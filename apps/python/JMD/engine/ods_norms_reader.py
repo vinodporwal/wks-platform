@@ -263,30 +263,124 @@ class ODSNormsReader:
 
     def get_steam_letdown_norms(self) -> dict:
         """
-        Return PRDS letdown norms for the steam cascade.
+        Return PRDS letdown norms for the steam cascade, discovered dynamically
+        from the ODS file.
 
-        The cascade flows from high pressure to low pressure:
-          SHP → HP (via HP Steam PRDS)    norm = 0.936 (1 MT HP needs 0.936 MT SHP)
-          HP  → MP (via MP Steam PRDS SHP) norm = 0.900 (1 MT MP needs 0.900 MT HP)
-          MP  → LP (via LP Steam PRDS)    norm = 0.945 (1 MT LP needs 0.945 MT MP)
+        Scans all rows where Account == 'Utilities'.  Any producer whose name
+        contains 'PRDS' (case-insensitive) and whose consumed material ends with
+        '_Dis' is treated as a letdown station.  The produced grade is inferred
+        from the utility name by stripping the consumed grade out of the PRDS name.
 
-        Returns:
-            {"LP_to_MP": 0.945, "MP_to_HP": 0.900, "HP_to_SHP": 0.936}
+        Returns a dict keyed by "<produced_grade>_to_<consumed_grade>" using the
+        short prefix (e.g., "lp", "mp") derived from the steam grade name, plus
+        two companion structures for the dispatch engine:
+
+            {
+                # Legacy-style flat keys (e.g. for backward compat logging)
+                "LP_to_MP": 0.945,
+                "MP_to_HP": 0.900,
+                "HP_to_SHP": 0.936,
+
+                # Full cascade description (list, ordered lowest→highest pressure)
+                "_cascade": [
+                    {"prds": "LP Steam PRDS",   "produces": "LP Steam_Dis",
+                     "consumes": "MP Steam_Dis", "norm": 0.945},
+                    {"prds": "MP Steam PRDS SHP","produces": "MP Steam_Dis",
+                     "consumes": "HP Steam_Dis", "norm": 0.900},
+                    {"prds": "HP Steam PRDS",   "produces": "HP Steam_Dis",
+                     "consumes": "SHP Steam_Dis","norm": 0.936},
+                ],
+            }
         """
         if not self.is_available:
             return {}
 
-        norms = {}
+        # Step 1: collect all _Dis steam material names present in the ODS
+        dis_materials = set()
+        for _, row in self._iter_data_rows():
+            mat = str(row[_COL_MATERIAL]).strip()
+            if mat.endswith("_Dis") and "Steam" in mat:
+                dis_materials.add(mat)
+
+        # Step 2: scan for PRDS rows — any utility whose name contains PRDS
+        # that consumes a steam _Dis material under account Utilities
+        prds_map: dict = {}  # prds_name -> {consumes, norm}
         for _, row in self._iter_data_rows():
             utility = str(row[_COL_UTILITY]).strip()
             material = str(row[_COL_MATERIAL]).strip()
+            account = str(row[_COL_ACCOUNT]).strip()
 
-            if utility == "LP Steam PRDS" and material == "MP Steam_Dis":
-                norms["LP_to_MP"] = self._get_norm_val(row)
-            elif utility == "MP Steam PRDS SHP" and material == "HP Steam_Dis":
-                norms["MP_to_HP"] = self._get_norm_val(row)
-            elif utility == "HP Steam PRDS" and material == "SHP Steam_Dis":
-                norms["HP_to_SHP"] = self._get_norm_val(row)
+            if (account == "Utilities"
+                    and "PRDS" in utility.upper()
+                    and material in dis_materials):
+                norm_val = self._get_norm_val(row)
+                if norm_val > 0:
+                    prds_map[utility] = {"consumes": material, "norm": norm_val}
+
+        # Step 3: for each PRDS station infer what grade it *produces*.
+        # A PRDS that consumes "MP Steam_Dis" produces the grade below MP.
+        # We derive this by finding the _Dis material that cites this PRDS as
+        # one of its sources (from the steam distribution).
+        distribution = self.get_steam_distribution()  # {produced_dis: {source: norm}}
+        prds_to_produced: dict = {}  # prds_name -> produced _Dis name
+        for produced_dis, sources in distribution.items():
+            for src in sources:
+                if "PRDS" in src.upper():
+                    prds_to_produced[src] = produced_dis
+
+        # Step 4: build the cascade list
+        cascade = []
+        for prds_name, info in prds_map.items():
+            produced = prds_to_produced.get(prds_name)
+            if produced:
+                cascade.append({
+                    "prds": prds_name,
+                    "produces": produced,
+                    "consumes": info["consumes"],
+                    "norm": info["norm"],
+                })
+
+        # Step 5: order cascade lowest→highest pressure.
+        # The chain runs: LP_PRDS(produces LP, consumes MP)
+        #                 → MP_PRDS(produces MP, consumes HP)
+        #                 → HP_PRDS(produces HP, consumes SHP)
+        # Start at the lowest grade (LP): the step whose produced grade is NOT
+        # consumed by any other PRDS step (i.e., no other PRDS produces it as an
+        # intermediate to consume).
+        # Walk upward: each step's consumed grade is produced by the next step up.
+        ordered: list = []
+        if cascade:
+            # produced grades that are consumed by some other PRDS step
+            produced_grades = {c["produces"] for c in cascade}
+            consumed_grades = {c["consumes"] for c in cascade}
+            # Start: step whose produces is NOT in consumed_grades
+            # (no higher-pressure PRDS needs this grade as its output to consume)
+            starts = [c for c in cascade if c["produces"] not in consumed_grades]
+            if starts:
+                current = starts[0]
+                ordered.append(current)
+                seen = {current["prds"]}
+                while True:
+                    # Next step UP: produces the grade that current step consumes
+                    nxt = next(
+                        (c for c in cascade
+                         if c["produces"] == current["consumes"] and c["prds"] not in seen),
+                        None,
+                    )
+                    if nxt is None:
+                        break
+                    ordered.append(nxt)
+                    seen.add(nxt["prds"])
+                    current = nxt
+            else:
+                ordered = cascade  # fallback: unordered
+
+        # Step 6: build flat legacy keys from the ordered cascade
+        norms: dict = {"_cascade": ordered}
+        for step in ordered:
+            prod_prefix = step["produces"].replace(" Steam_Dis", "").replace("_Dis", "")
+            cons_prefix = step["consumes"].replace(" Steam_Dis", "").replace("_Dis", "")
+            norms[f"{prod_prefix}_to_{cons_prefix}"] = step["norm"]
 
         return norms
 
@@ -385,14 +479,13 @@ class ODSNormsReader:
             return {}
 
         distribution = {}
-        steam_grades = ["SHP Steam_Dis", "HP Steam_Dis", "MP Steam_Dis", "LP Steam_Dis"]
 
         for _, row in self._iter_data_rows():
             utility = str(row[_COL_UTILITY]).strip()
             material = str(row[_COL_MATERIAL]).strip()
             account = str(row[_COL_ACCOUNT]).strip()
 
-            if utility in steam_grades and account == "Utilities":
+            if utility.endswith("_Dis") and "Steam" in utility and account == "Utilities":
                 norm_val = self._get_norm_val(row)
                 if norm_val > 0 or pd.notna(row[self._month_col_idx]):
                     if utility not in distribution:

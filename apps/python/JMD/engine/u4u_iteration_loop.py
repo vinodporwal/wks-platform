@@ -21,6 +21,7 @@ from typing import Dict, Optional, Set
 
 from engine.ods_norms_reader import ODSNormsReader
 from engine.dispatch_engine import dispatch_power, dispatch_steam
+from database.queries import fetch_process_demands_raw, fetch_fixed_consumption_raw
 
 logger = logging.getLogger(__name__)
 
@@ -29,33 +30,44 @@ MAX_ITERATIONS = 50
 
 DEFAULT_ALLOWED_ACCOUNTS: Set[str] = {"Utilities", "Raw Material"}
 
-_DISPATCHABLE_POWER_PRODUCER = "POWERGEN"
-_DISPATCHABLE_STEAM_PREFIXES = ("AUXBOIL", "HRSG")
 _EXCLUDED_NON_DISPATCHABLE = {"Power_Dis"}
 
-_DEMAND_PREFIX_TO_ODS_MATERIAL: Dict[str, str] = {
-    "power": "Power_Dis",
-    "shp": "SHP Steam_Dis",
-    "hp": "HP Steam_Dis",
-    "mp": "MP Steam_Dis",
-    "lp": "LP Steam_Dis",
-    "air": "COMPRESSED AIR",
-    "nitrogen_asu": "NITROGEN_ASU",
-    "dm": "D M Water",
-    "cooling_water": "Cooling Water",
-    "cw1": "Cooling Water",
-    "cw2": "Cooling Water",
-    "utility_water": "Utility Water",
-    "oxygen": "Oxygen",
-    "effluent": "Effluent",
-    "ret_steam_condensate": "Condensate",
-    "raw_water": "Raw Water",
-}
 
-_ODS_MATERIAL_TO_DEMAND_PREFIX: Dict[str, str] = {}
-for _prefix, _material in _DEMAND_PREFIX_TO_ODS_MATERIAL.items():
-    if _material not in _ODS_MATERIAL_TO_DEMAND_PREFIX:
-        _ODS_MATERIAL_TO_DEMAND_PREFIX[_material] = _prefix
+def _normalize_for_match(name: str) -> str:
+    """Case-fold and strip non-alphanumeric chars for fuzzy name matching."""
+    return "".join(ch.lower() for ch in name if ch.isalnum())
+
+
+def _build_db_to_ods_mapping(ods_material_names: set, db_utility_names: set) -> Dict[str, str]:
+    """
+    Build a mapping from DB utility names to ODS material names dynamically.
+
+    Strategy (in priority order):
+      1. Exact match (same string)
+      2. Case-insensitive match
+      3. Normalized alphanumeric match (strips spaces, underscores, casing)
+
+    Any DB utility name that cannot be matched to an ODS material is returned
+    with itself as the key — it will appear as an UNMAPPED utility in logs.
+
+    This eliminates all hardcoded name translation dicts.  When a new utility
+    is added to the DB it is automatically matched to the ODS if the name is
+    similar enough, or logged as unmapped if genuinely new.
+    """
+    ods_lower = {m.lower(): m for m in ods_material_names}
+    ods_norm  = {_normalize_for_match(m): m for m in ods_material_names}
+
+    mapping: Dict[str, str] = {}
+    for db_name in db_utility_names:
+        if db_name in ods_material_names:
+            mapping[db_name] = db_name
+        elif db_name.lower() in ods_lower:
+            mapping[db_name] = ods_lower[db_name.lower()]
+        elif _normalize_for_match(db_name) in ods_norm:
+            mapping[db_name] = ods_norm[_normalize_for_match(db_name)]
+        else:
+            mapping[db_name] = db_name  # pass-through; logged as unmapped later
+    return mapping
 
 _MONTH_NAMES = {
     1: "January", 2: "February", 3: "March", 4: "April",
@@ -90,6 +102,7 @@ class U4UIterationLoop:
         allowed_accounts: Optional[Set[str]] = None,
         convergence_tolerance: float = CONVERGENCE_TOLERANCE,
         max_iterations: int = MAX_ITERATIONS,
+        external_import_mwh: float = 0.0,
     ):
         self.plant_id = plant_id
         self.month = month
@@ -99,6 +112,7 @@ class U4UIterationLoop:
         self.allowed_accounts = allowed_accounts or DEFAULT_ALLOWED_ACCOUNTS
         self.convergence_tolerance = convergence_tolerance
         self.max_iterations = max_iterations
+        self.external_import_mwh = max(0.0, float(external_import_mwh))
 
         self.consumption_norms: dict = {}
         self._bpc_gen_quantities: dict = {}
@@ -106,6 +120,9 @@ class U4UIterationLoop:
         self._all_producers: set = set()
         self._initial_power_mwh: float = 0.0
         self._initial_steam_mt: Dict[str, float] = {}
+        self._raw_process: dict = {}
+        self._raw_fixed: dict = {}
+        self._power_ods_material: str = ""
 
         self.iteration_history: list = []
         self.final_power_result: Optional[dict] = None
@@ -127,8 +144,8 @@ class U4UIterationLoop:
         self._bpc_quantities = self.ods_reader.get_bpc_quantities()
 
         self._all_producers = set(self.consumption_norms.keys())
-        self._precompute_initial_values()
-        initial_utility_demands = self._build_initial_demands()
+        initial_utility_demands = self._build_initial_demands()  # sets _raw_process/_raw_fixed
+        self._precompute_initial_values()                         # reads _raw_process/_raw_fixed
 
         logger.info("")
         logger.info("  %s", "=" * 78)
@@ -222,27 +239,68 @@ class U4UIterationLoop:
     # ------------------------------------------------------------------
 
     def _precompute_initial_values(self):
-        """Cache initial power and steam demand totals for dispatch construction."""
-        power_process_kwh = float(self.initial_demands.get("power_process", 0.0))
-        power_fixed_mwh = float(self.initial_demands.get("power_fixed", 0.0))
-        self._initial_power_mwh = power_process_kwh / 1000.0 + power_fixed_mwh
+        """Cache initial power and steam demand totals for dispatch construction.
 
-        self._initial_steam_mt = {}
-        for grade in ("shp", "hp", "mp", "lp"):
-            process = float(self.initial_demands.get(f"{grade}_process", 0.0))
-            fixed = float(self.initial_demands.get(f"{grade}_fixed", 0.0))
-            self._initial_steam_mt[grade] = process + fixed
+        Uses the raw DB demands (self._raw_process / self._raw_fixed) and the
+        dynamic ODS mapping built in _build_initial_demands() so that no utility
+        names are hardcoded here.
+        """
+        # Power: find the ODS material whose normalized name matches 'powerdis'
+        power_ods = None
+        for mat in self._all_producers:
+            if _normalize_for_match(mat) in ("powerdis", "power"):
+                power_ods = mat
+                break
+        self._power_ods_material = power_ods  # e.g. "Power_Dis"
+
+        raw_power_process = float(self._raw_process.get(power_ods, 0.0)) if power_ods else 0.0
+        raw_power_fixed   = float(self._raw_fixed.get(power_ods, 0.0))   if power_ods else 0.0
+        self._initial_power_mwh = raw_power_process + raw_power_fixed
+
+        # Steam: find all steam _Dis ODS materials and sum process+fixed
+        self._initial_steam_mt = {}   # {ods_material_name: initial_mt}
+        for mat in self._all_producers:
+            if mat.endswith("_Dis") and "Steam" in mat:
+                proc  = float(self._raw_process.get(mat, 0.0))
+                fixed = float(self._raw_fixed.get(mat, 0.0))
+                self._initial_steam_mt[mat] = proc + fixed
 
     def _build_initial_demands(self) -> dict:
-        """Build initial demand map keyed by ODS material name."""
-        demands = {}
-        for prefix, ods_material in _DEMAND_PREFIX_TO_ODS_MATERIAL.items():
-            process_val = float(self.initial_demands.get(f"{prefix}_process", 0.0))
-            fixed_val = float(self.initial_demands.get(f"{prefix}_fixed", 0.0))
-            if prefix == "power":
-                process_val = process_val / 1000.0
-            total = process_val + fixed_val
-            demands[ods_material] = demands.get(ods_material, 0.0) + total
+        """Build initial demand map keyed by ODS material name.
+
+        Fetches raw process and fixed demands directly from the DB (no
+        predefined mapping dict), then matches each DB utility name to an ODS
+        material name using _build_db_to_ods_mapping().  New utilities added
+        to the DB are automatically picked up — no code change required.
+        """
+        # Fetch raw demands (DB utility name → value)
+        self._raw_process = fetch_process_demands_raw(self.plant_id, self.month, self.year)
+        self._raw_fixed   = fetch_fixed_consumption_raw(self.plant_id, self.month, self.year)
+
+        # Process demands for power are stored in KWH in the DB; convert to MWh.
+        # Detect power utility by normalized name (handles Power, Power_Dis, etc.)
+        for db_name in list(self._raw_process):
+            if _normalize_for_match(db_name) in ("powerdis", "power"):
+                self._raw_process[db_name] = self._raw_process[db_name] / 1000.0
+
+        all_db_names = set(self._raw_process) | set(self._raw_fixed)
+        db_to_ods = _build_db_to_ods_mapping(self._all_producers, all_db_names)
+
+        # Log mapping so any unmatched utilities are visible
+        unmapped = [db for db, ods in db_to_ods.items() if ods not in self._all_producers]
+        if unmapped:
+            logger.warning(
+                "  [U4U LOOP] %d DB utilities not matched to any ODS producer: %s",
+                len(unmapped), unmapped,
+            )
+
+        demands: dict = {}
+        for db_name, value in self._raw_process.items():
+            ods_mat = db_to_ods.get(db_name, db_name)
+            demands[ods_mat] = demands.get(ods_mat, 0.0) + float(value)
+        for db_name, value in self._raw_fixed.items():
+            ods_mat = db_to_ods.get(db_name, db_name)
+            demands[ods_mat] = demands.get(ods_mat, 0.0) + float(value)
 
         for producer in self._all_producers:
             if producer not in demands:
@@ -251,20 +309,46 @@ class U4UIterationLoop:
         return demands
 
     def _build_dispatch_demands(self, total_demands: dict) -> dict:
-        """Construct demands dict in the format expected by dispatch functions."""
-        dispatch_demands = dict(self.initial_demands)
+        """Construct demands dict in the format expected by dispatch functions.
 
-        power_u4u = total_demands.get("Power_Dis", 0.0) - self._initial_power_mwh
-        dispatch_demands["power_fixed"] = (
-            float(self.initial_demands.get("power_fixed", 0.0)) + power_u4u
-        )
+        Builds the merged demands dict that dispatch_power / dispatch_steam
+        consume.  All keys are derived from the raw DB fetch and ODS material
+        names — no hardcoded utility names.
+        """
+        # Start from raw process + fixed values (already in MWh / MT)
+        dispatch_demands: dict = {}
+        for db_name, val in self._raw_process.items():
+            dispatch_demands[db_name] = dispatch_demands.get(db_name, 0.0) + float(val)
+        for db_name, val in self._raw_fixed.items():
+            dispatch_demands[db_name] = dispatch_demands.get(db_name, 0.0) + float(val)
 
-        steam_ods_map = {"shp": "SHP Steam_Dis", "hp": "HP Steam_Dis",
-                         "mp": "MP Steam_Dis", "lp": "LP Steam_Dis"}
-        for grade, ods_material in steam_ods_map.items():
-            steam_u4u = total_demands.get(ods_material, 0.0) - self._initial_steam_mt.get(grade, 0.0)
-            dispatch_demands[f"{grade}_fixed"] = (
-                float(self.initial_demands.get(f"{grade}_fixed", 0.0)) + steam_u4u
+        # Add U4U increment for power and store explicit split for dispatch logging
+        if self._power_ods_material:
+            power_u4u_increment = (
+                total_demands.get(self._power_ods_material, 0.0)
+                - self._initial_power_mwh
+            )
+            key = self._power_ods_material
+            dispatch_demands[key] = dispatch_demands.get(key, 0.0) + power_u4u_increment
+
+            # Store split: process stays as-is; fixed absorbs U4U so dispatch sees full demand.
+            # Subtract external import so GTs only generate what isn't already covered externally.
+            dispatch_demands["_power_process_mwh"] = float(
+                self._raw_process.get(self._power_ods_material, 0.0)
+            )
+            dispatch_demands["_power_fixed_mwh"] = (
+                float(self._raw_fixed.get(self._power_ods_material, 0.0))
+                + power_u4u_increment
+                - self.external_import_mwh
+            )
+
+        # Add U4U increment for each steam grade
+        for ods_material, initial_mt in self._initial_steam_mt.items():
+            steam_u4u_increment = (
+                total_demands.get(ods_material, 0.0) - initial_mt
+            )
+            dispatch_demands[ods_material] = (
+                dispatch_demands.get(ods_material, 0.0) + steam_u4u_increment
             )
 
         return dispatch_demands
@@ -309,7 +393,14 @@ class U4UIterationLoop:
         """
         u4u: dict = {}
         details: list = []
-        powergen = self.consumption_norms.get(_DISPATCHABLE_POWER_PRODUCER)
+        # Dynamically find the power producer: the one whose production UOM is KWH
+        power_producer_name = None
+        powergen = None
+        for pname, pinfo in self.consumption_norms.items():
+            if pinfo.get("producer_uom", "").upper() == "KWH":
+                power_producer_name = pname
+                powergen = pinfo
+                break
         if not powergen:
             return u4u, details
 
@@ -348,7 +439,7 @@ class U4UIterationLoop:
 
                 details.append({
                     "producer": asset_name,
-                    "producer_utility": _DISPATCHABLE_POWER_PRODUCER,
+                    "producer_utility": power_producer_name,
                     "producer_uom": producer_uom,
                     "generation": gen_kwh,
                     "account": account,
@@ -478,10 +569,18 @@ class U4UIterationLoop:
     # ------------------------------------------------------------------
 
     def _is_dispatchable(self, producer_name: str) -> bool:
-        """Check if a producer is dispatchable (power or steam assets)."""
-        if producer_name == _DISPATCHABLE_POWER_PRODUCER:
-            return True
-        return any(producer_name.startswith(p) for p in _DISPATCHABLE_STEAM_PREFIXES)
+        """Check if a producer is dispatchable (power or steam assets).
+
+        A producer is dispatchable if it has raw material (fuel) consumption in
+        the ODS — meaning it is a real generator (GT, HRSG, Aux Boiler) that is
+        dispatched by dispatch_power / dispatch_steam rather than computed from
+        its demand.  PRDS and other pass-through utilities have no raw material
+        rows and are therefore non-dispatchable.
+        """
+        info = self.consumption_norms.get(producer_name)
+        if info is None:
+            return False
+        return any(c["account"] == "Raw Material" for c in info.get("consumptions", []))
 
     def _lookup_bpc_gen_qty(self, producer_name: str) -> float:
         """Look up BPC generation quantity for a producer from ODS data."""
@@ -666,7 +765,11 @@ class U4UIterationLoop:
         logger.info("")
         logger.info("  POWER BALANCE")
         logger.info("  %-30s  %14.2f  MWh", "Total Demand (incl U4U)", p_demand)
-        logger.info("  %-30s  %14.2f  MWh", "Total Generation", p_gen)
+        logger.info("  %-30s  %14.2f  MWh", "GT/STG Generation", p_gen)
+        if self.external_import_mwh > 0:
+            logger.info("  %-30s  %14.2f  MWh", "External Import Power", self.external_import_mwh)
+            logger.info("  %-30s  %14.2f  MWh", "Total Supply (Gen+Import)",
+                        p_gen + self.external_import_mwh)
         logger.info("  %-30s  %14.2f  MWh", "Auxiliary Consumption", p_import)
 
         if p_surplus > 0.01:
@@ -776,6 +879,127 @@ class U4UIterationLoop:
         logger.info("  %s", "=" * 78)
         logger.info("")
 
+    def _log_demand_generation_balance(self):
+        """Log demand vs generation balance table for all utilities."""
+        # Dynamically identify intermediate PRDS (letdown station) producers.
+        # A PRDS producer is one whose consumptions consist only of:
+        #   - a steam "_Dis" material (the higher-grade steam it letdowns from)
+        #   - optionally Boiler Feed Water (desuperheating)
+        # and has NO raw-material rows.
+        # These are skipped because their "generation" is already captured inside
+        # the steam _Dis net demand values from the dispatch engine.
+        steam_distribution = self.ods_reader.get_steam_distribution()
+        steam_dis_grades = set(steam_distribution.keys())  # e.g. {"SHP Steam_Dis", ...}
+
+        _skip_rows: set = set()
+        for producer, info in self.consumption_norms.items():
+            consumptions = info.get("consumptions", [])
+            has_raw_material = any(c["account"] == "Raw Material" for c in consumptions)
+            if has_raw_material:
+                continue
+            util_materials = {
+                c["material"] for c in consumptions if c["account"] == "Utilities"
+            }
+            # PRDS: only consumes steam _Dis grades and/or BFW
+            non_prds_inputs = util_materials - steam_dis_grades - {"Boiler Feed Water"}
+            if not non_prds_inputs and any(
+                m in steam_dis_grades for m in util_materials
+            ):
+                _skip_rows.add(producer)
+
+        # power _Dis material name — derived dynamically
+        power_dis = self._power_ods_material or "Power_Dis"
+
+        # Build process/fixed demand per ODS material from raw DB demands
+        all_db_names = set(self._raw_process) | set(self._raw_fixed)
+        db_to_ods = _build_db_to_ods_mapping(self._all_producers, all_db_names)
+        process_demands: dict = {}
+        fixed_demands: dict = {}
+        for db_name, val in self._raw_process.items():
+            ods_mat = db_to_ods.get(db_name, db_name)
+            process_demands[ods_mat] = process_demands.get(ods_mat, 0.0) + float(val)
+        for db_name, val in self._raw_fixed.items():
+            ods_mat = db_to_ods.get(db_name, db_name)
+            fixed_demands[ods_mat] = fixed_demands.get(ods_mat, 0.0) + float(val)
+
+        # Build generation per ODS material
+        generation = {}
+        steam_net_demand = {}  # override total demand for steam grades with dispatch net
+        pr = self.final_power_result or {}
+        sr = self.final_steam_result or {}
+
+        # Power generation: GT/STG dispatch + external import
+        generation[power_dis] = pr.get("total_generation_mwh", 0.0) + self.external_import_mwh
+
+        # Steam: use demand_detail net values so that PRDS letdown consumption
+        # is included in Total Demand, and Balance correctly shows 0 (met) or
+        # positive (real export surplus for the highest grade).
+        # The dispatch engine stores net demand keyed by grade prefix (shp/hp/mp/lp).
+        dd = sr.get("demand_detail") or {}
+        lp_byproduct = dd.get("lp_byproduct", 0.0)
+        lp_net = dd.get("lp_net", 0.0)
+        lp_total_gross = abs(lp_byproduct) + max(0.0, lp_net)
+
+        # Map each steam _Dis grade to its net demand and generation dynamically.
+        # Grade prefix is derived from the _Dis name (e.g. "LP Steam_Dis" → "lp").
+        for dis_grade in steam_dis_grades:
+            prefix = dis_grade.replace(" Steam_Dis", "").replace("_Dis", "").lower()
+            net_key = f"{prefix}_net"
+            if prefix == "lp":
+                gen_val = lp_total_gross
+                demand_val = lp_total_gross
+            elif prefix == "shp":
+                gen_val = sr.get("total_generation_mt", 0.0)
+                demand_val = max(0.0, dd.get(net_key, 0.0))
+            else:
+                net_val = max(0.0, dd.get(net_key, 0.0))
+                gen_val = net_val
+                demand_val = net_val
+            generation[dis_grade] = gen_val
+            steam_net_demand[dis_grade] = demand_val
+
+        # Non-dispatchable: generation = total demand
+        for material in self._all_producers:
+            if material not in generation and material not in _skip_rows:
+                generation[material] = self.final_total_demands.get(material, 0.0)
+
+        # Collect all utilities (union of demand and generation keys), skip PRDS
+        all_utilities = sorted(
+            (set(process_demands.keys()) | set(fixed_demands.keys()) |
+             set(self.final_u4u_demands.keys()) | set(self.final_total_demands.keys()) |
+             set(generation.keys()))
+            - _skip_rows
+        )
+
+        logger.info("  %s", "=" * 78)
+        logger.info("  DEMAND vs GENERATION BALANCE TABLE")
+        logger.info("  %s", "=" * 78)
+        logger.info("  %-25s  %12s  %12s  %12s  %14s  %14s  %14s",
+                     "Utility", "Process", "Fixed", "U4U", "Total Demand", "Generation", "Balance")
+        logger.info("  %s  %s  %s  %s  %s  %s  %s",
+                     "-" * 25, "-" * 12, "-" * 12, "-" * 12, "-" * 14, "-" * 14, "-" * 14)
+
+        for util in all_utilities:
+            proc = process_demands.get(util, 0.0)
+            fix = fixed_demands.get(util, 0.0)
+            u4u = self.final_u4u_demands.get(util, 0.0)
+            # For steam _Dis rows use the dispatch net (includes PRDS letdown)
+            if util in steam_net_demand:
+                total = steam_net_demand[util]
+            else:
+                total = self.final_total_demands.get(util, proc + fix + u4u)
+            gen = generation.get(util, 0.0)
+            balance = gen - total
+
+            if abs(total) < 0.01 and abs(gen) < 0.01 and abs(u4u) < 0.01:
+                continue
+
+            logger.info("  %-25s  %12.2f  %12.2f  %12.2f  %14.2f  %14.2f  %14.2f",
+                         util[:25], proc, fix, u4u, total, gen, balance)
+
+        logger.info("  %s", "=" * 78)
+        logger.info("")
+
     def _log_final_summary(self):
         """Log final summary with demand table and detailed U4U consumption table."""
         logger.info("")
@@ -788,6 +1012,9 @@ class U4UIterationLoop:
 
         # Part 0: Excess Power & Steam availability for export
         self._log_excess_availability()
+
+        # Part 0b: Demand vs Generation balance table
+        self._log_demand_generation_balance()
 
         # Part 1: Demand summary table
         logger.info("  %-30s  %14s  %14s", "Utility (ODS Material)", "U4U Demand", "Total Demand")
@@ -858,10 +1085,10 @@ class U4UIterationLoop:
 
         # Part 4: Per-utility summary comparison table
         logger.info("  GENERATION UTILITY COMPARISON SUMMARY")
-        logger.info("  %-25s  %-6s  %14s  %14s  %10s  %8s  %14s",
-                     "Utility Plant", "UOM", "Gen Qty", "BPC Gen Qty", "Gen Diff %", "# Mat", "Total U4U Qty")
-        logger.info("  %s  %s  %s  %s  %s  %s  %s",
-                     "-" * 25, "-" * 6, "-" * 14, "-" * 14, "-" * 10, "-" * 8, "-" * 14)
+        logger.info("  %-25s  %-6s  %14s  %14s  %10s  %8s",
+                     "Utility Plant", "UOM", "Gen Qty", "BPC Gen Qty", "Gen Diff %", "# Mat")
+        logger.info("  %s  %s  %s  %s  %s  %s",
+                     "-" * 25, "-" * 6, "-" * 14, "-" * 14, "-" * 10, "-" * 8)
 
         # Aggregate per producer
         producer_summary: dict = {}
@@ -875,17 +1102,15 @@ class U4UIterationLoop:
                     "generation": rec["generation"],
                     "bpc_gen": bpc_gen,
                     "material_count": 0,
-                    "total_u4u_qty": 0.0,
                 }
             producer_summary[p]["material_count"] += 1
-            producer_summary[p]["total_u4u_qty"] += rec["quantity"]
 
         for p in sorted(producer_summary.keys()):
             s = producer_summary[p]
             gen_diff = self._pct_diff(s["generation"], s["bpc_gen"])
-            logger.info("  %-25s  %-6s  %14.2f  %14.2f  %9.2f%%  %8d  %14.2f",
+            logger.info("  %-25s  %-6s  %14.2f  %14.2f  %9.2f%%  %8d",
                          p[:25], s["uom"][:6], s["generation"], s["bpc_gen"],
-                         gen_diff, s["material_count"], s["total_u4u_qty"])
+                         gen_diff, s["material_count"])
 
         logger.info("  %s", "=" * 78)
         logger.info("")

@@ -321,16 +321,14 @@ def _write_u4u_summary(ws, result: dict):
                 "generation": rec["generation"],
                 "bpc_gen": bpc_gen.get(p, 0.0),
                 "material_count": 0,
-                "total_u4u_qty": 0.0,
                 "materials": [],
             }
         producer_summary[p]["material_count"] += 1
-        producer_summary[p]["total_u4u_qty"] += rec["quantity"]
         producer_summary[p]["materials"].append(rec.get("material", ""))
 
     headers = [
         "Utility Plant", "Utility", "UOM", "Gen Qty", "BPC Gen Qty",
-        "Gen Diff %", "# Materials", "Total U4U Qty", "Materials Consumed",
+        "Gen Diff %", "# Materials", "Materials Consumed",
     ]
     _header_row(ws, 1, 1, headers)
 
@@ -346,7 +344,6 @@ def _write_u4u_summary(ws, result: dict):
             round(s["bpc_gen"], 2),
             round(gen_diff, 2),
             s["material_count"],
-            round(s["total_u4u_qty"], 2),
             ", ".join(s["materials"]),
         ], fill=fill)
 
@@ -354,11 +351,10 @@ def _write_u4u_summary(ws, result: dict):
     total_row = len(producer_summary) + 2
     total_gen = sum(s["generation"] for s in producer_summary.values())
     total_bpc = sum(s["bpc_gen"] for s in producer_summary.values())
-    total_u4u = sum(s["total_u4u_qty"] for s in producer_summary.values())
     _data_row(ws, total_row, [
         "TOTAL", "", "", round(total_gen, 2), round(total_bpc, 2),
         "", sum(s["material_count"] for s in producer_summary.values()),
-        round(total_u4u, 2), "",
+        "",
     ], bold=True, fill=_TOTAL_FILL)
 
     ws.freeze_panes = "A2"

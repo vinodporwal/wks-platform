@@ -233,6 +233,7 @@ UTILITY_MAPPING = {
     "Oxygen":         "oxygen_process",
     "Effluent Treated":"effluent_process",
     "Effluent":       "effluent_process",
+    "PROCESS FEED WATER": "process_feed_water_process",
 }
 
 
@@ -260,6 +261,7 @@ def fetch_process_demands(plant_id: str, month: int, year: int) -> dict:
         "cw1_process", "cw2_process", "cooling_water_process",
         "raw_water_process", "utility_water_process",
         "ret_steam_condensate_process", "oxygen_process", "effluent_process",
+        "process_feed_water_process",
     )}
 
     conn = get_connection()
@@ -302,6 +304,56 @@ def fetch_process_demands(plant_id: str, month: int, year: int) -> dict:
         return result
     except Exception as e:
         logger.error("  [PROCESS] Error: %s", e)
+        return result
+    finally:
+        conn.close()
+
+
+def fetch_process_demands_raw(plant_id: str, month: int, year: int) -> dict:
+    """
+    Fetch process utility demands keyed by the raw DB utility name.
+
+    Unlike fetch_process_demands(), this function does NOT translate names to
+    internal prefix keys.  It returns every utility found in the DB as-is:
+        {"LP Steam_Dis": 18336.0, "Power_Dis": 62526.31, "NITROGEN_ASU": ...}
+
+    This allows the calling code (u4u_iteration_loop) to match against ODS
+    material names dynamically — new utilities added to the DB are automatically
+    included without any code change.
+    """
+    fy = _fy_string(month, year)
+    col = _MONTH_COL.get(month)
+    if not col:
+        raise ValueError(f"Invalid month: {month}")
+
+    result: dict = {}
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            f"""
+            SELECT
+                m.cpp_utility,
+                ISNULL(c.[{col}], 0) AS demand
+            FROM dbo.{T.PROCESS_DEMAND_MASTER} m
+            LEFT JOIN dbo.{T.CALCULATED_PROCESS_DEMAND} c
+                ON  m.process_plant_id          = c.process_plant_id
+                AND m.cpp_utility_id            = c.cpp_utility_id
+                AND ISNULL(m.cpp_plant_id, '')  = ISNULL(c.cpp_plant_id, '')
+                AND c.financial_year            = ?
+            WHERE m.cpp_plant_fK_id = ?
+              AND m.is_active        = 1
+            """,
+            (fy, plant_id),
+        )
+        for row in cur.fetchall():
+            util_name = (row[0] or "").strip()
+            value = float(row[1]) if row[1] is not None else 0.0
+            if util_name:
+                result[util_name] = result.get(util_name, 0.0) + value
+        return result
+    except Exception as e:
+        logger.error("  [PROCESS_RAW] Error: %s", e)
         return result
     finally:
         conn.close()
@@ -602,6 +654,85 @@ def fetch_fixed_consumption(plant_id: str, month: int, year: int) -> dict:
     follows the stored-procedure SourceName-first plant lookup.
     """
     return fetch_fixed_consumption_by_plant(plant_id, month, year)
+
+
+def fetch_fixed_consumption_raw(plant_id: str, month: int, year: int) -> dict:
+    """
+    Fetch fixed consumption keyed by the raw DB utility (NormParameters.Name).
+
+    Unlike fetch_fixed_consumption(), this function does NOT translate names to
+    internal prefix keys.  It returns every utility found in the DB as-is:
+        {"LP Steam_Dis": 4745.0, "Power_Dis": 20341.28, ...}
+
+    Power values are converted from kWh to MWh (divide by 1000) so that the
+    unit is consistent with the ODS which uses MWh for power.
+
+    New utilities added to the DB are automatically included — no code change
+    required.
+    """
+    fy = _fy_string(month, year)
+    col = _MONTH_COL.get(month)
+    if not col:
+        raise ValueError(f"Invalid month: {month}")
+
+    result: dict = {}
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        for table_name in [T.FIXED_CONSUMPTION]:
+            try:
+                cur.execute(
+                    f"""
+                    SELECT
+                        COALESCE(np.Name, '') AS utility_name,
+                        COALESCE(np.UOM, '')  AS uom,
+                        SUM(ISNULL(fc.[{col}], 0)) AS total_consumption
+                    FROM dbo.{table_name} fc
+                    INNER JOIN dbo.Plants p ON p.Id = fc.Plant_FK_Id
+                    LEFT JOIN dbo.NormParameters np ON np.Id = fc.NormParameter_FK_Id
+                    WHERE p.SourceName = ?
+                      AND fc.AOPYear = ?
+                    GROUP BY np.Name, np.UOM
+                    """,
+                    (plant_id, fy),
+                )
+                rows = cur.fetchall()
+                if not rows:
+                    cur.execute(
+                        f"""
+                        SELECT
+                            COALESCE(np.Name, '') AS utility_name,
+                            COALESCE(np.UOM, '')  AS uom,
+                            SUM(ISNULL(fc.[{col}], 0)) AS total_consumption
+                        FROM dbo.{table_name} fc
+                        LEFT JOIN dbo.NormParameters np ON np.Id = fc.NormParameter_FK_Id
+                        WHERE fc.Plant_FK_Id = ?
+                          AND fc.AOPYear = ?
+                        GROUP BY np.Name, np.UOM
+                        """,
+                        (plant_id, fy),
+                    )
+                    rows = cur.fetchall()
+                for row in rows:
+                    util_name = (row[0] or "").strip()
+                    uom = (row[1] or "").strip().upper()
+                    value = float(row[2]) if row[2] is not None else 0.0
+                    if not util_name:
+                        continue
+                    if uom == "KWH":
+                        value = value / 1000.0
+                    result[util_name] = result.get(util_name, 0.0) + value
+                break
+            except Exception as table_error:
+                if _is_schema_error(table_error):
+                    continue
+                raise
+        return result
+    except Exception as e:
+        logger.error("  [FIXED_RAW] Error: %s", e)
+        return result
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------

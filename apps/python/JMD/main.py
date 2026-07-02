@@ -552,6 +552,7 @@ def _print_calculated_process_demand(plant_id: str, month: int, year: int):
         "ret_steam_condensate_process": ("Ret Steam Condensate", "M3"),
         "oxygen_process":     ("Oxygen",               "MT"),
         "effluent_process":   ("Effluent",             "M3"),
+        "process_feed_water_process": ("Process Feed Water", "M3"),
     }
 
     print(f"  {'Utility':<28}  {'Value':>16}  {'Unit':<8}")
@@ -601,6 +602,8 @@ def _print_demand_segregation(plant_id: str, month: int, year: int):
         "oxygen_fixed":      ("Oxygen (Fixed)",       "MT"),
         "effluent_process":  ("Effluent",             "M3"),
         "effluent_fixed":    ("Effluent (Fixed)",     "M3"),
+        "process_feed_water_process": ("Process Feed Water", "M3"),
+        "process_feed_water_fixed":   ("Process Feed Water (Fixed)", "M3"),
     }
     print(f"  {'Demand Component':<28}  {'Value':>12}  {'Unit':<8}")
     print(f"  {'-'*28}  {'-'*12}  {'-'*8}")

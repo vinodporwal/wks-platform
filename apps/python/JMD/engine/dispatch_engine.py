@@ -36,9 +36,119 @@ from engine.ods_norms_reader import ODSNormsReader
 
 logger = logging.getLogger(__name__)
 
-# Free steam factor: GT gross kWh × factor = free steam MT
-# Hardcoded for now; will be replaced by per-load lookup from CPP_GTHeatRate table
+# Free steam factor fallback for GT assets without a per-load lookup.
 DEFAULT_FREE_STEAM_FACTOR = 1.97
+
+# ---------------------------------------------------------------------------
+# GT per-load heat rate & free steam factor lookup (hardcoded copy of BPC data)
+# Later this will be replaced by the CPP_GTHeatRate table.
+# Format: (GTLOAD_MW, HEAT_RATE_Kcal_kWh, FREESTM_FACTOR)
+# ---------------------------------------------------------------------------
+_GT_LOAD_LOOKUP = {
+    "C2GT1_FRAME9": [
+        (50.00, 3413.07, 1.92), (51.00, 3393.07, 1.91), (52.00, 3373.07, 1.91),
+        (53.00, 3353.07, 1.90), (54.00, 3333.07, 1.90), (55.00, 3314.07, 1.89),
+        (56.00, 3295.07, 1.89), (57.00, 3276.07, 1.88), (58.00, 3257.07, 1.88),
+        (59.00, 3239.07, 1.87), (60.00, 3221.07, 1.87), (61.00, 3203.07, 1.86),
+        (62.00, 3185.07, 1.86), (63.00, 3168.07, 1.85), (64.00, 3151.07, 1.85),
+        (65.00, 3134.07, 1.84), (66.00, 3117.07, 1.84), (67.00, 3101.07, 1.83),
+        (68.00, 3085.07, 1.83), (69.00, 3069.07, 1.82), (70.00, 3053.07, 1.82),
+        (71.00, 3038.07, 1.81), (72.00, 3023.07, 1.81), (73.00, 3008.07, 1.80),
+        (74.00, 2993.07, 1.80), (75.00, 2979.07, 1.79), (76.00, 2966.07, 1.79),
+        (77.00, 2954.07, 1.78), (78.00, 2942.07, 1.78), (79.00, 2930.07, 1.77),
+        (80.00, 2918.07, 1.77), (81.00, 2908.07, 1.76), (82.00, 2898.07, 1.76),
+        (83.00, 2888.07, 1.75), (84.00, 2878.07, 1.75), (85.00, 2868.07, 1.74),
+        (86.00, 2858.07, 1.73), (87.00, 2848.07, 1.72), (88.00, 2837.07, 1.71),
+        (89.00, 2826.07, 1.70), (90.00, 2815.16, 1.70), (91.00, 2804.25, 1.70),
+        (92.00, 2793.25, 1.69), (93.00, 2782.25, 1.68), (94.00, 2771.25, 1.67),
+        (95.00, 2760.25, 1.66), (96.00, 2749.34, 1.65), (97.00, 2738.42, 1.64),
+        (98.00, 2726.42, 1.63), (99.00, 2714.42, 1.62), (100.00, 2702.52, 1.61),
+        (101.00, 2690.62, 1.60), (102.00, 2678.71, 1.60), (103.00, 2666.81, 1.59),
+        (104.00, 2654.90, 1.58), (105.00, 2643.00, 1.57), (106.00, 2638.00, 1.56),
+        (107.00, 2633.00, 1.55), (108.00, 2629.00, 1.54), (109.00, 2625.00, 1.53),
+        (110.00, 2621.00, 1.52), (111.00, 2618.00, 1.51), (112.00, 2615.00, 1.50),
+        (113.00, 2612.00, 1.49), (114.00, 2609.00, 1.48),
+    ],
+    "C2GT2_FRAME9": [
+        (50.00, 3430.34, 1.92), (51.00, 3410.50, 1.91), (52.00, 3390.66, 1.91),
+        (53.00, 3370.82, 1.90), (54.00, 3350.98, 1.90), (55.00, 3332.14, 1.89),
+        (56.00, 3313.29, 1.89), (57.00, 3294.44, 1.88), (58.00, 3275.59, 1.88),
+        (59.00, 3257.74, 1.87), (60.00, 3239.88, 1.87), (61.00, 3222.02, 1.86),
+        (62.00, 3204.17, 1.86), (63.00, 3187.30, 1.85), (64.00, 3170.44, 1.85),
+        (65.00, 3153.58, 1.84), (66.00, 3136.71, 1.84), (67.00, 3120.84, 1.83),
+        (68.00, 3104.97, 1.83), (69.00, 3089.10, 1.82), (70.00, 3073.22, 1.82),
+        (71.00, 3058.34, 1.81), (72.00, 3043.46, 1.81), (73.00, 3028.58, 1.80),
+        (74.00, 3013.70, 1.80), (75.00, 2999.82, 1.79), (76.00, 2985.93, 1.79),
+        (77.00, 2972.04, 1.78), (78.00, 2958.15, 1.78), (79.00, 2945.26, 1.77),
+        (80.00, 2932.36, 1.77), (81.00, 2920.46, 1.76), (82.00, 2908.55, 1.76),
+        (83.00, 2896.65, 1.75), (84.00, 2884.74, 1.75), (85.00, 2872.84, 1.74),
+        (86.00, 2860.94, 1.73), (87.00, 2849.03, 1.72), (88.00, 2838.12, 1.71),
+        (89.00, 2827.21, 1.70), (90.00, 2816.30, 1.70), (91.00, 2805.38, 1.70),
+        (92.00, 2793.48, 1.69), (93.00, 2781.58, 1.68), (94.00, 2769.67, 1.67),
+        (95.00, 2757.77, 1.66), (96.00, 2746.86, 1.65), (97.00, 2735.94, 1.64),
+        (98.00, 2725.03, 1.63), (99.00, 2714.12, 1.62), (100.00, 2702.22, 1.61),
+        (101.00, 2690.31, 1.60), (102.00, 2678.41, 1.60), (103.00, 2666.50, 1.59),
+        (104.00, 2654.60, 1.58), (105.00, 2642.70, 1.57), (106.00, 2637.74, 1.56),
+        (107.00, 2632.78, 1.55), (108.00, 2628.81, 1.54), (109.00, 2624.84, 1.53),
+        (110.00, 2620.87, 1.52), (111.00, 2617.90, 1.51), (112.00, 2614.92, 1.50),
+        (113.00, 2611.94, 1.49), (114.00, 2608.97, 1.48),
+    ],
+}
+
+
+# Map model asset names to the equipment types in the BPC lookup table.
+# Extend this as more plant assets are validated.
+_ASSET_TO_EQUIPMENT_TYPE = {
+    "JMD - C2-GTG 1": "C2GT1_FRAME9",
+    "JMD - C2-GTG 2": "C2GT2_FRAME9",
+}
+
+
+def _lookup_gt_load_factor(load_mw: float, table: list) -> float:
+    """
+    Linearly interpolate the free-steam factor for a given GT load (MW).
+    table: list of (load_mw, heat_rate, free_steam_factor) sorted by load_mw.
+    """
+    if not table:
+        return DEFAULT_FREE_STEAM_FACTOR
+    if load_mw <= table[0][0]:
+        return table[0][2]
+    if load_mw >= table[-1][0]:
+        return table[-1][2]
+    for i in range(1, len(table)):
+        lo, _, fo = table[i - 1]
+        hi, _, fh = table[i]
+        if lo <= load_mw <= hi:
+            if hi == lo:
+                return fo
+            return round(fo + (fh - fo) * (load_mw - lo) / (hi - lo), 6)
+    return table[-1][2]
+
+
+def _lookup_gt_heat_rate(load_mw: float, table: list) -> float:
+    """
+    Linearly interpolate the heat rate (Kcal/kWh) for a given GT load (MW).
+    """
+    if not table:
+        return 0.0
+    if load_mw <= table[0][0]:
+        return table[0][1]
+    if load_mw >= table[-1][0]:
+        return table[-1][1]
+    for i in range(1, len(table)):
+        lo, ho, _ = table[i - 1]
+        hi, hh, _ = table[i]
+        if lo <= load_mw <= hi:
+            if hi == lo:
+                return ho
+            return round(ho + (hh - ho) * (load_mw - lo) / (hi - lo), 2)
+    return table[-1][1]
+
+
+def _get_asset_equipment_type(asset_name: str) -> str:
+    """Return the equipment type key for a model asset name, if known."""
+    return _ASSET_TO_EQUIPMENT_TYPE.get(asset_name.strip(), "")
+
 
 # ---------------------------------------------------------------------------
 # Steam Spinning Margin (TPH) — per plant
@@ -64,7 +174,7 @@ POWER_SPINNING_MARGIN_ENABLED = {
     "2DFEE33F-4CFD-4887-B9DD-53388AA95271": False,  # SEZ-CPP
     "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": False,  # SEZ-PCG-CPP
     "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": False,  # DTA-CPP
-    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": True,   # C2-CPP
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": False,   # C2-CPP
 }
 
 _MONTH_NAMES = {
@@ -84,40 +194,44 @@ def _month_key(month: int) -> str:
     return _MONTH_NAMES[month][:3]
 
 
-def _get_steam_demands(plant_id: str, month: int, year: int, demands: dict = None) -> dict:
+def _get_steam_demands(plant_id: str, month: int, year: int, demands: dict = None,
+                       grade_prefixes: list = None) -> dict:
     """
     Build steam demand dict from pre-fetched demands or DB fallback.
 
     Args:
-        plant_id:  CPP plant UUID
-        month:     1-12
-        year:      calendar year
-        demands:   pre-fetched merged demands dict from calculator. If provided,
-                   skips DB round-trip for process + fixed consumption.
+        plant_id:       CPP plant UUID
+        month:          1-12
+        year:           calendar year
+        demands:        pre-fetched merged demands dict from calculator.
+        grade_prefixes: list of lowercase steam grade prefixes in cascade order
+                        (e.g. ['lp', 'mp', 'hp', 'shp']).  Derived from the ODS
+                        letdown cascade so no grades are hardcoded here.
     """
+    if grade_prefixes is None:
+        grade_prefixes = ["lp", "mp", "hp", "shp"]  # safe fallback
+
     if demands is not None:
-        return {
-            "lp_process": float(demands.get("lp_process", 0.0)),
-            "lp_fixed": float(demands.get("lp_fixed", 0.0)),
-            "mp_process": float(demands.get("mp_process", 0.0)),
-            "mp_fixed": float(demands.get("mp_fixed", 0.0)),
-            "hp_process": float(demands.get("hp_process", 0.0)),
-            "hp_fixed": float(demands.get("hp_fixed", 0.0)),
-            "shp_process": float(demands.get("shp_process", 0.0)),
-            "shp_fixed": float(demands.get("shp_fixed", 0.0)),
-        }
+        result = {}
+        for g in grade_prefixes:
+            # Derive the ODS _Dis material name from the grade prefix
+            # e.g. "lp" → "LP Steam_Dis",  "shp" → "SHP Steam_Dis"
+            ods_key = f"{g.upper()} Steam_Dis"
+            for kind in ("process", "fixed"):
+                prefix_key = f"{g}_{kind}"
+                # Prefer ODS material key (new format); fall back to prefix key (old)
+                if kind == "process":
+                    val = float(demands.get(ods_key, demands.get(prefix_key, 0.0)))
+                else:
+                    val = float(demands.get(prefix_key, 0.0))
+                result[prefix_key] = val
+        return result
 
     process = fetch_process_demands(plant_id, month, year)
     fixed = fetch_fixed_consumption(plant_id, month, year)
     return {
-        "lp_process": float(process.get("lp_process", 0.0)),
-        "lp_fixed": float(fixed.get("lp_fixed", 0.0)),
-        "mp_process": float(process.get("mp_process", 0.0)),
-        "mp_fixed": float(fixed.get("mp_fixed", 0.0)),
-        "hp_process": float(process.get("hp_process", 0.0)),
-        "hp_fixed": float(fixed.get("hp_fixed", 0.0)),
-        "shp_process": float(process.get("shp_process", 0.0)),
-        "shp_fixed": float(fixed.get("shp_fixed", 0.0)),
+        **{f"{g}_process": float(process.get(f"{g}_process", 0.0)) for g in grade_prefixes},
+        **{f"{g}_fixed":   float(fixed.get(f"{g}_fixed", 0.0))   for g in grade_prefixes},
     }
 
 
@@ -229,15 +343,26 @@ def _get_power_demand(plant_id: str, month: int, year: int, demands: dict = None
         }
     """
     if demands is not None:
-        process_kwh = float(demands.get("power_process", 0.0))
-        fixed_mwh = float(demands.get("power_fixed", 0.0))
+        if "_power_process_mwh" in demands:
+            # Preferred: explicit split stored by _build_dispatch_demands (already MWh)
+            process_mwh = float(demands["_power_process_mwh"])
+            fixed_mwh   = float(demands.get("_power_fixed_mwh", 0.0))
+        elif "Power_Dis" in demands:
+            # ODS-keyed combined value (process+fixed merged) — split as best-effort
+            total_mwh = float(demands["Power_Dis"])
+            fixed_mwh = 0.0
+            process_mwh = total_mwh
+        else:
+            # Legacy prefix-keyed format
+            process_kwh = float(demands.get("power_process", 0.0))
+            fixed_mwh   = float(demands.get("power_fixed", 0.0))
+            process_mwh = process_kwh / 1000.0
     else:
         process = fetch_process_demands(plant_id, month, year)
         fixed = fetch_fixed_consumption(plant_id, month, year)
         process_kwh = float(process.get("power_process", 0.0))
-        fixed_mwh = float(fixed.get("power_fixed", 0.0))
-
-    process_mwh = process_kwh / 1000.0
+        fixed_mwh   = float(fixed.get("power_fixed", 0.0))
+        process_mwh = process_kwh / 1000.0
 
     return {
         "process_mwh": round(process_mwh, 2),
@@ -393,12 +518,24 @@ def _dispatch_all_min_first(
         )
 
         # Free Steam MT — only for GT assets
-        # Formula: gross_mwh × free_steam_factor
+        # Use per-load factor from BPC lookup when available; otherwise fallback.
         is_gt = "GT" in d["asset_type"].upper()
         if is_gt and d["dispatched_mwh"] > 0:
-            d["free_steam_factor"] = DEFAULT_FREE_STEAM_FACTOR
-            d["free_steam_mt"] = round(d["dispatched_mwh"] * DEFAULT_FREE_STEAM_FACTOR, 2)
+            equip_type = _get_asset_equipment_type(d["asset_name"])
+            table = _GT_LOAD_LOOKUP.get(equip_type)
+            if table:
+                d["heat_rate"] = _lookup_gt_heat_rate(d["avg_load_mw"], table)
+                d["free_steam_factor"] = _lookup_gt_load_factor(d["avg_load_mw"], table)
+                d["free_steam_mt"] = round(d["dispatched_mwh"] * d["free_steam_factor"], 2)
+            else:
+                d["heat_rate"] = 0.0
+                d["free_steam_factor"] = DEFAULT_FREE_STEAM_FACTOR
+                d["free_steam_mt"] = round(d["dispatched_mwh"] * DEFAULT_FREE_STEAM_FACTOR, 2)
+                if equip_type:
+                    logger.warning("  [DISPATCH] No free-steam lookup table for equipment type '%s' on asset '%s'; using default %.2f",
+                                   equip_type, d["asset_name"], DEFAULT_FREE_STEAM_FACTOR)
         else:
+            d["heat_rate"] = 0.0
             d["free_steam_factor"] = 0.0
             d["free_steam_mt"] = 0.0
 
@@ -410,9 +547,8 @@ def _dispatch_all_min_first(
                 None
             )
         if norm_val is None:
-            # Fallback values
-            is_stg = "STG" in d["asset_name"].upper() or "STEAM" in d["asset_name"].upper()
-            norm_val = 0.00705 if is_stg else 0.00135
+            logger.warning("  [DISPATCH] No aux power norm in ODS for asset '%s'; using 0.0", d["asset_name"])
+            norm_val = 0.0
             
         d["aux_power_norm"] = norm_val
         d["aux_power"] = round(d["dispatched_mwh"] * norm_val, 2)
@@ -491,18 +627,21 @@ def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int, sp
     total_free_steam = sum(d.get("free_steam_mt", 0) for d in dispatch)
     total_aux_power = sum(d.get("aux_power", 0) for d in dispatch)
     logger.info("  FINAL DISPATCH")
-    logger.info("  %-25s  %8s  %14s  %14s  %8s  %12s  %14s  %14s  %14s",
-                "Asset", "Priority", "Dispatched MW", "Dispatched MWh", "Load %", "Avg Load MW", "Free Steam MT", "Aux Norm", "Aux Power MWh")
-    logger.info("  %s  %s  %s  %s  %s  %s  %s  %s  %s",
-                "-" * 25, "-" * 8, "-" * 14, "-" * 14, "-" * 8, "-" * 12, "-" * 14, "-" * 14, "-" * 14)
+    logger.info("  %-25s  %8s  %14s  %14s  %8s  %12s  %12s  %14s  %14s  %14s",
+                "Asset", "Priority", "Dispatched MW", "Dispatched MWh", "Load %", "Avg Load MW", "FreeStm Factor", "Free Steam MT", "Heat Rate", "Aux Power MWh")
+    logger.info("  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s",
+                "-" * 25, "-" * 8, "-" * 14, "-" * 14, "-" * 8, "-" * 12, "-" * 12, "-" * 14, "-" * 14, "-" * 14)
     for d in dispatch:
-        logger.info("  %-25s  %8d  %14.2f  %14.2f  %7.1f%%  %12.2f  %14.2f  %14.6f  %14.2f",
+        logger.info("  %-25s  %8d  %14.2f  %14.2f  %7.1f%%  %12.2f  %12.4f  %14.2f  %14.2f  %14.2f",
                      d["asset_name"], d["priority"],
                      d["dispatched_mw"], d["dispatched_mwh"], d["load_percent"],
-                     d.get("avg_load_mw", 0), d.get("free_steam_mt", 0),
-                     d.get("aux_power_norm", 0.0), d.get("aux_power", 0.0))
-    logger.info("  %-25s  %8s  %14s  %14.2f  %8s  %12s  %14.2f  %14s  %14.2f",
-                "TOTAL", "", "", total_gen, "", "", total_free_steam, "", total_aux_power)
+                     d.get("avg_load_mw", 0),
+                     d.get("free_steam_factor", 0.0),
+                     d.get("free_steam_mt", 0),
+                     d.get("heat_rate", 0.0),
+                     d.get("aux_power", 0.0))
+    logger.info("  %-25s  %8s  %14s  %14.2f  %8s  %12s  %12s  %14.2f  %14s  %14.2f",
+                "TOTAL", "", "", total_gen, "", "", "", total_free_steam, "", total_aux_power)
     # Spinning margin post-dispatch verification
     if spinning_margin > 0:
         working = [d for d in dispatch if d["op_hours"] > 0]
@@ -620,7 +759,10 @@ def dispatch_power(
 
 def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int, year: int, free_steam: float, spinning_margin: float = 0.0):
     """Print the full steam dispatch result to the log in a structured table format."""
-    total_demand = demand_details["shp_net"]
+    # Derive grade list dynamically from keys present in demand_details
+    top_grade = demand_details.get("_top_grade", "shp")
+    cascade_grades = demand_details.get("_cascade_grades", ["lp", "mp", "hp", "shp"])
+    total_demand = demand_details[f"{top_grade}_net"]
     total_gen = sum(d["dispatched_mt"] for d in dispatch) + free_steam
     surplus = max(0.0, total_gen - total_demand)
     deficit = max(0.0, total_demand - total_gen)
@@ -629,16 +771,16 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
     logger.info("  %s", sep)
     logger.info("  STEAM DISPATCH  (%s %d)", _MONTH_NAMES.get(month, ""), year)
     logger.info("  %s", sep)
-    
-    # Raw & Net Demands table
+
+    # Raw & Net Demands table — grades derived from cascade
     logger.info("  Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT")
     logger.info("  ---------  ----------------  ----------  ------------  ----------------")
-    for grade in ["LP", "MP", "HP", "SHP"]:
-        g_lower = grade.lower()
-        process_fixed = demand_details[f"{g_lower}_process"] + demand_details[f"{g_lower}_fixed"]
+    for g_lower in cascade_grades:
+        grade = g_lower.upper()
+        process_fixed = demand_details.get(f"{g_lower}_process", 0.0) + demand_details.get(f"{g_lower}_fixed", 0.0)
         letdown = demand_details.get(f"{g_lower}_letdown", 0.0)
         byprod = demand_details.get(f"{g_lower}_byproduct", 0.0)
-        net = demand_details[f"{g_lower}_net"]
+        net = demand_details.get(f"{g_lower}_net", 0.0)
         logger.info("  %-9s  %16.2f  %10.2f  %12.2f  %16.2f",
                     grade, process_fixed, letdown, byprod, net)
     logger.info("")
@@ -657,7 +799,7 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
                      d["asset_name"], d["priority"], man_flag,
                      d["min_tph"], d["max_tph"], d["op_hours"],
                      d["dispatched_tph"], d["dispatched_mt"], d["load_percent"])
-                     
+
     supp_gen = sum(d["dispatched_mt"] for d in dispatch)
     logger.info("  %-25s  %8s  %10s  %10s  %8s  %14s  %14.2f  %8s",
                 "TOTAL SUPPLEMENTARY", "", "", "", "", "", supp_gen, "")
@@ -716,14 +858,26 @@ def dispatch_steam(
     if ods_reader is None:
         ods_reader = ODSNormsReader.get_reader(plant_id, month, year)
 
-    # 1. Fetch demands (use pre-fetched demands if available)
-    raw_demands = _get_steam_demands(plant_id, month, year, demands=demands)
-    
-    # 2. Fetch norms from unified ODS reader
+    # 1. Fetch norms from ODS — letdown cascade drives the grade list
     letdown_norms = ods_reader.get_steam_letdown_norms()
-    lp_to_mp_norm = letdown_norms.get("LP_to_MP", 0.945)
-    mp_to_hp_norm = letdown_norms.get("MP_to_HP", 0.900)
-    hp_to_shp_norm = letdown_norms.get("HP_to_SHP", 0.936)
+    cascade = letdown_norms.get("_cascade", [])  # ordered lowest→highest pressure
+    # grade_prefixes: ['lp', 'mp', 'hp', 'shp'] derived from cascade + top grade
+    if cascade:
+        grade_prefixes = [
+            step["produces"].replace(" Steam_Dis", "").replace("_Dis", "").lower()
+            for step in cascade
+        ]
+        top_grade_dis = cascade[-1]["consumes"]  # highest grade consumed by top PRDS
+        top_grade = top_grade_dis.replace(" Steam_Dis", "").replace("_Dis", "").lower()
+        if top_grade not in grade_prefixes:
+            grade_prefixes.append(top_grade)
+    else:
+        grade_prefixes = ["lp", "mp", "hp", "shp"]
+        top_grade = "shp"
+
+    # 2. Fetch demands using the dynamic grade list
+    raw_demands = _get_steam_demands(plant_id, month, year, demands=demands,
+                                      grade_prefixes=grade_prefixes)
     
     byproduct_norms = ods_reader.get_hrsg_byproduct_norms()
     
@@ -747,7 +901,8 @@ def dispatch_steam(
         aname = asset.get("asset_name", "")
         
         # We only dispatch HRSG and AUXBOILER producing SHP steam
-        if stype == "SHP Steam_Dis" and atype in ["HRSG", "AUXBOILER"]:
+        top_dis = cascade[-1]["consumes"] if cascade else "SHP Steam_Dis"
+        if stype == top_dis and atype in ["HRSG", "AUXBOILER"]:
             asset_id = asset["asset_id"]
             
             # Determine hours and priority
@@ -794,7 +949,18 @@ def dispatch_steam(
 
             # Mandatory load flag (1 = must dispatch at MIN, 0 = optional)
             mandatory = int(cap_row.get(f"{mk}_Man_Load", 0) or 0)
-            
+
+            # For HRSGs linked to GTs, the GT exhaust provides free steam that is
+            # part of the HRSG total output. We track it separately so that the
+            # HRSG min/max capacity is interpreted as TOTAL output capacity, and
+            # the dispatchable supplementary range is total capacity minus free steam.
+            free_steam_mt = 0.0
+            linked_gt = None
+            if is_hrsg:
+                linked_gt = _find_linked_gt_asset(aname, power_result.get("assets", []))
+                if linked_gt:
+                    free_steam_mt = float(linked_gt.get("free_steam_mt", 0.0))
+
             dispatch_assets.append({
                 "asset_id": asset_id,
                 "asset_name": aname,
@@ -804,46 +970,69 @@ def dispatch_steam(
                 "max_tph": max_tph,
                 "priority": priority,
                 "mandatory": mandatory,
+                "free_steam_mt": free_steam_mt,
+                "linked_gt": linked_gt.get("asset_name") if linked_gt else None,
                 "dispatched_tph": 0.0,
                 "dispatched_mt": 0.0,
+                "total_output_mt": 0.0,
             })
-            
+
     # 3b. Apply steam spinning margin — reduces effective_max_tph per asset
     steam_spinning_margin = _apply_spinning_margin(dispatch_assets, plant_id)
 
+    # 3c. Convert HRSG total-output min/max into supplementary-firing min/max.
+    # Free steam from the linked GT already covers part of the HRSG total output,
+    # so only the remaining capacity is available for supplementary firing.
+    for a in dispatch_assets:
+        if a["asset_type"] == "HRSG" and a["op_hours"] > 0:
+            fs_tph = a["free_steam_mt"] / a["op_hours"] if a["op_hours"] > 0 else 0.0
+            a["orig_min_tph"] = a["min_tph"]
+            a["orig_max_tph"] = a["max_tph"]
+            # Supplementary firing range: total capacity minus free steam already present
+            a["min_tph"] = max(0.0, a["min_tph"] - fs_tph)
+            a["max_tph"] = max(0.0, a["max_tph"] - fs_tph)
+            a["free_steam_tph"] = fs_tph
+
     # 4. Convergence loop (5 iterations)
-    byproduct_lp_steam = 0.0
+    # byproduct applies to the lowest grade (first in cascade)
+    lowest_grade = grade_prefixes[0] if grade_prefixes else "lp"
+    byproduct_low_steam = 0.0
     demand_details = {}
     free_steam = float(power_result.get("total_free_steam_mt", 0.0))
     
     for iteration in range(5):
-        # LP demand sequential letdown
-        # LP byproduct reduces the LP net demand (norm is negative, so byproduct_lp_steam is negative)
-        lp_net = raw_demands["lp_process"] + raw_demands["lp_fixed"] + byproduct_lp_steam
-        
-        lp_letdown = max(0.0, lp_net) * lp_to_mp_norm
-        mp_net = raw_demands["mp_process"] + raw_demands["mp_fixed"] + lp_letdown
-        
-        mp_letdown = max(0.0, mp_net) * mp_to_hp_norm
-        hp_net = raw_demands["hp_process"] + raw_demands["hp_fixed"] + mp_letdown
-        
-        hp_letdown = max(0.0, hp_net) * hp_to_shp_norm
-        shp_net = raw_demands["shp_process"] + raw_demands["shp_fixed"] + hp_letdown
-        
+        # Dynamic cascade: walk from lowest grade upward, each grade letdowns into the next
+        net_by_grade = {}
+        letdown_by_grade = {}
+        prev_letdown = 0.0
+        for i, g in enumerate(grade_prefixes):
+            if i == 0:
+                # Lowest grade: include byproduct credit
+                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + byproduct_low_steam
+            else:
+                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
+            net_by_grade[g] = net
+            # Letdown: this grade's net demand drives consumption from the grade above
+            if i < len(cascade):
+                norm = cascade[i]["norm"]
+                letdown = max(0.0, net) * norm
+            else:
+                letdown = 0.0
+            letdown_by_grade[g] = letdown
+            prev_letdown = letdown
+
         demand_details = {
             **raw_demands,
-            "lp_byproduct": byproduct_lp_steam,
-            "lp_letdown": lp_letdown,
-            "mp_letdown": mp_letdown,
-            "hp_letdown": hp_letdown,
-            "lp_net": round(lp_net, 2),
-            "mp_net": round(mp_net, 2),
-            "hp_net": round(hp_net, 2),
-            "shp_net": round(shp_net, 2),
+            f"{lowest_grade}_byproduct": byproduct_low_steam,
+            **{f"{g}_letdown": letdown_by_grade[g] for g in grade_prefixes},
+            **{f"{g}_net": round(net_by_grade[g], 2) for g in grade_prefixes},
+            "_cascade_grades": grade_prefixes,
+            "_top_grade": top_grade,
         }
         
-        # Remaining SHP demand to be met by steam assets
-        net_shp_to_dispatch = max(0.0, shp_net - free_steam)
+        # Remaining top-grade demand to be met by steam assets
+        net_top = net_by_grade.get(top_grade, 0.0)
+        net_shp_to_dispatch = max(0.0, net_top - free_steam)
         
         # Reset dispatched values for this iteration
         for asset in dispatch_assets:
@@ -936,8 +1125,16 @@ def dispatch_steam(
                                     
                             remaining -= (allocation_mt - remaining_to_allocate)
                         
-        # Recalculate byproduct LP steam
-        byproduct_lp_steam = 0.0
+        # Total HRSG output = free steam + supplementary firing. Add free steam back
+        # to the HRSG output so that byproduct and downstream U4U are based on total output.
+        for a in dispatch_assets:
+            if a["asset_type"] == "HRSG":
+                a["total_output_mt"] = a["dispatched_mt"] + a["free_steam_mt"]
+            else:
+                a["total_output_mt"] = a["dispatched_mt"]
+
+        # Recalculate byproduct steam for lowest grade (based on total SHP output)
+        byproduct_low_steam = 0.0
         for a in dispatch_assets:
             norm_val = byproduct_norms.get(a["asset_name"].upper())
             if norm_val is None:
@@ -946,27 +1143,38 @@ def dispatch_steam(
                     None
                 )
             if norm_val is None:
-                # Default fallback for HRSGs
-                norm_val = -0.15 if "HRSG" in a["asset_name"].upper() else 0.0
-            byproduct_lp_steam += a["dispatched_mt"] * norm_val
+                logger.debug("  [DISPATCH] No byproduct norm in ODS for asset '%s'; using 0.0", a["asset_name"])
+                norm_val = 0.0
+            byproduct_low_steam += a["total_output_mt"] * norm_val
             
-    # Calculate load percentages and round fields
+    # Final total-output computation for returned assets
     for a in dispatch_assets:
+        if a["asset_type"] == "HRSG":
+            a["total_output_mt"] = a["dispatched_mt"] + a["free_steam_mt"]
+        else:
+            a["total_output_mt"] = a["dispatched_mt"]
+
+    # Calculate load percentages and round fields (load % is vs total output capacity)
+    for a in dispatch_assets:
+        orig_max = a.get("orig_max_tph", a["max_tph"])
+        total_output_tph = a["total_output_mt"] / a["op_hours"] if a["op_hours"] > 0 else 0.0
         a["load_percent"] = round(
-            (a["dispatched_tph"] / a["max_tph"] * 100) if a["max_tph"] > 0 else 0.0, 1
+            (total_output_tph / orig_max * 100) if orig_max > 0 else 0.0, 1
         )
         a["dispatched_tph"] = round(a["dispatched_tph"], 4)
         a["dispatched_mt"] = round(a["dispatched_mt"], 2)
+        a["total_output_mt"] = round(a["total_output_mt"], 2)
         a["min_tph"] = round(a["min_tph"], 2)
         a["max_tph"] = round(a["max_tph"], 2)
-        
+
     # Log results
     _log_steam_dispatch_result(demand_details, dispatch_assets, month, year, free_steam, steam_spinning_margin)
-    
+
     total_supp_gen = round(sum(a["dispatched_mt"] for a in dispatch_assets), 2)
-    total_steam_gen = round(total_supp_gen + free_steam, 2)
-    surplus_mt = round(max(0.0, total_steam_gen - shp_net), 2)
-    deficit_mt = round(max(0.0, shp_net - total_steam_gen), 2)
+    total_steam_gen = round(sum(a["total_output_mt"] for a in dispatch_assets), 2)
+    net_top = demand_details.get(f"{top_grade}_net", 0.0)
+    surplus_mt = round(max(0.0, total_steam_gen - net_top), 2)
+    deficit_mt = round(max(0.0, net_top - total_steam_gen), 2)
     
     return {
         "demand_detail": demand_details,
