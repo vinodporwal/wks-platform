@@ -1642,8 +1642,7 @@ const ProductionvolumeData = ({
         IS_PP_DTA ||
         IS_PP_HMD ||
         IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        VERTICAL_NAME == 'meg'
+        IS_PVC_HMD 
       ) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
