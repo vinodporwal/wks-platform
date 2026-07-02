@@ -308,4 +308,64 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
 
         return dto;
     }
+
+     @Override
+    public AOPMessageVM calculateHistoricalPiggingStatus(String plantId, String aopYear) {
+        
+          Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+            Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+           String procedureName = vertical.getName() + "_" + site.getName() + "_" + "HistoricalPiggingStatus";
+
+        // fetch start date and end date 
+
+         AOPMessageVM executionResult = configurationService.getConfigurationExecution(aopYear, plantId);
+
+           @SuppressWarnings("unchecked")
+            List<Map<String, Object>> executionData = (List<Map<String, Object>>) executionResult.getData();
+
+            String periodFrom = null;
+            String periodTo = null;
+            for (Map<String, Object> row : executionData) {
+                String name = row.get("Name") != null ? row.get("Name").toString() : "";
+                String value = row.get("AttributeValue") != null ? row.get("AttributeValue").toString() : null;
+                if ("StartDate".equals(name)) {
+                    periodFrom = value;
+                } else if ("EndDate".equals(name)) {
+                    periodTo = value;
+                }
+            }
+
+            if (periodFrom == null || periodTo == null) {
+                throw new IllegalStateException(
+                        "StartDate or EndDate not found in configuration execution for plant=" + plantId
+                                + ", year=" + aopYear);
+            }
+
+        Integer result = executeCalculateHistoricalPiggingStatusSP(
+                    plantId, aopYear, periodFrom, periodTo, procedureName);
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		return aopMessageVM;
+    }
+
+    
+	public Integer executeCalculateHistoricalPiggingStatusSP( String plantId, String aopYear, String periodFrom, String periodTo, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear, periodFrom, periodTo);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
+		}
+	}
 }

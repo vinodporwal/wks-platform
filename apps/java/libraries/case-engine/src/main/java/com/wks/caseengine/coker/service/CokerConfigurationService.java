@@ -12,4 +12,6 @@ public interface CokerConfigurationService {
     public AOPMessageVM getHistoricalPiggingStatus(String plantId, String aopYear);
 
     public AOPMessageVM saveHistoricalPiggingStatus(String plantId, String aopYear, List<Map<String, Object>> payload);
+
+    public AOPMessageVM calculateHistoricalPiggingStatus(String plantId, String aopYear);
 }

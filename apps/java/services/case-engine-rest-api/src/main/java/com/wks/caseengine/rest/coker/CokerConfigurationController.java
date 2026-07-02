@@ -38,4 +38,9 @@ public class CokerConfigurationController {
             @RequestBody List<Map<String, Object>> payload) {
         return configurationService.saveHistoricalPiggingStatus(plantId, aopYear, payload);
     }
+
+    @GetMapping(value = "/calculate-historical-pigging-status")
+    public AOPMessageVM calculateHistoricalPiggingStatus(@RequestParam String plantId, @RequestParam String aopYear) {
+        return configurationService.calculateHistoricalPiggingStatus(plantId, aopYear);
+    }
 }
