@@ -155,6 +155,11 @@ const ShutdownNorms = () => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'pdeb'
+  const IS_CRACKER_C2_HMD_DMD =
+    lowerVertName === 'cracker' &&
+    (SITE_NAME_LOWERCASE === 'c2' ||
+      SITE_NAME_LOWERCASE === 'dmd' ||
+      SITE_NAME_LOWERCASE === 'hmd')
   const textNote =
     ((IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2) ||
     IS_PVC_HMD
@@ -881,7 +886,8 @@ const ShutdownNorms = () => {
           !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')) ||
         IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE ||
         IS_CHEMICAL_HMD_PDEB ||
-        IS_AROMATICS_HMD
+        IS_AROMATICS_HMD ||
+        IS_CRACKER_C2_HMD_DMD
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
