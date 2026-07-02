@@ -678,6 +678,90 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         return response;
     }
 
+    // ── Delete SR Mapping ─────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteSRMapping(UUID id) {
+        logger.info("deleteSRMapping: id={}", id);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            if (id == null) {
+                response.setCode(400);
+                response.setMessage("Id must not be null.");
+                return response;
+            }
+
+            // ── Step 1: Verify the master record exists ─────────────────────────────────
+            List<String> masterCheck = db1JdbcTemplate.queryForList(
+                    "SELECT TOP 1 ID FROM CPP_SR_Mapping_Master WITH(NOLOCK) WHERE ID = ?",
+                    String.class, id.toString());
+
+            if (masterCheck.isEmpty()) {
+                logger.warn("deleteSRMapping: no CPP_SR_Mapping_Master found for id={}", id);
+                response.setCode(404);
+                response.setMessage("SR Mapping record not found for id: " + id);
+                return response;
+            }
+
+            // ── Step 2: Fetch all NormsHeader IDs linked to this SR Mapping ────────────
+            List<String> normsHeaderIds = db1JdbcTemplate.queryForList(
+                    "SELECT Id FROM NormsHeader WITH(NOLOCK) WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                    String.class, id.toString());
+
+            logger.info("deleteSRMapping: found {} NormsHeader record(s) linked to id={}", normsHeaderIds.size(), id);
+
+            if (!normsHeaderIds.isEmpty()) {
+                // Build an IN-clause placeholder string: ?,?,?...
+                String inClause = normsHeaderIds.stream()
+                        .map(h -> "?")
+                        .collect(java.util.stream.Collectors.joining(","));
+                Object[] headerIdArgs = normsHeaderIds.toArray();
+
+                // ── Step 3: Delete NormsMonthDetail (child of NormsHeader) ──────────────
+                int deletedMonthDetail = db1JdbcTemplate.update(
+                        "DELETE FROM NormsMonthDetail WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} NormsMonthDetail row(s)", deletedMonthDetail);
+
+                // ── Step 4: Delete CPPNorms (child of NormsHeader) ──────────────────────
+                int deletedNorms = db1JdbcTemplate.update(
+                        "DELETE FROM CPPNorms WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} CPPNorms row(s)", deletedNorms);
+
+                // ── Step 5: Delete CPPMonthWisePrice (child of NormsHeader) ────────────
+                int deletedMonthWisePrice = db1JdbcTemplate.update(
+                        "DELETE FROM CPPMonthWisePrice WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} CPPMonthWisePrice row(s)", deletedMonthWisePrice);
+
+                // ── Step 6: Delete NormsHeader rows ─────────────────────────────────────
+                int deletedHeaders = db1JdbcTemplate.update(
+                        "DELETE FROM NormsHeader WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                        id.toString());
+                logger.info("deleteSRMapping: deleted {} NormsHeader row(s)", deletedHeaders);
+            }
+
+            // ── Step 7: Delete CPP_SR_Mapping_Master ────────────────────────────────────
+            int deletedMaster = db1JdbcTemplate.update(
+                    "DELETE FROM CPP_SR_Mapping_Master WHERE ID = ?",
+                    id.toString());
+            logger.info("deleteSRMapping: deleted {} CPP_SR_Mapping_Master row(s) for id={}", deletedMaster, id);
+
+            response.setCode(200);
+            response.setMessage("SR Mapping record deleted successfully.");
+            response.setData(null);
+
+        } catch (Exception e) {
+            logger.error("deleteSRMapping error for id={}: {}", id, e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+
     /**
      * Returns true if the given plantId belongs to a Site whose Name = 'NMD'.
      * Lookup path: Plants.Site_FK_Id → Sites.Name.
