@@ -880,7 +880,8 @@ const ShutdownNorms = () => {
           SITE_NAME_LOWERCASE != 'jmd' &&
           !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')) ||
         IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE ||
-        IS_CHEMICAL_HMD_PDEB
+        IS_CHEMICAL_HMD_PDEB ||
+        IS_AROMATICS_HMD
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||

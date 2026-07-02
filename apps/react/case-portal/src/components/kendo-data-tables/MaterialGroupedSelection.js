@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { validateFields } from 'utils/validationUtils'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 export default function MaterialGroupedSelection() {
   const keycloak = useSession()
@@ -55,6 +56,8 @@ export default function MaterialGroupedSelection() {
     return `${start - 1}-${(end - 1).toString().slice(-2)}`
   }, [thisYear])
 
+  const FORMATE_DECIMAL = ValueFormatterProduction()
+
   const columns = useMemo(
     () => [
       {
@@ -77,6 +80,8 @@ export default function MaterialGroupedSelection() {
         minWidth: 100,
         isEditable: false,
         isDisabled: false,
+        type: 'groupedColumn',
+        format: FORMATE_DECIMAL,
       },
       {
         field: 'status',
@@ -231,7 +236,7 @@ export default function MaterialGroupedSelection() {
     }
   }, [modifiedCells, keycloak, PLANT_ID, fetchData])
 
-  const handleCalculate = () => {}
+  const handleCalculate = () => { }
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')
