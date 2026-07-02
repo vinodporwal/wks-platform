@@ -31,6 +31,15 @@ const ManualEntry = ({ startDate, endDate }) => {
   const valueFormat = customValueFormatterPhaseTwo(5)
   const columns = [
     {
+      field: 'type',
+      title: 'Type',
+      widthT: 100,
+      minWidth: 100,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
       field: 'normParameterFKId',
       title: 'normParameterFKId',
       widthT: 100,
@@ -101,6 +110,7 @@ const ManualEntry = ({ startDate, endDate }) => {
         id: index + 1,
         idFromApi: item.id,
         value: item.apr || 0,
+        type: item?.TypeDisplayName || item?.typeDisplayName,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -363,7 +373,7 @@ const ManualEntry = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // groupBy={['type']}
+        groupBy={['type']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
