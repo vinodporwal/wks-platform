@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { HeatRateApiService } from 'components/aop-phase-two/services/cpp/jmd/heatRateApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
 const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
@@ -27,10 +28,16 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const valueFormat = ValueFormatterPhaseTwo()
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
 
   const columns = [
     {
@@ -149,19 +156,14 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedEndDate = formatDate(endDate)
       fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
     }
-  }, [PLANT_ID, AOP_YEAR, selectedPlant, startDate, endDate])
+  }, [selectedPlant, startDate, endDate])
 
-  useEffect(() => {
-    getPlantList()
-  }, [PLANT_ID, AOP_YEAR])
-
-  const getPlantList = async () => {
+  const getPlantList = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getPlantList(
+      const res = await HeatRateApiService.getGTAssetDropdown(
         keycloak,
-        PLANT_ID,
-        AOP_YEAR,
+        PLANT_ID_LIST,
       )
 
       // Convert to required format
@@ -174,6 +176,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         setDropdownOptions([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
       setSelectedPlant(convertedData[0]?.id)
@@ -185,64 +188,77 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
-  const fetchHeatRateData = async (assetId, startDate, endDate) => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getHeatRateData(
-        keycloak,
-        assetId,
-        AOP_YEAR,
-        startDate,
-        endDate,
-      )
-
-      if (res?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        return
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        getPlantList()
       }
-      let tempRes = res?.map((item, index) => {
-        const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, getPlantList],
+  )
 
-        // Validate if selectedHeatRate matches the actual finalHeatRate value
-        const fieldMapping = {
-          OEM: 'oemHeatRate',
-          PREVIOUS_YEAR: 'previousYearHeatRate',
-          PROPOSED: 'heatRate',
+  const fetchHeatRateData = useCallback(
+    async (assetId, startDate, endDate) => {
+      setLoading(true)
+      try {
+        const res = await HeatRateApiService.getGTHeatRateData(
+          keycloak,
+          assetId,
+          AOP_YEAR,
+          startDate,
+          endDate,
+        )
+
+        if (res?.length === 0) {
+          setRows([])
+          setSnackbarOpen(true)
+          setSnackbarData({ message: 'No data found', severity: 'info' })
+          return
         }
+        let tempRes = res?.map((item, index) => {
+          const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
 
-        const selectedField = fieldMapping[selectedHeatRate]
-        const selectedValue = selectedField ? item[selectedField] : null
-        const finalValue = item.finalHeatRate
+          // Validate if selectedHeatRate matches the actual finalHeatRate value
+          const fieldMapping = {
+            OEM: 'oemHeatRate',
+            PREVIOUS_YEAR: 'previousYearHeatRate',
+            PROPOSED: 'heatRate',
+          }
 
-        // Check if selected column value matches final heat rate
-        const isMatch =
-          selectedValue !== null &&
-          selectedValue !== undefined &&
-          finalValue !== null &&
-          finalValue !== undefined &&
-          parseFloat(selectedValue) === parseFloat(finalValue)
+          const selectedField = fieldMapping[selectedHeatRate]
+          const selectedValue = selectedField ? item[selectedField] : null
+          const finalValue = item.finalHeatRate
 
-        return {
-          ...item,
-          id: item.id || index + 1,
-          remarks: item.remarks || '',
-          selectedHeatRate: isMatch ? selectedHeatRate : 'OTHER',
-        }
-      })
-      setRows(tempRes)
-      setOriginalRows(tempRes)
-    } catch (error) {
-      console.error('Error fetching heat rate data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
+          // Check if selected column value matches final heat rate
+          const isMatch =
+            selectedValue !== null &&
+            selectedValue !== undefined &&
+            finalValue !== null &&
+            finalValue !== undefined &&
+            parseFloat(selectedValue) === parseFloat(finalValue)
+
+          return {
+            ...item,
+            id: item.id || index + 1,
+            remarks: item.remarks || '',
+            selectedHeatRate: isMatch ? selectedHeatRate : 'OTHER',
+          }
+        })
+        setRows(tempRes)
+        setOriginalRows(tempRes)
+      } catch (error) {
+        console.error('Error fetching heat rate data:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, AOP_YEAR],
+  )
 
   const permissions = {
     showAction: true,
@@ -322,9 +338,8 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         return rest
       })
 
-      const res = await InputApiService.saveHeatRateData(
+      const res = await HeatRateApiService.saveGTHeatRateData(
         keycloak,
-        PLANT_ID,
         AOP_YEAR,
         payload,
       )
@@ -350,11 +365,9 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveHeatRateExcel(
+      const response = await HeatRateApiService.saveGTHeatRateExcel(
         file,
         keycloak,
-        PLANT_ID,
-        AOP_YEAR,
       )
 
       if (response?.success) {
@@ -395,7 +408,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      await InputApiService.exportHeatRateExcel(
+      await HeatRateApiService.exportGTHeatRateExcel(
         keycloak,
         selectedPlant,
         AOP_YEAR,

@@ -3,7 +3,7 @@ import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { HeatRateApiService } from 'components/aop-phase-two/services/cpp/jmd/heatRateApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
@@ -159,7 +159,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const getPlantList = async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getHRSGHeatRateDropdown(
+      const res = await HeatRateApiService.getHRSGAssetDropdown(
         keycloak,
         PLANT_ID,
       )
@@ -191,7 +191,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const fetchHeatRateData = async (assetId, startDate, endDate) => {
     setLoading(true)
     try {
-      const res = await InputApiService.getHRSGHeatRateData(
+      const res = await HeatRateApiService.getHRSGHeatRateData(
         keycloak,
         assetId,
         AOP_YEAR,
@@ -322,9 +322,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       })
       const tempPayload = JSON.stringify(payload)
 
-      const res = await InputApiService.saveHRSGHeatRateData(
+      const res = await HeatRateApiService.saveHRSGHeatRateData(
         keycloak,
-        PLANT_ID,
         AOP_YEAR,
         payload,
       )
@@ -358,11 +357,9 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveHRSGHeatRateExcel(
+      const response = await HeatRateApiService.saveHRSGHeatRateExcel(
         file,
         keycloak,
-        PLANT_ID,
-        AOP_YEAR,
       )
 
       if (response?.success) {
@@ -411,7 +408,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = startDate ? formatDate(startDate) : null
       const formattedEndDate = endDate ? formatDate(endDate) : null
 
-      await InputApiService.exportHRSGHeatRateExcel(
+      await HeatRateApiService.exportHRSGHeatRateExcel(
         keycloak,
         selectedPlant,
         AOP_YEAR,

@@ -3,7 +3,7 @@ import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { HeatRateApiService } from 'components/aop-phase-two/services/cpp/jmd/heatRateApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
@@ -144,7 +144,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const fetchHeatRateData = async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getSTGHeatRateData(
+      const res = await HeatRateApiService.getSTGHeatRateData(
         keycloak,
         AOP_YEAR,
         formatDate(startDate),
@@ -240,7 +240,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       })
       const tempPayload = JSON.stringify(payload)
 
-      await InputApiService.saveSTGHeatRateData(keycloak, AOP_YEAR, payload)
+      await HeatRateApiService.saveSTGHeatRateData(keycloak, AOP_YEAR, payload)
 
       setModifiedCells({})
       setSnackbarOpen(true)
@@ -266,7 +266,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveSTGHeatRateExcel(
+      const response = await HeatRateApiService.saveSTGHeatRateExcel(
         file,
         keycloak,
       )
@@ -309,7 +309,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = startDate ? formatDate(startDate) : null
       const formattedEndDate = endDate ? formatDate(endDate) : null
 
-      await InputApiService.exportSTGHeatRateExcel(
+      await HeatRateApiService.exportSTGHeatRateExcel(
         keycloak,
         AOP_YEAR,
         formattedStartDate,
