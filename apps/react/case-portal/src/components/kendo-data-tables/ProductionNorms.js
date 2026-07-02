@@ -97,7 +97,7 @@ const ProductionNorms = ({ permissions }) => {
   const IS_AROMATIC_DTA_PLATFORMER =
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'dta' &&
-    plantName === 'plat'
+    (plantName === 'platformer' || plantName === 'plat')
   const IS_AROMATIC_HMD =
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'hmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'

@@ -4,6 +4,7 @@ import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
@@ -274,6 +275,67 @@ const KendoDataTables = ({
   const [edit, setEdit] = useState({})
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
+
+  const processedRows = useMemo(() => {
+    try {
+      return process(rows, { filter, sort }).data
+    } catch (err) {
+      return rows
+    }
+  }, [rows, filter, sort])
+
+  const GroupedColumnCell = (props) => {
+    const { dataItem, field, tdProps } = props
+    const value = dataItem[field]
+
+    const gName = dataItem.groupName
+    if (!gName) {
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'right',
+          }}
+        >
+          {value !== null && value !== undefined ? value : ''}
+        </td>
+      )
+    }
+
+    const groupRows = processedRows.filter((r) => r.groupName === gName)
+    const indexInGroup = groupRows.findIndex((r) => r.id === dataItem.id)
+
+    if (indexInGroup > 0) {
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            display: 'none',
+          }}
+        />
+      )
+    }
+
+    const rowSpan = groupRows.length
+
+    return (
+      <td
+        {...tdProps}
+        rowSpan={rowSpan}
+        style={{
+          ...tdProps?.style,
+          verticalAlign: 'middle',
+          textAlign: 'right',
+          backgroundColor: '#FFFFFF',
+        }}
+      >
+        {value !== null && value !== undefined ? value : ''}
+      </td>
+    )
+  }
+
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
@@ -518,6 +580,19 @@ const KendoDataTables = ({
         {cellContent}
       </td>
     )
+  }
+  const formatTo12Hr = (raw) => {
+    if (!raw) return ''
+    const d = new Date(raw)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    let hours = d.getHours()
+    const minutes = String(d.getMinutes()).padStart(2, '0')
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    hours = hours % 12 || 12
+    const hh = String(hours).padStart(2, '0')
+    return `${dd}-${mm}-${yyyy} ${hh}:${minutes} ${ampm}`
   }
 
   const handleEditChange = useCallback((e) => {
@@ -3044,16 +3119,8 @@ const KendoDataTables = ({
                               (isStart && type === 'ramp-up')
 
                             if (isCellDisabled) {
-                              const raw = dataItem[field]
-                              const display = raw
-                                ? new Date(raw).toLocaleString('en-GB', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })
-                                : ''
+                              // ✅ formatTo12Hr instead of toLocaleString('en-GB')
+                              const display = formatTo12Hr(dataItem[field])
                               return (
                                 <td
                                   onClick={(e) => e.stopPropagation()}
@@ -4405,6 +4472,31 @@ const KendoDataTables = ({
                                 disableRedHighlight={disableRedHighlight}
                               />
                             ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
+                  if (col?.type === 'groupedColumn') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+                          ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                          ${col?.isBold ? 'bold-text' : ''}
+                        `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          data: GroupedColumnCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}

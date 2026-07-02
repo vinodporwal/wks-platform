@@ -36,7 +36,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'material',
-              title: 'Product name',
+              title: 'Product Name',
               editable: false,
               minWidth: 200,
             },
@@ -152,7 +152,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'material',
-              title: 'Product Name',
+              title: 'By Product Name',
               editable: false,
               minWidth: 200,
             },
@@ -339,7 +339,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'material',
-              title: 'Product Name',
+              title: 'Raw Material Name',
               editable: false,
               minWidth: 200,
             },
@@ -531,7 +531,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'material',
-              title: 'Product Name',
+              title: 'Cat Chem Name',
               editable: false,
               minWidth: 200,
             },
@@ -723,7 +723,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'material',
-              title: 'Product Name',
+              title: 'Utility Name',
               editable: false,
               minWidth: 200,
             },
