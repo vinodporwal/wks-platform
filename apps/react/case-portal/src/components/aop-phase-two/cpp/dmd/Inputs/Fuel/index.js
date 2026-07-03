@@ -12,6 +12,10 @@ const Fuel = () => {
       <Stack>
         <JCBFuel />
       </Stack>
+
+      <Stack sx={{ mb: 2 }}>
+        <FuelAvailability />
+      </Stack>
     </Stack>
   )
 }

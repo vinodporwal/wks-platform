@@ -144,6 +144,30 @@ const InputsDMD = () => {
             displayName: 'Heat Rate',
             displaySequence: 5,
           },
+          {
+            id: 'fixed-norms',
+            name: 'Norms',
+            displayName: 'Norms',
+            displaySequence: 6,
+          },
+          {
+            id: 'fuel-availability',
+            name: 'fuelAvailability',
+            displayName: 'Fuel Availability',
+            displaySequence: 7,
+          },
+          {
+            id: 'fuel-priority',
+            name: 'fuelPriority',
+            displayName: 'Fuel Priority',
+            displaySequence: 8,
+          },
+          {
+            id: 'prices',
+            name: 'prices',
+            displayName: 'Prices',
+            displaySequence: 9,
+          },
         ]
         break
 
