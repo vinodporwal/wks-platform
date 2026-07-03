@@ -1056,8 +1056,21 @@ sheet.setColumnHidden(17, true);
 		final short LINE_HEIGHT_TWIPS = 300;
 
 		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
-		CellStyle wrapStyle = workbook.createCellStyle();
-		wrapStyle.setWrapText(true);
+
+		// Style for editable cells: bordered + unlocked
+		CellStyle editableStyle = Utility.createBorderedUnlockedStyle(workbook);
+
+		// Style for editable wrap cells: bordered + unlocked + wrap
+		CellStyle editableWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+
+		// Style for read-only cells: bordered + grey background + locked
+		CellStyle readOnlyStyle = Utility.createBorderedLockedStyle(workbook);
+
+		// Style for read-only wrap cells: bordered + grey background + locked + wrap
+		CellStyle readOnlyWrapStyle = Utility.createBorderedWrapLockedStyle(workbook);
+
+		// Sheet protection must be enabled for cell locking to take effect
+		sheet.protectSheet("");
 
 		int currentRow = 0;
 
@@ -1090,6 +1103,8 @@ sheet.setColumnHidden(17, true);
 		}
 
 		for (BusinessDemandDataDTO dto : dtoList) {
+			boolean isEditable = dto.getIsEditable() == null || Boolean.TRUE.equals(dto.getIsEditable());
+
 			List<Object> rowData = new ArrayList<>();
 			rowData.add(dto.getDisplayName());
 			rowData.add(dto.getNormParameterTypeDisplayName());
@@ -1127,7 +1142,9 @@ sheet.setColumnHidden(17, true);
 				}
 
 				if (col == REMARK_COL_INDEX) {
-					cell.setCellStyle(wrapStyle);
+					cell.setCellStyle(isEditable ? editableWrapStyle : readOnlyWrapStyle);
+				} else {
+					cell.setCellStyle(isEditable ? editableStyle : readOnlyStyle);
 				}
 			}
 
