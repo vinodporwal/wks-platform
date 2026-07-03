@@ -189,7 +189,7 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "["+procedureName+"]"
 					+ " @PlantId = :plantId, @AOPYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
