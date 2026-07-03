@@ -384,6 +384,11 @@ class U4UIterationLoop:
             u4u[material] = u4u.get(material, 0.0) + amount
         details.extend(sub_details)
 
+        sub_u4u, sub_details = self._calculate_steam_cascade_u4u(steam_result, total_demands)
+        for material, amount in sub_u4u.items():
+            u4u[material] = u4u.get(material, 0.0) + amount
+        details.extend(sub_details)
+
         return u4u, details
 
     def _calculate_u4u_from_power(self, power_result: dict) -> tuple:
@@ -462,7 +467,12 @@ class U4UIterationLoop:
         for asset in steam_result.get("assets", []):
             asset_name = asset.get("asset_name", "")
             dispatched_mt = asset.get("dispatched_mt", 0.0)
-            if dispatched_mt <= 0:
+            free_steam_mt = asset.get("free_steam_mt", 0.0)
+            # Use total output (free steam + supplementary) as generation basis so
+            # that BFW, fuel and power norms are applied to the full HRSG output.
+            # For AuxBoilers free_steam_mt=0 so this equals dispatched_mt.
+            total_output_mt = asset.get("total_output_mt", dispatched_mt + free_steam_mt)
+            if total_output_mt <= 0:
                 continue
 
             producer_norms = self._find_steam_producer_norms(asset_name)
@@ -480,16 +490,30 @@ class U4UIterationLoop:
                 if norm == 0:
                     continue
 
-                # Skip byproducts from steam assets — handled by steam dispatch internally
-                if norm < 0:
-                    continue
-
                 material = c["material"]
                 material_uom = c.get("material_uom", "")
                 account = c["account"]
 
-                quantity = dispatched_mt * norm
+                quantity = total_output_mt * norm
                 u4u_amount = quantity
+
+                # Negative norms are byproduct credits (e.g. LP steam from HRSG).
+                # Include them in detail_records for display in the U4U table but
+                # do NOT add them to u4u[] — they are a supply, not a consumption.
+                if norm < 0:
+                    details.append({
+                        "producer": asset_name,
+                        "producer_utility": asset_name,
+                        "producer_uom": producer_uom,
+                        "generation": total_output_mt,
+                        "account": account,
+                        "material": material,
+                        "material_uom": material_uom,
+                        "norm": norm,
+                        "quantity": quantity,
+                    })
+                    continue
+
                 if material == "Power_Dis":
                     u4u_amount = u4u_amount / 1000.0  # KWH → MWh
 
@@ -500,7 +524,7 @@ class U4UIterationLoop:
                     "producer": asset_name,
                     "producer_utility": asset_name,
                     "producer_uom": producer_uom,
-                    "generation": dispatched_mt,
+                    "generation": total_output_mt,
                     "account": account,
                     "material": material,
                     "material_uom": material_uom,
@@ -522,6 +546,9 @@ class U4UIterationLoop:
             if self._is_dispatchable(producer_name):
                 continue
             if producer_name in _EXCLUDED_NON_DISPATCHABLE:
+                continue
+            # PRDS producers are handled by _calculate_steam_cascade_u4u
+            if "PRDS" in producer_name.upper():
                 continue
 
             generation = total_demands.get(producer_name, 0.0)
@@ -567,6 +594,135 @@ class U4UIterationLoop:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _calculate_steam_cascade_u4u(self, steam_result: dict, total_demands: dict) -> tuple:
+        """Calculate steam grade U4U via bottom-up PRDS cascade.
+
+        Walks LP → MP → HP → SHP, each step:
+          1. Takes total demand for the lower grade from total_demands (which
+             already contains process + fixed + all external U4U sources such
+             as BFW → LP, PROCESS FEED WATER → LP, NITROGEN → MP, etc.).
+          2. Subtracts HRSG LP byproduct supply (LP step only).
+          3. Applies the PRDS norm to determine how much of the higher grade
+             is consumed to satisfy the net demand.
+          4. Adds that consumed quantity as U4U demand on the higher grade for
+             the next iteration.
+
+        Returns (u4u_dict, detail_records).
+        """
+        u4u: dict = {}
+        details: list = []
+
+        letdown_norms = self.ods_reader.get_steam_letdown_norms()
+        cascade = letdown_norms.get("_cascade", [])
+        if not cascade:
+            return u4u, details
+
+        byproduct_norms = self.ods_reader.get_hrsg_byproduct_norms()
+
+        # LP byproduct from HRSGs based on this iteration's total HRSG output
+        lp_byproduct_mt = 0.0
+        for asset in steam_result.get("assets", []):
+            if asset.get("asset_type", "") == "HRSG":
+                total_out = asset.get("total_output_mt", 0.0)
+                aname_upper = asset.get("asset_name", "").upper()
+                norm_val = byproduct_norms.get(aname_upper)
+                if norm_val is None:
+                    norm_val = next(
+                        (v for k, v in byproduct_norms.items()
+                         if k in aname_upper or aname_upper in k),
+                        0.0,
+                    )
+                # Byproduct norms are stored as negative credits; take abs value
+                lp_byproduct_mt += total_out * abs(norm_val or 0.0)
+
+        # Build ODS-name → total demand map so cascade steps for intermediate
+        # grades (HP Steam_Dis) that are not in _all_producers can still be
+        # looked up.  total_demands is keyed by ODS material names; for grades
+        # not present (e.g. HP Steam_Dis not in ODS producers) start from 0.
+        all_db_names = set(self._raw_process) | set(self._raw_fixed)
+        db_to_ods = _build_db_to_ods_mapping(self._all_producers, all_db_names)
+        ods_process: dict = {}
+        ods_fixed: dict = {}
+        for db_name, val in self._raw_process.items():
+            ods_mat = db_to_ods.get(db_name, db_name)
+            ods_process[ods_mat] = ods_process.get(ods_mat, 0.0) + float(val)
+        for db_name, val in self._raw_fixed.items():
+            ods_mat = db_to_ods.get(db_name, db_name)
+            ods_fixed[ods_mat] = ods_fixed.get(ods_mat, 0.0) + float(val)
+
+        # Walk the cascade bottom-up: cascade is ordered lowest→highest pressure
+        # Each step: produces lower grade by consuming higher grade via PRDS
+        # step = {prds, produces, consumes, norm}
+        # norm: MT of `consumes` needed to produce 1 MT of `produces`
+        #
+        # gross_demand for each grade = total_demands (proc+fixed+all external
+        # U4U) PLUS any cascade-internal uplift accumulated from lower grades.
+        # This ensures BFW→LP and NITROGEN→MP contributions are included.
+        cascade_uplift: dict = {}  # grade_dis -> MT added by this cascade only
+
+        logger.debug("  [CASCADE] LP byproduct from HRSGs: %.2f MT", lp_byproduct_mt)
+        for step in cascade:
+            prds_name    = step["prds"]
+            produces_dis = step["produces"]   # e.g. "LP Steam_Dis"
+            consumes_dis = step["consumes"]   # e.g. "MP Steam_Dis"
+            norm         = step["norm"]       # e.g. 0.945 MT MP per MT LP
+
+            # For grades in total_demands (LP, MP, SHP): use that value directly.
+            # It already contains proc+fixed+all external U4U (BFW→LP etc.) from
+            # the previous iteration — do NOT add cascade_uplift on top or we
+            # double-count the LP→MP contribution.
+            # For intermediate grades absent from total_demands (HP Steam_Dis):
+            # fall back to proc+fixed from DB plus cascade_uplift propagated
+            # from the MP step of THIS cascade run.
+            if produces_dis in total_demands:
+                gross_demand = max(0.0, float(total_demands[produces_dis]))
+            else:
+                proc   = float(ods_process.get(produces_dis, 0.0))
+                fixed  = float(ods_fixed.get(produces_dis, 0.0))
+                uplift = cascade_uplift.get(produces_dis, 0.0)
+                gross_demand = max(0.0, proc + fixed) + uplift
+
+            # For LP grade: subtract HRSG byproduct supply
+            if "LP" in produces_dis.upper():
+                net_prds_demand = max(0.0, gross_demand - lp_byproduct_mt)
+            else:
+                net_prds_demand = max(0.0, gross_demand)
+
+            logger.debug(
+                "  [CASCADE] %-25s produces=%-20s gross=%10.2f "
+                "byproduct=%10.2f net=%10.2f -> %-20s consumed=%10.2f",
+                prds_name, produces_dis, gross_demand,
+                lp_byproduct_mt if "LP" in produces_dis.upper() else 0.0,
+                net_prds_demand, consumes_dis, net_prds_demand * norm,
+            )
+
+            # MT of higher grade consumed by PRDS to meet this net demand
+            higher_grade_consumed = net_prds_demand * norm
+
+            if higher_grade_consumed > 0:
+                # consumes_dis may be an intermediate grade not in _all_producers
+                # (e.g. HP Steam_Dis); still track it in cascade_uplift so the
+                # next cascade step picks it up correctly.
+                cascade_uplift[consumes_dis] = (
+                    cascade_uplift.get(consumes_dis, 0.0) + higher_grade_consumed
+                )
+                if consumes_dis in self._all_producers:
+                    u4u[consumes_dis] = u4u.get(consumes_dis, 0.0) + higher_grade_consumed
+
+            details.append({
+                "producer": prds_name,
+                "producer_utility": prds_name,
+                "producer_uom": "MT",
+                "generation": net_prds_demand,
+                "account": "Utilities",
+                "material": consumes_dis,
+                "material_uom": "MT",
+                "norm": norm,
+                "quantity": higher_grade_consumed,
+            })
+
+        return u4u, details
 
     def _is_dispatchable(self, producer_name: str) -> bool:
         """Check if a producer is dispatchable (power or steam assets).
@@ -971,18 +1127,26 @@ class U4UIterationLoop:
             - _skip_rows
         )
 
+        # Build letdown per steam _Dis grade from dispatch demand_detail
+        dd = (self.final_steam_result or {}).get("demand_detail") or {}
+        steam_letdown: dict = {}
+        for dis_grade in steam_dis_grades:
+            prefix = dis_grade.replace(" Steam_Dis", "").replace("_Dis", "").lower()
+            steam_letdown[dis_grade] = dd.get(f"{prefix}_letdown", 0.0)
+
         logger.info("  %s", "=" * 78)
         logger.info("  DEMAND vs GENERATION BALANCE TABLE")
         logger.info("  %s", "=" * 78)
-        logger.info("  %-25s  %12s  %12s  %12s  %14s  %14s  %14s",
-                     "Utility", "Process", "Fixed", "U4U", "Total Demand", "Generation", "Balance")
-        logger.info("  %s  %s  %s  %s  %s  %s  %s",
-                     "-" * 25, "-" * 12, "-" * 12, "-" * 12, "-" * 14, "-" * 14, "-" * 14)
+        logger.info("  %-25s  %12s  %12s  %12s  %12s  %14s  %14s  %14s",
+                     "Utility", "Process", "Fixed", "U4U", "Letdown", "Total Demand", "Generation", "Balance")
+        logger.info("  %s  %s  %s  %s  %s  %s  %s  %s",
+                     "-" * 25, "-" * 12, "-" * 12, "-" * 12, "-" * 12, "-" * 14, "-" * 14, "-" * 14)
 
         for util in all_utilities:
             proc = process_demands.get(util, 0.0)
             fix = fixed_demands.get(util, 0.0)
             u4u = self.final_u4u_demands.get(util, 0.0)
+            letdown = steam_letdown.get(util, 0.0)
             # For steam _Dis rows use the dispatch net (includes PRDS letdown)
             if util in steam_net_demand:
                 total = steam_net_demand[util]
@@ -994,8 +1158,8 @@ class U4UIterationLoop:
             if abs(total) < 0.01 and abs(gen) < 0.01 and abs(u4u) < 0.01:
                 continue
 
-            logger.info("  %-25s  %12.2f  %12.2f  %12.2f  %14.2f  %14.2f  %14.2f",
-                         util[:25], proc, fix, u4u, total, gen, balance)
+            logger.info("  %-25s  %12.2f  %12.2f  %12.2f  %12.2f  %14.2f  %14.2f  %14.2f",
+                         util[:25], proc, fix, u4u, letdown, total, gen, balance)
 
         logger.info("  %s", "=" * 78)
         logger.info("")
@@ -1112,6 +1276,85 @@ class U4UIterationLoop:
                          p[:25], s["uom"][:6], s["generation"], s["bpc_gen"],
                          gen_diff, s["material_count"])
 
+        logger.info("  %s", "=" * 78)
+        logger.info("")
+
+        # Part 5: Detailed asset dispatch summary (power + steam)
+        self._log_asset_dispatch_summary()
+
+    def _log_asset_dispatch_summary(self):
+        """Log a detailed end-of-run dispatch summary for all power and steam assets."""
+        pr = self.final_power_result or {}
+        sr = self.final_steam_result or {}
+
+        logger.info("  %s", "=" * 78)
+        logger.info("  FINAL ASSET DISPATCH SUMMARY")
+        logger.info("  %s", "=" * 78)
+
+        # --- Power assets ---
+        power_assets = pr.get("assets", [])
+        logger.info("  POWER ASSETS")
+        logger.info("  %-25s  %8s  %8s  %8s  %10s  %12s  %12s  %12s  %9s",
+                     "Asset", "Pri", "Man", "Hours", "Load MW",
+                     "Gross MWh", "Aux MWh", "Free Stm MT", "Load %")
+        logger.info("  %s  %s  %s  %s  %s  %s  %s  %s  %s",
+                     "-" * 25, "-" * 8, "-" * 8, "-" * 8, "-" * 10,
+                     "-" * 12, "-" * 12, "-" * 12, "-" * 9)
+        total_gross = 0.0
+        total_aux   = 0.0
+        total_fs    = 0.0
+        for a in power_assets:
+            gross    = a.get("dispatched_mwh", 0.0)
+            aux      = a.get("aux_power", 0.0)
+            fs       = a.get("free_steam_mt", 0.0)
+            hours    = a.get("op_hours", 0.0)
+            load_mw  = a.get("dispatched_mw", 0.0)
+            load_pct = a.get("load_percent", 0.0)
+            man_flag = "Y" if a.get("mandatory", 0) == 1 else "-"
+            total_gross += gross
+            total_aux   += aux
+            total_fs    += fs
+            logger.info("  %-25s  %8d  %8s  %8.2f  %10.2f  %12.2f  %12.2f  %12.2f  %9.1f%%",
+                         a.get("asset_name", "")[:25], a.get("priority", 0), man_flag,
+                         hours, load_mw, gross, aux, fs, load_pct)
+        import_mwh = pr.get("total_import_mwh", pr.get("import_mwh", 0.0))
+        logger.info("  %-25s  %8s  %8s  %8s  %10s  %12.2f  %12.2f  %12.2f  %9s",
+                     "TOTAL", "", "", "", "", total_gross, total_aux, total_fs, "")
+        if import_mwh > 0:
+            logger.info("  %-25s  %8s  %8s  %8s  %10s  %12.2f  %12s  %12s  %9s",
+                         "  + Import Power", "", "", "", "", import_mwh, "", "", "")
+        logger.info("")
+
+        # --- Steam assets ---
+        steam_assets = sr.get("assets", [])
+        free_steam_total = sr.get("total_free_steam_mt", 0.0)
+        supp_total       = sr.get("total_supplementary_generation_mt", 0.0)
+        gen_total        = sr.get("total_generation_mt", 0.0)
+        dd = sr.get("demand_detail") or {}
+        top_grade = dd.get("_top_grade", "shp")
+        net_demand = dd.get(f"{top_grade}_net", 0.0)
+        logger.info("  STEAM ASSETS  (SHP)")
+        logger.info("  %-25s  %8s  %8s  %8s  %10s  %10s  %12s  %12s  %12s  %10s",
+                     "Asset", "Pri", "Man", "Hours", "Min TPH",
+                     "Max TPH", "Supp. MT", "Free Stm MT", "Total MT", "Load %")
+        logger.info("  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s",
+                     "-" * 25, "-" * 8, "-" * 8, "-" * 8, "-" * 10,
+                     "-" * 10, "-" * 12, "-" * 12, "-" * 12, "-" * 10)
+        for a in steam_assets:
+            man_flag = "Y" if a.get("mandatory", 0) == 1 else "-"
+            orig_min = a.get("orig_min_tph", a.get("min_tph", 0.0))
+            orig_max = a.get("orig_max_tph", a.get("max_tph", 0.0))
+            fs_mt    = a.get("free_steam_mt", 0.0)
+            supp_mt  = a.get("dispatched_mt", 0.0)
+            tot_mt   = a.get("total_output_mt", supp_mt + fs_mt)
+            logger.info("  %-25s  %8d  %8s  %8.2f  %10.2f  %10.2f  %12.2f  %12.2f  %12.2f  %9.1f%%",
+                         a.get("asset_name", "")[:25], a.get("priority", 0), man_flag,
+                         a.get("op_hours", 0.0), orig_min, orig_max,
+                         supp_mt, fs_mt, tot_mt, a.get("load_percent", 0.0))
+        logger.info("  %-25s  %8s  %8s  %8s  %10s  %10s  %12.2f  %12.2f  %12.2f  %10s",
+                     "TOTAL", "", "", "", "", "", supp_total, free_steam_total, gen_total, "")
+        logger.info("  Net SHP Demand: %.2f MT  |  Generation: %.2f MT  |  Balance: %.2f MT",
+                     net_demand, gen_total, gen_total - net_demand)
         logger.info("  %s", "=" * 78)
         logger.info("")
 

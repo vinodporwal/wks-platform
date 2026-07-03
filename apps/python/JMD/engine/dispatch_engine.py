@@ -1009,6 +1009,11 @@ def dispatch_steam(
             if i == 0:
                 # Lowest grade: include byproduct credit
                 net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + byproduct_low_steam
+            elif g == top_grade:
+                # Top grade (SHP): the U4U loop cascade already baked the PRDS
+                # letdown into shp_process via dispatch_demands, so do NOT add
+                # prev_letdown again — that would double-count HP→SHP PRDS.
+                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
             else:
                 net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
             net_by_grade[g] = net
@@ -1030,7 +1035,9 @@ def dispatch_steam(
             "_top_grade": top_grade,
         }
         
-        # Remaining top-grade demand to be met by steam assets
+        # Remaining top-grade demand to be met by supplementary firing.
+        # Free steam from GTs is already available supply — only the portion
+        # NOT covered by free steam needs supplementary firing from assets.
         net_top = net_by_grade.get(top_grade, 0.0)
         net_shp_to_dispatch = max(0.0, net_top - free_steam)
         
