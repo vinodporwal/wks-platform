@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer;
 import com.wks.caseengine.rest.db2.entity.*;
 import com.wks.caseengine.rest.db2.repository.*;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -865,64 +866,43 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
     @Override
     public List<Case> getCaseDetails(String displayName, String hierarchyName) {
-        // List<String> assetsPKIds = fetchRecords.findNodesByHierarchyNameAndDisplayName(displayName, hierarchyName);
-        // String result = assetsPKIds.stream()
-        // 	    .map(id -> "\'" + id + "\'") // Add quotes to each item
-        // 	    .collect(Collectors.joining(", ")); // Join with a comma and space
-        // List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
         String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
-                "WHERE TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
-                "SELECT hn.HierarchyNode_PK_ID " +
-                "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
-                "JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
-                "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
-                "WHERE hn.IsDeleted = 0 " +
-                "AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
-                "AND ht.HierarchyType = :hierarchyName" +
-                ") ORDER BY c.case_no DESC";
+                "WHERE c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "AND (:hierarchyName IS NULL OR c.hierarchy_name = :hierarchyName) " +
+                "ORDER BY c.case_no DESC";
         Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
         nativeQuery.setParameter("assetName", displayName);
-        nativeQuery.setParameter("hierarchyName", hierarchyName);
+        nativeQuery.setParameter("hierarchyName", (hierarchyName == null || hierarchyName.isEmpty()) ? null : hierarchyName);
         List<Case> cases = nativeQuery.getResultList();
+        cases.forEach(c -> c.setAssignedTo(new java.util.ArrayList<>()));
         return cases;
     }
 
     @Override
     public List<Case> getCaseDetails(String displayName, String hierarchyName, int page, int size) {
         String baseQuery = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
-                "WHERE TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
-                "SELECT hn.HierarchyNode_PK_ID " +
-                "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
-                "JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
-                "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
-                "WHERE hn.IsDeleted = 0 " +
-                "AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
-                "AND ht.HierarchyType = :hierarchyName" +
-                ") ORDER BY c.case_no DESC";
-        // count total for hasNext/hasPrevious
+                "WHERE c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "AND (:hierarchyName IS NULL OR c.hierarchy_name = :hierarchyName) " +
+                "ORDER BY c.case_no DESC";
         String countQuery = "SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
-                "WHERE TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
-                "SELECT hn.HierarchyNode_PK_ID " +
-                "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
-                "JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
-                "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
-                "WHERE hn.IsDeleted = 0 " +
-                "AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
-                "AND ht.HierarchyType = :hierarchyName" +
-                ")";
+                "WHERE c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "AND (:hierarchyName IS NULL OR c.hierarchy_name = :hierarchyName)";
+
+        String hn = (hierarchyName == null || hierarchyName.isEmpty()) ? null : hierarchyName;
+
         Query countNativeQuery = entityManager.createNativeQuery(countQuery);
         countNativeQuery.setParameter("assetName", displayName);
-        countNativeQuery.setParameter("hierarchyName", hierarchyName);
+        countNativeQuery.setParameter("hierarchyName", hn);
         long total = ((Number) countNativeQuery.getSingleResult()).longValue();
 
         Query nativeQuery = entityManager.createNativeQuery(baseQuery, Case.class);
         nativeQuery.setParameter("assetName", displayName);
-        nativeQuery.setParameter("hierarchyName", hierarchyName);
+        nativeQuery.setParameter("hierarchyName", hn);
         nativeQuery.setFirstResult(page * size);
         nativeQuery.setMaxResults(size);
         List<Case> cases = nativeQuery.getResultList();
+        cases.forEach(c -> c.setAssignedTo(new java.util.ArrayList<>()));
 
-        // store total on thread local so controller can access it
         CaseDefinitionServiceImpl.totalHolder.set(total);
         return cases;
     }
