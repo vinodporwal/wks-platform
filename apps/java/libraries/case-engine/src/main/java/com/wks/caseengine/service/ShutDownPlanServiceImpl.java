@@ -3091,10 +3091,12 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean filament = verticalName.equalsIgnoreCase("Filament");
 		boolean staple = verticalName.equalsIgnoreCase("Staple");
-        boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+        boolean chemicalHmdDropdown = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD") && (
+			plant.getName().equalsIgnoreCase("butadiene") || plant.getName().equalsIgnoreCase("mtbe") || plant.getName().equalsIgnoreCase("butene") || plant.getName().equalsIgnoreCase("pdeb")
+		);
 		boolean chemicalHmdHtpb = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("HTPB");
 		boolean aromaticsHmd = verticalName.equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("HMD");
-		boolean descriptionValidation = chemical || aromaticsHmd;
+		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd;
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
