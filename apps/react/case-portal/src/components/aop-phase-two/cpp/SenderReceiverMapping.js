@@ -380,7 +380,10 @@ const SenderReceiverMapping = () => {
 
     try {
       if (rowToDelete.apiId != null) {
-        await UtilityPlantApiServiceV2.deleteSRMapping(keycloak, rowToDelete.apiId)
+        await UtilityPlantApiServiceV2.deleteSRMapping(
+          keycloak,
+          rowToDelete.apiId,
+        )
       }
       handleDeleteRow(rowToDelete)
       setSnackbarOpen(true)
@@ -388,6 +391,7 @@ const SenderReceiverMapping = () => {
         message: 'SR Mapping deleted successfully!',
         severity: 'success',
       })
+      fetchData()
     } catch (error) {
       console.error('Error deleting SR mapping:', error)
       setSnackbarOpen(true)
