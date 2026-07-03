@@ -16,6 +16,8 @@ public interface JMDHeatRateService {
     // DROPDOWN ENDPOINTS (multi-plant)
     // ========================================
     AOPMessageVM getGTAssetDropdown(List<UUID> plantIds);
+    
+    AOPMessageVM getGTHeatRateData(UUID assetId, String year);
 
     AOPMessageVM getHRSGAssetDropdown(List<UUID> plantIds);
 
