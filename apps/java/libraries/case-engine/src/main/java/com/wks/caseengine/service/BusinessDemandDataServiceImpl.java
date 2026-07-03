@@ -1672,7 +1672,9 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				businessDemand.setAvgTph(businessDemandDataDTO.getAvgTph());
 				businessDemand.setDec(businessDemandDataDTO.getDec());
 				businessDemand.setFeb(businessDemandDataDTO.getFeb());
-				businessDemand.setLineId(UUID.fromString(businessDemandDataDTO.getLineId()));
+				//businessDemand.setLineId(UUID.fromString(businessDemandDataDTO.getLineId()));
+				businessDemand.setLineId(businessDemandDataDTO.getLineId() != null ? UUID.fromString(businessDemandDataDTO.getLineId()) : null);
+
 
 				if (businessDemandDataDTO.getId() == null || businessDemandDataDTO.getId().contains("#")) {
 					businessDemand.setId(null);
