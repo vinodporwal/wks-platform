@@ -31,6 +31,7 @@ import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
 import com.wks.caseengine.cpp.dto.SRMappingDTO;
+import com.wks.caseengine.cpp.dto.norm.NormParameterDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.repository.CPPSRMappingRepository;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
@@ -1187,5 +1188,86 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             logger.error("resolveOrCreateNormParameter error (name={}, plant={}, normType={}): {}", utilityName, plantId, normTypeId, e.getMessage(), e);
             return null;
         }
+    }
+
+    // ── Norm Parameters by Source Plant ──────────────────────────────────────
+
+    @Override
+    public AOPMessageVM getNormParametersBySourcePlant(String plantId, Integer normTypeId) {
+        logger.info("getNormParametersBySourcePlant: plantId={}, normTypeId={}", plantId, normTypeId);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            StringBuilder sql = new StringBuilder(
+                "SELECT DISTINCT np.*, nt.NormName AS NormTypeName " +
+                "FROM Plants p " +
+                "INNER JOIN NormParameters np ON np.Plant_FK_Id = p.Id " +
+                "INNER JOIN NormTypes nt ON nt.Id = np.NormType_FK_Id " +
+                "WHERE p.SourceName = CAST(? AS VARCHAR(36))"
+            );
+            List<Object> params = new ArrayList<>();
+            params.add(plantId);
+
+            if (normTypeId != null) {
+                sql.append(" AND np.NormType_FK_Id = ?");
+                params.add(normTypeId);
+            }
+            sql.append(" ORDER BY nt.NormName, np.DisplayOrder, np.Name");
+
+            List<Map<String, Object>> rows = db1JdbcTemplate.queryForList(sql.toString(), params.toArray());
+
+            List<NormParameterDTO> data = new ArrayList<>();
+            for (Map<String, Object> row : rows) {
+                NormParameterDTO dto = new NormParameterDTO();
+                dto.setId(toUuid(row, "Id"));
+                dto.setName(str(row, "Name"));
+                dto.setDisplayName(str(row, "DisplayName"));
+                dto.setUom(str(row, "UOM"));
+                dto.setExpression(str(row, "Expression"));
+                dto.setExecuteQuery(str(row, "ExecuteQuery"));
+                dto.setDependantAttributeId(toUuid(row, "DependantAttributeId"));
+                dto.setType(str(row, "Type"));
+                dto.setNormParameterTypeFkId(toUuid(row, "NormParameterType_FK_Id"));
+                dto.setPlantFkId(toUuid(row, "Plant_FK_Id"));
+                dto.setNormTypeFkId(toInt(row, "NormType_FK_Id"));
+                dto.setIsHistorical(toBool(row, "IsHistorical"));
+                dto.setDisplayOrder(toInt(row, "DisplayOrder"));
+                dto.setIsEditable(toBool(row, "IsEditable"));
+                dto.setIsVisible(toBool(row, "IsVisible"));
+                dto.setCalculationType(str(row, "CalculationType"));
+                dto.setSapMaterialCode(str(row, "SAPMaterialCode"));
+                dto.setNormTypeName(str(row, "NormTypeName"));
+                data.add(dto);
+            }
+
+            logger.info("getNormParametersBySourcePlant: {} records returned", data.size());
+            response.setCode(200);
+            response.setMessage(data.size() + " record(s) found.");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("getNormParametersBySourcePlant error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private Integer toInt(Map<String, Object> row, String key) {
+        Object val = row.get(key);
+        if (val == null) return null;
+        if (val instanceof Number) return ((Number) val).intValue();
+        try { return Integer.parseInt(val.toString()); }
+        catch (NumberFormatException e) {
+            logger.warn("Could not parse Integer for column {}: {}", key, val);
+            return null;
+        }
+    }
+
+    private Boolean toBool(Map<String, Object> row, String key) {
+        Object val = row.get(key);
+        if (val == null) return null;
+        if (val instanceof Boolean) return (Boolean) val;
+        if (val instanceof Number) return ((Number) val).intValue() != 0;
+        return Boolean.parseBoolean(val.toString());
     }
 }

@@ -74,4 +74,13 @@ public interface CPPSRMappingService {
      * @return AOPMessageVM with code 200 on success, 404 if not found, 500 on error.
      */
     AOPMessageVM deleteSRMapping(UUID id);
+
+    /**
+     * Returns Norm Parameters for the given source plant by calling SP
+     * CPP_GetNormParametersBySourcePlant.
+     *
+     * @param plantId   Source Plant GUID (mapped to Plants.SourceName)
+     * @param normTypeId optional; 1 = Production, 2 = Consumption, null = All
+     */
+    AOPMessageVM getNormParametersBySourcePlant(String plantId, Integer normTypeId);
 }
