@@ -83,13 +83,13 @@ const OverallAopConsumption = () => {
   ]
 
   const columns = [
-    // {
-    //   field: 'Particulars',
-    //   title: 'Type',
-    //   editable: false,
-    //   hidden: true,
-    //   minWidth: 100,
-    // },
+    {
+      field: 'Particulars',
+      title: 'Type',
+      editable: false,
+      hidden: true,
+      minWidth: 100,
+    },
     {
       field: 'productName',
       title: 'Particulars',
@@ -245,7 +245,7 @@ const OverallAopConsumption = () => {
                 originalRemark: item.aopRemarks?.trim() || null,
                 id: index,
                 isEditable: true,
-                Particulars: item.normParameterTypeDisplayName || 'Type',
+                Particulars: item.normParameterTypeDisplayName || '',
                 avgOfAllMonths,
               }
             },
@@ -407,7 +407,7 @@ const OverallAopConsumption = () => {
       severity: 'success',
     })
     try {
-      const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME || 'PE'}_${SITE_NAME || 'NMD'}_${PLANT_NAME || ''}`
+      const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}`
       await OverallAopConsumptionApiService.exportOverallAopConsumption(
         keycloak,
         PLANT_ID,

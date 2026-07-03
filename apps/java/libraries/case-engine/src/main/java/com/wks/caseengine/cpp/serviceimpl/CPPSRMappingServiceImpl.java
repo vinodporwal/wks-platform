@@ -637,6 +637,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
                         // ── Step 8: Insert CPPNorms default row for new NormsHeader ─────────────
                         insertCppNorms(newNormsHeaderId, financialYear);
+
+                        // ── Step 9: Insert CPPMonthWisePrice default row for new NormsHeader ───
+                        insertCppMonthWisePrice(newNormsHeaderId, financialYear);
                     }
                 } else {
                     logger.info("updateSRMappingsByPlant: skipping NormsHeader – cppPlantId={} is not an NMD site", dto.getCppPlantId());
@@ -674,6 +677,90 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         }
         return response;
     }
+
+    // ── Delete SR Mapping ─────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteSRMapping(UUID id) {
+        logger.info("deleteSRMapping: id={}", id);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            if (id == null) {
+                response.setCode(400);
+                response.setMessage("Id must not be null.");
+                return response;
+            }
+
+            // ── Step 1: Verify the master record exists ─────────────────────────────────
+            List<String> masterCheck = db1JdbcTemplate.queryForList(
+                    "SELECT TOP 1 ID FROM CPP_SR_Mapping_Master WITH(NOLOCK) WHERE ID = ?",
+                    String.class, id.toString());
+
+            if (masterCheck.isEmpty()) {
+                logger.warn("deleteSRMapping: no CPP_SR_Mapping_Master found for id={}", id);
+                response.setCode(404);
+                response.setMessage("SR Mapping record not found for id: " + id);
+                return response;
+            }
+
+            // ── Step 2: Fetch all NormsHeader IDs linked to this SR Mapping ────────────
+            List<String> normsHeaderIds = db1JdbcTemplate.queryForList(
+                    "SELECT Id FROM NormsHeader WITH(NOLOCK) WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                    String.class, id.toString());
+
+            logger.info("deleteSRMapping: found {} NormsHeader record(s) linked to id={}", normsHeaderIds.size(), id);
+
+            if (!normsHeaderIds.isEmpty()) {
+                // Build an IN-clause placeholder string: ?,?,?...
+                String inClause = normsHeaderIds.stream()
+                        .map(h -> "?")
+                        .collect(java.util.stream.Collectors.joining(","));
+                Object[] headerIdArgs = normsHeaderIds.toArray();
+
+                // ── Step 3: Delete NormsMonthDetail (child of NormsHeader) ──────────────
+                int deletedMonthDetail = db1JdbcTemplate.update(
+                        "DELETE FROM NormsMonthDetail WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} NormsMonthDetail row(s)", deletedMonthDetail);
+
+                // ── Step 4: Delete CPPNorms (child of NormsHeader) ──────────────────────
+                int deletedNorms = db1JdbcTemplate.update(
+                        "DELETE FROM CPPNorms WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} CPPNorms row(s)", deletedNorms);
+
+                // ── Step 5: Delete CPPMonthWisePrice (child of NormsHeader) ────────────
+                int deletedMonthWisePrice = db1JdbcTemplate.update(
+                        "DELETE FROM CPPMonthWisePrice WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} CPPMonthWisePrice row(s)", deletedMonthWisePrice);
+
+                // ── Step 6: Delete NormsHeader rows ─────────────────────────────────────
+                int deletedHeaders = db1JdbcTemplate.update(
+                        "DELETE FROM NormsHeader WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                        id.toString());
+                logger.info("deleteSRMapping: deleted {} NormsHeader row(s)", deletedHeaders);
+            }
+
+            // ── Step 7: Delete CPP_SR_Mapping_Master ────────────────────────────────────
+            int deletedMaster = db1JdbcTemplate.update(
+                    "DELETE FROM CPP_SR_Mapping_Master WHERE ID = ?",
+                    id.toString());
+            logger.info("deleteSRMapping: deleted {} CPP_SR_Mapping_Master row(s) for id={}", deletedMaster, id);
+
+            response.setCode(200);
+            response.setMessage("SR Mapping record deleted successfully.");
+            response.setData(null);
+
+        } catch (Exception e) {
+            logger.error("deleteSRMapping error for id={}: {}", id, e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
 
     /**
      * Returns true if the given plantId belongs to a Site whose Name = 'NMD'.
@@ -948,6 +1035,55 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
         } catch (Exception e) {
             logger.error("insertCppNorms error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Inserts a default CPPMonthWisePrice row for a newly created NormsHeader.
+     *
+     * <p>Fixed defaults:
+     * <ul>
+     *   <li>All month prices       = 0 (Apr … Mar)</li>
+     *   <li>Remarks                = "Added new norms"</li>
+     *   <li>PriceSource            = "Calculation"</li>
+     *   <li>ValueType              = "Calculation"</li>
+     *   <li>ModifiedBy             = "SYSTEM"</li>
+     *   <li>CreatedDate / UpdatedDate = GETDATE()</li>
+     *   <li>FinancialYear and AOPYear are both set to financialYear (they are always equal)</li>
+     * </ul>
+     *
+     * @param normsHeaderId the Id of the newly inserted NormsHeader row
+     * @param financialYear financial year string, e.g. "2025-26" (used for both FinancialYear and AOPYear)
+     */
+    private void insertCppMonthWisePrice(UUID normsHeaderId, String financialYear) {
+        if (normsHeaderId == null || financialYear == null || financialYear.isBlank()) {
+            logger.warn("insertCppMonthWisePrice: skipped – normsHeaderId={}, financialYear={}", normsHeaderId, financialYear);
+            return;
+        }
+        try {
+            UUID newId = UUID.randomUUID();
+            String insertSql = "INSERT INTO CPPMonthWisePrice " +
+                    "(Id, NormsHeader_FK_Id, FinancialYear, AOPYear, " +
+                    " Apr_Price, May_Price, Jun_Price, Jul_Price, Aug_Price, Sep_Price, " +
+                    " Oct_Price, Nov_Price, Dec_Price, Jan_Price, Feb_Price, Mar_Price, " +
+                    " Remarks, PriceSource, CreatedDate, UpdatedDate, ModifiedBy, ValueType) " +
+                    "VALUES (?, ?, ?, ?, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 'Added new norms', 'Calculation', GETDATE(), GETDATE(), 'SYSTEM', 'Calculation')";
+
+            db1JdbcTemplate.update(insertSql,
+                    newId.toString(),
+                    normsHeaderId.toString(),
+                    financialYear,   // FinancialYear
+                    financialYear    // AOPYear (same value)
+            );
+
+            logger.info("insertCppMonthWisePrice: inserted CPPMonthWisePrice Id={} for NormsHeader={}, financialYear={}",
+                    newId, normsHeaderId, financialYear);
+
+        } catch (Exception e) {
+            logger.error("insertCppMonthWisePrice error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
         }
     }
 

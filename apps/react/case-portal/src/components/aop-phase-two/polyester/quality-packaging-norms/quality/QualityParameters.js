@@ -398,7 +398,7 @@ const QualityParameters = () => {
     addButton: false,
     deleteButton: false,
     showTitle: true,
-    showReleaseBtn: !showReleaseButton,
+    showReleaseBtn: showReleaseButton,
   }
 
   return (

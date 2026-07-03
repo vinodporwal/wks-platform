@@ -102,6 +102,23 @@ public class CPPSRMappingController {
         return ResponseEntity.status(httpStatus).body(response);
     }
 
+    // DELETE SR Mapping
+    /**
+     * DELETE /task/sr-mapping/{id}
+     *
+     * Deletes the CPP_SR_Mapping_Master record and all its associated child records
+     * (NormsMonthDetail, CPPNorms, CPPMonthWisePrice, NormsHeader) in the correct order.
+     *
+     * @param id UUID of the CPP_SR_Mapping_Master record to delete.
+     */
+    @DeleteMapping("/sr-mapping/{id}")
+    public ResponseEntity<AOPMessageVM> deleteSRMapping(@PathVariable UUID id) {
+
+        AOPMessageVM response = service.deleteSRMapping(id);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
     // GET Cost Centers (dropdown)
     /**
      * GET /task/sr-mapping/cost-centers

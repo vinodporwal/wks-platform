@@ -3,15 +3,14 @@ import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
-import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const ManualEntry = () => {
+const HistoricalMonths = ({ startDate, endDate }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -31,36 +30,21 @@ const ManualEntry = () => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [dynamicColumns, setDynamicColumns] = useState([])
 
   const valueFormat = customValueFormatterPhaseTwo(5)
-  const headerMap = generateHeaderNames(AOP_YEAR)
 
   const selectOptions = [
-    { value: '4.0', label: 'P-4' },
-    { value: '5.0', label: 'P-5' },
-    { value: '1.0', label: 'NP' },
+    { value: 'P-4', label: 'P-4' },
+    { value: 'P-5', label: 'P-5' },
+    { value: 'NP', label: 'NP' },
+    { value: 'NR', label: 'NR' },
   ]
 
-  const monthColumns = [
-    { field: 'apr', headerIndex: 4 },
-    { field: 'may', headerIndex: 5 },
-    { field: 'jun', headerIndex: 6 },
-    { field: 'jul', headerIndex: 7 },
-    { field: 'aug', headerIndex: 8 },
-    { field: 'sep', headerIndex: 9 },
-    { field: 'oct', headerIndex: 10 },
-    { field: 'nov', headerIndex: 11 },
-    { field: 'dec', headerIndex: 12 },
-    { field: 'jan', headerIndex: 1 },
-    { field: 'feb', headerIndex: 2 },
-    { field: 'mar', headerIndex: 3 },
-  ]
-
-  const columns = [
+  const baseColumns = [
     {
       field: 'id',
       title: 'Id',
-      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -70,7 +54,6 @@ const ManualEntry = () => {
     {
       field: 'productName',
       title: 'Particulars',
-      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -79,32 +62,20 @@ const ManualEntry = () => {
     {
       field: 'TypeDisplayName',
       title: 'Type',
-      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
       locked: true,
       hidden: true,
     },
-    // {
-    //   field: 'UOM',
-    //   title: 'UOM',
-    //   // widthT: 100,
-    //   minWidth: 100,
-    //   type: 'text',
-    //   editable: false,
-    // },
-    ...monthColumns.map((month) => ({
-      field: month.field,
-      title: headerMap[month.headerIndex],
-      // widthT: 100,
-      minWidth: 120,
-      type: 'select',
-      options: selectOptions,
-      displayMode: 'label',
+    ...dynamicColumns,
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      minWidth: 200,
+      type: 'text',
       editable: true,
-      format: valueFormat,
-    })),
+    },
   ]
 
   useEffect(() => {
@@ -117,21 +88,53 @@ const ManualEntry = () => {
     setLoading(true)
     try {
       // Fetch manual entry data from backend API
-      const response = await ProductionNormsApiService.getManualEntry(
+      const response = await ProductionNormsApiService.getHistoricalMonths(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
-        'Manual Entry', // type parameter
       )
 
       // Extract data from response - API returns { data: [...], code: 200, message: '...' }
-      const manualEntryData =
-        // dummyManualEntryObject
-        response?.data || []
+      const manualEntryData = response?.data || []
+
+      // Derive month column keys dynamically from the first row of response data
+      if (manualEntryData.length > 0) {
+        const EXCLUDED_KEYS = [
+          'Particulars',
+          'id',
+          'TypeDisplayName',
+          'UOM',
+          'auditYear',
+          'normParameterFKId',
+          'remark',
+          'remarks',
+          'Remarks',
+          'inEdit',
+          'productName',
+        ]
+        const monthKeys = Object.keys(manualEntryData[0]).filter(
+          (key) => !EXCLUDED_KEYS.includes(key),
+        )
+        const generatedMonthCols = monthKeys.map((key) => ({
+          field: key,
+          title: key,
+          minWidth: 120,
+          type: 'select',
+          options: selectOptions,
+          displayMode: 'label',
+          editable: true,
+          format: valueFormat,
+        }))
+        setDynamicColumns(generatedMonthCols)
+      }
 
       // Add inEdit flag to each row for edit tracking
-      const dataWithEditFlag = manualEntryData.map((row) => ({
+      const dataWithEditFlag = manualEntryData.map((row, index) => ({
         ...row,
+        productName: row.Particulars,
+        remarks: row.Remarks || row.remark,
+        id: index + 1,
+        idFromApi: row.id || null,
         inEdit: false,
       }))
 
@@ -174,63 +177,41 @@ const ManualEntry = () => {
       return
     }
 
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
-    // const validationError = validateRowDataWithRemarks(
-    //   data,
-    //   originalRows,
-    //   fieldsToCheck,
-    //   'productName',
-    // )
+    const monthKeys = dynamicColumns.map((col) => col.field)
+    const fieldsToCheck = monthKeys
+    const validationError = validateRowDataWithRemarks(
+      data,
+      originalRows,
+      fieldsToCheck,
+      'productName',
+      'remarks'
+    )
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
 
-    // if (validationError) {
-    //   setSnackbarOpen(true)
-    //   setSnackbarData({
-    //     message: validationError,
-    //     severity: 'error',
-    //   })
-    //   setLoading(false)
-    //   return
-    // }
-    console.log('data', data)
+    // Build payload dynamically using month keys from API response
+    const convertedData = data.map((row) => {
+      const monthData = {}
+      monthKeys.forEach((key) => {
+        monthData[key] = row[key]
+      })
+      return {
+        ...monthData,
+        id: row.idFromApi || null,
+        Remarks: row?.remarks,
+      }
+    })
 
-    // Convert dropdown values and send only required fields
-    const convertedData = data.map((row) => ({
-      apr: row.apr,
-      may: row.may,
-      jun: row.jun,
-      jul: row.jul,
-      aug: row.aug,
-      sep: row.sep,
-      oct: row.oct,
-      nov: row.nov,
-      dec: row.dec,
-      jan: row.jan,
-      feb: row.feb,
-      mar: row.mar,
-      UOM: row.UOM || '',
-      auditYear: row.auditYear || '',
-      normParameterFKId: row.normParameterFKId || '',
-      id: row.id || null,
-      remarks: `Updated on-${new Date().toLocaleString()}`,
-    }))
-
-    console.log('convertedData', convertedData)
     try {
       // Call the API to save manual entry data
-      await ProductionNormsApiService.saveManualEntry(
+      await ProductionNormsApiService.saveHistoricalMonths(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
@@ -264,6 +245,56 @@ const ManualEntry = () => {
     setRemarkDialogOpen(true)
   }
 
+  const handleCalculate = async () => {
+    setLoading(true)
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Calculating...',
+      severity: 'info',
+    })
+
+    try {
+      const response = await ProductionNormsApiService.calculateHistoricalMonths(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 422) {
+        setTimeout(() => {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response.message || 'Validation error occurred.',
+            severity: 'error',
+            autoHide: false,
+          })
+        }, 500)
+      } else if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation completed successfully!',
+          severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation failed. Please try again.',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating steady state consumption:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Calculation failed. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const permissions = {
     showAction: true,
     addButton: false,
@@ -275,9 +306,10 @@ const ManualEntry = () => {
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Pigging/Non-Pigging-Next AOP',
+    titleName: 'Pigging - NP/P-4/P-5/NR',
     showDropdown: false,
     remarksEditable: true,
+    showCalculate: true,
   }
 
   return (
@@ -285,7 +317,7 @@ const ManualEntry = () => {
       <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
-        columns={columns}
+        columns={baseColumns}
         rows={rows}
         setRows={setRows}
         modifiedCells={modifiedCells}
@@ -304,6 +336,7 @@ const ManualEntry = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        handleCalculate={handleCalculate}
         // groupBy={['normParameterTypeDisplayName']}
         customHeight={70}
         paginationConfig={{
@@ -317,4 +350,4 @@ const ManualEntry = () => {
   )
 }
 
-export default ManualEntry
+export default HistoricalMonths

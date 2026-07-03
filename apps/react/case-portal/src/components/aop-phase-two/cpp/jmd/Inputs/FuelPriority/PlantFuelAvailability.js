@@ -180,7 +180,6 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
           remarks: item.remarks || '',
         }),
       )
-      console.log("tempResssssssssss", tempRes)
       setRows(tempRes)
       setOriginalRows(tempRes)
     } catch (error) {
@@ -475,7 +474,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
