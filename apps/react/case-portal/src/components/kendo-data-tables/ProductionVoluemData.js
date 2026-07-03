@@ -1691,6 +1691,7 @@ const ProductionvolumeData = ({
         // setLoading(false)
 
         fetchData()
+        fetchDesignCapacityData()
         if (IS_CRACKER_DMD || IS_CRACKER_C2) {
           fetchDesignCapacityData(unitDesignCapacity)
         }
