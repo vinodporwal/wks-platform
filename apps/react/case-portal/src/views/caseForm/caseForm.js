@@ -723,7 +723,7 @@ console.log('*****  taskId:  ', taskId);
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+		      //  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
