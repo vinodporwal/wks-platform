@@ -1112,7 +1112,7 @@ public class AOPServiceImpl implements AOPService {
 	                cell.setCellStyle(headerStyle);
 	            }
 
-	            currentRow = writeDataRows(sheet, lineDtoList, currentRow, normalStyle, false, numCols, maxColWidths);
+	            currentRow = writeDataRows(sheet, lineDtoList, currentRow, normalStyle, false, numCols, maxColWidths, true);
 
 	            currentRow += 2;
 
@@ -1128,7 +1128,7 @@ public class AOPServiceImpl implements AOPService {
 	                cell.setCellStyle(headerStyle);
 	            }
 
-	            currentRow = writeDataRows(sheet, combinedDtoList, currentRow, normalStyle, false, numCols, maxColWidths);
+	            currentRow = writeDataRows(sheet, combinedDtoList, currentRow, normalStyle, false, numCols, maxColWidths, true);
 
 	            for (int col = 0; col < numCols; col++) {
 	                int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
@@ -1150,10 +1150,19 @@ public class AOPServiceImpl implements AOPService {
 
 	private int writeDataRows(Sheet sheet, List<AOPDTO> dtoList, int startRow, CellStyle normalStyle,
 	        boolean isAfterSave, int numCols, int[] maxColWidths) {
+	    return writeDataRows(sheet, dtoList, startRow, normalStyle, isAfterSave, numCols, maxColWidths, false);
+	}
+
+	private int writeDataRows(Sheet sheet, List<AOPDTO> dtoList, int startRow, CellStyle normalStyle,
+	        boolean isAfterSave, int numCols, int[] maxColWidths, boolean addHorizontalTotal) {
 	    int currentRow = startRow;
 	    if (dtoList == null) {
 	        return currentRow;
 	    }
+
+	    // colSums[0] is unused (Products label); colSums[1..13] accumulate month and vertical-total sums
+	    double[] colSums = new double[numCols];
+
 	    for (AOPDTO dto : dtoList) {
 	        Row row = sheet.createRow(currentRow++);
 	        List<Object> rowData = new ArrayList<>();
@@ -1190,6 +1199,9 @@ public class AOPServiceImpl implements AOPService {
 	            if (value instanceof Number) {
 	                cell.setCellValue(((Number) value).doubleValue());
 	                cellStr = value.toString();
+	                if (addHorizontalTotal && col >= 1 && col < numCols) {
+	                    colSums[col] += ((Number) value).doubleValue();
+	                }
 	            } else if (value instanceof Boolean) {
 	                cell.setCellValue((Boolean) value);
 	                cellStr = value.toString();
@@ -1206,6 +1218,23 @@ public class AOPServiceImpl implements AOPService {
 	            }
 	        }
 	    }
+
+	    if (addHorizontalTotal && !dtoList.isEmpty()) {
+	        Row totalRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
+	            Cell cell = totalRow.createCell(col);
+	            if (col == 0) {
+	                cell.setCellValue("Total");
+	                maxColWidths[col] = Math.max(maxColWidths[col], "Total".length());
+	            } else {
+	                cell.setCellValue(colSums[col]);
+	                String cellStr = String.valueOf(colSums[col]);
+	                maxColWidths[col] = Math.max(maxColWidths[col], cellStr.length());
+	            }
+	            cell.setCellStyle(normalStyle);
+	        }
+	    }
+
 	    return currentRow;
 	}
 
