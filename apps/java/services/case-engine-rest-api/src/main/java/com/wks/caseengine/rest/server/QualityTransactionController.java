@@ -32,10 +32,22 @@ public class QualityTransactionController {
 	public AOPMessageVM getQualityTransaction(@RequestParam String plantId,@RequestParam String year){
 		 return  qualityTransactionService.getQualityTransaction(plantId,year);
 	}
+
+	// phase 2 api
+	@GetMapping(value="/quality")
+	public AOPMessageVM getQualityData(@RequestParam String plantId,@RequestParam String year){
+		 return  qualityTransactionService.getQualityData(plantId,year);
+	}
 	
 	@PostMapping(value="/quality-transaction")
 	public AOPMessageVM saveQualityTransaction(@RequestParam String year,@RequestParam String plantId, @RequestBody List<QualityTransactionDTO> qualityTransactionDTOs) {
 		return 	qualityTransactionService.saveQualityTransaction(year,plantId,qualityTransactionDTOs);
+	}
+
+	// phase 2 api
+	@PostMapping(value="/quality")
+	public AOPMessageVM saveQualityData(@RequestParam String year,@RequestParam String plantId, @RequestBody List<QualityTransactionDTO> qualityTransactionDTOs) {
+		return 	qualityTransactionService.saveQualityData(year,plantId,qualityTransactionDTOs);
 	}
 	
 	
@@ -61,6 +73,29 @@ public class QualityTransactionController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
+// phase 2 api
+	@GetMapping(value = "/quality-export")
+	public ResponseEntity<byte[]> exportQualityData(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = qualityTransactionService.exportQualityData(year,plantId,false,null); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Quality_Transaction.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 	
 	@PostMapping(value = "/quality-transaction-import", consumes = "multipart/form-data")
 	public AOPMessageVM importQualityTransaction(
@@ -69,6 +104,16 @@ public class QualityTransactionController {
 			@RequestParam("file") MultipartFile file
 	        ) {
 			return	qualityTransactionService.importQualityTransaction(year,UUID.fromString(plantId), file); 
+	}
+
+	// phase 2 api
+	@PostMapping(value = "/quality-import", consumes = "multipart/form-data")
+	public AOPMessageVM importQualityData(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	qualityTransactionService.importQualityData(year,UUID.fromString(plantId), file); 
 	}
 	
 }
