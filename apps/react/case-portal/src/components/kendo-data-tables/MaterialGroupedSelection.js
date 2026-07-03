@@ -76,7 +76,6 @@ export default function MaterialGroupedSelection() {
         field: 'value',
         title: 'Value',
         editable: false,
-        type: 'number',
         minWidth: 100,
         isEditable: false,
         isDisabled: false,
