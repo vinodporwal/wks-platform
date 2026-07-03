@@ -53,6 +53,8 @@ public interface CaseDefinitionService {
 	String CaseNoGenerator();
 //
 	List<Case> getCaseDetails(String assetName, String hierarchyName);
+
+	List<Case> getCaseDetails(String assetName, String hierarchyName, int page, int size);
 //
 	List<Case> getCaseDetails(LocalDate from, LocalDate to, String status);
 

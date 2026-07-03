@@ -888,6 +888,49 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     }
 
     @Override
+    public List<Case> getCaseDetails(String displayName, String hierarchyName, int page, int size) {
+        String baseQuery = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
+                "WHERE TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                "SELECT hn.HierarchyNode_PK_ID " +
+                "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+                "JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+                "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                "WHERE hn.IsDeleted = 0 " +
+                "AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+                "AND ht.HierarchyType = :hierarchyName" +
+                ") ORDER BY c.case_no DESC";
+        // count total for hasNext/hasPrevious
+        String countQuery = "SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
+                "WHERE TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                "SELECT hn.HierarchyNode_PK_ID " +
+                "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+                "JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+                "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                "WHERE hn.IsDeleted = 0 " +
+                "AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+                "AND ht.HierarchyType = :hierarchyName" +
+                ")";
+        Query countNativeQuery = entityManager.createNativeQuery(countQuery);
+        countNativeQuery.setParameter("assetName", displayName);
+        countNativeQuery.setParameter("hierarchyName", hierarchyName);
+        long total = ((Number) countNativeQuery.getSingleResult()).longValue();
+
+        Query nativeQuery = entityManager.createNativeQuery(baseQuery, Case.class);
+        nativeQuery.setParameter("assetName", displayName);
+        nativeQuery.setParameter("hierarchyName", hierarchyName);
+        nativeQuery.setFirstResult(page * size);
+        nativeQuery.setMaxResults(size);
+        List<Case> cases = nativeQuery.getResultList();
+
+        // store total on thread local so controller can access it
+        CaseDefinitionServiceImpl.totalHolder.set(total);
+        return cases;
+    }
+
+    // thread-local to pass total count back to controller without changing return type
+    public static final ThreadLocal<Long> totalHolder = new ThreadLocal<>();
+
+    @Override
     public List<Case> getCaseDetails(LocalDate from, LocalDate to, String status) {
 //		String searchQueryStr = "select * FROM Cases";
         String searchQueryStr = "SELECT c.* FROM cases c LEFT JOIN case_status cs ON c.status_id = cs.id";

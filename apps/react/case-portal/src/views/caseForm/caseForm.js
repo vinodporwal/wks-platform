@@ -655,11 +655,14 @@ console.log('*****  taskId:  ', taskId);
       })
   }
 
-  const onAnalysisSave = () => {
+  const onAnalysisAndValueRealizationSave = (eventData) => {
+    // eventData comes from onCustomEvent and always has the latest form values
+    const liveData = eventData || formData?.data
+    const liveContainer = {container: liveData};
     setLoading(true)
     const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
     const missingFields = requiredFields.filter(
-      (field) => !formData.data.container[field],
+      (field) => !liveData?.[field],
     )
     if (missingFields.length > 0) {
       setSnackbarMessages([`Please fill in all required fields. ${requiredFields}`])
@@ -675,13 +678,13 @@ console.log('*****  taskId:  ', taskId);
     const eventIdsParam = urlParams.get('eventIds')
     const sourceSystem = urlParams.get('sourceSystem') || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
-    const caseAttributes = Object.keys(formData.data).map((key) => ({
+    const caseAttributes = Object.keys(liveContainer).map((key) => ({
       name: key,
       value:
-        typeof formData.data[key] !== 'object'
-          ? formData.data[key]
-          : JSON.stringify(formData.data[key]),
-      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+        typeof liveContainer[key] !== 'object'
+          ? liveContainer[key]
+          : JSON.stringify(liveContainer[key]),
+      type: typeof liveContainer[key] !== 'object' ? 'String' : 'Json',
     }))
     CaseService.createCase(
       keycloak,
@@ -1211,7 +1214,7 @@ console.log('*****  taskId:  ', taskId);
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">XOM Case Management System</h2>
+        <h2 style="text-align: center; margin: 0;">Case Management System</h2>
       </div>
 
       <!-- Case Information Panel -->
@@ -1460,6 +1463,7 @@ console.log('*****  taskId:  ', taskId);
               )}
               <Button
                 color='inherit'
+                hidden={true}
                 onClick={handleFollowClick}
                 startIcon={<NotificationsActiveIcon />}
                 disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
@@ -1470,7 +1474,7 @@ console.log('*****  taskId:  ', taskId);
                 {'Print'}
               </Button>
 
-               <Button color='inherit' onClick={onSave} disabled={(!isAdmin || isCaseViewer || isCaseEditor) && !isCaseCreator}>
+               <Button color='inherit' hidden={true} onClick={onSave} disabled={(!isAdmin || isCaseViewer || isCaseEditor) && !isCaseCreator}>
                 {'Save'}
               </Button>
             
@@ -1478,6 +1482,7 @@ console.log('*****  taskId:  ', taskId);
               {/* start process three dot button */}
                <IconButton
                 edge='end'
+                hidden={true}
                 disabled={(!isAdmin || isCaseViewer || isCaseEditor) && !isCaseCreator}
                 color='inherit'
                 onClick={handleMenuOpen}
@@ -1659,7 +1664,7 @@ console.log('*****  taskId:  ', taskId);
                             // onSubmitRecommendation()
                             onSave()
                           }  else if (event.component.key === 'analysisSubmit') {
-                            onAnalysisSave()
+                            onAnalysisAndValueRealizationSave(event.data)
                           }
                             
                           else if (event.component.key === 'btnEventTrend') {
@@ -1755,7 +1760,7 @@ console.log('*****  taskId:  ', taskId);
                       open={processErrorSnackbarOpen}
                       autoHideDuration={3000}
                       onClose={() => setProcessErrorSnackbarOpen(false)}
-                      anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                     >
                       <SnackbarContent
                         message={

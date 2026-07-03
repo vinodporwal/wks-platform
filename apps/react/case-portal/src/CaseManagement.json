@@ -199,7 +199,7 @@
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
-                                                "hidden": true,
+                                                "hidden": false,
                                                 "clearOnHide": true,
                                                 "hideLabel": false,
                                                 "refreshOn": "",
@@ -836,7 +836,7 @@
                                                 "disabled": true,
                                                 "tableView": true,
                                                 "redrawOn": "",
-                                                "calculateValue": "const urlParams = new URLSearchParams(window.location.search);\nconst assetName = urlParams.get('assetName');\nif (assetName) {\n  value = assetName;\n}",
+                                                "calculateValue":"if(!component._afLoaded){component._afLoaded=true;(function(){const token=localStorage.getItem('keycloakToken');if(!token){instance.setValue('');return;}const eventIds=new URLSearchParams(window.location.search).get('eventIds');if(!eventIds){instance.setValue('');return;}const baseUrl=window.location.hostname.includes('localhost')?'http://localhost:8081/cm':(localStorage.getItem('baseUrl')||'');fetch(`${baseUrl}/case-definition/fault-history/eventIds?eventIds=${encodeURIComponent(eventIds)}`,{method:'GET',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}}).then(r=>{if(!r.ok)throw new Error(`API call failed: ${r.status}`);return r.json();}).then(data=>{instance.setValue(Array.isArray(data)&&data.length?(data[0].AssetDisplayName||''):'');if(typeof instance.redraw==='function')instance.redraw();}).catch(()=>instance.setValue(''));})();}",
                                                 "key": "mainAsset",
                                                 "type": "textfield",
                                                 "input": true,
@@ -2539,7 +2539,7 @@
                         "key": "panel5",
                         "tags": [],
                         "properties": {},
-                        "customConditional": "show = !!data.container.caseAssignedTo;",
+                        "customConditional": "show = Array.isArray(data.container.analysisTeam) ? data.container.analysisTeam.length > 0 : !!data.container.analysisTeam;",
                         "logic": [],
                         "attributes": {},
                         "overlay": {
@@ -2987,85 +2987,6 @@
                                                 "addons": [],
                                                 "id": "es27bt8",
                                                 "fileKey": ""
-                                            },
-                                            {
-                                                "label": "Submit",
-                                                "action": "event",
-                                                "showValidations": false,
-                                                "theme": "primary",
-                                                "size": "md",
-                                                "block": false,
-                                                "leftIcon": "",
-                                                "rightIcon": "",
-                                                "shortcut": "",
-                                                "description": "",
-                                                "tooltip": "",
-                                                "customClass": "",
-                                                "tabindex": "",
-                                                "disableOnInvalid": false,
-                                                "hidden": false,
-                                                "autofocus": false,
-                                                "disabled": false,
-                                                "tableView": false,
-                                                "modalEdit": false,
-                                                "key": "analysisSubmit",
-                                                "tags": [],
-                                                "properties": {},
-                                                "conditional": {
-                                                    "eq": "",
-                                                    "json": ""
-                                                },
-                                                "customConditional": "show \u003d !!data.container.caseNo",
-                                                "logic": [],
-                                                "attributes": {},
-                                                "overlay": {
-                                                    "style": "",
-                                                    "page": "",
-                                                    "left": "",
-                                                    "top": "",
-                                                    "width": "",
-                                                    "height": ""
-                                                },
-                                                "type": "button",
-                                                "hideLabel": false,
-                                                "input": true,
-                                                "placeholder": "",
-                                                "prefix": "",
-                                                "suffix": "",
-                                                "multiple": false,
-                                                "protected": false,
-                                                "unique": false,
-                                                "persistent": false,
-                                                "clearOnHide": true,
-                                                "refreshOn": "",
-                                                "redrawOn": "",
-                                                "dataGridLabel": true,
-                                                "labelPosition": "top",
-                                                "errorLabel": "",
-                                                "dbIndex": false,
-                                                "customDefaultValue": "",
-                                                "calculateValue": "",
-                                                "calculateServer": false,
-                                                "widget": {
-                                                    "type": "input"
-                                                },
-                                                "validateOn": "change",
-                                                "validate": {
-                                                    "required": false,
-                                                    "custom": "",
-                                                    "customPrivate": false,
-                                                    "strictDateValidation": false,
-                                                    "multiple": false,
-                                                    "unique": false
-                                                },
-                                                "allowCalculateOverride": false,
-                                                "encrypted": false,
-                                                "showCharCount": false,
-                                                "showWordCount": false,
-                                                "allowMultipleMasks": false,
-                                                "addons": [],
-                                                "id": "eqwy614",
-                                                "event": ""
                                             }
                                         ],
                                         "size": "md",
@@ -4858,7 +4779,7 @@
                             "show": null,
                             "when": null
                         },
-                        "customConditional": "show = !!data.container.caseAssignedTo;",
+                        "customConditional": "show = Array.isArray(data.container.analysisTeam) ? data.container.analysisTeam.length > 0 : !!data.container.analysisTeam;",
                         "logic": [],
                         "attributes": {},
                         "overlay": {
@@ -5564,7 +5485,7 @@
                             {
                                 "components": [
                                     {
-                                        "label": "Save As Draft",
+                                        "label": "Save",
                                         "action": "event",
                                         "showValidations": false,
                                         "theme": "primary",
@@ -5578,12 +5499,12 @@
                                         "customClass": "",
                                         "tabindex": "",
                                         "disableOnInvalid": false,
-                                        "hidden": true,
+                                        "hidden": false,
                                         "autofocus": false,
                                         "disabled": false,
                                         "tableView": false,
                                         "modalEdit": false,
-                                        "key": "saveAsDraft",
+                                        "key": "onSave",
                                         "tags": [],
                                         "properties": {},
                                         "conditional": {
@@ -5592,7 +5513,6 @@
                                             "show": null,
                                             "when": null
                                         },
-                                        "customConditional": "",
                                         "logic": [],
                                         "attributes": {},
                                         "overlay": {
@@ -5643,7 +5563,8 @@
                                         "addons": [],
                                         "id": "ed4grh",
                                         "event": "",
-                                        "defaultValue": null
+                                        "defaultValue": null,
+                                        "customConditional": "show = !data.container.caseNo;"
                                     }
                                 ],
                                 "size": "md",
@@ -5672,7 +5593,7 @@
                                         "disabled": false,
                                         "tableView": false,
                                         "modalEdit": false,
-                                        "key": "onSave",
+                                        "key": "analysisSubmit",
                                         "tags": [],
                                         "properties": {},
                                         "conditional": {
@@ -5681,7 +5602,7 @@
                                             "show": null,
                                             "when": null
                                         },
-                                        "customConditional": "",
+                                        "customConditional": "show = !!data.container.caseNo;",
                                         "logic": [],
                                         "attributes": {},
                                         "overlay": {

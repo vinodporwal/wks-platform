@@ -1158,7 +1158,8 @@ else {
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
             variant='contained'
-            disabled={!(isCaseCreator || isAdmin)}
+            disabled={true} // Disabled the create new button on case list page
+            // disabled={!(isCaseCreator || isAdmin)}
           >
             {t('pages.caselist.action.newcase')}
           </Button>

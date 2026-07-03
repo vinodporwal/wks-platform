@@ -212,7 +212,7 @@ params.append('after', cursor.after || '')
 params.append('sort', cursor.sort || 'DESC')
 params.append('limit', cursor.limit || 10)
 
-const url = `${Config.CaseEngineUrl}/case/asset-name?${params.toString()}`
+const url = `${Config.CaseEngineUrl}/case-definition/cases-to-link?${params.toString()}`
 
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,

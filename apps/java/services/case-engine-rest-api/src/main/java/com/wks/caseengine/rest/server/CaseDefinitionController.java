@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
+import com.wks.caseengine.pagination.PageResult;
 import com.wks.caseengine.rest.db2.entity.Case;
 import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
@@ -138,6 +139,32 @@ public class CaseDefinitionController {
 		System.out.println("HierarchyName: "+hierarchyName);
 		List<Case> cases = caseDefinitionService.getCaseDetails(assetName, hierarchyName);
 		return ResponseEntity.ok(cases);
+	}
+
+	@GetMapping("/cases-to-link")
+	public ResponseEntity<Object> getCasesToLink(
+			@RequestParam String assetName,
+			@RequestParam(required = false) String hierarchyName,
+			@RequestParam(required = false) String eventIds,
+			@RequestParam(required = false) String status,
+			@RequestParam(required = false) String caseDefinitionId,
+			@RequestParam(required = false, name = "before") String before,
+			@RequestParam(required = false, name = "after") String after,
+			@RequestParam(required = false, name = "sort") String sort,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false, name = "limit") String limit) {
+		int pageSize = (limit != null && !limit.isEmpty()) ? Integer.parseInt(limit) : size;
+		List<Case> cases = caseDefinitionService.getCaseDetails(assetName, hierarchyName != null ? hierarchyName : "", page, pageSize);
+		long total = com.wks.caseengine.cases.definition.service.CaseDefinitionServiceImpl.totalHolder.get();
+		com.wks.caseengine.cases.definition.service.CaseDefinitionServiceImpl.totalHolder.remove();
+		boolean hasNext = (long)(page + 1) * pageSize < total;
+		boolean hasPrevious = page > 0;
+		PageResult<Case> result = new PageResult<>(cases, hasNext, hasPrevious,
+				hasNext ? page + 1 : null,
+				hasPrevious ? page - 1 : null,
+				org.springframework.data.domain.Sort.Direction.DESC, pageSize);
+		return ResponseEntity.ok(result.toJson());
 	}
 
 	@GetMapping("/cases/filter")
