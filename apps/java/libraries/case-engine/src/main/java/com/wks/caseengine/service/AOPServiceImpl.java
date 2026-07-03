@@ -81,6 +81,9 @@ public class AOPServiceImpl implements AOPService {
 	@Autowired
 	private NormParametersRepository normParametersRepository;
 
+	@Autowired
+	private ShutdownHistoryService shutdownHistoryService;
+
 	// Inject or set your DataSource (e.g., via constructor or setter)
 	public AOPServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
@@ -1015,6 +1018,135 @@ public class AOPServiceImpl implements AOPService {
     }
     return null;
 }
+
+	@SuppressWarnings("unchecked")
+	public byte[] exportAOPDataByLine(String plantId, String year, String type) {
+	    try {
+	        AOPMessageVM lineDetailsVM = shutdownHistoryService.getLineDetails(plantId, year);
+	        List<Map<String, Object>> lines = (List<Map<String, Object>>) lineDetailsVM.getData();
+
+	        AOPMessageVM combinedVM = getMonthlyProductionCombined(plantId, year);
+	        Map<String, Object> combinedMap = (Map<String, Object>) combinedVM.getData();
+	        List<AOPDTO> combinedDtoList = (List<AOPDTO>) combinedMap.get("aopDTOList");
+
+	        Workbook workbook = new XSSFWorkbook();
+
+	        Font boldFont = workbook.createFont();
+	        boldFont.setBold(true);
+
+	        CellStyle titleStyle = workbook.createCellStyle();
+	        titleStyle.setFont(boldFont);
+	        titleStyle.setBorderTop(BorderStyle.THIN);
+	        titleStyle.setBorderBottom(BorderStyle.THIN);
+	        titleStyle.setBorderLeft(BorderStyle.THIN);
+	        titleStyle.setBorderRight(BorderStyle.THIN);
+	        titleStyle.setLocked(true);
+
+	        CellStyle headerStyle = workbook.createCellStyle();
+	        headerStyle.setFont(boldFont);
+	        headerStyle.setFillForegroundColor(IndexedColors.GREY_40_PERCENT.getIndex());
+	        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        headerStyle.setBorderTop(BorderStyle.THIN);
+	        headerStyle.setBorderBottom(BorderStyle.THIN);
+	        headerStyle.setBorderLeft(BorderStyle.THIN);
+	        headerStyle.setBorderRight(BorderStyle.THIN);
+	        headerStyle.setLocked(true);
+
+	        CellStyle normalStyle = workbook.createCellStyle();
+	        normalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	        normalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        normalStyle.setBorderTop(BorderStyle.THIN);
+	        normalStyle.setBorderBottom(BorderStyle.THIN);
+	        normalStyle.setBorderLeft(BorderStyle.THIN);
+	        normalStyle.setBorderRight(BorderStyle.THIN);
+	        normalStyle.setLocked(true);
+
+	        List<String> columnHeaders = new ArrayList<>();
+	        columnHeaders.add("Products");
+	        columnHeaders.add(getMonth(year, 4));
+	        columnHeaders.add(getMonth(year, 5));
+	        columnHeaders.add(getMonth(year, 6));
+	        columnHeaders.add(getMonth(year, 7));
+	        columnHeaders.add(getMonth(year, 8));
+	        columnHeaders.add(getMonth(year, 9));
+	        columnHeaders.add(getMonth(year, 10));
+	        columnHeaders.add(getMonth(year, 11));
+	        columnHeaders.add(getMonth(year, 12));
+	        columnHeaders.add(getMonth(year, 1));
+	        columnHeaders.add(getMonth(year, 2));
+	        columnHeaders.add(getMonth(year, 3));
+	        columnHeaders.add("Total");
+
+	        int numCols = columnHeaders.size();
+
+	        for (Map<String, Object> line : lines) {
+	            String lineId = (String) line.get("id");
+	            String displayName = (String) line.get("displayName");
+
+	            String sheetName = displayName != null ? displayName : "Line";
+	            if (sheetName.length() > 31) {
+	                sheetName = sheetName.substring(0, 31);
+	            }
+
+	            Sheet sheet = workbook.createSheet(sheetName);
+	            int[] maxColWidths = new int[numCols];
+	            for (int i = 0; i < numCols; i++) {
+	                maxColWidths[i] = columnHeaders.get(i).length();
+	            }
+
+	            AOPMessageVM lineVM = getMonthlyProduction(plantId, year, type, lineId);
+	            Map<String, Object> lineMap = (Map<String, Object>) lineVM.getData();
+	            List<AOPDTO> lineDtoList = (List<AOPDTO>) lineMap.get("aopDTOList");
+
+	            int currentRow = 0;
+
+	            Row titleRow1 = sheet.createRow(currentRow++);
+	            Cell titleCell1 = titleRow1.createCell(0);
+	            titleCell1.setCellValue("Month Wise Production Plan");
+	            titleCell1.setCellStyle(titleStyle);
+
+	            Row headerRow1 = sheet.createRow(currentRow++);
+	            for (int col = 0; col < numCols; col++) {
+	                Cell cell = headerRow1.createCell(col);
+	                cell.setCellValue(columnHeaders.get(col));
+	                cell.setCellStyle(headerStyle);
+	            }
+
+	            currentRow = writeDataRows(sheet, lineDtoList, currentRow, normalStyle, false, numCols, maxColWidths);
+
+	            currentRow += 2;
+
+	            Row titleRow2 = sheet.createRow(currentRow++);
+	            Cell titleCell2 = titleRow2.createCell(0);
+	            titleCell2.setCellValue("Combined Month-Wise Production Plan");
+	            titleCell2.setCellStyle(titleStyle);
+
+	            Row headerRow2 = sheet.createRow(currentRow++);
+	            for (int col = 0; col < numCols; col++) {
+	                Cell cell = headerRow2.createCell(col);
+	                cell.setCellValue(columnHeaders.get(col));
+	                cell.setCellStyle(headerStyle);
+	            }
+
+	            currentRow = writeDataRows(sheet, combinedDtoList, currentRow, normalStyle, false, numCols, maxColWidths);
+
+	            for (int col = 0; col < numCols; col++) {
+	                int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
+	                sheet.setColumnWidth(col, width);
+	            }
+
+	            sheet.protectSheet("");
+	        }
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
 
 	private int writeDataRows(Sheet sheet, List<AOPDTO> dtoList, int startRow, CellStyle normalStyle,
 	        boolean isAfterSave, int numCols, int[] maxColWidths) {
