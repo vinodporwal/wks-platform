@@ -507,8 +507,36 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(attributeValue);
-            //    String assignedTo = rootNode.path("caseAssignedTo").asText();
-                String[] assignedTo = caseData.getAssignedTo().stream().map(ele -> ele.getEmailId()).toArray(String[]::new);
+                String caseAssignedToValue = rootNode.path("caseAssignedTo").asText();
+
+                if (caseAssignedToValue != null && !caseAssignedToValue.isBlank()
+                        && (caseData.getAssignedTo() == null || caseData.getAssignedTo().isEmpty())) {
+
+                    List<com.wks.caseengine.rest.db2.entity.Users> resolvedList = new ArrayList<>();
+
+                    com.wks.caseengine.rest.db2.entity.Users resolvedUser = usersRepository
+                            .findByEmailId(caseAssignedToValue);
+
+                    if (resolvedUser != null) {
+                        resolvedList.add(resolvedUser);
+                        caseData.setAssignedToLabel(resolvedUser.getUserId());
+                    } else {
+                        com.wks.caseengine.rest.db2.entity.Groups resolvedGroup = groupsRepository
+                                .findByGroupId(caseAssignedToValue);
+
+                        if (resolvedGroup != null && resolvedGroup.getUsers() != null
+                                && !resolvedGroup.getUsers().isEmpty()) {
+                            resolvedList.addAll(resolvedGroup.getUsers());
+                            caseData.setAssignedToLabel(resolvedGroup.getGroupId());
+                        }
+                    }
+
+                    if (!resolvedList.isEmpty()) {
+                        caseData.setAssignedTo(resolvedList);
+                    }
+                }
+                String[] assignedTo = caseData.getAssignedTo().stream().map(ele -> ele.getEmailId())
+                        .toArray(String[]::new);
                 String caseNumber = caseData.getCaseNo();
                 String caseTitle = rootNode.path("caseTitle").asText();
                 System.out.println(rootNode.path("caseAssignedTo").asText());
@@ -520,15 +548,15 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                 JsonNode analysisTeam = rootNode.path("analysisTeam");
 
                 // Extract main asset
-                String mainAsset = rootNode.path("textField1").asText();
+                String mainAsset = rootNode.path("mainAsset").asText();
 
                 // Prepare a list for sub-assets (if multiple in dataGrid2)
                 List<Map<String, String>> subAssetList = new ArrayList<>();
                 for (JsonNode item : rootNode.path("dataGrid2")) {
                     Map<String, String> row = new HashMap<>();
-                    row.put("subAsset", item.path("textField2").asText());
-                    row.put("events", item.path("textField3").asText());
-                    row.put("eventCategory", item.path("textField4").asText());
+                    row.put("subAsset", item.path("subAsset").asText());
+                    row.put("events", item.path("events").asText());
+                    row.put("eventCategory", item.path("eventCategory").asText());
                     row.put("faultStart", item.path("TextFaultStartTimeDate").asText());
                     row.put("faultEnd", item.path("TextFaultEndTimeDate").asText());
                     row.put("eventPkId", item.path("eventPkId").asText());
@@ -579,7 +607,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     System.out.println("Calling mail send method...");
 //			    	String from = "amol.borse@honeywell.com";
                     Map<String, Object> data = new HashMap<>();
-                    data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+                    if (caseStatusValue.equals("Closed"))
+                        data.put("caseTitle", "This is to inform you, the case has been closed");
+                    else
+                        data.put("caseTitle", "This is to inform you, the new case has been assigned to you");
+                    data.put("headerText", caseStatusValue.equals("Closed") ? "Case has been closed"
+                            : "New case has been assigned to you");
+                    data.put("headerColor", caseStatusValue.equals("Closed") ? "#D32F2F" : "#2F8B8B");
+                    
                     data.put("caseNumber", caseNumber);
                     data.put("status", caseStatusValue);
                     data.put("caseName", caseTitle);

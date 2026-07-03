@@ -5,7 +5,7 @@
     <title>Case Update Notification</title>
     <style>
         .header {
-            background-color: #2F8B8B;
+           /* background-color: #2F8B8B;*/
             color: white;
             padding: 10px;
         }
@@ -37,8 +37,8 @@
     </style>
 </head>
 <body>
-<div class="header">
-    <h2>New case has been assigned to you</h2>
+<div class="header" th:style="'background-color: ' + ${headerColor} + ';'">
+    <h2 th:text="${headerText}">New case has been assigned to you</h2>
 </div>
 
 <div class="content">
