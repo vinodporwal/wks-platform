@@ -2,9 +2,11 @@ import { useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
-import { Box, Stack } from '@mui/material'
+import { Box, Stack, Tooltip, IconButton } from '@mui/material'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import { useDebounce } from 'hooks/useDebounce'
 const SenderReceiverMapping = () => {
   const [modifiedCells, setModifiedCells] = useState({})
@@ -22,6 +24,9 @@ const SenderReceiverMapping = () => {
   const [originalRows, setOriginalRows] = useState([])
   const [plantsDropdown, setPlantsDropdown] = useState([])
   const [costCentersDropdown, setCostCentersDropdown] = useState([])
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [rowToDelete, setRowToDelete] = useState(null)
 
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -355,6 +360,79 @@ const SenderReceiverMapping = () => {
     },
   ]
 
+  // ── Delete ─────────────────────────────────────────────────────────────────
+
+  const handleDeleteRow = (row) => {
+    setRows((prev) => prev.filter((r) => r.id !== row.id))
+    setOriginalRows((prev) => prev.filter((r) => r.id !== row.id))
+    setModifiedCells((prev) => {
+      const next = { ...prev }
+      delete next[row.id]
+      return next
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!rowToDelete) return
+
+    setDeleteDialogOpen(false)
+    setLoading(true)
+
+    try {
+      if (rowToDelete.apiId != null) {
+        await UtilityPlantApiServiceV2.deleteSRMapping(
+          keycloak,
+          rowToDelete.apiId,
+        )
+      }
+      handleDeleteRow(rowToDelete)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'SR Mapping deleted successfully!',
+        severity: 'success',
+      })
+      fetchData()
+    } catch (error) {
+      console.error('Error deleting SR mapping:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete SR Mapping. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setRowToDelete(null)
+    }
+  }
+
+  // ── Delete action cell ─────────────────────────────────────────────────────
+
+  const DeleteActionCell = ({ dataItem, tdProps }) => (
+    <td
+      {...tdProps}
+      style={{
+        ...tdProps?.style,
+        textAlign: 'center',
+        verticalAlign: 'middle',
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Tooltip title='Delete Row'>
+          <IconButton
+            size='small'
+            color='error'
+            onClick={() => {
+              setRowToDelete(dataItem)
+              setDeleteDialogOpen(true)
+            }}
+          >
+            <DeleteOutlineIcon fontSize='small' />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </td>
+  )
+
   // Permissions
   const permissions = {
     showAction: true,
@@ -661,8 +739,17 @@ const SenderReceiverMapping = () => {
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
           setCurrentRowId={() => {}}
+          customActionCell={DeleteActionCell}
         />
       </Stack>
+
+      <DeleteDialog
+        openDeleteDialogeBox={deleteDialogOpen}
+        setOpenDeleteDialogeBox={setDeleteDialogOpen}
+        deleteTheRecord={handleConfirmDelete}
+        message='Are you sure you want to delete this SR Mapping record?'
+        confirmButtonText='Delete'
+      />
     </Box>
   )
 }
