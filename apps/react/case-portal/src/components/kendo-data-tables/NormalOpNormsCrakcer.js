@@ -629,7 +629,7 @@ const NormalOpNormsScreenCracker = () => {
 
   const finalPermissions = useMemo(() => {
     const base = { ...baseFinalPermissions }
-    base.saveBtn = false
+    base.saveBtn = IS_CRACKER_C2 ? true : false
     base.showCalculate = true
 
     return getAdjustedPermissions(base, isOldYear)
@@ -725,7 +725,7 @@ const NormalOpNormsScreenCracker = () => {
         remark: item.remark || '',
         Particulars: item.normType || item.normParameterTypeDisplayName,
         Method: item.Method || item.method,
-        isEditable: false,
+        isEditable: IS_CRACKER_C2 ? true : false,
       }))
 
       setRowsBestFinalNorms(mappedWithMethod)
