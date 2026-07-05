@@ -97,6 +97,7 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 
 // A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
@@ -225,10 +226,10 @@ const KendoDataTables = ({
   allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
-  setSelectMode = () => {},
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
-  onLoad = () => {},
+  setSelectMode = () => { },
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
+  onLoad = () => { },
   disableRedHighlight = false,
   showThreeColors = false,
   resetDataChanges = () => { },
@@ -506,12 +507,12 @@ const KendoDataTables = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          aggregates: totalRowConfiguration,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        aggregates: totalRowConfiguration,
+        dir: undefined,
+      },
+    ]
     : []
 
   const MyFooterCustomCell = (props) => {
@@ -991,16 +992,16 @@ const KendoDataTables = ({
                   }
                 } else {
                   // all others: start date is FIXED → move end date
-                const newEnd = recalcEndDate(
-                  updated.maintStartDateTime,
-                  value, // string like “10.20”
-                )
-                if (newEnd) {
-                  updated.maintEndDateTime = newEnd
+                  const newEnd = recalcEndDate(
+                    updated.maintStartDateTime,
+                    value, // string like “10.20”
+                  )
+                  if (newEnd) {
+                    updated.maintEndDateTime = newEnd
+                  }
                 }
               }
             }
-          }
           }
 
           if (
@@ -2575,6 +2576,11 @@ const KendoDataTables = ({
                 </React.Fragment>
               )}
 
+
+              {permissions?.showDisabledUOM && (
+                <DisabledUOM disabledUOM={permissions?.disabledUOM} />
+              )}
+
               {permissions?.showModes && (
                 <TextField
                   select
@@ -2742,7 +2748,7 @@ const KendoDataTables = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
@@ -3804,6 +3810,7 @@ const KendoDataTables = ({
                               allRedCell={allRedCell}
                               onRemarkClick={handleRemarkCellClick}
                               customModifiedCells={customModifiedCells}
+                              suppressRemarksPlaceholder={permissions?.suppressRemarksPlaceholder}
                             />
                           ),
                           headerCell: SimpleHeaderWithTooltip,

@@ -305,7 +305,7 @@ const NormalOpNormsScreenCracker = () => {
         editable: false,
         type: 'number',
         format: valueFormat,
-        minWidth: 120,
+        minWidth: 140,
       },
       {
         field: 'isEditable',
@@ -357,7 +357,7 @@ const NormalOpNormsScreenCracker = () => {
         editable: false,
         type: 'number',
         format: valueFormat,
-        minWidth: 120,
+        minWidth: 140,
       },
       {
         field: 'remark',

@@ -766,11 +766,11 @@ const ProductionvolumeData = ({
               (maxRow.materialFKId &&
                 row.materialFKId &&
                 maxRow.materialFKId.toLowerCase() ===
-                  row.materialFKId.toLowerCase()) ||
+                row.materialFKId.toLowerCase()) ||
               (maxRow.normParametersFKId &&
                 row.normParametersFKId &&
                 maxRow.normParametersFKId.toLowerCase() ===
-                  row.normParametersFKId.toLowerCase()) ||
+                row.normParametersFKId.toLowerCase()) ||
               (maxRow.productName &&
                 row.productName &&
                 maxRow.productName === row.productName),
@@ -1279,15 +1279,17 @@ const ProductionvolumeData = ({
 
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD ||
-        VERTICAL_NAME === 'meg'
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_PVC_HMD ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
+      disabledUOM: unitDesignCapacity,
+      showDisabledUOM: IS_CRACKER_C2
     },
     isOldYear,
   )
@@ -1396,16 +1398,16 @@ const ProductionvolumeData = ({
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC ||
-        IS_PP_SEZ ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_CRACKER_DMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_CRACKER_C2 ||
-        VERTICAL_NAME === 'meg'
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC ||
+          IS_PP_SEZ ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_CRACKER_DMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD ||
+          IS_CRACKER_C2 ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1459,32 +1461,32 @@ const ProductionvolumeData = ({
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
       showCalculateVisibility:
         VERTICAL_NAME === 'meg' &&
-        Object.keys(calculationObject || {}).length > 0
+          Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
       downloadExcelBtn:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD ||
-        permissions?.hideDownloadExcel ||
-        VERTICAL_NAME === 'meg'
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_PVC_HMD ||
+          IS_PVC_VMD ||
+          permissions?.hideDownloadExcel ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
       uploadExcelBtn:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD ||
-        IS_VCM_DMD_EDC ||
-        permissions?.hideDownloadExcel ||
-        VERTICAL_NAME === 'meg'
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_PVC_HMD ||
+          IS_PVC_VMD ||
+          IS_VCM_DMD_EDC ||
+          permissions?.hideDownloadExcel ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
 
@@ -1512,6 +1514,8 @@ const ProductionvolumeData = ({
               ? 'Proposed Operating Capacity / Production Volume Target (PVT)'
               : 'Proposed Operating Capacity',
       showNoteWhileSaving: IS_PP_SEZ ? true : false,
+      disabledUOM: unitDesignCapacity,
+      showDisabledUOM: IS_CRACKER_C2
     },
     isOldYear,
   )
@@ -1642,7 +1646,8 @@ const ProductionvolumeData = ({
         IS_PP_DTA ||
         IS_PP_HMD ||
         IS_PVC_DMD ||
-        IS_PVC_HMD 
+        IS_PVC_HMD
+        // VERTICAL_NAME == 'meg'
       ) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
