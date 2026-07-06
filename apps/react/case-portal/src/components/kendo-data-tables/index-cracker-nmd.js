@@ -115,30 +115,30 @@ const KendoDataTablesCrackerNMD = ({
   summaryEdited,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => { },
+  setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => { },
+  setRemarkDialogOpen = () => {},
   currentRemark = '',
-  setCurrentRemark = () => { },
+  setCurrentRemark = () => {},
   currentRowId = null,
-  setModifiedCells = () => { },
+  setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = () => { },
-  saveChanges = () => { },
-  deleteRowData = () => { },
-  handleCalculate = () => { },
-  handleGradeChange = () => { },
-  handleRemarkCellClick = () => { },
+  handleDeleteSelected = () => {},
+  saveChanges = () => {},
+  deleteRowData = () => {},
+  handleCalculate = () => {},
+  handleGradeChange = () => {},
+  handleRemarkCellClick = () => {},
   selectedUsers = [],
   groupBy = null,
   note = '',
   titleName = '',
   allProducts = [],
   allMonths = [],
-  handleExcelUpload = () => { },
-  downloadExcelForConfiguration = () => { },
-  onLoad = () => { },
+  handleExcelUpload = () => {},
+  downloadExcelForConfiguration = () => {},
+  onLoad = () => {},
 }) => {
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -172,11 +172,11 @@ const KendoDataTablesCrackerNMD = ({
 
   const initialGroup = groupBy
     ? [
-      {
-        field: groupBy,
-        dir: undefined,
-      },
-    ]
+        {
+          field: groupBy,
+          dir: undefined,
+        },
+      ]
     : []
   const fileInputRef = useRef(null)
   const grid = useRef(null)
@@ -275,10 +275,8 @@ const KendoDataTablesCrackerNMD = ({
   }
   const itemChange = useCallback(
     (e) => {
-
       const { dataItem, field, value } = e
       const itemId = dataItem.id
-
 
       // Ignore group header expand/collapse events — they are not real edits
       if (!field || dataItem?.items) {
@@ -286,7 +284,6 @@ const KendoDataTablesCrackerNMD = ({
       }
 
       setIsRowEdited(true)
-
 
       setRows((prev) =>
         prev.map((r) => {
@@ -832,7 +829,7 @@ const KendoDataTablesCrackerNMD = ({
             >
               {/* CASE 1: Permission TRUE ? Full Header UI */}
               {permissions?.showTitleNameBusiness ||
-                permissions?.showTitleName ? (
+              permissions?.showTitleName ? (
                 <Typography
                   component='div'
                   sx={{
@@ -1009,7 +1006,7 @@ const KendoDataTablesCrackerNMD = ({
                     rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                      !permissions?.showCalculateVisibility
+                        !permissions?.showCalculateVisibility
                   }
                   className='btn-save'
                   startIcon={

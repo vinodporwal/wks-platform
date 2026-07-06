@@ -45,6 +45,21 @@ public class ShutdownHistoryController {
 		 return  shutdownHistoryService.getShutdownHistoryPTA(plantId,year);
 	}
 
+	@GetMapping(value="/shutdown-history-config")
+	public AOPMessageVM getShutdownHistoryConfig(@RequestParam String plantId,@RequestParam String year){
+		 return  shutdownHistoryService.getShutdownHistoryConfig(plantId,year);
+	}
+
+	@PostMapping(value="/shutdown-history-config")
+	public AOPMessageVM saveShutdownHistoryConfig(@RequestBody List<Map<String, Object>> shutdownHistoryConfigList){
+		return shutdownHistoryService.saveShutdownHistoryConfig(shutdownHistoryConfigList, null, null);
+	}
+
+	@DeleteMapping(value="/shutdown-history-config")
+	public AOPMessageVM deleteShutdownHistoryConfig(@RequestParam String Id){
+		return shutdownHistoryService.deleteShutdownHistoryConfig(Id);
+	}
+
 	@GetMapping(value = "/shutdown-history-pta-export-excel")
 	public ResponseEntity<byte[]> exportShutdownHistoryPTAExcel(@RequestParam String plantId,
 			@RequestParam String year) {
@@ -108,6 +123,30 @@ public class ShutdownHistoryController {
 		return shutdownHistoryService.deleteSlowdownHistory(id);
 	}
 	
+	@GetMapping(value = "/shutdown-history-config-export-excel")
+	public ResponseEntity<byte[]> exportShutdownHistoryConfigExcel(@RequestParam String plantId,
+			@RequestParam String year) {
+		try {
+			byte[] excelBytes = shutdownHistoryService.createShutdownHistoryConfigExcel(plantId, year);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("shutdown-history-config.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/shutdown-history-config-import-excel", consumes = "multipart/form-data")
+	public AOPMessageVM importShutdownHistoryConfigExcel( @RequestParam String plantId, @RequestParam String year,
+			@RequestParam("file") MultipartFile file) {
+		return shutdownHistoryService.importShutdownHistoryConfigExcel(file, plantId, year);
+	}
+
 	@PostMapping(value="/shutdown-history-pta")
 	public AOPMessageVM saveHistoryPTA(@RequestParam String plantId,@RequestParam String year, @RequestBody List<Map<String, Object>> payload){
 		List<NormAttributeTransactionsDTO> dtoList = new ArrayList<>();

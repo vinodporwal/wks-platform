@@ -100,7 +100,7 @@ const ConsumptionNorms = () => {
   const { items: menuItems } = useMenuContext()
   const showReleaseButton = shouldShowReleaseButton(menuItems)
 
-  console.log('showReleaseButton', showReleaseButton)
+  // console.log('showReleaseButton', showReleaseButton)
 
   // const { setIsReleased } = dataGridStore
 

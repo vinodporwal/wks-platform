@@ -47,7 +47,7 @@ const ConfigurationAccordian = ({
   const endDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'EndDateNorms' || item.Name === 'EndDate',
   )
- 
+
   const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
 

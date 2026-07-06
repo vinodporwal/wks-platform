@@ -163,26 +163,18 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") ||  site.getName().equalsIgnoreCase("HMD"));
 		    boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 			boolean ischemicalAndVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
+			boolean aromaticsDtaAromatics = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("DTA") && plant.getName().equalsIgnoreCase("Aromatics");
 		    String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			List<Boolean> isEditable = new ArrayList<>();
 
 			Workbook workbook = new XSSFWorkbook();
-			CellStyle borderStyle = Utility.createBorderedStyle(workbook);
-			CellStyle boldStyle = Utility.createBoldStyle(workbook);
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
-			
 
 			List<List<Object>> rows = new ArrayList<>();
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
 
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
-			sheet.setDefaultColumnStyle(1, unlockedStyle);
-			
 			for (ConfigurationDTO dto : dtoList) {
 				if (dto.getConfigTypeName() != null && dto.getConfigTypeName().equalsIgnoreCase("ShutdownNorms")) {
 					continue;
@@ -235,7 +227,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 			innerHeaders.add("Type");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
+
+			if(aromaticsDtaAromatics) {  
+			innerHeaders.add("UOM/TPD");  
+		      }
+			  else {
+				innerHeaders.add("UOM");
+			  }
+			
 			if(reportTypes!=null && reportTypes.contains("Report Manual Entry")) {
 				year=getLastYear(year);
 			}
@@ -301,18 +300,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		int remarkColIndex = hasCategory ? 16 : 15;
 		int totalCols = innerHeaders.size();
 
-		// Wrap styles for the remarks column — preserve locked/unlocked appearance
-		CellStyle wrapUnlockedStyle = workbook.createCellStyle();
-		wrapUnlockedStyle.setWrapText(true);
-		wrapUnlockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
-		wrapUnlockedStyle.setLocked(false);
-
-		CellStyle wrapLockedStyle = workbook.createCellStyle();
-		wrapLockedStyle.setWrapText(true);
-		wrapLockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
-		wrapLockedStyle.setLocked(true);
-		wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		// Wrap styles for the remarks column — preserve locked/unlocked appearance with borders
+		CellStyle wrapUnlockedStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+		CellStyle wrapLockedStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
 		// Fixed preferred width for remarks column (~50 characters × 256 units)
 		final int REMARK_CHARS = 50;
@@ -570,22 +560,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<Boolean> isEditable = new ArrayList<>();
 
 			Workbook workbook = new XSSFWorkbook();
-			CellStyle borderStyle = Utility.createBorderedStyle(workbook);
-			CellStyle boldStyle = Utility.createBoldStyle(workbook);
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
-			
 
 			List<List<Object>> rows = new ArrayList<>();
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
 
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
-			sheet.setDefaultColumnStyle(1, unlockedStyle);
-			
 			for (ConfigurationDTO dto : dtoList) {
 				
 				List<Object> list = new ArrayList<>();
@@ -795,11 +776,11 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 
 			if (dto.getId() == null || dto.getId().trim().isEmpty()) {
 
-				String sql = "INSERT INTO CatalystChangeOver (date, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
-						+ "VALUES (:date, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
-				Query query = entityManager.createNativeQuery(sql);
-				query.setParameter("date", dto.getDate());
-				query.setParameter("remarks", dto.getRemarks());
+			String sql = "INSERT INTO CatalystChangeOver (date, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
+					+ "VALUES (:date, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("date", dto.getDate());
+			query.setParameter("remarks", dto.getRemarks());
 				query.setParameter("plantId", dto.getPlantId());
 				query.setParameter("aopYear", dto.getAopYear());
 				query.setParameter("modifiedBy", modifiedBy);
@@ -817,6 +798,7 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 
 				String existingParam    = existing[0] != null ? existing[0].toString().trim() : "";
 				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
+			
 				String existingRemarks  = existing[2] != null ? existing[2].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
@@ -835,7 +817,7 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 					String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
 					if (incomingRemarks.equals(existingRemarks)) {
 						throw new IllegalArgumentException(
-							"Remarks must be updated when Parameter or Date is changed.");
+							"Please Update Remarks");
 					}
 				}
 
@@ -858,12 +840,11 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 		aopMessageVM.setMessage("Data saved successfully");
 		aopMessageVM.setData(catalystChangeOverDTOList);
 		return aopMessageVM;
-	} catch (IllegalArgumentException e) {
-		throw new RestInvalidArgumentException(e.getMessage(), e);
-	} catch (Exception ex) {
-		ex.printStackTrace();
-		throw new RuntimeException("Failed to save CatalystChangeOver data", ex);
+	} 
+	catch (IllegalArgumentException e) {
+		throw new IllegalArgumentException(e.getMessage(), e);
 	}
+	
 
 }
 
@@ -1143,6 +1124,12 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 
+				// for meg set jan to dec values to null if the values are not present in DB. for others set to zero
+						if(verticalName.equalsIgnoreCase("MEG")) {  
+                           
+							setJanToDecValuesForMEG(configurationDTO, row);
+						}
+						else {
 				configurationDTO.setJan(
 						(row[1] != null && !row[1].toString().trim().isEmpty())
 								? Double.parseDouble(row[1].toString().trim())
@@ -1180,6 +1167,8 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
 						? Double.parseDouble(row[12].toString())
 						: 0.0);
+
+				}
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if(isChemical || isChemicalVmd) {
@@ -1232,6 +1221,48 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	public void setJanToDecValuesForMEG(ConfigurationDTO configurationDTO, Object[] row) { 
+
+		configurationDTO.setJan(
+			(row[1] != null && !row[1].toString().trim().isEmpty())
+					? Double.parseDouble(row[1].toString().trim())
+					: null); 
+	configurationDTO.setFeb(
+			(row[2] != null && !row[2].toString().trim().isEmpty()) ? Double.parseDouble(row[2].toString())
+					: null);
+	configurationDTO.setMar(
+			(row[3] != null && !row[3].toString().trim().isEmpty()) ? Double.parseDouble(row[3].toString())
+					: null);
+	configurationDTO.setApr(
+			(row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString())
+					: null);
+	configurationDTO.setMay(
+			(row[5] != null && !row[5].toString().trim().isEmpty()) ? Double.parseDouble(row[5].toString())
+					: null);
+	configurationDTO.setJun(
+			(row[6] != null && !row[6].toString().trim().isEmpty()) ? Double.parseDouble(row[6].toString())
+					: null);
+	configurationDTO.setJul(
+			(row[7] != null && !row[7].toString().trim().isEmpty()) ? Double.parseDouble(row[7].toString())
+					: null);
+	configurationDTO.setAug(
+			(row[8] != null && !row[8].toString().trim().isEmpty()) ? Double.parseDouble(row[8].toString())
+					: null);
+	configurationDTO.setSep(
+			(row[9] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString())
+					: null);
+	configurationDTO.setOct((row[10] != null && !row[10].toString().trim().isEmpty())
+			? Double.parseDouble(row[10].toString())
+			: null);
+	configurationDTO.setNov((row[11] != null && !row[11].toString().trim().isEmpty())
+			? Double.parseDouble(row[11].toString())
+			: null);
+	configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
+			? Double.parseDouble(row[12].toString())
+			: null);
+		
 	}
 
 	@Override
@@ -1305,6 +1336,11 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 
+				// for meg set jan to dec values to null if  not present in DB. for others set to zero
+				if(verticalName.equalsIgnoreCase("MEG")) {  
+					setJanToDecValuesForMEG(configurationDTO, row);
+				}
+				else {
 				configurationDTO.setJan(
 						(row[1] != null && !row[1].toString().trim().isEmpty())
 								? Double.parseDouble(row[1].toString().trim())
@@ -1342,6 +1378,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
 						? Double.parseDouble(row[12].toString())
 						: 0.0);
+
+				}
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc) {
@@ -1896,6 +1934,7 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
@@ -1922,7 +1961,12 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				map.put("Name", row[2]);
 				map.put("DisplayName", row[3]);
 				map.put("UOM", row[4]);
-				map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0);
+				if(meg) { 
+					map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : null);
+				}
+				else {
+					map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0);
+				}
 				map.put("AuditYear", row[6]);
 				map.put("Remarks", row[7]);
 				boolean isEditable;
@@ -3170,12 +3214,11 @@ continue;
 
 		try {
 
-			System.out.println("started Read configuration in importExcel");
+			
 			List<ConfigurationDTO> data = readConfigurations(file.getInputStream(), plantFKId, year);
-			System.out.println("Ended Read configuration in importExcel");
-			System.out.println("Started Save configuration in importExcel");
+			
 			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
-			System.out.println("Ended Save configuration in importExcel");
+			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = createExcel(year, plantFKId,reportTypes,version, true, failedRecords);
@@ -3760,47 +3803,86 @@ continue;
 				}
 			}
 
-			List<String> innerHeaders = new ArrayList<>();
-			innerHeaders.add("Type");
-			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
-			innerHeaders.add("Value");
-			innerHeaders.add("Remark");
+		List<String> innerHeaders = new ArrayList<>();
+		innerHeaders.add("Type");
+		innerHeaders.add("Particulars");
+		innerHeaders.add("UOM");
+		innerHeaders.add("Value");
+		innerHeaders.add("Remark");
+		innerHeaders.add("NormParameter_FK_Id");
 
-			
-			innerHeaders.add("NormParameter_FK_Id");
-			
+		final int REMARK_COL_INDEX = 4;
+		final int REMARK_COL_WIDTH_CHARS = 50;
 
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
+		CellStyle dataStyle = Utility.createBorderedStyle(workbook);
+		CellStyle remarkStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
 
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-				}
+		// Initialise max-width tracker with header label lengths
+		int[] maxColWidths = new int[innerHeaders.size()];
+		for (int i = 0; i < innerHeaders.size(); i++) {
+			maxColWidths[i] = innerHeaders.get(i).length();
+		}
+
+		List<List<String>> headers = new ArrayList<>();
+		headers.add(innerHeaders);
+
+		for (List<String> headerRowData : headers) {
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerRowData.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerRowData.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 			}
-			for (List<Object> rowData : rows) {
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
+		}
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
+		for (List<Object> rowData : rows) {
+			Row row = sheet.createRow(currentRow++);
+			String remarkText = "";
+
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row.createCell(col);
+				Object value = rowData.get(col);
+				String strValue = (value != null) ? value.toString() : "";
+
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else {
+					cell.setCellValue("");
+				}
+
+				if (col == REMARK_COL_INDEX) {
+					cell.setCellStyle(remarkStyle);
+					remarkText = strValue;
+				} else {
+					cell.setCellStyle(dataStyle);
+					if (col < maxColWidths.length) {
+						maxColWidths[col] = Math.max(maxColWidths[col], strValue.length());
 					}
-
 				}
 			}
-			sheet.setColumnHidden(5, true);
+
+			// Adjust row height so wrapped remark text is fully visible
+			if (!remarkText.isEmpty()) {
+				int lines = Math.max(1, (int) Math.ceil((double) remarkText.length() / REMARK_COL_WIDTH_CHARS));
+				row.setHeight((short) (lines * 300)); // ~15 points per line (300 twips)
+			}
+		}
+
+		// Set column widths: fixed larger width for Remark, content-based for others
+		for (int col = 0; col < innerHeaders.size(); col++) {
+			if (col == REMARK_COL_INDEX) {
+				sheet.setColumnWidth(col, REMARK_COL_WIDTH_CHARS * 256);
+			} else {
+				int charWidth = Math.max(10, Math.min(maxColWidths[col] + 4, 50));
+				sheet.setColumnWidth(col, charWidth * 256);
+			}
+		}
+
+		sheet.setColumnHidden(5, true);
 						try {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -5262,79 +5344,80 @@ continue;
 			Sheet sheet = workbook.createSheet("CatalystChangeOver");
 			int currentRow = 0;
 
-			// Columns: Parameter(0), Date(1), Remarks(2), Id(3-hidden)
-			List<String> headerNames = new ArrayList<>(Arrays.asList("Parameter", "Date", "Remarks", "Id"));
+		// Columns: Parameter(0), Date(1), Remarks(2), Id(3-hidden)
+		List<String> headerNames = new ArrayList<>(
+				Arrays.asList("Parameter", "Date", "Remarks", "Id"));
+		if (isAfterSave) {
+			headerNames.add("Status");
+			headerNames.add("Error Description");
+		}
+
+		Row headerRow = sheet.createRow(currentRow++);
+		for (int col = 0; col < headerNames.size(); col++) {
+			Cell cell = headerRow.createCell(col);
+			cell.setCellValue(headerNames.get(col));
+			cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+		}
+
+		// Wrap style for Remarks column
+		CellStyle wrapStyle = workbook.createCellStyle();
+		wrapStyle.setWrapText(true);
+		wrapStyle.setBorderBottom(BorderStyle.THIN);
+		wrapStyle.setBorderTop(BorderStyle.THIN);
+		wrapStyle.setBorderLeft(BorderStyle.THIN);
+		wrapStyle.setBorderRight(BorderStyle.THIN);
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+		for (CatalystChangeOverDTO dto : dtoList) {
+			Row row = sheet.createRow(currentRow++);
+
+			// Col 0 – Parameter
+			Cell paramCell = row.createCell(0);
+			paramCell.setCellValue(dto.getParameter() != null ? dto.getParameter() : "");
+			paramCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+			// Col 1 – Date
+			Cell dateCell = row.createCell(1);
+			dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
+			dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+			// Col 2 – Remarks (wrapped text, auto row height)
+			Cell remarksCell = row.createCell(2);
+			remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+			remarksCell.setCellStyle(wrapStyle);
+
+			// Col 3 – Id (hidden, used for import/update)
+			Cell idCell = row.createCell(3);
+			idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+			idCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
 			if (isAfterSave) {
-				headerNames.add("Status");
-				headerNames.add("Error Description");
+				Cell statusCell = row.createCell(4);
+				statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+				statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				Cell errCell = row.createCell(5);
+				errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+				errCell.setCellStyle(Utility.createBorderedStyle(workbook));
 			}
 
-			Row headerRow = sheet.createRow(currentRow++);
-			for (int col = 0; col < headerNames.size(); col++) {
-				Cell cell = headerRow.createCell(col);
-				cell.setCellValue(headerNames.get(col));
-				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			// Let POI calculate row height automatically for wrapped remarks
+			row.setHeight((short) -1);
+		}
+
+		// Dynamic column widths – fixed larger width for Remarks(2), auto-size for others
+		int totalCols = isAfterSave ? 6 : 4;
+		for (int col = 0; col < totalCols; col++) {
+			if (col == 2) {
+				sheet.setColumnWidth(col, 15000); // ~60 characters wide for Remarks
+			} else {
+				sheet.autoSizeColumn(col);
 			}
+		}
 
-			// Wrap style for Remarks column
-			CellStyle wrapStyle = workbook.createCellStyle();
-			wrapStyle.setWrapText(true);
-			wrapStyle.setBorderBottom(BorderStyle.THIN);
-			wrapStyle.setBorderTop(BorderStyle.THIN);
-			wrapStyle.setBorderLeft(BorderStyle.THIN);
-			wrapStyle.setBorderRight(BorderStyle.THIN);
-
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-			for (CatalystChangeOverDTO dto : dtoList) {
-				Row row = sheet.createRow(currentRow++);
-
-				// Col 0 – Parameter
-				Cell paramCell = row.createCell(0);
-				paramCell.setCellValue(dto.getParameter() != null ? dto.getParameter() : "");
-				paramCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				// Col 1 – Date
-				Cell dateCell = row.createCell(1);
-				dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
-				dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				// Col 2 – Remarks (wrapped text, auto row height)
-				Cell remarksCell = row.createCell(2);
-				remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
-				remarksCell.setCellStyle(wrapStyle);
-
-				// Col 3 – Id (hidden, used for import/update)
-				Cell idCell = row.createCell(3);
-				idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
-				idCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				if (isAfterSave) {
-					Cell statusCell = row.createCell(4);
-					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
-					statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-					Cell errCell = row.createCell(5);
-					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
-					errCell.setCellStyle(Utility.createBorderedStyle(workbook));
-				}
-
-				// Let POI calculate row height automatically for wrapped remarks
-				row.setHeight((short) -1);
-			}
-
-			// Dynamic column widths – fixed larger width for Remarks(2), auto-size for others
-			int totalCols = isAfterSave ? 6 : 4;
-			for (int col = 0; col < totalCols; col++) {
-				if (col == 2) {
-					sheet.setColumnWidth(col, 15000); // ~60 characters wide for Remarks
-				} else {
-					sheet.autoSizeColumn(col);
-				}
-			}
-
-			// Hide the Id column from end-users
-			sheet.setColumnHidden(3, true);
+		// Hide the Id column from end-users
+		sheet.setColumnHidden(3, true);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
@@ -5387,20 +5470,20 @@ continue;
 						}
 					}
 
-					// Col 2 – Remarks
-					Cell remarksCell = row.getCell(2);
-					if (remarksCell != null) {
-						remarksCell.setCellType(CellType.STRING);
-						dto.setRemarks(remarksCell.getStringCellValue().trim());
-					}
+				// Col 2 – Remarks
+				Cell remarksCell = row.getCell(2);
+				if (remarksCell != null) {
+					remarksCell.setCellType(CellType.STRING);
+					dto.setRemarks(remarksCell.getStringCellValue().trim());
+				}
 
-					// Col 3 – Id (hidden; present means update, absent means insert)
-					Cell idCell = row.getCell(3);
-					if (idCell != null) {
-						idCell.setCellType(CellType.STRING);
-						String idVal = idCell.getStringCellValue().trim();
-						dto.setId(idVal.isEmpty() ? null : idVal);
-					}
+				// Col 3 – Id (hidden; present means update, absent means insert)
+				Cell idCell = row.getCell(3);
+				if (idCell != null) {
+					idCell.setCellType(CellType.STRING);
+					String idVal = idCell.getStringCellValue().trim();
+					dto.setId(idVal.isEmpty() ? null : idVal);
+				}
 
 					dto.setPlantId(plantId);
 					dto.setAopYear(year);
@@ -5439,10 +5522,14 @@ continue;
 				}
 				try {
 					saveCatalystChangeOver(Collections.singletonList(dto), year);
-				} catch (Exception e) {
+				} 
+				catch (IllegalArgumentException e) {
 					dto.setSaveStatus("Failed");
-					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Save failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");
 					failedRecords.add(dto);
+				}
+				catch (Exception e) {
+					throw new RestInvalidArgumentException("Failed to import Catalyst ChangeOver data", e);
 				}
 			}
 

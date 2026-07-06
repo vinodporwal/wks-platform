@@ -127,6 +127,7 @@ const CrakcerConstants = () => {
       hidden: false,
       minWidth: 300,
       isVisible: false,
+      locked: true,
     },
     {
       field: 'UOM',
@@ -134,6 +135,7 @@ const CrakcerConstants = () => {
       editable: false,
       widthT: 80,
       minWidth: 80,
+      locked: true,
     },
     {
       field: 'ConstantValue',

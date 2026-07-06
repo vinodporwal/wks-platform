@@ -87,6 +87,8 @@ const NormalOpNormsScreen = () => {
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_ELASTOMER_HMD_SBR =
     VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
@@ -126,6 +128,13 @@ const NormalOpNormsScreen = () => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const IS_AROMATICS_PMD_LAB_OR_NP =
+    IS_AROMATICS_PMD && (lowerPlantName === 'lab' || lowerPlantName === 'np')
+  const textNote = IS_PVC_HMD
+    ? '*Norm listed in the page represent Grade-mix Norms for Line 1 and Line 2 combined.'
+    : IS_AROMATICS_PMD_LAB_OR_NP
+      ? '*Highlighted materials Norms data fetched from the MX plant. Click on the Calculate button to refresh the data.'
+      : ''
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -263,8 +272,11 @@ const NormalOpNormsScreen = () => {
           ...obj,
           normParameterFKId: obj.normParameterFKId.toUpperCase(),
         }))
-        setAllRedCell(normalized)
-        // setAllRedCell([])
+        if (lowerVertName === 'meg') {
+          setAllRedCell(normalized)
+        } else {
+          setAllRedCell([])
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -284,7 +296,6 @@ const NormalOpNormsScreen = () => {
       const promises = [fetchData(gradeId), getNormTransactions()]
 
       if (
-        lowerVertName === 'meg' ||
         IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
         IS_CHEMICAL_VMD_BUTADIENE ||
         IS_VCM_HMD_VCM ||
@@ -353,6 +364,7 @@ const NormalOpNormsScreen = () => {
       title: 'Particulars',
       widthT: 130,
       minWidth: 150,
+      locked: true,
     },
     {
       field: 'UOM',
@@ -360,6 +372,7 @@ const NormalOpNormsScreen = () => {
       widthT: 60,
       editable: false,
       minWidth: 80,
+      locked: true,
     },
     {
       field: 'Apr',
@@ -593,7 +606,15 @@ const NormalOpNormsScreen = () => {
           }
 
           fetchData(gradeId)
-          if (lowerVertName == 'meg') fetchDataIntermediateValues()
+          if (
+            IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+            IS_CHEMICAL_VMD_BUTADIENE ||
+            IS_VCM_HMD_VCM ||
+            IS_CHEMICAL_HMD_BUTADIENE ||
+            IS_CHEMICAL_VMD_BENEZENEFPU
+          ) {
+            fetchDataIntermediateValues()
+          }
           getNormTransactions()
         } else {
           setSnackbarOpen(true)
@@ -667,7 +688,16 @@ const NormalOpNormsScreen = () => {
         )
           fetchGradeDropdowns()
         fetchData(gradeId)
-        if (lowerVertName == 'meg') fetchDataIntermediateValues()
+        if (
+          lowerVertName === 'meg' ||
+          IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+          IS_CHEMICAL_VMD_BUTADIENE ||
+          IS_CHEMICAL_HMD_BUTADIENE ||
+          IS_CHEMICAL_VMD_BENEZENEFPU ||
+          IS_VCM_HMD_VCM
+        ) {
+          fetchDataIntermediateValues()
+        }
         getNormTransactions()
       } else {
         setSnackbarOpen(true)
@@ -716,36 +746,37 @@ const NormalOpNormsScreen = () => {
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: true,
+      showNote: IS_PVC_HMD || IS_AROMATICS_PMD_LAB_OR_NP,
       downloadExcelBtnFromUI: false,
       showCheckbox: false,
       showG:
         isPEPP ||
-          isPET ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         isPEPP ||
-          isPET ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel:
         isPEPP ||
-          isPET ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? 'Grade'
           : 'Mode',
       showCalculateVisibility:
@@ -759,6 +790,7 @@ const NormalOpNormsScreen = () => {
       uploadExcelBtn: true,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       highlightShutdownConsumption: IS_VCM_VERTICAL ? true : false,
+      isShowColoredPartucilars: IS_AROMATICS_PMD ? true : false,
     },
     isOldYear,
   )
@@ -775,7 +807,7 @@ const NormalOpNormsScreen = () => {
       showCalculate: false,
       allAction: true,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_Intermediate Values`,
+      ExcelName: `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Intermediate Values`,
     },
     isOldYear,
   )
@@ -968,41 +1000,41 @@ const NormalOpNormsScreen = () => {
           gridName='main'
           shutdownMonths={shutdownMonths}
           slowdownMonths={slowdownMonths}
+          note={textNote}
         />
       )}
 
-      {(lowerVertName === 'meg' ||
-        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+      {(IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
         IS_CHEMICAL_VMD_BUTADIENE ||
         IS_CHEMICAL_HMD_BUTADIENE ||
         IS_CHEMICAL_VMD_BENEZENEFPU ||
         IS_VCM_HMD_VCM) && (
-          <Box sx={{ width: '100%', marginTop: 1 }}>
-            <CustomAccordion defaultExpanded disableGutters>
-              <CustomAccordionSummary
-                aria-controls='grid-content'
-                id='grid-header'
-              >
-                <Typography component='span' className='grid-title'>
-                  Intermediate Values
-                </Typography>
-              </CustomAccordionSummary>
-              <CustomAccordionDetails>
-                <Box sx={{ width: '100%', margin: 0 }}>
-                  <KendoDataTables
-                    title='Intermediate Values'
-                    columns={colDefsIntermediateValues}
-                    setRows={setRowsIntermediateValues}
-                    rows={rowsIntermediateValues}
-                    paginationOptions={[100, 200, 300]}
-                    permissions={adjustedPermissionsIV}
-                    groupBy='NormTypeName'
-                  />
-                </Box>
-              </CustomAccordionDetails>
-            </CustomAccordion>
-          </Box>
-        )}
+        <Box sx={{ width: '100%', marginTop: 1 }}>
+          <CustomAccordion defaultExpanded disableGutters>
+            <CustomAccordionSummary
+              aria-controls='grid-content'
+              id='grid-header'
+            >
+              <Typography component='span' className='grid-title'>
+                Intermediate Values
+              </Typography>
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box sx={{ width: '100%', margin: 0 }}>
+                <KendoDataTables
+                  title='Intermediate Values'
+                  columns={colDefsIntermediateValues}
+                  setRows={setRowsIntermediateValues}
+                  rows={rowsIntermediateValues}
+                  paginationOptions={[100, 200, 300]}
+                  permissions={adjustedPermissionsIV}
+                  groupBy='NormTypeName'
+                />
+              </Box>
+            </CustomAccordionDetails>
+          </CustomAccordion>
+        </Box>
+      )}
 
       {true && lowerVertName === 'cracker' && <NormalOpNormsScreenCracker />}
     </div>

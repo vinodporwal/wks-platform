@@ -8,6 +8,8 @@ import productionColDefsVcm from '../../../assets/kendo_consumption_aop_vcm.json
 import productionColDefsPta from '../../../assets/kendo_consumption_aop_pta.json'
 import productionColDefsChemical from '../../../assets/kendo_consumption_aop_chemical.json'
 // import productionColDefsVcmDmd from '../../../assets/kendo_consumption_aop_vcmdmd.json'
+import { shouldLockColumn } from 'utils/columnLockUtils'
+
 const getEnhancedColDefs = ({
   headerMap,
   lowerVertName,
@@ -51,9 +53,14 @@ const getEnhancedColDefs = ({
   }
 
   const enhancedColDefs = colDefs.map((col) => {
+    let newCol = { ...col }
+    if (shouldLockColumn(col)) {
+      newCol.locked = true
+    }
+
     if (headerMap && headerMap[col.headerName] !== undefined) {
-      col = {
-        ...col,
+      newCol = {
+        ...newCol,
         title: headerMap[col.headerName],
         type: 'number',
         format: valueFormat || '{0:#.###}',
@@ -64,8 +71,8 @@ const getEnhancedColDefs = ({
     }
 
     if (col.field == 'avgOfAllMonths') {
-      col = {
-        ...col,
+      newCol = {
+        ...newCol,
         format: valueFormat || '{0:#.###}',
         editable: false,
         type: 'number',
@@ -74,14 +81,14 @@ const getEnhancedColDefs = ({
     }
     if (col.field === 'wtAverage') {
       return {
-        ...col,
+        ...newCol,
         type: 'number',
         format: valueFormat || '{0:#.###}',
         minWidth: 100,
       }
     }
 
-    return col
+    return newCol
   })
 
   return enhancedColDefs
