@@ -211,7 +211,8 @@ public class AOPMCCalculatedDataController {
         Sites site = siteRepository.findById(plant.getSiteFkId()).get();
         boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
         boolean aromatics=vertical.getName().equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("SEZ") && plant.getName().equalsIgnoreCase("PX4");
-        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || aromatics) {
+		boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || aromatics || meg ) {
         	return aOPMCCalculatedDataService.importExcelPE(year, plantId, file);
         }else {
         	return aOPMCCalculatedDataService.importExcel(year, plantId, file);

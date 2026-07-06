@@ -323,7 +323,7 @@ const QualityParameters = () => {
       severity: 'success',
     })
     try {
-      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Quality_Parameters`
+      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Quality_Parameters-${AOP_YEAR}`
       await QualityPackagingNormsApiService.exportQualityNorms(
         keycloak,
         PLANT_ID,
@@ -398,7 +398,7 @@ const QualityParameters = () => {
     addButton: false,
     deleteButton: false,
     showTitle: true,
-    showReleaseBtn: !showReleaseButton,
+    showReleaseBtn: showReleaseButton,
   }
 
   return (

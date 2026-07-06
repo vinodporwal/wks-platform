@@ -275,7 +275,7 @@ const ManualEntry = () => {
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Pigging/Non-Pigging',
+    titleName: 'Pigging/Non-Pigging-Next AOP',
     showDropdown: false,
     remarksEditable: true,
   }

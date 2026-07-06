@@ -85,7 +85,7 @@
 }
 
 .kendo-data-grid .k-grid-header {
-  background: #eff6ff !important; /* Solid light blue background */
+  background: #f0f5f9 !important; /* Solid background matching non-locked column headers */
   border-bottom: 1px solid #dde1eb !important;
 }
 
@@ -839,8 +839,18 @@
    don't bleed through when the scrollable part scrolls underneath */
 .kendo-data-grid .k-grid-header .k-header.k-grid-header-sticky,
 .kendo-data-grid .k-grid-header th[aria-haspopup].k-grid-header-sticky {
-  background-color: #eff6ff !important;
+  background-color: #f0f5f9 !important;
   z-index: 3 !important;
+}
+
+/* Ensure active column styling takes precedence on sticky/locked column headers */
+.kendo-data-grid .k-grid-header th.active-column.k-grid-header-sticky,
+.kendo-data-grid
+  .k-grid-header
+  th.active-column[aria-haspopup].k-grid-header-sticky {
+  background-color: #cee9f8 !important;
+  color: #00796b !important;
+  border-bottom: 2px solid #790000 !important;
 }
 
 /* Locked data cells — solid background prevents row bleed-through */
@@ -856,6 +866,25 @@
 
 .kendo-data-grid .k-grid-content tr:hover td.k-grid-content-sticky {
   background-color: #eef1fe !important;
+}
+
+/* Disabled row – grey must also apply to locked/sticky cells.
+   These rules must come AFTER the generic sticky rules so they win. */
+.kendo-data-grid
+  .k-grid-content
+  tr.custom-disabled-row
+  td.k-grid-content-sticky,
+.kendo-data-grid .k-grid-content tr.custom-disabled-row td {
+  background-color: #e3e3e3 !important;
+  border-color: rgb(169, 169, 169) !important;
+}
+
+.kendo-data-grid
+  .k-grid-content
+  tr.custom-disabled-row:hover
+  td.k-grid-content-sticky,
+.kendo-data-grid .k-grid-content tr.custom-disabled-row:hover td {
+  background-color: #e3e3e3 !important;
 }
 
 /* Right-border line that visually separates locked from scrollable area */

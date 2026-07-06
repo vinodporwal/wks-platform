@@ -1174,7 +1174,7 @@ const DecokingConfig = () => {
   }
 
   const saveCrackerRunLength = async (newRow) => {
-    setLoading(true)
+    setTimeout(() => setLoading(true), 0)
     try {
       const referenceRows = getRows('IBR Plan')[2]
 
@@ -1235,13 +1235,15 @@ const DecokingConfig = () => {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
       }
+      setTimeout(() => {
+        fetchData(3)
+      }, 100)
       return response
     } catch (error) {
       console.error('Error saving data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error saving data', severity: 'error' })
     } finally {
-      fetchData(3)
       setLoading(false)
     }
   }
@@ -1361,7 +1363,7 @@ const DecokingConfig = () => {
   }
 
   const saveExcelFile = async (rawFile) => {
-    setLoading(true)
+    setTimeout(() => setLoading(true), 0)
     try {
       var response
       response = await DataService.saveRunLengthExcel(
@@ -1407,13 +1409,14 @@ const DecokingConfig = () => {
           severity: 'error',
         })
       }
-      fetchData(3)
+      setTimeout(() => {
+        fetchData(3)
+      }, 100)
       return response
     } catch (error) {
       console.error('Error saving data:', error)
       setLoading(false)
     } finally {
-      // fetchData()
       setLoading(false)
     }
   }

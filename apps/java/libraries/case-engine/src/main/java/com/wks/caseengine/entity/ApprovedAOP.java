@@ -2,6 +2,7 @@ package com.wks.caseengine.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
+import java.util.Date;
 import java.util.UUID;
 
 @Entity
@@ -20,5 +21,12 @@ public class ApprovedAOP {
 
     @Column(name = "Plant_FK_Id", nullable = false)
     private UUID plantFkId;
+
+    @Column(name = "ModifiedBy", length = 200)
+    private String modifiedBy;
+
+    @Column(name = "ModifiedOn")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date modifiedOn;
 
 }

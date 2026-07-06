@@ -25,6 +25,7 @@ export const BusinessDemandPpColumns = [
     editable: false,
     width: 120,
     minWidth: 100,
+    locked: true,
   },
   {
     field: 'april',
@@ -170,6 +171,7 @@ export const SlowDownPpColumns = [
     widthT: 200,
     autoAdjust: false,
     minWidth: 200,
+    locked: true,
   },
 
   {
@@ -246,6 +248,7 @@ export const SlowDownPpDtaColumns = [
     widthT: 150,
     autoAdjust: false,
     minWidth: 100,
+    locked: true,
   },
 
   {
@@ -532,7 +535,7 @@ export const ShutdownConsumptionPpColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -590,7 +593,7 @@ export const SlowdownNormsPpColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',

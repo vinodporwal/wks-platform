@@ -82,8 +82,48 @@ public class PriceDifferentialController {
 			return	priceDifferentialService.importPriceDifferentialTransaction(year,UUID.fromString(plantId), file); 
 	}
 	
-	
+	// phase 2 api
+	@GetMapping(value="/quality-price")
+	public AOPMessageVM getQualityPrice(@RequestParam String plantId,@RequestParam String year){
+		 return  priceDifferentialService.getQualityPrice(plantId,year);
+	}
+// phase 2 api
+	@PostMapping(value="/quality-price")
+	public AOPMessageVM saveQualityPrice(@RequestParam String year,@RequestParam String plantFKId, @RequestBody List<PriceDifferentialTransactionDTO> priceDifferentialTransactionDTO) {
+		return 	priceDifferentialService.saveQualityPrice(year,plantFKId,priceDifferentialTransactionDTO);
+	}
 
-	
+	// phase 2 api
+	@GetMapping(value = "/quality-price-export")
+	public ResponseEntity<byte[]> exportQualityPrice(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = priceDifferentialService.exportQualityPrice(year,plantId,false,null); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Price_Differential_Service.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+// phase 2 api
+	@PostMapping(value = "/quality-price-import", consumes = "multipart/form-data")
+	public AOPMessageVM importQualityPrice(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	priceDifferentialService.importQualityPrice(year,UUID.fromString(plantId), file); 
+	}
 }
 

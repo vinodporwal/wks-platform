@@ -78,6 +78,7 @@ import TcsInput from 'components/aop-phase-two/tcs/TcsInput/index'
 import WorkflowDiagram from 'components/aop-phase-two/tcs/workflow-diagram/index'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
+import ProposedAOP from 'components/kendo-data-tables/ProposedAOP'
 import Summary from 'components/aop-phase-two/cpp/Summary/index'
 import SenderReceiverMapping from 'components/aop-phase-two/cpp/SenderReceiverMapping'
 import ProductionNormsBasis from 'components/aop-phase-two/vgoht/production-norms-basis/index'
@@ -144,6 +145,8 @@ import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBa
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
+import MaterialGroupedSelection from 'components/kendo-data-tables/MaterialGroupedSelection'
+
 // Vertical MEROX
 import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
 import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
@@ -161,12 +164,20 @@ import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-nor
 import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
 import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
+import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
 // Vertical Refinery Utility Ended
 
 // Naphthasplitter
 import SteadyStateConsumptionNS from 'components/aop-phase-two/naphthasplitter/steady-state-consumption'
 import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/overall-aop-consumption'
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
+import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
+import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
+import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUpload'
+import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
+import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
+import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
+
 // Naphthasplitter Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
@@ -338,6 +349,46 @@ export const MainRoutes = (
       },
 
       {
+        path: 'refinery-aop-budget',
+        children: [
+          //TCS Started
+          {
+            path: 'plant-capacities',
+            element: (
+              <PrivateRoute routeId='plant-capacities'>
+                <PlantCapacities />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown',
+            element: (
+              <PrivateRoute routeId='shutdown'>
+                <ShutdownSchedule />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown',
+            element: (
+              <PrivateRoute routeId='slowdown'>
+                <SlowdownSchedule />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'other-document-upload',
+            element: (
+              <PrivateRoute routeId='other-document-upload'>
+                <OtherDocumentUpload />
+              </PrivateRoute>
+            ),
+          },
+        ],
+        // REFINERY AOP BUDGET Ended],
+      },
+
+      {
         path: 'production-norms-plan',
         children: [
           {
@@ -470,6 +521,17 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'proposed-aop',
+            element: (
+              <PrivateRoute routeId='proposed-aop'>
+                <ProposedAOP />
+              </PrivateRoute>
+            ),
+          },
+
+
           {
             path: 'packaging-consumables',
             element: (
@@ -626,6 +688,30 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='overall-aop-consumption'>
                 <OverallAopConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'grade-mix-optimizer',
+            element: (
+              <PrivateRoute routeId='grade-mix-optimizer'>
+                <GradeMixOptimizer />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'vcm-availability',
+            element: (
+              <PrivateRoute routeId='vcm-availability'>
+                <VcmAvailability />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'material-grouped-selection',
+            element: (
+              <PrivateRoute routeId='material-grouped-selection'>
+                <MaterialGroupedSelection />
               </PrivateRoute>
             ),
           },
@@ -1341,6 +1427,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='site-aop-report'>
                 <SiteAOPReport />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'plant-aop-report',
+            element: (
+              <PrivateRoute routeId='plant-aop-report'>
+                <PlantAOPReport />
               </PrivateRoute>
             ),
           },

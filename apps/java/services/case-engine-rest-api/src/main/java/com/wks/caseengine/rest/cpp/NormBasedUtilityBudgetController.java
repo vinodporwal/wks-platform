@@ -168,7 +168,11 @@ public class NormBasedUtilityBudgetController {
             @RequestParam String financialYear) {
         
         byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudget(cppPlantId, financialYear, false, null);
-        
+        if (excelFile == null || excelFile.length == 0) {
+            log.error("exportNormBasedUtilityBudget: service returned empty file for plant {} year {}", cppPlantId, financialYear);
+            return ResponseEntity.status(500).body(new byte[0]);
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "NormBasedUtilityBudget_" + financialYear + ".xlsx");
@@ -184,6 +188,10 @@ public class NormBasedUtilityBudgetController {
             @RequestParam String financialYear) {
 
         byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudgetDetailed(cppPlantId, financialYear);
+        if (excelFile == null || excelFile.length == 0) {
+            log.error("exportNormBasedUtilityBudgetDetailed: service returned empty file for plant {} year {}", cppPlantId, financialYear);
+            return ResponseEntity.status(500).body(new byte[0]);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);

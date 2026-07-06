@@ -126,9 +126,8 @@ const AopDesignBasisNorms = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find(
-            (item) => item.Name === name,
-          )?.AttributeValue,
+          configurationExecutionDetails.find((item) => item.Name === name)
+            ?.AttributeValue,
         )
       setStartDate(getDateValue('StartDateNorms'))
       setEndDate(getDateValue('EndDateNorms'))
@@ -415,7 +414,6 @@ const AopDesignBasisNorms = () => {
 
   const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
-
 
   const ConfigurationDialog = useMemo(() => {
     return (

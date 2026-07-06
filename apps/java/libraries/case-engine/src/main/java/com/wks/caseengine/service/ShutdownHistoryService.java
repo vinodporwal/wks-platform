@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -30,5 +31,15 @@ public interface ShutdownHistoryService {
 	byte[] createShutdownHistoryPTAExcel(String plantId, String year);
 
 	AOPMessageVM importShutdownHistoryPTAExcel(String plantId, String year, MultipartFile file);
+
+	public AOPMessageVM getShutdownHistoryConfig(String plantId, String year);
+
+	public AOPMessageVM saveShutdownHistoryConfig(List<Map<String, Object>> shutdownHistoryConfigList, List<String[]> saveFailedRawRows, List<String> saveFailedErrors);
+
+	public AOPMessageVM deleteShutdownHistoryConfig(String id);
+
+	byte[] createShutdownHistoryConfigExcel(String plantId, String year);
+
+	AOPMessageVM importShutdownHistoryConfigExcel(MultipartFile file, String plantId, String year);
 
 }

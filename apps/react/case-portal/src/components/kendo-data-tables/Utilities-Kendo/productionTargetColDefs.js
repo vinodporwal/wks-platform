@@ -24,6 +24,7 @@ export function getColDefsPercentageSummary(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsFixedWidth(headerMap, false, valueFormat),
     {
@@ -79,6 +80,7 @@ export function getColDefsPercentageSummaryElastomerJMD(
       editable: false,
       autoAdjust: false,
       minWidth: 120,
+      locked: true,
     },
     {
       field: 'april',
@@ -134,6 +136,7 @@ export function getColDefsPercentageSummaryPEPP(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsPercentageSummaryPPE(headerMap, false, valueFormat),
     {
@@ -172,6 +175,7 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumns(headerMap, true, valueFormat),
     {
@@ -203,6 +207,7 @@ export function getColDefsDesignCapacityPVC(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumns(headerMap, true, valueFormat),
   ]
@@ -225,6 +230,7 @@ export function getColDefsDesignCapacityPTA(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsPTA(headerMap, true, valueFormat),
     {
@@ -255,6 +261,7 @@ export function getColDefsDesignCapacityPTADMD(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsPTA(headerMap, true, valueFormat),
     // {
@@ -285,6 +292,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       editable: false,
       autoAdjust: false,
       minWidth: 120,
+      locked: true,
     },
     {
       field: 'april',
@@ -362,6 +370,7 @@ export function getColDefsDesignCapacityELASTOMERJMD(
       editable: false,
       autoAdjust: false,
       minWidth: 120,
+      locked: true,
     },
     {
       field: 'april',
@@ -394,6 +403,7 @@ export function getColDefsDesignCapacityPEPP(headerMap = {}, valueFormat) {
       widthT: 250,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsForPEPP(headerMap, false, valueFormat, true),
   ]
@@ -416,6 +426,7 @@ export function getColDefsMaxAchievedCapacity(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsFixedWidth(headerMap, true, valueFormat),
   ]
@@ -438,6 +449,7 @@ export function getColDefsMaxAchievedCapacityPTA(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsFixedWidthPTA(headerMap, true, valueFormat),
   ]
@@ -460,6 +472,7 @@ export function getColDefsMaxAchievedCapacityPEPP(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumnsFixedWidthPEPP(headerMap, true, valueFormat),
   ]
@@ -486,6 +499,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       editable: false,
       autoAdjust: false,
       minWidth: 120,
+      locked: true,
     },
     {
       field: 'april',
@@ -563,6 +577,7 @@ export function getColDefsMaxAchievedCapacityELASTOMERJMD(
       editable: false,
       autoAdjust: false,
       minWidth: 120,
+      locked: true,
     },
     {
       field: 'april',
@@ -609,6 +624,7 @@ export function getColDefsNonEditable(headerMap = {}, valueFormat) {
       widthT: 120,
       editable: false,
       minWidth: 120,
+      locked: true,
     },
     ...generateMonthColumns(headerMap, false, valueFormat),
     {

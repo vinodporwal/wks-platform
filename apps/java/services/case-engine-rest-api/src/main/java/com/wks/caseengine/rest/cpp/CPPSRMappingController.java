@@ -102,6 +102,23 @@ public class CPPSRMappingController {
         return ResponseEntity.status(httpStatus).body(response);
     }
 
+    // DELETE SR Mapping
+    /**
+     * DELETE /task/sr-mapping/{id}
+     *
+     * Deletes the CPP_SR_Mapping_Master record and all its associated child records
+     * (NormsMonthDetail, CPPNorms, CPPMonthWisePrice, NormsHeader) in the correct order.
+     *
+     * @param id UUID of the CPP_SR_Mapping_Master record to delete.
+     */
+    @DeleteMapping("/sr-mapping/{id}")
+    public ResponseEntity<AOPMessageVM> deleteSRMapping(@PathVariable UUID id) {
+
+        AOPMessageVM response = service.deleteSRMapping(id);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
     // GET Cost Centers (dropdown)
     /**
      * GET /task/sr-mapping/cost-centers
@@ -237,5 +254,25 @@ public class CPPSRMappingController {
             workbook.write(outputStream);
         }
         return outputStream.toByteArray();
+    }
+
+    // GET Norm Parameters by Source Plant
+    /**
+     * GET /task/cpp-norm-parameters
+     *
+     * Calls SP CPP_GetNormParametersBySourcePlant.
+     * Returns Norm Parameters for the given source plant.
+     *
+     * @param plantId   Required. Source Plant GUID.
+     * @param type      Optional. 1 = Production, 2 = Consumption. If omitted, returns all.
+     */
+    @GetMapping("/cpp-norm-parameters")
+    public ResponseEntity<AOPMessageVM> getNormParameters(
+            @RequestParam String plantId,
+            @RequestParam(required = false) Integer type) {
+
+        AOPMessageVM response = service.getNormParametersBySourcePlant(plantId, type);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
     }
 }

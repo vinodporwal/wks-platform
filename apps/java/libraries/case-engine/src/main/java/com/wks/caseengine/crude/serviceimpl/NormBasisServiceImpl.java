@@ -304,13 +304,14 @@ private String executeNormCalculationProcedure(UUID plantId, String aopYear, UUI
 
 @Override
 public List<NormBasisDTO> getPIMSThroughput(UUID plantId, String aopYear) {
-    
-    List<NormBasisProjection> normBasisProjections = normBasisRepository.getPIMSThroughput(plantId, aopYear);
-    List<NormBasisDTO> normBasisDTOs = normBasisProjections.stream()
-        .map(this::fromProjection)
-        .collect(Collectors.toList());
 
-    return normBasisDTOs;
+    Plants plant = plantsRepository.findById(plantId)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+    String procedureName = vertical.getName() + "_GetPIMS_Throughput";
+
+    return fetchNormBasisFromProcedure(plantId, aopYear, procedureName);
 }
 
 

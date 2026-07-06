@@ -62,6 +62,10 @@ const SelectivityData = (props) => {
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_AROMATICS_PMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
+  const IS_AROMATICS_DTA_AROMATICS =
+    lowerVertName === 'aromatics' &&
+    lowerSiteName === 'dta' &&
+    lowerPlantName == 'aromatics'
 
   const IS_CHEMICAL_VMD_BENEZENEFPUBTA =
     lowerVertName === 'chemical' &&
@@ -232,10 +236,13 @@ const SelectivityData = (props) => {
       )
 
       if (response?.code == 200) {
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
+        if (!IS_AROMATICS_PMD) {
+          setSnackbarData({
+            message: 'Saved Successfully!',
+            severity: 'success',
+          })
+        }
+
         setLoading(false)
         setSnackbarOpen(true)
         // setIsEdited(false)
@@ -325,11 +332,19 @@ const SelectivityData = (props) => {
 
       if (response) {
         setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
 
+        if (IS_AROMATICS_PMD) {
+          setSnackbarData({
+            message: 'Changes saved successfully. Please reload the data.',
+            severity: 'info',
+            autoHide: false,
+          })
+        } else {
+          setSnackbarData({
+            message: 'Saved Successfully!',
+            severity: 'success',
+          })
+        }
         setModifiedCells({})
         setLoading(false)
 
@@ -569,6 +584,7 @@ const SelectivityData = (props) => {
     handleRemarkCellClick,
     configType: props?.configType,
     FORMATE_VALUE,
+    UOM_TITLE: IS_AROMATICS_DTA_AROMATICS ? 'UOM/TPD' : 'UOM',
   })
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -630,6 +646,9 @@ const SelectivityData = (props) => {
         IS_CHEMICAL_VMD_BENEZENEFPUBTA
           ? true
           : false,
+      calculateBtnText: IS_CHEMICAL_VMD_BENEZENEFPUBTA
+        ? 'Fetch Values'
+        : 'Calculate',
     },
     isOldYear,
   )

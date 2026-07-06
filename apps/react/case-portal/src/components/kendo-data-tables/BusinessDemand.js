@@ -78,7 +78,9 @@ const BusinessDemand = ({ permissions }) => {
 
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_CHEMICAL_HMD_PDEB =
-    lowerVertName === 'chemical' && lowerSiteName === 'hmd' && plantObject?.name?.toLowerCase() === 'pdeb'
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'hmd' &&
+    plantObject?.name?.toLowerCase() === 'pdeb'
   const IS_ELASTOMER_HMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_HMD_SBR =
@@ -122,6 +124,7 @@ const BusinessDemand = ({ permissions }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [selectedLine, setSelectedLine] = useState(null)
+  const [aopCalculation, setAopCalculation] = useState([])
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -188,22 +191,25 @@ const BusinessDemand = ({ permissions }) => {
 
     setLoading(true)
     try {
-      let data
+      let response
       if (IS_PVC_DMD) {
         const lineId = selectedLine?.id
-        data = await BusinessDemandDataApiService.getBDLineData(
+        response = await BusinessDemandDataApiService.getBDLineData(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           lineId,
         )
       } else {
-        data = await BusinessDemandDataApiService.getBDData(
+        response = await BusinessDemandDataApiService.getBDData(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
       }
+
+      const data = response?.data?.businessDemandDataDTOList || response || []
+      setAopCalculation(response?.data?.aopCalculation || [])
 
       const formattedData = data
         .filter((item) => {
@@ -320,6 +326,41 @@ const BusinessDemand = ({ permissions }) => {
   useEffect(() => {
     fetchProductionRateData()
   }, [selectedUnit, PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  const handleCalculate = async () => {
+    setLoading(true)
+    try {
+      const data = await BusinessDemandDataApiService.calculateBusinessDemand(
+        PLANT_ID,
+        AOP_YEAR,
+        keycloak,
+      )
+      if (data || data === 0 || data?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+        fetchProductionRateData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error saving refresh data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return
@@ -614,7 +655,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_PVC_HMD ||
-        IS_ELASTOMER_HMD
+        IS_ELASTOMER_HMD ||
+        lowerVertName === 'meg'
           ? true
           : false,
       uploadExcelBtn:
@@ -624,7 +666,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_PVC_HMD ||
-        IS_ELASTOMER_HMD
+        IS_ELASTOMER_HMD ||
+        lowerVertName === 'meg'
           ? true
           : false,
 
@@ -636,12 +679,16 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_DMD ||
         IS_PVC_HMD ||
         IS_ELASTOMER_JMD ||
-        IS_ELASTOMER_HMD
+        IS_ELASTOMER_HMD ||
+        lowerVertName === 'meg'
           ? false
           : true,
 
       // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
       enableOnOffDropdown: IS_CRACKER_HMD,
+      showCalculate: IS_PVC_HMD || IS_PVC_DMD,
+      showCalculateVisibility:
+        (IS_PVC_HMD || IS_PVC_DMD) && aopCalculation.length > 0,
     },
     isOldYear,
   )
@@ -968,6 +1015,7 @@ const BusinessDemand = ({ permissions }) => {
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         totalRowConfiguration={totalRowConfiguration}
+        handleCalculate={handleCalculate}
       />
 
       {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
@@ -983,7 +1031,9 @@ const BusinessDemand = ({ permissions }) => {
           </>
         )}
 
-      {(IS_CRACKER_HMD  || IS_CHEMICAL_HMD_PDEB) && <ModeSelection permissions={adjustedPermissions} />}
+      {(IS_CRACKER_HMD || IS_CHEMICAL_HMD_PDEB) && (
+        <ModeSelection permissions={adjustedPermissions} />
+      )}
     </div>
   )
 }

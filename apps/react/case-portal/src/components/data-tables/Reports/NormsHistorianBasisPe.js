@@ -64,6 +64,12 @@ const NormsHistorianBasisPe = () => {
   const workbookRef = useRef(null)
   const excelExportRef = useRef(null)
 
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
   const IS_AROMATICS_HMD =
     lowerVertName == 'aromatics' && lowerSiteName == 'hmd'
 
@@ -378,9 +384,35 @@ const NormsHistorianBasisPe = () => {
     return v
   }
 
-  const fileName = `${VERTICAL_NAME}-Norms Historian Basis.xlsx`
+  const fileName = `${EXCEL_EXPORT_TITLE}-Norms Historian Basis-${AOP_YEAR}.xlsx`
 
   const exportAllGrids = useCallback(() => {
+    // Shared border style for all cells
+    const borderStyle = {
+      top: { size: 1, color: '#000000' },
+      bottom: { size: 1, color: '#000000' },
+      left: { size: 1, color: '#000000' },
+      right: { size: 1, color: '#000000' },
+    }
+
+    // Header-specific style: grey background + bold
+    const headerStyle = {
+      background: '#D9D9D9',
+      bold: true,
+      borderBottom: borderStyle.bottom,
+      borderTop: borderStyle.top,
+      borderLeft: borderStyle.left,
+      borderRight: borderStyle.right,
+    }
+
+    // Data cell style: borders only
+    const dataCellStyle = {
+      borderBottom: borderStyle.bottom,
+      borderTop: borderStyle.top,
+      borderLeft: borderStyle.left,
+      borderRight: borderStyle.right,
+    }
+
     const sheets = gridNames
       .map((gridName, idx) => {
         const d = dataMap[gridName] || { rows: [], columns: [] }
@@ -388,17 +420,38 @@ const NormsHistorianBasisPe = () => {
         const rows = d.rows || []
         if (!cols.length && !rows.length) return null
 
-        const sheetColumns = cols.map((c) => ({
-          autoWidth: true,
+        // Calculate max width per column based on content length
+        const colWidths = cols.map((c, colIdx) => {
+          const headerText = String(c.title || c.field || '')
+          let maxLen = headerText.length
+
+          rows.forEach((r) => {
+            const cellVal = normalizeCellValue(r?.[c.field])
+            const cellLen = String(cellVal ?? '').length
+            if (cellLen > maxLen) maxLen = cellLen
+          })
+
+          // Approximate pixel width: ~8px per character + 16px padding, min 60px
+          return Math.max(maxLen * 8 + 16, 60)
+        })
+
+        const sheetColumns = cols.map((c, i) => ({
+          width: colWidths[i],
           title: c.title || c.field || '',
         }))
 
         const headerRow = {
-          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+          cells: cols.map((c) => ({
+            value: c.title || c.field || '',
+            ...headerStyle,
+          })),
         }
 
         const dataRows = rows.map((r) => ({
-          cells: cols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
+          cells: cols.map((c) => ({
+            value: normalizeCellValue(r?.[c.field]),
+            ...dataCellStyle,
+          })),
         }))
 
         const sheetRows = [headerRow, ...dataRows]
@@ -545,6 +598,8 @@ const NormsHistorianBasisPe = () => {
           <>
             {gridNames.map((name) => {
               const d = dataMap[name] || { rows: [], columns: [] }
+              // Hide grids with GRID_TYPE === 'GENERAL_NOTES'
+              if (d.rows?.[0]?.GRID_TYPE === 'GENERAL_NOTES') return null
               return (
                 <div key={name}>
                   <CustomAccordion defaultExpanded disableGutters>

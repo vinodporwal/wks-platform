@@ -58,7 +58,6 @@ const MonthwiseOperatingHours = () => {
       editable: true,
       type: 'number',
       format: valueFormatter,
-
       isDisabled: false,
     },
     {
@@ -101,13 +100,15 @@ const MonthwiseOperatingHours = () => {
       format: valueFormatter,
       isDisabled: false,
     },
-    // {
-    //   field: 'remarks',
-    //   title: 'Remarks',
-    //   widthT: 200,
-    //   editable: true,
-    // },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
+    },
   ]
+
+  const [groupBy, setGroupBy] = useState(null)
 
   const fetchData = async () => {
     try {
@@ -118,6 +119,14 @@ const MonthwiseOperatingHours = () => {
         AOP_YEAR,
       )
       if (res?.code === 200) {
+        const hasGroupBy = (res?.data.monthwiseOperatingHoursList || []).some(
+          (item) => Object.prototype.hasOwnProperty.call(item, 'groupBy'),
+        )
+        if (hasGroupBy) {
+          setGroupBy('groupBy')
+        } else {
+          setGroupBy(null)
+        }
         let formattedData
         formattedData = (res?.data.monthwiseOperatingHoursList || []).map(
           (item, index) => ({
@@ -131,6 +140,7 @@ const MonthwiseOperatingHours = () => {
         setRows(formattedData)
       } else {
         setRows([])
+        setGroupBy(null)
       }
     } catch (err) {
       console.error('Error fetching operating hours data:', err)
@@ -222,6 +232,7 @@ const MonthwiseOperatingHours = () => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         columns={columns}
+        groupBy={groupBy}
         permissions={{
           allAction: true,
           textAlignment: 'center',
@@ -232,6 +243,7 @@ const MonthwiseOperatingHours = () => {
           showTitle: true,
           showTitleNameBusiness: true,
           titleName: 'Monthwise Operating Hours (T-20)',
+          suppressRemarksPlaceholder: true,
         }}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

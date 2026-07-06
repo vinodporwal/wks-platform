@@ -353,6 +353,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	@Override
 	public AOPMessageVM getMaintenanceCatChem(String plantId, String year, String gradeId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+
 		try {
 			UUID plantUUID = UUID.fromString(plantId);
 			Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
@@ -360,6 +361,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			Plants plant = plantOpt.get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean nonGrade = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("HMD");
 
 			if (!plantOpt.isPresent()) {
 				throw new RuntimeException("Plant not found for ID: " + plantId);
@@ -376,11 +379,19 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 							String procedureName = vertical.getName() + "_" + site.getName() + "_GetCatChemConsumption";
 
-							String dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							String dataSql = null;
+							if (nonGrade) {
+								dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+							} else {
+								dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							}
+
 							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
 								ps.setString(1, plantId);
 								ps.setString(2, year);
+								if (!nonGrade) {
 								ps.setString(3, gradeId);
+								}
 								try (ResultSet rs = ps.executeQuery()) {
 									ResultSetMetaData metaData = rs.getMetaData();
 									int colCount = metaData.getColumnCount();
@@ -451,8 +462,68 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 			List<Map<String, Object>> gradeList = (List<Map<String, Object>>) gradesVM.getData();
 
+			// return single sheet for non grade verticals
 			if (gradeList.isEmpty()) {
-				return null;
+				AOPMessageVM catChemVM = getMaintenanceCatChem(plantId, year, null);
+
+				if (catChemVM == null || catChemVM.getData() == null) {
+					return null;
+				}
+
+				Map<String, Object> catChemData = (Map<String, Object>) catChemVM.getData();
+				List<Map<String, Object>> dataRows = (List<Map<String, Object>>) catChemData.get("data");
+				List<Map<String, Object>> columns = (List<Map<String, Object>>) catChemData.get("columns");
+
+				if (dataRows == null || dataRows.isEmpty()) {
+					return null;
+				}
+
+				Workbook workbook = new XSSFWorkbook();
+				Sheet sheet = workbook.createSheet("CatChem");
+
+				if (columns != null && !columns.isEmpty()) {
+					Row headerRow = sheet.createRow(0);
+					CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+					for (int col = 0; col < columns.size(); col++) {
+						Cell cell = headerRow.createCell(col);
+						Object title = columns.get(col).get("title");
+						cell.setCellValue(title != null ? title.toString() : "");
+						cell.setCellStyle(headerStyle);
+					}
+
+					for (int rowIdx = 0; rowIdx < dataRows.size(); rowIdx++) {
+						Map<String, Object> rowData = dataRows.get(rowIdx);
+						Row row = sheet.createRow(rowIdx + 1);
+						for (int col = 0; col < columns.size(); col++) {
+							Object field = columns.get(col).get("field");
+							Object value = field != null ? rowData.get(field.toString()) : null;
+							Cell cell = row.createCell(col);
+							if (value instanceof Number) {
+								cell.setCellValue(((Number) value).doubleValue());
+							} else {
+								cell.setCellValue(value != null ? value.toString() : "");
+							}
+						}
+					}
+
+					for (int col = 0; col < Math.min(5, columns.size()); col++) {
+						sheet.autoSizeColumn(col);
+					}
+
+					for (int col = 0; col < columns.size(); col++) {
+						Object field = columns.get(col).get("field");
+						if (field != null && "Grade_FK_Id".equalsIgnoreCase(field.toString())) {
+							sheet.setColumnHidden(col, true);
+							break;
+						}
+					}
+				}
+
+				try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+					workbook.write(outputStream);
+					workbook.close();
+					return outputStream.toByteArray();
+				}
 			}
 
 			Workbook workbook = new XSSFWorkbook();
@@ -1012,20 +1083,38 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        Workbook workbook = new XSSFWorkbook();
 	        Sheet sheet = workbook.createSheet("Maintenance Data");
 	        
-	        List<String> headers = new ArrayList<>(dynamicData.get(0).keySet());
+	        List<String> rawHeaders = new ArrayList<>(dynamicData.get(0).keySet());
+	        List<String> displayHeaders = new ArrayList<>();
+	        
+	        Plants plantObj = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+	        Sites siteObj = siteRepository.findById(plantObj.getSiteFkId()).orElseThrow();
+	        
+	        final String siteName = siteObj.getName();
+	        Map<String, String> columnTitleMap = entityManager.unwrap(Session.class)
+	                .doReturningWork(new ReturningWork<Map<String, String>>() {
+	                    @Override
+	                    public Map<String, String> execute(Connection connection) throws SQLException {
+	                        return loadColumnTitles(connection, "vwScrnCrackerKeyValueColumns", siteName, "DecokeMaintenance");
+	                    }
+	                });
+
+	        for (String key : rawHeaders) {
+	            displayHeaders.add(columnTitleMap.getOrDefault(key, key));
+	        }
+
 	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
 	        Row headerRow = sheet.createRow(0);
-	        for (int i = 0; i < headers.size(); i++) {
+	        for (int i = 0; i < displayHeaders.size(); i++) {
 	            Cell cell = headerRow.createCell(i);
-	            cell.setCellValue(headers.get(i));
+	            cell.setCellValue(displayHeaders.get(i));
 	            cell.setCellStyle(headerStyle);
 	        }
 	        Map<String, Double> totalsMap = new HashMap<>();
 	        int rowIdx = 1;
 	        for (Map<String, Object> rowData : dynamicData) {
 	            Row row = sheet.createRow(rowIdx++);
-	            for (int colIdx = 0; colIdx < headers.size(); colIdx++) {
-	                String key = headers.get(colIdx);
+	            for (int colIdx = 0; colIdx < rawHeaders.size(); colIdx++) {
+	                String key = rawHeaders.get(colIdx);
 	                Cell cell = row.createCell(colIdx);
 	                Object value = rowData.get(key);
 	                
@@ -1041,8 +1130,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        Row totalRow = sheet.createRow(rowIdx);
 	        CellStyle totalStyle = Utility.createBoldBorderedStyle(workbook); // Reuse bold style
 	        
-	        for (int i = 0; i < headers.size(); i++) {
-	            String header = headers.get(i);
+	        for (int i = 0; i < rawHeaders.size(); i++) {
+	            String header = rawHeaders.get(i);
 	            Cell cell = totalRow.createCell(i);
 	            cell.setCellStyle(totalStyle);
 
@@ -1055,8 +1144,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            }
 	        }
 	        Set<String> fieldsToHide = Set.of("ID", "PLANTID", "AOPYEAR");
-	        for (int i = 0; i < headers.size(); i++) {
-	            if (fieldsToHide.contains(headers.get(i).toUpperCase())) {
+	        for (int i = 0; i < rawHeaders.size(); i++) {
+	            if (fieldsToHide.contains(rawHeaders.get(i).toUpperCase())) {
 	                sheet.setColumnHidden(i, true);
 	            } else {
 	                sheet.autoSizeColumn(i);
@@ -1394,10 +1483,37 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        Row headerRow = sheet.getRow(0);
 	        if (headerRow == null) return payloadList;
 
+	        Plants plantObj = plantsRepository.findById(plantFKId).orElseThrow();
+	        Sites siteObj = siteRepository.findById(plantObj.getSiteFkId()).orElseThrow();
+	        final String siteName = siteObj.getName();
+	        Map<String, String> columnTitleMap = entityManager.unwrap(Session.class)
+	                .doReturningWork(new ReturningWork<Map<String, String>>() {
+	                    @Override
+	                    public Map<String, String> execute(Connection connection) throws SQLException {
+	                        return loadColumnTitles(connection, "vwScrnCrackerKeyValueColumns", siteName, "DecokeMaintenance");
+	                    }
+	                });
+	        
+	        // Build reverse map: Display Title (case-insensitive) -> Database Key
+	        Map<String, String> reverseColumnMap = new HashMap<>();
+	        for (Map.Entry<String, String> entry : columnTitleMap.entrySet()) {
+	            reverseColumnMap.put(entry.getValue().toLowerCase().trim(), entry.getKey());
+	        }
+
 	        List<String> columnNames = new ArrayList<>();
 	        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
 	            String headerValue = getStringCellValue(headerRow.getCell(i));
-	            columnNames.add(headerValue != null ? headerValue.trim() : "Column_" + i);
+	            if (headerValue != null) {
+	                headerValue = headerValue.trim();
+	                String dbColumnName = reverseColumnMap.get(headerValue.toLowerCase());
+	                if (dbColumnName != null) {
+	                    columnNames.add(dbColumnName);
+	                } else {
+	                    columnNames.add(headerValue);
+	                }
+	            } else {
+	                columnNames.add("Column_" + i);
+	            }
 	        }
 
 	        for (int i = 1; i < totalRows; i++) { 
@@ -1432,13 +1548,14 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                        value = getNumericCellValue(cell);
 	                    }
 
-	                    if (value instanceof Number && !columnName.equalsIgnoreCase("Id") && !columnName.equalsIgnoreCase("PlantId")) {
+	                    if (value instanceof Number && !columnName.equalsIgnoreCase("Id") && !columnName.equalsIgnoreCase("PlantId") && !columnName.equalsIgnoreCase("4FHours")) {
 	                        double numericValue = ((Number) value).doubleValue();
 	                        int maxDays = getMaxDaysInMonth(currentRowMonth, baseYearValue);
 	                        
 	                        if (numericValue < 0 || numericValue > maxDays) {
 	                            rowError = true;
-	                            rowErrorMsg.append("[").append(columnName).append("] value ").append(numericValue)
+	                            String displayColName = columnTitleMap.getOrDefault(columnName, columnName);
+	                            rowErrorMsg.append("[").append(displayColName).append("] value ").append(numericValue)
 	                                       .append(" exceeds max allowed (").append(maxDays).append(") for ").append(currentRowMonth != null ? currentRowMonth : "month").append(". ");
 	                        }
 	                    }

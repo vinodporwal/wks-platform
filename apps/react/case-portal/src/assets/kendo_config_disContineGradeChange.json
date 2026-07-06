@@ -18,6 +18,7 @@
     "title": "Particulars",
     "widthT": 120,
     "editable": false,
+    "locked": true,
     "minWidth": 100
   },
 

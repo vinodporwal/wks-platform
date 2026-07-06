@@ -207,8 +207,8 @@ Verticals vertical = null;
             String procedureName = null;
          
             if(plantId != null) {
-             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity"; 
-                procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    // this sp is independant of verticle (no verticle Id used)
+            
+                procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";    // this sp is independant of verticle (no verticle Id used)
             }
             else  {
                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut"; 
@@ -262,7 +262,10 @@ Verticals vertical = null;
         ) {
         
        try {
-        String procedureName = "CRUDE_ALL_CarryForwardTcsUnitCapacity";
+        Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+        String verticalName = verticalRepository.findById(plant.getVerticalFKId()).get().getName();
+        String siteName = siteRepository.findById(plant.getSiteFkId()).get().getName();
+        String procedureName = verticalName + "_" + siteName + "_CarryForwardTcsUnitCapacity";
         String sql = "EXEC " + procedureName + " @plantId = :plantId, @targetYear = :aopYear, @capacityType = :capacityType";
 
         Query query = entityManager.createNativeQuery(sql);
@@ -283,8 +286,7 @@ Verticals vertical = null;
         
         if (count.intValue() == 0) {
             // No data exists, add dummy data
-            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
-                    .orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+         
             
             UUID siteFkId = plant.getSiteFkId();
             UUID verticalFkId = plant.getVerticalFKId();
@@ -372,8 +374,8 @@ Verticals vertical = null;
         String procedureName = null;
 
         if(plantId != null) {
-        //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
-            procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    
+           procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
+              
         }
         else  {
             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
@@ -572,12 +574,12 @@ Verticals vertical = null;
             String procedureName = null;
 
             if(plantId != null) {
-            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM"; 
-            procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM";   
+              procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM"; 
+              
         }
         else {
-            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM_OutPut";
-            procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM_OutPut";
+               procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM_OutPut";
+          
 
         }
 

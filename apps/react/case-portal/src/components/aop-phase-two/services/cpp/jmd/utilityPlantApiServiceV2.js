@@ -29,11 +29,13 @@ export const UtilityPlantApiServiceV2 = {
   saveSRMapping,
   importSRMappingExcel,
   exportSRMappingExcel,
+  deleteSRMapping,
 
   updateSRMappingsByPlant,
   getSRMappingByPlant,
   getSRMappingPlants,
   getSRMappingCostCenters,
+  getNormParameters,
 
   // Generic Excel Import/Export
   saveExcelData,
@@ -662,6 +664,49 @@ async function getSRMappingCostCenters(keycloak, plantIds = null) {
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
+    return await Promise.reject(e)
+  }
+}
+// Delete a single SR Mapping record by id
+async function deleteSRMapping(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const text = await resp.text()
+    return text ? JSON.parse(text) : { success: true }
+  } catch (e) {
+    console.error('Error deleting SR mapping:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Get Norm Parameters by Source Plant
+async function getNormParameters(keycloak, plantId, type = null) {
+  let url = `${Config.CaseEngineUrl}/task/cpp-norm-parameters?plantId=${plantId}`
+  if (type != null) {
+    url += `&type=${type}`
+  }
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching norm parameters:', e)
     return await Promise.reject(e)
   }
 }

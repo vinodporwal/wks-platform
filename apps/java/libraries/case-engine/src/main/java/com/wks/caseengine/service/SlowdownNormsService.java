@@ -31,5 +31,7 @@ public interface SlowdownNormsService {
 	public AOPMessageVM saveSlowdownNormsConfigurationData( String plantId, String year,  List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList);
 	public AOPMessageVM getUniqueGrades(String year, String plantId);
 
+	public byte[] exportSlowdownNormsConfigurationData(String plantId, String year);
+	public AOPMessageVM importSlowdownNormsConfigurationData(String plantId, String year, MultipartFile file);
 
 }

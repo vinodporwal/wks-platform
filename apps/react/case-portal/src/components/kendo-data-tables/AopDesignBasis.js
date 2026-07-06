@@ -210,9 +210,8 @@ const AopDesignBasis = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find(
-            (item) => item.Name === name,
-          )?.AttributeValue,
+          configurationExecutionDetails.find((item) => item.Name === name)
+            ?.AttributeValue,
         )
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
@@ -843,14 +842,19 @@ const AopDesignBasis = () => {
 
               {/* ROW 2: AOP DESIGN BASIS */}
               <Box sx={{ width: '100%' }}>
-                <Stack direction='row' alignItems='center' spacing={0.5} sx={{ mb: 0.5 }}>
+                <Stack
+                  direction='row'
+                  alignItems='center'
+                  spacing={0.5}
+                  sx={{ mb: 0.5 }}
+                >
                   <Typography
                     variant='caption'
                     className='aop-design-basis-label'
                   >
                     AOP DESIGN BASIS
                   </Typography>
-                  <Tooltip title="Blueprint">
+                  <Tooltip title='Blueprint'>
                     <IconButton
                       size='small'
                       sx={{

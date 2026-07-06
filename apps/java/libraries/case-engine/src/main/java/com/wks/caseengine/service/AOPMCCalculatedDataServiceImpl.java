@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,8 +32,6 @@ import javax.sql.DataSource;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -150,10 +149,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            view = "vwAOPMCValues";
 	        }
 	        List<Object[]> obj=null;
+			boolean isFromview = false;
 	        if(vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD"))) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	  obj = getDataMCUValuesAllData(year, plantId, view);
+				  isFromview = true;
 	        }
 	       
 	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
@@ -182,6 +183,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
 	            dto.setProductName(row[24] != null ? row[24].toString() : null);
 	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
+				if(isFromview && row.length > 25) {
+					dto.setIsEditable(row[25] != null && 
+						("1".equals(row[25].toString()) || Boolean.TRUE.equals(row[25])));
+				}
 				if(isCracker && row.length > 28) {
 					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
 				}
@@ -612,7 +617,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                    + "April, May, June, July, August, September, October, November, December, "
                    + "January, February, March, "
                    + "FinancialYear, Remarks, CreatedOn, ModifiedOn, MCUVersion, UpdatedBy, "
-                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName "
+                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName, IsEditable "
                    + "FROM " + viewName + " " 
                    + "WHERE PLANT_FK_ID = :plantId "
                    + "AND FinancialYear = :year "
@@ -872,6 +877,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 			boolean isCracker = vertical.getName().equalsIgnoreCase("CRACKER");
 
+			boolean isFromview = false;
+
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
@@ -883,6 +890,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
  	        	 obj = aOPMCCalculatedDataRepository.getDesignCapacityData(year, plantId);
+				 isFromview = true;
  	        }
             
             List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
@@ -906,6 +914,16 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
                 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+
+				if(isFromview && row.length > 21) {
+					//dto.setIsEditable(row[21] != null && "1".equals(row[21].toString()));
+					dto.setIsEditable(
+						row[21] != null &&
+						("1".equals(row[21].toString()) || Boolean.TRUE.equals(row[21]))
+					);
+					
+				}
+
                 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
                 	dto.setNormType(row[21] != null ? row[21].toString() : " ");
 					if(row.length > 22) {
@@ -1108,17 +1126,24 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				String newRemarks = aOPMCCalculatedDataDTO.getRemarks() != null ? aOPMCCalculatedDataDTO.getRemarks() : "";
 				boolean remarksChanged = !existingRemarks.equalsIgnoreCase(newRemarks);
 
-				if (remarksChanged && changed) {
-				    outerChanged = true;
-				    aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
-				    saved = aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
-				} 
-				else if (!remarksChanged && changed) {
+				// if (remarksChanged && changed) {
+				//     outerChanged = true;
+				//     aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
+				//     saved = aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
+				// } 
+
+			 if (!remarksChanged && changed) {
 				    // If other data changed but remarks remain the same as the database, fail the validation
 				    aOPMCCalculatedDataDTO.setErrDescription("Please add/update remark");
 				    aOPMCCalculatedDataDTO.setSaveStatus("Failed");
 				    failedList.add(aOPMCCalculatedDataDTO);
+					continue;
 				}
+            // update even if only remark is chnged	
+				aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
+				saved = aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
+				outerChanged = true;	
+				
 
 				if (saved != null && saved.getId() == null) {
 					aOPMCCalculatedDataDTO
@@ -1407,19 +1432,18 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
-	// Unlocked style: month columns (1-12) and Remarks (13) in editable rows
-	CellStyle unlockedStyle = workbook.createCellStyle();
-	unlockedStyle.setLocked(false);
+	// Bordered unlocked style for month columns (1-12) in editable rows
+	CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
+	// Bordered unlocked + wrap style for Remarks column (13) in editable rows
+	CellStyle unlockedWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+	// Bordered locked style (no fill) for non-data columns in editable rows
+	CellStyle lockedDefaultStyle = Utility.createBorderedLockedNoFillStyle(workbook);
+	// Bordered locked grey style for all columns in non-editable (disabled) rows
+	CellStyle lockedGreyStyle = Utility.createBorderedLockedStyle(workbook);
+	// Bordered locked grey + wrap style for Remarks column in non-editable rows
+	CellStyle lockedGreyWrapStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
-	// Locked style (no fill): non-data columns in editable rows (Particulars, Id, MaterialFKId)
-	CellStyle lockedDefaultStyle = workbook.createCellStyle();
-	lockedDefaultStyle.setLocked(true);
-
-	// Locked style with grey fill: all columns in non-editable (disabled) rows
-	CellStyle lockedGreyStyle = workbook.createCellStyle();
-	lockedGreyStyle.setLocked(true);
-	lockedGreyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-	lockedGreyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	int remarksColIndex = 13;
 
 		for (List<Object> rowData : rows) {
 			Row row1 = sheet.createRow(currentRow++);
@@ -1446,17 +1470,39 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellValue("");
 				}
 
+				boolean isRemarks = (col == remarksColIndex);
 				if (isCracker && !isAfterSave) {
-					cell.setCellStyle(isRowEditable ? unlockedStyle : lockedGreyStyle);
+					if (isRowEditable) {
+						cell.setCellStyle(isRemarks ? unlockedWrapStyle : unlockedStyle);
+					} else {
+						cell.setCellStyle(isRemarks ? lockedGreyWrapStyle : lockedGreyStyle);
+					}
+				} else {
+					if (isRemarks) {
+						cell.setCellStyle(unlockedWrapStyle);
+					} else if (col >= 1 && col <= 12) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedDefaultStyle);
+					}
 				}
 			}
 		}
-		sheet.setColumnHidden(14, true);
-		sheet.setColumnHidden(15, true);
-		if (isCracker && !isAfterSave) {
-			sheet.setColumnHidden(16, true);
-			
+
+	// Auto-size all visible columns; give Remarks a fixed wider width for lengthy text
+	for (int col = 0; col < innerHeaders.size(); col++) {
+		if (col == remarksColIndex) {
+			sheet.setColumnWidth(col, 40 * 256);
+		} else {
+			sheet.autoSizeColumn(col);
 		}
+	}
+
+	sheet.setColumnHidden(14, true);
+	sheet.setColumnHidden(15, true);
+	if (isCracker && !isAfterSave) {
+		sheet.setColumnHidden(16, true);
+	}
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -1519,16 +1565,18 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 			}
 
-		CellStyle lockedStyle = workbook.createCellStyle();
-		lockedStyle.setLocked(true);
-		CellStyle unlockedStyle = workbook.createCellStyle();
-		unlockedStyle.setLocked(false);
+	// Bordered unlocked style for month columns (1-12) in editable rows
+	CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
+	// Bordered unlocked + wrap style for Remarks column (13) in editable rows
+	CellStyle unlockedWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+	// Bordered locked style (no fill) for non-data columns in editable rows
+	CellStyle lockedDefaultStyle = Utility.createBorderedLockedNoFillStyle(workbook);
+	// Bordered locked grey style for all columns in non-editable (disabled) rows
+	CellStyle lockedGreyStyle = Utility.createBorderedLockedStyle(workbook);
+	// Bordered locked grey + wrap style for Remarks column in non-editable rows
+	CellStyle lockedGreyWrapStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
-		// Locked style with grey fill: all columns in non-editable (disabled) rows
-	CellStyle lockedGreyStyle = workbook.createCellStyle();
-	lockedGreyStyle.setLocked(true);
-	lockedGreyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-	lockedGreyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	int remarksColIndex = 13;
 
 		for (List<Object> rowData : rows) {
 			Row row1 = sheet.createRow(currentRow++);
@@ -1552,18 +1600,40 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellValue("");
 				}
 
+				boolean isRemarks = (col == remarksColIndex);
 				if (isCracker) {
-					cell.setCellStyle(isRowEditable ? unlockedStyle : lockedGreyStyle);
+					if (isRowEditable) {
+						cell.setCellStyle(isRemarks ? unlockedWrapStyle : unlockedStyle);
+					} else {
+						cell.setCellStyle(isRemarks ? lockedGreyWrapStyle : lockedGreyStyle);
+					}
+				} else {
+					if (isRemarks) {
+						cell.setCellStyle(unlockedWrapStyle);
+					} else if (col >= 1 && col <= 12) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedDefaultStyle);
+					}
 				}
 			}
 		}
 
-		sheet.setColumnHidden(14, true);
-		sheet.setColumnHidden(15, true);
-		if (isCracker) {
-			sheet.setColumnHidden(16, true);
-			sheet.protectSheet("secret_password");
+	// Auto-size all visible columns; give Remarks a fixed wider width for lengthy text
+	for (int col = 0; col < innerHeaders.size(); col++) {
+		if (col == remarksColIndex) {
+			sheet.setColumnWidth(col, 40 * 256);
+		} else {
+			sheet.autoSizeColumn(col);
 		}
+	}
+
+	sheet.setColumnHidden(14, true);
+	sheet.setColumnHidden(15, true);
+	if (isCracker) {
+		sheet.setColumnHidden(16, true);
+		sheet.protectSheet("secret_password");
+	}
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
@@ -1580,16 +1650,21 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	    try {
 	        Map<String, List<AOPMCCalculatedDataDTO>> map = readDataPE(file.getInputStream(), UUID.fromString(plantFKId), year);
 	        
-	        List<AOPMCCalculatedDataDTO> allFailedRecords = new ArrayList<>();
-	        Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel = new HashMap<>();
-	        for (String key : map.keySet()) {
-	            List<AOPMCCalculatedDataDTO> failedList = editAOPMCCalculatedData(map.get(key), true, year, plantFKId);
-	            
-	            if (failedList != null && !failedList.isEmpty()) {
-	                allFailedRecords.addAll(failedList);
-	                mapForExcel.put(key, failedList);
-	            }
-	        }
+        List<AOPMCCalculatedDataDTO> allFailedRecords = new ArrayList<>();
+        Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel = new HashMap<>();
+        for (String key : map.keySet()) {
+            List<AOPMCCalculatedDataDTO> failedList;
+            if ("DesignCapacity".equalsIgnoreCase(key)) {
+                failedList = updateDesignCapacity(plantFKId, year, map.get(key));
+            } else {
+                failedList = editAOPMCCalculatedData(map.get(key), true, year, plantFKId);
+            }
+            
+            if (failedList != null && !failedList.isEmpty()) {
+                allFailedRecords.addAll(failedList);
+                mapForExcel.put(key, failedList);
+            }
+        }
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
 	        
 	        if (!allFailedRecords.isEmpty()) {
@@ -1815,7 +1890,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 		Map<String, List<AOPMCCalculatedDataDTO>> map = new HashMap<>();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-
+   Plants plant = plantsRepository.findById(plantFKId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+        
+				boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs = new ArrayList<>();
@@ -1828,38 +1908,61 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
 					continue;
 				}
-				if(!tableIdCell.toString().equalsIgnoreCase("ProposedOperatingCapacity")) {
-					continue;
-				}
+				
+			// 	if(meg) {
+			// 		if(!tableIdCell.toString().equalsIgnoreCase("ProposedOperatingCapacity") || !tableIdCell.toString().equalsIgnoreCase("DesignCapacity")) {
+			// 			continue;
+			// 	} }
+			// else if(!tableIdCell.toString().equalsIgnoreCase("ProposedOperatingCapacity")) {
+			// 		continue;
+			// 	}
+
+			String tableId = tableIdCell.toString();
+boolean isValidTable = false;
+
+// for meg, process ProposedOperatingCapacity and DesignCapacity for other only process ProposedOperatingCapacity.
+   if(meg) {
+	isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity")
+	|| tableId.equalsIgnoreCase("DesignCapacity");
+   }
+        else {
+			isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity");
+		 }
+
+if (!isValidTable) {
+    continue;
+}
 
 				AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
 
 				try {
 
-					dto.setProductName(getStringCellValue(row.getCell(0), dto));
-					dto.setApril(getNumericCellValue(row.getCell(1), dto));
-					dto.setMay(getNumericCellValue(row.getCell(2), dto));
-					dto.setJune(getNumericCellValue(row.getCell(3), dto));
-					dto.setJuly(getNumericCellValue(row.getCell(4), dto));
-					dto.setAugust(getNumericCellValue(row.getCell(5), dto));
-					dto.setSeptember(getNumericCellValue(row.getCell(6), dto));
-					dto.setOctober(getNumericCellValue(row.getCell(7), dto));
-					dto.setNovember(getNumericCellValue(row.getCell(8), dto));
-					dto.setDecember(getNumericCellValue(row.getCell(9), dto));
-					dto.setJanuary(getNumericCellValue(row.getCell(10), dto));
-					dto.setFebruary(getNumericCellValue(row.getCell(11), dto));
-					dto.setMarch(getNumericCellValue(row.getCell(12), dto));
-					dto.setRemarks(getStringCellValue(row.getCell(13), dto));
-					dto.setId(getStringCellValue(row.getCell(14), dto));
-					
-				} catch (Exception e) {
-					e.printStackTrace();
-					dto.setErrDescription(e.getMessage());
-					dto.setSaveStatus("Failed");
-				}
-				map.putIfAbsent(dto.getTableId(), new ArrayList<>());
+				dto.setProductName(getStringCellValue(row.getCell(0), dto));
+				dto.setApril(getNumericCellValue(row.getCell(1), dto));
+				dto.setMay(getNumericCellValue(row.getCell(2), dto));
+				dto.setJune(getNumericCellValue(row.getCell(3), dto));
+				dto.setJuly(getNumericCellValue(row.getCell(4), dto));
+				dto.setAugust(getNumericCellValue(row.getCell(5), dto));
+				dto.setSeptember(getNumericCellValue(row.getCell(6), dto));
+				dto.setOctober(getNumericCellValue(row.getCell(7), dto));
+				dto.setNovember(getNumericCellValue(row.getCell(8), dto));
+				dto.setDecember(getNumericCellValue(row.getCell(9), dto));
+				dto.setJanuary(getNumericCellValue(row.getCell(10), dto));
+				dto.setFebruary(getNumericCellValue(row.getCell(11), dto));
+				dto.setMarch(getNumericCellValue(row.getCell(12), dto));
+				dto.setRemarks(getStringCellValue(row.getCell(13), dto));
+				dto.setId(getStringCellValue(row.getCell(14), dto));
+				dto.setMaterialFKId(getStringCellValue(row.getCell(15), dto));
+				dto.setTableId(tableId);
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+				dto.setErrDescription(e.getMessage());
+				dto.setSaveStatus("Failed");
+			}
+			map.putIfAbsent(dto.getTableId(), new ArrayList<>());
 
-				map.get(dto.getTableId()).add(dto);
+			map.get(dto.getTableId()).add(dto);
 			}
 
 		} catch (Exception e) {
@@ -2189,6 +2292,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			boolean pe = vertical.getName().equalsIgnoreCase("PE");
+			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2262,9 +2368,21 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                    data.put(tableId, dataList);
 	                }
 	            }
-	            if(vertical.getName().equalsIgnoreCase("PE")) {
-	            	return excelUtilityService.generateFlexibleExcelPP(structure, data);
-	            }else {
+				// seperate export method to handle grid specific locking
+	            if(pe || meg) {
+					List<String> editableGrids = new ArrayList<>();
+					if(pe) {
+						editableGrids.add("proposedoperatingcapacity"); 
+					}
+
+					if(meg) {
+						editableGrids.addAll(Arrays.asList("DesignCapacity", "ProposedOperatingCapacity")); 
+					}
+	            	return excelUtilityService.generateFlexibleExcelPP(structure, data, editableGrids);
+
+	            }
+				
+				else {
 	            	return excelUtilityService.generateFlexibleExcel(structure, data);
 	            }
 	            
@@ -2612,8 +2730,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        // Metadata columns often used by the utility for styling or logic
 	        row.add(tableId);
 	        
-	        // Add editable flag from repository if needed, or default to true
-	        row.add(true); 
+        row.add(dto.getIsEditable() != null ? dto.getIsEditable() : true);
 	        
 	        dataList.add(row);
 	    }

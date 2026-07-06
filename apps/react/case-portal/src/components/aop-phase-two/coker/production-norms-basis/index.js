@@ -12,6 +12,7 @@ import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/coker/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
+import HistoricalMonths from './HistoricalMonths'
 
 const ProductionNormsBasisCoker = () => {
   const keycloak = useSession()
@@ -212,6 +213,19 @@ const ProductionNormsBasisCoker = () => {
         return null
       }
 
+      if (name === 'Manual Entry') {
+        return {
+          id: tabId,
+          name: 'Manual Entry - Next AOP',
+        }
+      }
+      if (name === 'Historical Months') {
+        return {
+          id: tabId,
+          name: 'Historical Months - Pigging Status',
+        }
+      }
+
       return {
         id: tabId,
         name,
@@ -245,6 +259,8 @@ const ProductionNormsBasisCoker = () => {
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
       case 'Manual Entry':
         return <ManualEntry />
+      case 'Historical Months':
+        return <HistoricalMonths startDate={startDate} endDate={endDate} />
       default:
         return null
     }

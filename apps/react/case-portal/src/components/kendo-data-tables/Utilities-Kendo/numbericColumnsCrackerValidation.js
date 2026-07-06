@@ -34,7 +34,7 @@ export const NoSpinnerNumericEditorCrackerValidation = ({
     '4F',
     '5F',
     'Total',
-    '4FHours',
+    // '4FHours',
     'TotalSAD',
     'NumberOfDays',
     'NoOfSAD',

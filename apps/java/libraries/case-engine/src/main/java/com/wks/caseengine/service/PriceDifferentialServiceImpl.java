@@ -178,7 +178,7 @@ public class PriceDifferentialServiceImpl implements PriceDifferentialService{
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "["+procedureName+"]"
 					+ " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -619,5 +619,232 @@ public class PriceDifferentialServiceImpl implements PriceDifferentialService{
 	    return null;
 	}
 
+// phase 2
+	@Override
+	public AOPMessageVM getQualityPrice(String plantId, String year) {
+		
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+			List<Object[]> obj = new ArrayList<>();
+			
+				String procedureName = verticalName + "_" + site.getName() + "_PriceDifferentialTransaction";
+				obj = findByYearAndPlantId(year, UUID.fromString(plantId), procedureName);
+			
+			List<PriceDifferentialTransactionDTO> priceDifferentialTransactionDTOs = new ArrayList<>();
+			for (Object[] row : obj) {
+				PriceDifferentialTransactionDTO priceDifferentialTransactionDTO = new PriceDifferentialTransactionDTO();
+				priceDifferentialTransactionDTO.setId(row[0] != null ? row[0].toString() : "");
+				priceDifferentialTransactionDTO.setMaterialId(row[1] != null ? row[1].toString() : "");
+				priceDifferentialTransactionDTO.setNormParameterTypeName(row[2] != null ? row[2].toString() : "");
+				priceDifferentialTransactionDTO.setDisplayName(row[3] != null ? row[3].toString() : "");
+				priceDifferentialTransactionDTO.setPercentage(
+						(row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString())
+								: 0.0);
+				priceDifferentialTransactionDTO.setPlantId(row[5] != null ? row[5].toString() : "");
+				priceDifferentialTransactionDTO.setAopYear(row[6] != null ? row[6].toString() : "");
+				priceDifferentialTransactionDTO.setRemark(row[10] != null ? row[10].toString() : "");
+				
+				
+				priceDifferentialTransactionDTOs.add(priceDifferentialTransactionDTO);
+			}
+			Map<String, Object> map = new HashMap<>(); 
+			
+			map.put("data", priceDifferentialTransactionDTOs);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+// phase 2
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Override
+	public AOPMessageVM saveQualityPrice(String year, String plantFKId,
+			List<PriceDifferentialTransactionDTO> priceDifferentialTransactionDTOs) {
+		try {
+			List<PriceDifferentialTransactionDTO> failedList = new ArrayList<>();
+			UUID plantId = UUID.fromString(plantFKId);
+
+			for (PriceDifferentialTransactionDTO priceDifferentialTransactionDTO : priceDifferentialTransactionDTOs) {
+				if (priceDifferentialTransactionDTO.getSaveStatus() != null
+						&& priceDifferentialTransactionDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(priceDifferentialTransactionDTO);
+					continue;
+				}
+				Boolean update=false;
+				Boolean changed=false;
+				PriceDifferentialTransaction priceDifferentialTransaction =null;
+				UUID material=UUID.fromString(priceDifferentialTransactionDTO.getMaterialId());
+				Optional<PriceDifferentialTransaction> priceDifferentialTransactionOpt =priceDifferentialTransactionRepository.findByMaterialPlantAndYear(material,plantId,year);
+				if(priceDifferentialTransactionOpt.isPresent()) {
+					priceDifferentialTransaction=priceDifferentialTransactionOpt.get();
+					update=true;
+				}else {
+					update=false;
+					priceDifferentialTransaction = new PriceDifferentialTransaction();
+					priceDifferentialTransaction.setMaterialId(UUID.fromString(priceDifferentialTransactionDTO.getMaterialId()));
+					priceDifferentialTransaction.setAopYear(year);
+					priceDifferentialTransaction.setPlantId(plantId);
+				}
+				if (update) {
+				    if (!Objects.equals(priceDifferentialTransaction.getPercentage(), priceDifferentialTransactionDTO.getPercentage())) {
+				        changed = true;
+				    }
+				    
+				    if (changed) {
+				        String existingRemark = priceDifferentialTransaction.getRemark();
+				        String newRemark = priceDifferentialTransactionDTO.getRemark();
+
+				        if (Objects.equals(existingRemark, newRemark) || 
+				           (existingRemark != null && existingRemark.equalsIgnoreCase(newRemark))) {
+				            
+				        	priceDifferentialTransactionDTO.setErrDescription("Please update remark");
+				        	priceDifferentialTransactionDTO.setSaveStatus("Failed");
+				            failedList.add(priceDifferentialTransactionDTO);
+				            continue;
+				        }
+				    }
+				}else {
+					if(priceDifferentialTransactionDTO.getRemark()==null) {
+						priceDifferentialTransactionDTO.setErrDescription("Please add remark");
+						priceDifferentialTransactionDTO.setSaveStatus("Failed");
+				            failedList.add(priceDifferentialTransactionDTO);
+				            continue;
+					}
+				}
+
+				priceDifferentialTransaction.setPercentage(priceDifferentialTransactionDTO.getPercentage());
+				priceDifferentialTransaction.setRemark(priceDifferentialTransactionDTO.getRemark());
+				priceDifferentialTransaction.setUpdatedBy(Utility.getUserName());
+				priceDifferentialTransaction.setModifiedOn(new Date());
+				
+				priceDifferentialTransactionRepository.save(priceDifferentialTransaction);
+			}
+			
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(failedList);
+			aopMessageVM.setMessage("Data updated successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
+
+// phase 2
+	@Override
+	public byte[] exportQualityPrice(String year, String plantId, boolean isAfterSave, List<PriceDifferentialTransactionDTO> dtoList) {
+	    try {   
+	        if (!isAfterSave) {
+	        	AOPMessageVM aopMessageVM = getQualityPrice(plantId,year);
+	        	Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
+
+		        if (innerMap != null) {
+		             dtoList = (List<PriceDifferentialTransactionDTO>) innerMap.get("data");
+		        }
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Quality Type");
+	        innerHeaders.add("Value %");
+	        innerHeaders.add("Remarks");
+	        innerHeaders.add("Material Id");
+	       
+	        if (isAfterSave) {
+	            innerHeaders.add("Status");
+	            innerHeaders.add("Error Description");
+	        }
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        int dataRowCount = dtoList.size();
+	        for (int i = 0; i < dataRowCount; i++) {
+	        	PriceDifferentialTransactionDTO dto = dtoList.get(i);
+	            Row row = sheet.createRow(currentRow++);
+	            List<Object> rowData = new ArrayList<>();
+	            
+	            rowData.add(dto.getDisplayName());
+	            rowData.add(dto.getPercentage());
+	            rowData.add(dto.getRemark());
+	            rowData.add(dto.getMaterialId());
+	            
+	            if (isAfterSave) {
+	                rowData.add(dto.getSaveStatus());
+	                rowData.add(dto.getErrDescription());
+	            }
+
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                if (value instanceof Number) {
+	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }  
+	            }
+	        }
+	        sheet.setColumnHidden(3, true);
+	        
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+// phase 2
+	@Override
+	public AOPMessageVM importQualityPrice(String year,UUID plantId,MultipartFile file) {
+		try {
+			List<PriceDifferentialTransactionDTO> data = readPriceDifferentialTransaction(file.getInputStream(), plantId, year);
+			 AOPMessageVM aopMessageVM = saveQualityPrice(year, plantId.toString(),data);
+			 List<PriceDifferentialTransactionDTO> failedList = (List<PriceDifferentialTransactionDTO>) aopMessageVM.getData();
+			
+			if (failedList != null && failedList.size() > 0) {
+				byte[] fileByteArray = exportQualityPrice(year, plantId.toString(), true, failedList);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			
+		}
+		return null;
+	}
 
 }
