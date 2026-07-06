@@ -105,7 +105,11 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
         PLANT_ID_LIST,
       )
 
-      const rawList = res?.data || []
+      const nonFuelAssetType = ['PRDS', 'STG']
+      const rawList =
+        res?.data?.filter(
+          (item) => !nonFuelAssetType.includes(item.assetType),
+        ) || []
 
       if (rawList.length === 0) {
         setRows([])
