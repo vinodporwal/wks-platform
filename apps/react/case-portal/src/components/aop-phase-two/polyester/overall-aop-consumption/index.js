@@ -119,13 +119,13 @@ const OverallAopConsumption = () => {
     //   format: valueFormat,
     //   minWidth: 120,
     // },
-    {
-      field: 'aopRemarks',
-      title: 'Remark',
-      type: 'textarea',
-      editable: false,
-      minWidth: 160,
-    },
+    // {
+    //   field: 'aopRemarks',
+    //   title: 'Remark',
+    //   type: 'textarea',
+    //   editable: true,
+    //   minWidth: 160,
+    // },
   ]
 
   const getIsReleased = useCallback(async () => {
@@ -478,7 +478,7 @@ const OverallAopConsumption = () => {
     deleteButton: false,
     editButton: false,
     showUnit: false,
-    saveBtn: true,
+    saveBtn: false,
     showCalculate: true,
     calculateDisabled: !(
       calculationObject && Object.keys(calculationObject).length > 0
