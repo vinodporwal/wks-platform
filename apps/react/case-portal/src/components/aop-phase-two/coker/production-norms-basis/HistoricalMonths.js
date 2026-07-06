@@ -184,7 +184,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       originalRows,
       fieldsToCheck,
       'productName',
-      'remarks'
+      'remarks',
     )
     if (validationError) {
       setSnackbarOpen(true)
@@ -254,11 +254,12 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     })
 
     try {
-      const response = await ProductionNormsApiService.calculateHistoricalMonths(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ProductionNormsApiService.calculateHistoricalMonths(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 422) {
         setTimeout(() => {
