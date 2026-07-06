@@ -6,7 +6,6 @@ import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
-
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -19,7 +18,7 @@ public interface JMDHeatRateService {
     // ========================================
     AOPMessageVM getGTAssetDropdown(List<UUID> plantIds);
     
-    AOPMessageVM getGTHeatRateData(UUID assetId, String year);
+    AOPMessageVM getGTHeatRateData(UUID assetId, String year,  String startDate,  String endDate,  String assessmentName,  List<UUID> plantIds);
 
     AOPMessageVM getHRSGAssetDropdown(List<UUID> plantIds);
     
