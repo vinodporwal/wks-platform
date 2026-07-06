@@ -52,7 +52,7 @@ export const RemarkCell = ({
       id={id}
       role={role}
       data-testid={dataTestId}
-      title={suppressRemarksPlaceholder ? (rawValue || '') : (rawValue || 'Add')}
+      title={suppressRemarksPlaceholder ? rawValue || '' : rawValue || 'Add'}
       // title={rawValue}
       style={{
         cursor: 'pointer',
@@ -76,7 +76,7 @@ export const RemarkCell = ({
         setEdit?.({})
       }}
     >
-      {suppressRemarksPlaceholder ? (displayText || '') : (displayText || 'Add')}
+      {suppressRemarksPlaceholder ? displayText || '' : displayText || 'Add'}
       {/* {displayText} */}
     </td>
   )

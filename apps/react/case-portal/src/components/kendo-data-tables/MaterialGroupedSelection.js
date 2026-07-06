@@ -235,7 +235,7 @@ export default function MaterialGroupedSelection() {
     }
   }, [modifiedCells, keycloak, PLANT_ID, fetchData])
 
-  const handleCalculate = () => { }
+  const handleCalculate = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')

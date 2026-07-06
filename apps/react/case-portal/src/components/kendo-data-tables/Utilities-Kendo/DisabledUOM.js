@@ -45,4 +45,3 @@ const DisabledUOM = ({ disabledUOM }) => {
 }
 
 export default DisabledUOM
-
