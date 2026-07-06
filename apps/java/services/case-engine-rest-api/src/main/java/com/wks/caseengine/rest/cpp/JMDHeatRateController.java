@@ -47,8 +47,8 @@ public class JMDHeatRateController {
     }
     
     @GetMapping("/jmd/gt-heat-rate")
-    public ResponseEntity<AOPMessageVM> getGTHeatRateData(@RequestParam UUID assetId, @RequestParam String year) {
-        AOPMessageVM response = jmdHeatRateService.getGTHeatRateData(assetId,year);
+    public ResponseEntity<AOPMessageVM> getGTHeatRateData(@RequestParam UUID assetId, @RequestParam String year, @RequestParam String startDate, @RequestParam String endDate, @RequestParam String assessmentName, @RequestParam List<UUID> plantIds) {
+        AOPMessageVM response = jmdHeatRateService.getGTHeatRateData(assetId,year,startDate,endDate,assessmentName,plantIds);
         return ResponseEntity.ok(response);
     }
     

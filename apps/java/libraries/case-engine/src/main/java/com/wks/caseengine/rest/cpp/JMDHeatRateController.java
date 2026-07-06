@@ -1,5 +1,6 @@
 package com.wks.caseengine.rest.cpp;
 
+import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
@@ -46,8 +47,17 @@ public class JMDHeatRateController {
     }
     
     @GetMapping("/jmd/gt-heat-rate")
-    public ResponseEntity<AOPMessageVM> getGTHeatRateData(@RequestParam UUID assetId, @RequestParam String year) {
-        AOPMessageVM response = jmdHeatRateService.getGTHeatRateData(assetId,year);
+    public ResponseEntity<AOPMessageVM> getGTHeatRateData(@RequestParam UUID assetId, @RequestParam String year, @RequestParam String startDate, @RequestParam String endDate, @RequestParam String assessmentName, @RequestParam List<UUID> plantIds) {
+        AOPMessageVM response = jmdHeatRateService.getGTHeatRateData(assetId,year,startDate,endDate,assessmentName,plantIds);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/jmd/gt-heat-rate")
+    public ResponseEntity<AOPMessageVM> saveGTHeatRateData(
+            @RequestBody List<CppGtHeatRateDto> dtoList, 
+            @RequestParam String year) {
+        
+        AOPMessageVM response = jmdHeatRateService.saveGTHeatRateData(dtoList, year);
         return ResponseEntity.ok(response);
     }
 
