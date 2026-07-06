@@ -252,10 +252,14 @@ def _write_assets(ws, result: dict):
 
 
 def _write_u4u_consumption(ws, result: dict):
-    """Write detailed U4U consumption table — one row per producer+material."""
+    """Write detailed U4U consumption table — one row per producer+material.
+
+    Uses the dynamic table (all ODS producers including zero generation) when
+    available, falling back to final_detail_records for backward compatibility.
+    """
     ws.title = "U4U Consumption"
     u4u = result.get("u4u_iteration") or {}
-    records = u4u.get("final_detail_records", [])
+    records = u4u.get("final_dynamic_table") or u4u.get("final_detail_records", [])
     if not records:
         ws.cell(row=1, column=1).value = "No U4U data"
         return
@@ -274,7 +278,9 @@ def _write_u4u_consumption(ws, result: dict):
     for r, rec in enumerate(records, start=2):
         p = rec["producer"]
         bg = bpc_gen.get(p, 0.0)
-        bq = (bpc_qty.get(p) or {}).get(rec["material"], 0.0)
+        bq = rec.get("bpc_quantity")
+        if bq is None:
+            bq = (bpc_qty.get(p) or {}).get(rec["material"], 0.0)
         gen_diff = _pct_diff(rec["generation"], bg)
         qty_diff = _pct_diff(rec["quantity"], bq)
         _data_row(ws, r, [
@@ -303,7 +309,7 @@ def _write_u4u_summary(ws, result: dict):
     """Write per-utility summary comparison — one row per generation utility."""
     ws.title = "U4U Summary"
     u4u = result.get("u4u_iteration") or {}
-    records = u4u.get("final_detail_records", [])
+    records = u4u.get("final_dynamic_table") or u4u.get("final_detail_records", [])
     if not records:
         ws.cell(row=1, column=1).value = "No U4U data"
         return

@@ -1,0 +1,154 @@
+NMD Plant Run Log
+Plant:     NMD CPP
+Period:    4/2026
+Generated: 2026-07-05 12:40:37
+================================================================================
+
+
+Fetching data for April 2026...
+######################################################################
+  NMD CPP  [23BCA1B3]  Period: 4/2026
+######################################################################
+
+======================================================================
+  PLANT INFO
+======================================================================
+  plant_id:     23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653
+  name:         NMD-CPP
+  display_name: NMD CPP
+  short_code:   NMD
+
+======================================================================
+  POWER GENERATION ASSETS  (PowerGenerationAssets)
+======================================================================
+  4 asset(s):
+  Asset                           Type      PlantCode   
+  ------------------------------  --------  ------------
+  NMD-Power Plant-1               GT        40NB        
+  NMD-Power Plant-2               GT        40NC        
+  NMD-Power Plant-3               GT        40ND        
+  NMD-STG Power Plant             STG       40NE        
+
+======================================================================
+  ASSET SNAPSHOT  (April 2026)
+======================================================================
+  4 asset(s)
+  Asset                         Type      Hours    MinMW    MaxMW   FixMin   FixMax   Prio   Avail
+  ----------------------------  ------  -------  -------  -------  -------  -------  -----  ------
+  NMD-Power Plant-2             -         700.0     6.00    20.00     5.00    22.00      1     Yes
+  NMD-Power Plant-3             -         720.0     6.00    20.00     5.00    22.00      1     Yes
+  NMD-Power Plant-1             -         620.0     6.00    20.00     5.00    22.00      2     Yes
+  NMD-STG Power Plant           -         720.0     6.00    24.00     6.00    25.00      5     Yes
+
+======================================================================
+  STEAM GENERATION ASSETS  (April 2026)
+======================================================================
+  7 asset(s):
+  Asset                   Type    Steam     MinMT    MaxMT    Eff   Prio    Hours   AlwaysOn  LinkedGT        
+  ----------------------  ------  ------  -------  -------  -----  -----  -------  ---------  ----------------
+  HRSG-1                  HRSG    SHP        60.0    136.0   1.03      1    620.0         No  NMD-Power Plant-1
+  HRSG-2                  HRSG    SHP        60.0    136.0   1.03      2    700.0         No  NMD-Power Plant-2
+  HRSG-3                  HRSG    SHP        60.0    136.0   1.03      3    720.0         No  NMD-Power Plant-3
+  STG                     STG     ALL         0.0  999999.0   1.00     10    720.0        Yes  -               
+  HP Steam PRDS           PRDS    HP          0.0  999999.0   1.00     20    720.0        Yes  -               
+  MP Steam PRDS           PRDS    MP          0.0  999999.0   1.00     21    720.0        Yes  -               
+  LP Steam PRDS           PRDS    LP          0.0  999999.0   1.00     22    720.0        Yes  -               
+
+======================================================================
+  DEMAND SEGREGATION  (Process + Fixed)  (4/2026)
+======================================================================
+12:40:35  INFO        [PROCESS] Found 56 rows for FY 2026-27, plant 23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653
+12:40:35  INFO        [PROCESS] COMPRESSED AIR                 558000.00  ->  air_process
+12:40:35  INFO        [PROCESS] Cooling Water 2                  3708.00  ->  cw2_process
+12:40:35  INFO        [PROCESS] D M Water                        1728.00  ->  dm_process
+12:40:35  INFO        [PROCESS] HP Steam_Dis                      360.00  ->  hp_process
+12:40:35  INFO        [PROCESS] LP Steam_Dis                     3387.00  ->  lp_process
+12:40:35  INFO        [PROCESS] MP Steam_Dis                    16935.00  ->  mp_process
+12:40:35  INFO        [PROCESS] Nitrogen Gas                   277200.00  ->  UNMAPPED
+12:40:35  INFO        [PROCESS] Oxygen                           5315.00  ->  oxygen_process
+12:40:35  INFO        [PROCESS] Power_Dis                     2172960.00  ->  power_process
+12:40:35  INFO        [PROCESS] Water                              43.00  ->  raw_water_process
+12:40:35  INFO        [PROCESS] COMPRESSED AIR                2952003.00  ->  air_process
+12:40:35  INFO        [PROCESS] Cooling Water 1                 14286.00  ->  cw1_process
+12:40:35  INFO        [PROCESS] D M Water                       71182.00  ->  dm_process
+12:40:35  INFO        [PROCESS] HP Steam_Dis                        0.00  ->  hp_process
+12:40:35  INFO        [PROCESS] LP Steam_Dis                    12926.00  ->  lp_process
+12:40:35  INFO        [PROCESS] MP Steam_Dis                     3621.00  ->  mp_process
+12:40:35  INFO        [PROCESS] Nitrogen Gas                  1000384.00  ->  UNMAPPED
+12:40:35  INFO        [PROCESS] Power_Dis                     5266611.00  ->  power_process
+12:40:35  INFO        [PROCESS] SHP Steam_Dis                   20126.00  ->  shp_process
+12:40:35  INFO        [PROCESS] Water                            7145.00  ->  raw_water_process
+12:40:35  INFO        [PROCESS] COMPRESSED AIR                      0.00  ->  air_process
+12:40:35  INFO        [PROCESS] Cooling Water 2                     0.00  ->  cw2_process
+12:40:35  INFO        [PROCESS] D M Water                           0.00  ->  dm_process
+12:40:35  INFO        [PROCESS] HP Steam_Dis                        0.00  ->  hp_process
+12:40:35  INFO        [PROCESS] LP Steam_Dis                        0.00  ->  lp_process
+12:40:35  INFO        [PROCESS] Nitrogen Gas                        0.00  ->  UNMAPPED
+12:40:35  INFO        [PROCESS] Power_Dis                           0.00  ->  power_process
+12:40:35  INFO        [PROCESS] Water                               0.00  ->  raw_water_process
+12:40:35  INFO        [PROCESS] COMPRESSED AIR                 351496.00  ->  air_process
+12:40:35  INFO        [PROCESS] Cooling Water 2                  2181.00  ->  cw2_process
+12:40:35  INFO        [PROCESS] D M Water                        2298.00  ->  dm_process
+12:40:35  INFO        [PROCESS] HP Steam_Dis                      424.00  ->  hp_process
+12:40:35  INFO        [PROCESS] LP Steam_Dis                      382.00  ->  lp_process
+12:40:35  INFO        [PROCESS] Nitrogen Gas                   223024.00  ->  UNMAPPED
+12:40:35  INFO        [PROCESS] Power_Dis                     5018654.00  ->  power_process
+12:40:35  INFO        [PROCESS] Water                             260.00  ->  raw_water_process
+12:40:35  INFO        [PROCESS] COMPRESSED AIR                1485956.00  ->  air_process
+12:40:35  INFO        [PROCESS] Cooling Water 2                   996.00  ->  cw2_process
+12:40:35  INFO        [PROCESS] D M Water                        9279.00  ->  dm_process
+12:40:35  INFO        [PROCESS] HP Steam_Dis                      482.00  ->  hp_process
+12:40:35  INFO        [PROCESS] LP Steam_Dis                     1130.00  ->  lp_process
+12:40:35  INFO        [PROCESS] Nitrogen Gas                  3675004.00  ->  UNMAPPED
+12:40:35  INFO        [PROCESS] Power_Dis                    11493916.00  ->  power_process
+12:40:35  INFO        [PROCESS] Water                            3696.00  ->  raw_water_process
+12:40:35  INFO        [PROCESS] COMPRESSED AIR                  58085.00  ->  air_process
+12:40:35  INFO        [PROCESS] Cooling Water 2                    18.00  ->  cw2_process
+12:40:35  INFO        [PROCESS] Nitrogen Gas                      166.00  ->  UNMAPPED
+12:40:35  INFO        [PROCESS] Power_Dis                      200880.00  ->  power_process
+12:40:35  INFO        [PROCESS] Water                               0.00  ->  raw_water_process
+12:40:35  INFO        [PROCESS] COMPRESSED AIR                 452961.00  ->  air_process
+12:40:35  INFO        [PROCESS] Cooling Water 2                  1057.00  ->  cw2_process
+12:40:35  INFO        [PROCESS] D M Water                         173.00  ->  dm_process
+12:40:35  INFO        [PROCESS] LP Steam_Dis                     1944.00  ->  lp_process
+12:40:35  INFO        [PROCESS] Nitrogen Gas                   288811.00  ->  UNMAPPED
+12:40:35  INFO        [PROCESS] Power_Dis                     2213528.00  ->  power_process
+12:40:35  INFO        [PROCESS] Water                              39.00  ->  raw_water_process
+12:40:36  INFO        [FIXED] 7 utility rows for FYM 60DD7891-50EE-4F84-AD90-D56EF6348F6B
+12:40:36  INFO        [FIXED] Cooling Water 2                     8.00  ->  cw2_fixed
+12:40:36  INFO        [FIXED] Power_Dis                        1019.08  ->  power_fixed
+12:40:36  INFO        [FIXED] D M Water                         366.00  ->  dm_fixed
+12:40:36  INFO        [FIXED] Water                          257241.00  ->  raw_water_fixed
+12:40:36  INFO        [FIXED] LP Steam_Dis                     5175.00  ->  lp_fixed
+12:40:36  INFO        [FIXED] MP Steam_Dis                      518.00  ->  mp_fixed
+12:40:36  INFO        [FIXED] COMPRESSED AIR                  32960.00  ->  air_fixed
+  Demand Component                     Value  Unit    
+  ----------------------------  ------------  --------
+  Power (Process)                26366549.00  KWH      *
+  Power (Fixed)                      1019.08  MWh      *
+  SHP Steam (Process)               20126.00  MT       *
+  SHP Steam (Fixed)                     0.00  MT      
+  HP Steam (Process)                 1266.00  MT       *
+  HP Steam (Fixed)                      0.00  MT      
+  MP Steam (Process)                20556.00  MT       *
+  MP Steam (Fixed)                    518.00  MT       *
+  LP Steam (Process)                19769.00  MT       *
+  LP Steam (Fixed)                   5175.00  MT       *
+
+  UTILITY-WISE SUMMARY  (Process + Fixed)
+  Utility                        Process         Fixed         Total  Unit    
+  ------------------------  ------------  ------------  ------------  --------
+  Power                         26366.55       1019.08      27385.63  MWh      *
+  SHP Steam                     20126.00          0.00      20126.00  MT       *
+  HP Steam                       1266.00          0.00       1266.00  MT       *
+  MP Steam                      20556.00        518.00      21074.00  MT       *
+  LP Steam                      19769.00       5175.00      24944.00  MT       *
+
+======================================================================
+  IMPORT POWER  (4/2026)
+======================================================================
+  Total Import Power: 0.00 MWh  (0 sources)
+
+======================================================================
+  DONE
+======================================================================

@@ -32,6 +32,11 @@ DEFAULT_ALLOWED_ACCOUNTS: Set[str] = {"Utilities", "Raw Material"}
 
 _EXCLUDED_NON_DISPATCHABLE = {"Power_Dis"}
 
+# Constants for reverse MMBTU norm calculation (same as NMD)
+_KCAL_TO_BTU = 3.96567
+_BTU_TO_MMBTU = 1_000_000
+_FREE_STEAM_ENERGY_KCAL_KG = 760.87  # (810 - 110) / 0.92
+
 
 def _normalize_for_match(name: str) -> str:
     """Case-fold and strip non-alphanumeric chars for fuzzy name matching."""
@@ -115,6 +120,7 @@ class U4UIterationLoop:
         self.external_import_mwh = max(0.0, float(external_import_mwh))
 
         self.consumption_norms: dict = {}
+        self.all_consumption_norms: dict = {}
         self._bpc_gen_quantities: dict = {}
         self._bpc_quantities: dict = {}
         self._all_producers: set = set()
@@ -136,6 +142,7 @@ class U4UIterationLoop:
     def run(self) -> dict:
         """Run the U4U iteration loop until convergence or max iterations."""
         self.consumption_norms = self.ods_reader.get_consumption_norms()
+        self.all_consumption_norms = self.ods_reader.get_all_consumption_norms()
         if not self.consumption_norms:
             logger.warning("  [U4U LOOP] No ODS consumption norms available")
             return self._empty_result()
@@ -229,6 +236,7 @@ class U4UIterationLoop:
             "final_u4u_demands": self.final_u4u_demands,
             "final_total_demands": self.final_total_demands,
             "final_detail_records": self.final_detail_records,
+            "final_dynamic_table": getattr(self, 'final_dynamic_table', []),
             "final_bpc_gen_quantities": self._bpc_gen_quantities,
             "final_bpc_quantities": self._bpc_quantities,
             "iteration_history": self.iteration_history,
@@ -1164,6 +1172,174 @@ class U4UIterationLoop:
         logger.info("  %s", "=" * 78)
         logger.info("")
 
+    def _build_dynamic_u4u_table(self) -> list:
+        """Build a dynamic U4U consumption table from all ODS producers.
+
+        Unlike ``final_detail_records`` (which only contains producers that
+        actually generated something), this table includes every producer utility
+        discovered in the ODS — including those with zero generation.  For each
+        producer it lists every consumption material from the ODS (Utilities,
+        Raw Material, Cat Chem, byproduct credits, etc.) with the computed
+        quantity = generation * norm.  New producers or materials added to the
+        ODS are automatically picked up without code changes.
+
+        Returns a list of detail records in the same shape as
+        ``final_detail_records``.
+        """
+        records: list = []
+        if not self.all_consumption_norms:
+            return records
+
+        # Identify the power producer (UOM = KWH) and its ODS sub-assets
+        power_producer_name = None
+        power_sub_assets: set = set()
+        for pname, pinfo in self.all_consumption_norms.items():
+            if pinfo.get("producer_uom", "").upper() == "KWH":
+                power_producer_name = pname
+                for c in pinfo.get("consumptions", []):
+                    sp = c.get("source_plant", "").strip()
+                    if sp:
+                        power_sub_assets.add(sp)
+                break
+
+        # Map power/steam asset names to their final generation
+        power_asset_gens: dict = {}
+        power_asset_heat: dict = {}  # asset_name → (heat_rate, free_steam_factor)
+        for asset in (self.final_power_result or {}).get("assets", []):
+            name = asset.get("asset_name", "")
+            power_asset_gens[name] = asset.get("dispatched_mwh", 0.0) * 1000.0
+            hr = asset.get("heat_rate", 0.0)
+            fsf = asset.get("free_steam_factor", 0.0)
+            if hr > 0:
+                power_asset_heat[name] = (hr, fsf)
+
+        steam_asset_gens: dict = {}
+        for asset in (self.final_steam_result or {}).get("assets", []):
+            steam_asset_gens[asset.get("asset_name", "")] = asset.get(
+                "total_output_mt",
+                asset.get("dispatched_mt", 0.0) + asset.get("free_steam_mt", 0.0),
+            )
+
+        # PRDS generation from the cascade details already calculated
+        prds_generation: dict = {}
+        for rec in self.final_detail_records:
+            if "PRDS" in rec.get("producer", "").upper():
+                prds_generation[rec["producer"]] = rec.get("generation", 0.0)
+
+        def _match_steam_asset(producer_name: str) -> tuple:
+            """Return (asset_name, generation) for a steam producer, or ('', 0)."""
+            if not steam_asset_gens:
+                return "", 0.0
+            # Exact match
+            if producer_name in steam_asset_gens:
+                return producer_name, steam_asset_gens[producer_name]
+            # Case-insensitive / substring match
+            pname_upper = producer_name.upper()
+            for aname, gen in steam_asset_gens.items():
+                if aname.upper() == pname_upper or aname.upper() in pname_upper or pname_upper in aname.upper():
+                    return aname, gen
+            return "", 0.0
+
+        for producer_name, producer_info in self.all_consumption_norms.items():
+            producer_uom = producer_info.get("producer_uom", "")
+            consumptions = producer_info.get("consumptions", [])
+            if not consumptions:
+                continue
+
+            gen_entries: list = []
+
+            if producer_name == power_producer_name and power_producer_name:
+                # One row per ODS sub-asset (GT1, GT2, STG, ...)
+                for asset_name in sorted(power_sub_assets):
+                    gen_entries.append({
+                        "producer": asset_name,
+                        "producer_utility": power_producer_name,
+                        "generation": power_asset_gens.get(asset_name, 0.0),
+                    })
+                if not power_sub_assets:
+                    total_gen = sum(power_asset_gens.values())
+                    gen_entries.append({
+                        "producer": producer_name,
+                        "producer_utility": producer_name,
+                        "generation": total_gen,
+                    })
+            elif self._is_dispatchable(producer_name):
+                # Steam asset producer (HRSG, Aux Boiler, ...)
+                asset_name, gen = _match_steam_asset(producer_name)
+                gen_entries.append({
+                    "producer": asset_name if asset_name else producer_name,
+                    "producer_utility": producer_name,
+                    "generation": gen,
+                })
+            elif "PRDS" in producer_name.upper():
+                # PRDS / letdown station
+                gen_entries.append({
+                    "producer": producer_name,
+                    "producer_utility": producer_name,
+                    "generation": prds_generation.get(producer_name, 0.0),
+                })
+            else:
+                # Non-dispatchable utility plant: generation = total demand
+                # Convert MWh → KWh when producer UOM is KWH (e.g. Power_Dis)
+                raw_gen = self.final_total_demands.get(producer_name, 0.0)
+                if producer_uom.upper() == "KWH":
+                    raw_gen = raw_gen * 1000.0
+                gen_entries.append({
+                    "producer": producer_name,
+                    "producer_utility": producer_name,
+                    "generation": raw_gen,
+                })
+
+            # Fallback: should always have at least one generation entry
+            if not gen_entries:
+                gen_entries.append({
+                    "producer": producer_name,
+                    "producer_utility": producer_name,
+                    "generation": 0.0,
+                })
+
+            for gen_entry in gen_entries:
+                gen = gen_entry["generation"]
+                for c in consumptions:
+                    # For the power producer, only show consumption entries
+                    # belonging to the current sub-asset
+                    if producer_name == power_producer_name:
+                        source_plant = c.get("source_plant", "").strip()
+                        if source_plant and source_plant != gen_entry["producer"]:
+                            continue
+
+                    material = c["material"]
+                    material_uom = c.get("material_uom", "")
+                    norm = c["norm"]
+
+                    # Reverse-calculate MMBTU norm for Raw Material (fuel) entries
+                    # on GT power assets using heat_rate and free_steam_factor
+                    if c["account"] == "Raw Material" and gen_entry["producer"] in power_asset_heat:
+                        hr, fsf = power_asset_heat[gen_entry["producer"]]
+                        reverse_norm = (
+                            _KCAL_TO_BTU * (hr - fsf * _FREE_STEAM_ENERGY_KCAL_KG)
+                            / _BTU_TO_MMBTU
+                        )
+                        if reverse_norm > 0:
+                            norm = reverse_norm
+
+                    quantity = gen * norm
+
+                    records.append({
+                        "producer": gen_entry["producer"],
+                        "producer_utility": gen_entry["producer_utility"],
+                        "producer_uom": producer_uom,
+                        "generation": gen,
+                        "account": c["account"],
+                        "material": material,
+                        "material_uom": material_uom,
+                        "norm": norm,
+                        "quantity": quantity,
+                        "bpc_quantity": c.get("quantity", 0.0),
+                    })
+
+        return records
+
     def _log_final_summary(self):
         """Log final summary with demand table and detailed U4U consumption table."""
         logger.info("")
@@ -1192,6 +1368,10 @@ class U4UIterationLoop:
 
         logger.info("")
 
+        # Build dynamic U4U consumption table (all ODS producers, including zero gen)
+        dynamic_table = self._build_dynamic_u4u_table()
+        self.final_dynamic_table = dynamic_table
+
         # Part 2: Detailed U4U consumption table
         logger.info("  U4U CONSUMPTION TABLE (final iteration)")
         logger.info("  %-25s  %-25s  %-6s  %14s  %14s  %10s  %-12s  %-25s  %-6s  %12s  %14s  %14s  %10s",
@@ -1201,10 +1381,12 @@ class U4UIterationLoop:
                      "-" * 25, "-" * 25, "-" * 6, "-" * 14, "-" * 14, "-" * 10,
                      "-" * 12, "-" * 25, "-" * 6, "-" * 12, "-" * 14, "-" * 14, "-" * 10)
 
-        for rec in self.final_detail_records:
+        for rec in dynamic_table:
             bpc_gen = self._lookup_bpc_gen_qty(rec["producer"])
             gen_diff_pct = self._pct_diff(rec["generation"], bpc_gen)
-            bpc_qty = self._lookup_bpc_qty(rec["producer"], rec["material"])
+            bpc_qty = rec.get("bpc_quantity")
+            if bpc_qty is None:
+                bpc_qty = self._lookup_bpc_qty(rec["producer"], rec["material"])
             qty_diff_pct = self._pct_diff(rec["quantity"], bpc_qty)
             logger.info("  %-25s  %-25s  %-6s  %14.2f  %14.2f  %9.2f%%  %-12s  %-25s  %-6s  %12.6f  %14.2f  %14.2f  %9.2f%%",
                          rec["producer"][:25],
@@ -1225,7 +1407,7 @@ class U4UIterationLoop:
 
         # Part 3: Totals by material
         material_totals: dict = {}
-        for rec in self.final_detail_records:
+        for rec in dynamic_table:
             mat = rec["material"]
             material_totals[mat] = material_totals.get(mat, 0.0) + rec["quantity"]
 
@@ -1235,7 +1417,7 @@ class U4UIterationLoop:
 
         # Get UOM for each material from detail records
         material_uoms = {}
-        for rec in self.final_detail_records:
+        for rec in dynamic_table:
             if rec["material"] not in material_uoms:
                 material_uoms[rec["material"]] = rec["material_uom"]
 
@@ -1256,7 +1438,7 @@ class U4UIterationLoop:
 
         # Aggregate per producer
         producer_summary: dict = {}
-        for rec in self.final_detail_records:
+        for rec in dynamic_table:
             p = rec["producer"]
             if p not in producer_summary:
                 bpc_gen = self._lookup_bpc_gen_qty(p)

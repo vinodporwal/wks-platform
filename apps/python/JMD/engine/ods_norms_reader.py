@@ -586,15 +586,19 @@ class ODSNormsReader:
     #    of generation for every producing asset/utility in the ODS
     # ------------------------------------------------------------------
 
-    def get_consumption_norms(self) -> dict:
+    def get_consumption_norms(self, include_all_accounts: bool = False) -> dict:
         """
-        Return the full consumption norms matrix for every producing utility/asset.
+        Return the consumption norms matrix for every producing utility/asset.
 
         For each producer (e.g., AUXBOIL7_SHP STEAM, POWERGEN, Boiler Feed Water),
         this returns all consumed utilities/materials and their norm per UOM of
         production.
 
-        Includes both 'Utilities' and 'Raw Material' account rows.
+        By default includes only 'Utilities' and 'Raw Material' account rows
+        (used for U4U calculation).  Set ``include_all_accounts=True`` to also
+        include other account types such as Cat Chem, byproduct credits, etc.
+        This makes the table dynamic and future-proof when new accounts are
+        added to the ODS/DB.
 
         Structure:
             {
@@ -627,7 +631,7 @@ class ODSNormsReader:
             account = str(row[_COL_ACCOUNT]).strip()
             material = str(row[_COL_MATERIAL]).strip()
 
-            if account not in ("Utilities", "Raw Material"):
+            if not include_all_accounts and account not in ("Utilities", "Raw Material"):
                 continue
             if not utility or utility == "nan" or not material or material == "nan":
                 continue
@@ -642,6 +646,7 @@ class ODSNormsReader:
             producer_uom = str(row[_COL_UTILITY_UOM]).strip() if pd.notna(row[_COL_UTILITY_UOM]) else ""
             material_uom = str(row[_COL_MATERIAL_UOM]).strip() if pd.notna(row[_COL_MATERIAL_UOM]) else ""
             norm_val = self._get_norm_val(row)
+            qty_val = self._get_quantity_val(row)
 
             # Use composite key when multiple plants produce the same utility
             # (e.g., POWERGEN appears 3 times: GTG1 at 36H0, GTG2 at 36H0, STG at 36H2)
@@ -669,12 +674,24 @@ class ODSNormsReader:
                 "material_id": material_id,
                 "issuing_plant_id": issuing_plant_id,
                 "norm": norm_val,
+                "quantity": qty_val,
                 "material_uom": material_uom,
                 "source_plant": utility_plant,
                 "source_plant_id": utility_plant_id,
             })
 
         return norms_map
+
+    def get_all_consumption_norms(self) -> dict:
+        """
+        Return the full consumption norms matrix including ALL account types.
+
+        This is the same as ``get_consumption_norms(include_all_accounts=True)``
+        and is used by display tables that must list every consumption material
+        for every producer (Utilities, Raw Material, Cat Chem, byproducts, etc.)
+        even when those materials are not part of the U4U calculation.
+        """
+        return self.get_consumption_norms(include_all_accounts=True)
 
     def get_consumption_norms_flat(self) -> dict:
         """

@@ -1,0 +1,1792 @@
+NMD Plant Run Log
+Plant:     NMD CPP
+Period:    4/2026
+Generated: 2026-07-07 00:41:38
+================================================================================
+
+
+Fetching data for April 2026...
+######################################################################
+  NMD CPP  [23BCA1B3]  Period: 4/2026
+######################################################################
+
+======================================================================
+  PLANT INFO
+======================================================================
+  plant_id:     23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653
+  name:         NMD-CPP
+  display_name: NMD CPP
+  short_code:   NMD
+
+======================================================================
+  POWER GENERATION ASSETS  (PowerGenerationAssets)
+======================================================================
+  4 asset(s):
+  Asset                           Type      PlantCode   
+  ------------------------------  --------  ------------
+  NMD-Power Plant-1               GT        40NB        
+  NMD-Power Plant-2               GT        40NC        
+  NMD-Power Plant-3               GT        40ND        
+  NMD-STG Power Plant             STG       40NE        
+
+======================================================================
+  ASSET SNAPSHOT  (April 2026)
+======================================================================
+  4 asset(s)
+  Asset                         Type      Hours    MinMW    MaxMW   FixMin   FixMax   Prio   Avail
+  ----------------------------  ------  -------  -------  -------  -------  -------  -----  ------
+  NMD-Power Plant-2             -         700.0     6.00    20.00     5.00    22.00      1     Yes
+  NMD-Power Plant-3             -         720.0     6.00    20.00     5.00    22.00      1     Yes
+  NMD-Power Plant-1             -         620.0     6.00    20.00     5.00    22.00      2     Yes
+  NMD-STG Power Plant           -         720.0     6.00    24.00     6.00    25.00      5     Yes
+
+======================================================================
+  GT HEAT RATE & FREE STEAM  (April 2026)
+======================================================================
+  GT Asset                  Curve    LoadMW    Hours    GrossMWh   HeatRate   FSFactor   FreeSteamMT  → HRSG    
+  ------------------------  ------  -------  -------  ----------  ---------  ---------  ------------  ----------
+  NMD-Power Plant-2         GT-2      20.00    700.0    14000.00    3382.00     1.8400      25760.00  HRSG-2    
+  NMD-Power Plant-3         GT-3      20.00    720.0    14400.00    3368.00     1.8400      26496.00  HRSG-3    
+  NMD-Power Plant-1         GT-1      20.00    620.0    12400.00    3378.00     1.8400      22816.00  HRSG-1    
+  ------------------------  ------  -------  -------  ----------  ---------  ---------  ------------  ----------
+  TOTAL FREE STEAM                                                                          75072.00
+
+  Free Steam (MT) = GrossMWh × FreeSteamFactor (from CPP_GTHeatRate at GT load)
+  This free steam is transferred to the respective linked HRSG as SHP steam input.
+
+======================================================================
+  STEAM GENERATION ASSETS  (April 2026)
+======================================================================
+  7 asset(s):
+  Asset                   Type    Steam     MinMT    MaxMT    Eff   Prio    Hours   AlwaysOn  LinkedGT        
+  ----------------------  ------  ------  -------  -------  -----  -----  -------  ---------  ----------------
+  HRSG-1                  HRSG    SHP        60.0    136.0   1.03      1    620.0         No  NMD-Power Plant-1
+  HRSG-2                  HRSG    SHP        60.0    136.0   1.03      2    700.0         No  NMD-Power Plant-2
+  HRSG-3                  HRSG    SHP        60.0    136.0   1.03      3    720.0         No  NMD-Power Plant-3
+  STG                     STG     ALL         0.0  999999.0   1.00     10    720.0        Yes  -               
+  HP Steam PRDS           PRDS    HP          0.0  999999.0   1.00     20    720.0        Yes  -               
+  MP Steam PRDS           PRDS    MP          0.0  999999.0   1.00     21    720.0        Yes  -               
+  LP Steam PRDS           PRDS    LP          0.0  999999.0   1.00     22    720.0        Yes  -               
+
+======================================================================
+  CONSOLIDATED DEMAND  (Process + Fixed)  (4/2026)
+======================================================================
+00:41:20  INFO        [CONSOLIDATED] 12 utilities (process + fixed) for 4/2026
+  12 utility(ies)
+  Utility                       UOM                Process             Fixed             Total
+  ----------------------------  --------  ----------------  ----------------  ----------------
+  COMPRESSED AIR                NM3             5858501.00          32960.00        5891461.00
+  Cooling Water 1               KM3/MT OF E+P          14286.00              0.00          14286.00
+  Cooling Water 2               KM3                7960.00              8.00           7968.00
+  D M Water                     M3                84660.00            366.00          85026.00
+  HP Steam_Dis                  MT/MT OF E+P           1266.00              0.00           1266.00
+  LP Steam_Dis                  MT                19769.00           5175.00          24944.00
+  MP Steam_Dis                  MT                20556.00            518.00          21074.00
+  Nitrogen Gas                  NM3/MT OF E+P        5464589.00              0.00        5464589.00
+  Oxygen                        TPH                5315.00              0.00           5315.00
+  Power_Dis                     KWH            26366549.00        1019084.00       27385633.00
+  SHP Steam_Dis                 TPH               20126.00              0.00          20126.00
+  Water                         M3                11183.00         257241.00         268424.00
+  ----------------------------  --------  ----------------  ----------------  ----------------
+  GRAND TOTAL                                  37874760.00        1315352.00       39190112.00
+
+  Note: Grand total mixes UOMs — for reference only.
+
+======================================================================
+  IMPORT POWER  (4/2026)
+======================================================================
+  Total Import Power: 34560.00 MWh  (0 sources)
+
+======================================================================
+  SUPPLY vs DEMAND ANALYSIS  (April 2026)
+======================================================================
+00:41:21  INFO        [CONSOLIDATED] 12 utilities (process + fixed) for 4/2026
+
+  --- POWER BALANCE ---
+
+  DEMAND                                     MWh
+  ------------------------------  --------------
+  Power (Process)                       26366.55
+  Power (Fixed)                          1019.08
+  Total Power Demand                    27385.63
+
+  IMPORT POWER (reduces demand)     Cap MW     Hours             MWh
+  ------------------------------  --------  --------  --------------
+  MEL                                24.00     720.0        17280.00
+  MSCB                               24.00     720.0        17280.00
+  ------------------------------  --------  --------  --------------
+  Total Import Power                                        34560.00
+
+  Net Demand (after import)             -7174.37
+
+  SUPPLY (GT + STG Assets)          Max MW     Hours             MWh
+  ------------------------------  --------  --------  --------------
+  NMD-Power Plant-2                  20.00     700.0        14000.00  [OK]
+  NMD-Power Plant-3                  20.00     720.0        14400.00  [OK]
+  NMD-Power Plant-1                  20.00     620.0        12400.00  [OK]
+  NMD-STG Power Plant                24.00     720.0        17280.00  [OK]
+  ------------------------------  --------  --------  --------------
+  Total Power Supply                                        58080.00
+
+  Power Balance (Supply - Net Demand)        65254.37 MWh  [SURPLUS]
+  Supply / Net Demand                        0.0 %
+  ** OK: Power supply can meet net demand with 65254.37 MWh surplus **
+
+
+  --- STEAM BALANCE ---
+
+
+  === SHP STEAM ===
+
+  DEMAND                                      MT
+  ------------------------------  --------------
+  Total SHP Steam Demand                20126.00
+
+  SUPPLY (Available Assets)         MaxMT/hr     Hours              MT
+  ------------------------------  ----------  --------  --------------
+  HRSG-1                               136.0     620.0        84320.00  [OK]
+  HRSG-2                               136.0     700.0        95200.00  [OK]
+  HRSG-3                               136.0     720.0        97920.00  [OK]
+  ------------------------------  ----------  --------  --------------
+  Total SHP Steam Supply                                     277440.00
+
+  SHP Steam Balance                    257314.00 MT  [SURPLUS]
+  Supply / Demand                         1378.5 %
+  ** OK: SHP steam supply can meet demand with 257314.00 MT surplus **
+
+  === HP STEAM ===
+
+  DEMAND                                      MT
+  ------------------------------  --------------
+  Total HP Steam Demand                  1266.00
+
+  SUPPLY (Available Assets)         MaxMT/hr     Hours              MT
+  ------------------------------  ----------  --------  --------------
+  HP Steam PRDS                     999999.0     720.0         1266.00  [ALWAYS]
+  ------------------------------  ----------  --------  --------------
+  Total HP Steam Supply                                        1266.00
+
+  HP Steam Balance                          0.00 MT  [SURPLUS]
+  Supply / Demand                          100.0 %
+  ** OK: HP steam supply can meet demand with 0.00 MT surplus **
+
+  === MP STEAM ===
+
+  DEMAND                                      MT
+  ------------------------------  --------------
+  Total MP Steam Demand                 21074.00
+
+  SUPPLY (Available Assets)         MaxMT/hr     Hours              MT
+  ------------------------------  ----------  --------  --------------
+  MP Steam PRDS                     999999.0     720.0        21074.00  [ALWAYS]
+  ------------------------------  ----------  --------  --------------
+  Total MP Steam Supply                                       21074.00
+
+  MP Steam Balance                          0.00 MT  [SURPLUS]
+  Supply / Demand                          100.0 %
+  ** OK: MP steam supply can meet demand with 0.00 MT surplus **
+
+  === LP STEAM ===
+
+  DEMAND                                      MT
+  ------------------------------  --------------
+  Total LP Steam Demand                 24944.00
+
+  SUPPLY (Available Assets)         MaxMT/hr     Hours              MT
+  ------------------------------  ----------  --------  --------------
+  LP Steam PRDS                     999999.0     720.0        24944.00  [ALWAYS]
+  ------------------------------  ----------  --------  --------------
+  Total LP Steam Supply                                       24944.00
+
+  LP Steam Balance                          0.00 MT  [SURPLUS]
+  Supply / Demand                          100.0 %
+  ** OK: LP steam supply can meet demand with 0.00 MT surplus **
+
+======================================================================
+  GENERATION UTILITIES & U4U CONSUMPTION MATRIX  (April 2026)
+======================================================================
+  Producer Utilities (22): Boiler Feed Water, COMPRESSED AIR, Cooling Water 1, Cooling Water 2, D M Water, Effluent Treated, HP Steam PRDS, HP Steam_Dis, HRSG1_SHP STEAM, HRSG2_SHP STEAM, HRSG3_SHP STEAM, LP Steam PRDS, LP Steam_Dis, MP Steam PRDS SHP, MP Steam_Dis, Oxygen, POWERGEN, Power_Dis, SHP Steam_Dis, STG1_LP STEAM, STG1_MP STEAM, Treated Spent Caustic
+  Consumer/U4U Utilities (20): Boiler Feed Water, COMPRESSED AIR, Cooling Water 2, D M Water, HP Steam PRDS, HRSG1_SHP STEAM, HRSG2_SHP STEAM, HRSG3_SHP STEAM, LP Steam PRDS, LP Steam_Dis, MP Steam PRDS SHP, MP Steam_Dis, POWERGEN, Power from MEL, Power_Dis, Ret steam condensate, SHP Steam_Dis, STG1_LP STEAM, STG1_MP STEAM, UREA,NITROGEN CONTENT 46%
+  Total Unique Utilities: 25
+
+  Plant                         Utility (Producer)      UOM         Generation  U4U Consumes                                      
+  ----------------------------  ----------------------  ------  --------------  --------------------------------------------------
+  NMD - Power Plant 1           POWERGEN                KWH               0.00  COMPRESSED AIR(0.0040); Cooling Water 2(0.0000)...
+  NMD - Power Plant 2           POWERGEN                KWH         9049661.39  COMPRESSED AIR(0.0039); Cooling Water 2(0.0000)...
+  NMD - Power Plant 3           POWERGEN                KWH         9049661.39  COMPRESSED AIR(0.0040); Cooling Water 2(0.0000)...
+  NMD - STG Power Plant         POWERGEN                KWH         5176924.36  COMPRESSED AIR(0.0044); Cooling Water 2(0.0002)...
+  NMD - Utility Plant           Boiler Feed Water       M3           104007.28  Cooling Water 2(0.0021); D M Water(0.8557); LP ...
+  NMD - Utility Plant           COMPRESSED AIR          NM3         6904921.00  Cooling Water 2(0.0000); Power_Dis(0.1789)        
+  NMD - Utility Plant           Cooling Water 1         KM3           14286.00  COMPRESSED AIR(0.1976); Power_Dis(244.6950)       
+  NMD - Utility Plant           Cooling Water 2         KM3           10843.00  COMPRESSED AIR(0.1353); Power_Dis(237.3584)       
+  NMD - Utility Plant           D M Water               M3           174025.97  COMPRESSED AIR(0.0879); Power_Dis(1.0877); Ret ...
+  NMD - Utility Plant           Effluent Treated        M3                0.00  Power_Dis(3.5400); UREA,NITROGEN CONTENT 46%(0....
+  NMD - Utility Plant           HP Steam PRDS           MT             1266.00  Boiler Feed Water(0.0768); SHP Steam_Dis(0.9232)  
+  NMD - Utility Plant           HRSG1_SHP STEAM         MT                0.00  Boiler Feed Water(1.1614); COMPRESSED AIR(14.32...
+  NMD - Utility Plant           HRSG2_SHP STEAM         MT            43200.00  Boiler Feed Water(1.0573); COMPRESSED AIR(14.44...
+  NMD - Utility Plant           HRSG3_SHP STEAM         MT            43200.00  Boiler Feed Water(1.5191); COMPRESSED AIR(14.02...
+  NMD - Utility Plant           LP Steam PRDS           MT            33588.41  Boiler Feed Water(0.2500); MP Steam_Dis(0.7500)   
+  NMD - Utility Plant           MP Steam PRDS SHP       MT            46264.31  Boiler Feed Water(0.0900); SHP Steam_Dis(0.9100)  
+  NMD - Utility Plant           Oxygen                  MT                0.00  Cooling Water 2(0.1091); Power_Dis(492.4029)      
+  NMD - Utility Plant           STG1_LP STEAM           MT             4284.62  SHP Steam_Dis(0.4800)                             
+  NMD - Utility Plant           STG1_MP STEAM           MT                0.00  SHP Steam_Dis(0.6900)                             
+  NMD - Utility Plant           Treated Spent Caustic   M3                0.00  COMPRESSED AIR(99.4124); Cooling Water 2(0.0000...
+  NMD - Utility/Power Dist      HP Steam_Dis            MT             1266.00  HP Steam PRDS(1.0000)                             
+  NMD - Utility/Power Dist      LP Steam_Dis            MT            37873.03  LP Steam PRDS(0.8869); STG1_LP STEAM(0.1131)      
+  NMD - Utility/Power Dist      MP Steam_Dis            MT            46264.31  MP Steam PRDS SHP(1.0000); STG1_MP STEAM(0.0000)  
+  NMD - Utility/Power Dist      Power_Dis               KWH        40181583.55  Power from MEL(0.4300); POWERGEN(0.0000); POWER...
+  NMD - Utility/Power Dist      SHP Steam_Dis           MT            86399.92  HRSG1_SHP STEAM(0.0000); HRSG2_SHP STEAM(0.5000...
+
+  --- U4U CONSUMPTION DETAILS ---
+
+  Producer Utility        Consumes (Material)           Norm             Qty  UOM     Issuing Plant               
+  ----------------------  ----------------------  ----------  --------------  ------  ----------------------------
+  Boiler Feed Water       Cooling Water 2           0.002072          215.50  KM3     NMD - Utility Plant         
+  Boiler Feed Water       D M Water                 0.855709        88999.97  M3      NMD - Utility Plant         
+  Boiler Feed Water       LP Steam_Dis              0.114937        11954.28  MT      NMD - Utility/Power Dist    
+  Boiler Feed Water       Power_Dis                 9.657983      1004500.54  KWH     NMD - Utility/Power Dist    
+  COMPRESSED AIR          Cooling Water 2           0.000019          131.19  KM3     NMD - Utility Plant         
+  COMPRESSED AIR          Power_Dis                 0.178938      1235552.75  KWH     NMD - Utility/Power Dist    
+  Cooling Water 1         COMPRESSED AIR            0.197630         2823.34  NM3     NMD - Utility Plant         
+  Cooling Water 1         Power_Dis               244.695043      3495713.38  KWH     NMD - Utility/Power Dist    
+  Cooling Water 2         COMPRESSED AIR            0.135278         1466.82  NM3     NMD - Utility Plant         
+  Cooling Water 2         Power_Dis               237.358415      2573677.29  KWH     NMD - Utility/Power Dist    
+  D M Water               COMPRESSED AIR            0.087875        15292.53  NM3     NMD - Utility Plant         
+  D M Water               Power_Dis                 1.087657       189280.56  KWH     NMD - Utility/Power Dist    
+  D M Water               Ret steam condensate      0.164338        28599.08  M3      NMD - STG Power Plant       
+  Effluent Treated        Power_Dis                 3.540000            0.00  KWH     NMD - Utility/Power Dist    
+  Effluent Treated        UREA,NITROGEN CONTENT 46%    0.001155            0.00  KG      NMD-Rev Proc                
+  HP Steam PRDS           Boiler Feed Water         0.076800           97.23  M3      NMD - Utility Plant         
+  HP Steam PRDS           SHP Steam_Dis             0.923200         1168.77  MT      NMD - Utility/Power Dist    
+  HP Steam_Dis            HP Steam PRDS             1.000000         1266.00  MT      NMD - Utility Plant         
+  HRSG1_SHP STEAM         Boiler Feed Water         1.161366            0.00  M3      NMD - Utility Plant         
+  HRSG1_SHP STEAM         COMPRESSED AIR           14.323373            0.00  NM3     NMD - Utility Plant         
+  HRSG1_SHP STEAM         LP Steam_Dis              0.012124            0.00  MT      NMD - Utility/Power Dist    
+  HRSG2_SHP STEAM         Boiler Feed Water         1.057282        45674.58  M3      NMD - Utility Plant         
+  HRSG2_SHP STEAM         COMPRESSED AIR           14.440609       623834.31  NM3     NMD - Utility Plant         
+  HRSG2_SHP STEAM         LP Steam_Dis              0.011287          487.60  MT      NMD - Utility/Power Dist    
+  HRSG3_SHP STEAM         Boiler Feed Water         1.519077        65624.13  M3      NMD - Utility Plant         
+  HRSG3_SHP STEAM         COMPRESSED AIR           14.022769       605783.62  NM3     NMD - Utility Plant         
+  HRSG3_SHP STEAM         LP Steam_Dis              0.010594          457.66  MT      NMD - Utility/Power Dist    
+  LP Steam PRDS           Boiler Feed Water         0.250000         8397.10  M3      NMD - Utility Plant         
+  LP Steam PRDS           MP Steam_Dis              0.750000        25191.31  MT      NMD - Utility/Power Dist    
+  LP Steam_Dis            LP Steam PRDS             0.886900        33589.59  MT      NMD - Utility Plant         
+  LP Steam_Dis            STG1_LP STEAM             0.113100         4283.44  MT      NMD - Utility Plant         
+  MP Steam PRDS SHP       Boiler Feed Water         0.090000         4163.79  M3      NMD - Utility Plant         
+  MP Steam PRDS SHP       SHP Steam_Dis             0.910000        42100.52  MT      NMD - Utility/Power Dist    
+  MP Steam_Dis            MP Steam PRDS SHP         1.000000        46264.31  MT      NMD - Utility Plant         
+  MP Steam_Dis            STG1_MP STEAM             0.000000            0.00  MT      NMD - Utility Plant         
+  Oxygen                  Cooling Water 2           0.109123            0.00  KM3     NMD - Utility Plant         
+  Oxygen                  Power_Dis               492.402868            0.00  KWH     NMD - Utility/Power Dist    
+  POWERGEN                COMPRESSED AIR            0.004357        22555.86  NM3     NMD - Utility Plant         
+  POWERGEN                Cooling Water 2           0.000227         1175.16  KM3     NMD - Utility Plant         
+  POWERGEN                Power_Dis                 0.002561        13258.10  KWH     NMD - Utility/Power Dist    
+  POWERGEN                SHP Steam_Dis             0.004442        22996.70  MT      NMD - Utility/Power Dist    
+  Power_Dis               POWERGEN                  0.128508      5163666.26  KWH     NMD - STG Power Plant       
+  Power_Dis               Power from MEL            0.430048     17280000.00  KWH     NMD-Rev Proc                
+  SHP Steam_Dis           HRSG1_SHP STEAM           0.000000            0.00  MT      NMD - Utility Plant         
+  SHP Steam_Dis           HRSG2_SHP STEAM           0.500000        43199.96  MT      NMD - Utility Plant         
+  SHP Steam_Dis           HRSG3_SHP STEAM           0.500000        43199.96  MT      NMD - Utility Plant         
+  STG1_LP STEAM           SHP Steam_Dis             0.479999         2056.61  MT      NMD - Utility/Power Dist    
+  STG1_MP STEAM           SHP Steam_Dis             0.689999            0.00  MT      NMD - Utility/Power Dist    
+  Treated Spent Caustic   COMPRESSED AIR           99.412351            0.00  NM3     NMD - Utility Plant         
+  Treated Spent Caustic   Cooling Water 2           0.000000            8.00  KM3     NMD - Utility Plant         
+  Treated Spent Caustic   MP Steam_Dis              0.039000            0.00  MT      NMD - Utility/Power Dist    
+  Treated Spent Caustic   Power_Dis                17.040000            0.00  KWH     NMD - Utility/Power Dist    
+
+  Note: Norm = consumption per unit generation. Qty = actual consumption for the month.
+  U4U consumption adds to total demand for each consumed utility.
+
+======================================================================
+  CPPNORMS — U4U CONSUMPTION NORMS  (April 2026)
+======================================================================
+  Financial Year: 2026-27  |  Norm Column: Apr_Norms  |  Total Rows: 64
+
+  Plant                         Generation Utility      UOM     U4U Material                    Norm  UOM     Issuing Plant               
+  ----------------------------  ----------------------  ------  ----------------------  ------------  ------  ----------------------------
+  NMD - Power Plant 1           POWERGEN                KWH     COMPRESSED AIR              0.004000  NM3     NMD - Utility Plant         
+                                                                Cooling Water 2             0.000011  KM3     NMD - Utility Plant         
+                                                                Power_Dis                   0.019625  KWH     NMD - Utility/Power Dist    
+  NMD - Power Plant 2           POWERGEN                KWH     COMPRESSED AIR              0.003949  NM3     NMD - Utility Plant         
+                                                                Cooling Water 2             0.000011  KM3     NMD - Utility Plant         
+                                                                Power_Dis                   0.019870  KWH     NMD - Utility/Power Dist    
+  NMD - Power Plant 3           POWERGEN                KWH     COMPRESSED AIR              0.003997  NM3     NMD - Utility Plant         
+                                                                Cooling Water 2             0.000011  KM3     NMD - Utility Plant         
+                                                                Power_Dis                   0.020082  KWH     NMD - Utility/Power Dist    
+  NMD - STG Power Plant         POWERGEN                KWH     COMPRESSED AIR              0.004357  NM3     NMD - Utility Plant         
+                                                                Cooling Water 2             0.000227  KM3     NMD - Utility Plant         
+                                                                Power_Dis                   0.002561  KWH     NMD - Utility/Power Dist    
+                                                                SHP Steam_Dis               0.004442  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           Boiler Feed Water       M3      Cooling Water 2             0.002072  KM3     NMD - Utility Plant         
+                                                                D M Water                   0.855709  M3      NMD - Utility Plant         
+                                                                LP Steam_Dis                0.114937  MT      NMD - Utility/Power Dist    
+                                                                Power_Dis                   9.657983  KWH     NMD - Utility/Power Dist    
+  NMD - Utility Plant           COMPRESSED AIR          NM3     Cooling Water 2             0.000019  KM3     NMD - Utility Plant         
+                                                                Power_Dis                   0.178938  KWH     NMD - Utility/Power Dist    
+  NMD - Utility Plant           Cooling Water 1         KM3     COMPRESSED AIR              0.197630  NM3     NMD - Utility Plant         
+                                                                Power_Dis                 244.695043  KWH     NMD - Utility/Power Dist    
+  NMD - Utility Plant           Cooling Water 2         KM3     COMPRESSED AIR              0.135278  NM3     NMD - Utility Plant         
+                                                                Power_Dis                 237.358415  KWH     NMD - Utility/Power Dist    
+  NMD - Utility Plant           D M Water               M3      COMPRESSED AIR              0.087875  NM3     NMD - Utility Plant         
+                                                                Power_Dis                   1.087657  KWH     NMD - Utility/Power Dist    
+                                                                Ret steam condensate        0.164338  M3      NMD - STG Power Plant       
+  NMD - Utility Plant           Effluent Treated        M3      Power_Dis                   3.540000  KWH     NMD - Utility/Power Dist    
+                                                                UREA,NITROGEN CONTENT 46%      0.001155  KG      NMD-Rev Proc                
+  NMD - Utility Plant           HP Steam PRDS           MT      Boiler Feed Water           0.076800  M3      NMD - Utility Plant         
+                                                                SHP Steam_Dis               0.923200  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           HRSG1_SHP STEAM         MT      Boiler Feed Water           1.161366  M3      NMD - Utility Plant         
+                                                                COMPRESSED AIR             14.323373  NM3     NMD - Utility Plant         
+                                                                LP Steam_Dis                0.012124  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           HRSG2_SHP STEAM         MT      Boiler Feed Water           1.057282  M3      NMD - Utility Plant         
+                                                                COMPRESSED AIR             14.440609  NM3     NMD - Utility Plant         
+                                                                LP Steam_Dis                0.011287  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           HRSG3_SHP STEAM         MT      Boiler Feed Water           1.519077  M3      NMD - Utility Plant         
+                                                                COMPRESSED AIR             14.022769  NM3     NMD - Utility Plant         
+                                                                LP Steam_Dis                0.010594  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           LP Steam PRDS           MT      Boiler Feed Water           0.250000  M3      NMD - Utility Plant         
+                                                                MP Steam_Dis                0.750000  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           MP Steam PRDS SHP       MT      Boiler Feed Water           0.090000  M3      NMD - Utility Plant         
+                                                                SHP Steam_Dis               0.910000  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           Oxygen                  MT      Cooling Water 2             0.109123  KM3     NMD - Utility Plant         
+                                                                Power_Dis                 492.402868  KWH     NMD - Utility/Power Dist    
+  NMD - Utility Plant           STG1_LP STEAM           MT      SHP Steam_Dis               0.479999  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           STG1_MP STEAM           MT      SHP Steam_Dis               0.689999  MT      NMD - Utility/Power Dist    
+  NMD - Utility Plant           Treated Spent Caustic   M3      COMPRESSED AIR             99.412351  NM3     NMD - Utility Plant         
+                                                                Cooling Water 2             0.000000  KM3     NMD - Utility Plant         
+                                                                MP Steam_Dis                0.039000  MT      NMD - Utility/Power Dist    
+                                                                Power_Dis                  17.040000  KWH     NMD - Utility/Power Dist    
+  NMD - Utility/Power Dist      HP Steam_Dis            MT      HP Steam PRDS               1.000000  MT      NMD - Utility Plant         
+  NMD - Utility/Power Dist      LP Steam_Dis            MT      LP Steam PRDS               0.886900  MT      NMD - Utility Plant         
+                                                                STG1_LP STEAM               0.113100  MT      NMD - Utility Plant         
+  NMD - Utility/Power Dist      MP Steam_Dis            MT      MP Steam PRDS SHP           1.000000  MT      NMD - Utility Plant         
+                                                                STG1_MP STEAM               0.000000  MT      NMD - Utility Plant         
+  NMD - Utility/Power Dist      Power_Dis               KWH     Power from MEL              0.430048  KWH     NMD-Rev Proc                
+                                                                POWERGEN                    0.000000  KWH     NMD - Power Plant 1         
+                                                                POWERGEN                    0.220744  KWH     NMD - Power Plant 2         
+                                                                POWERGEN                    0.220696  KWH     NMD - Power Plant 3         
+                                                                POWERGEN                    0.128508  KWH     NMD - STG Power Plant       
+  NMD - Utility/Power Dist      SHP Steam_Dis           MT      HRSG1_SHP STEAM             0.000000  MT      NMD - Utility Plant         
+                                                                HRSG2_SHP STEAM             0.500000  MT      NMD - Utility Plant         
+                                                                HRSG3_SHP STEAM             0.500000  MT      NMD - Utility Plant         
+
+  Norm = U4U consumption per unit of generation utility.
+  Consumption QTY = Norm × Generation QTY (from NormsMonthDetail).
+
+======================================================================
+  U4U ITERATIVE BALANCING
+======================================================================
+00:41:25  INFO        [NMD NormsReader] Loaded 118 rows for 4/2026 — 1 generation utilities, 34 U4U materials
+00:41:26  INFO        [CONSOLIDATED] 12 utilities (process + fixed) for 4/2026
+00:41:26  INFO        [U4U LOOP] Initial demands: 13 utilities (13 from demand, 1 from norms)
+00:41:26  INFO        [U4U LOOP] Pass-through utilities (demand but no norms): COMPRESSED AIR, Cooling Water 1, Cooling Water 2, D M Water, HP Steam_Dis, LP Steam_Dis, MP Steam_Dis, Nitrogen Gas, Oxygen, Power_Dis, SHP Steam_Dis, Water
+00:41:26  INFO      
+00:41:26  INFO        ==========================================================================================
+00:41:26  INFO        U4U ITERATION LOOP  (April 2026)
+00:41:26  INFO        ==========================================================================================
+00:41:26  INFO        Tolerance: 0.0100% (U4U)  |  0.02 MWh (power)  |  Max iterations: 50
+00:41:26  INFO        Total utilities: 13  |  Generation utilities: 1  |  Pass-through: 12
+00:41:26  INFO        Pass-through (no norms): COMPRESSED AIR, Cooling Water 1, Cooling Water 2, D M Water, HP Steam_Dis, LP Steam_Dis, MP Steam_Dis, Nitrogen Gas, Oxygen, Power_Dis, SHP Steam_Dis, Water
+00:41:26  INFO      
+00:41:27  INFO        [DISPATCH] Total demand: 27385.63 MWh, Import: 34560.00 MWh, Net for GT/STG: 0.00 MWh
+00:41:27  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:27  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:27  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:27  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:27  INFO        ==============================================================================
+00:41:27  INFO        POWER DISPATCH  (April 2026)
+00:41:27  INFO        ==============================================================================
+00:41:27  INFO        Demand:  Process = 27385.63 MWh  |  Fixed = 0.00 MWh  |  Total = 27385.63 MWh
+00:41:27  INFO      
+00:41:27  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:27  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:27  INFO        NMD-Power Plant-2                 1      6.00     20.00    700.00            6.00         4200.00     30.0%       8274.00          0.00
+00:41:27  INFO        NMD-Power Plant-3                 1      6.00     20.00    720.00            6.00         4320.00     30.0%       8510.40          0.00
+00:41:27  INFO        NMD-Power Plant-1                 2      6.00     20.00    620.00            6.00         3720.00     30.0%       7328.40          0.00
+00:41:27  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00            6.00         4320.00     25.0%          0.00          0.00
+00:41:27  INFO        TOTAL                                                                                    16560.00                24112.80          0.00
+00:41:27  INFO        DEFICIT: 10825.63 MWh under-generation
+00:41:27  INFO        ==============================================================================
+00:41:27  INFO        ==============================================================================
+00:41:27  INFO        STEAM DISPATCH  (April 2026)
+00:41:27  INFO        ==============================================================================
+00:41:27  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:27  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:27  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:27  INFO        SHP                20126.00    18580.32          0.00          20126.00
+00:41:27  INFO      
+00:41:27  INFO        Total Free Steam available: 24112.80 MT
+00:41:27  INFO      
+00:41:27  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:27  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:27  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:27  INFO        HRSG-1                            2       48.18      124.18    620.00            0.00            0.00      8.7%
+00:41:27  INFO        HRSG-2                            1       48.18      124.18    700.00            0.00            0.00      8.7%
+00:41:27  INFO        HRSG-3                            1       48.18      124.18    720.00            0.00            0.00      8.7%
+00:41:27  INFO        TOTAL SUPPLEMENTARY                                                                              0.00          
+00:41:27  INFO        TOTAL STEAM GENERATED                                                                        24112.80          
+00:41:27  INFO        SURPLUS: 3986.80 MT
+00:41:27  INFO        ==============================================================================
+00:41:27  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:27  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:27  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=0.00 MT, free_steam=7328.40 MT, total_steam=7328.40 MT
+00:41:27  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=7328.40 MT, norm=2.811570, consumed=20604.31 MMBTU (REVERSE, BPC method)
+00:41:27  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=0.00 MT, free_steam=8510.40 MT, total_steam=8510.40 MT
+00:41:27  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=8510.40 MT, norm=2.688724, consumed=22882.12 MMBTU (REVERSE, BPC method)
+00:41:27  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=0.00 MT, free_steam=8274.00 MT, total_steam=8274.00 MT
+00:41:27  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=8274.00 MT, norm=2.688724, consumed=22246.50 MMBTU (REVERSE, BPC method)
+00:41:27  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:27  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:27  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:27  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:27  INFO        [U4U LOOP] Excess SHP: 3986.80 MT → STG +1119.89 MWh, GT -1119.89 MWh
+00:41:27  INFO      
+00:41:27  INFO        ------------------------------------------------------------------------------------------
+00:41:27  INFO        ITERATION 1
+00:41:27  INFO        ------------------------------------------------------------------------------------------
+00:41:27  INFO        Power:  Demand =    27385633.00 KWH  |  Gen =       16560.00 MWh  |  Surplus = 23734.37  |  Deficit =     0.00
+00:41:27  INFO        Steam:  Gen =       24112.80 MT  |  Surplus =  3986.80  |  Deficit =     0.00
+00:41:27  INFO        Excess SHP:    3986.80 MT → STG override = 5439.89 MWh, GT reduction = 1119.89 MWh
+00:41:27  INFO        Power delta: 27385633.0000 MWh  |  Converged: NO
+00:41:27  INFO      
+00:41:27  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:27  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:27  INFO        COMPRESSED AIR                           5891461.00       422716.36      5891461.00   100.0000% (PT)
+00:41:27  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:27  INFO        Cooling Water 2                             7968.00         2022.71         7968.00   100.0000% (PT)
+00:41:27  INFO        D M Water                                  85026.00        88999.97        85026.00   100.0000% (PT)
+00:41:27  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:27  INFO        LP Steam_Dis                               24944.00        12226.68        24944.00   100.0000% (PT)
+00:41:27  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:27  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:27  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:27  INFO        POWERGEN                                       0.00     29135741.76            0.00     0.0000%
+00:41:27  INFO        Power_Dis                               27385633.00     10409569.15     27385633.00   100.0000% (PT)
+00:41:27  INFO        SHP Steam_Dis                              20126.00        19189.44        20126.00   100.0000% (PT)
+00:41:27  INFO        Water                                     268424.00       180976.37       268424.00   100.0000% (PT)
+00:41:27  INFO      
+00:41:27  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:27  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:27  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:27  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:27  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:27  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:27  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:27  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:27  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:27  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:27  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          111.94  
+00:41:27  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1054206.25  
+00:41:27  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:27  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:27  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:27  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:27  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1077.90  
+00:41:27  INFO        Cooling Water 2                 Power_Dis                       237.358415      1891271.85  
+00:41:27  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            1.26  
+00:41:27  INFO        Cooling Water 2                 Water                            11.500000        91632.00  
+00:41:27  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800           68.02  
+00:41:27  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701           59.60  
+00:41:27  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757           64.36  
+00:41:27  INFO        D M Water                       COMPRESSED AIR                    0.087875         7471.66  
+00:41:27  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           32.31  
+00:41:27  INFO        D M Water                       POLYELECTROLYTE                   0.000578           49.15  
+00:41:27  INFO        D M Water                       Power_Dis                         1.087657        92479.12  
+00:41:27  INFO        D M Water                       Ret steam condensate              0.164338        13973.00  
+00:41:27  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            0.85  
+00:41:27  INFO        D M Water                       Water                             1.050000        89277.30  
+00:41:27  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:27  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366         8510.95  
+00:41:27  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            0.73  
+00:41:27  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       104967.41  
+00:41:27  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            0.72  
+00:41:27  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124           88.85  
+00:41:27  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570        20604.31  
+00:41:27  INFO        HRSG1_SHP STEAM                 Water                             0.002660           19.49  
+00:41:27  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282         8747.95  
+00:41:27  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900            7.45  
+00:41:27  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       119481.60  
+00:41:27  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            0.83  
+00:41:27  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287           93.39  
+00:41:27  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724        22246.50  
+00:41:27  INFO        HRSG2_SHP STEAM                 Water                             0.002700           22.34  
+00:41:27  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        12927.95  
+00:41:27  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900            7.66  
+00:41:27  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       119339.37  
+00:41:27  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            0.85  
+00:41:27  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594           90.16  
+00:41:27  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724        22882.12  
+00:41:27  INFO        HRSG3_SHP STEAM                 Water                             0.002700           22.98  
+00:41:27  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        22122.83  
+00:41:27  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         2821.17  
+00:41:27  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:27  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:27  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:27  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:27  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        18822.24  
+00:41:27  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:27  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:27  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:27  INFO        POWERGEN                        Cooling Water 2                   0.000227          980.64  
+00:41:27  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:27  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:27  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:27  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:27  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:27  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:27  INFO        POWERGEN                        Power_Dis                         0.002561        11063.52  
+00:41:27  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:27  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:27  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        19189.44  
+00:41:27  INFO        Power_Dis                       POWERGEN                          0.128508      6569328.96  
+00:41:27  INFO        Power_Dis                       POWERGEN                          0.220696     11281979.52  
+00:41:27  INFO        Power_Dis                       POWERGEN                          0.220744     11284433.28  
+00:41:27  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:27  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        10063.00  
+00:41:27  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        10063.00  
+00:41:27  INFO      
+00:41:27  INFO        Not yet converged: 30 materials
+00:41:27  INFO          Boiler Feed Water               change = 100.0000%
+00:41:27  INFO          CAUSTIC SODA LYE – GRADE 1      change = 100.0000%
+00:41:27  INFO          CHEM  SODIUM SULPHITE;PN:MIS 19OX  change = 100.0000%
+00:41:27  INFO          CHEM ALUM.SULFATE, AL2(SO4)3,18H2O  change = 100.0000%
+00:41:27  INFO          CHEM CYCLO HEXY                 change = 100.0000%
+00:41:27  INFO          CHEM MORPHOLENE                 change = 100.0000%
+00:41:27  INFO          CHEM TRISODIUM PHOSPHATE        change = 100.0000%
+00:41:27  INFO          COMPRESSED AIR                  change = 100.0000%
+00:41:27  INFO          Cooling Water 2                 change = 100.0000%
+00:41:27  INFO          D M Water                       change = 100.0000%
+00:41:27  INFO          FURNACE OIL ( MEDIUM VISCOSITY GRADE )  change = 100.0000%
+00:41:27  INFO          HP Steam PRDS                   change = 100.0000%
+00:41:27  INFO          HRSG2_SHP STEAM                 change = 100.0000%
+00:41:27  INFO          HRSG3_SHP STEAM                 change = 100.0000%
+00:41:27  INFO          HYDRO CHLORIC ACID (30%) -VIRGIN  change = 100.0000%
+00:41:27  INFO          KEM WATREAT B 70M               change = 100.0000%
+00:41:27  INFO          LP Steam PRDS                   change = 100.0000%
+00:41:27  INFO          LP Steam_Dis                    change = 100.0000%
+00:41:27  INFO          MP Steam PRDS SHP               change = 100.0000%
+00:41:27  INFO          NATURAL GAS                     change = 100.0000%
+00:41:27  INFO          POLYELECTROLYTE                 change = 100.0000%
+00:41:27  INFO          POWERGEN                        change = 100.0000%
+00:41:27  INFO          Power from MEL                  change = 100.0000%
+00:41:27  INFO          Power_Dis                       change = 100.0000%
+00:41:27  INFO          Ret steam condensate            change = 100.0000%
+00:41:27  INFO          SHP Steam_Dis                   change = 100.0000%
+00:41:27  INFO          SODIUM CHLORIDE IS 797 GRADE1   change = 100.0000%
+00:41:27  INFO          STG1_LP STEAM                   change = 100.0000%
+00:41:27  INFO          SULPHURIC ACID                  change = 100.0000%
+00:41:27  INFO          Water                           change = 100.0000%
+00:41:27  INFO        ------------------------------------------------------------------------------------------
+00:41:28  INFO        [DISPATCH] Total demand: 37795.20 MWh, Import: 34560.00 MWh, Net for GT/STG: 3235.20 MWh
+00:41:29  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:29  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:29  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:29  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:29  INFO        ==============================================================================
+00:41:29  INFO        POWER DISPATCH  (April 2026)
+00:41:29  INFO        ==============================================================================
+00:41:29  INFO        Demand:  Process = 37795.20 MWh  |  Fixed = 0.00 MWh  |  Total = 37795.20 MWh
+00:41:29  INFO      
+00:41:29  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:29  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:29  INFO        NMD-Power Plant-2                 1      6.00     19.47    700.00            6.00         4200.00     30.8%       8274.00          0.00
+00:41:29  INFO        NMD-Power Plant-3                 1      6.00     19.48    720.00            6.00         4320.00     30.8%       8510.40          0.00
+00:41:29  INFO        NMD-Power Plant-1                 2      6.00     19.40    620.00            6.00         3720.00     30.9%       7328.40          0.00
+00:41:29  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00            7.56         5439.89     31.5%          0.00          0.00
+00:41:29  INFO        TOTAL                                                                                    17679.89                24112.80          0.00
+00:41:29  INFO        DEFICIT: 20115.31 MWh under-generation
+00:41:29  INFO        ==============================================================================
+00:41:29  INFO        ==============================================================================
+00:41:29  INFO        STEAM DISPATCH  (April 2026)
+00:41:29  INFO        ==============================================================================
+00:41:29  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:29  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:29  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:29  INFO        SHP                39315.44    36296.01          0.00          39315.44
+00:41:29  INFO      
+00:41:29  INFO        Total Free Steam available: 24112.80 MT
+00:41:29  INFO      
+00:41:29  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:29  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:29  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:29  INFO        HRSG-1                            2       48.18      124.18    620.00           48.18        29871.60     44.1%
+00:41:29  INFO        HRSG-2                            1       48.18      124.18    700.00           48.18        33726.00     44.1%
+00:41:29  INFO        HRSG-3                            1       48.18      124.18    720.00           48.18        34689.60     44.1%
+00:41:29  INFO        TOTAL SUPPLEMENTARY                                                                          98287.20          
+00:41:29  INFO        TOTAL STEAM GENERATED                                                                       122400.00          
+00:41:29  INFO        SURPLUS: 83084.56 MT
+00:41:29  INFO        ==============================================================================
+00:41:29  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:29  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:29  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=29871.60 MT, free_steam=7328.40 MT, total_steam=37200.00 MT
+00:41:29  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=37200.00 MT, norm=2.811570, consumed=104590.40 MMBTU (REVERSE, BPC method)
+00:41:29  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=34689.60 MT, free_steam=8510.40 MT, total_steam=43200.00 MT
+00:41:29  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=43200.00 MT, norm=2.688724, consumed=116152.88 MMBTU (REVERSE, BPC method)
+00:41:29  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=33726.00 MT, free_steam=8274.00 MT, total_steam=42000.00 MT
+00:41:29  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=42000.00 MT, norm=2.688724, consumed=112926.41 MMBTU (REVERSE, BPC method)
+00:41:29  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:29  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:29  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:29  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:29  INFO        [U4U LOOP] Excess SHP: 83084.56 MT → STG +23338.36 MWh, GT -23338.36 MWh
+00:41:29  INFO      
+00:41:29  INFO        ------------------------------------------------------------------------------------------
+00:41:29  INFO        ITERATION 2
+00:41:29  INFO        ------------------------------------------------------------------------------------------
+00:41:29  INFO        Power:  Demand =    37795202.15 KWH  |  Gen =       17679.89 MWh  |  Surplus = 14444.69  |  Deficit =     0.00
+00:41:29  INFO        Steam:  Gen =      122400.00 MT  |  Surplus = 83084.56  |  Deficit =     0.00
+00:41:29  INFO        Excess SHP:   83084.56 MT → STG override = 28778.25 MWh, GT reduction = 16672.82 MWh
+00:41:29  INFO        Power delta: 10409569.1531 MWh  |  Converged: NO
+00:41:29  INFO      
+00:41:29  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:29  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:29  INFO        COMPRESSED AIR                           6314177.36      1837020.51      5891461.00   100.0000% (PT)
+00:41:29  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:29  INFO        Cooling Water 2                             9990.71         2284.96         7968.00   100.0000% (PT)
+00:41:29  INFO        D M Water                                 174025.97        88999.97        85026.00   100.0000% (PT)
+00:41:29  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:29  INFO        LP Steam_Dis                               37170.68        13337.01        24944.00   100.0000% (PT)
+00:41:29  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:29  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:29  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:29  INFO        POWERGEN                                29135741.76     29774020.83            0.00   100.0000%
+00:41:29  INFO        Power_Dis                               37795202.15     11064985.79     27385633.00   100.0000% (PT)
+00:41:29  INFO        SHP Steam_Dis                              39315.44        24163.99        20126.00   100.0000% (PT)
+00:41:29  INFO        Water                                     449400.37       297951.67       268424.00   100.0000% (PT)
+00:41:29  INFO      
+00:41:29  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:29  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:29  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:29  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:29  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:29  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:29  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:29  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:29  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:29  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:29  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          119.97  
+00:41:29  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1129846.27  
+00:41:29  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:29  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:29  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:29  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:29  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1351.52  
+00:41:29  INFO        Cooling Water 2                 Power_Dis                       237.358415      2371378.99  
+00:41:29  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            1.58  
+00:41:29  INFO        Cooling Water 2                 Water                            11.500000       114893.16  
+00:41:29  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800          139.22  
+00:41:29  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701          121.99  
+00:41:29  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757          131.74  
+00:41:29  INFO        D M Water                       COMPRESSED AIR                    0.087875        15292.53  
+00:41:29  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           66.13  
+00:41:29  INFO        D M Water                       POLYELECTROLYTE                   0.000578          100.59  
+00:41:29  INFO        D M Water                       Power_Dis                         1.087657       189280.56  
+00:41:29  INFO        D M Water                       Ret steam condensate              0.164338        28599.08  
+00:41:29  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            1.74  
+00:41:29  INFO        D M Water                       Water                             1.050000       182727.26  
+00:41:29  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:29  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366        43202.82  
+00:41:29  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            3.72  
+00:41:29  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       532829.48  
+00:41:29  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            3.65  
+00:41:29  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124          451.01  
+00:41:29  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570       104590.40  
+00:41:29  INFO        HRSG1_SHP STEAM                 Water                             0.002660           98.95  
+00:41:29  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282        44405.84  
+00:41:29  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           37.80  
+00:41:29  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       606505.58  
+00:41:29  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.20  
+00:41:29  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287          474.05  
+00:41:29  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724       112926.41  
+00:41:29  INFO        HRSG2_SHP STEAM                 Water                             0.002700          113.40  
+00:41:29  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        65624.13  
+00:41:29  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           38.88  
+00:41:29  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       605783.62  
+00:41:29  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.32  
+00:41:29  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594          457.66  
+00:41:29  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724       116152.88  
+00:41:29  INFO        HRSG3_SHP STEAM                 Water                             0.002700          116.64  
+00:41:29  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        32966.68  
+00:41:29  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         4204.00  
+00:41:29  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:29  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:29  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:29  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:29  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        23701.60  
+00:41:29  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:29  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:29  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:29  INFO        POWERGEN                        Cooling Water 2                   0.000227         1234.86  
+00:41:29  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:29  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:29  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:29  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:29  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:29  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:29  INFO        POWERGEN                        Power_Dis                         0.002561        13931.56  
+00:41:29  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:29  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:29  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        24163.99  
+00:41:29  INFO        Power_Dis                       POWERGEN                          0.128508      6713243.78  
+00:41:29  INFO        Power_Dis                       POWERGEN                          0.220696     11529134.76  
+00:41:29  INFO        Power_Dis                       POWERGEN                          0.220744     11531642.28  
+00:41:29  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:29  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        19657.72  
+00:41:29  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        19657.72  
+00:41:29  INFO      
+00:41:29  INFO        Not yet converged: 23 materials
+00:41:29  INFO          Boiler Feed Water               change = 80.3000%
+00:41:29  INFO          CAUSTIC SODA LYE – GRADE 1      change = 51.1418%
+00:41:29  INFO          CHEM  SODIUM SULPHITE;PN:MIS 19OX  change = 51.1418%
+00:41:29  INFO          CHEM ALUM.SULFATE, AL2(SO4)3,18H2O  change = 51.1418%
+00:41:29  INFO          CHEM TRISODIUM PHOSPHATE        change = 80.3000%
+00:41:29  INFO          COMPRESSED AIR                  change = 76.9890%
+00:41:29  INFO          Cooling Water 2                 change = 11.4771%
+00:41:29  INFO          FURNACE OIL ( MEDIUM VISCOSITY GRADE )  change = 80.3000%
+00:41:29  INFO          HRSG2_SHP STEAM                 change = 48.8089%
+00:41:29  INFO          HRSG3_SHP STEAM                 change = 48.8089%
+00:41:29  INFO          HYDRO CHLORIC ACID (30%) -VIRGIN  change = 51.1418%
+00:41:29  INFO          LP Steam PRDS                   change = 32.8933%
+00:41:29  INFO          LP Steam_Dis                    change = 8.3252%
+00:41:29  INFO          NATURAL GAS                     change = 51.1834%
+00:41:29  INFO          POLYELECTROLYTE                 change = 51.1418%
+00:41:29  INFO          POWERGEN                        change = 2.1437%
+00:41:29  INFO          Power_Dis                       change = 5.9233%
+00:41:29  INFO          Ret steam condensate            change = 51.1418%
+00:41:29  INFO          SHP Steam_Dis                   change = 20.5866%
+00:41:29  INFO          SODIUM CHLORIDE IS 797 GRADE1   change = 51.1418%
+00:41:29  INFO          STG1_LP STEAM                   change = 32.8933%
+00:41:29  INFO          SULPHURIC ACID                  change = 8.3319%
+00:41:29  INFO          Water                           change = 39.2598%
+00:41:29  INFO        ------------------------------------------------------------------------------------------
+00:41:30  INFO        [DISPATCH] Total demand: 38450.62 MWh, Import: 34560.00 MWh, Net for GT/STG: 3890.62 MWh
+00:41:30  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:30  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:30  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:30  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:30  INFO        ==============================================================================
+00:41:30  INFO        POWER DISPATCH  (April 2026)
+00:41:30  INFO        ==============================================================================
+00:41:30  INFO        Demand:  Process = 38450.62 MWh  |  Fixed = 0.00 MWh  |  Total = 38450.62 MWh
+00:41:30  INFO      
+00:41:30  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:30  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:30  INFO        NMD-Power Plant-2                 1      6.00     12.06    700.00            6.00         4200.00     49.7%       8274.00          0.00
+00:41:30  INFO        NMD-Power Plant-3                 1      6.00     12.28    720.00            6.00         4320.00     48.9%       8510.40          0.00
+00:41:30  INFO        NMD-Power Plant-1                 2      6.00     11.04    620.00            6.00         3720.00     54.4%       7328.40          0.00
+00:41:30  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00           24.00        17280.00    100.0%          0.00          0.00
+00:41:30  INFO        TOTAL                                                                                    29520.00                24112.80          0.00
+00:41:30  INFO        DEFICIT: 8930.62 MWh under-generation
+00:41:30  INFO        ==============================================================================
+00:41:30  INFO        ==============================================================================
+00:41:30  INFO        STEAM DISPATCH  (April 2026)
+00:41:30  INFO        ==============================================================================
+00:41:30  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:30  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:30  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:30  INFO        SHP                44289.99    40888.52          0.00          44289.99
+00:41:30  INFO      
+00:41:30  INFO        Total Free Steam available: 24112.80 MT
+00:41:30  INFO      
+00:41:30  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:30  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:30  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:30  INFO        HRSG-1                            2       48.18      124.18    620.00           48.18        29871.60     44.1%
+00:41:30  INFO        HRSG-2                            1       48.18      124.18    700.00           48.18        33726.00     44.1%
+00:41:30  INFO        HRSG-3                            1       48.18      124.18    720.00           48.18        34689.60     44.1%
+00:41:30  INFO        TOTAL SUPPLEMENTARY                                                                          98287.20          
+00:41:30  INFO        TOTAL STEAM GENERATED                                                                       122400.00          
+00:41:30  INFO        SURPLUS: 78110.01 MT
+00:41:30  INFO        ==============================================================================
+00:41:30  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:30  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:30  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=29871.60 MT, free_steam=7328.40 MT, total_steam=37200.00 MT
+00:41:30  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=37200.00 MT, norm=2.811570, consumed=104590.40 MMBTU (REVERSE, BPC method)
+00:41:30  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=34689.60 MT, free_steam=8510.40 MT, total_steam=43200.00 MT
+00:41:30  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=43200.00 MT, norm=2.688724, consumed=116152.88 MMBTU (REVERSE, BPC method)
+00:41:30  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=33726.00 MT, free_steam=8274.00 MT, total_steam=42000.00 MT
+00:41:30  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=42000.00 MT, norm=2.688724, consumed=112926.41 MMBTU (REVERSE, BPC method)
+00:41:30  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:30  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:30  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:30  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:30  INFO        [U4U LOOP] Excess SHP: 78110.01 MT → STG +21941.01 MWh, GT -21941.01 MWh
+00:41:30  INFO      
+00:41:30  INFO        ------------------------------------------------------------------------------------------
+00:41:30  INFO        ITERATION 3
+00:41:30  INFO        ------------------------------------------------------------------------------------------
+00:41:30  INFO        Power:  Demand =    38450618.79 KWH  |  Gen =       29520.00 MWh  |  Surplus = 25629.38  |  Deficit =     0.00
+00:41:30  INFO        Steam:  Gen =      122400.00 MT  |  Surplus = 78110.01  |  Deficit =     0.00
+00:41:30  INFO        Excess SHP:   78110.01 MT → STG override = 39221.01 MWh, GT reduction = 20360.56 MWh
+00:41:30  INFO        Power delta: 655416.6350 MWh  |  Converged: NO
+00:41:30  INFO      
+00:41:30  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:30  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:30  INFO        COMPRESSED AIR                           7728481.51      1888643.35      5891461.00    94.5304% (PT)
+00:41:30  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:30  INFO        Cooling Water 2                            10252.96         4999.53         7968.00    80.2719% (PT)
+00:41:30  INFO        D M Water                                 174025.97        88999.97        85026.00    48.8582% (PT)
+00:41:30  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:30  INFO        LP Steam_Dis                               38281.01        13337.01        24944.00    68.0607% (PT)
+00:41:30  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:30  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:30  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:30  INFO        POWERGEN                                29774020.83     36522267.84            0.00     2.1437%
+00:41:30  INFO        Power_Dis                               38450618.79     11410627.51     27385633.00    72.9274% (PT)
+00:41:30  INFO        SHP Steam_Dis                              44289.99        76757.76        20126.00    56.6732% (PT)
+00:41:30  INFO        Water                                     566375.67       300967.51       268424.00    68.0466% (PT)
+00:41:30  INFO      
+00:41:30  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:30  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:30  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:30  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:30  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:30  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:30  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:30  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:30  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:30  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:30  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          146.84  
+00:41:30  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1382919.02  
+00:41:30  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:30  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:30  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:30  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:30  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1387.00  
+00:41:30  INFO        Cooling Water 2                 Power_Dis                       237.358415      2433625.44  
+00:41:30  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            1.62  
+00:41:30  INFO        Cooling Water 2                 Water                            11.500000       117909.00  
+00:41:30  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800          139.22  
+00:41:30  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701          121.99  
+00:41:30  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757          131.74  
+00:41:30  INFO        D M Water                       COMPRESSED AIR                    0.087875        15292.53  
+00:41:30  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           66.13  
+00:41:30  INFO        D M Water                       POLYELECTROLYTE                   0.000578          100.59  
+00:41:30  INFO        D M Water                       Power_Dis                         1.087657       189280.56  
+00:41:30  INFO        D M Water                       Ret steam condensate              0.164338        28599.08  
+00:41:30  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            1.74  
+00:41:30  INFO        D M Water                       Water                             1.050000       182727.26  
+00:41:30  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:30  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366        43202.82  
+00:41:30  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            3.72  
+00:41:30  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       532829.48  
+00:41:30  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            3.65  
+00:41:30  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124          451.01  
+00:41:30  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570       104590.40  
+00:41:30  INFO        HRSG1_SHP STEAM                 Water                             0.002660           98.95  
+00:41:30  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282        44405.84  
+00:41:30  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           37.80  
+00:41:30  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       606505.58  
+00:41:30  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.20  
+00:41:30  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287          474.05  
+00:41:30  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724       112926.41  
+00:41:30  INFO        HRSG2_SHP STEAM                 Water                             0.002700          113.40  
+00:41:30  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        65624.13  
+00:41:30  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           38.88  
+00:41:30  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       605783.62  
+00:41:30  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.32  
+00:41:30  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594          457.66  
+00:41:30  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724       116152.88  
+00:41:30  INFO        HRSG3_SHP STEAM                 Water                             0.002700          116.64  
+00:41:30  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        33951.43  
+00:41:30  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         4329.58  
+00:41:30  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:30  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:30  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:30  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:30  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        75288.96  
+00:41:30  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:30  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:30  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:30  INFO        POWERGEN                        Cooling Water 2                   0.000227         3922.56  
+00:41:30  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:30  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:30  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:30  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:30  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:30  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:30  INFO        POWERGEN                        Power_Dis                         0.002561        44254.08  
+00:41:30  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:30  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:30  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        76757.76  
+00:41:30  INFO        Power_Dis                       POWERGEN                          0.128508      8234792.64  
+00:41:30  INFO        Power_Dis                       POWERGEN                          0.220696     14142199.68  
+00:41:30  INFO        Power_Dis                       POWERGEN                          0.220744     14145275.52  
+00:41:30  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:30  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        22145.00  
+00:41:30  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        22145.00  
+00:41:30  INFO      
+00:41:30  INFO        Not yet converged: 11 materials
+00:41:30  INFO          COMPRESSED AIR                  change = 2.7333%
+00:41:30  INFO          Cooling Water 2                 change = 54.2966%
+00:41:30  INFO          HRSG2_SHP STEAM                 change = 11.2318%
+00:41:30  INFO          HRSG3_SHP STEAM                 change = 11.2318%
+00:41:30  INFO          LP Steam PRDS                   change = 2.9005%
+00:41:30  INFO          POWERGEN                        change = 18.4771%
+00:41:30  INFO          Power_Dis                       change = 3.0291%
+00:41:30  INFO          SHP Steam_Dis                   change = 68.5192%
+00:41:30  INFO          STG1_LP STEAM                   change = 2.9005%
+00:41:30  INFO          SULPHURIC ACID                  change = 1.0687%
+00:41:30  INFO          Water                           change = 1.0020%
+00:41:30  INFO        ------------------------------------------------------------------------------------------
+00:41:31  INFO        [DISPATCH] Total demand: 38796.26 MWh, Import: 34560.00 MWh, Net for GT/STG: 4236.26 MWh
+00:41:32  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:32  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:32  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:32  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:32  INFO        ==============================================================================
+00:41:32  INFO        POWER DISPATCH  (April 2026)
+00:41:32  INFO        ==============================================================================
+00:41:32  INFO        Demand:  Process = 38796.26 MWh  |  Fixed = 0.00 MWh  |  Total = 38796.26 MWh
+00:41:32  INFO      
+00:41:32  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:32  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:32  INFO        NMD-Power Plant-2                 1      6.00     10.30    700.00            6.00         4200.00     58.2%       8274.00          0.00
+00:41:32  INFO        NMD-Power Plant-3                 1      6.00     10.57    720.00            6.00         4320.00     56.7%       8510.40          0.00
+00:41:32  INFO        NMD-Power Plant-1                 2      6.00      9.05    620.00            6.00         3720.00     66.3%       7328.40          0.00
+00:41:32  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00           24.00        17280.00    100.0%          0.00          0.00
+00:41:32  INFO        TOTAL                                                                                    29520.00                24112.80          0.00
+00:41:32  INFO        DEFICIT: 9276.26 MWh under-generation
+00:41:32  INFO        ==============================================================================
+00:41:32  INFO        ==============================================================================
+00:41:32  INFO        STEAM DISPATCH  (April 2026)
+00:41:32  INFO        ==============================================================================
+00:41:32  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:32  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:32  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:32  INFO        SHP                96883.76    89443.09          0.00          96883.76
+00:41:32  INFO      
+00:41:32  INFO        Total Free Steam available: 24112.80 MT
+00:41:32  INFO      
+00:41:32  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:32  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:32  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:32  INFO        HRSG-1                            2       48.18      124.18    620.00           48.18        29871.60     44.1%
+00:41:32  INFO        HRSG-2                            1       48.18      124.18    700.00           48.18        33726.00     44.1%
+00:41:32  INFO        HRSG-3                            1       48.18      124.18    720.00           48.18        34689.60     44.1%
+00:41:32  INFO        TOTAL SUPPLEMENTARY                                                                          98287.20          
+00:41:32  INFO        TOTAL STEAM GENERATED                                                                       122400.00          
+00:41:32  INFO        SURPLUS: 25516.24 MT
+00:41:32  INFO        ==============================================================================
+00:41:32  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:32  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:32  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=29871.60 MT, free_steam=7328.40 MT, total_steam=37200.00 MT
+00:41:32  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=37200.00 MT, norm=2.811570, consumed=104590.40 MMBTU (REVERSE, BPC method)
+00:41:32  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=34689.60 MT, free_steam=8510.40 MT, total_steam=43200.00 MT
+00:41:32  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=43200.00 MT, norm=2.688724, consumed=116152.88 MMBTU (REVERSE, BPC method)
+00:41:32  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=33726.00 MT, free_steam=8274.00 MT, total_steam=42000.00 MT
+00:41:32  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=42000.00 MT, norm=2.688724, consumed=112926.41 MMBTU (REVERSE, BPC method)
+00:41:32  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:32  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:32  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:32  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:32  INFO        [U4U LOOP] Excess SHP: 25516.24 MT → STG +7167.48 MWh, GT -7167.48 MWh
+00:41:32  INFO      
+00:41:32  INFO        ------------------------------------------------------------------------------------------
+00:41:32  INFO        ITERATION 4
+00:41:32  INFO        ------------------------------------------------------------------------------------------
+00:41:32  INFO        Power:  Demand =    38796260.51 KWH  |  Gen =       29520.00 MWh  |  Surplus = 25283.74  |  Deficit =     0.00
+00:41:32  INFO        Steam:  Gen =      122400.00 MT  |  Surplus = 25516.24  |  Deficit =     0.00
+00:41:32  INFO        Excess SHP:   25516.24 MT → STG override = 24447.48 MWh, GT reduction = 11125.41 MWh
+00:41:32  INFO        Power delta: 345641.7258 MWh  |  Converged: NO
+00:41:32  INFO      
+00:41:32  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:32  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:32  INFO        COMPRESSED AIR                           7780104.35      1889010.57      5891461.00    76.3882% (PT)
+00:41:32  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:32  INFO        Cooling Water 2                            12967.53         5000.51         7968.00    82.3794% (PT)
+00:41:32  INFO        D M Water                                 174025.97        88999.97        85026.00    48.8582% (PT)
+00:41:32  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:32  INFO        LP Steam_Dis                               38281.01        13337.01        24944.00    65.1602% (PT)
+00:41:32  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:32  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:32  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:32  INFO        POWERGEN                                36522267.84     36522267.84            0.00    18.4771%
+00:41:32  INFO        Power_Dis                               38796260.51     12064192.44     27385633.00    71.4792% (PT)
+00:41:32  INFO        SHP Steam_Dis                              96883.76        76757.76        20126.00    75.0588% (PT)
+00:41:32  INFO        Water                                     569391.51       332185.14       268424.00    47.6719% (PT)
+00:41:32  INFO      
+00:41:32  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:32  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:32  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:32  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:32  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:32  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:32  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:32  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:32  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:32  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:32  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          147.82  
+00:41:32  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1392156.31  
+00:41:32  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:32  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:32  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:32  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:32  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1754.22  
+00:41:32  INFO        Cooling Water 2                 Power_Dis                       237.358415      3077953.07  
+00:41:32  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            2.05  
+00:41:32  INFO        Cooling Water 2                 Water                            11.500000       149126.63  
+00:41:32  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800          139.22  
+00:41:32  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701          121.99  
+00:41:32  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757          131.74  
+00:41:32  INFO        D M Water                       COMPRESSED AIR                    0.087875        15292.53  
+00:41:32  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           66.13  
+00:41:32  INFO        D M Water                       POLYELECTROLYTE                   0.000578          100.59  
+00:41:32  INFO        D M Water                       Power_Dis                         1.087657       189280.56  
+00:41:32  INFO        D M Water                       Ret steam condensate              0.164338        28599.08  
+00:41:32  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            1.74  
+00:41:32  INFO        D M Water                       Water                             1.050000       182727.26  
+00:41:32  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:32  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366        43202.82  
+00:41:32  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            3.72  
+00:41:32  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       532829.48  
+00:41:32  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            3.65  
+00:41:32  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124          451.01  
+00:41:32  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570       104590.40  
+00:41:32  INFO        HRSG1_SHP STEAM                 Water                             0.002660           98.95  
+00:41:32  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282        44405.84  
+00:41:32  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           37.80  
+00:41:32  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       606505.58  
+00:41:32  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.20  
+00:41:32  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287          474.05  
+00:41:32  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724       112926.41  
+00:41:32  INFO        HRSG2_SHP STEAM                 Water                             0.002700          113.40  
+00:41:32  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        65624.13  
+00:41:32  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           38.88  
+00:41:32  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       605783.62  
+00:41:32  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.32  
+00:41:32  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594          457.66  
+00:41:32  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724       116152.88  
+00:41:32  INFO        HRSG3_SHP STEAM                 Water                             0.002700          116.64  
+00:41:32  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        33951.43  
+00:41:32  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         4329.58  
+00:41:32  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:32  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:32  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:32  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:32  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        75288.96  
+00:41:32  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:32  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:32  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:32  INFO        POWERGEN                        Cooling Water 2                   0.000227         3922.56  
+00:41:32  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:32  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:32  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:32  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:32  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:32  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:32  INFO        POWERGEN                        Power_Dis                         0.002561        44254.08  
+00:41:32  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:32  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:32  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        76757.76  
+00:41:32  INFO        Power_Dis                       POWERGEN                          0.128508      8234792.64  
+00:41:32  INFO        Power_Dis                       POWERGEN                          0.220696     14142199.68  
+00:41:32  INFO        Power_Dis                       POWERGEN                          0.220744     14145275.52  
+00:41:32  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:32  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        48441.88  
+00:41:32  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        48441.88  
+00:41:32  INFO      
+00:41:32  INFO        Not yet converged: 7 materials
+00:41:32  INFO          COMPRESSED AIR                  change = 0.0194%
+00:41:32  INFO          Cooling Water 2                 change = 0.0196%
+00:41:32  INFO          HRSG2_SHP STEAM                 change = 54.2854%
+00:41:32  INFO          HRSG3_SHP STEAM                 change = 54.2854%
+00:41:32  INFO          Power_Dis                       change = 5.4174%
+00:41:32  INFO          SULPHURIC ACID                  change = 9.9605%
+00:41:32  INFO          Water                           change = 9.3977%
+00:41:32  INFO        ------------------------------------------------------------------------------------------
+00:41:33  INFO        [DISPATCH] Total demand: 39449.83 MWh, Import: 34560.00 MWh, Net for GT/STG: 4889.83 MWh
+00:41:33  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:33  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:33  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:33  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:33  INFO        ==============================================================================
+00:41:33  INFO        POWER DISPATCH  (April 2026)
+00:41:33  INFO        ==============================================================================
+00:41:33  INFO        Demand:  Process = 39449.83 MWh  |  Fixed = 0.00 MWh  |  Total = 39449.83 MWh
+00:41:33  INFO      
+00:41:33  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:33  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:33  INFO        NMD-Power Plant-2                 1      6.00     14.70    700.00            6.00         4200.00     40.8%       8274.00          0.00
+00:41:33  INFO        NMD-Power Plant-3                 1      6.00     14.85    720.00            6.00         4320.00     40.4%       8510.40          0.00
+00:41:33  INFO        NMD-Power Plant-1                 2      6.00     14.02    620.00            6.00         3720.00     42.8%       7328.40          0.00
+00:41:33  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00           24.00        17280.00    100.0%          0.00          0.00
+00:41:33  INFO        TOTAL                                                                                    29520.00                24112.80          0.00
+00:41:33  INFO        DEFICIT: 9929.83 MWh under-generation
+00:41:33  INFO        ==============================================================================
+00:41:33  INFO        ==============================================================================
+00:41:33  INFO        STEAM DISPATCH  (April 2026)
+00:41:33  INFO        ==============================================================================
+00:41:33  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:33  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:33  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:33  INFO        SHP                96883.76    89443.09          0.00          96883.76
+00:41:33  INFO      
+00:41:33  INFO        Total Free Steam available: 24112.80 MT
+00:41:33  INFO      
+00:41:33  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:33  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:33  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:33  INFO        HRSG-1                            2       48.18      124.18    620.00           48.18        29871.60     44.1%
+00:41:33  INFO        HRSG-2                            1       48.18      124.18    700.00           48.18        33726.00     44.1%
+00:41:33  INFO        HRSG-3                            1       48.18      124.18    720.00           48.18        34689.60     44.1%
+00:41:33  INFO        TOTAL SUPPLEMENTARY                                                                          98287.20          
+00:41:33  INFO        TOTAL STEAM GENERATED                                                                       122400.00          
+00:41:33  INFO        SURPLUS: 25516.24 MT
+00:41:33  INFO        ==============================================================================
+00:41:33  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:33  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:33  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=29871.60 MT, free_steam=7328.40 MT, total_steam=37200.00 MT
+00:41:33  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=37200.00 MT, norm=2.811570, consumed=104590.40 MMBTU (REVERSE, BPC method)
+00:41:33  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=34689.60 MT, free_steam=8510.40 MT, total_steam=43200.00 MT
+00:41:33  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=43200.00 MT, norm=2.688724, consumed=116152.88 MMBTU (REVERSE, BPC method)
+00:41:33  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=33726.00 MT, free_steam=8274.00 MT, total_steam=42000.00 MT
+00:41:33  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=42000.00 MT, norm=2.688724, consumed=112926.41 MMBTU (REVERSE, BPC method)
+00:41:33  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:33  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:33  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:33  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:33  INFO        [U4U LOOP] Excess SHP: 25516.24 MT → STG +7167.48 MWh, GT -7167.48 MWh
+00:41:33  INFO      
+00:41:33  INFO        ------------------------------------------------------------------------------------------
+00:41:33  INFO        ITERATION 5
+00:41:33  INFO        ------------------------------------------------------------------------------------------
+00:41:33  INFO        Power:  Demand =    39449825.44 KWH  |  Gen =       29520.00 MWh  |  Surplus = 24630.17  |  Deficit =     0.00
+00:41:33  INFO        Steam:  Gen =      122400.00 MT  |  Surplus = 25516.24  |  Deficit =     0.00
+00:41:33  INFO        Excess SHP:   25516.24 MT → STG override = 24447.48 MWh, GT reduction = 8354.86 MWh
+00:41:33  INFO        Power delta: 653564.9215 MWh  |  Converged: NO
+00:41:33  INFO      
+00:41:33  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:33  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:33  INFO        COMPRESSED AIR                           7780471.57      1889010.70      5891461.00    75.7258% (PT)
+00:41:33  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:33  INFO        Cooling Water 2                            12968.51         5000.52         7968.00    61.4487% (PT)
+00:41:33  INFO        D M Water                                 174025.97        88999.97        85026.00    48.8582% (PT)
+00:41:33  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:33  INFO        LP Steam_Dis                               38281.01        13337.01        24944.00    65.1602% (PT)
+00:41:33  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:33  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:33  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:33  INFO        POWERGEN                                36522267.84     36522267.84            0.00     0.0000%
+00:41:33  INFO        Power_Dis                               39449825.44     12064490.95     27385633.00    71.0756% (PT)
+00:41:33  INFO        SHP Steam_Dis                              96883.76        76757.76        20126.00    20.7733% (PT)
+00:41:33  INFO        Water                                     600609.14       332196.42       268424.00    49.8896% (PT)
+00:41:33  INFO      
+00:41:33  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:33  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:33  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:33  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:33  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:33  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:33  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:33  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:33  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:33  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:33  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          147.83  
+00:41:33  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1392222.02  
+00:41:33  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:33  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:33  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:33  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:33  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1754.35  
+00:41:33  INFO        Cooling Water 2                 Power_Dis                       237.358415      3078185.88  
+00:41:33  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            2.05  
+00:41:33  INFO        Cooling Water 2                 Water                            11.500000       149137.91  
+00:41:33  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800          139.22  
+00:41:33  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701          121.99  
+00:41:33  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757          131.74  
+00:41:33  INFO        D M Water                       COMPRESSED AIR                    0.087875        15292.53  
+00:41:33  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           66.13  
+00:41:33  INFO        D M Water                       POLYELECTROLYTE                   0.000578          100.59  
+00:41:33  INFO        D M Water                       Power_Dis                         1.087657       189280.56  
+00:41:33  INFO        D M Water                       Ret steam condensate              0.164338        28599.08  
+00:41:33  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            1.74  
+00:41:33  INFO        D M Water                       Water                             1.050000       182727.26  
+00:41:33  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:33  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366        43202.82  
+00:41:33  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            3.72  
+00:41:33  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       532829.48  
+00:41:33  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            3.65  
+00:41:33  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124          451.01  
+00:41:33  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570       104590.40  
+00:41:33  INFO        HRSG1_SHP STEAM                 Water                             0.002660           98.95  
+00:41:33  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282        44405.84  
+00:41:33  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           37.80  
+00:41:33  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       606505.58  
+00:41:33  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.20  
+00:41:33  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287          474.05  
+00:41:33  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724       112926.41  
+00:41:33  INFO        HRSG2_SHP STEAM                 Water                             0.002700          113.40  
+00:41:33  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        65624.13  
+00:41:33  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           38.88  
+00:41:33  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       605783.62  
+00:41:33  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.32  
+00:41:33  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594          457.66  
+00:41:33  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724       116152.88  
+00:41:33  INFO        HRSG3_SHP STEAM                 Water                             0.002700          116.64  
+00:41:33  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        33951.43  
+00:41:33  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         4329.58  
+00:41:33  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:33  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:33  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:33  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:33  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        75288.96  
+00:41:33  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:33  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:33  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:33  INFO        POWERGEN                        Cooling Water 2                   0.000227         3922.56  
+00:41:33  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:33  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:33  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:33  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:33  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:33  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:33  INFO        POWERGEN                        Power_Dis                         0.002561        44254.08  
+00:41:33  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:33  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:33  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        76757.76  
+00:41:33  INFO        Power_Dis                       POWERGEN                          0.128508      8234792.64  
+00:41:33  INFO        Power_Dis                       POWERGEN                          0.220696     14142199.68  
+00:41:33  INFO        Power_Dis                       POWERGEN                          0.220744     14145275.52  
+00:41:33  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:33  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        48441.88  
+00:41:33  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        48441.88  
+00:41:33  INFO      
+00:41:33  INFO        All U4U materials converged within tolerance
+00:41:33  INFO        ------------------------------------------------------------------------------------------
+00:41:34  INFO        [DISPATCH] Total demand: 39450.12 MWh, Import: 34560.00 MWh, Net for GT/STG: 4890.12 MWh
+00:41:35  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:35  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:35  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:35  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:35  INFO        ==============================================================================
+00:41:35  INFO        POWER DISPATCH  (April 2026)
+00:41:35  INFO        ==============================================================================
+00:41:35  INFO        Demand:  Process = 39450.12 MWh  |  Fixed = 0.00 MWh  |  Total = 39450.12 MWh
+00:41:35  INFO      
+00:41:35  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:35  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:35  INFO        NMD-Power Plant-2                 1      6.00     16.02    700.00            6.00         4200.00     37.4%       8274.00          0.00
+00:41:35  INFO        NMD-Power Plant-3                 1      6.00     16.13    720.00            6.00         4320.00     37.2%       8510.40          0.00
+00:41:35  INFO        NMD-Power Plant-1                 2      6.00     15.51    620.00            6.00         3720.00     38.7%       7328.40          0.00
+00:41:35  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00           24.00        17280.00    100.0%          0.00          0.00
+00:41:35  INFO        TOTAL                                                                                    29520.00                24112.80          0.00
+00:41:35  INFO        DEFICIT: 9930.12 MWh under-generation
+00:41:35  INFO        ==============================================================================
+00:41:35  INFO        ==============================================================================
+00:41:35  INFO        STEAM DISPATCH  (April 2026)
+00:41:35  INFO        ==============================================================================
+00:41:35  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:35  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:35  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:35  INFO        SHP                96883.76    89443.09          0.00          96883.76
+00:41:35  INFO      
+00:41:35  INFO        Total Free Steam available: 24112.80 MT
+00:41:35  INFO      
+00:41:35  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:35  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:35  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:35  INFO        HRSG-1                            2       48.18      124.18    620.00           48.18        29871.60     44.1%
+00:41:35  INFO        HRSG-2                            1       48.18      124.18    700.00           48.18        33726.00     44.1%
+00:41:35  INFO        HRSG-3                            1       48.18      124.18    720.00           48.18        34689.60     44.1%
+00:41:35  INFO        TOTAL SUPPLEMENTARY                                                                          98287.20          
+00:41:35  INFO        TOTAL STEAM GENERATED                                                                       122400.00          
+00:41:35  INFO        SURPLUS: 25516.24 MT
+00:41:35  INFO        ==============================================================================
+00:41:35  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:35  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:35  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=29871.60 MT, free_steam=7328.40 MT, total_steam=37200.00 MT
+00:41:35  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=37200.00 MT, norm=2.811570, consumed=104590.40 MMBTU (REVERSE, BPC method)
+00:41:35  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=34689.60 MT, free_steam=8510.40 MT, total_steam=43200.00 MT
+00:41:35  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=43200.00 MT, norm=2.688724, consumed=116152.88 MMBTU (REVERSE, BPC method)
+00:41:35  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=33726.00 MT, free_steam=8274.00 MT, total_steam=42000.00 MT
+00:41:35  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=42000.00 MT, norm=2.688724, consumed=112926.41 MMBTU (REVERSE, BPC method)
+00:41:35  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:35  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:35  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:35  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:35  INFO        [U4U LOOP] Excess SHP: 25516.24 MT → STG +7167.48 MWh, GT -7167.48 MWh
+00:41:35  INFO      
+00:41:35  INFO        ------------------------------------------------------------------------------------------
+00:41:35  INFO        ITERATION 6
+00:41:35  INFO        ------------------------------------------------------------------------------------------
+00:41:35  INFO        Power:  Demand =    39450123.95 KWH  |  Gen =       29520.00 MWh  |  Surplus = 24629.88  |  Deficit =     0.00
+00:41:35  INFO        Steam:  Gen =      122400.00 MT  |  Surplus = 25516.24  |  Deficit =     0.00
+00:41:35  INFO        Excess SHP:   25516.24 MT → STG override = 24447.48 MWh, GT reduction = 7523.70 MWh
+00:41:35  INFO        Power delta: 298.5192 MWh  |  Converged: NO
+00:41:35  INFO      
+00:41:35  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:35  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:35  INFO        COMPRESSED AIR                           7780471.70      1889010.70      5891461.00    75.7211% (PT)
+00:41:35  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:35  INFO        Cooling Water 2                            12968.52         5000.52         7968.00    61.4411% (PT)
+00:41:35  INFO        D M Water                                 174025.97        88999.97        85026.00    48.8582% (PT)
+00:41:35  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:35  INFO        LP Steam_Dis                               38281.01        13337.01        24944.00    65.1602% (PT)
+00:41:35  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:35  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:35  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:35  INFO        POWERGEN                                36522267.84     36522267.84            0.00     0.0000%
+00:41:35  INFO        Power_Dis                               39450123.95     12064492.63     27385633.00    69.4191% (PT)
+00:41:35  INFO        SHP Steam_Dis                              96883.76        76757.76        20126.00    20.7733% (PT)
+00:41:35  INFO        Water                                     600620.42       332196.50       268424.00    44.6930% (PT)
+00:41:35  INFO      
+00:41:35  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:35  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:35  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:35  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:35  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:35  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:35  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:35  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:35  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:35  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:35  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          147.83  
+00:41:35  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1392222.05  
+00:41:35  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:35  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:35  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:35  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:35  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1754.36  
+00:41:35  INFO        Cooling Water 2                 Power_Dis                       237.358415      3078187.54  
+00:41:35  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            2.05  
+00:41:35  INFO        Cooling Water 2                 Water                            11.500000       149137.99  
+00:41:35  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800          139.22  
+00:41:35  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701          121.99  
+00:41:35  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757          131.74  
+00:41:35  INFO        D M Water                       COMPRESSED AIR                    0.087875        15292.53  
+00:41:35  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           66.13  
+00:41:35  INFO        D M Water                       POLYELECTROLYTE                   0.000578          100.59  
+00:41:35  INFO        D M Water                       Power_Dis                         1.087657       189280.56  
+00:41:35  INFO        D M Water                       Ret steam condensate              0.164338        28599.08  
+00:41:35  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            1.74  
+00:41:35  INFO        D M Water                       Water                             1.050000       182727.26  
+00:41:35  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:35  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366        43202.82  
+00:41:35  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            3.72  
+00:41:35  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       532829.48  
+00:41:35  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            3.65  
+00:41:35  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124          451.01  
+00:41:35  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570       104590.40  
+00:41:35  INFO        HRSG1_SHP STEAM                 Water                             0.002660           98.95  
+00:41:35  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282        44405.84  
+00:41:35  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           37.80  
+00:41:35  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       606505.58  
+00:41:35  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.20  
+00:41:35  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287          474.05  
+00:41:35  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724       112926.41  
+00:41:35  INFO        HRSG2_SHP STEAM                 Water                             0.002700          113.40  
+00:41:35  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        65624.13  
+00:41:35  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           38.88  
+00:41:35  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       605783.62  
+00:41:35  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.32  
+00:41:35  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594          457.66  
+00:41:35  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724       116152.88  
+00:41:35  INFO        HRSG3_SHP STEAM                 Water                             0.002700          116.64  
+00:41:35  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        33951.43  
+00:41:35  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         4329.58  
+00:41:35  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:35  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:35  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:35  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:35  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        75288.96  
+00:41:35  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:35  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:35  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:35  INFO        POWERGEN                        Cooling Water 2                   0.000227         3922.56  
+00:41:35  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:35  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:35  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:35  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:35  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:35  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:35  INFO        POWERGEN                        Power_Dis                         0.002561        44254.08  
+00:41:35  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:35  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:35  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        76757.76  
+00:41:35  INFO        Power_Dis                       POWERGEN                          0.128508      8234792.64  
+00:41:35  INFO        Power_Dis                       POWERGEN                          0.220696     14142199.68  
+00:41:35  INFO        Power_Dis                       POWERGEN                          0.220744     14145275.52  
+00:41:35  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:35  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        48441.88  
+00:41:35  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        48441.88  
+00:41:35  INFO      
+00:41:35  INFO        All U4U materials converged within tolerance
+00:41:35  INFO        ------------------------------------------------------------------------------------------
+00:41:36  INFO        [DISPATCH] Total demand: 39450.13 MWh, Import: 34560.00 MWh, Net for GT/STG: 4890.13 MWh
+00:41:36  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:36  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:36  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:36  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:36  INFO        ==============================================================================
+00:41:36  INFO        POWER DISPATCH  (April 2026)
+00:41:36  INFO        ==============================================================================
+00:41:36  INFO        Demand:  Process = 39450.13 MWh  |  Fixed = 0.00 MWh  |  Total = 39450.13 MWh
+00:41:36  INFO      
+00:41:36  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:36  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:36  INFO        NMD-Power Plant-2                 1      6.00     16.42    700.00            6.00         4200.00     36.5%       8274.00          0.00
+00:41:36  INFO        NMD-Power Plant-3                 1      6.00     16.52    720.00            6.00         4320.00     36.3%       8510.40          0.00
+00:41:36  INFO        NMD-Power Plant-1                 2      6.00     15.96    620.00            6.00         3720.00     37.6%       7328.40          0.00
+00:41:36  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00           24.00        17280.00    100.0%          0.00          0.00
+00:41:36  INFO        TOTAL                                                                                    29520.00                24112.80          0.00
+00:41:36  INFO        DEFICIT: 9930.13 MWh under-generation
+00:41:36  INFO        ==============================================================================
+00:41:36  INFO        ==============================================================================
+00:41:36  INFO        STEAM DISPATCH  (April 2026)
+00:41:36  INFO        ==============================================================================
+00:41:36  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:36  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:36  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:36  INFO        SHP                96883.76    89443.09          0.00          96883.76
+00:41:36  INFO      
+00:41:36  INFO        Total Free Steam available: 24112.80 MT
+00:41:36  INFO      
+00:41:36  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:36  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:36  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:36  INFO        HRSG-1                            2       48.18      124.18    620.00           48.18        29871.60     44.1%
+00:41:36  INFO        HRSG-2                            1       48.18      124.18    700.00           48.18        33726.00     44.1%
+00:41:36  INFO        HRSG-3                            1       48.18      124.18    720.00           48.18        34689.60     44.1%
+00:41:36  INFO        TOTAL SUPPLEMENTARY                                                                          98287.20          
+00:41:36  INFO        TOTAL STEAM GENERATED                                                                       122400.00          
+00:41:36  INFO        SURPLUS: 25516.24 MT
+00:41:36  INFO        ==============================================================================
+00:41:36  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:36  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:36  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=29871.60 MT, free_steam=7328.40 MT, total_steam=37200.00 MT
+00:41:36  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=37200.00 MT, norm=2.811570, consumed=104590.40 MMBTU (REVERSE, BPC method)
+00:41:36  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=34689.60 MT, free_steam=8510.40 MT, total_steam=43200.00 MT
+00:41:36  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=43200.00 MT, norm=2.688724, consumed=116152.88 MMBTU (REVERSE, BPC method)
+00:41:36  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=33726.00 MT, free_steam=8274.00 MT, total_steam=42000.00 MT
+00:41:36  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=42000.00 MT, norm=2.688724, consumed=112926.41 MMBTU (REVERSE, BPC method)
+00:41:36  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:36  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:36  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:36  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:36  INFO        [U4U LOOP] Excess SHP: 25516.24 MT → STG +7167.48 MWh, GT -7167.48 MWh
+00:41:36  INFO      
+00:41:36  INFO        ------------------------------------------------------------------------------------------
+00:41:36  INFO        ITERATION 7
+00:41:36  INFO        ------------------------------------------------------------------------------------------
+00:41:36  INFO        Power:  Demand =    39450125.63 KWH  |  Gen =       29520.00 MWh  |  Surplus = 24629.87  |  Deficit =     0.00
+00:41:36  INFO        Steam:  Gen =      122400.00 MT  |  Surplus = 25516.24  |  Deficit =     0.00
+00:41:36  INFO        Excess SHP:   25516.24 MT → STG override = 24447.48 MWh, GT reduction = 7274.35 MWh
+00:41:36  INFO        Power delta: 1.6798 MWh  |  Converged: NO
+00:41:36  INFO      
+00:41:36  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:36  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:36  INFO        COMPRESSED AIR                           7780471.70      1889010.70      5891461.00    75.7211% (PT)
+00:41:36  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:36  INFO        Cooling Water 2                            12968.52         5000.52         7968.00    61.4411% (PT)
+00:41:36  INFO        D M Water                                 174025.97        88999.97        85026.00    48.8582% (PT)
+00:41:36  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:36  INFO        LP Steam_Dis                               38281.01        13337.01        24944.00    65.1602% (PT)
+00:41:36  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:36  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:36  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:36  INFO        POWERGEN                                36522267.84     36522267.84            0.00     0.0000%
+00:41:36  INFO        Power_Dis                               39450125.63     12064492.64     27385633.00    69.4184% (PT)
+00:41:36  INFO        SHP Steam_Dis                              96883.76        76757.76        20126.00    20.7733% (PT)
+00:41:36  INFO        Water                                     600620.50       332196.50       268424.00    44.6911% (PT)
+00:41:36  INFO      
+00:41:36  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:36  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:36  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:36  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:36  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:36  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:36  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:36  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:36  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:36  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:36  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          147.83  
+00:41:36  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1392222.05  
+00:41:36  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:36  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:36  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:36  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:36  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1754.36  
+00:41:36  INFO        Cooling Water 2                 Power_Dis                       237.358415      3078187.54  
+00:41:36  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            2.05  
+00:41:36  INFO        Cooling Water 2                 Water                            11.500000       149137.99  
+00:41:36  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800          139.22  
+00:41:36  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701          121.99  
+00:41:36  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757          131.74  
+00:41:36  INFO        D M Water                       COMPRESSED AIR                    0.087875        15292.53  
+00:41:36  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           66.13  
+00:41:36  INFO        D M Water                       POLYELECTROLYTE                   0.000578          100.59  
+00:41:36  INFO        D M Water                       Power_Dis                         1.087657       189280.56  
+00:41:36  INFO        D M Water                       Ret steam condensate              0.164338        28599.08  
+00:41:36  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            1.74  
+00:41:36  INFO        D M Water                       Water                             1.050000       182727.26  
+00:41:36  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:36  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366        43202.82  
+00:41:36  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            3.72  
+00:41:36  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       532829.48  
+00:41:36  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            3.65  
+00:41:36  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124          451.01  
+00:41:36  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570       104590.40  
+00:41:36  INFO        HRSG1_SHP STEAM                 Water                             0.002660           98.95  
+00:41:36  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282        44405.84  
+00:41:36  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           37.80  
+00:41:36  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       606505.58  
+00:41:36  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.20  
+00:41:36  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287          474.05  
+00:41:36  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724       112926.41  
+00:41:36  INFO        HRSG2_SHP STEAM                 Water                             0.002700          113.40  
+00:41:36  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        65624.13  
+00:41:36  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           38.88  
+00:41:36  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       605783.62  
+00:41:36  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.32  
+00:41:36  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594          457.66  
+00:41:36  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724       116152.88  
+00:41:36  INFO        HRSG3_SHP STEAM                 Water                             0.002700          116.64  
+00:41:36  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        33951.43  
+00:41:36  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         4329.58  
+00:41:36  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:36  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:36  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:36  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:36  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        75288.96  
+00:41:36  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:36  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:36  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:36  INFO        POWERGEN                        Cooling Water 2                   0.000227         3922.56  
+00:41:36  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:36  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:36  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:36  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:36  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:36  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:36  INFO        POWERGEN                        Power_Dis                         0.002561        44254.08  
+00:41:36  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:36  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:36  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        76757.76  
+00:41:36  INFO        Power_Dis                       POWERGEN                          0.128508      8234792.64  
+00:41:36  INFO        Power_Dis                       POWERGEN                          0.220696     14142199.68  
+00:41:36  INFO        Power_Dis                       POWERGEN                          0.220744     14145275.52  
+00:41:36  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:36  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        48441.88  
+00:41:36  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        48441.88  
+00:41:36  INFO      
+00:41:36  INFO        All U4U materials converged within tolerance
+00:41:36  INFO        ------------------------------------------------------------------------------------------
+00:41:37  INFO        [DISPATCH] Total demand: 39450.13 MWh, Import: 34560.00 MWh, Net for GT/STG: 4890.13 MWh
+00:41:37  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-2'; using 0.0
+00:41:37  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+00:41:37  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+00:41:37  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+00:41:37  INFO        ==============================================================================
+00:41:37  INFO        POWER DISPATCH  (April 2026)
+00:41:37  INFO        ==============================================================================
+00:41:37  INFO        Demand:  Process = 39450.13 MWh  |  Fixed = 0.00 MWh  |  Total = 39450.13 MWh
+00:41:37  INFO      
+00:41:37  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+00:41:37  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+00:41:37  INFO        NMD-Power Plant-2                 1      6.00     16.54    700.00            6.00         4200.00     36.3%       8274.00          0.00
+00:41:37  INFO        NMD-Power Plant-3                 1      6.00     16.63    720.00            6.00         4320.00     36.1%       8510.40          0.00
+00:41:37  INFO        NMD-Power Plant-1                 2      6.00     16.09    620.00            6.00         3720.00     37.3%       7328.40          0.00
+00:41:37  INFO        NMD-STG Power Plant               5      6.00     24.00    720.00           24.00        17280.00    100.0%          0.00          0.00
+00:41:37  INFO        TOTAL                                                                                    29520.00                24112.80          0.00
+00:41:37  INFO        DEFICIT: 9930.13 MWh under-generation
+00:41:37  INFO        ==============================================================================
+00:41:38  INFO        ==============================================================================
+00:41:38  INFO        STEAM DISPATCH  (April 2026)
+00:41:38  INFO        ==============================================================================
+00:41:38  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+00:41:38  INFO        ---------  ----------------  ----------  ------------  ----------------
+00:41:38  INFO        MP                 21074.00    15805.50          0.00          21074.00
+00:41:38  INFO        SHP                96883.76    89443.09          0.00          96883.76
+00:41:38  INFO      
+00:41:38  INFO        Total Free Steam available: 24112.80 MT
+00:41:38  INFO      
+00:41:38  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+00:41:38  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+00:41:38  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+00:41:38  INFO        HRSG-1                            2       48.18      124.18    620.00           48.18        29871.60     44.1%
+00:41:38  INFO        HRSG-2                            1       48.18      124.18    700.00           48.18        33726.00     44.1%
+00:41:38  INFO        HRSG-3                            1       48.18      124.18    720.00           48.18        34689.60     44.1%
+00:41:38  INFO        TOTAL SUPPLEMENTARY                                                                          98287.20          
+00:41:38  INFO        TOTAL STEAM GENERATED                                                                       122400.00          
+00:41:38  INFO        SURPLUS: 25516.24 MT
+00:41:38  INFO        ==============================================================================
+00:41:38  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-1, plant: NMD - Power Plant 1, heat_rate: 5421.0, free_steam: 1.97
+00:41:38  INFO        [REVERSE NG] NMD - Power Plant 1: gen_qty=3720000 KWH, heat_rate=5421.00, free_steam=1.9700, consumed=57859.76 MMBTU (REVERSE)
+00:41:38  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-1, supp_steam=29871.60 MT, free_steam=7328.40 MT, total_steam=37200.00 MT
+00:41:38  INFO        [REVERSE NG HRSG] HRSG1_SHP STEAM: total_steam=37200.00 MT, norm=2.811570, consumed=104590.40 MMBTU (REVERSE, BPC method)
+00:41:38  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-3, supp_steam=34689.60 MT, free_steam=8510.40 MT, total_steam=43200.00 MT
+00:41:38  INFO        [REVERSE NG HRSG] HRSG3_SHP STEAM: total_steam=43200.00 MT, norm=2.688724, consumed=116152.88 MMBTU (REVERSE, BPC method)
+00:41:38  INFO        [REVERSE NG HRSG] Found HRSG: HRSG-2, supp_steam=33726.00 MT, free_steam=8274.00 MT, total_steam=42000.00 MT
+00:41:38  INFO        [REVERSE NG HRSG] HRSG2_SHP STEAM: total_steam=42000.00 MT, norm=2.688724, consumed=112926.41 MMBTU (REVERSE, BPC method)
+00:41:38  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-2, plant: NMD - Power Plant 2, heat_rate: 5416.0, free_steam: 1.97
+00:41:38  INFO        [REVERSE NG] NMD - Power Plant 2: gen_qty=4200000 KWH, heat_rate=5416.00, free_steam=1.9700, consumed=65242.26 MMBTU (REVERSE)
+00:41:38  INFO        [REVERSE NG] Found GT asset: NMD-Power Plant-3, plant: NMD - Power Plant 3, heat_rate: 5393.0, free_steam: 1.97
+00:41:38  INFO        [REVERSE NG] NMD - Power Plant 3: gen_qty=4320000 KWH, heat_rate=5393.00, free_steam=1.9700, consumed=66712.29 MMBTU (REVERSE)
+00:41:38  INFO        [U4U LOOP] Excess SHP: 25516.24 MT → STG +7167.48 MWh, GT -7167.48 MWh
+00:41:38  INFO      
+00:41:38  INFO        ------------------------------------------------------------------------------------------
+00:41:38  INFO        ITERATION 8
+00:41:38  INFO        ------------------------------------------------------------------------------------------
+00:41:38  INFO        Power:  Demand =    39450125.64 KWH  |  Gen =       29520.00 MWh  |  Surplus = 24629.87  |  Deficit =     0.00
+00:41:38  INFO        Steam:  Gen =      122400.00 MT  |  Surplus = 25516.24  |  Deficit =     0.00
+00:41:38  INFO        Excess SHP:   25516.24 MT → STG override = 24447.48 MWh, GT reduction = 7199.54 MWh
+00:41:38  INFO        Power delta: 0.0008 MWh  |  Converged: YES
+00:41:38  INFO      
+00:41:38  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+00:41:38  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+00:41:38  INFO        COMPRESSED AIR                           7780471.70      1889010.70      5891461.00    75.7211% (PT)
+00:41:38  INFO        Cooling Water 1                            14286.00            0.00        14286.00   100.0000% (PT)
+00:41:38  INFO        Cooling Water 2                            12968.52         5000.52         7968.00    61.4411% (PT)
+00:41:38  INFO        D M Water                                 174025.97        88999.97        85026.00    48.8582% (PT)
+00:41:38  INFO        HP Steam_Dis                                1266.00            0.00         1266.00   100.0000% (PT)
+00:41:38  INFO        LP Steam_Dis                               38281.01        13337.01        24944.00    65.1602% (PT)
+00:41:38  INFO        MP Steam_Dis                               21074.00            0.00        21074.00   100.0000% (PT)
+00:41:38  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00   100.0000% (PT)
+00:41:38  INFO        Oxygen                                      5315.00            0.00         5315.00   100.0000% (PT)
+00:41:38  INFO        POWERGEN                                36522267.84     36522267.84            0.00     0.0000%
+00:41:38  INFO        Power_Dis                               39450125.64     12064492.64     27385633.00    69.4184% (PT)
+00:41:38  INFO        SHP Steam_Dis                              96883.76        76757.76        20126.00    20.7733% (PT)
+00:41:38  INFO        Water                                     600620.50       332196.50       268424.00    44.6911% (PT)
+00:41:38  INFO      
+00:41:38  INFO        U4U CONSUMPTION BREAKDOWN (per producer per material):
+00:41:38  INFO        Producer                        Material Consumed                     Norm        Quantity  Credit
+00:41:38  INFO        ------------------------------  ------------------------------  ----------  --------------  ------
+00:41:38  INFO        Boiler Feed Water               CHEM CYCLO HEXY                   0.000100           10.40  
+00:41:38  INFO        Boiler Feed Water               CHEM MORPHOLENE                   0.000002            0.21  
+00:41:38  INFO        Boiler Feed Water               Cooling Water 2                   0.002072          215.50  
+00:41:38  INFO        Boiler Feed Water               D M Water                         0.855709        88999.97  
+00:41:38  INFO        Boiler Feed Water               KEM WATREAT B 70M                 0.000570           59.28  
+00:41:38  INFO        Boiler Feed Water               LP Steam_Dis                      0.114937        11954.28  
+00:41:38  INFO        Boiler Feed Water               Power_Dis                         9.657983      1004500.54  
+00:41:38  INFO        COMPRESSED AIR                  Cooling Water 2                   0.000019          147.83  
+00:41:38  INFO        COMPRESSED AIR                  Power_Dis                         0.178938      1392222.05  
+00:41:38  INFO        Cooling Water 1                 COMPRESSED AIR                    0.197630         2823.34  
+00:41:38  INFO        Cooling Water 1                 Power_Dis                       244.695043      3495713.38  
+00:41:38  INFO        Cooling Water 1                 SULPHURIC ACID                    0.000158            2.26  
+00:41:38  INFO        Cooling Water 1                 Water                             0.000158            2.26  
+00:41:38  INFO        Cooling Water 2                 COMPRESSED AIR                    0.135278         1754.36  
+00:41:38  INFO        Cooling Water 2                 Power_Dis                       237.358415      3078187.54  
+00:41:38  INFO        Cooling Water 2                 SULPHURIC ACID                    0.000158            2.05  
+00:41:38  INFO        Cooling Water 2                 Water                            11.500000       149137.99  
+00:41:38  INFO        D M Water                       CAUSTIC SODA LYE – GRADE 1        0.000800          139.22  
+00:41:38  INFO        D M Water                       CHEM  SODIUM SULPHITE;PN:MIS 1    0.000701          121.99  
+00:41:38  INFO        D M Water                       CHEM ALUM.SULFATE, AL2(SO4)3,1    0.000757          131.74  
+00:41:38  INFO        D M Water                       COMPRESSED AIR                    0.087875        15292.53  
+00:41:38  INFO        D M Water                       HYDRO CHLORIC ACID (30%) -VIRG    0.000380           66.13  
+00:41:38  INFO        D M Water                       POLYELECTROLYTE                   0.000578          100.59  
+00:41:38  INFO        D M Water                       Power_Dis                         1.087657       189280.56  
+00:41:38  INFO        D M Water                       Ret steam condensate              0.164338        28599.08  
+00:41:38  INFO        D M Water                       SODIUM CHLORIDE IS 797 GRADE1     0.000010            1.74  
+00:41:38  INFO        D M Water                       Water                             1.050000       182727.26  
+00:41:38  INFO        HP Steam_Dis                    HP Steam PRDS                     1.000000         1266.00  
+00:41:38  INFO        HRSG1_SHP STEAM                 Boiler Feed Water                 1.161366        43202.82  
+00:41:38  INFO        HRSG1_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000100            3.72  
+00:41:38  INFO        HRSG1_SHP STEAM                 COMPRESSED AIR                   14.323373       532829.48  
+00:41:38  INFO        HRSG1_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000098            3.65  
+00:41:38  INFO        HRSG1_SHP STEAM                 LP Steam_Dis                      0.012124          451.01  
+00:41:38  INFO        HRSG1_SHP STEAM                 NATURAL GAS                       2.811570       104590.40  
+00:41:38  INFO        HRSG1_SHP STEAM                 Water                             0.002660           98.95  
+00:41:38  INFO        HRSG2_SHP STEAM                 Boiler Feed Water                 1.057282        44405.84  
+00:41:38  INFO        HRSG2_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           37.80  
+00:41:38  INFO        HRSG2_SHP STEAM                 COMPRESSED AIR                   14.440609       606505.58  
+00:41:38  INFO        HRSG2_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.20  
+00:41:38  INFO        HRSG2_SHP STEAM                 LP Steam_Dis                      0.011287          474.05  
+00:41:38  INFO        HRSG2_SHP STEAM                 NATURAL GAS                       2.688724       112926.41  
+00:41:38  INFO        HRSG2_SHP STEAM                 Water                             0.002700          113.40  
+00:41:38  INFO        HRSG3_SHP STEAM                 Boiler Feed Water                 1.519077        65624.13  
+00:41:38  INFO        HRSG3_SHP STEAM                 CHEM TRISODIUM PHOSPHATE          0.000900           38.88  
+00:41:38  INFO        HRSG3_SHP STEAM                 COMPRESSED AIR                   14.022769       605783.62  
+00:41:38  INFO        HRSG3_SHP STEAM                 FURNACE OIL ( MEDIUM VISCOSITY    0.000100            4.32  
+00:41:38  INFO        HRSG3_SHP STEAM                 LP Steam_Dis                      0.010594          457.66  
+00:41:38  INFO        HRSG3_SHP STEAM                 NATURAL GAS                       2.688724       116152.88  
+00:41:38  INFO        HRSG3_SHP STEAM                 Water                             0.002700          116.64  
+00:41:38  INFO        LP Steam_Dis                    LP Steam PRDS                     0.886900        33951.43  
+00:41:38  INFO        LP Steam_Dis                    STG1_LP STEAM                     0.113100         4329.58  
+00:41:38  INFO        MP Steam_Dis                    MP Steam PRDS SHP                 1.000000        21074.00  
+00:41:38  INFO        Oxygen                          Cooling Water 2                   0.109123          579.99  
+00:41:38  INFO        Oxygen                          Power_Dis                       492.402868      2617121.24  
+00:41:38  INFO        POWERGEN                        COMPRESSED AIR                    0.004000        14880.00  
+00:41:38  INFO        POWERGEN                        COMPRESSED AIR                    0.004357        75288.96  
+00:41:38  INFO        POWERGEN                        COMPRESSED AIR                    0.003949        16585.80  
+00:41:38  INFO        POWERGEN                        COMPRESSED AIR                    0.003997        17267.04  
+00:41:38  INFO        POWERGEN                        Cooling Water 2                   0.000011           40.92  
+00:41:38  INFO        POWERGEN                        Cooling Water 2                   0.000227         3922.56  
+00:41:38  INFO        POWERGEN                        Cooling Water 2                   0.000011           46.20  
+00:41:38  INFO        POWERGEN                        Cooling Water 2                   0.000011           47.52  
+00:41:38  INFO        POWERGEN                        NATURAL GAS                       0.009472        57859.76  
+00:41:38  INFO        POWERGEN                        NATURAL GAS                       0.009512        65242.26  
+00:41:38  INFO        POWERGEN                        NATURAL GAS                       0.009449        66712.29  
+00:41:38  INFO        POWERGEN                        Power_Dis                         0.019625        73005.00  
+00:41:38  INFO        POWERGEN                        Power_Dis                         0.002561        44254.08  
+00:41:38  INFO        POWERGEN                        Power_Dis                         0.019870        83454.00  
+00:41:38  INFO        POWERGEN                        Power_Dis                         0.020082        86754.24  
+00:41:38  INFO        POWERGEN                        SHP Steam_Dis                     0.004442        76757.76  
+00:41:38  INFO        Power_Dis                       POWERGEN                          0.128508      8234792.64  
+00:41:38  INFO        Power_Dis                       POWERGEN                          0.220696     14142199.68  
+00:41:38  INFO        Power_Dis                       POWERGEN                          0.220744     14145275.52  
+00:41:38  INFO        Power_Dis                       Power from MEL                    0.430048     34560000.00  
+00:41:38  INFO        SHP Steam_Dis                   HRSG2_SHP STEAM                   0.500000        48441.88  
+00:41:38  INFO        SHP Steam_Dis                   HRSG3_SHP STEAM                   0.500000        48441.88  
+00:41:38  INFO      
+00:41:38  INFO        All U4U materials converged within tolerance
+00:41:38  INFO        ------------------------------------------------------------------------------------------
+00:41:38  INFO      
+00:41:38  INFO        [U4U LOOP] === CONVERGED in 8 iterations ===
+00:41:38  INFO      
+00:41:38  INFO        ==========================================================================================
+00:41:38  INFO        FINAL BALANCE  (after 8 iterations, CONVERGED)
+00:41:38  INFO        ==========================================================================================
+00:41:38  INFO      
+00:41:38  INFO        POWER BALANCE
+00:41:38  INFO        Process + Fixed Demand                  27385633.00 KWH
+00:41:38  INFO        U4U Demand                              12064492.64 KWH
+00:41:38  INFO        TOTAL DEMAND                            39450125.64 KWH
+00:41:38  INFO        GT/STG Generation                          29520.00 MWh
+00:41:38  INFO        Import Power                               34560.00 MWh
+00:41:38  INFO        TOTAL SUPPLY                               64080.00 MWh
+00:41:38  INFO        BALANCE                                    24629.87 MWh
+00:41:38  INFO      
+00:41:38  INFO        STEAM BALANCE
+00:41:38  INFO        Grade            Demand (MT)        Gen (MT)    Surplus (MT)    Deficit (MT)
+00:41:38  INFO        ------------  --------------  --------------  --------------  --------------
+00:41:38  INFO        MP                  21074.00            0.00            0.00            0.00
+00:41:38  INFO        SHP                 96883.76       122400.00        25516.24            0.00
+00:41:38  INFO      
+00:41:38  INFO        U4U CONSUMPTION SUMMARY
+00:41:38  INFO        Utility                              Initial Demand      U4U Demand    Total Demand
+00:41:38  INFO        -----------------------------------  --------------  --------------  --------------
+00:41:38  INFO        COMPRESSED AIR                           5891461.00      1889010.70      7780471.70 (PT)
+00:41:38  INFO        Cooling Water 1                            14286.00            0.00        14286.00 (PT)
+00:41:38  INFO        Cooling Water 2                             7968.00         5000.52        12968.52 (PT)
+00:41:38  INFO        D M Water                                  85026.00        88999.97       174025.97 (PT)
+00:41:38  INFO        HP Steam_Dis                                1266.00            0.00         1266.00 (PT)
+00:41:38  INFO        LP Steam_Dis                               24944.00        13337.01        38281.01 (PT)
+00:41:38  INFO        MP Steam_Dis                               21074.00            0.00        21074.00 (PT)
+00:41:38  INFO        Nitrogen Gas                             5464589.00            0.00      5464589.00 (PT)
+00:41:38  INFO        Oxygen                                      5315.00            0.00         5315.00 (PT)
+00:41:38  INFO        POWERGEN                                       0.00     36522267.84     36522267.84
+00:41:38  INFO        Power_Dis                               27385633.00     12064492.64     39450125.64 (PT)
+00:41:38  INFO        SHP Steam_Dis                              20126.00        76757.76        96883.76 (PT)
+00:41:38  INFO        Water                                     268424.00       332196.50       600620.50 (PT)
+00:41:38  INFO      
+00:41:38  INFO        PASS-THROUGH UTILITIES (demand but no norms configuration):
+00:41:38  INFO          COMPRESSED AIR                       demand = 7780471.70  (assumed external supply)
+00:41:38  INFO          Cooling Water 1                      demand = 14286.00  (assumed external supply)
+00:41:38  INFO          Cooling Water 2                      demand = 12968.52  (assumed external supply)
+00:41:38  INFO          D M Water                            demand = 174025.97  (assumed external supply)
+00:41:38  INFO          HP Steam_Dis                         demand = 1266.00  (assumed external supply)
+00:41:38  INFO          LP Steam_Dis                         demand = 38281.01  (assumed external supply)
+00:41:38  INFO          MP Steam_Dis                         demand = 21074.00  (assumed external supply)
+00:41:38  INFO          Nitrogen Gas                         demand = 5464589.00  (assumed external supply)
+00:41:38  INFO          Oxygen                               demand = 5315.00  (assumed external supply)
+00:41:38  INFO          Power_Dis                            demand = 39450125.64  (assumed external supply)
+00:41:38  INFO          SHP Steam_Dis                        demand = 96883.76  (assumed external supply)
+00:41:38  INFO          Water                                demand = 600620.50  (assumed external supply)
+00:41:38  INFO        ==========================================================================================
+
+  Iterations: 8  |  Converged: YES
+  Pass-through utilities: D M Water, Oxygen, SHP Steam_Dis, Power_Dis, Cooling Water 2, Water, HP Steam_Dis, COMPRESSED AIR, MP Steam_Dis, LP Steam_Dis, Cooling Water 1, Nitrogen Gas
+
+======================================================================
+  DONE
+======================================================================
