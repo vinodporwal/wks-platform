@@ -240,36 +240,41 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
             for (CppGtHeatRateDto dto : dtoList) {
                 if (dto != null) {
-                    CppGtHeatRate entity = new CppGtHeatRate();
+                    CppGtHeatRate entity = null;
 
-                    entity.setId(dto.getId());
-                    entity.setAssetFkId(dto.getAssetFkId());
-                    entity.setAssetName(dto.getEquipType());
-                    entity.setUtilityId(dto.getCppUtility());
+                    
+                    if (dto.getId() != null) {
+                        entity = cppGtHeatRateRepository.findById(dto.getId()).orElse(null);
+                    }
+                    if (entity == null) {
+                        logger.warn("[JMDHeatRate] Record with ID {} not found. Skipping update.", dto.getId());
+                        continue; 
+                    }
+
                     entity.setGtLoad(dto.getGtLoad());
-                    entity.setFreeSteamFactor(dto.getFreeSteamFactor());
-                    entity.setRemarks(dto.getRemarks());
-                    entity.setFinalHeatRate(dto.getFinalHeatRate());
                     entity.setOemHeatRate(dto.getOemHeatRate());
+                    entity.setFinalHeatRate(dto.getFinalHeatRate());
+                    entity.setFreeSteamFactor(dto.getFreeSteamFactor());
                     entity.setSelectedHeatRate(dto.getSelectedHeatRate());
-
+                    entity.setRemarks(dto.getRemarks());
                     entitiesToSave.add(entity);
                 }
             }
-
-            
-            List<CppGtHeatRate> savedEntities = cppGtHeatRateRepository.saveAll(entitiesToSave);
-            
-            logger.info("[JMDHeatRate] saveGTHeatRateData - successfully saved {} records", savedEntities.size());
-            
-            vm.setCode(200);
-            vm.setMessage("Data saved successfully");
-            vm.setData(null); 
+         
+            if (!entitiesToSave.isEmpty()) {
+                List<CppGtHeatRate> savedEntities = cppGtHeatRateRepository.saveAll(entitiesToSave);
+                logger.info("[JMDHeatRate] saveGTHeatRateData - successfully updated {} records", savedEntities.size());
+                vm.setCode(200);
+                vm.setMessage("Data updated successfully");
+            } else {
+                vm.setCode(400);
+                vm.setMessage("No valid existing records found to update");
+            }
             
         } catch (Exception e) {
             logger.error("[JMDHeatRate] saveGTHeatRateData error: {}", e.getMessage(), e);
             vm.setCode(500);
-            vm.setMessage("Failed to save GT heat rate data: " + e.getMessage());
+            vm.setMessage("Failed to update GT heat rate data: " + e.getMessage());
             vm.setData(null);
         }
         
