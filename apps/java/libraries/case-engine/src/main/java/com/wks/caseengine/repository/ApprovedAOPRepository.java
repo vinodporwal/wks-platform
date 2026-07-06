@@ -12,7 +12,7 @@ import com.wks.caseengine.entity.ApprovedAOP;
 @Repository
 public interface ApprovedAOPRepository extends JpaRepository<ApprovedAOP,UUID>{
 	
-	@Query(value = "SELECT Id, Plant_FK_Id, AOPYear FROM vwGetApprovedAOP WHERE AOPYear = :aopYear AND Plant_FK_Id = :plantId",
+	@Query(value = "SELECT Id, Plant_FK_Id, AOPYear, ModifiedBy, ModifiedOn FROM vwGetApprovedAOP WHERE AOPYear = :aopYear AND Plant_FK_Id = :plantId",
 	           nativeQuery = true)
 	    List<ApprovedAOP> findByYearAndPlant(@Param("aopYear") String aopYear,
 	                                               @Param("plantId") UUID plantId);

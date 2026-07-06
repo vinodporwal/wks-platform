@@ -66,6 +66,45 @@ public class AOPController {
 	    }
 	}
 	
+	@GetMapping(value = "/monthly-production-export-combined")
+	public ResponseEntity<byte[]> exportAOPDataCombined(@RequestParam String plantId, @RequestParam String year) {
+	    try {
+	        byte[] excelBytes = aopService.exportAOPDataCombined(plantId, year, false, null, null);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Monthly_Production_Combined.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
+	@GetMapping(value = "/monthly-production-export-by-line")
+	public ResponseEntity<byte[]> exportAOPDataByLine(@RequestParam String plantId, @RequestParam String year,
+	        @RequestParam(required = false) String type) {
+	    try {
+	        byte[] excelBytes = aopService.exportAOPDataByLine(plantId, year, type);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Monthly_Production_By_Line.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
 	@PutMapping(value="/monthly-production")
 	public List<AOPDTO> updateAOP(@RequestBody List<AOPDTO> aOPDTOList) {
 		aopService.updateAOP(aOPDTOList);

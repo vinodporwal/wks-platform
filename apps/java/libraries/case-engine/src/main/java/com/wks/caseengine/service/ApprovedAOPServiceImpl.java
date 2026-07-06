@@ -93,8 +93,16 @@ public class ApprovedAOPServiceImpl implements ApprovedAOPService {
 	            	ApprovedAOP entity = new ApprovedAOP();
 	            	entity.setAopYear(year);
 	            	entity.setPlantFkId(UUID.fromString(plantId));
+	            	entity.setModifiedBy(Utility.getUserName());
+	            	entity.setModifiedOn(new Date());
 	            	approvedAOPRepository.save(entity);
-	       }
+	            } else {
+	            	for (ApprovedAOP entity : approvedAOPs) {
+	            		entity.setModifiedBy(Utility.getUserName());
+	            		entity.setModifiedOn(new Date());
+	            		approvedAOPRepository.save(entity);
+	            	}
+	            }
 	        
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
 	        aopMessageVM.setCode(200);

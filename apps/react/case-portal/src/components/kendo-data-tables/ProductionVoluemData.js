@@ -112,6 +112,8 @@ const ProductionvolumeData = ({
     siteObject?.name?.toLowerCase() == 'vmd'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
+  const IS_AROMATICS_HMD = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
+  const IS_AROMATICS_PMD = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'pmd'
   const IS_ELASTOMER_JMD = VERTICAL_NAME === 'elastomer' && SITE_NAME === 'jmd'
   // Check if it's PP VERTICAL | DTA SITE
   const IS_PP_DTA = VERTICAL_NAME === 'pp' && SITE_NAME === 'dta'
@@ -162,7 +164,9 @@ const ProductionvolumeData = ({
   const [mcuMaxCapValues, setMcuMaxCapValues] = useState(null)
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState(null)
-
+  const textNote = IS_PVC_HMD
+    ? 'K6711 MCU LISTED IN THE PAGE REPRESENT GRADE-MIX MCU FOR LINE1 and LINE2 COMBINED.'
+    : ''
   const textNoteWhileSaving = IS_PP_SEZ ? 'Update MCU for All Line' : ''
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -655,7 +659,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
-              isEditable: IS_VCM_DMD_EDC ? false : item.isEditable ?? true,
+              isEditable: IS_VCM_DMD_EDC ? false : (item.isEditable ?? true),
             }),
           }
         },
@@ -676,7 +680,10 @@ const ProductionvolumeData = ({
         ...item,
         remarks: item.remarks ? item.remarks.trim() : '',
       }))
-      setRowsPercentageSummary(nonEditableRows)
+      // For AROMATICS_HMD/PMD, percentage summary is based on MAX_ACHIEVED_CAPACITY (set in fetchMaxCapacityData)
+      if (!IS_AROMATICS_HMD && !IS_AROMATICS_PMD) {
+        setRowsPercentageSummary(nonEditableRows)
+      }
       setRows(formattedData)
       setRowsFormattedAndNonEditable(formattedDataNONEDITABLE)
       setLoading(false)
@@ -731,7 +738,7 @@ const ProductionvolumeData = ({
     }
   }
 
-  function normalizeAllRows(grid) {
+  function normalizeAllRows(grid, maxCapacityGrid) {
     const monthKeys = [
       'april',
       'may',
@@ -747,20 +754,53 @@ const ProductionvolumeData = ({
       'march',
     ]
 
-    return grid?.map((row) => {
-      // 1. Find this row?s max month value
-      const vals = monthKeys?.map((k) => Number(row[k]))
-      const maxVal = Math.max(...vals)
-
-      // 2. Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
+    return grid?.map((row, index) => {
+      // Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
       const newRow = { ...row }
 
-      // 3. Overwrite only the month fields:
-      monthKeys.forEach((key) => {
-        const orig = Number(row[key] || 0)
-        const pct = maxVal ? (orig / maxVal) * 100 : 0
-        newRow[key] = Number(pct)
-      })
+      if (maxCapacityGrid) {
+        // Match row to corresponding max capacity row by materialFKId, normParametersFKId, or productName
+        const matchedMaxRow =
+          maxCapacityGrid?.find(
+            (maxRow) =>
+              (maxRow.materialFKId &&
+                row.materialFKId &&
+                maxRow.materialFKId.toLowerCase() ===
+                row.materialFKId.toLowerCase()) ||
+              (maxRow.normParametersFKId &&
+                row.normParametersFKId &&
+                maxRow.normParametersFKId.toLowerCase() ===
+                row.normParametersFKId.toLowerCase()) ||
+              (maxRow.productName &&
+                row.productName &&
+                maxRow.productName === row.productName),
+          ) || maxCapacityGrid?.[index]
+
+        monthKeys.forEach((key) => {
+          const orig = Number(row[key] || 0)
+          let pct = 0
+          if (matchedMaxRow) {
+            const maxVal = Number(matchedMaxRow[key] || 0)
+            pct = maxVal ? (orig / maxVal) * 100 : 0
+          } else {
+            // fallback to self-normalization if no match
+            const vals = monthKeys?.map((k) => Number(row[k]))
+            const selfMax = Math.max(...vals)
+            pct = selfMax ? (orig / selfMax) * 100 : 0
+          }
+          newRow[key] = Number(pct.toFixed(2))
+        })
+      } else {
+        // Self-normalization: compare each month against this row's max month value
+        const vals = monthKeys?.map((k) => Number(row[k]))
+        const maxVal = Math.max(...vals)
+
+        monthKeys.forEach((key) => {
+          const orig = Number(row[key] || 0)
+          const pct = maxVal ? (orig / maxVal) * 100 : 0
+          newRow[key] = Number(pct)
+        })
+      }
 
       return newRow
     })
@@ -1063,6 +1103,24 @@ const ProductionvolumeData = ({
     fetchMaxCapacityData(unitMaxCapacity)
   }, [unitMaxCapacity, PLANT_ID, yearChanged, keycloak])
 
+  // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY once both rows and maxCapacity are available
+  // (same approach as ProductionTarget uses for elastomer: production / maxCapacity * 100)
+  useEffect(() => {
+    if (
+      (IS_AROMATICS_HMD || IS_AROMATICS_PMD) &&
+      rows?.length > 0 &&
+      rowsMaxCapacity?.length > 0
+    ) {
+      const percentageFromMax = normalizeAllRows(rows, rowsMaxCapacity).map(
+        (item) => ({
+          ...item,
+          isEditable: false,
+        }),
+      )
+      setRowsPercentageSummary(percentageFromMax)
+    }
+  }, [rows, rowsMaxCapacity, IS_AROMATICS_HMD, IS_AROMATICS_PMD])
+
   const handleCalculateMeg = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
 
@@ -1221,14 +1279,17 @@ const ProductionvolumeData = ({
 
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_PVC_HMD ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
+      disabledUOM: unitDesignCapacity,
+      showDisabledUOM: IS_CRACKER_C2
     },
     isOldYear,
   )
@@ -1257,7 +1318,8 @@ const ProductionvolumeData = ({
       IS_PP_SEZ ||
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
-      IS_PVC_HMD
+      IS_PVC_HMD ||
+      VERTICAL_NAME === 'meg'
     ) {
       return true
     }
@@ -1274,6 +1336,7 @@ const ProductionvolumeData = ({
     IS_PVC_DMD,
     IS_PVC_HMD,
     IS_CRACKER_C2,
+    VERTICAL_NAME,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
@@ -1295,7 +1358,8 @@ const ProductionvolumeData = ({
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
       IS_PVC_HMD ||
-      IS_CRACKER_C2
+      IS_CRACKER_C2 ||
+      VERTICAL_NAME === 'meg'
     ) {
       return true
     }
@@ -1312,6 +1376,7 @@ const ProductionvolumeData = ({
     IS_PVC_DMD,
     IS_PVC_HMD,
     IS_CRACKER_C2,
+    VERTICAL_NAME === 'meg',
   ])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
@@ -1323,6 +1388,7 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
+      showNote: IS_PVC_HMD ? true : false,
       saveBtn:
         IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
           ? false
@@ -1332,15 +1398,16 @@ const ProductionvolumeData = ({
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC ||
-        IS_PP_SEZ ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_CRACKER_DMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_CRACKER_C2
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC ||
+          IS_PP_SEZ ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_CRACKER_DMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD ||
+          IS_CRACKER_C2 ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1388,34 +1455,38 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_VCM_DMD_EDC ? false : permissions?.saveBtn ?? true,
+      saveBtn: IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
       showCalculateVisibility:
         VERTICAL_NAME === 'meg' &&
-        Object.keys(calculationObject || {}).length > 0
+          Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
       downloadExcelBtn:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_PVC_HMD ||
+          IS_PVC_VMD ||
+          permissions?.hideDownloadExcel ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
       uploadExcelBtn:
         IS_PE_PP ||
-        IS_PET ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD ||
-        IS_VCM_DMD_EDC
+          IS_PET ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_AROMATICS_SEZ_PX4 ||
+          IS_PVC_HMD ||
+          IS_PVC_VMD ||
+          IS_VCM_DMD_EDC ||
+          permissions?.hideDownloadExcel ||
+          VERTICAL_NAME === 'meg'
           ? false
           : true,
 
@@ -1439,8 +1510,12 @@ const ProductionvolumeData = ({
             : 'Proposed Operating Capacity (Ethylene)'
           : IS_VCM
             ? 'Steady State Operating Capacity'
-            : 'Proposed Operating Capacity',
+            : VERTICAL_NAME === 'meg'
+              ? 'Proposed Operating Capacity / Production Volume Target (PVT)'
+              : 'Proposed Operating Capacity',
       showNoteWhileSaving: IS_PP_SEZ ? true : false,
+      disabledUOM: unitDesignCapacity,
+      showDisabledUOM: IS_CRACKER_C2
     },
     isOldYear,
   )
@@ -1499,7 +1574,13 @@ const ProductionvolumeData = ({
           EXCEL_EXPORT_TITLE,
           LineName,
         )
-      } else if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_AROMATICS_SEZ_PX4) {
+      } else if (
+        IS_PE_PP ||
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        VERTICAL_NAME === 'meg'
+      ) {
         await ProductionVolumeDataApiService.getProductionVolExcelCommon(
           keycloak,
           PLANT_ID,
@@ -1560,7 +1641,14 @@ const ProductionvolumeData = ({
     setLoading(true)
     try {
       let response
-      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD) {
+      if (
+        IS_PP_SEZ ||
+        IS_PP_DTA ||
+        IS_PP_HMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
+        // VERTICAL_NAME == 'meg'
+      ) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,
@@ -1607,6 +1695,7 @@ const ProductionvolumeData = ({
         // setLoading(false)
 
         fetchData()
+        fetchDesignCapacityData()
         if (IS_CRACKER_DMD || IS_CRACKER_C2) {
           fetchDesignCapacityData(unitDesignCapacity)
         }
@@ -1716,6 +1805,7 @@ const ProductionvolumeData = ({
             VERTICAL_NAME?.toLowerCase() === 'cracker' ? 'normType' : undefined
           }
           handleCalculate={handleCalculate}
+          note={textNote}
         />
       )}
 

@@ -226,9 +226,7 @@ const EtheleneStock = () => {
           g.gridName?.startsWith('UNKNOWN_GRID')
         ) {
           displayName =
-            Array.isArray(g.data) &&
-              g.data.length > 0 &&
-              g.data[0].GRID_TYPE
+            Array.isArray(g.data) && g.data.length > 0 && g.data[0].GRID_TYPE
               ? g.data[0].GRID_TYPE
               : g.gridName
         }

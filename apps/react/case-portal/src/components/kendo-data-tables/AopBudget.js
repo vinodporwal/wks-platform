@@ -7,13 +7,19 @@ import {
   CircularProgress,
   Typography,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 
 import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
+import { setIsReleased } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import { Grid, TextField } from '../../../node_modules/@mui/material/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
@@ -21,6 +27,9 @@ import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/ind
 import { AOPMaintenanceApiService } from 'services/aop-maintenance-api-service'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { DataService } from 'services/DataService'
+import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
+import { useMenuContext } from 'menu/menuProvider'
 export default function AopBudget() {
   const keycloak = useSession()
 
@@ -48,6 +57,7 @@ export default function AopBudget() {
     setDesignBasisAndDesignRemarksEdited2,
   ] = useState(false)
 
+  const dispatch = useDispatch()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -75,7 +85,12 @@ export default function AopBudget() {
   const lowerVertName = vertName?.toLowerCase()
   const headerMap = generateHeaderNames(AOP_YEAR)
   const thisYear = AOP_YEAR
+
+  const VERTICAL_NAME_U = verticalObject?.name?.toUpperCase()
   const SiteName = siteObject?.name
+  const SITE_NAME_U = siteObject?.name?.toUpperCase()
+  const PLANT_NAME_U = plantObject?.name?.toUpperCase()
+  const EXCEL_NAME = `${VERTICAL_NAME_U}_${SITE_NAME_U}_${AOP_YEAR}_Budget_Maintenance`
 
   // second grid states
   const [rowsP, setRowsP] = useState([])
@@ -89,6 +104,11 @@ export default function AopBudget() {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  const { items: menuItems } = useMenuContext()
+  const showReleaseButton = shouldShowReleaseButton(menuItems)
   const oldYearLabel = useMemo(() => {
     if (!thisYear || !thisYear.includes('-')) return ''
     const [start, end] = thisYear.split('-').map(Number)
@@ -429,6 +449,67 @@ export default function AopBudget() {
   )
   const handleCalculate = () => {}
   const handleCalculateP = () => {}
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, AOP_YEAR, PLANT_ID])
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleRemarkCellClick = useCallback((row) => {
     if (!row?.IsEditable || READ_ONLY) return
@@ -512,6 +593,7 @@ export default function AopBudget() {
       resetButton: false,
       percentChangeLogic: true,
       showResetButton: true,
+      showReleaseBtn: showReleaseButton ? true : false,
     },
     isOldYear,
   )
@@ -855,6 +937,8 @@ export default function AopBudget() {
         resetRowData={resetRowData1}
         summaryEdited={anyGridEdited}
         resetDataChanges={resetDataChanges}
+        isReleaseDisabled={isReleaseDisabled}
+        handleRelease={handleRelease}
         // setEditMode={setEditMode}
       />
 
@@ -883,6 +967,73 @@ export default function AopBudget() {
         // setEditMode={setEditMode}
         resetDataChanges={resetDataChanges}
       />
+      <Dialog
+        open={openReleaseDialogBox}
+        onClose={closeReleaseDialogBox}
+        disableScrollLock
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 2,
+            width: 400,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.2rem',
+
+            pb: 0.5,
+          }}
+        >
+          Confirm Release
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 1 }}>
+          <DialogContentText
+            sx={{
+              fontSize: '0.9rem',
+              color: '#4b5563',
+              lineHeight: 1.5,
+            }}
+          >
+            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>,{' '}
+            <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+            <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+            releasing for review.
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+          <Button
+            onClick={closeReleaseDialogBox}
+            variant='text'
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              color: '#6b7280',
+              '&:hover': { background: 'rgba(0,0,0,0.04)' },
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={submitConfirmation}
+            variant='contained'
+            className='btn-save'
+            sx={{
+              textTransform: 'none',
+              px: 2.5,
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}

@@ -10,6 +10,7 @@ import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { validateFields } from 'utils/validationUtils'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const CatalystChangeOver = ({
   permissions,
@@ -57,7 +58,7 @@ const CatalystChangeOver = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const valueFormat = ValueFormatterProduction()
   const CatalystChangeOverColumns = [
     {
       field: 'id',

@@ -12,6 +12,7 @@
     "field": "DisplayName",
     "title": "Particulars",
     "editable": false,
+    "locked": true,
     "widthT": 300,
     "autoAdjust": false,
     "minWidth": 300
@@ -20,6 +21,7 @@
     "field": "UOM",
     "title": "UOM",
     "editable": false,
+    "locked": true,
     "widthT": 80,
     "minWidth": 90
   },

@@ -1,5 +1,3 @@
-
-
 import { Box, Button, Typography } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 import { ExcelExport } from '@progress/kendo-react-excel-export'
@@ -441,9 +439,6 @@ const OptimizerReportHMD = () => {
     tabIndex,
   ])
 
-
-
-
   const renderTitle = (t) => t
 
   const PETabs = ['Steady State Norm Basis', 'Overall Consumption Norm Basis']
@@ -454,15 +449,6 @@ const OptimizerReportHMD = () => {
   return (
     <div>
       <LoaderBackdrop open={!!loading} />
-
-
-
-
-
-
-
-
-
 
       <Box display='flex' flexDirection='column' gap={2}>
         {tabIndex === 0 && (
@@ -529,7 +515,6 @@ const OptimizerReportHMD = () => {
             })}
           </>
         )}
-
       </Box>
     </div>
   )

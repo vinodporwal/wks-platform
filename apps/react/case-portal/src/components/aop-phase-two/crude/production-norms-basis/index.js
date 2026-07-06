@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Stack,
@@ -138,6 +138,7 @@ const ProductionNormsBasis = () => {
     }
 
     setNormCalculationLoading(true)
+    setRefreshData(false)
     try {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
@@ -161,7 +162,6 @@ const ProductionNormsBasis = () => {
             severity: 'error',
             autoHide: false,
           })
-          setRefreshData(true)
         }, 500)
       } else {
         // Code 200 - show only success notification
@@ -172,7 +172,6 @@ const ProductionNormsBasis = () => {
           severity: 'success',
           autoHide: true,
         })
-        setRefreshData(true)
       }
     } catch (error) {
       console.error('Error in norm calculation:', error)
@@ -184,6 +183,7 @@ const ProductionNormsBasis = () => {
       })
     } finally {
       setNormCalculationLoading(false)
+      setRefreshData(true)
     }
   }
 
@@ -219,7 +219,7 @@ const ProductionNormsBasis = () => {
     })
     .filter((tab) => tab !== null)
 
-  const renderTab = () => {
+  const renderTab = useCallback(() => {
     if (!tabs.length || !availableTabs.length) {
       return null
     }
@@ -247,7 +247,7 @@ const ProductionNormsBasis = () => {
       default:
         return null
     }
-  }
+  }, [tabs, availableTabs, tabIndex, startDate, endDate, refreshData])
 
   return (
     <div>

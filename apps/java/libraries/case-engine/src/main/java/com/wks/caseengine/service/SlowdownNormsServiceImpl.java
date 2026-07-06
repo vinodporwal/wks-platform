@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.Iterator;
 import javax.sql.DataSource;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -43,6 +44,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -117,6 +119,9 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	
 	@Autowired
 	private GradeSlowdownNormsValuesRepository gradeSlowdownNormsValuesRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	public SlowdownNormsServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
@@ -499,10 +504,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
                     if (col >= MONTH_COL_START && col <= MONTH_COL_END) {
                         int monthNumber = ACADEMIC_MONTH_ORDER[col - MONTH_COL_START];
                         if (editableMonths != null && !editableMonths.contains(monthNumber)) {
-                            // Month is not in the allowed list → always locked
+                            // Month is not in the allowed list ? always locked
                             cellStyle = lockedStyle;
                         } else {
-                            // No restriction or month is allowed → follow row editability
+                            // No restriction or month is allowed ? follow row editability
                             cellStyle = rowStyle;
                         }
                     } else {
@@ -1084,8 +1089,8 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			}
 		}
 
-		// Column index (0-based) → month number mapping for the 12 month columns
-		// Cols 3–11: Apr(4)–Dec(12); Cols 12–14: Jan(1)–Mar(3)
+		// Column index (0-based) ? month number mapping for the 12 month columns
+		// Cols 3�11: Apr(4)�Dec(12); Cols 12�14: Jan(1)�Mar(3)
 		Map<Integer, Integer> colToMonth = new HashMap<>();
 		colToMonth.put(3,  4);  // April
 		colToMonth.put(4,  5);  // May
@@ -1721,6 +1726,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	 AOPMessageVM aopMessageVM = new AOPMessageVM();
 	 Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 		String procedureName = vertical.getName()+"_GetSlowdownConsumption";
         try {
             // Get the data
@@ -1744,6 +1750,12 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 
 			List<AopCalculation> aopCalculation = aopCalculationRepository
 					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "slowdown-norms-configuration-calculate");
+
+					if(meg) {
+				List<Map<String, Object>> result =		fetchNormsTransactionsSlowdownConfiguration(plantId, year);
+					
+			map.put("SlowdownConfiguration", result);
+			}
 			map.put("resultList", resultList);
 			map.put("aopCalculation", aopCalculation);
             aopMessageVM.setCode(200);
@@ -1776,12 +1788,30 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		}
 	}
 
+	public List<Map<String, Object>> fetchNormsTransactionsSlowdownConfiguration(String plantId, String year) { 
+
+		String sql = "SELECT * FROM NormsTransactionsSlowdownConfiguration " +
+             "WHERE Plant_FK_Id = ? " +
+             "AND AOPYear = ?";
+
+List<Map<String, Object>> result = jdbcTemplate.queryForList(
+    sql,
+    plantId,
+    year
+);
+return result;
+	}
+
 	@Override
 	public AOPMessageVM saveSlowdownNormsConfigurationData(String plantId, String year,
 			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		
 		List<SlowdownConsumption> slowdownConsumptionList = new ArrayList<>();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
+		boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+		
 		try {
 			for(NormAttributeTransactionsDTO normAttributeTransactionsDTO:normAttributeTransactionsDTOList) {
 				String rawDesc = normAttributeTransactionsDTO.getDescription();
@@ -1791,8 +1821,16 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				if(maintenanceId==null) {
 					throw new RuntimeException("No Maintenance Id found with "+normAttributeTransactionsDTO.getDescription());
 				}
+
 				SlowdownConsumption  slowdownConsumption= slowdownConsumptionRepository.findByParameterFKIdAndAuditYear(UUID.fromString(plantId),normAttributeTransactionsDTO.getNormParameterFKId(),year,maintenanceId,month);
 				if(slowdownConsumption!=null) {
+
+				Double	oldVal=slowdownConsumption.getParameterValue();
+				Double	newVal=Double.parseDouble(normAttributeTransactionsDTO.getAttributeValue());
+
+				if (meg && newVal != null && !Objects.equals(oldVal, newVal)) { 
+					slowdownConsumptionUpdateTracker(normAttributeTransactionsDTO, oldVal, newVal, year, plantId);
+				}
 					slowdownConsumption.setParameterValue(Double.parseDouble(normAttributeTransactionsDTO.getAttributeValue()));
 					slowdownConsumption.setUpdatedOn(new Date());
 					slowdownConsumption.setUpdatedBy(Utility.getUserName());
@@ -1833,6 +1871,30 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		aopMessageVM.setMessage("Data updated successfully");
 		return aopMessageVM;
 	}
+
+public void slowdownConsumptionUpdateTracker(NormAttributeTransactionsDTO dto, Double oldval, Double newval, String aopYear, String plantFkId) {
+
+	String rawDesc = dto.getDescription();
+				int month=extractMonthNumber(rawDesc);
+				//String cleanDesc = stripTrailingSuffix(rawDesc);
+
+				jdbcTemplate.update(
+					"INSERT INTO NormsTransactionsSlowdownConfiguration " +
+					"(Id, Plant_FK_Id, AOPYear, NormParameter_FK_Id, ColumnName, AttributeValue, Version) " +
+					"VALUES (NEWID(), ?, ?, ?, ?, ?,?)",
+					plantFkId,
+					aopYear,
+					dto.getNormParameterFKId(),   
+					rawDesc,
+					newval,
+					1
+					
+				);
+
+
+
+}
+
 	private String stripTrailingSuffix(String description) {
 	    return description.replaceAll("_[^_]*$", "");
 	}
@@ -1889,7 +1951,6 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	}
 	
 	 public List<String> fetchUniqueGradeFkIds(String viewName, UUID plantFkId, String financialYear) {
-	        // Build SQL with safe view injection (ensure viewName is validated)
 	        String sql = "SELECT DISTINCT Grade_Fk_Id FROM " + viewName +
 	                     " WHERE Plant_Fk_Id = :plantFkId AND FinancialYear = :financialYear";
 
@@ -1901,6 +1962,384 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	        List<String> results = query.getResultList();
 	        return results;
 	    }
+
+	// --- Export: Slowdown Norms Configuration --------------------------------
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public byte[] exportSlowdownNormsConfigurationData(String plantId, String year) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName = vertical.getName() + "_GetSlowdownConsumption";
+
+			// Column definitions (field ? title) from the dynamic-columns API
+			AOPMessageVM columnsVM = getSlowdownNormsDynamicColumns(year, UUID.fromString(plantId));
+			List<Map<String, String>> columnDefs = (List<Map<String, String>>) columnsVM.getData();
+
+			// Raw SP data and column name list
+			List<String> spColumnNames = getColumnNames(procedureName, plantId, year);
+			List<Object[]> spRows = getData(plantId, year, procedureName);
+
+			// SP column-name ? index map for fast lookup
+			Map<String, Integer> colIndexMap = new LinkedHashMap<>();
+			for (int i = 0; i < spColumnNames.size(); i++) {
+				colIndexMap.put(spColumnNames.get(i), i);
+			}
+
+			// Fixed/metadata fields that are NOT dynamic slowdown columns
+			Set<String> fixedFields = new HashSet<>(Arrays.asList(
+					"particulars", "NormTypeName", "NormParameter_FK_Id",
+					"DisplayName", "UOM", "IsEditable"));
+
+			// Dynamic slowdown columns in API-returned order
+			List<Map<String, String>> dynamicCols = columnDefs.stream()
+					.filter(col -> !fixedFields.contains(col.get("field")))
+					.collect(Collectors.toList());
+
+		// -- Build workbook ----------------------------------------------
+		Workbook workbook = new XSSFWorkbook();
+		Sheet sheet = workbook.createSheet("Slowdown Norms");
+
+		// Styles
+		CellStyle hiddenStyle = workbook.createCellStyle();
+		hiddenStyle.setLocked(true);
+		hiddenStyle.setBorderTop(BorderStyle.THIN);
+		hiddenStyle.setBorderBottom(BorderStyle.THIN);
+		hiddenStyle.setBorderLeft(BorderStyle.THIN);
+		hiddenStyle.setBorderRight(BorderStyle.THIN);
+
+		CellStyle lockedStyle = workbook.createCellStyle();
+		lockedStyle.setLocked(true);
+		lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		lockedStyle.setBorderTop(BorderStyle.THIN);
+		lockedStyle.setBorderBottom(BorderStyle.THIN);
+		lockedStyle.setBorderLeft(BorderStyle.THIN);
+		lockedStyle.setBorderRight(BorderStyle.THIN);
+
+		CellStyle unlockedStyle = workbook.createCellStyle();
+		unlockedStyle.setLocked(false);
+		unlockedStyle.setBorderTop(BorderStyle.THIN);
+		unlockedStyle.setBorderBottom(BorderStyle.THIN);
+		unlockedStyle.setBorderLeft(BorderStyle.THIN);
+		unlockedStyle.setBorderRight(BorderStyle.THIN);
+
+		// Wrap-text variants for the Remark column
+		CellStyle wrapLockedStyle = workbook.createCellStyle();
+		wrapLockedStyle.setLocked(true);
+		wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		wrapLockedStyle.setWrapText(true);
+		wrapLockedStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
+		wrapLockedStyle.setBorderTop(BorderStyle.THIN);
+		wrapLockedStyle.setBorderBottom(BorderStyle.THIN);
+		wrapLockedStyle.setBorderLeft(BorderStyle.THIN);
+		wrapLockedStyle.setBorderRight(BorderStyle.THIN);
+
+		CellStyle wrapUnlockedStyle = workbook.createCellStyle();
+		wrapUnlockedStyle.setLocked(false);
+		wrapUnlockedStyle.setWrapText(true);
+		wrapUnlockedStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
+		wrapUnlockedStyle.setBorderTop(BorderStyle.THIN);
+		wrapUnlockedStyle.setBorderBottom(BorderStyle.THIN);
+		wrapUnlockedStyle.setBorderLeft(BorderStyle.THIN);
+		wrapUnlockedStyle.setBorderRight(BorderStyle.THIN);
+
+		// Right-aligned variants for dynamic columns (cols 5+)
+		CellStyle lockedRightStyle = workbook.createCellStyle();
+		lockedRightStyle.cloneStyleFrom(lockedStyle);
+		lockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
+		CellStyle unlockedRightStyle = workbook.createCellStyle();
+		unlockedRightStyle.cloneStyleFrom(unlockedStyle);
+		unlockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
+		CellStyle wrapLockedRightStyle = workbook.createCellStyle();
+		wrapLockedRightStyle.cloneStyleFrom(wrapLockedStyle);
+		wrapLockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
+		CellStyle wrapUnlockedRightStyle = workbook.createCellStyle();
+		wrapUnlockedRightStyle.cloneStyleFrom(wrapUnlockedStyle);
+		wrapUnlockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
+		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+
+		// -- Identify the Remark column among dynamic columns --
+		// (matched by field or title containing "remark", case-insensitive)
+		int remarkDynIdx = -1;
+		for (int i = 0; i < dynamicCols.size(); i++) {
+			String field = dynamicCols.get(i).get("field");
+			String title = dynamicCols.get(i).get("title");
+			if ((field != null && field.toLowerCase(Locale.ROOT).contains("remark"))
+					|| (title != null && title.toLowerCase(Locale.ROOT).contains("remark"))) {
+				remarkDynIdx = i;
+				break;
+			}
+		}
+		// Absolute sheet-column index for the Remark column (-1 if absent)
+		// Layout: Col 0 (hidden) NormParameter_FK_Id | Col 1 (hidden) IsEditable
+		//         Col 2 Particulars | Col 3 Type | Col 4 UOM | Col 5+ dynamic slowdown columns
+		final int remarkSheetCol = remarkDynIdx >= 0 ? 5 + remarkDynIdx : -1;
+
+		// -- Header row --
+		Row headerRow = sheet.createRow(0);
+
+		Cell h0 = headerRow.createCell(0);
+		h0.setCellValue("NormParameter_FK_Id");
+		h0.setCellStyle(headerStyle);
+
+		Cell h1 = headerRow.createCell(1);
+		h1.setCellValue("IsEditable");
+		h1.setCellStyle(headerStyle);
+
+		Cell h2 = headerRow.createCell(2);
+		h2.setCellValue("Particulars");
+		h2.setCellStyle(headerStyle);
+
+		Cell h3 = headerRow.createCell(3);
+		h3.setCellValue("Type");
+		h3.setCellStyle(headerStyle);
+
+		Cell h4 = headerRow.createCell(4);
+		h4.setCellValue("UOM");
+		h4.setCellStyle(headerStyle);
+
+		for (int i = 0; i < dynamicCols.size(); i++) {
+			Cell hCell = headerRow.createCell(5 + i);
+			hCell.setCellValue(dynamicCols.get(i).get("title"));
+			hCell.setCellStyle(headerStyle);
+		}
+
+		// -- Data rows --
+		Integer isEditableIdx  = colIndexMap.get("IsEditable");
+		Integer normParamIdx   = colIndexMap.get("NormParameter_FK_Id");
+		Integer displayNameIdx = colIndexMap.get("DisplayName");
+		Integer normTypeNameIdx = colIndexMap.get("NormTypeName");
+		Integer uomIdx         = colIndexMap.get("UOM");
+
+		// Track max character widths per column for auto-sizing (cols 2+)
+		int totalCols = 5 + dynamicCols.size();
+		int[] maxColChars = new int[totalCols];
+		// Seed with header text lengths
+		maxColChars[2] = "Particulars".length();
+		maxColChars[3] = "Type".length();
+		maxColChars[4] = "UOM".length();
+		for (int i = 0; i < dynamicCols.size(); i++) {
+			String title = dynamicCols.get(i).get("title");
+			maxColChars[5 + i] = title != null ? title.length() : 0;
+		}
+
+		int rowIdx = 1;
+		for (Object[] spRow : spRows) {
+			boolean isEditable = resolveIsEditable(spRow, isEditableIdx);
+
+			Row dataRow = sheet.createRow(rowIdx++);
+
+			// Col 0 � NormParameter_FK_Id (hidden)
+			Cell c0 = dataRow.createCell(0);
+			c0.setCellValue(spRow[normParamIdx] != null ? spRow[normParamIdx].toString() : "");
+			c0.setCellStyle(hiddenStyle);
+
+			// Col 1 � IsEditable (hidden)
+			Cell c1 = dataRow.createCell(1);
+			c1.setCellValue(String.valueOf(isEditable));
+			c1.setCellStyle(hiddenStyle);
+
+			// Col 2 � Particulars (DisplayName � always read-only)
+			String particularsVal = spRow[displayNameIdx] != null ? spRow[displayNameIdx].toString() : "";
+			Cell c2 = dataRow.createCell(2);
+			c2.setCellValue(particularsVal);
+			c2.setCellStyle(lockedStyle);
+			maxColChars[2] = Math.max(maxColChars[2], particularsVal.length());
+
+			// Col 3 � Type (NormTypeName � always read-only)
+			String typeVal = normTypeNameIdx != null && spRow[normTypeNameIdx] != null ? spRow[normTypeNameIdx].toString() : "";
+			Cell c3 = dataRow.createCell(3);
+			c3.setCellValue(typeVal);
+			c3.setCellStyle(lockedStyle);
+			maxColChars[3] = Math.max(maxColChars[3], typeVal.length());
+
+			// Col 4 � UOM (always read-only)
+			String uomVal = uomIdx != null && spRow[uomIdx] != null ? spRow[uomIdx].toString() : "";
+			Cell c4 = dataRow.createCell(4);
+			c4.setCellValue(uomVal);
+			c4.setCellStyle(lockedStyle);
+			maxColChars[4] = Math.max(maxColChars[4], uomVal.length());
+
+		// Col 5+ � dynamic slowdown columns
+		boolean rowHasWrappedContent = false;
+		for (int i = 0; i < dynamicCols.size(); i++) {
+			String field    = dynamicCols.get(i).get("field");
+			int    sheetCol = 5 + i;
+			boolean isRemark = (sheetCol == remarkSheetCol);
+
+			Cell cell = dataRow.createCell(sheetCol);
+			Integer spColIdx = colIndexMap.get(field);
+			String cellText = "";
+			if (spColIdx != null && spRow[spColIdx] != null) {
+				Object val = spRow[spColIdx];
+				if (!isRemark && val instanceof Number) {
+					cell.setCellValue(((Number) val).doubleValue());
+					cellText = val.toString();
+				} else {
+					cellText = val.toString();
+					cell.setCellValue(cellText);
+				}
+			} else {
+				cell.setCellValue("");
+			}
+
+			if (isRemark) {
+				cell.setCellStyle(isEditable ? wrapUnlockedRightStyle : wrapLockedRightStyle);
+				if (!cellText.isEmpty()) rowHasWrappedContent = true;
+			} else {
+				cell.setCellStyle(isEditable ? unlockedRightStyle : lockedRightStyle);
+				maxColChars[sheetCol] = Math.max(maxColChars[sheetCol], cellText.length());
+			}
+		}
+
+			// Let Excel auto-fit the row height when wrapped content is present
+			if (rowHasWrappedContent) {
+				dataRow.setHeight((short) -1);
+			}
+		}
+
+		// -- Column widths --
+		// Hidden metadata columns
+		sheet.setColumnHidden(0, true);
+		sheet.setColumnHidden(1, true);
+
+		// Remark column: fixed generous width (� 60 characters)
+		if (remarkSheetCol >= 0) {
+			sheet.setColumnWidth(remarkSheetCol, 60 * 256);
+		}
+
+		// All other visible columns: content-driven width with a small padding buffer
+		for (int col = 2; col < totalCols; col++) {
+			if (col == remarkSheetCol) continue;
+			// 256 units per character; add ~4-char padding; cap at Excel's max (255 chars)
+			int width = Math.min((maxColChars[col] + 4) * 256, 255 * 256);
+			// Enforce a comfortable minimum of 10 characters
+			width = Math.max(width, 10 * 256);
+			sheet.setColumnWidth(col, width);
+		}
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		workbook.write(out);
+		workbook.close();
+		return out.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// --- Import: Slowdown Norms Configuration --------------------------------
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public AOPMessageVM importSlowdownNormsConfigurationData(String plantId, String year, MultipartFile file) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			// Rebuild dynamic column list to know which Excel columns map to which fields
+			AOPMessageVM columnsVM = getSlowdownNormsDynamicColumns(year, UUID.fromString(plantId));
+			List<Map<String, String>> columnDefs = (List<Map<String, String>>) columnsVM.getData();
+
+			Set<String> fixedFields = new HashSet<>(Arrays.asList(
+					"particulars", "NormTypeName", "NormParameter_FK_Id",
+					"DisplayName", "UOM", "IsEditable"));
+
+			// Dynamic slowdown field names in the same order as the exported sheet (col 4+)
+			List<String> dynamicFields = columnDefs.stream()
+					.filter(col -> !fixedFields.contains(col.get("field")))
+					.map(col -> col.get("field"))
+					.collect(Collectors.toList());
+
+			List<NormAttributeTransactionsDTO> dtoList = new ArrayList<>();
+
+			try (InputStream is = file.getInputStream();
+				 Workbook workbook = new XSSFWorkbook(is)) {
+
+				Sheet sheet = workbook.getSheetAt(0);
+
+				// Row 0 is the header � start from row 1
+				for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
+					Row row = sheet.getRow(rowNum);
+					if (row == null) continue;
+
+					// Col 0 � NormParameter_FK_Id (hidden)
+					String normParamIdStr = getCellStringValue(row.getCell(0));
+					if (normParamIdStr == null || normParamIdStr.trim().isEmpty()) continue;
+
+					UUID normParameterId;
+					try {
+						normParameterId = UUID.fromString(normParamIdStr.trim());
+					} catch (IllegalArgumentException ex) {
+						continue; // skip rows with invalid UUID
+					}
+
+					// Col 1 � IsEditable (hidden) � skip non-editable rows
+					String isEditableStr = getCellStringValue(row.getCell(1));
+					boolean isEditable = "true".equalsIgnoreCase(isEditableStr != null ? isEditableStr.trim() : "");
+					if (!isEditable) continue;
+
+				// Col 5+ � dynamic slowdown column values (Col 3 = Type is read-only, Col 4 = UOM)
+				for (int i = 0; i < dynamicFields.size(); i++) {
+					Cell cell = row.getCell(5 + i);
+						if (cell == null) continue;
+						String value = getCellStringValue(cell);
+						if (value == null || value.trim().isEmpty()) continue;
+
+						NormAttributeTransactionsDTO dto = new NormAttributeTransactionsDTO();
+						dto.setNormParameterFKId(normParameterId);
+						dto.setDescription(dynamicFields.get(i));
+						dto.setAttributeValue(value.trim());
+						dtoList.add(dto);
+					}
+				}
+			}
+
+			if (!dtoList.isEmpty()) {
+				return saveSlowdownNormsConfigurationData(plantId, year, dtoList);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("No editable data found to import");
+			return aopMessageVM;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Import failed: " + e.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	// --- Private helpers -----------------------------------------------------
+
+	private boolean resolveIsEditable(Object[] spRow, Integer isEditableIdx) {
+		if (isEditableIdx == null || spRow[isEditableIdx] == null) return true;
+		Object val = spRow[isEditableIdx];
+		if (val instanceof Boolean) return (Boolean) val;
+		if (val instanceof Number) return ((Number) val).intValue() != 0;
+		String s = val.toString().trim();
+		return "true".equalsIgnoreCase(s) || "1".equals(s);
+	}
+
+	private String getCellStringValue(Cell cell) {
+		if (cell == null) return "";
+		switch (cell.getCellType()) {
+			case STRING:  return cell.getStringCellValue();
+			case NUMERIC: return String.valueOf(cell.getNumericCellValue());
+			case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+			case FORMULA:
+				try { return String.valueOf(cell.getNumericCellValue()); }
+				catch (Exception e) { return cell.getStringCellValue(); }
+			default: return "";
+		}
+	}
 
 
 }

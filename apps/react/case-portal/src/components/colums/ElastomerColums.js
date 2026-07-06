@@ -22,6 +22,7 @@ export const BusinessDemandElastomerColumns = [
     title: 'Particulars',
     editable: false,
     minWidth: 125,
+    locked: true,
   },
   {
     field: 'april',
@@ -173,6 +174,7 @@ export const BusinessDemandElastomerJmdColumns = [
     editable: false,
     widthT: 220,
     autoAdjust: false,
+    locked: true,
   },
   {
     field: 'april',
@@ -207,6 +209,7 @@ export const SlowDownElastomerColumns = [
     editable: true,
     widthT: 200,
     autoAdjust: false,
+    locked: true,
   },
 
   {
@@ -264,6 +267,7 @@ export const SlowDown_Elastomer_JMD_Columns = [
     editable: true,
     widthT: 260,
     autoAdjust: false,
+    locked: true,
   },
 
   {
@@ -323,6 +327,7 @@ export const SlowDownElastomerColumnsSBR = [
     widthT: 230,
     autoAdjust: false,
     minWidth: 100,
+    locked: true,
   },
   {
     field: 'productName1',
@@ -397,6 +402,7 @@ export const SlowDownElastomerColumnsPBR3 = [
     widthT: 230,
     autoAdjust: false,
     minWidth: 100,
+    locked: true,
   },
 
   {
@@ -848,7 +854,7 @@ export const ShutdownConsumptionElastomerColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -914,12 +920,12 @@ export const SlowdownNormsElastomerColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
     minWidth: 100,
-    headerName: 'UOM / MT',
+    headerName: 'UOM/MT',
     width: 90,
     editable: false,
   },
@@ -980,7 +986,7 @@ export const SlowdownNormsElastomerJmdColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 120,
+    minWidth: 130,
   },
   {
     field: 'UOM',

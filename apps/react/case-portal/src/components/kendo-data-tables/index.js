@@ -4,6 +4,7 @@ import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
@@ -11,6 +12,7 @@ import Notification from 'components/Utilities/Notification'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import PublishIcon from '@mui/icons-material/Publish'
 import { useSelector } from 'react-redux'
 import YearDropdownEditor from './Utilities-Kendo/YearDropdownEditor'
 import CloseIcon from '@mui/icons-material/Close'
@@ -95,6 +97,7 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 
 // A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
@@ -188,28 +191,28 @@ const KendoDataTables = ({
   typeRank = {},
   permissions = {},
   errorRows = new Set(),
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  NormParameterIdCell = () => {},
-  setModifiedCells = () => {},
+  NormParameterIdCell = () => { },
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = (selectedItems) => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleAddPlantSite = () => {},
-  handleCalculate = () => {},
-  handleLoad = () => {},
-  fetchData = () => {},
-  handleUnitChange = () => {},
-  handleYearChange = () => {},
-  handleGradeChange = () => {},
-  handleRemarkCellClick = () => {},
-  calculatebtnClicked = () => {},
+  handleDeleteSelected = (selectedItems) => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleAddPlantSite = () => { },
+  handleCalculate = () => { },
+  handleLoad = () => { },
+  fetchData = () => { },
+  handleUnitChange = () => { },
+  handleYearChange = () => { },
+  handleGradeChange = () => { },
+  handleRemarkCellClick = () => { },
+  calculatebtnClicked = () => { },
   selectedUsers = [],
   groupBy = null,
   totalRowConfiguration = null,
@@ -223,13 +226,13 @@ const KendoDataTables = ({
   allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
-  setSelectMode = () => {},
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
-  onLoad = () => {},
+  setSelectMode = () => { },
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
+  onLoad = () => { },
   disableRedHighlight = false,
   showThreeColors = false,
-  resetDataChanges = () => {},
+  resetDataChanges = () => { },
   noteOnSaveDialogeBox = '',
   deleteNoteOnDeleteDialogeBox = '',
   shutdownMonths = [],
@@ -241,10 +244,11 @@ const KendoDataTables = ({
   mcuMaxCapValues = [],
   key = [],
   isReleaseDisabled = true,
-  handleRelease = () => {},
+  handleRelease = () => { },
   customItemChange = null,
   configType,
   isEditable = false,
+  currentTabDisplayName,
 }) => {
   const _export = useRef(null)
 
@@ -272,6 +276,67 @@ const KendoDataTables = ({
   const [edit, setEdit] = useState({})
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
+
+  const processedRows = useMemo(() => {
+    try {
+      return process(rows, { filter, sort }).data
+    } catch (err) {
+      return rows
+    }
+  }, [rows, filter, sort])
+
+  const GroupedColumnCell = (props) => {
+    const { dataItem, field, tdProps } = props
+    const value = dataItem[field]
+
+    const gName = dataItem.groupName
+    if (!gName) {
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'right',
+          }}
+        >
+          {value !== null && value !== undefined ? value : ''}
+        </td>
+      )
+    }
+
+    const groupRows = processedRows.filter((r) => r.groupName === gName)
+    const indexInGroup = groupRows.findIndex((r) => r.id === dataItem.id)
+
+    if (indexInGroup > 0) {
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            display: 'none',
+          }}
+        />
+      )
+    }
+
+    const rowSpan = groupRows.length
+
+    return (
+      <td
+        {...tdProps}
+        rowSpan={rowSpan}
+        style={{
+          ...tdProps?.style,
+          verticalAlign: 'middle',
+          textAlign: 'right',
+          backgroundColor: '#FFFFFF',
+        }}
+      >
+        {value !== null && value !== undefined ? value : ''}
+      </td>
+    )
+  }
+
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
@@ -306,6 +371,36 @@ const KendoDataTables = ({
   const lowerSiteName = SiteName?.toLowerCase()
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
+  const lowerPlantName = plantName?.toLowerCase()
+
+  const IS_CHEMICAL_VMD_BENZENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    lowerPlantName === 'benzene'
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES = [
+    'C5 Cut to NCP',
+    'FC Column Bottom to RARFS',
+    'VA Stream to BZ',
+    'PYROLYSIS GASOLINE',
+    'Benzene Content in feed for PyGas',
+  ].map((n) => n.trim().toLowerCase())
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_NP = [
+    'Tatoray Hydrogen',
+    'PACOL HYDROGEN',
+    'PX Hydrogen',
+  ].map((n) => n.trim().toLowerCase())
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_LAB = [
+    'PX Hydrogen',
+    'HYDROGENT',
+  ].map((n) => n.trim().toLowerCase())
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS =
+    lowerPlantName == 'np'
+      ? RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_NP
+      : RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_LAB
 
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
@@ -412,12 +507,12 @@ const KendoDataTables = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          aggregates: totalRowConfiguration,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        aggregates: totalRowConfiguration,
+        dir: undefined,
+      },
+    ]
     : []
 
   const MyFooterCustomCell = (props) => {
@@ -486,6 +581,19 @@ const KendoDataTables = ({
         {cellContent}
       </td>
     )
+  }
+  const formatTo12Hr = (raw) => {
+    if (!raw) return ''
+    const d = new Date(raw)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    let hours = d.getHours()
+    const minutes = String(d.getMinutes()).padStart(2, '0')
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    hours = hours % 12 || 12
+    const hh = String(hours).padStart(2, '0')
+    return `${dd}-${mm}-${yyyy} ${hh}:${minutes} ${ampm}`
   }
 
   const handleEditChange = useCallback((e) => {
@@ -615,11 +723,9 @@ const KendoDataTables = ({
 
   const itemChange = useCallback(
     (e) => {
-
       const { dataItem, field } = e
       let { value } = e
 
-      // Ignore group header expand/collapse events — they are not real edits
       if (!field || dataItem?.items) {
         return
       }
@@ -645,7 +751,6 @@ const KendoDataTables = ({
           'oct',
           'sep',
         ]
-
         if (monthsForTotalRow.includes(field)) {
           if (value === '' || value == null) {
             value = null
@@ -660,7 +765,6 @@ const KendoDataTables = ({
 
       const itemId = dataItem.id
 
-      // months list in the order you provided
       const months = [
         'apr',
         'may',
@@ -686,6 +790,18 @@ const KendoDataTables = ({
         const cleaned = s.replace(/^\+/, '')
         const n = Number(cleaned)
         return Number.isFinite(n) ? n : null
+      }
+
+      // ✅ Helper: calculate start date from end date and duration
+      const recalcStartDate = (endDateTime, durationStr) => {
+        if (!endDateTime || !durationStr) return null
+        const end = new Date(endDateTime)
+        if (isNaN(end)) return null
+        const [hoursStr, minsStr = '0'] = String(durationStr).split('.')
+        const hours = parseInt(hoursStr, 10) || 0
+        const mins = parseInt(minsStr.padEnd(2, '0'), 10) || 0
+        const totalMs = (hours * 60 + mins) * 60 * 1000
+        return new Date(end.getTime() - totalMs)
       }
 
       setRows((prev) =>
@@ -865,16 +981,29 @@ const KendoDataTables = ({
                   updated.maintEndDateTime,
                 )
               } else if (field === 'durationInHrs') {
-                const newEnd = recalcEndDate(
-                  updated.maintStartDateTime,
-                  value, // string like “10.20”
-                )
-                if (newEnd) {
-                  updated.maintEndDateTime = newEnd
+                if (updated.type === 'ramp-down') {
+                  // ramp-down: end date is FIXED → move start date
+                  const newStart = recalcStartDate(
+                    updated.maintEndDateTime,
+                    value,
+                  )
+                  if (newStart) {
+                    updated.maintStartDateTime = newStart
+                  }
+                } else {
+                  // all others: start date is FIXED → move end date
+                  const newEnd = recalcEndDate(
+                    updated.maintStartDateTime,
+                    value, // string like “10.20”
+                  )
+                  if (newEnd) {
+                    updated.maintEndDateTime = newEnd
+                  }
                 }
               }
             }
           }
+
           if (
             lowerVertName === 'vcm' &&
             [
@@ -961,8 +1090,15 @@ const KendoDataTables = ({
                   base.maintEndDateTime,
                 )
               } else if (field === 'durationInHrs') {
-                const newEnd = recalcEndDate(base.maintStartDateTime, value)
-                if (newEnd) base.maintEndDateTime = newEnd.toISOString()
+                if (base.type === 'ramp-down') {
+                  // ramp-down: end date is FIXED → move start date
+                  const newStart = recalcStartDate(base.maintEndDateTime, value)
+                  if (newStart) base.maintStartDateTime = newStart.toISOString()
+                } else {
+                  // all others: start date is FIXED → move end date
+                  const newEnd = recalcEndDate(base.maintStartDateTime, value)
+                  if (newEnd) base.maintEndDateTime = newEnd.toISOString()
+                }
               }
             }
           }
@@ -1482,6 +1618,15 @@ const KendoDataTables = ({
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
     const isBoldFromCells = dataItem?.boldCells?.includes(field)
+
+    const isStart = field === 'maintStartDateTime'
+    const isEnd = field === 'maintEndDateTime'
+    const type = dataItem?.type
+    const isDisabled =
+      (isEnd && type === 'ramp-down') || (isStart && type === 'ramp-up')
+
+
+
     return (
       <td
         {...tdProps}
@@ -1490,6 +1635,9 @@ const KendoDataTables = ({
         style={{
           fontWeight:
             !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
+          backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+          color: isDisabled ? '#6e6e6e' : undefined,
+          cursor: isDisabled ? 'not-allowed' : undefined,
         }}
       >
         {children}
@@ -1526,14 +1674,36 @@ const KendoDataTables = ({
       field,
     )
 
-    const month = field
-    const normId = dataItem.materialFkId || dataItem.NormParameter_FK_Id
+    const normId =
+      dataItem.materialFKId ||
+      dataItem.materialFkId ||
+      dataItem.NormParameter_FK_Id
 
-    const isRedFromAllRedCell = allRedCell?.some(
-      (cell) =>
-        cell.month === month &&
-        cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
-    )
+    const fieldMonthNumber = fieldToMonthNumber[field?.toLowerCase()]
+
+    const isRedFromAllRedCell = allRedCell?.some((cell) => {
+      const cellNormId = (
+        cell.NormParameter_FK_Id || cell.normParameterFKId
+      )?.toLowerCase()
+
+      if (!cellNormId || !normId || cellNormId !== normId.toLowerCase()) {
+        return false
+      }
+
+      // MEG-style cells carry a ColumnName that matches the dynamic field name directly
+      const cellColumnName = cell.ColumnName || cell.columnName
+      if (cellColumnName != null) {
+        return cellColumnName === field
+      }
+
+      // Normal-op-norms-style cells carry a numeric/string month
+      const cellMonthNumber =
+        typeof cell.month === 'number'
+          ? cell.month
+          : fieldToMonthNumber[String(cell.month).toLowerCase()]
+
+      return cellMonthNumber === fieldMonthNumber
+    })
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
@@ -1657,6 +1827,13 @@ const KendoDataTables = ({
     )
   }
 
+  const lowerCurrentTabDisplayName = currentTabDisplayName
+    ?.toLowerCase()
+    ?.trim()
+  const isConfigOrConstantTab =
+    lowerCurrentTabDisplayName === 'configuration' ||
+    configType === 'Configuration'
+
   const toolTipRenderer = (props) => {
     const value = props.dataItem[props.field]
     const month = props.field
@@ -1668,8 +1845,26 @@ const KendoDataTables = ({
         cell.month === month &&
         cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
     )
-
     const isRed = isRedFromAllRedCell
+
+    const isProductNameTarget =
+      props.field === 'productName' &&
+      isConfigOrConstantTab &&
+      IS_CHEMICAL_VMD_BENZENE &&
+      RED_HIGHLIGHT_PRODUCT_NAMES.includes(
+        String(value || '')
+          .trim()
+          .toLowerCase(),
+      )
+
+    const isProductNameTargetSSN =
+      props.field === 'productName' &&
+      permissions?.isShowColoredPartucilars &&
+      RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS.includes(
+        String(value || '')
+          .trim()
+          .toLowerCase(),
+      )
 
     return (
       <td
@@ -1677,7 +1872,20 @@ const KendoDataTables = ({
         title={value}
         className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
-        {props.children}
+        {isProductNameTarget || isProductNameTargetSSN ? (
+          <span
+            ref={(el) => {
+              if (el) {
+                el.style.setProperty('color', 'red', 'important')
+                el.style.setProperty('font-weight', 'bold', 'important')
+              }
+            }}
+          >
+            {props.children}
+          </span>
+        ) : (
+          props.children
+        )}
       </td>
     )
   }
@@ -1691,6 +1899,7 @@ const KendoDataTables = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
+          ...restThProps?.style,
           fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         }}
       >
@@ -2337,7 +2546,7 @@ const KendoDataTables = ({
                         },
                       },
                     }}
-                    // disabled={rows?.length === 0}
+                  // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled className='menu-item-style'>
                       UOM
@@ -2365,6 +2574,11 @@ const KendoDataTables = ({
                     flexItem={{ mx: 2 }}
                   />
                 </React.Fragment>
+              )}
+
+
+              {permissions?.showDisabledUOM && (
+                <DisabledUOM disabledUOM={permissions?.disabledUOM} />
               )}
 
               {permissions?.showModes && (
@@ -2465,7 +2679,7 @@ const KendoDataTables = ({
                   onClick={excelExport}
                   // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
-                  //ANY ONE CAN EXPORT
+                //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -2534,11 +2748,11 @@ const KendoDataTables = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
-                  Calculate
+                  {permissions?.calculateBtnText || 'Calculate'}
                 </Button>
               )}
 
@@ -2610,6 +2824,7 @@ const KendoDataTables = ({
                   className='btn-save'
                   disabled={isReleaseDisabled || READ_ONLY}
                   onClick={handleRelease}
+                  startIcon={<PublishIcon sx={{ color: '#4A4DDA' }} />}
                 >
                   Release
                 </Button>
@@ -2663,21 +2878,21 @@ const KendoDataTables = ({
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
-                        enabled: false,
-                        footer: 'visible',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'visible',
+                      showGroupPanel: false,
+                    }
                     : {
-                        enabled: false,
-                        footer: 'none',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'none',
+                      showGroupPanel: false,
+                    }
                 }
                 cells={
                   permissions?.isTotalFooterActive
                     ? {
-                        groupFooter: MyFooterCustomCell,
-                      }
+                      groupFooter: MyFooterCustomCell,
+                    }
                     : undefined
                 }
                 allRedCell={allRedCell}
@@ -2688,17 +2903,20 @@ const KendoDataTables = ({
                     ? false
                     : rows?.length > 100
                       ? {
-                          buttonCount: 4,
-                          pageSizes: [10, 50, 100],
-                        }
+                        buttonCount: 4,
+                        pageSizes: [10, 50, 100],
+                      }
                       : false
                 }
                 sortable={true}
                 sort={sort}
                 onSortChange={(e) => setSort(e.sort)}
+                lockGroups={true}
+                columnWidth={150}
               >
                 {permissions?.deleteMultiple && (
                   <GridColumn
+                    locked={true}
                     field='selected'
                     width='50px'
                     headerSelectionValue={
@@ -2768,6 +2986,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -2806,6 +3025,7 @@ const KendoDataTables = ({
                     ) {
                       return (
                         <GridColumn
+                          locked={col.locked || false}
                           key={col?.field}
                           field={col?.field}
                           title={col?.title || col?.headerName}
@@ -2856,29 +3076,80 @@ const KendoDataTables = ({
                     }
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
                         cells={{
                           edit: {
-                            date: [
-                              'fromDate',
-                              'toDate',
-                              'periodTo',
-                              'periodFrom',
-                              'toDateReport',
-                              'fromDateReport',
-                            ].includes(col?.field)
-                              ? DateOnlyPicker
-                              : DateTimePickerEditor,
+                            date: (props) => {
+                              const { dataItem, field } = props
+                              const isStart = field === 'maintStartDateTime'
+                              const isEnd = field === 'maintEndDateTime'
+                              const type = dataItem?.type
+                              const isDisabled =
+                                (isEnd && type === 'ramp-down') ||
+                                (isStart && type === 'ramp-up')
+                              if (isDisabled) {
+                                return (
+                                  <SimpleHighlightCell
+                                    {...props}
+                                    customModifiedCells={customModifiedCells}
+                                    highlight={
+                                      permissions?.highlightDate || false
+                                    }
+                                  />
+                                )
+                              }
+                              return [
+                                'fromDate',
+                                'toDate',
+                                'periodTo',
+                                'periodFrom',
+                                'toDateReport',
+                                'fromDateReport',
+                              ].includes(col?.field) ? (
+                                <DateOnlyPicker {...props} />
+                              ) : (
+                                <DateTimePickerEditor {...props} />
+                              )
+                            },
                           },
-                          data: (props) => (
-                            <SimpleHighlightCell
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              highlight={permissions?.highlightDate || false} // Add this permission
-                            />
-                          ),
+                          data: (props) => {
+                            const { dataItem, field } = props
+                            const isStart = field === 'maintStartDateTime'
+                            const isEnd = field === 'maintEndDateTime'
+                            const type = dataItem?.type
+                            const isCellDisabled =
+                              (isEnd && type === 'ramp-down') ||
+                              (isStart && type === 'ramp-up')
+
+                            if (isCellDisabled) {
+                              // ✅ formatTo12Hr instead of toLocaleString('en-GB')
+                              const display = formatTo12Hr(dataItem[field])
+                              return (
+                                <td
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    backgroundColor: '#f0f0f0',
+                                    color: '#888',
+                                    cursor: 'not-allowed',
+                                  }}
+                                  title={display}
+                                >
+                                  {display}
+                                </td>
+                              )
+                            }
+
+                            return (
+                              <SimpleHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                highlight={permissions?.highlightDate || false}
+                              />
+                            )
+                          },
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         format={
@@ -2895,7 +3166,6 @@ const KendoDataTables = ({
                         }
                         editor='date'
                         hidden={col?.hidden}
-                        // columnMenu={DateColumnMenu}
                         filter='date'
                         columnMenu={ColumnMenuCheckboxFilterDate}
                         width={setWidth(col?.minWidth || 150)}
@@ -2911,6 +3181,7 @@ const KendoDataTables = ({
                   if (dateFields1.includes(col?.field)) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -2971,6 +3242,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -2998,6 +3270,7 @@ const KendoDataTables = ({
                   if (col?.field === 'symbol') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='symbol'
                         field='symbol'
                         width={setWidth(col?.minWidth || 150)}
@@ -3017,6 +3290,7 @@ const KendoDataTables = ({
                   if (col?.field === 'limit') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='limit'
                         field='limit'
                         width={setWidth(col?.minWidth || 150)}
@@ -3040,6 +3314,7 @@ const KendoDataTables = ({
                   if (col?.field === 'discriptionDrpdwn') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='discriptionDrpdwn'
                         field='discriptionDrpdwn'
                         title={col?.title || col?.headerName || 'Particulars'}
@@ -3065,6 +3340,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='discription'
                         field='discription'
                         title={col?.title || col?.headerName || 'Particulars'}
@@ -3088,6 +3364,7 @@ const KendoDataTables = ({
                   if (col?.field === 'productName1') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='productName1'
                         field='productName1'
                         title={col?.title || col?.headerName || 'Particulars'}
@@ -3115,6 +3392,7 @@ const KendoDataTables = ({
                   if (col?.field === 'month') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='month'
                         field='month'
                         title={col?.title || col?.headerName || 'month'}
@@ -3138,6 +3416,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName || 'Description'}
@@ -3167,6 +3446,7 @@ const KendoDataTables = ({
                   if (col?.type === 'descLimit') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3186,6 +3466,7 @@ const KendoDataTables = ({
                   if (col?.field === 'UOM') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='UOM'
                         field='UOM'
                         title={col?.title || col?.headerName || 'UOM'}
@@ -3204,6 +3485,7 @@ const KendoDataTables = ({
                   if (col?.field === 'ReceipeName') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='ReceipeName'
                         field='ReceipeName'
                         title={col?.title || col?.headerName}
@@ -3221,6 +3503,7 @@ const KendoDataTables = ({
                   if (col?.type === 'Receipe') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3251,6 +3534,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3275,6 +3559,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
@@ -3312,6 +3597,7 @@ const KendoDataTables = ({
                   if (col?.type === 'monthDropdownPEPP') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3341,6 +3627,7 @@ const KendoDataTables = ({
                   if (col?.type === 'monthDropdown') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3360,6 +3647,7 @@ const KendoDataTables = ({
                   if (col?.type === 'Categorydropdown') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3395,6 +3683,7 @@ const KendoDataTables = ({
                   if (col?.type === 'yeardropdown') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3414,6 +3703,7 @@ const KendoDataTables = ({
                   if (col?.type === 'typesdDropdown') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3450,6 +3740,7 @@ const KendoDataTables = ({
                   if (col?.type === 'lineDropdown') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title}
@@ -3476,6 +3767,7 @@ const KendoDataTables = ({
                   if (col?.field === 'DisplayName') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key='DisplayName'
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3505,6 +3797,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3517,6 +3810,7 @@ const KendoDataTables = ({
                               allRedCell={allRedCell}
                               onRemarkClick={handleRemarkCellClick}
                               customModifiedCells={customModifiedCells}
+                              suppressRemarksPlaceholder={permissions?.suppressRemarksPlaceholder}
                             />
                           ),
                           headerCell: SimpleHeaderWithTooltip,
@@ -3531,6 +3825,7 @@ const KendoDataTables = ({
                   if (col?.field === 'durationInHrs') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3570,6 +3865,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
@@ -3597,6 +3893,7 @@ const KendoDataTables = ({
                   if (col?.field === 'rpfDownTime') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3620,6 +3917,7 @@ const KendoDataTables = ({
                   if (col?.hideFilter && col?.hideSort) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3653,6 +3951,7 @@ const KendoDataTables = ({
                   if (col?.type === 'propaneDropdown') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3698,6 +3997,7 @@ const KendoDataTables = ({
 
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3734,6 +4034,7 @@ const KendoDataTables = ({
                       []
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
@@ -3760,6 +4061,7 @@ const KendoDataTables = ({
                   if (col?.type === 'percentChange') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3783,6 +4085,7 @@ const KendoDataTables = ({
                   if (col?.type === 'negativeNumber') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3825,6 +4128,7 @@ const KendoDataTables = ({
                   if (col?.type === 'numberWithUOMValidation') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3868,6 +4172,7 @@ const KendoDataTables = ({
                   if (col?.type === 'integerOnlyForDays') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3911,6 +4216,7 @@ const KendoDataTables = ({
                   if (col?.field === 'rate') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={
@@ -3946,6 +4252,7 @@ const KendoDataTables = ({
                   if (col?.crackerValidation) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -3993,6 +4300,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -4064,6 +4372,7 @@ const KendoDataTables = ({
                   ) {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
@@ -4139,6 +4448,7 @@ const KendoDataTables = ({
                   if (col?.type === 'integerNumberOnly') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -4177,9 +4487,35 @@ const KendoDataTables = ({
                       />
                     )
                   }
+                  if (col?.type === 'groupedColumn') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+                          ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                          ${col?.isBold ? 'bold-text' : ''}
+                        `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          data: GroupedColumnCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
                   if (col?.type === 'number') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -4236,6 +4572,7 @@ const KendoDataTables = ({
 
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title='.'
@@ -4299,6 +4636,7 @@ const KendoDataTables = ({
 
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title='.'
@@ -4341,6 +4679,7 @@ const KendoDataTables = ({
                   if (col?.type === 'numberWidth') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -4368,6 +4707,7 @@ const KendoDataTables = ({
                   if (col?.field === 'ConstantValue') {
                     return (
                       <GridColumn
+                        locked={col.locked || false}
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
@@ -4385,8 +4725,52 @@ const KendoDataTables = ({
                     )
                   }
 
+                  if (col?.type === 'checkbox') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          data: (props) => {
+                            const dataItem = props.dataItem || {}
+                            const val = !!dataItem[props.field]
+                            const isDisabled =
+                              col?.editable === false || READ_ONLY
+                            return (
+                              <td style={{ textAlign: 'center' }}>
+                                <Checkbox
+                                  checked={val}
+                                  onChange={(e) => {
+                                    const checked =
+                                      e?.value ?? e?.target?.checked ?? false
+                                    const changeEvent = {
+                                      dataItem,
+                                      field: props.field,
+                                      value: checked,
+                                    }
+                                    itemChange(changeEvent)
+                                  }}
+                                  disabled={isDisabled}
+                                />
+                              </td>
+                            )
+                          },
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
                   return (
                     <GridColumn
+                      locked={col.locked || false}
                       key={col?.field}
                       field={col?.field}
                       title={col?.title || col?.headerName}

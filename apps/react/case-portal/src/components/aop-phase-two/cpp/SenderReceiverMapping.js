@@ -2,9 +2,11 @@ import { useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
-import { Box, Stack } from '@mui/material'
+import { Box, Stack, Tooltip, IconButton } from '@mui/material'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import { useDebounce } from 'hooks/useDebounce'
 const SenderReceiverMapping = () => {
   const [modifiedCells, setModifiedCells] = useState({})
@@ -22,6 +24,10 @@ const SenderReceiverMapping = () => {
   const [originalRows, setOriginalRows] = useState([])
   const [plantsDropdown, setPlantsDropdown] = useState([])
   const [costCentersDropdown, setCostCentersDropdown] = useState([])
+  const [normParameters, setNormParameters] = useState([])
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [rowToDelete, setRowToDelete] = useState(null)
 
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -60,6 +66,22 @@ const SenderReceiverMapping = () => {
           ],
     [jmdSelectedPlants, plantObject, lowerSiteName],
   )
+
+  // Fetch norm parameters for the selected plant
+  const fetchNormParameters = useCallback(async () => {
+    if (!PLANT_ID) return
+    try {
+      const res = await UtilityPlantApiServiceV2.getNormParameters(
+        keycloak,
+        PLANT_ID,
+      )
+      const data = res?.data || []
+      setNormParameters(data)
+    } catch (error) {
+      console.error('Error fetching norm parameters:', error)
+      setNormParameters([])
+    }
+  }, [keycloak, PLANT_ID])
 
   // Fetch plants and cost centers for dropdowns
   const fetchAssociatedFieldIds = useCallback(async () => {
@@ -143,11 +165,56 @@ const SenderReceiverMapping = () => {
       if (PLANT_ID_LIST?.length && AOP_YEAR) {
         fetchData()
         fetchAssociatedFieldIds()
+        fetchNormParameters()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchData, fetchAssociatedFieldIds],
+    [
+      PLANT_ID_LIST,
+      AOP_YEAR,
+      fetchData,
+      fetchAssociatedFieldIds,
+      fetchNormParameters,
+    ],
+  )
+
+  const getFilteredSenderUtilities = useCallback(
+    (dataItem) => {
+      const selectedPlantId = dataItem?.senderPlantId
+      if (!selectedPlantId) return []
+      const filtered = normParameters.filter(
+        (np) =>
+          np.normTypeFkId === 2 &&
+          np.plantFkId?.toLowerCase() === selectedPlantId?.toLowerCase(),
+      )
+      return filtered.map((np) => ({
+        value: np.displayName || np.name,
+        label: np.displayName || np.name,
+        sapMaterialCode: np.sapMaterialCode || '',
+        uom: np.uom || '',
+      }))
+    },
+    [normParameters],
+  )
+
+  const getFilteredReceiverUtilities = useCallback(
+    (dataItem) => {
+      const selectedPlantId = dataItem?.receiverPlantId
+      if (!selectedPlantId) return []
+      const filtered = normParameters.filter(
+        (np) =>
+          np.normTypeFkId === 1 &&
+          np.plantFkId?.toLowerCase() === selectedPlantId?.toLowerCase(),
+      )
+      return filtered.map((np) => ({
+        value: np.displayName || np.name,
+        label: np.displayName || np.name,
+        sapMaterialCode: np.sapMaterialCode || '',
+        uom: np.uom || '',
+      }))
+    },
+    [normParameters],
   )
 
   const getFilteredCostCenters = useCallback(
@@ -245,7 +312,10 @@ const SenderReceiverMapping = () => {
       title: 'Utility',
       widthT: 150,
       minWidth: 150,
-      type: 'text',
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredSenderUtilities,
       editable: true,
     },
     {
@@ -254,7 +324,7 @@ const SenderReceiverMapping = () => {
       widthT: 150,
       minWidth: 150,
       type: 'text',
-      editable: true,
+      editable: false,
     },
     {
       field: 'senderUtilityUOM',
@@ -262,7 +332,7 @@ const SenderReceiverMapping = () => {
       widthT: 150,
       minWidth: 150,
       type: 'text',
-      editable: true,
+      editable: false,
     },
 
     {
@@ -308,7 +378,10 @@ const SenderReceiverMapping = () => {
       title: 'Receiver Utility',
       widthT: 150,
       minWidth: 150,
-      type: 'text',
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredReceiverUtilities,
       editable: true,
       hidden: false,
     },
@@ -318,7 +391,7 @@ const SenderReceiverMapping = () => {
       widthT: 180,
       minWidth: 180,
       type: 'text',
-      editable: true,
+      editable: false,
       hidden: false,
     },
     {
@@ -327,7 +400,7 @@ const SenderReceiverMapping = () => {
       widthT: 180,
       minWidth: 180,
       type: 'text',
-      editable: true,
+      editable: false,
     },
     // {
     //   field: 'materialActivity',
@@ -354,6 +427,79 @@ const SenderReceiverMapping = () => {
       editable: true,
     },
   ]
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+
+  const handleDeleteRow = (row) => {
+    setRows((prev) => prev.filter((r) => r.id !== row.id))
+    setOriginalRows((prev) => prev.filter((r) => r.id !== row.id))
+    setModifiedCells((prev) => {
+      const next = { ...prev }
+      delete next[row.id]
+      return next
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!rowToDelete) return
+
+    setDeleteDialogOpen(false)
+    setLoading(true)
+
+    try {
+      if (rowToDelete.apiId != null) {
+        await UtilityPlantApiServiceV2.deleteSRMapping(
+          keycloak,
+          rowToDelete.apiId,
+        )
+      }
+      handleDeleteRow(rowToDelete)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'SR Mapping deleted successfully!',
+        severity: 'success',
+      })
+      fetchData()
+    } catch (error) {
+      console.error('Error deleting SR mapping:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete SR Mapping. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setRowToDelete(null)
+    }
+  }
+
+  // ── Delete action cell ─────────────────────────────────────────────────────
+
+  const DeleteActionCell = ({ dataItem, tdProps }) => (
+    <td
+      {...tdProps}
+      style={{
+        ...tdProps?.style,
+        textAlign: 'center',
+        verticalAlign: 'middle',
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Tooltip title='Delete Row'>
+          <IconButton
+            size='small'
+            color='error'
+            onClick={() => {
+              setRowToDelete(dataItem)
+              setDeleteDialogOpen(true)
+            }}
+          >
+            <DeleteOutlineIcon fontSize='small' />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </td>
+  )
 
   // Permissions
   const permissions = {
@@ -624,6 +770,54 @@ const SenderReceiverMapping = () => {
       )
       return
     }
+
+    // Handle senderUtilityName dropdown change - auto-populate code and UOM
+    if (field === 'senderUtilityName' && value) {
+      const selectedUtil = normParameters.find(
+        (np) => (np.displayName || np.name) === value && np.normTypeFkId === 2,
+      )
+      const utilCode = selectedUtil?.sapMaterialCode || ''
+      const utilUOM = selectedUtil?.uom || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                senderUtilityName: value,
+                senderUtilityId: selectedUtil?.id || '',
+                senderUtilityCode: utilCode,
+                senderUtilityUOM: utilUOM,
+              }
+            : row,
+        ),
+      )
+      return
+    }
+
+    // Handle receiverUtilityName dropdown change - auto-populate code and UOM
+    if (field === 'receiverUtilityName' && value) {
+      const selectedUtil = normParameters.find(
+        (np) => (np.displayName || np.name) === value && np.normTypeFkId === 1,
+      )
+      const utilCode = selectedUtil?.sapMaterialCode || ''
+      const utilUOM = selectedUtil?.uom || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                receiverUtilityName: value,
+                receiverUtilityId: selectedUtil?.id || '',
+                receiverUtilityCode: utilCode,
+                receiverUtilityUOM: utilUOM,
+              }
+            : row,
+        ),
+      )
+      return
+    }
   }
 
   return (
@@ -661,8 +855,17 @@ const SenderReceiverMapping = () => {
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
           setCurrentRowId={() => {}}
+          customActionCell={DeleteActionCell}
         />
       </Stack>
+
+      <DeleteDialog
+        openDeleteDialogeBox={deleteDialogOpen}
+        setOpenDeleteDialogeBox={setDeleteDialogOpen}
+        deleteTheRecord={handleConfirmDelete}
+        message='Are you sure you want to delete this SR Mapping record?'
+        confirmButtonText='Delete'
+      />
     </Box>
   )
 }

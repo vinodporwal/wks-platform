@@ -40,7 +40,12 @@ import com.wks.caseengine.utility.Utility;
 @Service
 public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	
-	public byte[] generateFlexibleExcelPP(Map<String, Object> structure, Map<String, List<List<Object>>> data) {
+	public byte[] generateFlexibleExcelPP(Map<String, Object> structure, Map<String, List<List<Object>>> data, List<String> editableGrids) {
+
+        Set<String> editableGridSet = editableGrids.stream()
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
+
 	    try {
 	        Workbook workbook = new XSSFWorkbook();
 	        CellStyle boldBorderStyle = Utility.createBoldBorderedStyle(workbook);
@@ -78,8 +83,7 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                
 	                List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
 
-	                boolean isProposedCap = "ProposedOperatingCapacity".equalsIgnoreCase(originalTemplateId) 
-	                                     || "ProposedOperatingCapacity".equalsIgnoreCase(tableId);
+	                boolean isEditableGrid =  editableGridSet.contains(tableId.toLowerCase());
 
 	                List<List<String>> headerTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
 	                List<List<Object>> rows = data.get(tableId);
@@ -116,6 +120,12 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                if (rows != null) {
 	                    for (List<Object> rowData : rows) {
 	                        Row row = sheet.createRow(currentRow++);
+
+	                        // Per-row editable flag is the last element appended by populateRowsFromDTOs.
+	                        // When isEditable == false the entire row must stay locked.
+	                        Object editableFlagObj = rowData.get(rowData.size() - 1);
+	                        boolean rowIsEditable = !Boolean.FALSE.equals(editableFlagObj);
+
 	                        for (int col = 0; col < rowData.size() - 1; col++) {
 	                            Cell cell = row.createCell(col);
 	                            Object value = rowData.get(col);
@@ -125,8 +135,8 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                            else cell.setCellValue(value != null ? value.toString() : "");
 
 	                            boolean canEdit = false;
-	                            
-	                            if (isProposedCap && monthStartIndex != null) {
+
+	                            if (rowIsEditable && isEditableGrid && monthStartIndex != null) {
 	                                if (col >= monthStartIndex && col <= (monthStartIndex + 12)) {
 	                                    canEdit = true;
 	                                }

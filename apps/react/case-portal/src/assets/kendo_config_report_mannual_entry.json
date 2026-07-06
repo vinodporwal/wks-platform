@@ -19,6 +19,7 @@
     "title": "Particulars",
     "widthT": 250,
     "editable": false,
+    "locked": true,
     "minWidth": 250
   },
 
@@ -27,6 +28,7 @@
     "title": "UOM",
     "widthT": 80,
     "editable": false,
+    "locked": true,
     "minWidth": 100
   },
 

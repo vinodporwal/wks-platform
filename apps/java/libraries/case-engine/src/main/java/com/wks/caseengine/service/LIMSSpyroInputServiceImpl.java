@@ -323,6 +323,16 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
             return null;
         }
     }
+    private Integer toInteger(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 
 	@Override
 	public AOPMessageVM saveLIMSSpyroInput(String year, String plantFKId, List<LIMSSpyroInputDTO> lIMSSpyroInputDTOs) {
@@ -1021,7 +1031,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 			// View name pattern: vw_Vertical_Site_LIMSConditions
 			String viewName = "vw_" + vertical.getName() + "_" + site.getName() + "_LIMSConditions";
 
-			String sql = "SELECT Section, Name, MAX, MIN, MONTHS, MAX_Id, MIN_Id, MONTHS_Id FROM " + viewName;
+			String sql = "SELECT Section, Name, DisplayOrder, MAX, MIN, MONTHS, MAX_Id, MIN_Id, MONTHS_Id FROM " + viewName + " ORDER BY DisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -1033,12 +1043,13 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 				NaphthaQualityDTO dto = new NaphthaQualityDTO();
 				dto.setSection(row[0] != null ? row[0].toString() : "");
 				dto.setName(row[1] != null ? row[1].toString() : "");
-				dto.setMax(row[2] != null ? toDouble(row[2]) : null);
-				dto.setMin(row[3] != null ? toDouble(row[3]) : null);
-				dto.setMonths(row[4] != null ? toDouble(row[4]) : null);
-				dto.setMaxId(row[5] != null ? row[5].toString() : "");
-				dto.setMinId(row[6] != null ? row[6].toString() : "");
-				dto.setMonthsId(row[7] != null ? row[7].toString() : "");
+				dto.setDisplayOrder(row[2] != null ? toInteger(row[2]) : null);
+				dto.setMax(row[3] != null ? toDouble(row[3]) : null);
+				dto.setMin(row[4] != null ? toDouble(row[4]) : null);
+				dto.setMonths(row[5] != null ? toDouble(row[5]) : null);
+				dto.setMaxId(row[6] != null ? row[6].toString() : "");
+				dto.setMinId(row[7] != null ? row[7].toString() : "");
+				dto.setMonthsId(row[8] != null ? row[8].toString() : "");
 				dtoList.add(dto);
 			}
 

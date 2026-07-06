@@ -33,12 +33,12 @@ public class BusinessDemandDataController {
 	private BusinessDemandDataService businessDemandDataService;
 	
 	@GetMapping(value="/business-demand")
-	public	List<BusinessDemandDataDTO> getBusinessDemandData(@RequestParam String year,@RequestParam String plantId){
+	public	AOPMessageVM getBusinessDemandData(@RequestParam String year,@RequestParam String plantId){
 		return businessDemandDataService.getBusinessDemandData(year,plantId);	
 	}
 	
     @GetMapping(value="/business-demand-line")
-	public	List<BusinessDemandDataDTO> getBusinessDemandLineData(@RequestParam String year,@RequestParam String plantId,@RequestParam String lineId){
+	public	AOPMessageVM getBusinessDemandLineData(@RequestParam String year,@RequestParam String plantId,@RequestParam String lineId){
 		return businessDemandDataService.getBusinessDemandLineData(year,plantId,lineId);	
 	}
 
@@ -157,6 +157,10 @@ public class BusinessDemandDataController {
 		return businessDemandDataService.deleteBusinessDemandData(id);	
 	}
 	
+	@GetMapping(value = "/calculate-business-demand")
+	public AOPMessageVM calculateBusinessDemand(@RequestParam String year, @RequestParam String plantId) {
+		return businessDemandDataService.calculateBusinessDemand(year, plantId);
+	}
 	
 
 

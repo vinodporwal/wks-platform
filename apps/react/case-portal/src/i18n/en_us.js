@@ -112,11 +112,19 @@ const defs = {
     pimsoutput: 'PIMS Output',
     workflowdesign: 'Workflow Design',
 
+    refineryAopBudget: 'Refinery AOP Budget',
+    shutdownSlowdownActivity: 'Shutdown/Slowdown Activity',
+    plantCapacities: 'Plant Capacities',
+    shutdown: 'Shutdown',
+    slowdown: 'Slowdown',
+
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
     packagingConsumables: 'Packaging Consumables',
     dashboard: 'AOP Dashboard',
     proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
+    proposedAop: 'Proposed AOP',
+    proposedAOP: 'Proposed AOP',
     qualitypackaging: 'Quality & Packaging Norms',
     qualityPackagingBasis: 'Quality & Packaging Basis',
     // New Data Sets
@@ -130,6 +138,11 @@ const defs = {
 
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
+    plantAOPReport: 'Plant AOP Report',
+    gradeMixOptimizer: 'Grade Mix Optimizer',
+    materialGroupedSelection: 'Material Grouped Selection',
+    vcmAvailability: 'VCM Availability',
+    otherDocumentUpload: 'Other Document Upload',
   },
   pages: {
     dashboard: {
@@ -330,16 +343,26 @@ const defs = {
         packagingConsumables: 'Packaging Consumables',
         dashboard: 'AOP Dashboard',
         proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
+        proposedAop: 'Proposed AOP',
+        proposedAOP: 'Proposed AOP',
         qualitypackaging: 'Quality & Packaging Norms',
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',
         sapBasedRefNorms: 'SAP Based Reference Norms',
         specificConsumptionC3: 'Feed Availability',
         productionOptimizer: 'Production Optimizer',
+        plantCapacities: 'Plant Capacities',
+        shutdown: 'Shutdown',
+        slowdown: 'Slowdown',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
         etheleneStock: 'Ethylene Stock in Cryo Tank',
+        plantAOPReport: 'Plant AOP Report',
+        materialGroupedSelection: 'Material Grouped Selection',
+        gradeMixOptimizer: 'Grade Mix Optimizer',
+        vcmAvailability: 'VCM Availability',
+        otherDocumentUpload: 'Other Document Upload',
       },
     },
   },

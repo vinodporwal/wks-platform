@@ -1,0 +1,158 @@
+package com.wks.caseengine.rest.cpp;
+
+import com.wks.caseengine.cpp.dto.CPPProcessUnitAllocationDTO;
+import com.wks.caseengine.cpp.service.CPPProcessUnitAllocationService;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/task")
+public class CPPProcessUnitAllocationController {
+
+    private static final Logger logger = LoggerFactory.getLogger(CPPProcessUnitAllocationController.class);
+
+    @Autowired
+    private CPPProcessUnitAllocationService processUnitAllocationService;
+
+    // ========================================
+    // GET  /task/process-unit-allocation
+    // ========================================
+
+    /**
+     * GET /task/process-unit-allocation?plantIds=UUID,UUID&aopYear=2026-27
+     *
+     * Returns all CPPProcessUnitAllocation records scoped to the given CPP
+     * plant IDs and AOP year. Supports JMD multi-plant (list of UUIDs).
+     *
+     * Example response:
+     * <pre>
+     * {
+     *   "code": 200,
+     *   "message": "Data fetched successfully",
+     *   "data": {
+     *     "processUnitAllocations": [ { ... } ]
+     *   }
+     * }
+     * </pre>
+     */
+    @GetMapping("/process-unit-allocation")
+    public ResponseEntity<AOPMessageVM> getProcessUnitAllocations(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear) {
+
+        logger.info("[GET /process-unit-allocation] plantIds: {}, aopYear: {}", plantIds, aopYear);
+
+        AOPMessageVM response = processUnitAllocationService.getProcessUnitAllocations(plantIds, aopYear);
+
+        logger.info("[GET /process-unit-allocation] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // ========================================
+    // POST  /task/process-unit-allocation
+    // ========================================
+
+    /**
+     * POST /task/process-unit-allocation?plantIds=UUID,UUID&aopYear=2026-27
+     *
+     * Upserts process unit allocation records.
+     * - Records with id starting with "new_" are inserted as new rows.
+     * - Records with a valid existing UUID are updated.
+     * - Duplicate guard: insert is skipped when (CPPPlant + ImportPower + ProcessPlant + AOPYear) already exists.
+     *
+     * Request body — direct array of allocation records:
+     * <pre>
+     * [
+     *   {
+     *     "id":               "new_1782978418899",
+     *     "cppPlantId":       "UUID",
+     *     "sourceId":         "UUID",
+     *     "normParameterFkId":"UUID",
+     *     "processPlantName": "JMD - DTA-C2 CRACKER",
+     *     "processPlantCode": "C2-CRACKER",
+     *     "aopYear":          "2026-27",
+     *     "processUnit":      "JMD - DTA-C2 CRACKER",
+     *     "remarks":          "...",
+     *     "apr": 10, "may": 10, ... "mar": 10,
+     *     "balanceApr": 50, ... "balanceMar": 50
+     *   }
+     * ]
+     * </pre>
+     *
+     * Example response:
+     * <pre>
+     * {
+     *   "code": 200,
+     *   "message": "Process unit allocations saved. Inserted: 1, Updated: 0, Skipped: 0",
+     *   "data": { "inserted": 1, "updated": 0, "skipped": 0, "totalProcessed": 1 }
+     * }
+     * </pre>
+     */
+    @PostMapping("/process-unit-allocation")
+    public ResponseEntity<AOPMessageVM> saveProcessUnitAllocations(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear,
+            @RequestBody List<CPPProcessUnitAllocationDTO> payload) {
+
+        logger.info("[POST /process-unit-allocation] plantIds: {}, aopYear: {}, records: {}",
+                plantIds, aopYear, payload != null ? payload.size() : 0);
+
+        AOPMessageVM response = processUnitAllocationService
+                .saveProcessUnitAllocations(plantIds, aopYear, payload);
+
+        logger.info("[POST /process-unit-allocation] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // ========================================
+    // DELETE  /task/process-unit-allocation/{id}
+    // ========================================
+
+    /**
+     * DELETE /task/process-unit-allocation/{id}
+     *
+     * Hard-deletes the allocation record with the given primary key.
+     *
+     * Example response:
+     * <pre>
+     * {
+     *   "code": 200,
+     *   "message": "Allocation deleted successfully."
+     * }
+     * </pre>
+     */
+    @DeleteMapping("/process-unit-allocation/{id}")
+    public ResponseEntity<AOPMessageVM> deleteProcessUnitAllocation(
+            @PathVariable UUID id) {
+
+        logger.info("[DELETE /process-unit-allocation/{}] Request received", id);
+
+        AOPMessageVM response = processUnitAllocationService.deleteProcessUnitAllocation(id);
+
+        logger.info("[DELETE /process-unit-allocation/{}] Response - code: {}, message: {}",
+                id, response.getCode(), response.getMessage());
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+}

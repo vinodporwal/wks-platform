@@ -149,7 +149,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'activity',
       headerName: 'Calculation of Operating hours',
-      editable: true,
+      editable: false,
       flex: 1,
       minWidth: 350,
     },
@@ -161,7 +161,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'rateValue',
       headerName: 'Value',
-      editable: true,
+      editable: false,
       flex: 1,
       align: 'right',
       widthT: 150,
@@ -171,7 +171,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'uom',
       headerName: 'Hours',
-      editable: true,
+      editable: false,
       flex: 1,
       align: 'right',
       widthT: 120,
@@ -350,7 +350,7 @@ const AnnualProductionPlan = () => {
           idFromApi: item?.id,
           id: index,
           sno: index + 1,
-          isEditable: true,
+          isEditable: type === 'OperatingHrs' ? false : true,
           inEdit: false,
           periodFrom: item?.periodFrom
             ? moment(item.periodFrom, 'DD-MMM-YY').toDate()
@@ -804,7 +804,7 @@ const AnnualProductionPlan = () => {
         rows={rowsOperatingHrs}
         columns={columnsOperatingHrs}
         permissions={{
-          saveBtn: !isOldYear,
+          saveBtn: false,
           allAction: true,
           showReportTitle: true,
         }}

@@ -6,6 +6,7 @@ export const ProductionNormsApiService = {
   getAOPData,
   monthlyProductionC2rC3R,
   MonthwiseProductionExport,
+  MonthwiseProductionExportCombined,
   getQualityParameters,
   saveQualityParameters,
   getPriceDifferential,
@@ -32,6 +33,7 @@ export const ProductionNormsApiService = {
   ProductionOptimizerExport,
   calculateLIMSData,
   getAOPCombinedData,
+  MonthwiseProductionExportCombinedLineWise,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -148,7 +150,13 @@ async function monthlyOtherProduction(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-export async function MonthwiseProductionExport(keycloak, plantId, year, type) {
+export async function MonthwiseProductionExport(
+  keycloak,
+  plantId,
+  year,
+  type,
+  fileName,
+) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&type=${encodeURIComponent(type)}`
   const headers = {
     'Content-Type': 'application/json',
@@ -167,13 +175,55 @@ export async function MonthwiseProductionExport(keycloak, plantId, year, type) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'vcm_Month wise Production plan.xlsx'
+    a.download = fileName
+      ? `${fileName}.xlsx`
+      : 'vcm_Month wise Production plan.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
     console.error('Error exporting Month wise Production plan Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function MonthwiseProductionExportCombined(
+  keycloak,
+  plantId,
+  year,
+  fileName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/monthly-production-export-combined?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = fileName
+      ? `${fileName}.xlsx`
+      : 'MEG_Month wise Production plan.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error(
+      'Error exporting Month wise Production plan Excel (Combined):',
+      e,
+    )
     return Promise.reject(e)
   }
 }
@@ -605,5 +655,45 @@ async function getAOPCombinedData(keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+export async function MonthwiseProductionExportCombinedLineWise(
+  keycloak,
+  plantId,
+  year,
+  type,
+  fileName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/monthly-production-export-by-line?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&type=${encodeURIComponent(type)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = fileName
+      ? `${fileName}.xlsx`
+      : 'MEG_Month wise Production plan.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error(
+      'Error exporting Month wise Production plan Excel (Combined):',
+      e,
+    )
+    return Promise.reject(e)
   }
 }

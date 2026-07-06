@@ -49,6 +49,13 @@ const Profile = ({ keycloak }) => {
         fontWeight={700}
         color='text.primary'
         textTransform='capitalize'
+        sx={{
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: 160,
+        }}
+        title={keycloak?.idTokenParsed?.name}
       >
         {keycloak?.idTokenParsed?.name}
       </Typography>

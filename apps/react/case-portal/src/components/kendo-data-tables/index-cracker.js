@@ -119,30 +119,30 @@ const KendoDataTablesCracker = ({
   summaryEdited,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => { },
+  setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => { },
+  setRemarkDialogOpen = () => {},
   currentRemark = '',
-  setCurrentRemark = () => { },
+  setCurrentRemark = () => {},
   currentRowId = null,
-  setModifiedCells = () => { },
+  setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = () => { },
-  saveChanges = () => { },
-  deleteRowData = () => { },
-  handleCalculate = () => { },
-  handleGradeChange = () => { },
-  handleRemarkCellClick = () => { },
+  handleDeleteSelected = () => {},
+  saveChanges = () => {},
+  deleteRowData = () => {},
+  handleCalculate = () => {},
+  handleGradeChange = () => {},
+  handleRemarkCellClick = () => {},
   selectedUsers = [],
   groupBy = null,
   note = '',
   titleName = '',
   allProducts = [],
   allMonths = [],
-  handleExcelUpload = () => { },
-  downloadExcelForConfiguration = () => { },
-  onLoad = () => { },
+  handleExcelUpload = () => {},
+  downloadExcelForConfiguration = () => {},
+  onLoad = () => {},
 }) => {
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -176,11 +176,11 @@ const KendoDataTablesCracker = ({
 
   const initialGroup = groupBy
     ? [
-      {
-        field: groupBy,
-        dir: undefined,
-      },
-    ]
+        {
+          field: groupBy,
+          dir: undefined,
+        },
+      ]
     : []
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -280,10 +280,8 @@ const KendoDataTablesCracker = ({
   }
   const itemChange = useCallback(
     (e) => {
-
       const { dataItem, field, value } = e
       const itemId = dataItem.id || dataItem.Id
-
 
       // Ignore group header expand/collapse events — they are not real edits
       if (!field || dataItem?.items) {
@@ -291,7 +289,6 @@ const KendoDataTablesCracker = ({
       }
 
       setIsRowEdited(true)
-
 
       setRows((prev) =>
         prev.map((r) => {
@@ -870,7 +867,7 @@ const KendoDataTablesCracker = ({
             >
               {/* CASE 1: Permission TRUE ? Full Header UI */}
               {permissions?.showTitleNameBusiness ||
-                permissions?.showTitleName ? (
+              permissions?.showTitleName ? (
                 <Typography
                   component='div'
                   sx={{
@@ -1047,7 +1044,7 @@ const KendoDataTablesCracker = ({
                     rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                      !permissions?.showCalculateVisibility
+                        !permissions?.showCalculateVisibility
                   }
                   className='btn-calculate'
                   startIcon={
