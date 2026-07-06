@@ -193,13 +193,13 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     if (entity.getGtLoad() != null && prevYearHeatRateMap.containsKey(entity.getGtLoad())) {
                         dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getGtLoad()));
                     } else {
-                        dto.setPrevYearFinalHeatRate(null); 
+                        dto.setPrevYearFinalHeatRate(0.0); 
                     }
 
                     if (entity.getGtLoad() != null && proposedHeatRateMap.containsKey(entity.getGtLoad())) {
                         dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getGtLoad()));
                     } else {
-                        dto.setProposedYearFinalHeatRate(null);
+                        dto.setProposedYearFinalHeatRate(0.0);
                     }
 
                     resultList.add(dto);
