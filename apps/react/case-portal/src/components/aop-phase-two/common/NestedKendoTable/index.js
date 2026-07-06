@@ -151,6 +151,7 @@ const NestedKendoTable = ({
   dateCalculationConfig = {},
   customHeight = null,
   customItemChange = null,
+  customAddRow = null,
   isReleaseDisabled = true,
   handleRelease = () => {},
 }) => {
@@ -993,6 +994,26 @@ const NestedKendoTable = ({
         )
       }
 
+      // Handle custom action cell configured via column config
+      if (col.type === 'customAction' && col.cell) {
+        return (
+          <GridColumn
+            key={col.field || 'customActions'}
+            field={col.field || 'customActions'}
+            title={col.title || 'Action'}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            width={setWidth(col?.minWidth || col?.widthT) || 100}
+            className={col.className || 'k-text-center'}
+            filterable={false}
+            editable={false}
+            cells={{
+              data: col.cell,
+            }}
+          />
+        )
+      }
+
       // Handle leaf columns based on type
       if (col.type === 'number' || col.type === 'number1') {
         // Determine which numeric editor to use based on min/max constraints
@@ -1390,6 +1411,22 @@ const NestedKendoTable = ({
                 paddingBottom: 0.25,
               }}
             >
+              {permissions?.addButton && (
+                <Button
+                  variant='contained'
+                  className='btn-add'
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    if (customAddRow) {
+                      customAddRow()
+                    }
+                  }}
+                  disabled={isButtonDisabled || READ_ONLY}
+                >
+                  {permissions?.addBtnName || 'Add Item'}
+                </Button>
+              )}
+
               {permissions?.showExport && (
                 <Button
                   variant='contained'

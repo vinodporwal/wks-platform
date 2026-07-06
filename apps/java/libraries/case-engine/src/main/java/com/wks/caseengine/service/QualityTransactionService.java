@@ -14,4 +14,8 @@ public interface QualityTransactionService {
 	public AOPMessageVM saveQualityTransaction( String year, String plantFKId, List<QualityTransactionDTO> qualityTransactionDTOs);
 	public byte[] exportQualityTransaction(String year, String plantFKId,boolean isAfterSave,List<QualityTransactionDTO> dtoList);
 	public AOPMessageVM importQualityTransaction(String year,UUID plantId,MultipartFile file);
+	public AOPMessageVM getQualityData(String plantId,String year);
+	public AOPMessageVM saveQualityData(String year, String plantFKId, List<QualityTransactionDTO> qualityTransactionDTOs);
+	public byte[] exportQualityData(String year, String plantId, boolean isAfterSave, List<QualityTransactionDTO> dtoList);
+	public AOPMessageVM importQualityData(String year,UUID plantId,MultipartFile file);
 }

@@ -501,11 +501,11 @@ const MaintenanceTable = () => {
           allAction: true,
           downloadExcelBtnFromUI:
             IS_PP_DTA ||
-              IS_PP_SEZ ||
-              IS_PVC_DMD ||
-              IS_PP_HMD ||
-              IS_PVC_HMD ||
-              IS_PVC_VMD
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
               ? false
               : true,
           ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
@@ -515,11 +515,11 @@ const MaintenanceTable = () => {
 
           downloadExcelBtn:
             IS_PP_DTA ||
-              IS_PP_SEZ ||
-              IS_PVC_DMD ||
-              IS_PP_HMD ||
-              IS_PVC_HMD ||
-              IS_PVC_VMD
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
               ? true
               : false,
         },

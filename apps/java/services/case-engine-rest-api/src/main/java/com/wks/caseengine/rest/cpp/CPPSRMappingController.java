@@ -255,4 +255,24 @@ public class CPPSRMappingController {
         }
         return outputStream.toByteArray();
     }
+
+    // GET Norm Parameters by Source Plant
+    /**
+     * GET /task/cpp-norm-parameters
+     *
+     * Calls SP CPP_GetNormParametersBySourcePlant.
+     * Returns Norm Parameters for the given source plant.
+     *
+     * @param plantId   Required. Source Plant GUID.
+     * @param type      Optional. 1 = Production, 2 = Consumption. If omitted, returns all.
+     */
+    @GetMapping("/cpp-norm-parameters")
+    public ResponseEntity<AOPMessageVM> getNormParameters(
+            @RequestParam String plantId,
+            @RequestParam(required = false) Integer type) {
+
+        AOPMessageVM response = service.getNormParametersBySourcePlant(plantId, type);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
 }

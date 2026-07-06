@@ -28,11 +28,6 @@ const OtherDocumentUpload = ({ permissions }) => {
   const [dragOver, setDragOver] = useState(false)
   const [rows, setRows] = useState([])
 
-
-
-
-
-
   const [columns, setColumns] = useState([])
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -130,8 +125,6 @@ const OtherDocumentUpload = ({ permissions }) => {
       //   AOP_YEAR,
       // )
 
-
-
       // const formattedData = response?.data?.data?.map((row, index) => ({
       //   ...row,
       //   id: row.id || index,
@@ -196,8 +189,6 @@ const OtherDocumentUpload = ({ permissions }) => {
   const getStorageKey = useCallback(() => {
     return `other_docs_${PLANT_ID || 'default'}_${AOP_YEAR || 'default'}_${VERTICAL_ID || 'default'}`
   }, [PLANT_ID, AOP_YEAR, VERTICAL_ID])
-
-
 
   useEffect(() => {
     fetchData()
@@ -278,7 +269,10 @@ const OtherDocumentUpload = ({ permissions }) => {
       showMessage('Files uploaded successfully!', 'success')
     } catch (error) {
       console.error('File upload error:', error)
-      showMessage(error?.message || 'Error occurred during file upload.', 'error')
+      showMessage(
+        error?.message || 'Error occurred during file upload.',
+        'error',
+      )
     } finally {
       setLoading(false)
       setIsUploading(false)
@@ -344,8 +338,6 @@ const OtherDocumentUpload = ({ permissions }) => {
 
   return (
     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
-
-
       {/* Header Context Display */}
       {/* <Paper
         elevation={0}
@@ -412,13 +404,16 @@ const OtherDocumentUpload = ({ permissions }) => {
           }}
         >
           <input
-            type="file"
-            id="file-upload-input"
+            type='file'
+            id='file-upload-input'
             multiple
             style={{ display: 'none' }}
             onChange={handleFileSelect}
           />
-          <label htmlFor="file-upload-input" style={{ cursor: 'pointer', width: '100%' }}>
+          <label
+            htmlFor='file-upload-input'
+            style={{ cursor: 'pointer', width: '100%' }}
+          >
             <CardContent
               sx={{
                 py: 6,
@@ -429,12 +424,18 @@ const OtherDocumentUpload = ({ permissions }) => {
                 gap: 2,
               }}
             >
-              <CloudUploadIcon sx={{ fontSize: 56, color: dragOver ? '#3f51b5' : '#757575' }} />
-              <Box textAlign="center">
-                <Typography variant="h6" color="textPrimary" fontWeight="500">
+              <CloudUploadIcon
+                sx={{ fontSize: 56, color: dragOver ? '#3f51b5' : '#757575' }}
+              />
+              <Box textAlign='center'>
+                <Typography variant='h6' color='textPrimary' fontWeight='500'>
                   Drag and drop files here, or click to browse
                 </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
+                <Typography
+                  variant='body2'
+                  color='textSecondary'
+                  sx={{ mt: 0.5 }}
+                >
                   Support for Excel documents.
                 </Typography>
               </Box>
@@ -447,19 +448,22 @@ const OtherDocumentUpload = ({ permissions }) => {
       {isUploading && (
         <Box sx={{ width: '100%', mt: 1 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant='body2' color='textSecondary'>
               Uploading documents...
             </Typography>
-            <Typography variant="body2" fontWeight="bold" color="primary">
+            <Typography variant='body2' fontWeight='bold' color='primary'>
               {uploadProgress}%
             </Typography>
           </Box>
-          <LinearProgress variant="determinate" value={uploadProgress} sx={{ height: 8, borderRadius: 4 }} />
+          <LinearProgress
+            variant='determinate'
+            value={uploadProgress}
+            sx={{ height: 8, borderRadius: 4 }}
+          />
         </Box>
       )}
 
       <Box>
-
         <Box>
           <KendoDataTables
             modifiedCells={modifiedCells}
@@ -488,11 +492,17 @@ const OtherDocumentUpload = ({ permissions }) => {
         </Box>
       </Box>
 
-
-
       {/* Snackbar Alert */}
-      <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={handleSnackbarClose}>
-        <Alert onClose={handleSnackbarClose} severity={snackbarData.severity} sx={{ width: '100%' }}>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarData.severity}
+          sx={{ width: '100%' }}
+        >
           {snackbarData.message}
         </Alert>
       </Snackbar>

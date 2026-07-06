@@ -28,7 +28,7 @@ export const QualityPackagingNormsApiService = {
 // ========================|| Quality Norms APIs ||=====================================//
 
 async function getQualityNorms(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/quality-transaction?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/quality?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ async function getQualityNorms(keycloak, plantId, year) {
 }
 
 async function saveQualityNorms(keycloak, plantId, year, payload) {
-  const url = `${Config.CaseEngineUrl}/task/quality-transaction?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/quality?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ async function saveQualityNorms(keycloak, plantId, year, payload) {
 }
 
 async function exportQualityNorms(keycloak, plantId, year, excelName) {
-  const url = `${Config.CaseEngineUrl}/task/quality-transaction-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const url = `${Config.CaseEngineUrl}/task/quality-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -91,7 +91,7 @@ async function exportQualityNorms(keycloak, plantId, year, excelName) {
 }
 
 async function importQualityNorms(keycloak, plantId, year, file) {
-  const url = `${Config.CaseEngineUrl}/task/quality-transaction-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+  const url = `${Config.CaseEngineUrl}/task/quality-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -114,7 +114,7 @@ async function importQualityNorms(keycloak, plantId, year, file) {
 // ========================|| Price Differential APIs ||=================================//
 
 async function getPriceDifferential(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/price-differential-transaction?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/quality-price?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ async function getPriceDifferential(keycloak, plantId, year) {
 }
 
 async function savePriceDifferential(keycloak, plantId, year, payload) {
-  const url = `${Config.CaseEngineUrl}/task/price-differential-transaction?plantFKId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/quality-price?plantFKId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ async function savePriceDifferential(keycloak, plantId, year, payload) {
 }
 
 async function exportPriceDifferential(keycloak, plantId, year, excelName) {
-  const url = `${Config.CaseEngineUrl}/task/price-differential-transaction-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const url = `${Config.CaseEngineUrl}/task/quality-price-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -177,7 +177,7 @@ async function exportPriceDifferential(keycloak, plantId, year, excelName) {
 }
 
 async function importPriceDifferential(keycloak, plantId, year, file) {
-  const url = `${Config.CaseEngineUrl}/task/price-differential-transaction-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+  const url = `${Config.CaseEngineUrl}/task/quality-price-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {

@@ -17,4 +17,8 @@ public interface PriceDifferentialService {
 	public AOPMessageVM savePriceDifferentialTransaction( String year, String plantFKId, List<PriceDifferentialTransactionDTO> priceDifferentialTransactionDTOs);
 	public byte[] exportPriceDifferentialTransaction(String year, String plantFKId,boolean isAfterSave,List<PriceDifferentialTransactionDTO> dtoList);
 	public AOPMessageVM importPriceDifferentialTransaction(String year,UUID plantId,MultipartFile file);
+	public AOPMessageVM getQualityPrice(String plantId,String year);
+	public AOPMessageVM saveQualityPrice(String year, String plantFKId, List<PriceDifferentialTransactionDTO> priceDifferentialTransactionDTOs);
+	public byte[] exportQualityPrice(String year, String plantId, boolean isAfterSave, List<PriceDifferentialTransactionDTO> dtoList);
+	public AOPMessageVM importQualityPrice(String year,UUID plantId,MultipartFile file);
 }
