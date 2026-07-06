@@ -589,12 +589,10 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     db1JdbcTemplate.update(insertSql,
                             srMappingId.toString(),
                             dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
-                            // resolvedReceiverCostCenterId   != null ? resolvedReceiverCostCenterId.toString() : null,
-                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                            // resolvedSenderCostCenterId     != null ? resolvedSenderCostCenterId.toString()   : null,
                             dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
+                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             dto.getRemarks()
                     );
                     logger.info("updateSRMappingsByPlant: inserted new CPP_SR_Mapping_Master ID={}", srMappingId);
@@ -613,12 +611,10 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                             "WHERE ID = ?";
                     db1JdbcTemplate.update(updateSql,
                             dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
-                            // resolvedReceiverCostCenterId   != null ? resolvedReceiverCostCenterId.toString() : null,
-                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                            // resolvedSenderCostCenterId     != null ? resolvedSenderCostCenterId.toString()   : null,
                             dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
+                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             dto.getRemarks(),
                             srMappingId.toString()
                     );
