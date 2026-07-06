@@ -80,7 +80,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const [aopCalculation, setAopCalculation] = useState([])
   const [refreshSignal, setRefreshSignal] = useState(0)
   const handleRemarkCellClick = (row) => {
-    if (READ_ONLY) return
+    if (READ_ONLY || row.isEditable === false) return
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
