@@ -190,6 +190,61 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         
         return vm;
     }
+    
+    @Override
+    public AOPMessageVM saveGTHeatRateData(List<CppGtHeatRateDto> dtoList, String year) {
+        logger.info("[JMDHeatRate] saveGTHeatRateData - processing {} records for year: {}", 
+                dtoList != null ? dtoList.size() : 0, year);
+        
+        AOPMessageVM vm = new AOPMessageVM();
+        
+        try {
+            if (dtoList == null || dtoList.isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("Request body cannot be empty");
+                return vm;
+            }
+
+            List<CppGtHeatRate> entitiesToSave = new java.util.ArrayList<>();
+
+            for (CppGtHeatRateDto dto : dtoList) {
+                if (dto != null) {
+                    CppGtHeatRate entity = new CppGtHeatRate();
+
+                    entity.setId(dto.getId());
+                    entity.setAssetFkId(dto.getAssetFkId());
+                    entity.setAssetName(dto.getAssetName());
+                    entity.setUtilityId(dto.getUtilityId());
+                    entity.setGtLoad(dto.getGtLoad());
+                    entity.setFreeSteamFactor(dto.getFreeSteamFactor());
+                    entity.setRemarks(dto.getRemarks());
+                    entity.setFinalHeatRate(dto.getFinalHeatRate());
+                    entity.setOemHeatRate(dto.getOemHeatRate());
+                    entity.setSelectedHeatRate(dto.getSelectedHeatRate());
+
+                    entitiesToSave.add(entity);
+                }
+            }
+
+            
+            List<CppGtHeatRate> savedEntities = cppGtHeatRateRepository.saveAll(entitiesToSave);
+            
+            logger.info("[JMDHeatRate] saveGTHeatRateData - successfully saved {} records", savedEntities.size());
+            
+            vm.setCode(200);
+            vm.setMessage("Data saved successfully");
+            vm.setData(null); 
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] saveGTHeatRateData error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Failed to save GT heat rate data: " + e.getMessage());
+            vm.setData(null);
+        }
+        
+        return vm;
+    }
+    
     private PowerGenerationAssetDto convertToDto(PowerGenerationAsset entity) {
         PowerGenerationAssetDto dto = new PowerGenerationAssetDto();
 

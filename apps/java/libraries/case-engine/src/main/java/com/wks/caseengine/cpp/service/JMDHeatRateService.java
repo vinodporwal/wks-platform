@@ -1,10 +1,12 @@
 package com.wks.caseengine.cpp.service;
 
+import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -20,6 +22,10 @@ public interface JMDHeatRateService {
     AOPMessageVM getGTHeatRateData(UUID assetId, String year);
 
     AOPMessageVM getHRSGAssetDropdown(List<UUID> plantIds);
+    
+    public AOPMessageVM saveGTHeatRateData(
+             List<CppGtHeatRateDto> dtoList, 
+             String year);
 
     // ========================================
     // GT HEAT RATE
