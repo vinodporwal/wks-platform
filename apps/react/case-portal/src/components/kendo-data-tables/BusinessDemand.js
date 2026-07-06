@@ -254,6 +254,7 @@ const BusinessDemand = ({ permissions }) => {
             inEdit: false,
             Particulars: item.normParameterTypeDisplayName,
             expanded: false,
+            isEditable: IS_PVC_DMD ? false : (item.isEditable ?? true),
             UOM:
               IS_VCM_VERTICAL ||
               (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
@@ -626,8 +627,8 @@ const BusinessDemand = ({ permissions }) => {
       deleteButton: permissions?.deleteButton ?? false,
       editButton: permissions?.editButton ?? false,
       showUnit: permissions?.showUnit ?? false,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? true,
+      saveWithRemark: IS_PVC_DMD ? false : (permissions?.saveWithRemark ?? true),
+      saveBtn: IS_PVC_DMD ? false : (permissions?.saveBtn ?? true),
       allAction: permissions?.allAction ?? true,
       units: ['TPH', 'TPD'],
       showTitleNameBusiness: true,
@@ -660,16 +661,17 @@ const BusinessDemand = ({ permissions }) => {
           ? true
           : false,
       uploadExcelBtn:
-        IS_CRACKER_VERTICAL ||
-        IS_PE_PP_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_ELASTOMER_HMD ||
-        lowerVertName === 'meg'
-          ? true
-          : false,
+        IS_PVC_DMD
+          ? false
+          : IS_CRACKER_VERTICAL ||
+            IS_PE_PP_VERTICAL ||
+            IS_PET_VERTICAL ||
+            IS_PVC_VMD ||
+            IS_PVC_HMD ||
+            IS_ELASTOMER_HMD ||
+            lowerVertName === 'meg'
+            ? true
+            : false,
 
       downloadExcelBtnFromUI:
         IS_CRACKER_VERTICAL ||
@@ -686,9 +688,9 @@ const BusinessDemand = ({ permissions }) => {
 
       // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
       enableOnOffDropdown: IS_CRACKER_HMD,
-      showCalculate: IS_PVC_HMD || IS_PVC_DMD,
+      showCalculate: IS_PVC_HMD,
       showCalculateVisibility:
-        (IS_PVC_HMD || IS_PVC_DMD) && aopCalculation.length > 0,
+        IS_PVC_HMD && aopCalculation.length > 0,
     },
     isOldYear,
   )
