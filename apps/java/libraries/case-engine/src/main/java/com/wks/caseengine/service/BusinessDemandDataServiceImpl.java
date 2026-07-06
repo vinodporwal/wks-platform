@@ -736,7 +736,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 			}
 		}
-	// Bordered + unlocked style for editable BD cells (months col 3?14 and Remark col 15)
+	// Bordered + unlocked style for editable BD cells (months col 3–14 and Remark col 15)
 	CellStyle unlockedBorderedStyle = workbook.createCellStyle();
 	unlockedBorderedStyle.setLocked(false);
 	unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
@@ -770,7 +770,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 			}
 
 			if (showProductionTarget) {
-				// Month columns (3?14) and Remark (15) remain editable; all others locked
+				// Month columns (3–14) and Remark (15) remain editable; all others locked
 				if ((col >= 3 && col <= 14) || col == 15) {
 					cell.setCellStyle(unlockedBorderedStyle);
 				} else {
@@ -787,7 +787,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 			sheet.protectSheet("");
 		}
 
-	// Auto-size all visible columns (0?15)
+	// Auto-size all visible columns (0–15)
 	for (int col = 0; col <= 15; col++) {
 		sheet.autoSizeColumn(col);
 	}
@@ -1056,8 +1056,21 @@ sheet.setColumnHidden(17, true);
 		final short LINE_HEIGHT_TWIPS = 300;
 
 		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
-		CellStyle wrapStyle = workbook.createCellStyle();
-		wrapStyle.setWrapText(true);
+
+		// Style for editable cells: bordered + unlocked
+		CellStyle editableStyle = Utility.createBorderedUnlockedStyle(workbook);
+
+		// Style for editable wrap cells: bordered + unlocked + wrap
+		CellStyle editableWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+
+		// Style for read-only cells: bordered + grey background + locked
+		CellStyle readOnlyStyle = Utility.createBorderedLockedStyle(workbook);
+
+		// Style for read-only wrap cells: bordered + grey background + locked + wrap
+		CellStyle readOnlyWrapStyle = Utility.createBorderedWrapLockedStyle(workbook);
+
+		// Sheet protection must be enabled for cell locking to take effect
+		sheet.protectSheet("");
 
 		int currentRow = 0;
 
@@ -1090,6 +1103,8 @@ sheet.setColumnHidden(17, true);
 		}
 
 		for (BusinessDemandDataDTO dto : dtoList) {
+			boolean isEditable = dto.getIsEditable() == null || Boolean.TRUE.equals(dto.getIsEditable());
+
 			List<Object> rowData = new ArrayList<>();
 			rowData.add(dto.getDisplayName());
 			rowData.add(dto.getNormParameterTypeDisplayName());
@@ -1127,7 +1142,9 @@ sheet.setColumnHidden(17, true);
 				}
 
 				if (col == REMARK_COL_INDEX) {
-					cell.setCellStyle(wrapStyle);
+					cell.setCellStyle(isEditable ? editableWrapStyle : readOnlyWrapStyle);
+				} else {
+					cell.setCellStyle(isEditable ? editableStyle : readOnlyStyle);
 				}
 			}
 
@@ -1655,7 +1672,9 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				businessDemand.setAvgTph(businessDemandDataDTO.getAvgTph());
 				businessDemand.setDec(businessDemandDataDTO.getDec());
 				businessDemand.setFeb(businessDemandDataDTO.getFeb());
-				businessDemand.setLineId(UUID.fromString(businessDemandDataDTO.getLineId()));
+				//businessDemand.setLineId(UUID.fromString(businessDemandDataDTO.getLineId()));
+				businessDemand.setLineId(businessDemandDataDTO.getLineId() != null ? UUID.fromString(businessDemandDataDTO.getLineId()) : null);
+
 
 				if (businessDemandDataDTO.getId() == null || businessDemandDataDTO.getId().contains("#")) {
 					businessDemand.setId(null);
@@ -2388,7 +2407,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			titleCell.setCellValue("Proposed Operating Capacity / Production Volume Target (PVT)");
 			titleCell.setCellStyle(boldLockedGreyStyle);
 
-			// Header row  Particulars + 12 academic-year months; NO Remarks column
+			// Header row – Particulars + 12 academic-year months; NO Remarks column
 			List<String> ptHeaders = new ArrayList<>();
 			ptHeaders.add("Particulars");
 			ptHeaders.add(getMonth(year, 4));
@@ -2411,7 +2430,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				cell.setCellStyle(boldLockedGreyStyle);
 			}
 
-			// Data rows ? locked and greyed out; no ID or metadata columns
+			// Data rows – locked and greyed out; no ID or metadata columns
 			if (ptList != null) {
 				for (AOPMCCalculatedDataDTO dto : ptList) {
 					Row row = sheet.createRow(startRow++);
@@ -2510,7 +2529,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
 				try {
 				dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
-				// col 1 is "Type" (display/export only) ? not read or persisted during import
+				// col 1 is "Type" (display/export only) — not read or persisted during import
 				dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
 			// Read each month individually from its own column (shifted +1 due to Type column)

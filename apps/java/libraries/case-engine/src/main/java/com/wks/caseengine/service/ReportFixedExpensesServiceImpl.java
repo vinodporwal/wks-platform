@@ -183,4 +183,26 @@ public class ReportFixedExpensesServiceImpl implements ReportFixedExpensesServic
 		}
 	}
 
+	@Transactional
+	@Override
+	public AOPMessageVM deleteReportFixedExpensesTransaction(String id) {
+		try {
+			ReportFixedExpenses reportFixedExpenses = reportFixedExpensesRepository.findById(UUID.fromString(id))
+					.orElseThrow(() -> new RestInvalidArgumentException("Record not found for id: " + id, null));
+
+			reportFixedExpensesRepository.delete(reportFixedExpenses);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data deleted successfully");
+			return aopMessageVM;
+		}
+		catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for id", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to delete data", ex);
+		}
+	}
+
 }

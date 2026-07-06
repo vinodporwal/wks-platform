@@ -149,10 +149,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            view = "vwAOPMCValues";
 	        }
 	        List<Object[]> obj=null;
+			boolean isFromview = false;
 	        if(vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD"))) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	  obj = getDataMCUValuesAllData(year, plantId, view);
+				  isFromview = true;
 	        }
 	       
 	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
@@ -181,6 +183,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
 	            dto.setProductName(row[24] != null ? row[24].toString() : null);
 	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
+				if(isFromview && row.length > 25) {
+					dto.setIsEditable(row[25] != null && 
+						("1".equals(row[25].toString()) || Boolean.TRUE.equals(row[25])));
+				}
 				if(isCracker && row.length > 28) {
 					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
 				}
@@ -611,7 +617,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                    + "April, May, June, July, August, September, October, November, December, "
                    + "January, February, March, "
                    + "FinancialYear, Remarks, CreatedOn, ModifiedOn, MCUVersion, UpdatedBy, "
-                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName "
+                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName, IsEditable "
                    + "FROM " + viewName + " " 
                    + "WHERE PLANT_FK_ID = :plantId "
                    + "AND FinancialYear = :year "
@@ -871,6 +877,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 			boolean isCracker = vertical.getName().equalsIgnoreCase("CRACKER");
 
+			boolean isFromview = false;
+
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
@@ -882,6 +890,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
  	        	 obj = aOPMCCalculatedDataRepository.getDesignCapacityData(year, plantId);
+				 isFromview = true;
  	        }
             
             List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
@@ -905,6 +914,16 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
                 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+
+				if(isFromview && row.length > 21) {
+					//dto.setIsEditable(row[21] != null && "1".equals(row[21].toString()));
+					dto.setIsEditable(
+						row[21] != null &&
+						("1".equals(row[21].toString()) || Boolean.TRUE.equals(row[21]))
+					);
+					
+				}
+
                 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
                 	dto.setNormType(row[21] != null ? row[21].toString() : " ");
 					if(row.length > 22) {
@@ -1107,11 +1126,11 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				String newRemarks = aOPMCCalculatedDataDTO.getRemarks() != null ? aOPMCCalculatedDataDTO.getRemarks() : "";
 				boolean remarksChanged = !existingRemarks.equalsIgnoreCase(newRemarks);
 
-				if (remarksChanged && changed) {
-				    outerChanged = true;
-				    aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
-				    saved = aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
-				} 
+				// if (remarksChanged && changed) {
+				//     outerChanged = true;
+				//     aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
+				//     saved = aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
+				// } 
 
 			 if (!remarksChanged && changed) {
 				    // If other data changed but remarks remain the same as the database, fail the validation
@@ -1631,16 +1650,21 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	    try {
 	        Map<String, List<AOPMCCalculatedDataDTO>> map = readDataPE(file.getInputStream(), UUID.fromString(plantFKId), year);
 	        
-	        List<AOPMCCalculatedDataDTO> allFailedRecords = new ArrayList<>();
-	        Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel = new HashMap<>();
-	        for (String key : map.keySet()) {
-	            List<AOPMCCalculatedDataDTO> failedList = editAOPMCCalculatedData(map.get(key), true, year, plantFKId);
-	            
-	            if (failedList != null && !failedList.isEmpty()) {
-	                allFailedRecords.addAll(failedList);
-	                mapForExcel.put(key, failedList);
-	            }
-	        }
+        List<AOPMCCalculatedDataDTO> allFailedRecords = new ArrayList<>();
+        Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel = new HashMap<>();
+        for (String key : map.keySet()) {
+            List<AOPMCCalculatedDataDTO> failedList;
+            if ("DesignCapacity".equalsIgnoreCase(key)) {
+                failedList = updateDesignCapacity(plantFKId, year, map.get(key));
+            } else {
+                failedList = editAOPMCCalculatedData(map.get(key), true, year, plantFKId);
+            }
+            
+            if (failedList != null && !failedList.isEmpty()) {
+                allFailedRecords.addAll(failedList);
+                mapForExcel.put(key, failedList);
+            }
+        }
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
 	        
 	        if (!allFailedRecords.isEmpty()) {
@@ -1866,7 +1890,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 		Map<String, List<AOPMCCalculatedDataDTO>> map = new HashMap<>();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-
+   Plants plant = plantsRepository.findById(plantFKId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+        
+				boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs = new ArrayList<>();
@@ -1879,38 +1908,61 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
 					continue;
 				}
-				if(!tableIdCell.toString().equalsIgnoreCase("ProposedOperatingCapacity")) {
-					continue;
-				}
+				
+			// 	if(meg) {
+			// 		if(!tableIdCell.toString().equalsIgnoreCase("ProposedOperatingCapacity") || !tableIdCell.toString().equalsIgnoreCase("DesignCapacity")) {
+			// 			continue;
+			// 	} }
+			// else if(!tableIdCell.toString().equalsIgnoreCase("ProposedOperatingCapacity")) {
+			// 		continue;
+			// 	}
+
+			String tableId = tableIdCell.toString();
+boolean isValidTable = false;
+
+// for meg, process ProposedOperatingCapacity and DesignCapacity for other only process ProposedOperatingCapacity.
+   if(meg) {
+	isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity")
+	|| tableId.equalsIgnoreCase("DesignCapacity");
+   }
+        else {
+			isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity");
+		 }
+
+if (!isValidTable) {
+    continue;
+}
 
 				AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
 
 				try {
 
-					dto.setProductName(getStringCellValue(row.getCell(0), dto));
-					dto.setApril(getNumericCellValue(row.getCell(1), dto));
-					dto.setMay(getNumericCellValue(row.getCell(2), dto));
-					dto.setJune(getNumericCellValue(row.getCell(3), dto));
-					dto.setJuly(getNumericCellValue(row.getCell(4), dto));
-					dto.setAugust(getNumericCellValue(row.getCell(5), dto));
-					dto.setSeptember(getNumericCellValue(row.getCell(6), dto));
-					dto.setOctober(getNumericCellValue(row.getCell(7), dto));
-					dto.setNovember(getNumericCellValue(row.getCell(8), dto));
-					dto.setDecember(getNumericCellValue(row.getCell(9), dto));
-					dto.setJanuary(getNumericCellValue(row.getCell(10), dto));
-					dto.setFebruary(getNumericCellValue(row.getCell(11), dto));
-					dto.setMarch(getNumericCellValue(row.getCell(12), dto));
-					dto.setRemarks(getStringCellValue(row.getCell(13), dto));
-					dto.setId(getStringCellValue(row.getCell(14), dto));
-					
-				} catch (Exception e) {
-					e.printStackTrace();
-					dto.setErrDescription(e.getMessage());
-					dto.setSaveStatus("Failed");
-				}
-				map.putIfAbsent(dto.getTableId(), new ArrayList<>());
+				dto.setProductName(getStringCellValue(row.getCell(0), dto));
+				dto.setApril(getNumericCellValue(row.getCell(1), dto));
+				dto.setMay(getNumericCellValue(row.getCell(2), dto));
+				dto.setJune(getNumericCellValue(row.getCell(3), dto));
+				dto.setJuly(getNumericCellValue(row.getCell(4), dto));
+				dto.setAugust(getNumericCellValue(row.getCell(5), dto));
+				dto.setSeptember(getNumericCellValue(row.getCell(6), dto));
+				dto.setOctober(getNumericCellValue(row.getCell(7), dto));
+				dto.setNovember(getNumericCellValue(row.getCell(8), dto));
+				dto.setDecember(getNumericCellValue(row.getCell(9), dto));
+				dto.setJanuary(getNumericCellValue(row.getCell(10), dto));
+				dto.setFebruary(getNumericCellValue(row.getCell(11), dto));
+				dto.setMarch(getNumericCellValue(row.getCell(12), dto));
+				dto.setRemarks(getStringCellValue(row.getCell(13), dto));
+				dto.setId(getStringCellValue(row.getCell(14), dto));
+				dto.setMaterialFKId(getStringCellValue(row.getCell(15), dto));
+				dto.setTableId(tableId);
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+				dto.setErrDescription(e.getMessage());
+				dto.setSaveStatus("Failed");
+			}
+			map.putIfAbsent(dto.getTableId(), new ArrayList<>());
 
-				map.get(dto.getTableId()).add(dto);
+			map.get(dto.getTableId()).add(dto);
 			}
 
 		} catch (Exception e) {
@@ -2678,8 +2730,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        // Metadata columns often used by the utility for styling or logic
 	        row.add(tableId);
 	        
-	        // Add editable flag from repository if needed, or default to true
-	        row.add(true); 
+        row.add(dto.getIsEditable() != null ? dto.getIsEditable() : true);
 	        
 	        dataList.add(row);
 	    }

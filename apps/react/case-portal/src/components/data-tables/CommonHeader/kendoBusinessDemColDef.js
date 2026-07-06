@@ -60,7 +60,7 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
     }
   })
 
-  // For Cracker HMD — inject a read-only Avg column just before Remark
+  // For Cracker HMD ? inject a read-only Avg column just before Remark
   if (IS_CRACKER_HMD) {
     const remarkIndex = enhancedColDefs.findIndex(
       (col) => col.field === 'remark',
@@ -79,8 +79,15 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
     })
   }
 
-  colDefsCache.set(cacheKey, enhancedColDefs)
-  return enhancedColDefs
+  const IS_PVC_DMD = lowerVertName === 'pvc' && siteName === 'dmd'
+
+  let finalColDefs = enhancedColDefs
+  if (IS_PVC_DMD) {
+    finalColDefs = enhancedColDefs.filter((col) => col.field !== 'remark')
+  }
+
+  colDefsCache.set(cacheKey, finalColDefs)
+  return finalColDefs
 }
 
 export const clearColDefsCache = () => colDefsCache.clear()

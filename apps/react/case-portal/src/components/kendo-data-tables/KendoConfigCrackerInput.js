@@ -41,7 +41,7 @@ const CrackerConfig = () => {
   const SITE_NAME = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
   const AOP_YEAR = year?.selectedYear
-
+  const lowerSiteName = siteObject?.name?.toLowerCase()
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
@@ -211,7 +211,9 @@ const CrackerConfig = () => {
   const productionColumns = useMemo(() => {
     const configType =
       currentTabDisplay === 'Composition'
-        ? 'cracker_composition'
+        ? lowerSiteName === 'c2'
+          ? 'cracker_composition_c2'
+          : 'cracker_composition'
         : currentTabDisplay === 'Constant'
           ? 'cracker_constants'
           : currentTabDisplay === 'Yield'
@@ -220,7 +222,9 @@ const CrackerConfig = () => {
               ? 'Naphtha'
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
-                : 'cracker'
+                : lowerSiteName === 'c2'
+                  ? 'cracker_c2'
+                  : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -228,7 +232,7 @@ const CrackerConfig = () => {
       configType,
       FORMATE_VALUE,
     })
-  }, [headerMap, currentTabDisplay])
+  }, [headerMap, currentTabDisplay, lowerSiteName])
 
   const fetchTabsMatrix = useCallback(async () => {
     try {
