@@ -19,6 +19,7 @@ import TabAccessApiService from 'components/aop-phase-two/services/common/tabAcc
 import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
+import ManualEntry from './ManualEntry'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -252,6 +253,8 @@ const ProductionNormsBasis = () => {
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
       case 'Report Manual Entry':
         return <ReportManualEntry startDate={startDate} endDate={endDate} />
+      case 'Manual Entry':
+        return <ManualEntry startDate={startDate} endDate={endDate} />
       default:
         return null
     }
