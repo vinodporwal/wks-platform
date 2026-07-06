@@ -15,7 +15,7 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import AddSourceDialog from './components/AddSourceDialog'
 
-const ImportPower = () => {
+const ImportPowerGrid = ({ setImportData }) => {
   const keycloak = useSession()
 
   // State management
@@ -254,6 +254,7 @@ const ImportPower = () => {
 
       if (!importedPowerPlans || importedPowerPlans.length === 0) {
         setRows([])
+        setImportData([])
         setOriginalRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
@@ -264,6 +265,7 @@ const ImportPower = () => {
         ...row,
         remarks: row.remarks || '',
       }))
+      setImportData(importedPowerPlans)
 
       // Calculate total row
       const totalRow = buildTotalRow(importedPowerPlans)
@@ -657,4 +659,4 @@ const ImportPower = () => {
   )
 }
 
-export default ImportPower
+export default ImportPowerGrid
