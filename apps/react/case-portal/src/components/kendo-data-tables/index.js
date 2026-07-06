@@ -98,6 +98,7 @@ import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
+import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
 
 // A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
@@ -1388,6 +1389,34 @@ const KendoDataTables = ({
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
+  }
+
+  // Auto-popup for Calculate prompt on screen render
+  const [openAutoCalculatePopup, setOpenAutoCalculatePopup] = useState(false)
+  const autoCalculateDismissedRef = useRef(false)
+
+  const isCalculateEnabled =
+    permissions?.showCalculate &&
+    !READ_ONLY &&
+    rows?.length > 0 &&
+    !isButtonDisabled &&
+    permissions?.showCalculateVisibility
+
+  useEffect(() => {
+    if (isCalculateEnabled && !autoCalculateDismissedRef.current) {
+      // setOpenAutoCalculatePopup(true) // Uncomment this line to enable the auto-calculate popup on screen render
+    }
+  }, [isCalculateEnabled])
+
+  const handleAutoCalculateYes = () => {
+    autoCalculateDismissedRef.current = true
+    setOpenAutoCalculatePopup(false)
+    handleCalculateBtn()
+  }
+
+  const handleAutoCalculateNo = () => {
+    autoCalculateDismissedRef.current = true
+    setOpenAutoCalculatePopup(false)
   }
 
   const handleRefresh = async () => {
@@ -5115,6 +5144,13 @@ const KendoDataTables = ({
           </Button>
         </DialogActions>
       </CompactDialog>
+
+      {/* Auto Calculate Popup - shown on render when Calculate is enabled */}
+      <AutoCalculatePopup
+        open={openAutoCalculatePopup}
+        onYes={handleAutoCalculateYes}
+        onNo={handleAutoCalculateNo}
+      />
 
       <CompactDialog
         open={openSaveDialogeBox}
