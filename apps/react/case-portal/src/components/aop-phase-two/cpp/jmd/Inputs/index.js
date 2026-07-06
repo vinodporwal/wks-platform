@@ -14,7 +14,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
 import FuelPriority from './FuelPriority/index'
-import ImportPower from './ImportPower/index'
+import ImportPower from './ImportPowerMain/index'
 
 const InputsJMD = () => {
   const keycloak = useSession()

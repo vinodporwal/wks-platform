@@ -13,7 +13,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
-import AddSourceDialog from '../../jmd/Inputs/ImportPower/components/AddSourceDialog'
+import AddSourceDialog from '../../jmd/Inputs/ImportPowerMain/components/AddSourceDialog'
 
 const ImportPower = () => {
   const keycloak = useSession()
