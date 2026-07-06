@@ -400,7 +400,6 @@ const SteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Calculating...', severity: 'info' })
     try {
-      // Same as NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe
       const data =
         await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
           PLANT_ID,
@@ -444,7 +443,7 @@ const SteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel export started!', severity: 'info' })
     try {
-      await SteadyStateConsumptionApiService.exportSteadyStateConsumptionPE(
+      await SteadyStateConsumptionApiService.exportSteadyStateConsumption(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
