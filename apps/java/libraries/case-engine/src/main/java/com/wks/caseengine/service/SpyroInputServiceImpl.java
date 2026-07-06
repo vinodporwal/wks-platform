@@ -614,7 +614,8 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				map = readSpyroInputsExcelWithWeightedAverage(file.getInputStream(), year);
 			}
 			// read excel without weighted average
-			map = readSpyroInputsExcel(file.getInputStream(), year);
+			else {
+			map = readSpyroInputsExcel(file.getInputStream(), year);  }
 
 			// remove Optimizer Input from map
 		
