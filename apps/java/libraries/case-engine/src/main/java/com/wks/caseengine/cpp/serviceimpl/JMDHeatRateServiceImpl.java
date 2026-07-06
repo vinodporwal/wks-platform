@@ -109,9 +109,9 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     
         
     @Override
-    public AOPMessageVM getGTHeatRateData(UUID assetId, String year, String startDate, String endDate, String assessmentName, List<UUID> plantIds) {
+    public AOPMessageVM getGTHeatRateData(UUID assetId, String year, String startDate, String endDate, String assetName, List<UUID> plantIds) {
         logger.info("[JMDHeatRate] getGTHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, assessmentName: {}, plantIds: {}", 
-                assetId, year, startDate, endDate, assessmentName, plantIds);
+                assetId, year, startDate, endDate, assetName, plantIds);
         
         AOPMessageVM vm = new AOPMessageVM();
         
@@ -151,7 +151,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             }
 
             List<Object[]> spResultList = cppGtHeatRateRepository.executeCalculateCommonGTHeatRateSP(
-                    startDate, endDate, assessmentName, plantIdsStr
+                    startDate, endDate, assetName, plantIdsStr
             );
 
             if (spResultList != null) {
