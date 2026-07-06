@@ -4,6 +4,7 @@ import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
@@ -3706,7 +3707,9 @@ const KendoDataTables = ({
                               allRedCell={allRedCell}
                               onRemarkClick={handleRemarkCellClick}
                               customModifiedCells={customModifiedCells}
-                              suppressRemarksPlaceholder={permissions?.suppressRemarksPlaceholder}
+                              suppressRemarksPlaceholder={
+                                permissions?.suppressRemarksPlaceholder
+                              }
                             />
                           ),
                           headerCell: SimpleHeaderWithTooltip,

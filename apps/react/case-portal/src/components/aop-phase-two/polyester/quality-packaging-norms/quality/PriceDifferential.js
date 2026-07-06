@@ -245,7 +245,7 @@ const PriceDifferential = () => {
       severity: 'success',
     })
     try {
-      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Price_Differential`
+      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Price_Differential-${AOP_YEAR}`
       await QualityPackagingNormsApiService.exportPriceDifferential(
         keycloak,
         PLANT_ID,

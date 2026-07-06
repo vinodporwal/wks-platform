@@ -348,6 +348,7 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
           onClick={handleCancel}
           color='secondary'
           disabled={isButtonDisabled}
+          className='btn-no'
         >
           Cancel
         </Button>
@@ -363,10 +364,10 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
           {isButtonDisabled
             ? isEditMode
               ? 'Updating...'
-              : 'Submitting...'
+              : 'Saving...'
             : isEditMode
               ? 'Update'
-              : 'Submit'}
+              : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>
