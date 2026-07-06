@@ -264,6 +264,58 @@ const NormalOpNormsScreenCracker = () => {
     march: 3,
   }
 
+  const colDefsFinalNormsHMD = useMemo(
+    () => [
+      {
+        field: 'sapMaterialCode',
+        title: 'SAP MAT Code',
+        widthT: 120,
+        editable: false,
+        useMethodColors: true,
+        minWidth: 150,
+        locked: true,
+      },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        widthT: 130,
+        editable: false,
+        minWidth: 300,
+        locked: true,
+      },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 100,
+        locked: true,
+      },
+      ...MONTHS.map((m, i) => ({
+        field: m,
+        title: headerMap[monthIndexMap[m]] || m,
+        editable: true,
+        type: 'number',
+        format: valueFormat,
+        minWidth: 120,
+      })),
+      {
+        field: 'wtAverage',
+        title: 'Weighted Average',
+        editable: false,
+        type: 'number',
+        format: valueFormat,
+        minWidth: 140,
+      },
+      {
+        field: 'isEditable',
+        title: 'isEditable',
+        hidden: true,
+        isVisible: false,
+      },
+    ],
+    [headerMap, valueFormat],
+  )
   const colDefsFinalNormsC2 = useMemo(
     () => [
       {
@@ -305,7 +357,12 @@ const NormalOpNormsScreenCracker = () => {
         editable: false,
         type: 'number',
         format: valueFormat,
-        minWidth: 120,
+        minWidth: 140,
+      },
+      {
+        field: 'remark',
+        title: 'Remarks',
+        editable: true,
       },
       {
         field: 'isEditable',
@@ -360,9 +417,10 @@ const NormalOpNormsScreenCracker = () => {
     ],
     [headerMap, valueFormat],
   )
-  const colDefsFinalNorms =
-    IS_CRACKER_C2 || IS_CRACKER_HMD
-      ? colDefsFinalNormsC2
+  const colDefsFinalNorms = IS_CRACKER_C2
+    ? colDefsFinalNormsC2
+    : IS_CRACKER_HMD
+      ? colDefsFinalNormsHMD
       : colDefsFinalNormsDefault
 
   const colDefsFinalNorms1 = useMemo(
@@ -629,7 +687,7 @@ const NormalOpNormsScreenCracker = () => {
 
   const finalPermissions = useMemo(() => {
     const base = { ...baseFinalPermissions }
-    base.saveBtn = false
+    base.saveBtn = IS_CRACKER_C2 ? true : false
     base.showCalculate = true
 
     return getAdjustedPermissions(base, isOldYear)
@@ -725,7 +783,7 @@ const NormalOpNormsScreenCracker = () => {
         remark: item.remark || '',
         Particulars: item.normType || item.normParameterTypeDisplayName,
         Method: item.Method || item.method,
-        isEditable: false,
+        isEditable: IS_CRACKER_C2 ? true : false,
       }))
 
       setRowsBestFinalNorms(mappedWithMethod)
@@ -1054,6 +1112,19 @@ const NormalOpNormsScreenCracker = () => {
 
   const saveChangesCrackerFinalNorms = useCallback(() => {
     const data = Object.values(modifiedCellsFinalNorms)
+    const requiredFields = ['remark']
+
+    const validationMessage = validateFields(data, requiredFields)
+
+    if (validationMessage) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationMessage,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
     return saveRows(data, true)
   }, [modifiedCellsFinalNorms, saveRows])
 

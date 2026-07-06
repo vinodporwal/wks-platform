@@ -96,6 +96,7 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 
 // A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
@@ -274,6 +275,67 @@ const KendoDataTables = ({
   const [edit, setEdit] = useState({})
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
+
+  const processedRows = useMemo(() => {
+    try {
+      return process(rows, { filter, sort }).data
+    } catch (err) {
+      return rows
+    }
+  }, [rows, filter, sort])
+
+  const GroupedColumnCell = (props) => {
+    const { dataItem, field, tdProps } = props
+    const value = dataItem[field]
+
+    const gName = dataItem.groupName
+    if (!gName) {
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'right',
+          }}
+        >
+          {value !== null && value !== undefined ? value : ''}
+        </td>
+      )
+    }
+
+    const groupRows = processedRows.filter((r) => r.groupName === gName)
+    const indexInGroup = groupRows.findIndex((r) => r.id === dataItem.id)
+
+    if (indexInGroup > 0) {
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            display: 'none',
+          }}
+        />
+      )
+    }
+
+    const rowSpan = groupRows.length
+
+    return (
+      <td
+        {...tdProps}
+        rowSpan={rowSpan}
+        style={{
+          ...tdProps?.style,
+          verticalAlign: 'middle',
+          textAlign: 'right',
+          backgroundColor: '#FFFFFF',
+        }}
+      >
+        {value !== null && value !== undefined ? value : ''}
+      </td>
+    )
+  }
+
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
@@ -2459,6 +2521,11 @@ const KendoDataTables = ({
                 </React.Fragment>
               )}
 
+
+              {permissions?.showDisabledUOM && (
+                <DisabledUOM disabledUOM={permissions?.disabledUOM} />
+              )}
+
               {permissions?.showModes && (
                 <TextField
                   select
@@ -3639,6 +3706,7 @@ const KendoDataTables = ({
                               allRedCell={allRedCell}
                               onRemarkClick={handleRemarkCellClick}
                               customModifiedCells={customModifiedCells}
+                              suppressRemarksPlaceholder={permissions?.suppressRemarksPlaceholder}
                             />
                           ),
                           headerCell: SimpleHeaderWithTooltip,
@@ -4307,6 +4375,31 @@ const KendoDataTables = ({
                                 disableRedHighlight={disableRedHighlight}
                               />
                             ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
+                  if (col?.type === 'groupedColumn') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+                          ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                          ${col?.isBold ? 'bold-text' : ''}
+                        `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          data: GroupedColumnCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}

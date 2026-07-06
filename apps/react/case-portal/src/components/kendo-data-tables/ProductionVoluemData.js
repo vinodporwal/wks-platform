@@ -1288,6 +1288,8 @@ const ProductionvolumeData = ({
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
+      disabledUOM: unitDesignCapacity,
+      showDisabledUOM: IS_CRACKER_C2
     },
     isOldYear,
   )
@@ -1512,6 +1514,8 @@ const ProductionvolumeData = ({
               ? 'Proposed Operating Capacity / Production Volume Target (PVT)'
               : 'Proposed Operating Capacity',
       showNoteWhileSaving: IS_PP_SEZ ? true : false,
+      disabledUOM: unitDesignCapacity,
+      showDisabledUOM: IS_CRACKER_C2
     },
     isOldYear,
   )

@@ -716,13 +716,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					catalystChangeOverDTO.setId((String) row[0]);
 					catalystChangeOverDTO.setParameter((String) row[1]);
 					catalystChangeOverDTO.setDate((Date) row[2]);
-					catalystChangeOverDTO.setCatalystQuantity((Double) row[3]);
-					catalystChangeOverDTO.setRunLength((Integer) row[4]);
-					catalystChangeOverDTO.setRemarks((String) row[5]);
-					catalystChangeOverDTO.setPlantId((String) row[6]);
-					catalystChangeOverDTO.setAopYear((String) row[7]);
-					catalystChangeOverDTO.setModifiedBy((String) row[8]);
-					catalystChangeOverDTO.setModifiedOn((Date) row[9]);
+					catalystChangeOverDTO.setRemarks((String) row[3]);
+					catalystChangeOverDTO.setPlantId((String) row[4]);
+					catalystChangeOverDTO.setAopYear((String) row[5]);
+					catalystChangeOverDTO.setModifiedBy((String) row[6]);
+					catalystChangeOverDTO.setModifiedOn((Date) row[7]);
 					catalystChangeOverDTOList.add(catalystChangeOverDTO);
 				}
 
@@ -778,13 +776,11 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 
 			if (dto.getId() == null || dto.getId().trim().isEmpty()) {
 
-				String sql = "INSERT INTO CatalystChangeOver (date, catalystQuantity, runLength, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
-						+ "VALUES (:date, :catalystQuantity, :runLength, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
-				Query query = entityManager.createNativeQuery(sql);
-				query.setParameter("date", dto.getDate());
-				query.setParameter("catalystQuantity", dto.getCatalystQuantity());
-				query.setParameter("runLength", dto.getRunLength());
-				query.setParameter("remarks", dto.getRemarks());
+			String sql = "INSERT INTO CatalystChangeOver (date, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
+					+ "VALUES (:date, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("date", dto.getDate());
+			query.setParameter("remarks", dto.getRemarks());
 				query.setParameter("plantId", dto.getPlantId());
 				query.setParameter("aopYear", dto.getAopYear());
 				query.setParameter("modifiedBy", modifiedBy);
@@ -795,27 +791,17 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 			} else {
 
 				// ── 3. Remarks Validation for Parameter / Date Changes ──────────────
-				String selectSql = "SELECT parameter, date, catalystQuantity, runLength, remarks FROM CatalystChangeOver WHERE id = :id";
+				String selectSql = "SELECT parameter, date, remarks FROM CatalystChangeOver WHERE id = :id";
 				Query selectQuery = entityManager.createNativeQuery(selectSql);
 				selectQuery.setParameter("id", dto.getId());
 				Object[] existing = (Object[]) selectQuery.getSingleResult();
 
 				String existingParam    = existing[0] != null ? existing[0].toString().trim() : "";
 				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
-				Double existingCatalystQuantity = (Double) existing[2];
-				Integer existingRunLength = (Integer) existing[3];
-				if (existingRunLength == null) {
-					existingRunLength = 0;
-				}
-
-				if(existingCatalystQuantity == null) {
-					existingCatalystQuantity = 0.0;
-				}
-				String existingRemarks  = existing[4] != null ? existing[4].toString().trim() : "";
+			
+				String existingRemarks  = existing[2] != null ? existing[2].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
-				boolean catalystQuantityChanged = !Objects.equals(dto.getCatalystQuantity(), existingCatalystQuantity);
-				boolean runLengthChanged = !Objects.equals(dto.getRunLength(), existingRunLength);
 				boolean dateChanged = false;
 				if (existingDateRaw != null) {
 					// LocalDate existingLocalDate = existingDateRaw.toInstant()
@@ -827,7 +813,7 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 					dateChanged = true;
 				}
 
-				if (parameterChanged || dateChanged || catalystQuantityChanged || runLengthChanged) {
+				if (parameterChanged || dateChanged) {
 					String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
 					if (incomingRemarks.equals(existingRemarks)) {
 						throw new IllegalArgumentException(
@@ -836,12 +822,10 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 				}
 
 				String sql = "UPDATE CatalystChangeOver "
-						+ "SET date = :date, catalystQuantity = :catalystQuantity, runLength = :runLength, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
+						+ "SET date = :date, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
 						+ "WHERE id = :id";
 				Query query = entityManager.createNativeQuery(sql);
 				query.setParameter("date", dto.getDate());
-				query.setParameter("catalystQuantity", dto.getCatalystQuantity());
-				query.setParameter("runLength", dto.getRunLength());
 				query.setParameter("remarks", dto.getRemarks());
 				query.setParameter("modifiedBy", modifiedBy);
 				query.setParameter("modifiedOn", new Date());
@@ -5360,90 +5344,80 @@ continue;
 			Sheet sheet = workbook.createSheet("CatalystChangeOver");
 			int currentRow = 0;
 
-			// Columns: Parameter(0), Date(1), Catalyst Quantity(2), Runlength(3), Remarks(4), Id(5-hidden)
-			List<String> headerNames = new ArrayList<>(
-					Arrays.asList("Parameter", "Date", "Catalyst Quantity", "Runlength", "Remarks", "Id"));
+		// Columns: Parameter(0), Date(1), Remarks(2), Id(3-hidden)
+		List<String> headerNames = new ArrayList<>(
+				Arrays.asList("Parameter", "Date", "Remarks", "Id"));
+		if (isAfterSave) {
+			headerNames.add("Status");
+			headerNames.add("Error Description");
+		}
+
+		Row headerRow = sheet.createRow(currentRow++);
+		for (int col = 0; col < headerNames.size(); col++) {
+			Cell cell = headerRow.createCell(col);
+			cell.setCellValue(headerNames.get(col));
+			cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+		}
+
+		// Wrap style for Remarks column
+		CellStyle wrapStyle = workbook.createCellStyle();
+		wrapStyle.setWrapText(true);
+		wrapStyle.setBorderBottom(BorderStyle.THIN);
+		wrapStyle.setBorderTop(BorderStyle.THIN);
+		wrapStyle.setBorderLeft(BorderStyle.THIN);
+		wrapStyle.setBorderRight(BorderStyle.THIN);
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+		for (CatalystChangeOverDTO dto : dtoList) {
+			Row row = sheet.createRow(currentRow++);
+
+			// Col 0 – Parameter
+			Cell paramCell = row.createCell(0);
+			paramCell.setCellValue(dto.getParameter() != null ? dto.getParameter() : "");
+			paramCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+			// Col 1 – Date
+			Cell dateCell = row.createCell(1);
+			dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
+			dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+			// Col 2 – Remarks (wrapped text, auto row height)
+			Cell remarksCell = row.createCell(2);
+			remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+			remarksCell.setCellStyle(wrapStyle);
+
+			// Col 3 – Id (hidden, used for import/update)
+			Cell idCell = row.createCell(3);
+			idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+			idCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
 			if (isAfterSave) {
-				headerNames.add("Status");
-				headerNames.add("Error Description");
+				Cell statusCell = row.createCell(4);
+				statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+				statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				Cell errCell = row.createCell(5);
+				errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+				errCell.setCellStyle(Utility.createBorderedStyle(workbook));
 			}
 
-			Row headerRow = sheet.createRow(currentRow++);
-			for (int col = 0; col < headerNames.size(); col++) {
-				Cell cell = headerRow.createCell(col);
-				cell.setCellValue(headerNames.get(col));
-				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			// Let POI calculate row height automatically for wrapped remarks
+			row.setHeight((short) -1);
+		}
+
+		// Dynamic column widths – fixed larger width for Remarks(2), auto-size for others
+		int totalCols = isAfterSave ? 6 : 4;
+		for (int col = 0; col < totalCols; col++) {
+			if (col == 2) {
+				sheet.setColumnWidth(col, 15000); // ~60 characters wide for Remarks
+			} else {
+				sheet.autoSizeColumn(col);
 			}
+		}
 
-			// Wrap style for Remarks column
-			CellStyle wrapStyle = workbook.createCellStyle();
-			wrapStyle.setWrapText(true);
-			wrapStyle.setBorderBottom(BorderStyle.THIN);
-			wrapStyle.setBorderTop(BorderStyle.THIN);
-			wrapStyle.setBorderLeft(BorderStyle.THIN);
-			wrapStyle.setBorderRight(BorderStyle.THIN);
-
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-			for (CatalystChangeOverDTO dto : dtoList) {
-				Row row = sheet.createRow(currentRow++);
-
-				// Col 0 – Parameter
-				Cell paramCell = row.createCell(0);
-				paramCell.setCellValue(dto.getParameter() != null ? dto.getParameter() : "");
-				paramCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				// Col 1 – Date
-				Cell dateCell = row.createCell(1);
-				dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
-				dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				// Col 2 – Catalyst Quantity
-				Cell catalystQtyCell = row.createCell(2);
-				catalystQtyCell.setCellValue(dto.getCatalystQuantity());
-				catalystQtyCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				// Col 3 – Runlength
-				Cell runLengthCell = row.createCell(3);
-				runLengthCell.setCellValue(dto.getRunLength() != null ? dto.getRunLength() : 0);
-				runLengthCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				// Col 4 – Remarks (wrapped text, auto row height)
-				Cell remarksCell = row.createCell(4);
-				remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
-				remarksCell.setCellStyle(wrapStyle);
-
-				// Col 5 – Id (hidden, used for import/update)
-				Cell idCell = row.createCell(5);
-				idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
-				idCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-				if (isAfterSave) {
-					Cell statusCell = row.createCell(6);
-					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
-					statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
-
-					Cell errCell = row.createCell(7);
-					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
-					errCell.setCellStyle(Utility.createBorderedStyle(workbook));
-				}
-
-				// Let POI calculate row height automatically for wrapped remarks
-				row.setHeight((short) -1);
-			}
-
-			// Dynamic column widths – fixed larger width for Remarks(4), auto-size for others
-			int totalCols = isAfterSave ? 8 : 6;
-			for (int col = 0; col < totalCols; col++) {
-				if (col == 4) {
-					sheet.setColumnWidth(col, 15000); // ~60 characters wide for Remarks
-				} else {
-					sheet.autoSizeColumn(col);
-				}
-			}
-
-			// Hide the Id column from end-users
-			sheet.setColumnHidden(5, true);
+		// Hide the Id column from end-users
+		sheet.setColumnHidden(3, true);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
@@ -5496,48 +5470,20 @@ continue;
 						}
 					}
 
-					// Col 2 – Catalyst Quantity
-					Cell catalystQtyCell = row.getCell(2);
-					if (catalystQtyCell != null) {
-						if (catalystQtyCell.getCellType() == CellType.NUMERIC) {
-							dto.setCatalystQuantity(catalystQtyCell.getNumericCellValue());
-						} else {
-							catalystQtyCell.setCellType(CellType.STRING);
-							String qtyStr = catalystQtyCell.getStringCellValue().trim();
-							if (!qtyStr.isEmpty()) {
-								dto.setCatalystQuantity(Double.parseDouble(qtyStr));
-							}
-						}
-					}
+				// Col 2 – Remarks
+				Cell remarksCell = row.getCell(2);
+				if (remarksCell != null) {
+					remarksCell.setCellType(CellType.STRING);
+					dto.setRemarks(remarksCell.getStringCellValue().trim());
+				}
 
-					// Col 3 – Runlength
-					Cell runLengthCell = row.getCell(3);
-					if (runLengthCell != null) {
-						if (runLengthCell.getCellType() == CellType.NUMERIC) {
-							dto.setRunLength((int) runLengthCell.getNumericCellValue());
-						} else {
-							runLengthCell.setCellType(CellType.STRING);
-							String rlStr = runLengthCell.getStringCellValue().trim();
-							if (!rlStr.isEmpty()) {
-								dto.setRunLength(Integer.parseInt(rlStr));
-							}
-						}
-					}
-
-					// Col 4 – Remarks
-					Cell remarksCell = row.getCell(4);
-					if (remarksCell != null) {
-						remarksCell.setCellType(CellType.STRING);
-						dto.setRemarks(remarksCell.getStringCellValue().trim());
-					}
-
-					// Col 5 – Id (hidden; present means update, absent means insert)
-					Cell idCell = row.getCell(5);
-					if (idCell != null) {
-						idCell.setCellType(CellType.STRING);
-						String idVal = idCell.getStringCellValue().trim();
-						dto.setId(idVal.isEmpty() ? null : idVal);
-					}
+				// Col 3 – Id (hidden; present means update, absent means insert)
+				Cell idCell = row.getCell(3);
+				if (idCell != null) {
+					idCell.setCellType(CellType.STRING);
+					String idVal = idCell.getStringCellValue().trim();
+					dto.setId(idVal.isEmpty() ? null : idVal);
+				}
 
 					dto.setPlantId(plantId);
 					dto.setAopYear(year);

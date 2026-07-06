@@ -243,6 +243,7 @@ const MonthwiseOperatingHours = () => {
           showTitle: true,
           showTitleNameBusiness: true,
           titleName: 'Monthwise Operating Hours (T-20)',
+          suppressRemarksPlaceholder: true,
         }}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

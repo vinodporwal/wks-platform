@@ -321,7 +321,7 @@ const MaintenanceTable = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
-      minWidth: 120,
+      minWidth: 100,
     }))
   }
 
@@ -343,7 +343,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
-      minWidth: 300,
+      minWidth: nameWidthT,
       locked: true,
     },
     ...getMonthlyColumns(),
@@ -421,7 +421,7 @@ const MaintenanceTable = () => {
   ]
 
   // Column sets
-  const productionColumnsMEG = generateColumns(390)
+  const productionColumnsMEG = generateColumns(580)
   const productionColumnsPE = generateColumnsPEPP(200)
   const productionColumnsPP = generateColumnsPEPP(220)
   const productionColumnsNonMEG = generateColumns(200)
@@ -501,11 +501,11 @@ const MaintenanceTable = () => {
           allAction: true,
           downloadExcelBtnFromUI:
             IS_PP_DTA ||
-            IS_PP_SEZ ||
-            IS_PVC_DMD ||
-            IS_PP_HMD ||
-            IS_PVC_HMD ||
-            IS_PVC_VMD
+              IS_PP_SEZ ||
+              IS_PVC_DMD ||
+              IS_PP_HMD ||
+              IS_PVC_HMD ||
+              IS_PVC_VMD
               ? false
               : true,
           ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
@@ -515,11 +515,11 @@ const MaintenanceTable = () => {
 
           downloadExcelBtn:
             IS_PP_DTA ||
-            IS_PP_SEZ ||
-            IS_PVC_DMD ||
-            IS_PP_HMD ||
-            IS_PVC_HMD ||
-            IS_PVC_VMD
+              IS_PP_SEZ ||
+              IS_PVC_DMD ||
+              IS_PP_HMD ||
+              IS_PVC_HMD ||
+              IS_PVC_VMD
               ? true
               : false,
         },
