@@ -87,6 +87,11 @@ export const InputApiService = {
   saveFuelAvailabilityDataJCB,
   saveFuelAvailabilityExcelJCB,
   exportFuelAvailabilityExcelJCB,
+
+  // Used in: ImportPower/ProcessUnitGrid.js
+  getProcessUnitAllocations,
+  saveProcessUnitAllocations,
+  deleteProcessUnitAllocation,
 }
 
 // ===================== ||Shutdown and Operational hrs APIs || ===================== //
@@ -1422,6 +1427,76 @@ async function saveAssetCompatibleFuel(keycloak, payload) {
     return result || { success: true }
   } catch (e) {
     console.error('Error saving compatible fuel assets:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// ========================|| Process Unit Allocation APIs ||===========================//
+
+// GET /task/process-unit-allocation?plantIds=UUID,UUID&aopYear=2026-27
+async function getProcessUnitAllocations(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/process-unit-allocation?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching process unit allocations:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/process-unit-allocation?plantIds=UUID,UUID&aopYear=2026-27
+// Body: direct array of allocation records
+async function saveProcessUnitAllocations(keycloak, plantIds, aopYear, payload) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/process-unit-allocation?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving process unit allocations:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// DELETE /task/process-unit-allocation/{id}
+async function deleteProcessUnitAllocation(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/process-unit-allocation/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const text = await resp.text()
+    return text ? JSON.parse(text) : { success: true }
+  } catch (e) {
+    console.error('Error deleting process unit allocation:', e)
     return await Promise.reject(e)
   }
 }
