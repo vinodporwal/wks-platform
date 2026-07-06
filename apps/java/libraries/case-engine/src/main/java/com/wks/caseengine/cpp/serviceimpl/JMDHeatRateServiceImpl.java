@@ -73,7 +73,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     
     @Autowired
     private CppGtHeatRateRepository cppGtHeatRateRepository;
-
+    
     // ============================================================
     // DROPDOWN METHODS (multi-plant)
     // ============================================================
@@ -109,9 +109,9 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     
         
     @Override
-    public AOPMessageVM getGTHeatRateData(UUID assetId, String year, String startDate, String endDate, String assetName, List<UUID> plantIds) {
+    public AOPMessageVM getGTHeatRateData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds) {
         logger.info("[JMDHeatRate] getGTHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, assessmentName: {}, plantIds: {}", 
-                assetId, year, startDate, endDate, assetName, plantIds);
+                assetId, year, startDate, endDate, plantIds);
         
         AOPMessageVM vm = new AOPMessageVM();
         
@@ -149,9 +149,12 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         .map(UUID::toString)
                         .collect(java.util.stream.Collectors.joining(","));
             }
+            
+            String displayName = assetRepository.findDisplayNameByAssetId(assetId)
+                    .orElse("Asset Not Found");
 
             List<Object[]> spResultList = cppGtHeatRateRepository.executeCalculateCommonGTHeatRateSP(
-                    startDate, endDate, assetName, plantIdsStr
+                    startDate, endDate, displayName, plantIdsStr
             );
 
             if (spResultList != null) {

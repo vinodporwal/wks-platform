@@ -6,6 +6,7 @@ import com.wks.caseengine.cpp.entity.PowerGenerationAsset;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -25,4 +26,7 @@ public interface PowerGenerationAssetRepository extends JpaRepository<PowerGener
         @Param("plantIds") List<UUID> plantIds, 
         @Param("assetType") String assetType
     );
+    
+    @Query("SELECT p.displayName FROM PowerGenerationAsset p WHERE p.assetId = :assetId")
+    Optional<String> findDisplayNameByAssetId(@Param("assetId") UUID assetId);
 }
