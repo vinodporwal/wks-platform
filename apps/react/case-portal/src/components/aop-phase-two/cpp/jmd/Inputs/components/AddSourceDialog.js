@@ -75,7 +75,7 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
 
   const cppPlantOptions = useMemo(() => {
     const options = (
-      siteObject?.name?.toLowerCase() === 'dmd'
+      siteObject?.name?.toLowerCase() !== 'jmd'
         ? plantObjectNew
         : jmdSelectedPlants || []
     ).map((plant) => ({

@@ -170,6 +170,28 @@ const InputsDMD = () => {
           },
         ]
         break
+      case 'vmd':
+        tabs = [
+          {
+            id: 'aop-design-basis',
+            name: 'aopDesignBasis',
+            displayName: 'AOP Design Basis',
+            displaySequence: 0,
+          },
+          {
+            id: 'purchase-power',
+            name: 'purchasePowerInput',
+            displayName: 'Purchase Power Input',
+            displaySequence: 1,
+          },
+          {
+            id: 'shutdown-operational',
+            name: 'shutdownOperationalHrs',
+            displayName: 'Shutdown and Operational Hrs.',
+            displaySequence: 2,
+          },
+        ]
+        break
 
       default:
         tabs = []

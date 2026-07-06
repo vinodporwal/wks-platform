@@ -24,6 +24,7 @@ const SenderReceiverMapping = () => {
   const [originalRows, setOriginalRows] = useState([])
   const [plantsDropdown, setPlantsDropdown] = useState([])
   const [costCentersDropdown, setCostCentersDropdown] = useState([])
+  const [normParameters, setNormParameters] = useState([])
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [rowToDelete, setRowToDelete] = useState(null)
@@ -65,6 +66,22 @@ const SenderReceiverMapping = () => {
           ],
     [jmdSelectedPlants, plantObject, lowerSiteName],
   )
+
+  // Fetch norm parameters for the selected plant
+  const fetchNormParameters = useCallback(async () => {
+    if (!PLANT_ID) return
+    try {
+      const res = await UtilityPlantApiServiceV2.getNormParameters(
+        keycloak,
+        PLANT_ID,
+      )
+      const data = res?.data || []
+      setNormParameters(data)
+    } catch (error) {
+      console.error('Error fetching norm parameters:', error)
+      setNormParameters([])
+    }
+  }, [keycloak, PLANT_ID])
 
   // Fetch plants and cost centers for dropdowns
   const fetchAssociatedFieldIds = useCallback(async () => {
@@ -148,11 +165,56 @@ const SenderReceiverMapping = () => {
       if (PLANT_ID_LIST?.length && AOP_YEAR) {
         fetchData()
         fetchAssociatedFieldIds()
+        fetchNormParameters()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchData, fetchAssociatedFieldIds],
+    [
+      PLANT_ID_LIST,
+      AOP_YEAR,
+      fetchData,
+      fetchAssociatedFieldIds,
+      fetchNormParameters,
+    ],
+  )
+
+  const getFilteredSenderUtilities = useCallback(
+    (dataItem) => {
+      const selectedPlantId = dataItem?.senderPlantId
+      if (!selectedPlantId) return []
+      const filtered = normParameters.filter(
+        (np) =>
+          np.normTypeFkId === 2 &&
+          np.plantFkId?.toLowerCase() === selectedPlantId?.toLowerCase(),
+      )
+      return filtered.map((np) => ({
+        value: np.displayName || np.name,
+        label: np.displayName || np.name,
+        sapMaterialCode: np.sapMaterialCode || '',
+        uom: np.uom || '',
+      }))
+    },
+    [normParameters],
+  )
+
+  const getFilteredReceiverUtilities = useCallback(
+    (dataItem) => {
+      const selectedPlantId = dataItem?.receiverPlantId
+      if (!selectedPlantId) return []
+      const filtered = normParameters.filter(
+        (np) =>
+          np.normTypeFkId === 1 &&
+          np.plantFkId?.toLowerCase() === selectedPlantId?.toLowerCase(),
+      )
+      return filtered.map((np) => ({
+        value: np.displayName || np.name,
+        label: np.displayName || np.name,
+        sapMaterialCode: np.sapMaterialCode || '',
+        uom: np.uom || '',
+      }))
+    },
+    [normParameters],
   )
 
   const getFilteredCostCenters = useCallback(
@@ -250,7 +312,10 @@ const SenderReceiverMapping = () => {
       title: 'Utility',
       widthT: 150,
       minWidth: 150,
-      type: 'text',
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredSenderUtilities,
       editable: true,
     },
     {
@@ -259,7 +324,7 @@ const SenderReceiverMapping = () => {
       widthT: 150,
       minWidth: 150,
       type: 'text',
-      editable: true,
+      editable: false,
     },
     {
       field: 'senderUtilityUOM',
@@ -267,7 +332,7 @@ const SenderReceiverMapping = () => {
       widthT: 150,
       minWidth: 150,
       type: 'text',
-      editable: true,
+      editable: false,
     },
 
     {
@@ -313,7 +378,10 @@ const SenderReceiverMapping = () => {
       title: 'Receiver Utility',
       widthT: 150,
       minWidth: 150,
-      type: 'text',
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredReceiverUtilities,
       editable: true,
       hidden: false,
     },
@@ -323,7 +391,7 @@ const SenderReceiverMapping = () => {
       widthT: 180,
       minWidth: 180,
       type: 'text',
-      editable: true,
+      editable: false,
       hidden: false,
     },
     {
@@ -332,7 +400,7 @@ const SenderReceiverMapping = () => {
       widthT: 180,
       minWidth: 180,
       type: 'text',
-      editable: true,
+      editable: false,
     },
     // {
     //   field: 'materialActivity',
@@ -696,6 +764,54 @@ const SenderReceiverMapping = () => {
                 ...row,
                 receiverCostCenterId: value,
                 receiverCostCenterCode: ccCode,
+              }
+            : row,
+        ),
+      )
+      return
+    }
+
+    // Handle senderUtilityName dropdown change - auto-populate code and UOM
+    if (field === 'senderUtilityName' && value) {
+      const selectedUtil = normParameters.find(
+        (np) => (np.displayName || np.name) === value && np.normTypeFkId === 2,
+      )
+      const utilCode = selectedUtil?.sapMaterialCode || ''
+      const utilUOM = selectedUtil?.uom || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                senderUtilityName: value,
+                senderUtilityId: selectedUtil?.id || '',
+                senderUtilityCode: utilCode,
+                senderUtilityUOM: utilUOM,
+              }
+            : row,
+        ),
+      )
+      return
+    }
+
+    // Handle receiverUtilityName dropdown change - auto-populate code and UOM
+    if (field === 'receiverUtilityName' && value) {
+      const selectedUtil = normParameters.find(
+        (np) => (np.displayName || np.name) === value && np.normTypeFkId === 1,
+      )
+      const utilCode = selectedUtil?.sapMaterialCode || ''
+      const utilUOM = selectedUtil?.uom || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                receiverUtilityName: value,
+                receiverUtilityId: selectedUtil?.id || '',
+                receiverUtilityCode: utilCode,
+                receiverUtilityUOM: utilUOM,
               }
             : row,
         ),

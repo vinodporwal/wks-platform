@@ -20,7 +20,6 @@ public interface PackagingConsumablesService {
 	public AOPMessageVM getCalculatePackagingNorms(String year,String plantId);
 	public AOPMessageVM getQualityPackaging(String plantId, String aopYear, String periodFrom, String periodTo,String type);
     public AOPMessageVM getCalculateOtherProductionNorms(String year,String plantId);
-	public AOPMessageVM getDataSetQualityPackaging(String plantId, String aopYear, String periodFrom, String periodTo,String type);
 
 
 }

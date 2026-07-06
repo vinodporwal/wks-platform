@@ -35,6 +35,7 @@ export const UtilityPlantApiServiceV2 = {
   getSRMappingByPlant,
   getSRMappingPlants,
   getSRMappingCostCenters,
+  getNormParameters,
 
   // Generic Excel Import/Export
   saveExcelData,
@@ -683,6 +684,29 @@ async function deleteSRMapping(keycloak, id) {
     return text ? JSON.parse(text) : { success: true }
   } catch (e) {
     console.error('Error deleting SR mapping:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Get Norm Parameters by Source Plant
+async function getNormParameters(keycloak, plantId, type = null) {
+  let url = `${Config.CaseEngineUrl}/task/cpp-norm-parameters?plantId=${plantId}`
+  if (type != null) {
+    url += `&type=${type}`
+  }
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching norm parameters:', e)
     return await Promise.reject(e)
   }
 }
