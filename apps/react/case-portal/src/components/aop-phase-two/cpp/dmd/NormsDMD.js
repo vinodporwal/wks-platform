@@ -680,13 +680,13 @@ const NormsDMD = () => {
         AOP_YEAR,
       )
 
-      if (res?.data?.length === 0) {
+      if (res?.data?.list?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.data
+      let tempRes = res?.data?.list
         ?.filter((item) => item?.accountName !== 'Stores & Spares')
         .map((item, index) => {
           return {
@@ -1082,7 +1082,7 @@ const NormsDMD = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
