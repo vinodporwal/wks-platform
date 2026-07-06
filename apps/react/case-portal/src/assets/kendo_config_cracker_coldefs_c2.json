@@ -1,42 +1,34 @@
 [
   {
-    "field": "normParameterTypeName",
-    "title": "Type",
-    "width": 110,
-    "groupable": true,
-    "editable": false,
-    "hidden": true,
-    "isVisible": false
-  },
-  {
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
     "locked": true,
-    "width": 150,
-    "minWidth": 300
+    "widthT": 120,
+    "minWidth": 300,
+    "hidden": false,
+    "isVisible": true
   },
   {
     "field": "uom",
     "title": "UOM",
     "editable": false,
     "locked": true,
-    "width": 120,
+    "width": 80,
     "minWidth": 90
   },
   {
     "field": "apr",
     "title": 4,
     "editable": true,
-    "width": 120
+    "width": 120,
+    "type": "number"
   },
   {
     "field": "may",
     "title": 5,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -44,8 +36,6 @@
     "title": 6,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -53,8 +43,6 @@
     "title": 7,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -62,8 +50,6 @@
     "title": 8,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -71,18 +57,13 @@
     "title": 9,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
-
   {
     "field": "oct",
     "title": 10,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -90,8 +71,6 @@
     "title": 11,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -99,8 +78,6 @@
     "title": 12,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -108,8 +85,6 @@
     "title": 1,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
@@ -117,13 +92,18 @@
     "title": 2,
     "editable": true,
     "width": 120,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number"
   },
   {
     "field": "mar",
     "title": 3,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Weighted Average",
+    "title": "Weighted Average",
     "editable": true,
     "width": 120,
     "align": "left",
@@ -134,8 +114,14 @@
     "field": "remarks",
     "title": "Remark",
     "editable": false,
-    "width": 180,
+    "width": 120,
     "type": "string",
     "minWidth": 120
+  },
+  {
+    "field": "normParameterFKID",
+    "title": "normParameterFKID",
+    "filterable": false,
+    "hidden": true
   }
 ]

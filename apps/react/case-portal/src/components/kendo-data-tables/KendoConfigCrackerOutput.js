@@ -120,7 +120,9 @@ const CrackerConfig = () => {
   const productionColumns = useMemo(() => {
     const configType =
       currentTabDisplay === 'Composition'
-        ? 'cracker_composition'
+        ? SITE_NAME === 'C2'
+          ? 'cracker_composition_c2'
+          : 'cracker_composition'
         : currentTabDisplay === 'Constant'
           ? 'cracker_constants'
           : currentTabDisplay === 'Yield'
@@ -129,7 +131,9 @@ const CrackerConfig = () => {
               : SITE_NAME == 'VMD'
                 ? 'cracker_yield_vmd'
                 : 'cracker_yield_dmd'
-            : 'cracker'
+            : SITE_NAME === 'C2'
+              ? 'cracker_c2'
+              : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
