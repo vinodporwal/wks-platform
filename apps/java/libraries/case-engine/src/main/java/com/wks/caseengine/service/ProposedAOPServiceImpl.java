@@ -107,7 +107,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
                     throw new RuntimeException("NormParameterId, GradeId and AopYear are required");
                 }
                
-                    String updateSql = "UPDATE MCUNormsValueGrade " +
+                    String updateSql = "UPDATE MCUNormsValueGrade_Proposed " +
                         "SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
                         "October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, Remarks = ? " +
                         "WHERE Material_FK_Id = ? and Grade_FK_Id = ? and FinancialYear = ?";
