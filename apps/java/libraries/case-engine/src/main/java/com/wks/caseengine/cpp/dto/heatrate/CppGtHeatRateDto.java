@@ -12,8 +12,8 @@ public class CppGtHeatRateDto {
 
     private UUID id;
     private UUID assetFkId;
-    private String assetName;
-    private String utilityId;
+    private String equipType;
+    private String cppUtility;
     private String financialYear;
     private Double gtLoad;
     private Double freeSteamFactor;
@@ -24,4 +24,5 @@ public class CppGtHeatRateDto {
     private Double oemHeatRate;
     private String selectedHeatRate;
     private Double prevYearFinalHeatRate;
+    private Double proposedYearFinalHeatRate;
 }

@@ -109,8 +109,10 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     
         
     @Override
-    public AOPMessageVM getGTHeatRateData(UUID assetId, String year) {
-        logger.info("[JMDHeatRate] getGTHeatRateData - assetId: {}, year: {}", assetId, year);
+    public AOPMessageVM getGTHeatRateData(UUID assetId, String year, String startDate, String endDate, String assessmentName, List<UUID> plantIds) {
+        logger.info("[JMDHeatRate] getGTHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, assessmentName: {}, plantIds: {}", 
+                assetId, year, startDate, endDate, assessmentName, plantIds);
+        
         AOPMessageVM vm = new AOPMessageVM();
         
         try {
@@ -123,52 +125,78 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 prevYear = (startYear - 1) + "-" + (endYear - 1);
             }
 
-          
-            List<CppGtHeatRate> entities = cppGtHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, year);
             
+            List<CppGtHeatRate> entities = cppGtHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, year);
             
             List<CppGtHeatRate> prevEntities = new java.util.ArrayList<>();
             if (prevYear != null) {
                 prevEntities = cppGtHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, prevYear);
             }
-
           
+            
             java.util.Map<Double, Double> prevYearHeatRateMap = new java.util.HashMap<>();
             for (CppGtHeatRate prevEntity : prevEntities) {
                 if (prevEntity != null && prevEntity.getGtLoad() != null) {
                     prevYearHeatRateMap.put(prevEntity.getGtLoad(), prevEntity.getFinalHeatRate());
                 }
             }
+
+            java.util.Map<Double, Double> proposedHeatRateMap = new java.util.HashMap<>();
+            
+            String plantIdsStr = "";
+            if (plantIds != null && !plantIds.isEmpty()) {
+                plantIdsStr = plantIds.stream()
+                        .map(UUID::toString)
+                        .collect(java.util.stream.Collectors.joining(","));
+            }
+
+            List<Object[]> spResultList = cppGtHeatRateRepository.executeCalculateCommonGTHeatRateSP(
+                    startDate, endDate, assessmentName, plantIdsStr
+            );
+
+            if (spResultList != null) {
+                for (Object[] row : spResultList) {
+                    
+                    if (row != null && row.length > 3) {
+                        Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
+                        Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
+                        
+                        if (loadVal != null && proposedHeatRate != null) {
+                            proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                        }
+                    }
+                }
+            }
             
             List<CppGtHeatRateDto> resultList = new java.util.ArrayList<>();
-
-            
             for (CppGtHeatRate entity : entities) {
                 if (entity != null) {
                     CppGtHeatRateDto dto = new CppGtHeatRateDto();
 
                     dto.setId(entity.getId() != null ? entity.getId() : null);
                     dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId() : null);
-                    dto.setAssetName(entity.getAssetName() != null ? entity.getAssetName() : null);
-                    dto.setUtilityId(entity.getUtilityId() != null ? entity.getUtilityId() : null);
+                    dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
+                    dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
                     dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
-                    
-                   
                     dto.setGtLoad(entity.getGtLoad() != null ? entity.getGtLoad() : null);
                     dto.setFreeSteamFactor(entity.getFreeSteamFactor() != null ? entity.getFreeSteamFactor() : null);
-                    
-                    dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : null);
+                    dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
                     dto.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate() : null);
                     dto.setUpdatedDate(entity.getUpdatedDate() != null ? entity.getUpdatedDate() : null);
                     dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
                     dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
-                    dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : null);
-
+                    dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
                    
                     if (entity.getGtLoad() != null && prevYearHeatRateMap.containsKey(entity.getGtLoad())) {
                         dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getGtLoad()));
                     } else {
                         dto.setPrevYearFinalHeatRate(null); 
+                    }
+
+                    if (entity.getGtLoad() != null && proposedHeatRateMap.containsKey(entity.getGtLoad())) {
+                        dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getGtLoad()));
+                    } else {
+                        dto.setProposedYearFinalHeatRate(null);
                     }
 
                     resultList.add(dto);
@@ -213,8 +241,8 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
                     entity.setId(dto.getId());
                     entity.setAssetFkId(dto.getAssetFkId());
-                    entity.setAssetName(dto.getAssetName());
-                    entity.setUtilityId(dto.getUtilityId());
+                    entity.setAssetName(dto.getEquipType());
+                    entity.setUtilityId(dto.getCppUtility());
                     entity.setGtLoad(dto.getGtLoad());
                     entity.setFreeSteamFactor(dto.getFreeSteamFactor());
                     entity.setRemarks(dto.getRemarks());
