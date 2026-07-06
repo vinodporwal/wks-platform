@@ -295,18 +295,18 @@ const FixedNorms = () => {
   }
 
   // Show error notification if configuration is not set up
-  // useEffect(() => {
-  //   if (configError) {
-  //     setSnackbarOpen(true)
-  //     setSnackbarData({
-  //       message: configError,
-  //       severity: 'warning',
-  //     })
-  //   }
-  // }, [configError])
+  useEffect(() => {
+    if (configError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: configError,
+        severity: 'warning',
+      })
+    }
+  }, [configError])
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
+    if (PLANT_ID && AOP_YEAR && startDate && endDate) {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
       fetchNormsData(formattedStartDate, formattedEndDate)
@@ -376,7 +376,6 @@ const FixedNorms = () => {
           isEditable: true, // Row editable when checkbox unchecked
         }
       })
-
       setRows(tempRes)
       setOriginalRows(tempRes)
     } catch (error) {
