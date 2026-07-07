@@ -98,6 +98,7 @@ import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
+import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
 
 // A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
@@ -191,28 +192,28 @@ const KendoDataTables = ({
   typeRank = {},
   permissions = {},
   errorRows = new Set(),
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  NormParameterIdCell = () => {},
-  setModifiedCells = () => {},
+  NormParameterIdCell = () => { },
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = (selectedItems) => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleAddPlantSite = () => {},
-  handleCalculate = () => {},
-  handleLoad = () => {},
-  fetchData = () => {},
-  handleUnitChange = () => {},
-  handleYearChange = () => {},
-  handleGradeChange = () => {},
-  handleRemarkCellClick = () => {},
-  calculatebtnClicked = () => {},
+  handleDeleteSelected = (selectedItems) => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleAddPlantSite = () => { },
+  handleCalculate = () => { },
+  handleLoad = () => { },
+  fetchData = () => { },
+  handleUnitChange = () => { },
+  handleYearChange = () => { },
+  handleGradeChange = () => { },
+  handleRemarkCellClick = () => { },
+  calculatebtnClicked = () => { },
   selectedUsers = [],
   groupBy = null,
   totalRowConfiguration = null,
@@ -226,13 +227,13 @@ const KendoDataTables = ({
   allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
-  setSelectMode = () => {},
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
-  onLoad = () => {},
+  setSelectMode = () => { },
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
+  onLoad = () => { },
   disableRedHighlight = false,
   showThreeColors = false,
-  resetDataChanges = () => {},
+  resetDataChanges = () => { },
   noteOnSaveDialogeBox = '',
   deleteNoteOnDeleteDialogeBox = '',
   shutdownMonths = [],
@@ -244,7 +245,7 @@ const KendoDataTables = ({
   mcuMaxCapValues = [],
   key = [],
   isReleaseDisabled = true,
-  handleRelease = () => {},
+  handleRelease = () => { },
   customItemChange = null,
   configType,
   isEditable = false,
@@ -507,12 +508,12 @@ const KendoDataTables = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          aggregates: totalRowConfiguration,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        aggregates: totalRowConfiguration,
+        dir: undefined,
+      },
+    ]
     : []
 
   const MyFooterCustomCell = (props) => {
@@ -1390,6 +1391,34 @@ const KendoDataTables = ({
     }, 500)
   }
 
+  // Auto-popup for Calculate prompt on screen render
+  const [openAutoCalculatePopup, setOpenAutoCalculatePopup] = useState(false)
+  const autoCalculateDismissedRef = useRef(false)
+
+  const isCalculateEnabled =
+    permissions?.showCalculate &&
+    !READ_ONLY &&
+    rows?.length > 0 &&
+    !isButtonDisabled &&
+    permissions?.showCalculateVisibility
+
+  useEffect(() => {
+    if (isCalculateEnabled && !autoCalculateDismissedRef.current) {
+      // setOpenAutoCalculatePopup(true) // Uncomment this line to enable the auto-calculate popup on screen render
+    }
+  }, [isCalculateEnabled])
+
+  const handleAutoCalculateYes = () => {
+    autoCalculateDismissedRef.current = true
+    setOpenAutoCalculatePopup(false)
+    handleCalculateBtn()
+  }
+
+  const handleAutoCalculateNo = () => {
+    autoCalculateDismissedRef.current = true
+    setOpenAutoCalculatePopup(false)
+  }
+
   const handleRefresh = async () => {
     try {
       fetchData()
@@ -1594,7 +1623,7 @@ const KendoDataTables = ({
         {...props.tdProps}
         title={value}
         style={{
-          backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+          backgroundColor: isDisabled ? '#e3e3e3' : undefined,
         }}
       >
         {props.children}
@@ -1633,7 +1662,7 @@ const KendoDataTables = ({
         style={{
           fontWeight:
             !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
-          backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+          backgroundColor: isDisabled ? '#e3e3e3' : undefined,
           color: isDisabled ? '#6e6e6e' : undefined,
           cursor: isDisabled ? 'not-allowed' : undefined,
         }}
@@ -2544,7 +2573,7 @@ const KendoDataTables = ({
                         },
                       },
                     }}
-                    // disabled={rows?.length === 0}
+                  // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled className='menu-item-style'>
                       UOM
@@ -2676,7 +2705,7 @@ const KendoDataTables = ({
                   onClick={excelExport}
                   // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
-                  //ANY ONE CAN EXPORT
+                //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -2745,7 +2774,7 @@ const KendoDataTables = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
@@ -2875,21 +2904,21 @@ const KendoDataTables = ({
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
-                        enabled: false,
-                        footer: 'visible',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'visible',
+                      showGroupPanel: false,
+                    }
                     : {
-                        enabled: false,
-                        footer: 'none',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'none',
+                      showGroupPanel: false,
+                    }
                 }
                 cells={
                   permissions?.isTotalFooterActive
                     ? {
-                        groupFooter: MyFooterCustomCell,
-                      }
+                      groupFooter: MyFooterCustomCell,
+                    }
                     : undefined
                 }
                 allRedCell={allRedCell}
@@ -2900,9 +2929,9 @@ const KendoDataTables = ({
                     ? false
                     : rows?.length > 100
                       ? {
-                          buttonCount: 4,
-                          pageSizes: [10, 50, 100],
-                        }
+                        buttonCount: 4,
+                        pageSizes: [10, 50, 100],
+                      }
                       : false
                 }
                 sortable={true}
@@ -3128,7 +3157,7 @@ const KendoDataTables = ({
                                 <td
                                   onClick={(e) => e.stopPropagation()}
                                   style={{
-                                    backgroundColor: '#f0f0f0',
+                                    backgroundColor: '#e3e3e3',
                                     color: '#888',
                                     cursor: 'not-allowed',
                                   }}
@@ -5115,6 +5144,13 @@ const KendoDataTables = ({
           </Button>
         </DialogActions>
       </CompactDialog>
+
+      {/* Auto Calculate Popup - shown on render when Calculate is enabled */}
+      <AutoCalculatePopup
+        open={openAutoCalculatePopup}
+        onYes={handleAutoCalculateYes}
+        onNo={handleAutoCalculateNo}
+      />
 
       <CompactDialog
         open={openSaveDialogeBox}

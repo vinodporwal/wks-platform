@@ -104,8 +104,8 @@
   {
     "field": "Weighted Average",
     "title": "Weighted Average",
-    "editable": true,
-    "width": 120,
+    "editable": false,
+    "minWidth": 150,
     "align": "left",
     "headerAlign": "left",
     "type": "number"
