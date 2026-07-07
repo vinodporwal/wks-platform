@@ -10,8 +10,8 @@ import java.util.UUID;
 @NoArgsConstructor
 public class CppGtHeatRateDto {
 
-    private UUID id;
-    private UUID assetFkId;
+    private String id;
+    private String assetFkId;
     private String equipType;
     private String cppUtility;
     private String financialYear;
@@ -25,4 +25,6 @@ public class CppGtHeatRateDto {
     private String selectedHeatRate;
     private Double prevYearFinalHeatRate;
     private Double proposedYearFinalHeatRate;
+    private String saveStatus;
+    private String errDescription;
 }

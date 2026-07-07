@@ -25,6 +25,10 @@ public interface JMDHeatRateService {
     public AOPMessageVM saveGTHeatRateData(
              List<CppGtHeatRateDto> dtoList, 
              String year);
+    
+    byte[] exportGTHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppGtHeatRateDto> dtoList);
+    
+    AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
 
     // ========================================
     // GT HEAT RATE

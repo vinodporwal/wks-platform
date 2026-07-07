@@ -31,9 +31,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -42,6 +45,7 @@ import java.util.stream.Collectors;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
@@ -176,8 +180,8 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 if (entity != null) {
                     CppGtHeatRateDto dto = new CppGtHeatRateDto();
 
-                    dto.setId(entity.getId() != null ? entity.getId() : null);
-                    dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId() : null);
+                    dto.setId(entity.getId() != null ? entity.getId().toString() : null);
+                    dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId().toString() : null);
                     dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
                     dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
                     dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
@@ -223,6 +227,148 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     }
     
     @Override
+    public AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            
+            List<CppGtHeatRateDto> data = readGTHeatRateData(file.getInputStream(), year);
+            
+            if (data != null && !data.isEmpty()) {
+                CppGtHeatRateDto firstRow = data.get(0);
+                if (assetId == null && firstRow.getAssetFkId() != null) {
+                    assetId = UUID.fromString(firstRow.getAssetFkId());
+                }
+            }
+
+            aopMessageVM = saveGTHeatRateData(data, year);
+            
+            List<CppGtHeatRateDto> failedList = (List<CppGtHeatRateDto>) aopMessageVM.getData();
+
+            if (failedList != null && !failedList.isEmpty()) {
+                byte[] fileByteArray = exportGTHeatRateExcelData(
+                    assetId,     
+                    year,        
+                    startDate,   
+                    endDate,    
+                    plantIds,    
+                    true,        
+                    failedList   
+                );
+                
+                if (fileByteArray != null && fileByteArray.length > 0) {
+                    String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                    aopMessageVM.setData(base64File);
+                    aopMessageVM.setCode(400);
+                    aopMessageVM.setMessage("Partial data has been saved. Please check the attached error details.");
+                }
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved successfully.");
+                aopMessageVM.setData(null);
+            }
+
+            return aopMessageVM;
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] Error importing GT heat rate data: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to process file import: " + e.getMessage());
+            aopMessageVM.setData(null);
+        }
+        return aopMessageVM;
+    }
+    
+    public List<CppGtHeatRateDto> readGTHeatRateData(InputStream inputStream, String year) {
+	    List<CppGtHeatRateDto> cppGtHeatRateDtos = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext())
+	            rowIterator.next();  
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+	            
+	            CppGtHeatRateDto dto = new CppGtHeatRateDto();
+	            try {
+	                dto.setEquipType(getStringCellValue(row.getCell(0), dto));
+	                dto.setCppUtility(getStringCellValue(row.getCell(1), dto));
+	                dto.setGtLoad(getNumericCellValue(row.getCell(2), dto));
+	                dto.setOemHeatRate(getNumericCellValue(row.getCell(3), dto));
+	                dto.setPrevYearFinalHeatRate(getNumericCellValue(row.getCell(4), dto));
+	                dto.setProposedYearFinalHeatRate(getNumericCellValue(row.getCell(5), dto));
+	                dto.setFinalHeatRate(getNumericCellValue(row.getCell(6), dto));
+	                dto.setFreeSteamFactor(getNumericCellValue(row.getCell(7), dto));
+	                dto.setRemarks(getStringCellValue(row.getCell(8), dto));
+	                dto.setFinancialYear(year);
+	                dto.setSelectedHeatRate(getStringCellValue(row.getCell(9), dto));
+	                dto.setId(getStringCellValue(row.getCell(10), dto));
+	              } 
+	              catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+	            cppGtHeatRateDtos.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return cppGtHeatRateDtos;
+	}
+    
+    private static Double getNumericCellValue(Cell cell, CppGtHeatRateDto dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } 
+	    
+	    if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        if (val.isEmpty()) {
+	            return null; // Return null for blank strings
+	        }
+	        try {
+	            return Double.parseDouble(val);
+	        } catch (NumberFormatException e) {
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    }
+	    return null;
+	}
+
+    
+    private static String getStringCellValue(Cell cell, CppGtHeatRateDto dto) {
+	    try {
+	        if (cell == null || cell.getCellType() == CellType.BLANK) {
+	            return null;
+	        }
+	        
+	        cell.setCellType(CellType.STRING);
+	        String val = cell.getStringCellValue().trim();
+	        
+	        // Return null if the string is empty after trimming
+	        return val.isEmpty() ? null : val;
+	        
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Please enter correct values");
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+    
+    @Override
     public AOPMessageVM saveGTHeatRateData(List<CppGtHeatRateDto> dtoList, String year) {
         logger.info("[JMDHeatRate] saveGTHeatRateData - processing {} records for year: {}", 
                 dtoList != null ? dtoList.size() : 0, year);
@@ -236,39 +382,100 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 return vm;
             }
 
+            List<CppGtHeatRateDto> failedList = new java.util.ArrayList<>();
             List<CppGtHeatRate> entitiesToSave = new java.util.ArrayList<>();
 
             for (CppGtHeatRateDto dto : dtoList) {
-                if (dto != null) {
-                    CppGtHeatRate entity = null;
+                if (dto == null) continue;
 
-                    
-                    if (dto.getId() != null) {
-                        entity = cppGtHeatRateRepository.findById(dto.getId()).orElse(null);
-                    }
-                    if (entity == null) {
-                        logger.warn("[JMDHeatRate] Record with ID {} not found. Skipping update.", dto.getId());
-                        continue; 
-                    }
-
-                    entity.setGtLoad(dto.getGtLoad());
-                    entity.setOemHeatRate(dto.getOemHeatRate());
-                    entity.setFinalHeatRate(dto.getFinalHeatRate());
-                    entity.setFreeSteamFactor(dto.getFreeSteamFactor());
-                    entity.setSelectedHeatRate(dto.getSelectedHeatRate());
-                    entity.setRemarks(dto.getRemarks());
-                    entitiesToSave.add(entity);
+                // 1. Skip and collect pre-flagged errors from reading phase
+                if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+                    failedList.add(dto);
+                    continue;
                 }
+                
+                // 2. Fetch the existing database entity safely
+                CppGtHeatRate entity = null;
+                if (dto.getId() != null && !dto.getId().trim().isEmpty()) {
+                    try {
+                        entity = cppGtHeatRateRepository.findById(UUID.fromString(dto.getId())).orElse(null);
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[JMDHeatRate] Invalid UUID format provided: {}", dto.getId());
+                    }
+                }
+                
+                if (entity == null) {
+                    logger.warn("[JMDHeatRate] Record with ID {} not found. Skipping update.", dto.getId());
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription("Record ID not found in database");
+                    failedList.add(dto);
+                    continue; 
+                }
+
+                // 3. Detect data value shifts (treating null and 0.0 as equal)
+                boolean isValueChanged = false;
+
+                if (isDoubleChanged(entity.getGtLoad(), dto.getGtLoad())) isValueChanged = true;
+                if (isDoubleChanged(entity.getOemHeatRate(), dto.getOemHeatRate())) isValueChanged = true;
+                if (isDoubleChanged(entity.getFinalHeatRate(), dto.getFinalHeatRate())) isValueChanged = true;
+                if (isDoubleChanged(entity.getFreeSteamFactor(), dto.getFreeSteamFactor())) isValueChanged = true;
+                
+                String existingSelectedHR = entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate().trim() : "";
+                String incomingSelectedHR = dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate().trim() : "";
+                if (!existingSelectedHR.equalsIgnoreCase(incomingSelectedHR)) {
+                    isValueChanged = true;
+                }
+
+                // 4. Enforce business rule: Remark validation ONLY on change
+                String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+                if (isValueChanged) {
+                    if (incomingRemarks.isEmpty()) {
+                        // Data changed but remark field is missing text entirely
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Remarks are mandatory when data values are updated");
+                        failedList.add(dto);
+                        continue;
+                    }
+                    
+                    String existingRemarks = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+                    if (incomingRemarks.equalsIgnoreCase(existingRemarks)) {
+                        // Data changed but remark matches the old database record precisely
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Remarks must be updated because data values changed");
+                        failedList.add(dto);
+                        continue;
+                    }
+                }
+
+                // 5. Transfer updated records to the persistence collection
+                entity.setGtLoad(dto.getGtLoad());
+                entity.setOemHeatRate(dto.getOemHeatRate());
+                entity.setFinalHeatRate(dto.getFinalHeatRate());
+                entity.setFreeSteamFactor(dto.getFreeSteamFactor());
+                entity.setSelectedHeatRate(dto.getSelectedHeatRate());
+                entity.setRemarks(dto.getRemarks()); // Kept original or updated string safely
+                
+                entitiesToSave.add(entity);
             }
          
+            // 6. Bulk update database transactions and configure server response state
             if (!entitiesToSave.isEmpty()) {
                 List<CppGtHeatRate> savedEntities = cppGtHeatRateRepository.saveAll(entitiesToSave);
                 logger.info("[JMDHeatRate] saveGTHeatRateData - successfully updated {} records", savedEntities.size());
-                vm.setCode(200);
-                vm.setMessage("Data updated successfully");
+                
+                if (!failedList.isEmpty()) {
+                    vm.setCode(400);
+                    vm.setMessage("Partial data saved with validation exceptions");
+                } else {
+                    vm.setCode(200);
+                    vm.setMessage("Data updated successfully");
+                }
+                vm.setData(failedList);
             } else {
                 vm.setCode(400);
-                vm.setMessage("No valid existing records found to update");
+                vm.setMessage("No valid records met conditions to update");
+                vm.setData(failedList);
             }
             
         } catch (Exception e) {
@@ -279,6 +486,105 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         }
         
         return vm;
+    }
+
+    
+    private boolean isDoubleChanged(Double dbValue, Double incomingValue) {
+        double dbPrimitive = (dbValue == null) ? 0.0 : dbValue;
+        double incomingPrimitive = (incomingValue == null) ? 0.0 : incomingValue;
+        
+        return Double.compare(dbPrimitive, incomingPrimitive) != 0;
+    }
+    
+    @Override
+    public byte[] exportGTHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, 
+                                            List<UUID> plantIds, boolean isAfterSave, List<CppGtHeatRateDto> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM aopMessageVM = getGTHeatRateData(assetId, year, startDate, endDate, plantIds);
+                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+                    dtoList = (List<CppGtHeatRateDto>) aopMessageVM.getData();
+                }
+            }
+            if (dtoList == null) {
+                dtoList = new java.util.ArrayList<>();
+            }
+            try (Workbook workbook = new XSSFWorkbook(); 
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                 
+                Sheet sheet = workbook.createSheet("Heat Rate");
+                 CellStyle headerStyle = createHeaderStyle(workbook);
+                CellStyle dataStyle = createDataStyle(workbook);
+                CellStyle remarksStyle = createRemarksStyle(workbook);
+                List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
+                    "Equipment Type", "CPP Utility", "GT Load", "OEM HR", 
+                    "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)", 
+                    "Final HR", "Free Steam Factor", "Remark", "Selected Heat Rate", "Id"
+                ));
+
+                if (isAfterSave) {
+                    headerList.add("Status");
+                    headerList.add("Error Description");
+                }
+
+                int rowNum = 0;
+                Row headerRow = sheet.createRow(rowNum++);
+                for (int i = 0; i < headerList.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headerList.get(i));
+                    cell.setCellStyle(headerStyle);
+                }
+                sheet.setColumnHidden(9, true);
+                sheet.setColumnHidden(10, true);
+                for (CppGtHeatRateDto dto : dtoList) {
+                    Row row = sheet.createRow(rowNum++);
+                    int colNum = 0;
+
+                    row.createCell(colNum++).setCellValue(dto.getEquipType() != null ? dto.getEquipType() : "");
+                    row.createCell(colNum++).setCellValue(dto.getCppUtility() != null ? dto.getCppUtility() : "");
+                    row.createCell(colNum++).setCellValue(dto.getGtLoad() != null ? dto.getGtLoad() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getOemHeatRate() != null ? dto.getOemHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getPrevYearFinalHeatRate() != null ? dto.getPrevYearFinalHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getProposedYearFinalHeatRate() != null ? dto.getProposedYearFinalHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getFinalHeatRate() != null ? dto.getFinalHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getFreeSteamFactor() != null ? dto.getFreeSteamFactor() : 0.0);
+                    
+                    Cell remarkCell = row.createCell(colNum++);
+                    remarkCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+                    remarkCell.setCellStyle(remarksStyle);
+
+                    row.createCell(colNum++).setCellValue(dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate() : "");
+                    row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
+
+                    if (isAfterSave) {
+                        row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                        row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+                    }
+
+                    for (int c = 0; c < colNum; c++) {
+                        if (c != 8) { 
+                            row.getCell(c).setCellStyle(dataStyle);
+                        }
+                    }
+                }
+
+                
+                for (int i = 0; i < headerList.size(); i++) {
+                    if (i == 8) {
+                        sheet.setColumnWidth(i, 8000); 
+                        continue;
+                    }
+                    sheet.autoSizeColumn(i);
+                    applyHeaderMinWidth(sheet, i, headerList.get(i));
+                }
+
+                workbook.write(outputStream);
+                return outputStream.toByteArray();
+            }
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] exportGTHeatRateExcelData error: {}", e.getMessage(), e);
+        }
+        return null;
     }
     
     private PowerGenerationAssetDto convertToDto(PowerGenerationAsset entity) {
