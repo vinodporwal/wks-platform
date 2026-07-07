@@ -1,6 +1,7 @@
 package com.wks.caseengine.cpp.service;
 
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
+import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
@@ -29,6 +30,11 @@ public interface JMDHeatRateService {
     public AOPMessageVM saveGTHeatRateData(
              List<CppGtHeatRateDto> dtoList, 
              String year);
+    
+    public AOPMessageVM saveHRSGHeatRateData(
+            List<CppHrsgHeatRateDto> dtoList, 
+            String year);
+    
     
     byte[] exportGTHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppGtHeatRateDto> dtoList);
     

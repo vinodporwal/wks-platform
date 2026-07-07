@@ -1,6 +1,7 @@
 package com.wks.caseengine.rest.cpp;
 
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
+import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
@@ -71,6 +72,15 @@ public class JMDHeatRateController {
             @RequestParam String year) {
         
         AOPMessageVM response = jmdHeatRateService.saveGTHeatRateData(dtoList, year);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/jmd/hrsg-heat-rate")
+    public ResponseEntity<AOPMessageVM> saveHRSGHeatRateData(
+            @RequestBody List<CppHrsgHeatRateDto> dtoList, 
+            @RequestParam String year) {
+        
+        AOPMessageVM response = jmdHeatRateService.saveHRSGHeatRateData(dtoList, year);
         return ResponseEntity.ok(response);
     }
     
