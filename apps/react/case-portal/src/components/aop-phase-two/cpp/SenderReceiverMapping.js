@@ -162,11 +162,15 @@ const SenderReceiverMapping = () => {
 
   useDebounce(
     () => {
+      // Clear old data when vertical, site, or plant changes
+      setRows([])
+      setOriginalRows([])
+      setModifiedCells({})
+
       if (PLANT_ID_LIST?.length && AOP_YEAR) {
         fetchData()
         fetchAssociatedFieldIds()
         fetchNormParameters()
-        setModifiedCells({})
       }
     },
     1000,
@@ -270,7 +274,7 @@ const SenderReceiverMapping = () => {
     },
 
     {
-      field: 'senderCostCenterId',
+      field: 'senderCostCenterName',
       title: 'Sender Cost Center',
       widthT: 200,
       minWidth: 200,
@@ -289,7 +293,7 @@ const SenderReceiverMapping = () => {
       editable: false,
     },
     {
-      field: 'senderPlantId',
+      field: 'senderPlantName',
       title: 'Sender Plant',
       widthT: 200,
       minWidth: 200,
@@ -336,7 +340,7 @@ const SenderReceiverMapping = () => {
     },
 
     {
-      field: 'receiverCostCenterId',
+      field: 'receiverCostCenterName',
       title: 'Receiver Cost Center',
       widthT: 180,
       minWidth: 180,
@@ -355,7 +359,7 @@ const SenderReceiverMapping = () => {
       editable: false,
     },
     {
-      field: 'receiverPlantId',
+      field: 'receiverPlantName',
       title: 'Receiver Plant',
       widthT: 200,
       minWidth: 200,
@@ -693,81 +697,145 @@ const SenderReceiverMapping = () => {
     const field = e?.field
     const value = e?.value
 
-    // Handle senderPlantId dropdown change - auto-populate code field
-    if (field === 'senderPlantId' && value) {
-      const selectedPlant = plantsDropdown.find((p) => p.value === value)
+    // Handle senderPlantName dropdown change - auto-populate code and ID fields
+    if (field === 'senderPlantName' && value) {
+      const selectedPlant = plantsDropdown.find(
+        (p) => p.value?.toLowerCase() === value?.toLowerCase(),
+      )
       const plantCode = selectedPlant?.code || ''
+      const plantId = selectedPlant?.value || ''
+      const plantName = selectedPlant?.label || ''
 
       setRows((prevRows) =>
         prevRows.map((row) =>
           row.id === dataItem.id
             ? {
                 ...row,
-                senderPlantId: value,
+                senderPlantId: plantId,
                 senderPlantCode: plantCode,
-                senderPlantName: selectedPlant?.label || '',
+                senderPlantName: plantName,
               }
             : row,
         ),
       )
+
+      // Also update modifiedCells to track changes
+      setModifiedCells((prev) => ({
+        ...prev,
+        [dataItem.id]: {
+          ...prev[dataItem.id],
+          senderPlantId: plantId,
+          senderPlantCode: plantCode,
+          senderPlantName: plantName,
+        },
+      }))
       return
     }
 
-    // Handle receiverPlantCode dropdown change - auto-populate code field
-    if (field === 'receiverPlantId' && value) {
-      const selectedPlant = plantsDropdown.find((p) => p.value === value)
+    // Handle receiverPlantName dropdown change - auto-populate code and ID fields
+    if (field === 'receiverPlantName' && value) {
+      const selectedPlant = plantsDropdown.find(
+        (p) => p.value?.toLowerCase() === value?.toLowerCase(),
+      )
       const plantCode = selectedPlant?.code || ''
+      const plantId = selectedPlant?.value || ''
+      const plantName = selectedPlant?.label || ''
 
       setRows((prevRows) =>
         prevRows.map((row) =>
           row.id === dataItem.id
             ? {
                 ...row,
-                receiverPlantId: value,
+                receiverPlantId: plantId,
                 receiverPlantCode: plantCode,
-                receiverPlantName: selectedPlant?.label || '',
+                receiverPlantName: plantName,
               }
             : row,
         ),
       )
+
+      // Also update modifiedCells to track changes
+      setModifiedCells((prev) => ({
+        ...prev,
+        [dataItem.id]: {
+          ...prev[dataItem.id],
+          receiverPlantId: plantId,
+          receiverPlantCode: plantCode,
+          receiverPlantName: plantName,
+        },
+      }))
       return
     }
 
-    // Handle senderCostCenterId dropdown change - auto-populate code field
-    if (field === 'senderCostCenterId' && value) {
-      const selectedCC = costCentersDropdown.find((cc) => cc.value === value)
+    // Handle senderCostCenterName dropdown change - auto-populate code and ID fields
+    if (field === 'senderCostCenterName' && value) {
+      // Value is the ID (UUID), find by value not label
+      const selectedCC = costCentersDropdown.find(
+        (cc) => cc.value?.toLowerCase() === value?.toLowerCase(),
+      )
       const ccCode = selectedCC?.code || ''
+      const ccName = selectedCC?.label || ''
+      const ccId = selectedCC?.value || ''
 
       setRows((prevRows) =>
         prevRows.map((row) =>
           row.id === dataItem.id
             ? {
                 ...row,
-                senderCostCenterId: value,
+                senderCostCenterId: ccId,
                 senderCostCenterCode: ccCode,
+                senderCostCenterName: ccName,
               }
             : row,
         ),
       )
+
+      // Also update modifiedCells to track changes
+      setModifiedCells((prev) => ({
+        ...prev,
+        [dataItem.id]: {
+          ...prev[dataItem.id],
+          senderCostCenterId: ccId,
+          senderCostCenterCode: ccCode,
+          senderCostCenterName: ccName,
+        },
+      }))
       return
     }
 
-    // Handle receiverCostCenterId dropdown change - auto-populate code field
-    if (field === 'receiverCostCenterId' && value) {
-      const selectedCC = costCentersDropdown.find((cc) => cc.value === value)
+    // Handle receiverCostCenterName dropdown change - auto-populate code and ID fields
+    if (field === 'receiverCostCenterName' && value) {
+      // Value is the ID (UUID), find by value not label
+      const selectedCC = costCentersDropdown.find(
+        (cc) => cc.value?.toLowerCase() === value?.toLowerCase(),
+      )
       const ccCode = selectedCC?.code || ''
+      const ccName = selectedCC?.label || ''
+      const ccId = selectedCC?.value || ''
 
       setRows((prevRows) =>
         prevRows.map((row) =>
           row.id === dataItem.id
             ? {
                 ...row,
-                receiverCostCenterId: value,
+                receiverCostCenterId: ccId,
                 receiverCostCenterCode: ccCode,
+                receiverCostCenterName: ccName,
               }
             : row,
         ),
       )
+
+      // Also update modifiedCells to track changes
+      setModifiedCells((prev) => ({
+        ...prev,
+        [dataItem.id]: {
+          ...prev[dataItem.id],
+          receiverCostCenterId: ccId,
+          receiverCostCenterCode: ccCode,
+          receiverCostCenterName: ccName,
+        },
+      }))
       return
     }
 
@@ -792,6 +860,18 @@ const SenderReceiverMapping = () => {
             : row,
         ),
       )
+
+      // Also update modifiedCells to track changes
+      setModifiedCells((prev) => ({
+        ...prev,
+        [dataItem.id]: {
+          ...prev[dataItem.id],
+          senderUtilityName: value,
+          senderUtilityId: selectedUtil?.id || '',
+          senderUtilityCode: utilCode,
+          senderUtilityUOM: utilUOM,
+        },
+      }))
       return
     }
 
@@ -816,6 +896,18 @@ const SenderReceiverMapping = () => {
             : row,
         ),
       )
+
+      // Also update modifiedCells to track changes
+      setModifiedCells((prev) => ({
+        ...prev,
+        [dataItem.id]: {
+          ...prev[dataItem.id],
+          receiverUtilityName: value,
+          receiverUtilityId: selectedUtil?.id || '',
+          receiverUtilityCode: utilCode,
+          receiverUtilityUOM: utilUOM,
+        },
+      }))
       return
     }
   }
