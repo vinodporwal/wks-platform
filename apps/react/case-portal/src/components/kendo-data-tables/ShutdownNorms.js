@@ -94,6 +94,11 @@ const ShutdownNorms = () => {
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
 
+  const IS_ELASTOMER_HMD_PBR3 =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    PLANT_NAME_LOWERCASE === 'pbr3'
+
   const IS_PE_C2 = lowerVertName === 'pe' && SITE_NAME_LOWERCASE === 'c2'
 
   const IS_ELASTOMER_JMD_HIIR =
@@ -146,6 +151,15 @@ const ShutdownNorms = () => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
     ['mtbe', 'butadiene', 'butene'].includes(PLANT_NAME_LOWERCASE)
+  const IS_CHEMICAL_HMD_PDEB =
+    lowerVertName === 'chemical' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    PLANT_NAME_LOWERCASE === 'pdeb'
+  const IS_CRACKER_C2_HMD_DMD =
+    lowerVertName === 'cracker' &&
+    (SITE_NAME_LOWERCASE === 'c2' ||
+      SITE_NAME_LOWERCASE === 'dmd' ||
+      SITE_NAME_LOWERCASE === 'hmd')
   const textNote =
     ((IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2) ||
     IS_PVC_HMD
@@ -261,10 +275,7 @@ const ShutdownNorms = () => {
         // Fetch grades for slowdown months
         let slowdownMonthsRes = []
         if (
-          IS_PE_NMD_LDPE ||
-          lowerVertName === 'pp' ||
-          IS_PE_VMD ||
-          IS_PE_DMD ||
+          IS_PE_PP_VERTICAL ||
           IS_PET_VERTICAL ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
@@ -304,10 +315,6 @@ const ShutdownNorms = () => {
         const finalMonths =
           IS_PE_PP_VERTICAL ||
           IS_ELASTOMER_JMD_HIIR ||
-          IS_PE_NMD_LDPE ||
-          lowerVertName === 'pp' ||
-          IS_PE_VMD ||
-          IS_PE_DMD ||
           IS_PET_VERTICAL ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
@@ -671,7 +678,8 @@ const ShutdownNorms = () => {
         IS_AROMATICS_DTA ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD ||
-        IS_AROMATICS_PMD
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
       ) {
         // Use shutdownNormsExportNonGrade for VCM
         response =
@@ -737,7 +745,8 @@ const ShutdownNorms = () => {
         IS_AROMATICS_DTA ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD ||
-        IS_AROMATICS_PMD
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
       ) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response =
@@ -830,6 +839,16 @@ const ShutdownNorms = () => {
   const isVCMWithVMD =
     lowerVertName === 'vcm' && SITE_NAME?.toLowerCase() === 'vmd'
 
+  const getShutdownTitleName = () => {
+    if (IS_PET_VERTICAL || IS_PVC_VMD) return `Shutdown Consumption (Norms)`
+
+    if (IS_ELASTOMER_HMD_PBR3) return `Shutdown Consumption (Yearly Norms)`
+    if (lowerVertName === 'elastomer' || lowerVertName === 'pta' || IS_CHEMICAL)
+      return `Shutdown Consumption (Norms/Quantity)`
+    if (lowerVertName === 'meg') return `${SCREEN_NAME}-UOM Per Day Basis`
+    return SCREEN_NAME
+  }
+
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: false,
@@ -865,7 +884,10 @@ const ShutdownNorms = () => {
         (lowerVertName == 'elastomer' &&
           SITE_NAME_LOWERCASE != 'jmd' &&
           !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')) ||
-        IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE
+        IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE ||
+        IS_CHEMICAL_HMD_PDEB ||
+        IS_AROMATICS_HMD ||
+        IS_CRACKER_C2_HMD_DMD
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
@@ -927,7 +949,8 @@ const ShutdownNorms = () => {
         IS_AROMATICS_SEZ_PX4 ||
         IS_CHEMICAL ||
         IS_AROMATICS_HMD ||
-        IS_AROMATICS_PMD
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
           ? false
           : true,
       downloadExcelBtn:
@@ -946,7 +969,8 @@ const ShutdownNorms = () => {
         IS_CHEMICAL ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD ||
-        IS_AROMATICS_PMD
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
           ? true
           : false,
       uploadExcelBtn:
@@ -968,19 +992,13 @@ const ShutdownNorms = () => {
         IS_PVC_HMD ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD ||
-        IS_AROMATICS_PMD
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
           ? true
           : false,
       showTitleNameBusiness: IS_PE_DMD_HDPE ? false : true,
 
-      titleName:
-        IS_PET_VERTICAL || IS_PVC_VMD
-          ? `Shutdown Consumption (Norms)`
-          : lowerVertName === 'elastomer' ||
-              lowerVertName === 'pta' ||
-              IS_CHEMICAL
-            ? `Shutdown Consumption (Norms/Quantity)`
-            : SCREEN_NAME,
+      titleName: getShutdownTitleName(),
       ExcelName: EXCEL_EXPORT_TITLE,
       showTitleAndInformation: IS_PE_DMD_HDPE ? true : false,
       titleAndInformation:

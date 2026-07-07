@@ -37,6 +37,10 @@ import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
 import ElastomerShutDown from './ElastomerShutDown'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import PtaShutDown from './PtaShutdown'
+import { ShutDownAROMATICSHMDColumns } from 'components/colums/AromaticsColumns'
+import { Box, Tab, Tabs } from '../../../node_modules/@mui/material/index'
+import AopTabs from 'components/AopTabs'
+import ShutdownHistoryConfig from './ShutdownHistoryConfig'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -123,7 +127,10 @@ const ShutDown = ({ permissions }) => {
     lowerSiteName === 'hmd' &&
     (lowerPlantName === 'butadiene' ||
       lowerPlantName === 'mtbe' ||
-      lowerPlantName === 'butene'|| lowerPlantName === 'pdeb')
+      lowerPlantName === 'butene' ||
+      lowerPlantName === 'pdeb')
+  const IS_AROMATIC_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -151,6 +158,7 @@ const ShutDown = ({ permissions }) => {
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
   const [allLines, setAllLines] = useState([])
+  const [selectedTab, setSelectedTab] = useState(0)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
@@ -387,7 +395,12 @@ const ShutDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'pta') {
+      if (
+        duplicate &&
+        lowerVertName !== 'pta' &&
+        !IS_AROMATIC_HMD &&
+        !IS_CHEMICAL_HMD_DROPDOWNDESC
+      ) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -1030,7 +1043,7 @@ const ShutDown = ({ permissions }) => {
       try {
         let data = []
 
-        if (IS_PTA || IS_CHEMICAL_HMD_DROPDOWNDESC) {
+        if (IS_PTA || IS_CHEMICAL_HMD_DROPDOWNDESC || IS_AROMATIC_HMD) {
           data = await DataService.dropdownValuesDMD(
             keycloak,
             PLANT_ID,
@@ -1077,7 +1090,11 @@ const ShutDown = ({ permissions }) => {
       }
     }
 
-    if (lowerVertName == 'pta' || IS_CHEMICAL_HMD_DROPDOWNDESC)
+    if (
+      lowerVertName == 'pta' ||
+      IS_CHEMICAL_HMD_DROPDOWNDESC ||
+      IS_AROMATIC_HMD
+    )
       getAllDescriptionDrpdwn()
   }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
@@ -1195,6 +1212,10 @@ const ShutDown = ({ permissions }) => {
           : IS_ELASTOMER_JMD_IIR
             ? ShutDown_Elastomer_JMD_IIR_Columns
             : []
+      case verticalEnums.AROMATICS:
+        return IS_AROMATIC_HMD
+          ? ShutDownAROMATICSHMDColumns
+          : ShutDownAllColumns
 
       default:
         return ShutDownAllColumns
@@ -1440,6 +1461,9 @@ const ShutDown = ({ permissions }) => {
   const handleExcelUpload = (rawFile) => {
     importShutdown(rawFile)
   }
+  const handleTabChange = (event, newIndex) => {
+    setSelectedTab(newIndex)
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -1518,6 +1542,29 @@ const ShutDown = ({ permissions }) => {
   return (
     <div>
       <LoaderBackdrop open={!!loading} />
+      {IS_AROMATIC_HMD && (
+        <Box style={{ margin: 0, padding: 0 }}>
+          <AopTabs
+            tabIndex={selectedTab}
+            setTabIndex={(index) => handleTabChange(null, index)}
+            tabs={[`${SCREEN_NAME}`, 'Shutdown History Config']}
+          >
+            {[`${SCREEN_NAME}`, 'Shutdown History Config'].map((label, idx) => (
+              <Tab
+                key={idx}
+                label={label}
+                sx={{
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
+                  fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '12px',
+                }}
+              />
+            ))}
+          </AopTabs>
+        </Box>
+      )}
 
       {lowerVertName === 'meg' && (
         <Typography component='div' className='text-note'>
@@ -1525,43 +1572,46 @@ const ShutDown = ({ permissions }) => {
           in the shutdown desc column
         </Typography>
       )}
-      <KendoDataTables
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        setRows={setRows}
-        columns={colDefs}
-        rows={rows}
-        paginationOptions={[100, 200, 300]}
-        updateShutdownData={updateShutdownData}
-        saveChanges={saveChanges}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        apiRef={apiRef}
-        deleteId={deleteId}
-        open1={open1}
-        setDeleteId={setDeleteId}
-        setOpen1={setOpen1}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        fetchData={fetchData}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        deleteRowData={deleteRowData}
-        handleDeleteSelected={handleDeleteSelected}
-        permissions={adjustedPermissions}
-        disableRedHighlight={true}
-        allProducts={allProducts}
-        allDescriptionDrpdwn={allDescriptionDrpdwn}
-        handleExcelUpload={handleExcelUpload}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
-        deleteNoteOnDeleteDialogeBox={DELETE_NOTE}
-        screenType='shutdown'
-        allLines={allLines}
-      />
+      {selectedTab === 0 && (
+        <KendoDataTables
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          setRows={setRows}
+          columns={colDefs}
+          rows={rows}
+          paginationOptions={[100, 200, 300]}
+          updateShutdownData={updateShutdownData}
+          saveChanges={saveChanges}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          deleteId={deleteId}
+          open1={open1}
+          setDeleteId={setDeleteId}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          fetchData={fetchData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          deleteRowData={deleteRowData}
+          handleDeleteSelected={handleDeleteSelected}
+          permissions={adjustedPermissions}
+          disableRedHighlight={true}
+          allProducts={allProducts}
+          allDescriptionDrpdwn={allDescriptionDrpdwn}
+          handleExcelUpload={handleExcelUpload}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          deleteNoteOnDeleteDialogeBox={DELETE_NOTE}
+          screenType='shutdown'
+          allLines={allLines}
+        />
+      )}
+      {selectedTab === 1 && IS_AROMATIC_HMD && <ShutdownHistoryConfig />}
     </div>
   )
 }

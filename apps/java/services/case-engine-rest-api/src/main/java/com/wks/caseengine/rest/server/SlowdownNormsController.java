@@ -203,10 +203,37 @@ public class SlowdownNormsController {
 			return slowdownNormsService.saveSlowdownNormsConfigurationData(plantId,year,dtoList);		
 		}
 		
-		@GetMapping(value="/slowdown-norms-grades")
-		public AOPMessageVM getUniqueGrades(@RequestParam String year,@RequestParam String plantId){
-			return	slowdownNormsService.getUniqueGrades(year,plantId);
+	@GetMapping(value="/slowdown-norms-grades")
+	public AOPMessageVM getUniqueGrades(@RequestParam String year,@RequestParam String plantId){
+		return	slowdownNormsService.getUniqueGrades(year,plantId);
+	}
+
+	@GetMapping(value = "/slowdown-consumption-configuration-export")
+	public ResponseEntity<byte[]> exportSlowdownNormsConfigurationData(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year) {
+		try {
+			byte[] excelBytes = slowdownNormsService.exportSlowdownNormsConfigurationData(plantId, year);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("slowdown-norms-configuration.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	@PostMapping(value = "/slowdown-consumption-configuration-import", consumes = "multipart/form-data")
+	public AOPMessageVM importSlowdownNormsConfigurationData(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file) {
+		return slowdownNormsService.importSlowdownNormsConfigurationData(plantId, year, file);
+	}
 
 }
 

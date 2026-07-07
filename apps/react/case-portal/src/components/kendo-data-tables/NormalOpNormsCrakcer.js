@@ -204,6 +204,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 30,
         filter: false,
         minWidth: 60,
+        locked: true,
       },
       {
         field: 'sapMaterialCode',
@@ -211,14 +212,21 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 120,
         editable: false,
         minWidth: 150,
+        locked: true,
       },
-      { field: 'materialDisplayName', title: 'Particulars', minWidth: 300 },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        minWidth: 300,
+        locked: true,
+      },
       {
         field: 'uom',
         title: 'UOM',
         editable: false,
         widthT: 85,
         minWidth: 100,
+        locked: true,
       },
       {
         field: 'april',
@@ -256,7 +264,7 @@ const NormalOpNormsScreenCracker = () => {
     march: 3,
   }
 
-  const colDefsFinalNormsC2 = useMemo(
+  const colDefsFinalNormsHMD = useMemo(
     () => [
       {
         field: 'sapMaterialCode',
@@ -265,6 +273,7 @@ const NormalOpNormsScreenCracker = () => {
         editable: false,
         useMethodColors: true,
         minWidth: 150,
+        locked: true,
       },
       {
         field: 'materialDisplayName',
@@ -272,6 +281,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 130,
         editable: false,
         minWidth: 300,
+        locked: true,
       },
       {
         field: 'uom',
@@ -279,6 +289,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 80,
         editable: false,
         minWidth: 100,
+        locked: true,
       },
       ...MONTHS.map((m, i) => ({
         field: m,
@@ -294,7 +305,64 @@ const NormalOpNormsScreenCracker = () => {
         editable: false,
         type: 'number',
         format: valueFormat,
+        minWidth: 140,
+      },
+      {
+        field: 'isEditable',
+        title: 'isEditable',
+        hidden: true,
+        isVisible: false,
+      },
+    ],
+    [headerMap, valueFormat],
+  )
+  const colDefsFinalNormsC2 = useMemo(
+    () => [
+      {
+        field: 'sapMaterialCode',
+        title: 'SAP MAT Code',
+        widthT: 120,
+        editable: false,
+        useMethodColors: true,
+        minWidth: 150,
+        locked: true,
+      },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        widthT: 130,
+        editable: false,
+        minWidth: 300,
+        locked: true,
+      },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 100,
+        locked: true,
+      },
+      ...MONTHS.map((m, i) => ({
+        field: m,
+        title: headerMap[monthIndexMap[m]] || m,
+        editable: true,
+        type: 'number',
+        format: valueFormat,
         minWidth: 120,
+      })),
+      {
+        field: 'wtAverage',
+        title: 'Weighted Average',
+        editable: false,
+        type: 'number',
+        format: valueFormat,
+        minWidth: 140,
+      },
+      {
+        field: 'remark',
+        title: 'Remarks',
+        editable: true,
       },
       {
         field: 'isEditable',
@@ -322,6 +390,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 130,
         editable: false,
         minWidth: 300,
+        locked: true,
       },
       {
         field: 'uom',
@@ -329,6 +398,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 80,
         editable: false,
         minWidth: 100,
+        locked: true,
       },
       ...MONTHS.map((m, i) => ({
         field: m,
@@ -347,9 +417,10 @@ const NormalOpNormsScreenCracker = () => {
     ],
     [headerMap, valueFormat],
   )
-  const colDefsFinalNorms =
-    IS_CRACKER_C2 || IS_CRACKER_HMD
-      ? colDefsFinalNormsC2
+  const colDefsFinalNorms = IS_CRACKER_C2
+    ? colDefsFinalNormsC2
+    : IS_CRACKER_HMD
+      ? colDefsFinalNormsHMD
       : colDefsFinalNormsDefault
 
   const colDefsFinalNorms1 = useMemo(
@@ -374,8 +445,16 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 130,
         editable: false,
         minWidth: 300,
+        locked: true,
       },
-      { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 80,
+        locked: true,
+      },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
@@ -426,8 +505,16 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 130,
         editable: false,
         minWidth: 300,
+        locked: true,
       },
-      { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 80,
+        locked: true,
+      },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
@@ -600,7 +687,7 @@ const NormalOpNormsScreenCracker = () => {
 
   const finalPermissions = useMemo(() => {
     const base = { ...baseFinalPermissions }
-    base.saveBtn = false
+    base.saveBtn = IS_CRACKER_C2 ? true : false
     base.showCalculate = true
 
     return getAdjustedPermissions(base, isOldYear)
@@ -696,7 +783,7 @@ const NormalOpNormsScreenCracker = () => {
         remark: item.remark || '',
         Particulars: item.normType || item.normParameterTypeDisplayName,
         Method: item.Method || item.method,
-        isEditable: false,
+        isEditable: IS_CRACKER_C2 ? true : false,
       }))
 
       setRowsBestFinalNorms(mappedWithMethod)
@@ -1025,6 +1112,19 @@ const NormalOpNormsScreenCracker = () => {
 
   const saveChangesCrackerFinalNorms = useCallback(() => {
     const data = Object.values(modifiedCellsFinalNorms)
+    const requiredFields = ['remark']
+
+    const validationMessage = validateFields(data, requiredFields)
+
+    if (validationMessage) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationMessage,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
     return saveRows(data, true)
   }, [modifiedCellsFinalNorms, saveRows])
 

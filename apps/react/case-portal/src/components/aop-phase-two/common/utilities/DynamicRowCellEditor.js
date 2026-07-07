@@ -10,6 +10,7 @@ import { DropDownList } from '@progress/kendo-react-dropdowns'
 export const DynamicRowCellEditor = (props) => {
   const { dataItem, field, onChange } = props
   const inputType = dataItem?.type
+  const allowNegative = dataItem?.allowNegative || false
   const rawOptions = dataItem?.options || []
 
   // Convert string array to object array for SelectCellEditor
@@ -23,7 +24,7 @@ export const DynamicRowCellEditor = (props) => {
   switch (inputType) {
     case 'number':
     case 'numeric':
-      return <NoSpinnerNumericEditor {...props} />
+      return <NoSpinnerNumericEditor {...props} allowNegative={allowNegative} />
 
     case 'dropdown':
     case 'select':
@@ -68,7 +69,7 @@ export const DynamicRowCellEditor = (props) => {
       return <DateTimePickerEditor {...props} />
 
     default:
-      return <NoSpinnerNumericEditor {...props} />
+      return <NoSpinnerNumericEditor {...props} allowNegative={allowNegative} />
   }
 }
 

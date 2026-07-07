@@ -134,10 +134,7 @@ export default function PlantContribution() {
             id: index,
             actualId: item?.id,
             widthT: 100,
-            isEditable:
-              !READ_ONLY &&
-              key === 'OtherVariableCost' &&
-              index <= rows.length - 4,
+            isEditable: false,
           }))
           if (key == 'OtherVariableCost') setRows(rows)
         } else {
@@ -319,7 +316,7 @@ export default function PlantContribution() {
                 remarksEditable: true,
                 showCalculate: false,
                 saveBtnForRemark: true,
-                saveBtn: true,
+                saveBtn: false,
                 showWorkFlowBtns: true,
                 showTitle: true,
               }}

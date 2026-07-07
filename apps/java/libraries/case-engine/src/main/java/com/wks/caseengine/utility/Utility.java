@@ -100,6 +100,44 @@ public class Utility {
 		style.setBorderRight(BorderStyle.THIN);
 		return style;
 	}
+
+	public static CellStyle createBorderedUnlockedStyle(Workbook wb) {
+		CellStyle style = createBorderedStyle(wb);
+		style.setLocked(false);
+		return style;
+	}
+
+	public static CellStyle createBorderedLockedStyle(Workbook wb) {
+		CellStyle style = createBorderedStyle(wb);
+		style.setLocked(true);
+		style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		return style;
+	}
+
+	public static CellStyle createBorderedLockedNoFillStyle(Workbook wb) {
+		CellStyle style = createBorderedStyle(wb);
+		style.setLocked(true);
+		return style;
+	}
+
+	public static CellStyle createBorderedWrapUnlockedStyle(Workbook wb) {
+		CellStyle style = createBorderedStyle(wb);
+		style.setLocked(false);
+		style.setWrapText(true);
+		style.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
+		return style;
+	}
+
+	public static CellStyle createBorderedWrapLockedStyle(Workbook wb) {
+		CellStyle style = createBorderedStyle(wb);
+		style.setLocked(true);
+		style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		style.setWrapText(true);
+		style.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
+		return style;
+	}
 	
 
 	public static CellStyle createBoldStyle(Workbook wb) {

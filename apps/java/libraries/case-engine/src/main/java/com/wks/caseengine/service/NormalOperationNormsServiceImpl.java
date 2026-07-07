@@ -262,6 +262,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 			boolean elastomerJMDIIR = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR");
 			boolean aromaticPmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+			boolean aromaticSEZ = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
 			for (MCUNormsValueDTO dto : mCUNormsValueDTOList) {
 				System.out.println(dto.getProductName());
 				Boolean changed = false;
@@ -829,7 +830,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
 			}
-			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || aromaticPmd) {
+			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || aromaticPmd || aromaticSEZ) {
 				String procedure = vertical.getName() + "_" + site.getName() + "_CalculateTotalFuelNorms";
 				executeProcedure(procedure, plantFKId.toString(), year);
 			}
@@ -2004,18 +2005,46 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
+
+			sheet.protectSheet("secret_password");
 			// List<List<Object>> rows = new ArrayList<>();
 
 			List<List<Object>> rows = new ArrayList<>();
 
-			// Create styles for locking/unlocking cells
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		// Create styles for locking/unlocking cells
+		CellStyle lockedStyle = workbook.createCellStyle();
+		lockedStyle.setLocked(true);
+		lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		lockedStyle.setBorderTop(BorderStyle.THIN);
+		lockedStyle.setBorderBottom(BorderStyle.THIN);
+		lockedStyle.setBorderLeft(BorderStyle.THIN);
+		lockedStyle.setBorderRight(BorderStyle.THIN);
 
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
+		CellStyle unlockedStyle = workbook.createCellStyle();
+		unlockedStyle.setLocked(false);
+		unlockedStyle.setBorderTop(BorderStyle.THIN);
+		unlockedStyle.setBorderBottom(BorderStyle.THIN);
+		unlockedStyle.setBorderLeft(BorderStyle.THIN);
+		unlockedStyle.setBorderRight(BorderStyle.THIN);
+
+		CellStyle remarksLockedStyle = workbook.createCellStyle();
+		remarksLockedStyle.setLocked(true);
+		remarksLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		remarksLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		remarksLockedStyle.setBorderTop(BorderStyle.THIN);
+		remarksLockedStyle.setBorderBottom(BorderStyle.THIN);
+		remarksLockedStyle.setBorderLeft(BorderStyle.THIN);
+		remarksLockedStyle.setBorderRight(BorderStyle.THIN);
+		remarksLockedStyle.setWrapText(true);
+
+		CellStyle remarksUnlockedStyle = workbook.createCellStyle();
+		remarksUnlockedStyle.setLocked(false);
+		remarksUnlockedStyle.setBorderTop(BorderStyle.THIN);
+		remarksUnlockedStyle.setBorderBottom(BorderStyle.THIN);
+		remarksUnlockedStyle.setBorderLeft(BorderStyle.THIN);
+		remarksUnlockedStyle.setBorderRight(BorderStyle.THIN);
+		remarksUnlockedStyle.setWrapText(true);
 			// Data rows
 			for (MCUNormsValueDTO dto : dtoList) {
 				// if (isAfterSave) {
@@ -2069,6 +2098,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				innerHeaders.add("Status");
 				innerHeaders.add("Error Description");
 			}
+
+			int remarksColIndex = innerHeaders.indexOf("Remarks");
+			int idColIndex = innerHeaders.indexOf("Id");
+
 			List<List<String>> headers = new ArrayList<>();
 			headers.add(innerHeaders);
 
@@ -2100,7 +2133,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					} else {
 						cell.setCellValue("");
 					}
-					if (isRowEditable) {
+					if (col == remarksColIndex) {
+						cell.setCellStyle(isRowEditable ? remarksUnlockedStyle : remarksLockedStyle);
+					} else if (isRowEditable) {
 						cell.setCellStyle(unlockedStyle);
 					} else {
 						cell.setCellStyle(lockedStyle);
@@ -2113,7 +2148,34 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			} else {
 				sheet.setColumnHidden(16, true);
 			}
-			// sheet.setColumnHidden(18, true);
+
+			// Auto-size all columns; give Remarks a fixed wide width with text wrapping
+			int totalCols = innerHeaders.size();
+			for (int col = 0; col < totalCols; col++) {
+				if (col == idColIndex) {
+					// already hidden above; skip width adjustment
+				} else if (col == remarksColIndex) {
+					sheet.setColumnWidth(col, 15000); // ~55 characters wide
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
+
+			// Adjust row heights so wrapped Remarks content is fully visible
+			for (int r = 1; r < currentRow; r++) {
+				Row row = sheet.getRow(r);
+				if (row == null) continue;
+				Cell remarksCell = (remarksColIndex >= 0) ? row.getCell(remarksColIndex) : null;
+				if (remarksCell != null) {
+					String remarksText = remarksCell.getStringCellValue();
+					if (remarksText != null && !remarksText.isEmpty()) {
+						int charsPerLine = 55;
+						int lines = (int) Math.ceil((double) remarksText.length() / charsPerLine);
+						row.setHeight((short) (Math.max(1, lines) * 300)); // 300 twips ≈ 15 pt per line
+					}
+				}
+			}
+
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
