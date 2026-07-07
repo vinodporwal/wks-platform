@@ -1,6 +1,7 @@
 package com.wks.caseengine.cpp.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.UUID;
 
+import org.hibernate.annotations.GenericGenerator;
+
 @Entity
 @Table(name = "PowerGenerationAssets")
 @Data
@@ -16,8 +19,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class PowerGenerationAsset {
-
+    
     @Id
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "AssetId", updatable = false, nullable = false)
     private UUID assetId;
 

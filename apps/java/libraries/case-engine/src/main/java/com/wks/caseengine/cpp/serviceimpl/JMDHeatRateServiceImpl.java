@@ -1,6 +1,8 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
+import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
+import com.wks.caseengine.cpp.dto.heatrate.CppSteamGenerationAssetDto;
 import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateProjection;
@@ -11,14 +13,19 @@ import com.wks.caseengine.cpp.dto.heatrate.SelectedHeatRateType;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.entity.CppGtHeatRate;
+import com.wks.caseengine.cpp.entity.CppHrsgHeatRate;
+import com.wks.caseengine.cpp.entity.CppSteamGenerationAsset;
 import com.wks.caseengine.cpp.entity.HRSGHeatRateLookup;
 import com.wks.caseengine.cpp.entity.PowerGenerationAsset;
 import com.wks.caseengine.cpp.entity.STGExtractionLookup;
 import com.wks.caseengine.cpp.repository.CppGtHeatRateRepository;
+import com.wks.caseengine.cpp.repository.CppHrsgHeatRateRepository;
+import com.wks.caseengine.cpp.repository.CppSteamGenerationAssetRepository;
 import com.wks.caseengine.cpp.repository.JMDHRSGHeatRateLookupRepository;
 import com.wks.caseengine.cpp.repository.JMDHeatRateRepository;
 import com.wks.caseengine.cpp.repository.JMDSTGExtractionLookupRepository;
 import com.wks.caseengine.cpp.repository.PowerGenerationAssetRepository;
+import com.wks.caseengine.cpp.repository.SteamGenerationAssetRepository;
 import com.wks.caseengine.cpp.service.JMDHeatRateService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.slf4j.Logger;
@@ -76,12 +83,23 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     private  PowerGenerationAssetRepository assetRepository;
     
     @Autowired
+    private  SteamGenerationAssetRepository steamGenerationAssetRepository;
+    
+    @Autowired
+    private  CppSteamGenerationAssetRepository cppSteamGenerationAssetRepository;
+    
+    @Autowired
     private CppGtHeatRateRepository cppGtHeatRateRepository;
+    
+    @Autowired
+    private CppHrsgHeatRateRepository cppHrsgHeatRateRepository;
+    
+    
     
     // ============================================================
     // DROPDOWN METHODS (multi-plant)
     // ============================================================
-
+    
     @Override
     public AOPMessageVM getGTAssetDropdown(List<UUID> plantIds,String assetType) {
         logger.info("[JMDHeatRate] getGTAssetDropdown - plantIds: {}, assetType: {}", plantIds, assetType);
@@ -110,8 +128,37 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         }
         return vm;
     }    
-    
+
+    @Override
+    public AOPMessageVM getHRSGAssetDropdown(List<UUID> plantIds,String assetType) {
+        logger.info("[JMDHeatRate] getHRSGAssetDropdown - plantIds: {}, assetType: {}", plantIds, assetType);
+        AOPMessageVM vm = new AOPMessageVM();
         
+        try {
+            // String assetType = "GT";
+            List<CppSteamGenerationAsset> entities = cppSteamGenerationAssetRepository.findByPlantIdsAndAssetType(plantIds, assetType);
+
+            List<CppSteamGenerationAssetDto> result = entities.stream()
+                    .map(this::convertToCppSteamGenerationAssetDto)
+                    .collect(Collectors.toList());
+
+            logger.info("[JMDHeatRate] getGTAssetDropdown - found {} assets", result.size());
+            
+           
+            vm.setCode(200);
+            vm.setMessage("Success");
+            vm.setData(result);
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] getGTAssetDropdown error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Failed to fetch GT asset dropdown: " + e.getMessage());
+            vm.setData(null);
+        }
+        return vm;
+    }    
+
+    
     @Override
     public AOPMessageVM getGTHeatRateData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds) {
         logger.info("[JMDHeatRate] getGTHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, assessmentName: {}, plantIds: {}", 
@@ -225,7 +272,120 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         
         return vm;
     }
-    
+
+    @Override
+    public AOPMessageVM getHRSGHeatRateData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds) {
+        logger.info("[JMDHeatRate] getHRSGHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, assessmentName: {}, plantIds: {}", 
+                assetId, year, startDate, endDate, plantIds);
+        
+        AOPMessageVM vm = new AOPMessageVM();
+        
+        try {
+           
+            String prevYear = null;
+            if (year != null && year.contains("-")) {
+                String[] parts = year.split("-");
+                int startYear = Integer.parseInt(parts[0]);
+                int endYear = Integer.parseInt(parts[1]);
+                prevYear = (startYear - 1) + "-" + (endYear - 1);
+            }
+
+            
+            List<CppHrsgHeatRate> entities = cppHrsgHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, year);
+            
+            List<CppHrsgHeatRate> prevEntities = new java.util.ArrayList<>();
+            if (prevYear != null) {
+                prevEntities = cppHrsgHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, prevYear);
+            }
+          
+            
+            java.util.Map<Double, Double> prevYearHeatRateMap = new java.util.HashMap<>();
+            for (CppHrsgHeatRate prevEntity : prevEntities) {
+                if (prevEntity != null && prevEntity.getHrsgLoad() != null) {
+                    prevYearHeatRateMap.put(prevEntity.getHrsgLoad(), prevEntity.getFinalHeatRate());
+                }
+            }
+
+            java.util.Map<Double, Double> proposedHeatRateMap = new java.util.HashMap<>();
+            
+            String plantIdsStr = "";
+            if (plantIds != null && !plantIds.isEmpty()) {
+                plantIdsStr = plantIds.stream()
+                        .map(UUID::toString)
+                        .collect(java.util.stream.Collectors.joining(","));
+            }
+            
+            String displayName = cppSteamGenerationAssetRepository.findDisplayNameByAssetId(assetId)
+                    .orElse("Asset Not Found");
+
+            List<Object[]> spResultList = cppHrsgHeatRateRepository.executeCalculateCommonHRSGHeatRateSP(
+                    startDate, endDate, displayName, plantIdsStr
+            );
+
+            if (spResultList != null) {
+                for (Object[] row : spResultList) {
+                    
+                    if (row != null && row.length > 3) {
+                        Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
+                        Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
+                        
+                        if (loadVal != null && proposedHeatRate != null) {
+                            proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                        }
+                    }
+                }
+            }
+            
+            List<CppHrsgHeatRateDto> resultList = new java.util.ArrayList<>();
+            for (CppHrsgHeatRate entity : entities) {
+                if (entity != null) {
+                	CppHrsgHeatRateDto dto = new CppHrsgHeatRateDto();
+
+                    dto.setId(entity.getId() != null ? entity.getId().toString() : null);
+                    dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId().toString() : null);
+                    dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
+                    dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
+                    dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
+                    dto.setHrsgLoad(entity.getHrsgLoad() != null ? entity.getHrsgLoad() : null);
+                    dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
+                    dto.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate() : null);
+                    dto.setUpdatedDate(entity.getUpdatedDate() != null ? entity.getUpdatedDate() : null);
+                    dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
+                    dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
+                    dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
+                   
+                    if (entity.getHrsgLoad() != null && prevYearHeatRateMap.containsKey(entity.getHrsgLoad())) {
+                        dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getHrsgLoad()));
+                    } else {
+                        dto.setPrevYearFinalHeatRate(0.0); 
+                    }
+
+                    if (entity.getHrsgLoad() != null && proposedHeatRateMap.containsKey(entity.getHrsgLoad())) {
+                        dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getHrsgLoad()));
+                    } else {
+                        dto.setProposedYearFinalHeatRate(0.0);
+                    }
+
+                    resultList.add(dto);
+                }
+            }
+
+            logger.info("[JMDHeatRate] getGTHeatRateData - found {} heat rate records", resultList.size());
+            
+            vm.setCode(200);
+            vm.setMessage("Success");
+            vm.setData(resultList);
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] getGTHeatRateData error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Failed to fetch GT heat rate data: " + e.getMessage());
+            vm.setData(null);
+        }
+        
+        return vm;
+    }
+
     @Override
     public AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -603,7 +763,34 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
         return dto;
     }
+    
+    private CppSteamGenerationAssetDto convertToCppSteamGenerationAssetDto(CppSteamGenerationAsset entity) {
+        if (entity == null) {
+            return null;
+        }
 
+        CppSteamGenerationAssetDto dto = new CppSteamGenerationAssetDto();
+
+        dto.setAssetId(entity.getAssetId() != null ? entity.getAssetId().toString() : null);
+        dto.setCppPlantFkId(entity.getCppPlantFkId() != null ? entity.getCppPlantFkId().toString() : null);
+        dto.setUtilityGenerationFkId(entity.getUtilityGenerationFkId() != null ? entity.getUtilityGenerationFkId().toString() : null);
+        dto.setUtilityDistributedFkId(entity.getUtilityDistributedFkId() != null ? entity.getUtilityDistributedFkId().toString() : null);
+        dto.setLinkedPowerAssetFkId(entity.getLinkedPowerAssetFkId() != null ? entity.getLinkedPowerAssetFkId().toString() : null);
+        dto.setCreatedDate(entity.getCreatedDate());
+        dto.setUpdatedDate(entity.getUpdatedDate());
+        dto.setAssetName(entity.getAssetName());
+        dto.setAssetType(entity.getAssetType());
+        dto.setPlantCode(entity.getPlantCode());
+        dto.setRemarks(entity.getRemarks());
+        dto.setDisplayName(entity.getDisplayName());
+        dto.setSteamType(entity.getSteamType());
+        dto.setCompatibleFuel(entity.getCompatibleFuel());
+        dto.setIsVisible(entity.getIsVisible());
+        dto.setIsEditable(entity.getIsEditable());
+
+        return dto;
+    }
+    
     @Override
     public AOPMessageVM getHRSGAssetDropdown(List<UUID> plantIds) {
         logger.info("[JMDHeatRate] getHRSGAssetDropdown - plantIds: {}", plantIds);

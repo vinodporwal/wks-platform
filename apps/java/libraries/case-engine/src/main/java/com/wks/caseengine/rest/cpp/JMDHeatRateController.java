@@ -47,9 +47,21 @@ public class JMDHeatRateController {
         return ResponseEntity.ok(response);
     }
     
+    @GetMapping("/jmd/hrsg/drop-down")
+    public ResponseEntity<AOPMessageVM> getHRSGAssetDropdown(@RequestParam List<UUID> plantIds, @RequestParam(required = false) String assetType) {
+        AOPMessageVM response = jmdHeatRateService.getHRSGAssetDropdown(plantIds, assetType);
+        return ResponseEntity.ok(response);
+    }
+    
     @GetMapping("/jmd/gt-heat-rate")
     public ResponseEntity<AOPMessageVM> getGTHeatRateData(@RequestParam UUID assetId, @RequestParam String year, @RequestParam String startDate, @RequestParam String endDate, @RequestParam List<UUID> plantIds) {
         AOPMessageVM response = jmdHeatRateService.getGTHeatRateData(assetId,year,startDate,endDate,plantIds);
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/jmd/hrsg-heat-rate")
+    public ResponseEntity<AOPMessageVM> getHRSGHeatRateData(@RequestParam UUID assetId, @RequestParam String year, @RequestParam String startDate, @RequestParam String endDate, @RequestParam List<UUID> plantIds) {
+        AOPMessageVM response = jmdHeatRateService.getHRSGHeatRateData(assetId,year,startDate,endDate,plantIds);
         return ResponseEntity.ok(response);
     }
     
