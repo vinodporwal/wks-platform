@@ -31,6 +31,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import jakarta.persistence.EntityManagerFactory;
 
+
+import org.springframework.jdbc.core.JdbcTemplate;
+
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
@@ -93,4 +96,11 @@ public class DB2Config {
         @Qualifier("db2EntityManagerFactory") EntityManagerFactory db2EntityManagerFactory) {
         return new JpaTransactionManager(db2EntityManagerFactory);
     }
+
+
+    @Bean(name = "db2JdbcTemplate")
+    public JdbcTemplate db2JdbcTemplate() {
+    return new JdbcTemplate(db2DataSource());
+   }
+   
 }
