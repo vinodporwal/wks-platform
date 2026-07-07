@@ -222,20 +222,21 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     try {
       const res = await HeatRateApiService.getSTGHeatRateData(
         keycloak,
+        assetId,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
+        PLANT_ID_LIST,
       )
 
-      if (res?.length === 0) {
+      if (res?.data?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      console.log('res', res)
-      setRows(res)
-      setOriginalRows(res)
+      setRows(res?.data)
+      setOriginalRows(res?.data)
     } catch (error) {
       console.error('Error fetching STG heat rate data:', error)
       setSnackbarOpen(true)
@@ -332,7 +333,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      await fetchHeatRateData()
+      await fetchHeatRateData(
+        selectedPlant,
+        formatDate(startDate),
+        formatDate(endDate),
+      )
     } catch (error) {
       console.error('Error saving heat rate data:', error)
       setSnackbarOpen(true)
@@ -362,7 +367,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchHeatRateData()
+        await fetchHeatRateData(
+          selectedPlant,
+          formatDate(startDate),
+          formatDate(endDate),
+        )
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -395,9 +404,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
       await HeatRateApiService.exportSTGHeatRateExcel(
         keycloak,
+        selectedPlant,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
+        PLANT_ID_LIST,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

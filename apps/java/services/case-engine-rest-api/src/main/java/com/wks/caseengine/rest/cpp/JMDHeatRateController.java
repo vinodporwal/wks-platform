@@ -120,13 +120,15 @@ public class JMDHeatRateController {
     // STG HEAT RATE ENDPOINTS
     // ============================================================
 
-    @GetMapping({"/jmd/stg-heat-rate/{aopYear}", "/jmd/stg-heat-rate/{aopYear}/{startDate}/{endDate}"})
+    @GetMapping("/jmd/stg-heat-rate")
     public ResponseEntity<AOPMessageVM> getSTGHeatRate(
-            @PathVariable String aopYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
-        logger.info("[JMDHeatRateController] GET STG heat rate - aopYear: {}, startDate: {}, endDate: {}", aopYear, startDate, endDate);
-        AOPMessageVM response = jmdHeatRateService.getSTGHeatRate(aopYear, startDate, endDate);
+            @RequestParam String assetId,
+            @RequestParam String aopYear,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam List<UUID> plantIds) {
+        logger.info("[JMDHeatRateController] GET STG heat rate - assetId: {}, aopYear: {}, startDate: {}, endDate: {}, plantIds: {}", assetId, aopYear, startDate, endDate, plantIds);
+        AOPMessageVM response = jmdHeatRateService.getSTGHeatRate(assetId, aopYear, startDate, endDate, plantIds);
         return ResponseEntity.ok(response);
     }
 
@@ -214,13 +216,15 @@ public class JMDHeatRateController {
         return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
     }
 
-    @GetMapping({"/jmd/stg-heat-rate/export/{aopYear}", "/jmd/stg-heat-rate/export/{aopYear}/{startDate}/{endDate}"})
+    @GetMapping("/jmd/stg-heat-rate/export")
     public ResponseEntity<byte[]> exportSTGHeatRate(
-            @PathVariable String aopYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
-        logger.info("[JMDHeatRateController] Export STG heat rate - aopYear: {}", aopYear);
-        byte[] excelData = jmdHeatRateService.exportSTGHeatRate(aopYear, startDate, endDate);
+            @RequestParam String assetId,
+            @RequestParam String aopYear,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam List<UUID> plantIds) {
+        logger.info("[JMDHeatRateController] Export STG heat rate - assetId: {}, aopYear: {}, plantIds: {}", assetId, aopYear, plantIds);
+        byte[] excelData = jmdHeatRateService.exportSTGHeatRate(assetId, aopYear, startDate, endDate, plantIds);
         if (excelData == null) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

@@ -291,12 +291,27 @@ async function exportHRSGHeatRateExcel(
 
 // ===================== || STG HEAT RATE APIs || ===================== //
 
-// GET /task/jmd/stg-heat-rate/{aopYear} or /task/jmd/stg-heat-rate/{aopYear}/{startDate}/{endDate}
-async function getSTGHeatRateData(keycloak, aopYear, startDate, endDate) {
-  let url = `${Config.CaseEngineUrl}/task/jmd/stg-heat-rate/${aopYear}`
+// GET /task/jmd/stg-heat-rate?assetId=...&aopYear=...&startDate=...&endDate=...&plantIds=id1,id2
+async function getSTGHeatRateData(
+  keycloak,
+  assetId,
+  aopYear,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('assetId', assetId)
+  queryParams.append('aopYear', aopYear)
   if (startDate && endDate) {
-    url += `/${startDate}/${endDate}`
+    queryParams.append('startDate', startDate)
+    queryParams.append('endDate', endDate)
   }
+  if (plantIds && plantIds.length > 0) {
+    const plantIdsStr = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+    queryParams.append('plantIds', plantIdsStr)
+  }
+  const url = `${Config.CaseEngineUrl}/task/jmd/stg-heat-rate?${queryParams.toString()}`
   try {
     const resp = await fetch(url, {
       method: 'GET',
@@ -306,7 +321,7 @@ async function getSTGHeatRateData(keycloak, aopYear, startDate, endDate) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
     const result = await json(keycloak, resp)
-    return result?.data ?? result
+    return result
   } catch (e) {
     console.error('Error fetching STG heat rate data:', e)
     return await Promise.reject(e)
@@ -361,14 +376,28 @@ async function saveSTGHeatRateExcel(file, keycloak) {
   }
 }
 
-// GET /task/jmd/stg-heat-rate/export/{aopYear} or /task/jmd/stg-heat-rate/export/{aopYear}/{startDate}/{endDate}
-async function exportSTGHeatRateExcel(keycloak, aopYear, startDate, endDate) {
-  let endpoint = `jmd/stg-heat-rate/export/${aopYear}`
+// GET /task/jmd/stg-heat-rate/export?assetId=...&aopYear=...&startDate=...&endDate=...&plantIds=id1,id2
+async function exportSTGHeatRateExcel(
+  keycloak,
+  assetId,
+  aopYear,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('assetId', assetId)
+  queryParams.append('aopYear', aopYear)
   if (startDate && endDate) {
-    endpoint = `jmd/stg-heat-rate/export/${aopYear}/${startDate}/${endDate}`
+    queryParams.append('startDate', startDate)
+    queryParams.append('endDate', endDate)
+  }
+  if (plantIds && plantIds.length > 0) {
+    const plantIdsStr = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+    queryParams.append('plantIds', plantIdsStr)
   }
   return exportExcelData(keycloak, {
-    endpoint,
+    endpoint: `jmd/stg-heat-rate/export?${queryParams.toString()}`,
     queryParams: {},
     fileName: `STG_Heat_Rate_${aopYear}.xlsx`,
     method: 'GET',

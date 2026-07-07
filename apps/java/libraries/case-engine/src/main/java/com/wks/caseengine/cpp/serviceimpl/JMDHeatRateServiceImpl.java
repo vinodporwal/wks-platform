@@ -921,15 +921,15 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     // ============================================================
 
     @Override
-    public AOPMessageVM getSTGHeatRate(String aopYear, String startDate, String endDate) {
-        logger.info("[JMDHeatRate] getSTGHeatRate - aopYear: {}, startDate: {}, endDate: {}", aopYear, startDate, endDate);
+    public AOPMessageVM getSTGHeatRate(String assetId, String aopYear, String startDate, String endDate, List<UUID> plantIds) {
+        logger.info("[JMDHeatRate] getSTGHeatRate - assetId: {}, aopYear: {}, startDate: {}, endDate: {}, plantIds: {}", assetId, aopYear, startDate, endDate, plantIds);
         AOPMessageVM vm = new AOPMessageVM();
         try {
             List<STGHeatRateDTO> result;
             if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
-                result = getSTGHeatRateWithProposed(aopYear, startDate, endDate);
+                result = getSTGHeatRateWithProposed(assetId, aopYear, startDate, endDate, plantIds);
             } else {
-                result = getSTGHeatRateByFinancialYear(aopYear);
+                result = getSTGHeatRateByAssetId(assetId, aopYear);
             }
             logger.info("[JMDHeatRate] getSTGHeatRate - returning {} records", result.size());
             vm.setCode(200);
@@ -944,9 +944,21 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         return vm;
     }
 
-    private List<STGHeatRateDTO> getSTGHeatRateByFinancialYear(String financialYear) {
+    private List<STGHeatRateDTO> getSTGHeatRateByAssetId(String assetId, String financialYear) {
         String previousFinancialYear = calculatePreviousFinancialYear(financialYear);
-        List<STGHeatRateProjection> projections = heatRateRepository.findStgHeatRateByFinancialYear(financialYear, previousFinancialYear);
+        UUID assetUUID = UUID.fromString(assetId);
+        String assetName = null;
+        try {
+            assetName = jdbcTemplate.queryForObject(
+                    "SELECT AssetName FROM PowerGenerationAssets WITH(NOLOCK) WHERE AssetId = ?",
+                    String.class, assetUUID);
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] Error retrieving asset name for assetId {}: {}", assetUUID, e.getMessage());
+        }
+        if (assetName == null || assetName.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<STGHeatRateProjection> projections = heatRateRepository.findStgHeatRateByAssetName(assetName, financialYear, previousFinancialYear);
         return projections.stream()
                 .map(projection -> {
                     STGHeatRateDTO dto = new STGHeatRateDTO();
@@ -965,10 +977,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 .toList();
     }
 
-    private List<STGHeatRateDTO> getSTGHeatRateWithProposed(String financialYear, String startDate, String endDate) {
-        List<STGHeatRateDTO> dtos = getSTGHeatRateByFinancialYear(financialYear);
+    private List<STGHeatRateDTO> getSTGHeatRateWithProposed(String assetId, String financialYear, String startDate, String endDate, List<UUID> plantIds) {
+        List<STGHeatRateDTO> dtos = getSTGHeatRateByAssetId(assetId, financialYear);
         if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
-            Map<Double, Double> proposedHeatRateMap = calculateProposedSTGHeatRates(startDate, endDate);
+            UUID assetUUID = UUID.fromString(assetId);
+            Map<Double, Double> proposedHeatRateMap = calculateProposedSTGHeatRates(assetUUID, startDate, endDate, plantIds);
             for (STGHeatRateDTO dto : dtos) {
                 Double proposedHeatRate = proposedHeatRateMap.get(dto.getStgLoad());
                 if (proposedHeatRate != null) {
@@ -979,8 +992,25 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         return dtos;
     }
 
-    private Map<Double, Double> calculateProposedSTGHeatRates(String startDate, String endDate) {
-        String sql = "EXEC CPP_CalculateSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?";
+    private Map<Double, Double> calculateProposedSTGHeatRates(UUID assetId, String startDate, String endDate, List<UUID> plantIds) {
+        String assetName = null;
+        try {
+            assetName = jdbcTemplate.queryForObject(
+                    "SELECT AssetName FROM PowerGenerationAssets WITH(NOLOCK) WHERE AssetId = ?",
+                    String.class, assetId);
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] Error retrieving asset name for assetId {}: {}", assetId, e.getMessage());
+        }
+        if (assetName == null || assetName.trim().isEmpty()) {
+            return new HashMap<>();
+        }
+        String plantIdsStr = "";
+        if (plantIds != null && !plantIds.isEmpty()) {
+            plantIdsStr = plantIds.stream()
+                    .map(UUID::toString)
+                    .collect(java.util.stream.Collectors.joining(","));
+        }
+        String sql = "EXEC CPP_CalculateCommonSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?, @AssetName = ?, @PlantIds = ?";
         Map<Double, Double> proposedHeatRateMap = new HashMap<>();
         try {
             jdbcTemplate.query(sql,
@@ -991,7 +1021,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                             proposedHeatRateMap.put(stgLoad, heatRate);
                         }
                     },
-                    startDate, endDate);
+                    startDate, endDate, assetName, plantIdsStr);
         } catch (Exception e) {
             logger.error("[JMDHeatRate] Error calling STG stored procedure: {}", e.getMessage(), e);
         }
@@ -1300,14 +1330,14 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     }
 
     @Override
-    public byte[] exportSTGHeatRate(String aopYear, String startDate, String endDate) {
-        logger.info("[JMDHeatRate] exportSTGHeatRate - aopYear: {}", aopYear);
+    public byte[] exportSTGHeatRate(String assetId, String aopYear, String startDate, String endDate, List<UUID> plantIds) {
+        logger.info("[JMDHeatRate] exportSTGHeatRate - assetId: {}, aopYear: {}, plantIds: {}", assetId, aopYear, plantIds);
         try {
             List<STGHeatRateDTO> data;
             if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
-                data = getSTGHeatRateWithProposed(aopYear, startDate, endDate);
+                data = getSTGHeatRateWithProposed(assetId, aopYear, startDate, endDate, plantIds);
             } else {
-                data = getSTGHeatRateByFinancialYear(aopYear);
+                data = getSTGHeatRateByAssetId(assetId, aopYear);
             }
             return generateSTGHeatRateExcel(data);
         } catch (Exception e) {

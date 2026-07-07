@@ -47,7 +47,7 @@ public interface JMDHeatRateService {
     // ========================================
     // STG HEAT RATE
     // ========================================
-    AOPMessageVM getSTGHeatRate(String aopYear, String startDate, String endDate);
+    AOPMessageVM getSTGHeatRate(String assetId, String aopYear, String startDate, String endDate, List<UUID> plantIds);
 
     AOPMessageVM updateSTGHeatRate(List<STGHeatRateDTO> stgHeatRateDTOs, String aopYear);
 
@@ -74,7 +74,7 @@ public interface JMDHeatRateService {
     // ========================================
     byte[] exportGTHeatRate(String assetId, String aopYear, String startDate, String endDate);
 
-    byte[] exportSTGHeatRate(String aopYear, String startDate, String endDate);
+    byte[] exportSTGHeatRate(String assetId, String aopYear, String startDate, String endDate, List<UUID> plantIds);
 
     byte[] exportHRSGHeatRate(String assetId, String aopYear, String startDate, String endDate);
 
