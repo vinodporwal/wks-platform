@@ -32,7 +32,7 @@ from __future__ import annotations
 import logging
 from typing import Dict, List, Optional, Set, Tuple
 
-from database.queries import fetch_norm_rows_all_plants
+from database import queries
 from plant_mapper import NMD_PLANT_ID
 
 logger = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ class NMDNormsReader:
         if self._loaded:
             return
 
-        self._rows = fetch_norm_rows_all_plants(self.month, self.year, NMD_PLANT_ID)
+        self._rows = queries.fetch_norm_rows_all_plants(self.month, self.year, NMD_PLANT_ID)
         self._build_indexes()
         self._loaded = True
 
@@ -194,12 +194,13 @@ class NMDNormsReader:
                     self._stg_steam_norm = float(norm) if norm is not None else 0.0
 
             # Extract steam letdown (PRDS) norms
+            # Physical steam flow: SHP → HP → MP → LP (higher to lower pressure)
             if utility == "LP Steam PRDS" and material == "MP Steam_Dis":
-                self._steam_letdown_norms["LP_to_MP"] = float(norm) if norm is not None else 0.0
+                self._steam_letdown_norms["MP_to_LP"] = float(norm) if norm is not None else 0.0
             elif utility == "MP Steam PRDS SHP" and material == "HP Steam_Dis":
-                self._steam_letdown_norms["MP_to_HP"] = float(norm) if norm is not None else 0.0
+                self._steam_letdown_norms["HP_to_MP"] = float(norm) if norm is not None else 0.0
             elif utility == "HP Steam PRDS" and material == "SHP Steam_Dis":
-                self._steam_letdown_norms["HP_to_SHP"] = float(norm) if norm is not None else 0.0
+                self._steam_letdown_norms["SHP_to_HP"] = float(norm) if norm is not None else 0.0
 
             # Extract HRSG byproduct norms (LP steam credit)
             if "HRSG" in utility.upper() and "LP STEAM" in material.upper():
@@ -284,8 +285,10 @@ class NMDNormsReader:
         """
         Return PRDS letdown norms for the steam cascade.
 
+        Physical steam flow: SHP → HP → MP → LP (higher to lower pressure)
+
         Returns::
-            {"LP_to_MP": 0.945, "MP_to_HP": 0.900, "HP_to_SHP": 0.936}
+            {"SHP_to_HP": 0.936, "HP_to_MP": 0.900, "MP_to_LP": 0.945}
         """
         return self._steam_letdown_norms
 
@@ -301,6 +304,29 @@ class NMDNormsReader:
     def get_stg_steam_norm(self) -> float:
         """Return STG SHP steam consumption norm (MT/KWH)."""
         return self._stg_steam_norm
+
+    def get_stg_extraction_for_load(self, stg_load_mw: float) -> dict:
+        """
+        Get STG extraction data for a given STG load by interpolating the lookup table.
+
+        Args:
+            stg_load_mw: STG load in MW
+
+        Returns:
+            Dict with interpolated extraction rates:
+            {
+                "svh_inlet_tph": float,
+                "sm_bleed_flow_tph": float,
+                "sl_ext_flow_tph": float,
+                "condensing_load_m3hr": float,
+                "heat_rate_kcal_kwh": float,
+                "eq_svh_mp": float,
+                "eq_svh_lp": float,
+                "steam_for_power": float,
+                "sp_steam_power": float
+            }
+        """
+        return queries.get_stg_extraction_for_load(stg_load_mw)
 
     def get_reverse_calc_entries(self) -> List[Dict]:
         """

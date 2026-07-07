@@ -273,12 +273,16 @@ class NMDU4UIterationLoop:
                 gt_reduction_mwh=gt_reduction_mwh,
             )
 
+            # Calculate STG extraction based on curve
+            stg_extraction = self._calculate_stg_extraction(power_result)
+
             # Dispatch steam
             steam_result = dispatch_steam(
                 self.plant_id, self.month, self.year,
                 power_result=power_result,
                 demands=dispatch_demands,
                 norms_reader=self.norms_reader,
+                stg_extraction=stg_extraction,
             )
 
             # Calculate U4U consumption
@@ -408,6 +412,49 @@ class NMDU4UIterationLoop:
     # ------------------------------------------------------------------
     # Dispatch demands builder
     # ------------------------------------------------------------------
+
+    def _calculate_stg_extraction(self, power_result: dict) -> dict:
+        """
+        Calculate STG extraction (LP/MP steam) based on STG load from curve lookup.
+
+        Args:
+            power_result: Result dict from dispatch_power() containing dispatched assets
+
+        Returns:
+            Dict with STG extraction quantities:
+            {
+                "LP Steam_Dis": <extraction MT>,
+                "MP Steam_Dis": <extraction MT>
+            }
+        """
+        extraction = {}
+
+        # Find STG asset in power_result
+        for asset in power_result.get("assets", []):
+            asset_name = str(asset.get("asset_name", "")).upper()
+            if "STG" in asset_name:
+                # Get STG load (dispatched MW)
+                stg_load_mw = float(asset.get("dispatched_mw", 0.0))
+                stg_op_hours = float(asset.get("op_hours", 0.0))
+
+                if stg_load_mw > 0 and stg_op_hours > 0:
+                    # Get extraction rates from curve lookup
+                    extraction_data = self.norms_reader.get_stg_extraction_for_load(stg_load_mw)
+                    if extraction_data:
+                        # Calculate extraction quantities
+                        lp_extraction_mt = extraction_data.get("sl_ext_flow_tph", 0.0) * stg_op_hours
+                        mp_extraction_mt = extraction_data.get("sm_bleed_flow_tph", 0.0) * stg_op_hours
+
+                        extraction["LP Steam_Dis"] = lp_extraction_mt
+                        extraction["MP Steam_Dis"] = mp_extraction_mt
+
+                        logger.info(
+                            "  [STG EXTRACTION] STG Load: %.2f MW, LP Extraction: %.2f MT, MP Extraction: %.2f MT",
+                            stg_load_mw, lp_extraction_mt, mp_extraction_mt
+                        )
+                break
+
+        return extraction
 
     def _build_dispatch_demands(self, total_demands: dict) -> dict:
         """Build demands dict for dispatch_power / dispatch_steam.

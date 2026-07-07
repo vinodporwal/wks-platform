@@ -741,6 +741,7 @@ def dispatch_steam(
     power_result: dict,
     demands: dict = None,
     norms_reader: NMDNormsReader = None,
+    stg_extraction: dict = None,
 ) -> dict:
     """
     Dispatch steam generation assets (HRSGs) to meet SHP demand.
@@ -752,6 +753,8 @@ def dispatch_steam(
         power_result:   result dict from dispatch_power() (for GT-HRSG interlinking)
         demands:        pre-fetched merged demands dict
         norms_reader:   pre-loaded NMDNormsReader
+        stg_extraction: dict with LP/MP extraction from STG (supply side)
+                       {"LP Steam_Dis": <MT>, "MP Steam_Dis": <MT>}
 
     Returns:
         {
@@ -771,25 +774,30 @@ def dispatch_steam(
     letdown_norms = norms_reader.get_steam_letdown_norms()
     cascade = []
     if letdown_norms:
-        # Build cascade from letdown norms (lowest → highest)
-        # Expected keys: LP_to_MP, MP_to_HP, HP_to_SHP
-        if "LP_to_MP" in letdown_norms:
-            cascade.append({"produces": "MP Steam_Dis", "consumes": "LP Steam_Dis", "norm": letdown_norms["LP_to_MP"]})
-        if "MP_to_HP" in letdown_norms:
-            cascade.append({"produces": "HP Steam_Dis", "consumes": "MP Steam_Dis", "norm": letdown_norms["MP_to_HP"]})
-        if "HP_to_SHP" in letdown_norms:
-            cascade.append({"produces": "SHP Steam_Dis", "consumes": "HP Steam_Dis", "norm": letdown_norms["HP_to_SHP"]})
+        # Build cascade from letdown norms (highest → lowest pressure)
+        # Physical steam flow: SHP → HP → MP → LP
+        # Expected keys: SHP_to_HP, HP_to_MP, MP_to_LP
+        if "SHP_to_HP" in letdown_norms:
+            cascade.append({"produces": "HP Steam_Dis", "consumes": "SHP Steam_Dis", "norm": letdown_norms["SHP_to_HP"]})
+        if "HP_to_MP" in letdown_norms:
+            cascade.append({"produces": "MP Steam_Dis", "consumes": "HP Steam_Dis", "norm": letdown_norms["HP_to_MP"]})
+        if "MP_to_LP" in letdown_norms:
+            cascade.append({"produces": "LP Steam_Dis", "consumes": "MP Steam_Dis", "norm": letdown_norms["MP_to_LP"]})
 
     if cascade:
         grade_prefixes = [
             step["produces"].replace(" Steam_Dis", "").replace("_Dis", "").lower()
             for step in cascade
         ]
-        # Top grade should always be the highest pressure grade (SHP)
-        # not the consumer of the last cascade step
+        # Ensure all grades are included in correct order (highest to lowest pressure)
+        # Physical order: SHP → HP → MP → LP
+        all_grades = ["shp", "hp", "mp", "lp"]
+        for grade in all_grades:
+            if grade not in grade_prefixes:
+                grade_prefixes.append(grade)
+        # Sort by pressure (highest to lowest)
+        grade_prefixes = sorted(grade_prefixes, key=lambda x: all_grades.index(x) if x in all_grades else 999)
         top_grade = "shp"
-        if top_grade not in grade_prefixes:
-            grade_prefixes.append(top_grade)
     else:
         grade_prefixes = ["lp", "mp", "hp", "shp"]
         top_grade = "shp"
@@ -833,18 +841,37 @@ def dispatch_steam(
     free_steam = float(power_result.get("total_free_steam_mt", 0.0))
     demand_details = {}
 
+    # Initialize STG extraction supply
+    stg_lp_supply = float(stg_extraction.get("LP Steam_Dis", 0.0)) if stg_extraction else 0.0
+    stg_mp_supply = float(stg_extraction.get("MP Steam_Dis", 0.0)) if stg_extraction else 0.0
+    
+    # Initialize HRSG LP byproduct supply (negative norm means it's generation)
+    hrsg_lp_byproduct_supply = 0.0
+
     for iteration in range(5):
         net_by_grade = {}
         letdown_by_grade = {}
         prev_letdown = 0.0
 
         for i, g in enumerate(grade_prefixes):
-            if i == 0:
-                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + byproduct_low_steam
-            elif g == top_grade:
-                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
+            # Calculate net demand for this grade
+            # Start with process + fixed demand
+            net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
+            
+            # Subtract HRSG LP byproduct supply (HRSG produces LP as byproduct)
+            if g == "lp":
+                net -= hrsg_lp_byproduct_supply
+            
+            # Add letdown from previous grade (cascading)
             else:
-                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
+                net += prev_letdown
+            
+            # Subtract STG extraction supply (STG produces LP/MP steam)
+            if g == "lp":
+                net -= stg_lp_supply
+            elif g == "mp":
+                net -= stg_mp_supply
+            
             net_by_grade[g] = net
 
             if i < len(cascade):
@@ -877,7 +904,7 @@ def dispatch_steam(
                 a["total_output_mt"] = a["dispatched_mt"]
 
         # Recalculate byproduct for lowest grade
-        byproduct_low_steam = 0.0
+        hrsg_lp_byproduct_supply = 0.0
         for a in dispatch_assets:
             norm_val = byproduct_norms.get(a["asset_name"].upper())
             if norm_val is None:
@@ -888,7 +915,10 @@ def dispatch_steam(
                 )
             if norm_val is None:
                 norm_val = 0.0
-            byproduct_low_steam += a["total_output_mt"] * norm_val
+            hrsg_lp_byproduct_supply += a["total_output_mt"] * norm_val
+        
+        # Keep byproduct_low_steam for backward compatibility in demand_details
+        byproduct_low_steam = hrsg_lp_byproduct_supply
 
     # Final output computation
     for a in dispatch_assets:

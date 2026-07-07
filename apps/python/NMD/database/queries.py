@@ -1665,3 +1665,127 @@ def fetch_gt_heat_rate_curves(financial_year: str) -> dict:
         conn.close()
 
 
+# ---------------------------------------------------------------------------
+# 11. STG Extraction Lookup
+# ---------------------------------------------------------------------------
+
+def fetch_stg_extraction_lookup() -> list:
+    """
+    Fetch STG extraction lookup data from database.
+
+    Returns:
+        List of dicts with keys: LoadMW, SVHInletTPH, SMBleedFlowTPH, SLExtFlowTPH,
+                                 CondensingLoadM3Hr, HeatRateKcalKWH, EqSvhMp, EqSvhLp,
+                                 SteamForPower, SpSteamPower
+        Sorted by LoadMW ascending.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT
+                LoadMW,
+                SVHInletTPH,
+                SMBleedFlowTPH,
+                SLExtFlowTPH,
+                CondensingLoadM3Hr,
+                HeatRateKcalKWH,
+                ISNULL(EqSvhMp, 0) AS EqSvhMp,
+                ISNULL(EqSvhLp, 0) AS EqSvhLp,
+                ISNULL(SteamForPower, 0) AS SteamForPower,
+                ISNULL(SpSteamPower, 0) AS SpSteamPower
+            FROM STGExtractionLookup
+            ORDER BY LoadMW ASC
+        """)
+        rows = cur.fetchall()
+    except Exception as e:
+        logger.error("  [STG EXTRACTION] Error: %s", e)
+        conn.close()
+        return []
+    finally:
+        conn.close()
+
+    result = []
+    for row in rows:
+        result.append({
+            "load_mw": float(row[0]) if row[0] is not None else 0.0,
+            "svh_inlet_tph": float(row[1]) if row[1] is not None else 0.0,
+            "sm_bleed_flow_tph": float(row[2]) if row[2] is not None else 0.0,
+            "sl_ext_flow_tph": float(row[3]) if row[3] is not None else 0.0,
+            "condensing_load_m3hr": float(row[4]) if row[4] is not None else 0.0,
+            "heat_rate_kcal_kwh": float(row[5]) if row[5] is not None else 0.0,
+            "eq_svh_mp": float(row[6]) if row[6] is not None else 0.0,
+            "eq_svh_lp": float(row[7]) if row[7] is not None else 0.0,
+            "steam_for_power": float(row[8]) if row[8] is not None else 0.0,
+            "sp_steam_power": float(row[9]) if row[9] is not None else 0.0,
+        })
+    return result
+
+
+def get_stg_extraction_for_load(stg_load_mw: float) -> dict:
+    """
+    Get STG extraction data for a given STG load by interpolating the lookup table.
+
+    Args:
+        stg_load_mw: STG load in MW
+
+    Returns:
+        Dict with interpolated extraction rates:
+        {
+            "svh_inlet_tph": float,
+            "sm_bleed_flow_tph": float,
+            "sl_ext_flow_tph": float,
+            "condensing_load_m3hr": float,
+            "heat_rate_kcal_kwh": float,
+            "eq_svh_mp": float,
+            "eq_svh_lp": float,
+            "steam_for_power": float,
+            "sp_steam_power": float
+        }
+    """
+    lookup = fetch_stg_extraction_lookup()
+    if not lookup:
+        return {}
+
+    # Find the two closest load points for interpolation
+    # Sort by load_mw
+    lookup_sorted = sorted(lookup, key=lambda x: x["load_mw"])
+
+    # Find the bracketing points
+    lower = None
+    upper = None
+
+    for i, point in enumerate(lookup_sorted):
+        if stg_load_mw <= point["load_mw"]:
+            upper = point
+            if i > 0:
+                lower = lookup_sorted[i - 1]
+            break
+    else:
+        # If load is higher than all points, use the highest point
+        lower = lookup_sorted[-1]
+        upper = None
+
+    # Interpolate
+    if lower is None:
+        # Load is lower than all points, use the lowest point
+        result = upper
+    elif upper is None:
+        # Load is higher than all points, use the highest point
+        result = lower
+    elif lower["load_mw"] == upper["load_mw"]:
+        # Exact match or same points
+        result = lower
+    else:
+        # Linear interpolation
+        t = (stg_load_mw - lower["load_mw"]) / (upper["load_mw"] - lower["load_mw"])
+        result = {}
+        for key in lower.keys():
+            if key == "load_mw":
+                result[key] = stg_load_mw
+            else:
+                result[key] = lower[key] + t * (upper[key] - lower[key])
+
+    return result
+
+
