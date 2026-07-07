@@ -5553,4 +5553,36 @@ continue;
 		}
 	}
 
+	@Override
+    public AOPMessageVM calculateCombine(UUID plantId, String aopYear) {
+        
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_CalculateCombine";
+
+        Integer result = executeCombineCalculationSP(String.valueOf(plantId), aopYear, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+	
+		return aopMessageVM;
+    }
+
+    
+	public Integer executeCombineCalculationSP( String plantId, String aopYear, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
+		}
+	}
+
 }
