@@ -21,8 +21,6 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheetProtection;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.PersistenceContext;
@@ -469,43 +467,31 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			if (!isAfterSave) {
 				dtoList = findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
 			}
-		String pattern = "dd-MM-yyyy HH:mm";
-		SimpleDateFormat formatter = new SimpleDateFormat(pattern);
-		Workbook workbook = new XSSFWorkbook();
+			String pattern = "dd-MM-yyyy HH:mm";
+			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+			Workbook workbook = new XSSFWorkbook();
 
-		// Unlock the workbook's built-in default cell style (index 0) so that rows
-		// inserted by the user at runtime inherit an unlocked (editable) style.
-		workbook.getCellStyleAt(0).setLocked(false);
+			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+			dateTimeStyle.setBorderBottom(BorderStyle.THIN);
+			dateTimeStyle.setBorderTop(BorderStyle.THIN);
+			dateTimeStyle.setBorderLeft(BorderStyle.THIN);
+			dateTimeStyle.setBorderRight(BorderStyle.THIN);
+			dateTimeStyle.setLocked(false);
 
-		CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
-		dateTimeStyle.setBorderBottom(BorderStyle.THIN);
-		dateTimeStyle.setBorderTop(BorderStyle.THIN);
-		dateTimeStyle.setBorderLeft(BorderStyle.THIN);
-		dateTimeStyle.setBorderRight(BorderStyle.THIN);
-		dateTimeStyle.setLocked(false);
+			CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+			borderedStyle.setLocked(false);
 
-		CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
-		borderedStyle.setLocked(false);
+			CellStyle remarkWrapStyle = workbook.createCellStyle();
+			remarkWrapStyle.cloneStyleFrom(borderedStyle);
+			remarkWrapStyle.setWrapText(true);
+			remarkWrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+			remarkWrapStyle.setLocked(false);
 
-		CellStyle remarkWrapStyle = workbook.createCellStyle();
-		remarkWrapStyle.cloneStyleFrom(borderedStyle);
-		remarkWrapStyle.setWrapText(true);
-		remarkWrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
-		remarkWrapStyle.setLocked(false);
+			CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
+			lockedBorderedStyle.setLocked(true);
 
-		CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
-		lockedBorderedStyle.setLocked(true);
-
-		// Use XSSFSheet so we can configure fine-grained sheet-protection options.
-		XSSFSheet sheet = (XSSFSheet) workbook.createSheet("Sheet1");
-		sheet.protectSheet(""); // enable protection with an empty (no-password) lock
-
-		// Allow the user to insert and delete rows even though the sheet is protected.
-		// In the OOXML schema these flags mean "locked" (true) / "not locked" (false),
-		// so setting them to false explicitly enables those operations.
-		CTSheetProtection prot = sheet.getCTWorksheet().getSheetProtection();
-		prot.setInsertRows(false);
-		prot.setDeleteRows(false);
+			Sheet sheet = workbook.createSheet("Sheet1");
+			sheet.protectSheet("");
 			int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
 			List<String> rowTypes = new ArrayList<>();
