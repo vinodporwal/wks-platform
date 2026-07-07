@@ -10,6 +10,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -59,6 +60,49 @@ public class JMDHeatRateController {
         
         AOPMessageVM response = jmdHeatRateService.saveGTHeatRateData(dtoList, year);
         return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping(value = "/jmd/gt-heat-rate-export")
+    public ResponseEntity<byte[]> exportGTHeatRate(
+            @RequestParam("assetId") UUID assetId,
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds,
+            @RequestParam(value = "isAfterSave", defaultValue = "false") boolean isAfterSave,
+            @RequestBody(required = false) List<CppGtHeatRateDto> dtoList) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportGTHeatRateExcelData(
+                    assetId, year, startDate, endDate, plantIds, isAfterSave, dtoList
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            
+            String filename = isAfterSave ? "GT_Heat_Rate_Import_Status.xlsx" : "GT_Heat_Rate_Data.xlsx";
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    @PostMapping(value = "/jmd/gt-heat-rate/import", consumes = "multipart/form-data")
+    public AOPMessageVM importGTHeatRateData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "assetId", required = false) UUID assetId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        
+        return jmdHeatRateService.importGTHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
     }
 
     @GetMapping("/jmd/hrsg-heat-rate/drop-down")
