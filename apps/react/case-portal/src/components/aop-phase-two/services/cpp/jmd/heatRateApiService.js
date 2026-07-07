@@ -120,9 +120,26 @@ async function saveGTHeatRateData(keycloak, aopYear, payload) {
   }
 }
 
-// POST /task/jmd/heat-rate/import
-async function saveGTHeatRateExcel(file, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/jmd/heat-rate/import`
+// POST /task/jmd/gt-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
+async function saveGTHeatRateExcel(
+  file,
+  keycloak,
+  aopYear,
+  assetId,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('year', aopYear)
+  if (assetId) queryParams.append('assetId', assetId)
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
+  if (plantIds && plantIds.length > 0) {
+    const plantIdsStr = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+    queryParams.append('plantIds', plantIdsStr)
+  }
+  const url = `${Config.CaseEngineUrl}/task/jmd/gt-heat-rate/import?${queryParams.toString()}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -147,28 +164,79 @@ async function saveGTHeatRateExcel(file, keycloak) {
   }
 }
 
-// GET /task/jmd/heat-rate/export/{assetId}/{aopYear} or /task/jmd/heat-rate/export/{assetId}/{aopYear}/{startDate}/{endDate}
+// GET /task/jmd/gt-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
 async function exportGTHeatRateExcel(
   keycloak,
   assetId,
   aopYear,
   startDate,
   endDate,
+  plantIds,
   assetDisplayName,
+  isAfterSave = false,
+  dtoList = null,
 ) {
-  let endpoint = `jmd/heat-rate/export/${assetId}/${aopYear}`
-  if (startDate && endDate) {
-    endpoint = `jmd/heat-rate/export/${assetId}/${aopYear}/${startDate}/${endDate}`
+  const queryParams = new URLSearchParams()
+  queryParams.append('assetId', assetId)
+  queryParams.append('year', aopYear)
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
+  if (plantIds && plantIds.length > 0) {
+    const plantIdsStr = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+    queryParams.append('plantIds', plantIdsStr)
   }
+  queryParams.append('isAfterSave', isAfterSave)
+
+  const endpoint = `jmd/gt-heat-rate/export?${queryParams.toString()}`
   const fileName = assetDisplayName
     ? `${assetDisplayName}_${aopYear}.xlsx`
     : `GT_Heat_Rate_${aopYear}.xlsx`
-  return exportExcelData(keycloak, {
-    endpoint,
-    queryParams: {},
-    fileName,
-    method: 'GET',
-  })
+
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  const fetchOptions = { method: 'GET', headers }
+  if (isAfterSave && dtoList) {
+    fetchOptions.method = 'POST'
+    fetchOptions.body = JSON.stringify(dtoList)
+  }
+
+  try {
+    const resp = await fetch(url, fetchOptions)
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = fileName
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename=?"([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error(`Error exporting Excel from ${endpoint}:`, e)
+    return Promise.reject(e)
+  }
 }
 
 // ===================== || HRSG HEAT RATE APIs || ===================== //
@@ -349,9 +417,26 @@ async function saveSTGHeatRateData(keycloak, aopYear, payload) {
   }
 }
 
-// POST /task/jmd/stg-heat-rate/import
-async function saveSTGHeatRateExcel(file, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/jmd/stg-heat-rate/import`
+// POST /task/jmd/stg-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
+async function saveSTGHeatRateExcel(
+  file,
+  keycloak,
+  aopYear,
+  assetId,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('year', aopYear)
+  if (assetId) queryParams.append('assetId', assetId)
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
+  if (plantIds && plantIds.length > 0) {
+    const plantIdsStr = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+    queryParams.append('plantIds', plantIdsStr)
+  }
+  const url = `${Config.CaseEngineUrl}/task/jmd/stg-heat-rate/import?${queryParams.toString()}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -384,24 +469,62 @@ async function exportSTGHeatRateExcel(
   startDate,
   endDate,
   plantIds,
+  assetDisplayName,
 ) {
   const queryParams = new URLSearchParams()
   queryParams.append('assetId', assetId)
   queryParams.append('aopYear', aopYear)
-  if (startDate && endDate) {
-    queryParams.append('startDate', startDate)
-    queryParams.append('endDate', endDate)
-  }
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
   if (plantIds && plantIds.length > 0) {
     const plantIdsStr = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
     queryParams.append('plantIds', plantIdsStr)
   }
-  return exportExcelData(keycloak, {
-    endpoint: `jmd/stg-heat-rate/export?${queryParams.toString()}`,
-    queryParams: {},
-    fileName: `STG_Heat_Rate_${aopYear}.xlsx`,
-    method: 'GET',
-  })
+
+  const endpoint = `jmd/stg-heat-rate/export?${queryParams.toString()}`
+  const fileName = assetDisplayName
+    ? `${assetDisplayName}_${aopYear}.xlsx`
+    : `STG_Heat_Rate_${aopYear}.xlsx`
+
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = fileName
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename=?"([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error(`Error exporting Excel from ${endpoint}:`, e)
+    return Promise.reject(e)
+  }
 }
 
 // ===================== || GENERIC EXCEL EXPORT FUNCTION || ===================== //

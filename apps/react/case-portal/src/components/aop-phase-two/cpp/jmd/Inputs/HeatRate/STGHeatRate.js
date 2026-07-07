@@ -9,6 +9,7 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
+import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
@@ -248,8 +249,8 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const dropdownConfig = {
     options: dropdownOptions,
-    label: 'Asset',
-    placeholder: 'Select Asset',
+    label: 'Plant',
+    placeholder: 'Select Plant',
     valueKey: 'id',
     labelKey: 'name',
   }
@@ -355,12 +356,20 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     setLoading(true)
     try {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+
       const response = await HeatRateApiService.saveSTGHeatRateExcel(
         file,
         keycloak,
+        AOP_YEAR,
+        selectedPlant,
+        formattedStartDate,
+        formattedEndDate,
+        PLANT_ID_LIST,
       )
 
-      if (response?.success) {
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Excel file imported successfully!',
@@ -369,13 +378,27 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         setModifiedCells({})
         await fetchHeatRateData(
           selectedPlant,
-          formatDate(startDate),
-          formatDate(endDate),
+          formattedStartDate,
+          formattedEndDate,
+        )
+      } else if (response?.code === 400 && response?.data) {
+        downloadBase64Excel(response.data, 'STG_Heat_Rate_Import_Status.xlsx')
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
+        await fetchHeatRateData(
+          selectedPlant,
+          formattedStartDate,
+          formattedEndDate,
         )
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Upload Failed!',
+          message: response?.message || 'Upload Failed!',
           severity: 'error',
         })
       }
@@ -402,6 +425,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = startDate ? formatDate(startDate) : null
       const formattedEndDate = endDate ? formatDate(endDate) : null
 
+      const selectedOption = dropdownOptions?.find(
+        (opt) => opt.id === selectedPlant,
+      )
+      const assetDisplayName = selectedOption?.name
+
       await HeatRateApiService.exportSTGHeatRateExcel(
         keycloak,
         selectedPlant,
@@ -409,6 +437,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         formattedStartDate,
         formattedEndDate,
         PLANT_ID_LIST,
+        assetDisplayName,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

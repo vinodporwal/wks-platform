@@ -75,16 +75,7 @@ public class JMDHeatRateController {
         return ResponseEntity.ok(response);
     }
     
-    @PostMapping("/jmd/hrsg-heat-rate")
-    public ResponseEntity<AOPMessageVM> saveHRSGHeatRateData(
-            @RequestBody List<CppHrsgHeatRateDto> dtoList, 
-            @RequestParam String year) {
-        
-        AOPMessageVM response = jmdHeatRateService.saveHRSGHeatRateData(dtoList, year);
-        return ResponseEntity.ok(response);
-    }
-    
-    @GetMapping(value = "/jmd/gt-heat-rate-export")
+    @GetMapping(value = "/jmd/gt-heat-rate/export")
     public ResponseEntity<byte[]> exportGTHeatRate(
             @RequestParam("assetId") UUID assetId,
             @RequestParam("year") String year,

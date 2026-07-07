@@ -9,6 +9,7 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
+import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
@@ -394,9 +395,17 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     setLoading(true)
     try {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+
       const response = await HeatRateApiService.saveGTHeatRateExcel(
         file,
         keycloak,
+        AOP_YEAR,
+        selectedPlant,
+        formattedStartDate,
+        formattedEndDate,
+        PLANT_ID_LIST,
       )
 
       if (response?.code === 200) {
@@ -406,8 +415,20 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        const formattedStartDate = formatDate(startDate)
-        const formattedEndDate = formatDate(endDate)
+        await fetchHeatRateData(
+          selectedPlant,
+          formattedStartDate,
+          formattedEndDate,
+        )
+      } else if (response?.code === 400 && response?.data) {
+        downloadBase64Excel(response.data, 'GT_Heat_Rate_Import_Status.xlsx')
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
         await fetchHeatRateData(
           selectedPlant,
           formattedStartDate,
@@ -455,6 +476,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
+        PLANT_ID_LIST,
         assetDisplayName,
       )
       setSnackbarData({
