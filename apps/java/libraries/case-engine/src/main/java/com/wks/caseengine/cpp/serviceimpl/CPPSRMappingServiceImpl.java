@@ -855,19 +855,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "IsActive = 1 " +
                         "WHERE Id = ?";
                 db1JdbcTemplate.update(updateSql,
-                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
-                        dto.getSenderUtilityName(),                                                               // UtilityName
-                        dto.getSenderUtilityCode(),                                                               // UtilityId
-                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // Plant_FK_Id
+                        dto.getReceiverUtilityName(),                                                             // UtilityName
+                        dto.getReceiverUtilityCode(),                                                             // UtilityId
+                        dto.getReceiverUtilityUOM(),                                                              // UtilityUOM
                         "Utilities",                                                                              // AccountName
-                        dto.getReceiverUtilityName(),                                                             // MaterialName
-                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
-                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
-                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
-                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getSenderUtilityName(),                                                               // MaterialName
+                        dto.getSenderPlantName(),                                                                 // IssuingPlantName
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // IssuingPlant_FK_Id
+                        resolvedSenderUtilityId          != null ? resolvedSenderUtilityId.toString()          : null,  // NormParameter_FK_Id
+                        dto.getSenderUtilityUOM(),                                                                // IssuingUOM
+                        dto.getSenderUtilityCode(),                                                               // MaterialId
                         dto.getRemarks(),                                                                         // Remarks
-                        dto.getReceiverPlantCode(),                                                               // plantCode
+                        dto.getSenderPlantCode(),                                                                 // plantCode
                         existingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: updated NormsHeader Id={} for srMappingId={}", existingId, srMappingId);
@@ -884,19 +884,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?)";
                 db1JdbcTemplate.update(insertSql,
                         newId.toString(),
-                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
-                        dto.getSenderUtilityName(),                                                               // UtilityName
-                        dto.getSenderUtilityCode(),                                                               // UtilityId
-                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // Plant_FK_Id
+                        dto.getReceiverUtilityName(),                                                             // UtilityName
+                        dto.getReceiverUtilityCode(),                                                             // UtilityId
+                        dto.getReceiverUtilityUOM(),                                                              // UtilityUOM
                         "Utilities",                                                                              // AccountName
-                        dto.getReceiverUtilityName(),                                                             // MaterialName
-                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
-                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
-                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
-                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getSenderUtilityName(),                                                               // MaterialName
+                        dto.getSenderPlantName(),                                                                 // IssuingPlantName
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // IssuingPlant_FK_Id
+                        resolvedSenderUtilityId          != null ? resolvedSenderUtilityId.toString()          : null,  // NormParameter_FK_Id
+                        dto.getSenderUtilityUOM(),                                                                // IssuingUOM
+                        dto.getSenderUtilityCode(),                                                               // MaterialId
                         dto.getRemarks(),                                                                         // Remarks
-                        dto.getReceiverPlantCode(),                                                               // plantCode
+                        dto.getSenderPlantCode(),                                                                 // plantCode
                         srMappingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: inserted NormsHeader Id={} for srMappingId={}", newId, srMappingId);
