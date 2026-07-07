@@ -40,9 +40,9 @@ public class JMDHeatRateController {
     // ============================================================
 
     @GetMapping("/jmd/heat-rate/drop-down")
-    public ResponseEntity<AOPMessageVM> getGTAssetDropdown(@RequestParam List<UUID> plantIds) {
-        logger.info("[JMDHeatRateController] GET /jmd/heat-rate/drop-down - plantIds: {}", plantIds);
-        AOPMessageVM response = jmdHeatRateService.getGTAssetDropdown(plantIds);
+    public ResponseEntity<AOPMessageVM> getGTAssetDropdown(@RequestParam List<UUID> plantIds, @RequestParam(required = false, defaultValue = "GT") String assetType) {
+        logger.info("[JMDHeatRateController] GET /jmd/heat-rate/drop-down - plantIds: {}, assetType: {}", plantIds, assetType);
+        AOPMessageVM response = jmdHeatRateService.getGTAssetDropdown(plantIds, assetType);
         return ResponseEntity.ok(response);
     }
     

@@ -79,12 +79,12 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     // ============================================================
 
     @Override
-    public AOPMessageVM getGTAssetDropdown(List<UUID> plantIds) {
-        logger.info("[JMDHeatRate] getGTAssetDropdown - plantIds: {}", plantIds);
+    public AOPMessageVM getGTAssetDropdown(List<UUID> plantIds,String assetType) {
+        logger.info("[JMDHeatRate] getGTAssetDropdown - plantIds: {}, assetType: {}", plantIds, assetType);
         AOPMessageVM vm = new AOPMessageVM();
         
         try {
-            String assetType = "GT";
+            // String assetType = "GT";
             List<PowerGenerationAsset> entities = assetRepository.findByPlantIdsAndAssetType(plantIds, assetType);
 
             List<PowerGenerationAssetDto> result = entities.stream()

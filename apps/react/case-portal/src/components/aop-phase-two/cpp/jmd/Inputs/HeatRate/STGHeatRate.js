@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,6 +8,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
 const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
@@ -27,11 +28,19 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const valueFormat = ValueFormatterPhaseTwo()
 
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
+
+  const [selectedPlant, setSelectedPlant] = useState(null)
+  const [dropdownOptions, setDropdownOptions] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -125,14 +134,6 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
-  console.log('startDate', startDate)
-  console.log('endDate', endDate)
-  useEffect(() => {
-    if (AOP_YEAR && startDate && endDate) {
-      fetchHeatRateData()
-    }
-  }, [AOP_YEAR, startDate, endDate])
-
   const formatDate = (date) => {
     if (!date) return ''
     const year = date.getFullYear()
@@ -141,14 +142,89 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     return `${year}-${month}-${day}`
   }
 
-  const fetchHeatRateData = async () => {
+  const getPlantList = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await HeatRateApiService.getGTAssetDropdown(
+        keycloak,
+        PLANT_ID_LIST,
+        'STG',
+      )
+
+      // Convert to required format with plant name
+      const convertedData = res?.map((item) => {
+        // Find plant name from jmdSelectedPlants by matching cppPlantFkId
+        const plant = jmdSelectedPlants?.find(
+          (p) => p.id?.toUpperCase() === item.cppPlantFkId?.toUpperCase(),
+        )
+        const plantName = plant?.name
+
+        return {
+          id: item.assetId,
+          name: `${item.assetName} (${plantName})`,
+          plantName: plantName,
+          cppPlantFkId: item.cppPlantFkId,
+        }
+      })
+
+      // Sort by plantName
+      convertedData?.sort((a, b) => {
+        const nameA = a.plantName || ''
+        const nameB = b.plantName || ''
+        return nameA.localeCompare(nameB)
+      })
+
+      if (convertedData?.length === 0) {
+        setDropdownOptions([])
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
+        return
+      }
+      setSelectedPlant(convertedData[0]?.id)
+      setDropdownOptions(convertedData)
+    } catch (error) {
+      console.error('Error fetching plant list:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, jmdSelectedPlants])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        getPlantList()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, getPlantList],
+  )
+
+  useEffect(() => {
+    if (AOP_YEAR && startDate && endDate && selectedPlant) {
+      fetchHeatRateData(
+        selectedPlant,
+        formatDate(startDate),
+        formatDate(endDate),
+      )
+    }
+  }, [selectedPlant, startDate, endDate])
+
+  const fetchHeatRateData = async (
+    assetId,
+    formattedStartDate,
+    formattedEndDate,
+  ) => {
     setLoading(true)
     try {
       const res = await HeatRateApiService.getSTGHeatRateData(
         keycloak,
         AOP_YEAR,
-        formatDate(startDate),
-        formatDate(endDate),
+        formattedStartDate,
+        formattedEndDate,
       )
 
       if (res?.length === 0) {
@@ -169,6 +245,14 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     }
   }
 
+  const dropdownConfig = {
+    options: dropdownOptions,
+    label: 'Asset',
+    placeholder: 'Select Asset',
+    valueKey: 'id',
+    labelKey: 'name',
+  }
+
   const permissions = {
     showAction: true,
     addButton: false,
@@ -182,7 +266,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     showExport: true,
     ExcelName: `STG Heat Rate - ${AOP_YEAR}`,
     showTitle: true,
-    showDropdown: false,
+    showDropdown: true,
   }
 
   const saveChanges = async () => {
@@ -567,8 +651,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
+        dropdownConfig={dropdownConfig}
+        selectedDropdownValue={selectedPlant}
+        setSelectedDropdownValue={setSelectedPlant}
         customItemChange={handleCustomItemChange}
+        setSnackbarData={setSnackbarData}
       />
     </Box>
   )

@@ -41,11 +41,14 @@ function buildPlantIdsParam(plantIds) {
 // ===================== || GT HEAT RATE APIs || ===================== //
 
 // GET /task/jmd/heat-rate/drop-down?plantIds=...
-async function getGTAssetDropdown(keycloak, plantIds) {
+async function getGTAssetDropdown(keycloak, plantIds, assetType) {
   const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/jmd/heat-rate/drop-down?plantIds=${queryParams}`
+  const url = `${Config.CaseEngineUrl}/task/jmd/heat-rate/drop-down?plantIds=${queryParams}&assetType=${assetType}`
   try {
-    const resp = await fetch(url, { method: 'GET', headers: buildHeaders(keycloak) })
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: buildHeaders(keycloak),
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -57,14 +60,32 @@ async function getGTAssetDropdown(keycloak, plantIds) {
   }
 }
 
-// GET /task/jmd/heat-rate/{assetId}/{aopYear} or /task/jmd/heat-rate/{assetId}/{aopYear}/{startDate}/{endDate}
-async function getGTHeatRateData(keycloak, assetId, aopYear, startDate, endDate) {
-  let url = `${Config.CaseEngineUrl}/task/jmd/heat-rate/${assetId}/${aopYear}`
+// GET /task/jmd/gt-heat-rate?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
+async function getGTHeatRateData(
+  keycloak,
+  assetId,
+  aopYear,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('assetId', assetId)
+  queryParams.append('year', aopYear)
   if (startDate && endDate) {
-    url += `/${startDate}/${endDate}`
+    queryParams.append('startDate', startDate)
+    queryParams.append('endDate', endDate)
   }
+  if (plantIds) {
+    const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+    queryParams.append('plantIds', plantIdArray.join(','))
+  }
+  const url = `${Config.CaseEngineUrl}/task/jmd/gt-heat-rate?${queryParams.toString()}`
   try {
-    const resp = await fetch(url, { method: 'GET', headers: buildHeaders(keycloak) })
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: buildHeaders(keycloak),
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -76,12 +97,18 @@ async function getGTHeatRateData(keycloak, assetId, aopYear, startDate, endDate)
   }
 }
 
-// POST /task/jmd/heat-rate/{aopYear}
+// POST /task/jmd/gt-heat-rate?year=...
 async function saveGTHeatRateData(keycloak, aopYear, payload) {
-  const url = `${Config.CaseEngineUrl}/task/jmd/heat-rate/${aopYear}`
+  const queryParams = new URLSearchParams()
+  queryParams.append('year', aopYear)
+  const url = `${Config.CaseEngineUrl}/task/jmd/gt-heat-rate?${queryParams.toString()}`
   const body = JSON.stringify(payload)
   try {
-    const resp = await fetch(url, { method: 'POST', headers: buildHeaders(keycloak), body })
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: buildHeaders(keycloak),
+      body,
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -109,7 +136,9 @@ async function saveGTHeatRateExcel(file, keycloak) {
       return responseData
     }
     if (!resp.ok) {
-      throw new Error(`Failed to import GT heat rate data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to import GT heat rate data: ${resp.status} ${resp.statusText}`,
+      )
     }
     return responseData
   } catch (e) {
@@ -119,15 +148,25 @@ async function saveGTHeatRateExcel(file, keycloak) {
 }
 
 // GET /task/jmd/heat-rate/export/{assetId}/{aopYear} or /task/jmd/heat-rate/export/{assetId}/{aopYear}/{startDate}/{endDate}
-async function exportGTHeatRateExcel(keycloak, assetId, aopYear, startDate, endDate) {
+async function exportGTHeatRateExcel(
+  keycloak,
+  assetId,
+  aopYear,
+  startDate,
+  endDate,
+  assetDisplayName,
+) {
   let endpoint = `jmd/heat-rate/export/${assetId}/${aopYear}`
   if (startDate && endDate) {
     endpoint = `jmd/heat-rate/export/${assetId}/${aopYear}/${startDate}/${endDate}`
   }
+  const fileName = assetDisplayName
+    ? `${assetDisplayName}_${aopYear}.xlsx`
+    : `GT_Heat_Rate_${aopYear}.xlsx`
   return exportExcelData(keycloak, {
     endpoint,
     queryParams: {},
-    fileName: `GT_Heat_Rate_${aopYear}.xlsx`,
+    fileName,
     method: 'GET',
   })
 }
@@ -139,7 +178,10 @@ async function getHRSGAssetDropdown(keycloak, plantIds) {
   const queryParams = buildPlantIdsParam(plantIds)
   const url = `${Config.CaseEngineUrl}/task/jmd/hrsg-heat-rate/drop-down?plantIds=${queryParams}`
   try {
-    const resp = await fetch(url, { method: 'GET', headers: buildHeaders(keycloak) })
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: buildHeaders(keycloak),
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -152,13 +194,22 @@ async function getHRSGAssetDropdown(keycloak, plantIds) {
 }
 
 // GET /task/jmd/hrsg-heat-rate/{assetId}/{aopYear} or /task/jmd/hrsg-heat-rate/{assetId}/{aopYear}/{startDate}/{endDate}
-async function getHRSGHeatRateData(keycloak, assetId, aopYear, startDate, endDate) {
+async function getHRSGHeatRateData(
+  keycloak,
+  assetId,
+  aopYear,
+  startDate,
+  endDate,
+) {
   let url = `${Config.CaseEngineUrl}/task/jmd/hrsg-heat-rate/${assetId}/${aopYear}`
   if (startDate && endDate) {
     url += `/${startDate}/${endDate}`
   }
   try {
-    const resp = await fetch(url, { method: 'GET', headers: buildHeaders(keycloak) })
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: buildHeaders(keycloak),
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -175,7 +226,11 @@ async function saveHRSGHeatRateData(keycloak, aopYear, payload) {
   const url = `${Config.CaseEngineUrl}/task/jmd/hrsg-heat-rate/${aopYear}`
   const body = JSON.stringify(payload)
   try {
-    const resp = await fetch(url, { method: 'POST', headers: buildHeaders(keycloak), body })
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: buildHeaders(keycloak),
+      body,
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -203,7 +258,9 @@ async function saveHRSGHeatRateExcel(file, keycloak) {
       return responseData
     }
     if (!resp.ok) {
-      throw new Error(`Failed to import HRSG heat rate data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to import HRSG heat rate data: ${resp.status} ${resp.statusText}`,
+      )
     }
     return responseData
   } catch (e) {
@@ -213,7 +270,13 @@ async function saveHRSGHeatRateExcel(file, keycloak) {
 }
 
 // GET /task/jmd/hrsg-heat-rate/export/{assetId}/{aopYear} or /task/jmd/hrsg-heat-rate/export/{assetId}/{aopYear}/{startDate}/{endDate}
-async function exportHRSGHeatRateExcel(keycloak, assetId, aopYear, startDate, endDate) {
+async function exportHRSGHeatRateExcel(
+  keycloak,
+  assetId,
+  aopYear,
+  startDate,
+  endDate,
+) {
   let endpoint = `jmd/hrsg-heat-rate/export/${assetId}/${aopYear}`
   if (startDate && endDate) {
     endpoint = `jmd/hrsg-heat-rate/export/${assetId}/${aopYear}/${startDate}/${endDate}`
@@ -235,7 +298,10 @@ async function getSTGHeatRateData(keycloak, aopYear, startDate, endDate) {
     url += `/${startDate}/${endDate}`
   }
   try {
-    const resp = await fetch(url, { method: 'GET', headers: buildHeaders(keycloak) })
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: buildHeaders(keycloak),
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -252,7 +318,11 @@ async function saveSTGHeatRateData(keycloak, aopYear, payload) {
   const url = `${Config.CaseEngineUrl}/task/jmd/stg-heat-rate/${aopYear}`
   const body = JSON.stringify(payload)
   try {
-    const resp = await fetch(url, { method: 'POST', headers: buildHeaders(keycloak), body })
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: buildHeaders(keycloak),
+      body,
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
@@ -280,7 +350,9 @@ async function saveSTGHeatRateExcel(file, keycloak) {
       return responseData
     }
     if (!resp.ok) {
-      throw new Error(`Failed to import STG heat rate data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to import STG heat rate data: ${resp.status} ${resp.statusText}`,
+      )
     }
     return responseData
   } catch (e) {
@@ -321,7 +393,9 @@ async function exportExcelData(keycloak, params) {
     const resp = await fetch(url, { method, headers })
 
     if (!resp.ok) {
-      throw new Error(`Failed to export Excel: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
     }
 
     const blob = await resp.blob()

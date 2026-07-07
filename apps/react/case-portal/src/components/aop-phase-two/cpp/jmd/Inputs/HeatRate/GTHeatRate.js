@@ -80,7 +80,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       radioValue: 'OEM',
     },
     {
-      field: 'previousYearHeatRate',
+      field: 'prevYearFinalHeatRate',
       title: 'PREVIOUS YEAR BUDGET HR',
       widthT: 230,
       type: 'numberWithRadio',
@@ -93,7 +93,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       radioValue: 'PREVIOUS_YEAR',
     },
     {
-      field: 'heatRate',
+      field: 'proposedYearFinalHeatRate',
       title: 'PROPOSED HR',
       subtitle: '(Based On Actual Data)',
       widthT: 200,
@@ -164,13 +164,31 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       const res = await HeatRateApiService.getGTAssetDropdown(
         keycloak,
         PLANT_ID_LIST,
+        'GT',
       )
 
-      // Convert to required format
-      const convertedData = res?.map((item) => ({
-        id: item[0],
-        name: item[1],
-      }))
+      // Convert to required format with plant name
+      const convertedData = res?.map((item) => {
+        // Find plant name from jmdSelectedPlants by matching cppPlantFkId
+        const plant = jmdSelectedPlants?.find(
+          (p) => p.id?.toUpperCase() === item.cppPlantFkId?.toUpperCase(),
+        )
+        const plantName = plant?.name
+
+        return {
+          id: item.assetId,
+          name: `${item.assetName} (${plantName})`,
+          plantName: plantName,
+          cppPlantFkId: item.cppPlantFkId,
+        }
+      })
+
+      // Sort by plantName
+      convertedData?.sort((a, b) => {
+        const nameA = a.plantName || ''
+        const nameB = b.plantName || ''
+        return nameA.localeCompare(nameB)
+      })
 
       if (convertedData?.length === 0) {
         setDropdownOptions([])
@@ -188,12 +206,13 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, jmdSelectedPlants])
 
   useDebounce(
     () => {
       if (PLANT_ID_LIST?.length && AOP_YEAR) {
         getPlantList()
+        setModifiedCells({})
       }
     },
     1000,
@@ -210,6 +229,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
           AOP_YEAR,
           startDate,
           endDate,
+          PLANT_ID_LIST,
         )
 
         if (res?.length === 0) {
@@ -224,8 +244,8 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
           // Validate if selectedHeatRate matches the actual finalHeatRate value
           const fieldMapping = {
             OEM: 'oemHeatRate',
-            PREVIOUS_YEAR: 'previousYearHeatRate',
-            PROPOSED: 'heatRate',
+            PREVIOUS_YEAR: 'prevYearFinalHeatRate',
+            PROPOSED: 'proposedYearFinalHeatRate',
           }
 
           const selectedField = fieldMapping[selectedHeatRate]
@@ -246,6 +266,12 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
             remarks: item.remarks || '',
             selectedHeatRate: isMatch ? selectedHeatRate : 'OTHER',
           }
+        })
+        // Sort by gtLoad in ascending order
+        tempRes.sort((a, b) => {
+          const aLoad = parseFloat(a.gtLoad) || 0
+          const bLoad = parseFloat(b.gtLoad) || 0
+          return aLoad - bLoad
         })
         setRows(tempRes)
         setOriginalRows(tempRes)
@@ -334,7 +360,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     try {
       const payload = modifiedData.map((item) => {
-        const { inEdit, ...rest } = item
+        const { inEdit, updatedDate, createdDate, ...rest } = item
         return rest
       })
 
@@ -349,6 +375,9 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+      fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
     } catch (error) {
       console.error('Error saving heat rate data:', error)
       setSnackbarOpen(true)
@@ -370,18 +399,24 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         keycloak,
       )
 
-      if (response?.success) {
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Excel file imported successfully!',
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchHeatRateData(selectedPlant)
+        const formattedStartDate = formatDate(startDate)
+        const formattedEndDate = formatDate(endDate)
+        await fetchHeatRateData(
+          selectedPlant,
+          formattedStartDate,
+          formattedEndDate,
+        )
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Upload Failed!',
+          message: response?.message || 'Upload Failed!',
           severity: 'error',
         })
       }
@@ -408,12 +443,19 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
+      // Get the selected asset name with plant name
+      const selectedAsset = dropdownOptions.find(
+        (opt) => opt.id === selectedPlant,
+      )
+      const assetDisplayName = selectedAsset?.name || 'GT_Heat_Rate'
+
       await HeatRateApiService.exportGTHeatRateExcel(
         keycloak,
         selectedPlant,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
+        assetDisplayName,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -445,8 +487,8 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       // Map radioValue to field name
       const fieldMapping = {
         OEM: 'oemHeatRate',
-        PREVIOUS_YEAR: 'previousYearHeatRate',
-        PROPOSED: 'heatRate',
+        PREVIOUS_YEAR: 'prevYearFinalHeatRate',
+        PROPOSED: 'proposedYearFinalHeatRate',
       }
 
       const selectedField = fieldMapping[value]
@@ -494,8 +536,8 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     // When a source column is edited, update finalHeatRate ONLY if that source is currently selected
     const sourceFieldMapping = {
       oemHeatRate: 'OEM',
-      previousYearHeatRate: 'PREVIOUS_YEAR',
-      heatRate: 'PROPOSED',
+      prevYearFinalHeatRate: 'PREVIOUS_YEAR',
+      proposedYearFinalHeatRate: 'PROPOSED',
     }
 
     if (sourceFieldMapping[field]) {
@@ -577,10 +619,14 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         },
         {
           radioValue: 'PREVIOUS_YEAR',
-          field: 'previousYearHeatRate',
-          value: dataItem.previousYearHeatRate,
+          field: 'prevYearFinalHeatRate',
+          value: dataItem.prevYearFinalHeatRate,
         },
-        { radioValue: 'PROPOSED', field: 'heatRate', value: dataItem.heatRate },
+        {
+          radioValue: 'PROPOSED',
+          field: 'proposedYearFinalHeatRate',
+          value: dataItem.proposedYearFinalHeatRate,
+        },
       ]
 
       let matchedRadioValue = null
@@ -667,11 +713,12 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         selectedDropdownValue={selectedPlant}
         setSelectedDropdownValue={setSelectedPlant}
         customItemChange={handleCustomItemChange}
+        customHeight={60}
         paginationConfig={{
           threshold: 20, // Show pagination if > 50 rows
           buttonCount: 5,
           pageSizes: [10, 20, 50, 100],
-          defaultPageSize: 20,
+          defaultPageSize: 100,
         }}
       />
     </Box>
