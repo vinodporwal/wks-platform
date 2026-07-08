@@ -428,9 +428,8 @@ async function saveHRSGHeatRateExcel(
 // -----------------------------------------------------------------------
 // [HRSG] EXPORT EXCEL
 // Used by   : HRSGHeatRate.js → handleExport()
-// Endpoint  : GET /task/jmd/hrsg-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
-// Controller: exportHRSGHeatRate(PathVariable) — @GetMapping("/jmd/hrsg-heat-rate/export/{assetId}/{aopYear}")
-//             NOTE: UI calls query-param endpoint but controller has path-variable version — verify mapping.
+// Endpoint  : GET /task/jmd/hrsg-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...&isAfterSave=false
+// Controller: exportHRSGHeatRate() — @GetMapping("/jmd/hrsg-heat-rate-export")
 // -----------------------------------------------------------------------
 // GET /task/jmd/hrsg-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
 async function exportHRSGHeatRateExcel(
@@ -452,7 +451,7 @@ async function exportHRSGHeatRateExcel(
     queryParams.append('plantIds', plantIdsStr)
   }
 
-  const endpoint = `jmd/hrsg-heat-rate/export?${queryParams.toString()}`
+  const endpoint = `jmd/hrsg-heat-rate-export?${queryParams.toString()}`
   const fileName = assetDisplayName
     ? `${assetDisplayName}_${aopYear}.xlsx`
     : `HRSG_Heat_Rate_${aopYear}.xlsx`

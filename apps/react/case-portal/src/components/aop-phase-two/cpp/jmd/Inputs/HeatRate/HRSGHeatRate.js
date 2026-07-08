@@ -167,7 +167,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const res = await HeatRateApiService.getHRSGAssetDropdown(
         keycloak,
         PLANT_ID_LIST,
-        'AUXBOILER',
+        'HRSG',
       )
 
       // Convert to required format with plant name
@@ -196,7 +196,10 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       if (convertedData?.length === 0) {
         setDropdownOptions([])
         setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
+        setSnackbarData({
+          message: 'No HRSG data found',
+          severity: 'info',
+        })
         setLoading(false)
         return
       }
@@ -751,6 +754,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         dropdownConfig={dropdownConfig}
         selectedDropdownValue={selectedPlant}
         setSelectedDropdownValue={setSelectedPlant}
+        customHeight={60}
         paginationConfig={{
           threshold: 20,
           buttonCount: 5,

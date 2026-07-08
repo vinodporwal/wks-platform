@@ -28,11 +28,11 @@ public interface CppGtHeatRateRepository extends JpaRepository<CppGtHeatRate, UU
     @Query(value = "EXEC [dbo].[CPP_CalculateCommonGTHeatRate_ByDateRange] " +
             "@StartDate = :startDate, " +
             "@EndDate = :endDate, " +
-            "@AssetName = :assetName, " +
+            "@AssetId = :assetId, " +
             "@PlantIds = :plantIds", nativeQuery = true)
     List<Object[]> executeCalculateCommonGTHeatRateSP(
      @Param("startDate") String startDate,
      @Param("endDate") String endDate,
-     @Param("assetName") String assetName,
+     @Param("assetId") UUID assetId,
      @Param("plantIds") String plantIds);
 }
