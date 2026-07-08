@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,6 +8,8 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
+import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 
 const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
@@ -30,10 +32,16 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const valueFormat = ValueFormatterPhaseTwo()
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -138,6 +146,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const [originalRows, setOriginalRows] = useState([])
 
   const formatDate = (date) => {
+    if (!date) return ''
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
@@ -150,25 +159,39 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedEndDate = formatDate(endDate)
       fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
     }
-  }, [PLANT_ID, AOP_YEAR, selectedPlant, startDate, endDate])
+  }, [selectedPlant, startDate, endDate])
 
-  useEffect(() => {
-    getPlantList()
-  }, [PLANT_ID, AOP_YEAR])
-
-  const getPlantList = async () => {
+  const getPlantList = useCallback(async () => {
     setLoading(true)
     try {
       const res = await HeatRateApiService.getHRSGAssetDropdown(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
+        'AUXBOILER',
       )
 
-      // Convert to required format
-      const convertedData = res?.map((item) => ({
-        id: item[0],
-        name: item[1],
-      }))
+      // Convert to required format with plant name
+      const convertedData = res?.map((item) => {
+        // Find plant name from jmdSelectedPlants by matching cppPlantFkId
+        const plant = jmdSelectedPlants?.find(
+          (p) => p.id?.toUpperCase() === item.cppPlantFkId?.toUpperCase(),
+        )
+        const plantName = plant?.name
+
+        return {
+          id: item.assetId,
+          name: `${item.assetName} (${plantName})`,
+          plantName: plantName,
+          cppPlantFkId: item.cppPlantFkId,
+        }
+      })
+
+      // Sort by plantName
+      convertedData?.sort((a, b) => {
+        const nameA = a.plantName || ''
+        const nameB = b.plantName || ''
+        return nameA.localeCompare(nameB)
+      })
 
       if (convertedData?.length === 0) {
         setDropdownOptions([])
@@ -186,66 +209,96 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, jmdSelectedPlants])
 
-  const fetchHeatRateData = async (assetId, startDate, endDate) => {
-    setLoading(true)
-    try {
-      const res = await HeatRateApiService.getHRSGHeatRateData(
-        keycloak,
-        assetId,
-        AOP_YEAR,
-        startDate,
-        endDate,
-      )
-
-      if (res?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        getPlantList()
+        setModifiedCells({})
       }
-      let tempRes = res.map((item, index) => {
-        const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, getPlantList],
+  )
 
-        // Validate if selectedHeatRate matches the actual finalHeatRate value
-        const fieldMapping = {
-          OEM: 'oemHeatRate',
-          PREVIOUS_YEAR: 'previousYearHeatRate',
-          PROPOSED: 'proposedHeatRate',
+  const fetchHeatRateData = useCallback(
+    async (assetId, startDate, endDate) => {
+      setLoading(true)
+      try {
+        const res = await HeatRateApiService.getHRSGHeatRateData(
+          keycloak,
+          assetId,
+          AOP_YEAR,
+          startDate,
+          endDate,
+          PLANT_ID_LIST,
+        )
+
+        if (res?.code === 500) {
+          setRows([])
+          setOriginalRows([])
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: res?.message || 'Error fetching HRSG heat rate data',
+            severity: 'error',
+          })
+          return
         }
 
-        const selectedField = fieldMapping[selectedHeatRate]
-        const selectedValue = selectedField ? item[selectedField] : null
-        const finalValue = item.finalHeatRate
-
-        // Check if selected column value matches final heat rate
-        const isMatch =
-          selectedValue !== null &&
-          selectedValue !== undefined &&
-          finalValue !== null &&
-          finalValue !== undefined &&
-          parseFloat(selectedValue) === parseFloat(finalValue)
-
-        return {
-          ...item,
-          id: item.id || index + 1,
-          remarks: item.remarks || '',
-          selectedHeatRate: isMatch ? selectedHeatRate : 'OTHER',
+        if (!res?.data || res?.data?.length === 0) {
+          setRows([])
+          setOriginalRows([])
+          setSnackbarOpen(true)
+          setSnackbarData({ message: 'No data found', severity: 'info' })
+          return
         }
-      })
-      console.log('res', res)
-      setRows(tempRes)
-      setOriginalRows(tempRes)
-    } catch (error) {
-      console.error('Error fetching HRSG heat rate data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
+        let tempRes = res?.data?.map((item, index) => {
+          const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
+
+          // Validate if selectedHeatRate matches the actual finalHeatRate value
+          const fieldMapping = {
+            OEM: 'oemHeatRate',
+            PREVIOUS_YEAR: 'previousYearHeatRate',
+            PROPOSED: 'proposedHeatRate',
+          }
+
+          const selectedField = fieldMapping[selectedHeatRate]
+          const selectedValue = selectedField ? item[selectedField] : null
+          const finalValue = item.finalHeatRate
+
+          // Check if selected column value matches final heat rate
+          const isMatch =
+            selectedValue !== null &&
+            selectedValue !== undefined &&
+            finalValue !== null &&
+            finalValue !== undefined &&
+            parseFloat(selectedValue) === parseFloat(finalValue)
+
+          return {
+            ...item,
+            id: item.id || index + 1,
+            remarks: item.remarks || '',
+            selectedHeatRate: isMatch ? selectedHeatRate : 'OTHER',
+          }
+        })
+        setRows(tempRes)
+        setOriginalRows(tempRes)
+      } catch (error) {
+        console.error('Error fetching HRSG heat rate data:', error)
+        setRows([])
+        setOriginalRows([])
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: error?.message || 'Error fetching data',
+          severity: 'error',
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, AOP_YEAR, PLANT_ID_LIST],
+  )
 
   const permissions = {
     showAction: true,
@@ -357,31 +410,49 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     setLoading(true)
     try {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+
       const response = await HeatRateApiService.saveHRSGHeatRateExcel(
         file,
         keycloak,
+        AOP_YEAR,
+        selectedPlant,
+        formattedStartDate,
+        formattedEndDate,
+        PLANT_ID_LIST,
       )
 
-      if (response?.success) {
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Excel file imported successfully!',
           severity: 'success',
         })
         setModifiedCells({})
-        if (startDate && endDate) {
-          const formattedStartDate = formatDate(startDate)
-          const formattedEndDate = formatDate(endDate)
-          await fetchHeatRateData(
-            selectedPlant,
-            formattedStartDate,
-            formattedEndDate,
-          )
-        }
+        await fetchHeatRateData(
+          selectedPlant,
+          formattedStartDate,
+          formattedEndDate,
+        )
+      } else if (response?.code === 400 && response?.data) {
+        downloadBase64Excel(response.data, 'HRSG_Heat_Rate_Import_Status.xlsx')
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
+        await fetchHeatRateData(
+          selectedPlant,
+          formattedStartDate,
+          formattedEndDate,
+        )
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Upload Failed!',
+          message: response?.message || 'Upload Failed!',
           severity: 'error',
         })
       }
@@ -405,8 +476,14 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     })
 
     try {
-      const formattedStartDate = startDate ? formatDate(startDate) : null
-      const formattedEndDate = endDate ? formatDate(endDate) : null
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+
+      // Get the selected asset name with plant name
+      const selectedAsset = dropdownOptions.find(
+        (opt) => opt.id === selectedPlant,
+      )
+      const assetDisplayName = selectedAsset?.name || 'HRSG_Heat_Rate'
 
       await HeatRateApiService.exportHRSGHeatRateExcel(
         keycloak,
@@ -414,6 +491,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
+        PLANT_ID_LIST,
+        assetDisplayName,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
