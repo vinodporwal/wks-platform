@@ -385,7 +385,6 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	@Override
 	public byte[] exportOverallConsumptionWithoutGrades(String year, UUID plantFKId, boolean isAfterSave, List<AOPConsumptionNormDTO> dtoList) {
 		try {
-			AOPMessageVM gradesVM = getConsumptionAOPGrades(year, plantFKId.toString());
 	
 			Workbook workbook = new XSSFWorkbook();
 			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
