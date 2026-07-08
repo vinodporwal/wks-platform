@@ -202,28 +202,33 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         .collect(java.util.stream.Collectors.joining(","));
             }
             
-           
             java.util.Optional<String> displayNameOpt = assetRepository.findDisplayNameByAssetId(assetId);
 
             if (displayNameOpt.isPresent()) {
                 String displayName = displayNameOpt.get();
                 
-                
-                List<Object[]> spResultList = cppGtHeatRateRepository.executeCalculateCommonGTHeatRateSP(
-                        startDate, endDate, displayName, plantIdsStr
-                );
+                // ISOLATED TRY-CATCH GUARD: Prevents database Stored Procedure errors from crashing the API execution
+                try {
+                    List<Object[]> spResultList = cppGtHeatRateRepository.executeCalculateCommonGTHeatRateSP(
+                            startDate, endDate, displayName, plantIdsStr
+                    );
 
-                if (spResultList != null) {
-                    for (Object[] row : spResultList) {
-                        if (row != null && row.length > 3) {
-                            Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
-                            Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
-                            
-                            if (loadVal != null && proposedHeatRate != null) {
-                                proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                    if (spResultList != null) {
+                        for (Object[] row : spResultList) {
+                            if (row != null && row.length > 3) {
+                                Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
+                                Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
+                                
+                                if (loadVal != null && proposedHeatRate != null) {
+                                    proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                                }
                             }
                         }
                     }
+                } catch (Exception dbEx) {
+                    // Safely catches custom database exceptions like "Asset not found for selected plants."
+                    logger.warn("[JMDHeatRate] GT Stored procedure execution failed or bypassed for Asset Name: [{}] and Plant IDs: [{}]. Reason: {}. Proceeding with default values.", 
+                            displayName, plantIdsStr, dbEx.getMessage());
                 }
             } else {
                 logger.warn("[JMDHeatRate] Display name not found for assetId: {}. Skipping proposed heat rate SP calculation.", assetId);
@@ -244,6 +249,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 dto.setFreeSteamFactor(entity.getFreeSteamFactor() != null ? entity.getFreeSteamFactor() : null);
                 dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
                 
+                // Native Date mapping
                 dto.setCreatedDate(entity.getCreatedDate());
                 dto.setUpdatedDate(entity.getUpdatedDate());
                 
@@ -330,21 +336,28 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             if (displayNameOpt.isPresent()) {
                 String displayName = displayNameOpt.get();
                 
-                List<Object[]> spResultList = cppHrsgHeatRateRepository.executeCalculateCommonHRSGHeatRateSP(
-                        startDate, endDate, displayName, plantIdsStr
-                );
+                // ISOLATED TRY-CATCH GUARD: Prevents custom Stored Procedure business rule violations from breaking execution flow
+                try {
+                    List<Object[]> spResultList = cppHrsgHeatRateRepository.executeCalculateCommonHRSGHeatRateSP(
+                            startDate, endDate, displayName, plantIdsStr
+                    );
 
-                if (spResultList != null) {
-                    for (Object[] row : spResultList) {
-                        if (row != null && row.length > 3) {
-                            Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
-                            Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
-                            
-                            if (loadVal != null && proposedHeatRate != null) {
-                                proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                    if (spResultList != null) {
+                        for (Object[] row : spResultList) {
+                            if (row != null && row.length > 3) {
+                                Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
+                                Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
+                                
+                                if (loadVal != null && proposedHeatRate != null) {
+                                    proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                                }
                             }
                         }
                     }
+                } catch (Exception dbEx) {
+                    // Catches 'InvalidDataAccessResourceUsageException' or any custom DB error like 'Asset not found for selected plants.'
+                    logger.warn("[JMDHeatRate] Stored procedure execution bypassed/failed for Asset Name: [{}] and Plant IDs: [{}]. Exception Message: {}. Proceeding with default values.", 
+                            displayName, plantIdsStr, dbEx.getMessage());
                 }
             } else {
                 logger.warn("[JMDHeatRate] Display name not found for assetId: {}. Skipping proposed heat rate SP calculation.", assetId);
