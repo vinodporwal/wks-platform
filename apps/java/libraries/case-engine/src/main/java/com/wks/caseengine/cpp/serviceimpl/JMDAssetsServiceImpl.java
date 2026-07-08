@@ -581,7 +581,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 List<UUID> linkedHrsgIds;
                 try {
                     linkedHrsgIds = jdbcTemplate.queryForList(
-                            "SELECT AssetId FROM [RIL.AOP].[dbo].[CPPSteamGenerationAsset] WITH(NOLOCK) " +
+                            "SELECT AssetId FROM [dbo].[CPPSteamGenerationAsset] WITH(NOLOCK) " +
                             "WHERE LinkedPowerAsset_FK_ID = ? AND CPPPLANT_FK_Id = ?",
                             UUID.class, gtAssetId, plantId);
                 } catch (Exception ex) {
