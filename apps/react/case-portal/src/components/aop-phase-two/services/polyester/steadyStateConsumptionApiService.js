@@ -372,7 +372,7 @@ async function importSteadyStateConsumption(
  * @returns {Promise<Array>} Calculated data
  */
 async function calculateSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/crude/calculate-steady-state-norms`
+  const baseUrl = `${Config.CaseEngineUrl}/task/calculate-steady-state-norms`
   const queryParams = new URLSearchParams({ year, plantId })
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {

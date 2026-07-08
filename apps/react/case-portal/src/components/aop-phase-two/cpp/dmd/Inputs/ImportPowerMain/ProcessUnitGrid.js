@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { Box, Tooltip, IconButton } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -81,6 +81,7 @@ const ProcessUnitGrid = ({ importData }) => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [sourceRows, setSourceRows] = useState([])
+  const sourceRowsRef = useRef(sourceRows)
   const [plantRequirementData, setPlantRequirementData] = useState([])
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -203,9 +204,7 @@ const ProcessUnitGrid = ({ importData }) => {
         return
       }
 
-      // sourceRows is set from importData (parent component) via useEffect
-      // Use current sourceRows ref to compute balances
-      const rowsWithBalance = computeBalanceRows(allocations, sourceRows)
+      const rowsWithBalance = computeBalanceRows(allocations, sourceRowsRef.current)
       const finalRows = buildTotalRows(rowsWithBalance)
 
       setRows(finalRows)
@@ -217,7 +216,7 @@ const ProcessUnitGrid = ({ importData }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, sourceRows])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const fetchPlantRequirementData = useCallback(async () => {
     setLoading(true)
@@ -261,10 +260,13 @@ const ProcessUnitGrid = ({ importData }) => {
       }
     },
     1000,
-    [PLANT_ID, AOP_YEAR, fetchProcessUnitData, fetchPlantRequirementData],
+    [PLANT_ID, AOP_YEAR],
   )
 
-  useEffect(() => setSourceRows(importData), [importData])
+  useEffect(() => {
+    sourceRowsRef.current = importData
+    setSourceRows(importData)
+  }, [importData])
 
   // ── Balance / total helpers ────────────────────────────────────────────────
 

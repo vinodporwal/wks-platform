@@ -428,7 +428,6 @@ const FixedNorms = () => {
       setLoading(false)
       return
     }
-
     // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
       'aprNorms',
@@ -487,6 +486,7 @@ const FixedNorms = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      fetchNormsData()
     } catch (error) {
       console.error('Error saving plant requirement data:', error)
       setSnackbarOpen(true)

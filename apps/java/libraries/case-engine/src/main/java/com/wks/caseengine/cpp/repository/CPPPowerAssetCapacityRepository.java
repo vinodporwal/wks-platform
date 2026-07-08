@@ -85,7 +85,7 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
                     THEN TRY_CAST(RIGHT(a.DisplayName, LEN(a.DisplayName) - CHARINDEX('-', a.DisplayName)) AS INT)
                     ELSE 0
                 END AS nameNumber
-            FROM [RIL.AOP].[dbo].[CPPPowerAssetCapacity] c WITH(NOLOCK)
+            FROM [dbo].[CPPPowerAssetCapacity] c WITH(NOLOCK)
             LEFT JOIN PowerGenerationAssets a WITH(NOLOCK) ON c.Asset_FK_Id = a.AssetId
             LEFT JOIN Plants pl WITH(NOLOCK) ON a.CPPPLANT_FK_Id = pl.Id
             LEFT JOIN NormParameters npg WITH(NOLOCK) ON npg.Id = a.UtilityGeneration_FK_Id
@@ -165,8 +165,8 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
                     THEN TRY_CAST(RIGHT(sa.DisplayName, LEN(sa.DisplayName) - CHARINDEX('-', sa.DisplayName)) AS INT)
                     ELSE 0
                 END AS nameNumber
-            FROM [RIL.AOP].[dbo].[CPPSteamAssetCapacity] s WITH(NOLOCK)
-            LEFT JOIN [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sa WITH(NOLOCK) ON s.Asset_FK_Id = sa.AssetId
+            FROM [dbo].[CPPSteamAssetCapacity] s WITH(NOLOCK)
+            LEFT JOIN [dbo].[CPPSteamGenerationAsset] sa WITH(NOLOCK) ON s.Asset_FK_Id = sa.AssetId
             LEFT JOIN Plants pl2 WITH(NOLOCK) ON sa.CPPPLANT_FK_Id = pl2.Id
             LEFT JOIN NormParameters npg2 WITH(NOLOCK) ON npg2.Id = sa.UtilityGeneration_FK_Id
             LEFT JOIN NormParameters npd2 WITH(NOLOCK) ON npd2.Id = sa.UtilityDistributed_FK_Id
@@ -189,7 +189,7 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
             @Param("plantIds") List<UUID> plantIds,
             @Param("aopYear") String aopYear);
 
-    @Query(value = "SELECT c.* FROM [RIL.AOP].[dbo].[CPPPowerAssetCapacity] c WITH(NOLOCK) " +
+    @Query(value = "SELECT c.* FROM [dbo].[CPPPowerAssetCapacity] c WITH(NOLOCK) " +
                    "LEFT JOIN PowerGenerationAssets a WITH(NOLOCK) ON c.Asset_FK_Id = a.AssetId " +
                    "WHERE a.CPPPLANT_FK_Id = :plantId AND c.AOPYear = :aopYear", nativeQuery = true)
     List<CPPPowerAssetCapacity> findByPlantIdAndAopYear(@Param("plantId") UUID plantId, @Param("aopYear") String aopYear);
@@ -320,7 +320,7 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
                     THEN TRY_CAST(RIGHT(sga.DisplayName, LEN(sga.DisplayName) - CHARINDEX('-', sga.DisplayName)) AS INT)
                     ELSE 0
                 END AS nameNumber
-            FROM [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
+            FROM [dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
             LEFT JOIN Plants pl2 WITH(NOLOCK) ON sga.CPPPLANT_FK_Id = pl2.Id
             LEFT JOIN NormParameters npg2 WITH(NOLOCK) ON npg2.Id = sga.UtilityGeneration_FK_Id
             LEFT JOIN NormParameters npd2 WITH(NOLOCK) ON npd2.Id = sga.UtilityDistributed_FK_Id

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "CPPAssetOperationalHours", schema = "dbo", catalog = "RIL.AOP")
+@Table(name = "CPPAssetOperationalHours", schema = "dbo")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

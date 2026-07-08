@@ -509,6 +509,7 @@ const FixedConsumption = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <FixedConsumptionJMD />
+      case 'vmd':
       case 'hmd':
       case 'dmd':
         return <FixedConsumptionDMD />
@@ -532,7 +533,7 @@ const FixedConsumption = () => {
             currentRemark={currentRemark}
             setCurrentRemark={setCurrentRemark}
             currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
+            setCurrentRowId={() => { }}
             saveChanges={saveChanges}
             handleExcelUpload={handleExcelUpload}
             handleExport={handleExport}
@@ -542,7 +543,7 @@ const FixedConsumption = () => {
             setSnackbarData={setSnackbarData}
             customHeight={80}
             groupBy='plant'
-            // groupBy={['plant', 'plantId']}
+          // groupBy={['plant', 'plantId']}
           />
         )
     }
