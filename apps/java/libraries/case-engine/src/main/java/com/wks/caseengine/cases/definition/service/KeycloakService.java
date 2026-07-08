@@ -74,7 +74,10 @@ public class KeycloakService {
      * Mirrors: GET /admin/realms/{realm}/users?idpAlias={alias}&idpUserId={id}
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> getUserByFederatedId(String externalUserId, String idpAlias) {
+    @Value("${keycloak.idp-alias:oidc}")
+    private String idpAlias;
+
+    public Map<String, Object> getUserByFederatedId(String externalUserId) {
         try {
             String token = getAdminToken();
             String url = UriComponentsBuilder
@@ -83,7 +86,7 @@ public class KeycloakService {
                 .queryParam("idpUserId", externalUserId)
                 .toUriString();
 
-            log.info("getUserByFederatedId url={}", url);
+            log.info("getUserByFederatedId GET {}", url);
 
             ResponseEntity<List<Map<String, Object>>> response = rest.exchange(
                 url, HttpMethod.GET,
@@ -91,15 +94,17 @@ public class KeycloakService {
                 new ParameterizedTypeReference<>() {}
             );
 
+            log.info("getUserByFederatedId status={} body={}", response.getStatusCode(), response.getBody());
+
             List<Map<String, Object>> users = response.getBody();
             if (users != null && !users.isEmpty()) {
-                log.info("getUserByFederatedId found user: {}", users.get(0).get("username"));
+                log.info("getUserByFederatedId found user={}", users.get(0).get("username"));
                 return users.get(0);
             }
-            log.warn("getUserByFederatedId: no user found for externalUserId={} idpAlias={}", externalUserId, idpAlias);
+            log.warn("getUserByFederatedId: empty result for externalUserId={} idpAlias={}", externalUserId, idpAlias);
             return null;
         } catch (Exception e) {
-            log.warn("getUserByFederatedId failed: {}", e.getMessage());
+            log.warn("getUserByFederatedId failed for externalUserId={}: {}", externalUserId, e.getMessage());
             return null;
         }
     }

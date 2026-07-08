@@ -107,9 +107,8 @@ public class SsoController {
         }
 
         String userId = sessionData.get("userId");
-        String idpAlias = sessionData.getOrDefault("idpAlias", "oidc");
         try {
-            Map<String, Object> user = keycloakService.getUserByFederatedId(userId, idpAlias);
+            Map<String, Object> user = keycloakService.getUserByFederatedId(userId);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("User not found in Keycloak for sub: " + userId);
