@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ImportPower from './ImportPower'
 import AssetCapacity from './AssetCapacity/index'
 import ShutdownAndOperational from './ShutdownAndOperational/index'
 import { generateMockData } from './InputUtility'
@@ -16,6 +15,7 @@ import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
 import Prices from '../../Inputs/Prices/index'
 import FuelPriority from './FuelPriority/index'
+import ImportPower from '../../dmd/Inputs/ImportPowerMain/index'
 
 const InputsDMD = () => {
   const keycloak = useSession()
@@ -189,6 +189,30 @@ const InputsDMD = () => {
             name: 'shutdownOperationalHrs',
             displayName: 'Shutdown and Operational Hrs.',
             displaySequence: 2,
+          },
+          {
+            id: 'asset-priority',
+            name: 'assetPriority',
+            displayName: 'Asset Priority',
+            displaySequence: 3,
+          },
+          {
+            id: 'asset-capacity',
+            name: 'assetCapacity',
+            displayName: 'Asset Capacity',
+            displaySequence: 4,
+          },
+          {
+            id: 'heat-rate',
+            name: 'heatRate',
+            displayName: 'Heat Rate',
+            displaySequence: 5,
+          },
+          {
+            id: 'fixed-norms',
+            name: 'Norms',
+            displayName: 'Norms',
+            displaySequence: 6,
           },
         ]
         break
