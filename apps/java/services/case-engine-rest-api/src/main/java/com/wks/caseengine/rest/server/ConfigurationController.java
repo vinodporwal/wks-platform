@@ -490,4 +490,9 @@ public class ConfigurationController {
 	    }
 	}
 
+	@GetMapping(value = "/calculate-combine")
+	public AOPMessageVM calculateCombine(@RequestParam String plantId, @RequestParam String aopYear) {
+		return configurationService.calculateCombine(UUID.fromString(plantId), aopYear);
+	}
+
 }
