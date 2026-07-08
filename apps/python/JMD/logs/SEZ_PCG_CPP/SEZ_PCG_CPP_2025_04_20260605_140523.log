@@ -1,0 +1,15 @@
+JMD Plant Run Log
+Plant:     SEZ PCG CPP
+Period:    4/2025
+Generated: 2026-06-05 14:05:23
+================================================================================
+
+14:05:21  INFO        [CALC] SEZ PCG CPP  4/2025  (2025-26)
+14:05:21  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45
+14:05:22  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+14:05:22  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+14:05:22  INFO      [DC] Using DB consumption data for D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45 4/2025
+14:05:22  INFO      [DC] Using DB asset list for D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45
+14:05:22  INFO        [BUDGET] SEZ PCG CPP  4/2025  LP=0  MP=0  HP=0  SHP=0
+14:05:23  INFO        [DISPATCH] Using dummy power demand 4400.0 MWh for plant D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45
+14:05:23  INFO        [CALC] Done  4/2025  (1.5s)  assets=3  norms=0  budget=OK  iter=1

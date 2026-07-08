@@ -1,0 +1,222 @@
+JMD Plant Run Log
+Plant:     C2 CPP
+Period:    4/2026
+Generated: 2026-06-25 15:15:46
+================================================================================
+
+
+======================================================================
+  NEW SCHEMA ASSET SNAPSHOT  (April 2026)
+======================================================================
+  Plant:    C2-CPP
+  AOP Year: 2026-27
+
+  POWER ASSETS
+  Asset                      Type           Hours    Min MW    Max MW     Gen MWh   Prio
+  -------------------------  ----------  --------  --------  --------  ----------  -----
+  JMD - C2-GTG 1             GT            676.00     80.00    110.00    74360.00      2
+  JMD - C2-GTG 2             GT            710.00     80.00    110.00    78100.00      1
+  JMD - C2-STG 1             STG           719.00      0.00     93.00    66867.00      1
+  TOTAL                                                                 219327.00       
+
+  STEAM ASSETS
+  Asset                      Type        SteamType      Hours   Min TPH   Max TPH      Gen MT   Prio
+  -------------------------  ----------  ----------  --------  --------  --------  ----------  -----
+  AUXBOIL7_SHP STEAM         AUXBOILER   SHP Steam_Dis    698.00     90.00    220.00   153560.00      1
+  AUXBOIL8_SHP STEAM         AUXBOILER   SHP Steam_Dis    720.00     90.00    220.00   158400.00      1
+  HP Steam PRDS              PRDS        HP Steam_Dis    720.00      0.00    568.00   408960.00      1
+  HRSG1_C2_LP STEAM          HRSG        LP Steam_Dis    720.00     32.00     42.00    30240.00      1
+  HRSG1_C2_SHP STEAM         HRSG        SHP Steam_Dis    720.00    160.00    250.00   180000.00      1
+  HRSG2_C2_LP STEAM          HRSG        LP Steam_Dis    720.00     32.00     42.00    30240.00      1
+  HRSG2_C2_SHP STEAM         HRSG        SHP Steam_Dis    720.00    160.00    250.00   180000.00      1
+  LP Steam PRDS              PRDS        LP Steam_Dis    720.00      0.00     68.00    48960.00      1
+  MP Steam PRDS SHP          PRDS        MP Steam_Dis    720.00      0.00    498.00   358560.00      1
+  TOTAL                                                                            1548920.00       
+
+  MONTHLY GENERATION SUMMARY
+  Category                  Generation  Unit    
+  --------------------  --------------  --------
+  Power                     219,327.00  MWh
+  Steam                   1,548,920.00  MT
+15:15:41  INFO        [CALC] C2 CPP  4/2026  (2026-27)
+15:15:41  INFO        [PROCESS] Found 11 rows for FY 2026-27, plant BA558F95-8A3F-4769-9C78-FF7B6C639DDF
+15:15:41  INFO        [PROCESS] Utility                           Demand  Mapped Key                  
+15:15:41  INFO        [PROCESS] ------------------------  --------------  ----------------------------
+15:15:41  INFO        [PROCESS] NITROGEN_ASU                  4435199.00  nitrogen_asu_process        
+15:15:41  INFO        [PROCESS] COMPRESSED AIR                7221792.00  air_process                 
+15:15:41  INFO        [PROCESS] HP Steam_Dis                   -21599.00  hp_process                  
+15:15:41  INFO        [PROCESS] SHP Steam_Dis                  219588.00  shp_process                 
+15:15:41  INFO        [PROCESS] Power_Dis                    11813076.00  power_process               
+15:15:41  INFO        [PROCESS] MP Steam_Dis                  -127253.00  mp_process                  
+15:15:41  INFO        [PROCESS] Utility Water                    3548.00  utility_water_process       
+15:15:41  INFO        [PROCESS] D M Water                       72074.00  dm_process                  
+15:15:41  INFO        [PROCESS] LP Steam_Dis                    54000.00  lp_process                  
+15:15:41  INFO        [PROCESS] Ret steam condensate          -154158.00  ret_steam_condensate_process
+15:15:41  INFO        [PROCESS] Cooling Water                   47161.00  cooling_water_process       
+15:15:41  INFO        [PROCESS] TOTAL                                                                 
+15:15:41  INFO        [PROCESS]   power_process             11813076.00
+15:15:41  INFO        [PROCESS]   lp_process                   54000.00
+15:15:41  INFO        [PROCESS]   mp_process                 -127253.00
+15:15:41  INFO        [PROCESS]   hp_process                  -21599.00
+15:15:41  INFO        [PROCESS]   shp_process                 219588.00
+15:15:41  INFO        [PROCESS]   air_process                7221792.00
+15:15:41  INFO        [PROCESS]   nitrogen_asu_process       4435199.00
+15:15:41  INFO        [PROCESS]   dm_process                   72074.00
+15:15:41  INFO        [PROCESS]   cooling_water_process        47161.00
+15:15:41  INFO        [PROCESS]   utility_water_process         3548.00
+15:15:41  INFO        [PROCESS]   ret_steam_condensate_process     -154158.00
+15:15:41  INFO        [FIXED] ==================================================
+15:15:41  INFO        [FIXED] Fetching fixed consumption for plant BA558F95-8A3F-4769-9C78-FF7B6C639DDF
+15:15:41  INFO        [FIXED] Financial year : 2026-27
+15:15:41  INFO        [FIXED] Selected month : Apr
+15:15:41  INFO        [FIXED] ==================================================
+15:15:41  INFO        [FIXED] Using CPP Plant ID as SourceName to find sub-plants: BA558F95-8A3F-4769-9C78-FF7B6C639DDF
+15:15:41  INFO        [FIXED] Trying table: CPPFixedConsumption (SourceName filter)
+15:15:41  INFO        [FIXED] Using table: CPPFixedConsumption
+15:15:41  INFO        [FIXED] Power values are normalized from kWh to MWh for the model
+15:15:41  INFO        [FIXED] Plant                     Cost Center             Utility                      Value
+15:15:41  INFO        [FIXED] ------------------------  ----------------------  ------------------  --------------
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       COMPRESSED AIR           501800.00
+15:15:41  INFO        [FIXED] JMD-Rev Proc-DTA C2       JG-C2-Tankfarms         COMPRESSED AIR            79200.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  COMPRESSED AIR           746713.00
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Cooling Water             10872.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  D M Water                 55713.00
+15:15:41  INFO        [FIXED] JMD-Rev Proc-DTA C2       JG-C2-Horticulture      Effluent Treated         131760.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     HP Steam_Dis                238.00
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       LP Steam_Dis               4320.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     LP Steam_Dis                425.00
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       MP Steam_Dis               1200.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     MP Steam_Dis                389.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Flaring     MP Steam_Dis               6336.00
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       NITROGEN_ASU             648000.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Flaring     NITROGEN_ASU             504000.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  NITROGEN_ASU             800800.00
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Power_Dis                  2880.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG C2 Utility Common    Power_Dis                  1440.08
+15:15:41  INFO        [FIXED] JMD-Rev Proc-DTA C2       JG C2 Utility Common    Power_Dis                  3528.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-FIRE WATER        Power_Dis                   151.20
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-C2-RWTP          Power_Dis                   180.00
+15:15:41  INFO        [FIXED] JMD - DTA-C2 Power & UTILITY  JG-DTA-Utility Sale to Sibur  Power_Dis                 12162.00
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Ret steam condensate         1512.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     SHP Steam_Dis               630.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  SHP Steam_Dis             93660.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  SWRO WATER                87646.00
+15:15:41  INFO        [FIXED]   -> unmapped utility kept out of rollup: SWRO WATER
+15:15:41  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Utility Water               720.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG C2 Utility Common    Utility Water           1512083.00
+15:15:41  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  Utility Water             10847.00
+15:15:41  INFO        [FIXED] --------------------------------------------------
+15:15:41  INFO        [FIXED] Utility-wise fixed totals
+15:15:41  INFO        [FIXED] Utility                            Total  Unit    
+15:15:41  INFO        [FIXED] ------------------------  --------------  --------
+15:15:41  INFO        [FIXED] Power                           20341.28  MWh     
+15:15:41  INFO        [FIXED] LP Steam                         4745.00  MT      
+15:15:41  INFO        [FIXED] MP Steam                         7925.00  MT      
+15:15:41  INFO        [FIXED] HP Steam                          238.00  MT      
+15:15:41  INFO        [FIXED] SHP Steam                       94290.00  MT      
+15:15:41  INFO        [FIXED] Compressed Air                1327713.00  NM3     
+15:15:41  INFO        [FIXED] Nitrogen ASU                  1952800.00  NM3     
+15:15:41  INFO        [FIXED] DM Water                        55713.00  M3      
+15:15:41  INFO        [FIXED] Cooling Water                   10872.00  KM3     
+15:15:41  INFO        [FIXED] Utility Water                 1523650.00  M3      
+15:15:41  INFO        [FIXED] Ret Steam Condensate             1512.00  M3      
+15:15:41  INFO        [FIXED] Effluent                       131760.00  M3      
+15:15:41  INFO        [FIXED] ==================================================
+15:15:41  INFO        [DEMAND] ==================================================
+15:15:41  INFO        [DEMAND] Utility-wise demand rollup  (4/2026)
+15:15:41  INFO        [DEMAND] Utility                        Process         Fixed         Total  Unit    
+15:15:41  INFO        [DEMAND] ------------------------  ------------  ------------  ------------  --------
+15:15:41  INFO        [DEMAND] Power                         11813.08      20341.28      32154.36  MWh     
+15:15:41  INFO        [DEMAND] LP Steam                      54000.00       4745.00      58745.00  MT      
+15:15:41  INFO        [DEMAND] MP Steam                    -127253.00       7925.00    -119328.00  MT      
+15:15:41  INFO        [DEMAND] HP Steam                     -21599.00        238.00     -21361.00  MT      
+15:15:41  INFO        [DEMAND] SHP Steam                    219588.00      94290.00     313878.00  MT      
+15:15:41  INFO        [DEMAND] Compressed Air              7221792.00    1327713.00    8549505.00  NM3     
+15:15:41  INFO        [DEMAND] Nitrogen ASU                4435199.00    1952800.00    6387999.00  NM3     
+15:15:41  INFO        [DEMAND] DM Water                      72074.00      55713.00     127787.00  M3      
+15:15:41  INFO        [DEMAND] CW1                               0.00          0.00          0.00  KM3     
+15:15:41  INFO        [DEMAND] CW2                               0.00          0.00          0.00  KM3     
+15:15:41  INFO        [DEMAND] Cooling Water                 47161.00      10872.00      58033.00  KM3     
+15:15:41  INFO        [DEMAND] Raw Water                         0.00          0.00          0.00  M3      
+15:15:41  INFO        [DEMAND] Utility Water                  3548.00    1523650.00    1527198.00  M3      
+15:15:41  INFO        [DEMAND] Ret Steam Condensate        -154158.00       1512.00    -152646.00  M3      
+15:15:41  INFO        [DEMAND] Oxygen                            0.00          0.00          0.00  MT      
+15:15:41  INFO        [DEMAND] Effluent                          0.00     131760.00     131760.00  M3      
+15:15:41  INFO        [DEMAND] ==================================================
+15:15:44  INFO        [DC] ==================================================
+15:15:44  INFO        [DC] Power Demand vs Capacity Check:
+15:15:44  INFO        [DC] Demand: 32154.36 MWh, Available Capacity: 219327.00 MWh
+15:15:44  INFO        [DC] -> Power demand CAN be achieved with available assets.
+15:15:44  INFO        [DC] Steam (SHP) Demand vs Capacity Check:
+15:15:44  INFO        [DC] Demand: 231934.00 MT, Available Capacity: 1553760.00 MT
+15:15:44  INFO        [DC] -> Steam demand CAN be achieved with available assets.
+15:15:44  INFO        [DC] ==================================================
+15:15:45  INFO        [ODS] Loaded C2_JMD.ods (187 rows, 83 cols) — month 4/2026 at col 11
+15:15:45  INFO        [ODS] ===== NORMS SUMMARY (C2_JMD.ods 4/2026) =====
+15:15:45  INFO        [ODS] Powergen aux power norms:
+15:15:45  INFO        [ODS]   JMD - C2-GTG 1             aux_norm=0.001350
+15:15:45  INFO        [ODS]   JMD - C2-GTG 2             aux_norm=0.001350
+15:15:45  INFO        [ODS]   JMD - C2-STG 1             aux_norm=0.007050
+15:15:45  INFO        [ODS] Steam letdown norms (PRDS cascade):
+15:15:45  INFO        [ODS]   LP→MP: 0.9450  (1 MT LP needs this much MP)
+15:15:45  INFO        [ODS]   MP→HP: 0.9000  (1 MT MP needs this much HP)
+15:15:45  INFO        [ODS]   HP→SHP: 0.9360 (1 MT HP needs this much SHP)
+15:15:45  INFO        [ODS] HRSG byproduct (LP steam credit):
+15:15:45  INFO        [ODS]   HRSG1_C2_SHP STEAM         byproduct_norm=-0.1500 MT LP / MT SHP
+15:15:45  INFO        [ODS]   HRSG2_C2_SHP STEAM         byproduct_norm=-0.1500 MT LP / MT SHP
+15:15:45  INFO        [ODS] STG steam consumption:
+15:15:45  INFO        [ODS]   JMD - C2-STG 1             shp_norm=0.003640 MT/KWH
+15:15:45  INFO        [ODS] Steam distribution factors:
+15:15:45  INFO        [ODS]   HP Steam_Dis → HP Steam PRDS: 1.0000
+15:15:45  INFO        [ODS]   LP Steam_Dis → HRSG1_C2_LP STEAM: 0.3873, HRSG2_C2_LP STEAM: 0.2453, LP Steam PRDS: 0.3675
+15:15:45  INFO        [ODS]   MP Steam_Dis → MP Steam PRDS SHP: 1.0000
+15:15:45  INFO        [ODS]   SHP Steam_Dis → AUXBOIL7_SHP STEAM: 0.2267, HRSG1_C2_SHP STEAM: 0.4735, HRSG2_C2_SHP STEAM: 0.2999
+15:15:45  INFO        [ODS] ===================================
+15:15:46  INFO        ==============================================================================
+15:15:46  INFO        POWER DISPATCH  (April 2026)
+15:15:46  INFO        ==============================================================================
+15:15:46  INFO        Demand:  Process = 11813.08 MWh  |  Fixed = 20341.28 MWh  |  Total = 32154.36 MWh
+15:15:46  INFO      
+15:15:46  INFO        Step 1: All assets at MIN load
+15:15:46  INFO        Asset                      Priority    Min MW    Max MW     Hours       Min MWh
+15:15:46  INFO        -------------------------  --------  --------  --------  --------  ------------
+15:15:46  INFO        JMD - C2-GTG 1                    2     80.00    110.00    676.00      54080.00
+15:15:46  INFO        JMD - C2-GTG 2                    1     80.00    110.00    710.00      56800.00
+15:15:46  INFO        JMD - C2-STG 1                    1      0.00     93.00    719.00          0.00
+15:15:46  INFO        TOTAL MIN GENERATION                                                  110880.00
+15:15:46  INFO      
+15:15:46  INFO        ⚠ SURPLUS: MIN generation (110880.00 MWh) EXCEEDS demand (32154.36 MWh)
+15:15:46  INFO          Surplus = 78725.64 MWh  (will be handled via export power in future)
+15:15:46  INFO      
+15:15:46  INFO        FINAL DISPATCH
+15:15:46  INFO        Asset                      Priority   Dispatched MW  Dispatched MWh    Load %   Avg Load MW   Free Steam MT        Aux Norm   Aux Power MWh
+15:15:46  INFO        -------------------------  --------  --------------  --------------  --------  ------------  --------------  --------------  --------------
+15:15:46  INFO        JMD - C2-GTG 1                    2           80.00        54080.00     72.7%         80.00       106537.60        0.001350           73.01
+15:15:46  INFO        JMD - C2-GTG 2                    1           80.00        56800.00     72.7%         80.00       111896.00        0.001350           76.68
+15:15:46  INFO        JMD - C2-STG 1                    1            0.00            0.00      0.0%          0.00            0.00        0.007050            0.00
+15:15:46  INFO        TOTAL                                                     110880.00                               218433.60                          149.69
+15:15:46  INFO        ==============================================================================
+15:15:46  INFO        ==============================================================================
+15:15:46  INFO        STEAM DISPATCH  (April 2026)
+15:15:46  INFO        ==============================================================================
+15:15:46  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+15:15:46  INFO        ---------  ----------------  ----------  ------------  ----------------
+15:15:46  INFO        LP                 58745.00    24079.54     -33264.00          25481.00
+15:15:46  INFO        MP               -119328.00        0.00          0.00         -95248.46
+15:15:46  INFO        HP                -21361.00        0.00          0.00         -21361.00
+15:15:46  INFO        SHP               313878.00        0.00          0.00         313878.00
+15:15:46  INFO      
+15:15:46  INFO        Total Free Steam available: 218433.60 MT
+15:15:46  INFO      
+15:15:46  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+15:15:46  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+15:15:46  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+15:15:46  INFO        AUXBOIL7_SHP STEAM                1       90.00      220.00    698.00           90.00        62820.00     40.9%
+15:15:46  INFO        AUXBOIL8_SHP STEAM                1       90.00      220.00    720.00           90.00        64800.00     40.9%
+15:15:46  INFO        HRSG1_C2_SHP STEAM                2      160.00      250.00    676.00          160.00       108160.00     64.0%
+15:15:46  INFO        HRSG2_C2_SHP STEAM                1      160.00      250.00    710.00          160.00       113600.00     64.0%
+15:15:46  INFO        TOTAL SUPPLEMENTARY                                                                         349380.00          
+15:15:46  INFO        TOTAL STEAM GENERATED                                                                       567813.60          
+15:15:46  INFO        ✓ Steam demand fully met with surplus of 253935.60 MT
+15:15:46  INFO        ==============================================================================
+15:15:46  INFO        [CALC] Done  4/2026  (5.2s)  assets=3  norms=0

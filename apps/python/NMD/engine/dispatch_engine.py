@@ -35,6 +35,19 @@ from engine.norms_reader import NMDNormsReader
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Per-month DB query cache — eliminates redundant DB round-trips across U4U
+# iterations (asset table, import power, GT curves, steam assets are invariant
+# for a given month/year).  Call clear_db_cache() between months.
+# ---------------------------------------------------------------------------
+_DB_CACHE: Dict[tuple, object] = {}
+
+
+def clear_db_cache() -> None:
+    """Clear the dispatch-engine DB cache.  Call between months."""
+    _DB_CACHE.clear()
+
+
 DEFAULT_FREE_STEAM_FACTOR = 1.97
 STEAM_TO_POWER_MT_PER_MWH = 3.56  # SHP steam (MT) consumed per MWh by STG
 EXCESS_STEAM_THRESHOLD_MT = 1.0
@@ -141,6 +154,10 @@ def _build_power_asset_table(month: int, year: int) -> list:
         asset_id, asset_name, asset_type, op_hours, min_mw, max_mw,
         fixed_max_mw, priority, mandatory, min_mwh, max_mwh
     """
+    cache_key = ("power_assets", month, year)
+    if cache_key in _DB_CACHE:
+        return _DB_CACHE[cache_key]
+
     assets_raw = fetch_asset_availability_with_hours(month, year)
     result = []
     for a in assets_raw:
@@ -170,6 +187,7 @@ def _build_power_asset_table(month: int, year: int) -> list:
             "min_mwh":     min_mw * op_hours,
             "max_mwh":     max_mw * op_hours,
         })
+    _DB_CACHE[cache_key] = result
     return result
 
 
@@ -479,7 +497,12 @@ def dispatch_power(
     total_demand = demand["total_mwh"]
 
     # 3. Fetch import power FIRST — import is utilized before GT/STG
-    import_power = fetch_import_power(plant_id, month, year)
+    imp_key = ("import_power", plant_id, month, year)
+    if imp_key in _DB_CACHE:
+        import_power = _DB_CACHE[imp_key]
+    else:
+        import_power = fetch_import_power(plant_id, month, year)
+        _DB_CACHE[imp_key] = import_power
     import_mwh = float(import_power.get("total_mwh", 0.0)) if import_power.get("success") else 0.0
 
     # Net demand after import power
@@ -489,7 +512,12 @@ def dispatch_power(
 
     # 4. Fetch GT heat rate curves from DB
     fy = _fy_string(month, year)
-    gt_curves = fetch_gt_heat_rate_curves(fy)
+    gt_key = ("gt_curves", fy)
+    if gt_key in _DB_CACHE:
+        gt_curves = _DB_CACHE[gt_key]
+    else:
+        gt_curves = fetch_gt_heat_rate_curves(fy)
+        _DB_CACHE[gt_key] = gt_curves
 
     # 5. Run dispatch — GT/STG only cover net demand (after import)
     dispatch = _dispatch_all_min_first(
@@ -540,7 +568,12 @@ def _build_steam_asset_table(power_result: dict) -> list:
     NMD uses SteamGenerationAssets with inline MinCapacityMT/MaxCapacityMT.
     HRSGs inherit operational hours and priority from their linked GT.
     """
-    steam_assets = fetch_steam_generation_assets()
+    steam_key = ("steam_assets",)
+    if steam_key in _DB_CACHE:
+        steam_assets = _DB_CACHE[steam_key]
+    else:
+        steam_assets = fetch_steam_generation_assets()
+        _DB_CACHE[steam_key] = steam_assets
     power_assets = power_result.get("assets", [])
 
     dispatch_assets = []
@@ -857,6 +890,12 @@ def dispatch_steam(
             # Calculate net demand for this grade
             # Start with process + fixed demand
             net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
+            
+            # Add byproduct for lowest grade (LP)
+            if i == 0:
+                net += byproduct_low_steam
+            
+            # Add letdown from previous grade (cascading)
             
             # Subtract HRSG LP byproduct supply (HRSG produces LP as byproduct)
             if g == "lp":

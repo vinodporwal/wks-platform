@@ -1,0 +1,116 @@
+JMD Plant Full-Year Run Log
+Plant:     DTA CPP
+FY:        2025-26
+Generated: 2026-06-04 18:24:39
+================================================================================
+
+18:24:20  INFO      [FULL YEAR] DTA CPP  FY 2025-26  (4 workers)
+18:24:20  INFO        [CALC] DTA CPP  4/2025  (2025-26)
+18:24:20  INFO        [CALC] DTA CPP  6/2025  (2025-26)
+18:24:20  INFO        [CALC] DTA CPP  5/2025  (2025-26)
+18:24:20  INFO        [CALC] DTA CPP  7/2025  (2025-26)
+18:24:21  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:21  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:21  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:21  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:22  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:22  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:22  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:22  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:22  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:22  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:22  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:22  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:23  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 4/2025
+18:24:23  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:23  INFO        [BUDGET] DTA CPP  4/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:23  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 7/2025
+18:24:23  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:23  INFO        [BUDGET] DTA CPP  7/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:23  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 6/2025
+18:24:23  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 5/2025
+18:24:23  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:23  INFO        [BUDGET] DTA CPP  5/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:23  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:23  INFO        [BUDGET] DTA CPP  6/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:26  INFO        [CALC] Done  7/2025  (2.9s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] July 2025  assets=20  norms=0  (2.9s)
+18:24:26  INFO        [CALC] DTA CPP  8/2025  (2025-26)
+18:24:26  INFO        [CALC] Done  4/2025  (2.9s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] April 2025  assets=20  norms=0  (2.9s)
+18:24:26  INFO        [CALC] Done  6/2025  (2.9s)  assets=20  norms=0  budget=OK  iter=4
+18:24:26  INFO        [CALC] DTA CPP  9/2025  (2025-26)
+  [OK  ] June 2025  assets=20  norms=0  (2.9s)
+18:24:26  INFO        [CALC] DTA CPP  10/2025  (2025-26)
+18:24:26  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:26  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:26  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:26  INFO        [CALC] Done  5/2025  (2.9s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] May 2025  assets=20  norms=0  (2.9s)
+18:24:26  INFO        [CALC] DTA CPP  11/2025  (2025-26)
+18:24:26  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:28  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:28  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:28  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:28  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:28  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:28  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:28  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:28  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:28  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 8/2025
+18:24:28  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:28  INFO        [BUDGET] DTA CPP  8/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:28  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 9/2025
+18:24:28  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:28  INFO        [BUDGET] DTA CPP  9/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:28  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 10/2025
+18:24:28  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:28  INFO        [BUDGET] DTA CPP  10/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:28  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 11/2025
+18:24:28  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:28  INFO        [BUDGET] DTA CPP  11/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:31  INFO        [CALC] Done  8/2025  (2.0s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] August 2025  assets=20  norms=0  (2.0s)
+18:24:31  INFO        [CALC] DTA CPP  12/2025  (2025-26)
+18:24:31  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:31  INFO        [CALC] Done  10/2025  (2.0s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] October 2025  assets=20  norms=0  (2.0s)
+18:24:31  INFO        [CALC] DTA CPP  1/2026  (2025-26)
+18:24:31  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:32  INFO        [CALC] Done  9/2025  (2.0s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] September 2025  assets=20  norms=0  (2.0s)
+18:24:32  INFO        [CALC] DTA CPP  2/2026  (2025-26)
+18:24:32  INFO        [CALC] Done  11/2025  (2.0s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] November 2025  assets=20  norms=0  (2.0s)
+18:24:32  INFO        [CALC] DTA CPP  3/2026  (2025-26)
+18:24:32  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:32  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:33  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:33  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:33  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:33  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:34  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:34  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:35  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:24:35  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 1/2026
+18:24:35  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:35  INFO        [BUDGET] DTA CPP  1/2026  LP=0  MP=0  HP=0  SHP=0
+18:24:35  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:24:35  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 12/2025
+18:24:35  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:35  INFO        [BUDGET] DTA CPP  12/2025  LP=0  MP=0  HP=0  SHP=0
+18:24:35  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 2/2026
+18:24:35  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:35  INFO        [BUDGET] DTA CPP  2/2026  LP=0  MP=0  HP=0  SHP=0
+18:24:35  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 3/2026
+18:24:35  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+18:24:35  INFO        [BUDGET] DTA CPP  3/2026  LP=0  MP=0  HP=0  SHP=0
+18:24:38  INFO        [CALC] Done  12/2025  (3.3s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] December 2025  assets=20  norms=0  (3.3s)
+18:24:38  INFO        [CALC] Done  3/2026  (3.3s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] March 2026  assets=20  norms=0  (3.3s)
+18:24:38  INFO        [CALC] Done  1/2026  (3.2s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] January 2026  assets=20  norms=0  (3.2s)
+18:24:39  INFO        [CALC] Done  2/2026  (3.3s)  assets=20  norms=0  budget=OK  iter=4
+  [OK  ] February 2026  assets=20  norms=0  (3.3s)
+18:24:39  INFO      [FULL YEAR] Done  FY 2025-26  12/12 OK  19.0s

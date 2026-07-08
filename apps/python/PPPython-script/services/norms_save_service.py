@@ -94,6 +94,31 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
                     }
                 fym_id = fym_row[0]
                 
+                # Get all NormsHeader entries to build mapping
+                cur.execute('''
+                    SELECT
+                        nh.Id,
+                        p.Name as PlantName,
+                        nh.UtilityName,
+                        nh.MaterialName,
+                        nh.AccountName
+                    FROM NormsHeader nh
+                    INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+                    WHERE nh.IsActive = 1
+                ''')
+                header_records = cur.fetchall()
+                
+                # Build mapping: (PlantName, UtilityName, MaterialName) -> (NormsHeader.Id, AccountName)
+                header_map = {}
+                for row in header_records:
+                    header_id = str(row[0])
+                    plant_name = row[1]
+                    utility_name = row[2]
+                    material_name = row[3]
+                    account_name = row[4]
+                    key = (plant_name, utility_name, material_name)
+                    header_map[key] = (header_id, account_name)
+                
                 # Get all NormsMonthDetail records for this month
                 # Also join CPPMonthWisePrice to fetch ValueType so we can
                 # skip Amount overwrite for 'Amount' type utilities.
@@ -111,7 +136,8 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
                         nmd.Price,
                         nh.Plant_FK_Id,
                         nmd.Amount,
-                        ISNULL(cmp.ValueType, '') AS ValueType
+                        ISNULL(cmp.ValueType, '') AS ValueType,
+                        nh.AccountName
                     FROM NormsMonthDetail nmd
                     INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
                     INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
@@ -144,14 +170,26 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
                     plant_id = str(row[10]) if len(row) > 10 and row[10] else ''
                     old_amount = float(row[11]) if len(row) > 11 and row[11] else 0
                     value_type = str(row[12]).strip() if len(row) > 12 and row[12] else ''
+                    account_name = str(row[13]).strip() if len(row) > 13 and row[13] else ''
 
                     # ── ValueType = 'Amount': user entered a direct cost amount.
                     # We must NEVER overwrite the amount — only QTY/Quantity/Norms
                     # may be updated (so norms stay accurate even for Amount rows).
                     is_direct_amount = (value_type == 'Amount')
 
-                    key = (plant_name, utility_name)
-                    new_qty = generation_map.get(key, None)
+                    # Build key to lookup in header_map
+                    header_key = (plant_name, utility_name, material_name)
+                    header_info = header_map.get(header_key, (None, None))
+                    header_id = header_info[0] if header_info else None
+                    header_account_name = header_info[1] if header_info else ''
+
+                    # For generation utilities (AccountName='Utilities'), update QTY from generation_map
+                    # For consumption utilities, keep existing QTY
+                    is_generation_utility = (header_account_name == 'Utilities')
+                    
+                    # Use (PlantName, UtilityName) key for generation_map (existing logic)
+                    gen_key = (plant_name, utility_name)
+                    new_qty = generation_map.get(gen_key, None) if is_generation_utility else old_qty
                     
                     if material_name == 'POWERGEN' and issueing_plant:
                         if 'Power Plant 1' in issueing_plant or 'Power Plant-1' in issueing_plant:

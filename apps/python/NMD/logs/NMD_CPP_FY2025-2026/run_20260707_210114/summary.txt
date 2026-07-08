@@ -1,0 +1,23 @@
+FULL FINANCIAL YEAR RUN SUMMARY - FY 2025-26
+========================================================================================================================
+
+CPP Plant: NMD CPP  [23BCA1B3]
+Run timestamp: 20260707_210114
+Months processed: 12
+
+MONTH-BY-MONTH QUICK RESULTS:
+------------------------------------------------------------------------------------------------------------------------
+[OK] April 2025: U4U=YES (iters=21) | Price=YES (iters=11) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_04_20260707_210147.log
+[OK] May 2025: U4U=YES (iters=26) | Price=YES (iters=12) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_05_20260707_210222.log
+[OK] June 2025: U4U=YES (iters=26) | Price=YES (iters=13) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_06_20260707_210255.log
+[OK] July 2025: U4U=YES (iters=26) | Price=YES (iters=13) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_07_20260707_210329.log
+[OK] August 2025: U4U=YES (iters=26) | Price=YES (iters=13) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_08_20260707_210402.log
+[OK] September 2025: U4U=YES (iters=22) | Price=YES (iters=12) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_09_20260707_210434.log
+[OK] October 2025: U4U=YES (iters=27) | Price=YES (iters=12) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_10_20260707_210509.log
+[OK] November 2025: U4U=YES (iters=23) | Price=YES (iters=14) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_11_20260707_210541.log
+[OK] December 2025: U4U=YES (iters=23) | Price=YES (iters=13) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2025_12_20260707_210612.log
+[OK] January 2026: U4U=YES (iters=23) | Price=YES (iters=13) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2026_01_20260707_210645.log
+[OK] February 2026: U4U=YES (iters=23) | Price=YES (iters=13) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2026_02_20260707_210718.log
+[OK] March 2026: U4U=YES (iters=23) | Price=YES (iters=12) | Log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\NMD_CPP_2026_03_20260707_210755.log
+
+Utility price comparison log: C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\NMD\logs\NMD_CPP_FY2025-2026\run_20260707_210114\utility_price_bpc_comparison.log

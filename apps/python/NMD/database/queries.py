@@ -1311,7 +1311,9 @@ def fetch_norm_rows_all_plants(month: int, year: int, plant_id: str = None) -> l
                 nh.AccountName,
                 nh.IssuingPlantName,
                 nmd.Norms,
-                nmd.QTY
+                nmd.QTY,
+                nh.Id               AS NormsHeaderId,
+                nmd.Id             AS NormsMonthDetailId
             FROM {T.NORMS_MONTH_DETAIL} nmd
             INNER JOIN {T.NORMS_HEADER} nh ON nh.Id = nmd.NormsHeader_FK_Id
             INNER JOIN {T.PLANTS} p        ON p.Id  = nh.{T.NORMS_HEADER_PLANT_FK}
@@ -1330,7 +1332,9 @@ def fetch_norm_rows_all_plants(month: int, year: int, plant_id: str = None) -> l
                 nh.AccountName,
                 nh.IssuingPlantName,
                 nmd.Norms,
-                nmd.QTY
+                nmd.QTY,
+                nh.Id               AS NormsHeaderId,
+                nmd.Id             AS NormsMonthDetailId
             FROM {T.NORMS_MONTH_DETAIL} nmd
             INNER JOIN {T.NORMS_HEADER} nh ON nh.Id = nmd.NormsHeader_FK_Id
             INNER JOIN {T.PLANTS} p        ON p.Id  = nh.{T.NORMS_HEADER_PLANT_FK}
@@ -1351,6 +1355,8 @@ def fetch_norm_rows_all_plants(month: int, year: int, plant_id: str = None) -> l
                 "issuing_plant_name": row[4],
                 "norm":               float(row[5]) if row[5] is not None else None,
                 "qty":                float(row[6]) if row[6] is not None else 0.0,
+                "norms_header_id":    row[7],
+                "norms_month_detail_id": row[8],
             })
         return rows
     except Exception as e:
@@ -1471,6 +1477,10 @@ def fetch_generation_utilities_and_u4u(month: int, year: int) -> dict:
 
         if not util_name:
             continue
+        
+        # Skip utilities with zero generation - they cause mathematical instability in U4U loop
+        if generation <= 0:
+            continue
 
         key = (plant_name, util_name)
         if key not in gen_map:
@@ -1485,7 +1495,13 @@ def fetch_generation_utilities_and_u4u(month: int, year: int) -> dict:
             all_utilities.add(util_name)
 
         # Add consumption entry (material = what this utility consumes)
+        # Skip import power sources - they are external inputs, not U4U utilities
         if material_name and material_name != "No Material":
+            # Exclude import power sources from U4U matrix
+            material_upper = material_name.upper()
+            if "MEL" in material_upper or "MSCB" in material_upper or "IMPORT" in material_upper:
+                continue
+            
             consume_entry = {
                 "material": material_name,
                 "issuing_plant": issuing_plant,

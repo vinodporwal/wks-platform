@@ -1,0 +1,839 @@
+JMD Plant Run Log
+Plant:     C2 CPP
+Period:    4/2026
+Generated: 2026-06-29 13:55:43
+================================================================================
+
+
+======================================================================
+  NEW SCHEMA ASSET SNAPSHOT  (April 2026)
+======================================================================
+  Plant:    C2-CPP
+  AOP Year: 2026-27
+
+  POWER ASSETS
+  Asset                      Type           Hours    Min MW    Max MW     Gen MWh   Prio
+  -------------------------  ----------  --------  --------  --------  ----------  -----
+  JMD - C2-GTG 1             GT            676.00     80.00    110.00    74360.00      2
+  JMD - C2-GTG 2             GT            710.00     80.00    110.00    78100.00      1
+  JMD - C2-STG 1             STG           719.00      0.00     93.00    66867.00      1
+  TOTAL                                                                 219327.00       
+
+  STEAM ASSETS
+  Asset                      Type        SteamType      Hours   Min TPH   Max TPH      Gen MT   Prio
+  -------------------------  ----------  ----------  --------  --------  --------  ----------  -----
+  AUXBOIL7_SHP STEAM         AUXBOILER   SHP Steam_Dis    698.00     90.00    220.00   153560.00      1
+  AUXBOIL8_SHP STEAM         AUXBOILER   SHP Steam_Dis    720.00     90.00    220.00   158400.00      1
+  HP Steam PRDS              PRDS        HP Steam_Dis    720.00      0.00    568.00   408960.00      1
+  HRSG1_C2_LP STEAM          HRSG        LP Steam_Dis    720.00     32.00     42.00    30240.00      1
+  HRSG1_C2_SHP STEAM         HRSG        SHP Steam_Dis    720.00    160.00    250.00   180000.00      1
+  HRSG2_C2_LP STEAM          HRSG        LP Steam_Dis    720.00     32.00     42.00    30240.00      1
+  HRSG2_C2_SHP STEAM         HRSG        SHP Steam_Dis    720.00    160.00    250.00   180000.00      1
+  LP Steam PRDS              PRDS        LP Steam_Dis    720.00      0.00     68.00    48960.00      1
+  MP Steam PRDS SHP          PRDS        MP Steam_Dis    720.00      0.00    498.00   358560.00      1
+  TOTAL                                                                            1548920.00       
+
+  MONTHLY GENERATION SUMMARY
+  Category                  Generation  Unit    
+  --------------------  --------------  --------
+  Power                     219,327.00  MWh
+  Steam                   1,548,920.00  MT
+13:55:35  INFO        [CALC] C2 CPP  4/2026  (2026-27)
+13:55:36  INFO        [PROCESS] Found 11 rows for FY 2026-27, plant BA558F95-8A3F-4769-9C78-FF7B6C639DDF
+13:55:36  INFO        [PROCESS] Utility                           Demand  Mapped Key                  
+13:55:36  INFO        [PROCESS] ------------------------  --------------  ----------------------------
+13:55:36  INFO        [PROCESS] NITROGEN_ASU                  4435199.00  nitrogen_asu_process        
+13:55:36  INFO        [PROCESS] COMPRESSED AIR                7221792.00  air_process                 
+13:55:36  INFO        [PROCESS] HP Steam_Dis                   -21599.00  hp_process                  
+13:55:36  INFO        [PROCESS] SHP Steam_Dis                  219588.00  shp_process                 
+13:55:36  INFO        [PROCESS] Power_Dis                    11813076.00  power_process               
+13:55:36  INFO        [PROCESS] MP Steam_Dis                  -127253.00  mp_process                  
+13:55:36  INFO        [PROCESS] Utility Water                    3548.00  utility_water_process       
+13:55:36  INFO        [PROCESS] D M Water                       72074.00  dm_process                  
+13:55:36  INFO        [PROCESS] LP Steam_Dis                    54000.00  lp_process                  
+13:55:36  INFO        [PROCESS] Ret steam condensate          -154158.00  ret_steam_condensate_process
+13:55:36  INFO        [PROCESS] Cooling Water                   47161.00  cooling_water_process       
+13:55:36  INFO        [PROCESS] TOTAL                                                                 
+13:55:36  INFO        [PROCESS]   power_process             11813076.00
+13:55:36  INFO        [PROCESS]   lp_process                   54000.00
+13:55:36  INFO        [PROCESS]   mp_process                 -127253.00
+13:55:36  INFO        [PROCESS]   hp_process                  -21599.00
+13:55:36  INFO        [PROCESS]   shp_process                 219588.00
+13:55:36  INFO        [PROCESS]   air_process                7221792.00
+13:55:36  INFO        [PROCESS]   nitrogen_asu_process       4435199.00
+13:55:36  INFO        [PROCESS]   dm_process                   72074.00
+13:55:36  INFO        [PROCESS]   cooling_water_process        47161.00
+13:55:36  INFO        [PROCESS]   utility_water_process         3548.00
+13:55:36  INFO        [PROCESS]   ret_steam_condensate_process     -154158.00
+13:55:36  INFO        [FIXED] ==================================================
+13:55:36  INFO        [FIXED] Fetching fixed consumption for plant BA558F95-8A3F-4769-9C78-FF7B6C639DDF
+13:55:36  INFO        [FIXED] Financial year : 2026-27
+13:55:36  INFO        [FIXED] Selected month : Apr
+13:55:36  INFO        [FIXED] ==================================================
+13:55:36  INFO        [FIXED] Using CPP Plant ID as SourceName to find sub-plants: BA558F95-8A3F-4769-9C78-FF7B6C639DDF
+13:55:36  INFO        [FIXED] Trying table: CPPFixedConsumption (SourceName filter)
+13:55:36  INFO        [FIXED] Using table: CPPFixedConsumption
+13:55:36  INFO        [FIXED] Power values are normalized from kWh to MWh for the model
+13:55:36  INFO        [FIXED] Plant                     Cost Center             Utility                      Value
+13:55:36  INFO        [FIXED] ------------------------  ----------------------  ------------------  --------------
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       COMPRESSED AIR           501800.00
+13:55:36  INFO        [FIXED] JMD-Rev Proc-DTA C2       JG-C2-Tankfarms         COMPRESSED AIR            79200.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  COMPRESSED AIR           746713.00
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Cooling Water             10872.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  D M Water                 55713.00
+13:55:36  INFO        [FIXED] JMD-Rev Proc-DTA C2       JG-C2-Horticulture      Effluent Treated         131760.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     HP Steam_Dis                238.00
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       LP Steam_Dis               4320.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     LP Steam_Dis                425.00
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       MP Steam_Dis               1200.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     MP Steam_Dis                389.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Flaring     MP Steam_Dis               6336.00
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       NITROGEN_ASU             648000.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Flaring     NITROGEN_ASU             504000.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  NITROGEN_ASU             800800.00
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Power_Dis                  2880.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG C2 Utility Common    Power_Dis                  1440.08
+13:55:36  INFO        [FIXED] JMD-Rev Proc-DTA C2       JG C2 Utility Common    Power_Dis                  3528.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-FIRE WATER        Power_Dis                   151.20
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-C2-RWTP          Power_Dis                   180.00
+13:55:36  INFO        [FIXED] JMD - DTA-C2 Power & UTILITY  JG-DTA-Utility Sale to Sibur  Power_Dis                 12162.00
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Ret steam condensate         1512.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-C2-Steam Dumping     SHP Steam_Dis               630.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  SHP Steam_Dis             93660.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  SWRO WATER                87646.00
+13:55:36  INFO        [FIXED]   -> unmapped utility kept out of rollup: SWRO WATER
+13:55:36  INFO        [FIXED] JMD - DTA-MEG-C2 Gantry   JG- C2- Tank Farm       Utility Water               720.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG C2 Utility Common    Utility Water           1512083.00
+13:55:36  INFO        [FIXED] JMD - C2 Utility Plant    JG-DTA-Utility Sale to Sibur  Utility Water             10847.00
+13:55:36  INFO        [FIXED] --------------------------------------------------
+13:55:36  INFO        [FIXED] Utility-wise fixed totals
+13:55:36  INFO        [FIXED] Utility                            Total  Unit    
+13:55:36  INFO        [FIXED] ------------------------  --------------  --------
+13:55:36  INFO        [FIXED] Power                           20341.28  MWh     
+13:55:36  INFO        [FIXED] LP Steam                         4745.00  MT      
+13:55:36  INFO        [FIXED] MP Steam                         7925.00  MT      
+13:55:36  INFO        [FIXED] HP Steam                          238.00  MT      
+13:55:36  INFO        [FIXED] SHP Steam                       94290.00  MT      
+13:55:36  INFO        [FIXED] Compressed Air                1327713.00  NM3     
+13:55:36  INFO        [FIXED] Nitrogen ASU                  1952800.00  NM3     
+13:55:36  INFO        [FIXED] DM Water                        55713.00  M3      
+13:55:36  INFO        [FIXED] Cooling Water                   10872.00  KM3     
+13:55:36  INFO        [FIXED] Utility Water                 1523650.00  M3      
+13:55:36  INFO        [FIXED] Ret Steam Condensate             1512.00  M3      
+13:55:36  INFO        [FIXED] Effluent                       131760.00  M3      
+13:55:36  INFO        [FIXED] ==================================================
+13:55:36  INFO        [DEMAND] ==================================================
+13:55:36  INFO        [DEMAND] Utility-wise demand rollup  (4/2026)
+13:55:36  INFO        [DEMAND] Utility                        Process         Fixed         Total  Unit    
+13:55:36  INFO        [DEMAND] ------------------------  ------------  ------------  ------------  --------
+13:55:36  INFO        [DEMAND] Power                         11813.08      20341.28      32154.36  MWh     
+13:55:36  INFO        [DEMAND] LP Steam                      54000.00       4745.00      58745.00  MT      
+13:55:36  INFO        [DEMAND] MP Steam                    -127253.00       7925.00    -119328.00  MT      
+13:55:36  INFO        [DEMAND] HP Steam                     -21599.00        238.00     -21361.00  MT      
+13:55:36  INFO        [DEMAND] SHP Steam                    219588.00      94290.00     313878.00  MT      
+13:55:36  INFO        [DEMAND] Compressed Air              7221792.00    1327713.00    8549505.00  NM3     
+13:55:36  INFO        [DEMAND] Nitrogen ASU                4435199.00    1952800.00    6387999.00  NM3     
+13:55:36  INFO        [DEMAND] DM Water                      72074.00      55713.00     127787.00  M3      
+13:55:36  INFO        [DEMAND] CW1                               0.00          0.00          0.00  KM3     
+13:55:36  INFO        [DEMAND] CW2                               0.00          0.00          0.00  KM3     
+13:55:36  INFO        [DEMAND] Cooling Water                 47161.00      10872.00      58033.00  KM3     
+13:55:36  INFO        [DEMAND] Raw Water                         0.00          0.00          0.00  M3      
+13:55:36  INFO        [DEMAND] Utility Water                  3548.00    1523650.00    1527198.00  M3      
+13:55:36  INFO        [DEMAND] Ret Steam Condensate        -154158.00       1512.00    -152646.00  M3      
+13:55:36  INFO        [DEMAND] Oxygen                            0.00          0.00          0.00  MT      
+13:55:36  INFO        [DEMAND] Effluent                          0.00     131760.00     131760.00  M3      
+13:55:36  INFO        [DEMAND] ==================================================
+13:55:38  INFO        [DC] ==================================================
+13:55:38  INFO        [DC] Power Demand vs Capacity Check:
+13:55:38  INFO        [DC] Demand: 32154.36 MWh, Available Capacity: 219327.00 MWh
+13:55:38  INFO        [DC] -> Power demand CAN be achieved with available assets.
+13:55:38  INFO        [DC] Steam (SHP) Demand vs Capacity Check:
+13:55:38  INFO        [DC] Demand: 231934.00 MT, Available Capacity: 1553760.00 MT
+13:55:38  INFO        [DC] -> Steam demand CAN be achieved with available assets.
+13:55:38  INFO        [DC] ==================================================
+13:55:40  INFO        [ODS] Loaded C2_JMD.ods (187 rows, 83 cols) — month 4/2026 at col 11
+13:55:40  INFO        [ODS] ===== NORMS SUMMARY (C2_JMD.ods 4/2026) =====
+13:55:40  INFO        [ODS] Powergen aux power norms:
+13:55:40  INFO        [ODS]   JMD - C2-GTG 1             aux_norm=0.001350
+13:55:40  INFO        [ODS]   JMD - C2-GTG 2             aux_norm=0.001350
+13:55:40  INFO        [ODS]   JMD - C2-STG 1             aux_norm=0.007050
+13:55:40  INFO        [ODS] Steam letdown norms (PRDS cascade):
+13:55:40  INFO        [ODS]   LP→MP: 0.9450  (1 MT LP needs this much MP)
+13:55:40  INFO        [ODS]   MP→HP: 0.9000  (1 MT MP needs this much HP)
+13:55:40  INFO        [ODS]   HP→SHP: 0.9360 (1 MT HP needs this much SHP)
+13:55:40  INFO        [ODS] HRSG byproduct (LP steam credit):
+13:55:40  INFO        [ODS]   HRSG1_C2_SHP STEAM         byproduct_norm=-0.1500 MT LP / MT SHP
+13:55:40  INFO        [ODS]   HRSG2_C2_SHP STEAM         byproduct_norm=-0.1500 MT LP / MT SHP
+13:55:40  INFO        [ODS] STG steam consumption:
+13:55:40  INFO        [ODS]   JMD - C2-STG 1             shp_norm=0.003640 MT/KWH
+13:55:40  INFO        [ODS] Steam distribution factors:
+13:55:40  INFO        [ODS]   HP Steam_Dis → HP Steam PRDS: 1.0000
+13:55:40  INFO        [ODS]   LP Steam_Dis → HRSG1_C2_LP STEAM: 0.3873, HRSG2_C2_LP STEAM: 0.2453, LP Steam PRDS: 0.3675
+13:55:40  INFO        [ODS]   MP Steam_Dis → MP Steam PRDS SHP: 1.0000
+13:55:40  INFO        [ODS]   SHP Steam_Dis → AUXBOIL7_SHP STEAM: 0.2267, HRSG1_C2_SHP STEAM: 0.4735, HRSG2_C2_SHP STEAM: 0.2999
+13:55:40  INFO      
+13:55:40  INFO        [ODS] ╔══════════════════════════════════════════════════════════════════╗
+13:55:40  INFO        [ODS] ║  CONSUMPTION NORMS — Who consumes what to produce what          ║
+13:55:40  INFO        [ODS] ║  (Each block = one producer. Shows what it needs to make 1 unit)║
+13:55:40  INFO        [ODS] ╚══════════════════════════════════════════════════════════════════╝
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  Think of it like a recipe card:
+13:55:40  INFO        [ODS]  - The PRODUCER is what the plant makes (like a cake)
+13:55:40  INFO        [ODS]  - The INGREDIENTS are what it needs to make it (flour, eggs, etc.)
+13:55:40  INFO        [ODS]  - The NORM is how much of each ingredient is needed for 1 unit of output
+13:55:40  INFO        [ODS]  - A negative norm means it's a BYPRODUCT (you get it for free while making something else)
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: AUXBOIL7_SHP STEAM                 
+13:55:40  INFO        [ODS]  │ SAP Code: 310028384             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of AUXBOIL7_SHP STEAM
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Raw Mat.  SynGas(Unshift)                   SYNGASN_UNSHIFT      2.876221  MMBTU     
+13:55:40  INFO        [ODS]  │  Utility  Boiler Feed Water                 310027927            1.010000  M3        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            3.850000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of AUXBOIL7_SHP STEAM, you need:
+13:55:40  INFO        [ODS]  │    → 2.876221 MMBTU of SynGas(Unshift)
+13:55:40  INFO        [ODS]  │    → 1.010000 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │    → 3.850000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: AUXBOIL8_SHP STEAM                 
+13:55:40  INFO        [ODS]  │ SAP Code: 310028411             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of AUXBOIL8_SHP STEAM
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Raw Mat.  SynGas(Unshift)                   SYNGASN_UNSHIFT             0  MMBTU     
+13:55:40  INFO        [ODS]  │  Utility  Boiler Feed Water                 310027927            1.010000  M3        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            3.850000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of AUXBOIL8_SHP STEAM, you need:
+13:55:40  INFO        [ODS]  │    → 1.010000 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │    → 3.850000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: Boiler Feed Water                  
+13:55:40  INFO        [ODS]  │ SAP Code: 310027927             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 M3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  D M Water                         310027966            0.900000  M3        
+13:55:40  INFO        [ODS]  │  Utility  LP Steam_Dis                      310027965            0.100000  MT        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            8.100000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 M3 of Boiler Feed Water, you need:
+13:55:40  INFO        [ODS]  │    → 0.900000 M3 of D M Water
+13:55:40  INFO        [ODS]  │    → 0.100000 MT of LP Steam_Dis
+13:55:40  INFO        [ODS]  │    → 8.100000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: COMPRESED AIR_ASU                  
+13:55:40  INFO        [ODS]  │ SAP Code: 310028433             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 NM3 of COMPRESED AIR_ASU
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 NM3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            0.125000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 NM3 of COMPRESED AIR_ASU, you need:
+13:55:40  INFO        [ODS]  │    → 0.125000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: COMPRESSED AIR                     
+13:55:40  INFO        [ODS]  │ SAP Code: 310027904             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 NM3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  COMPRESED AIR_ASU                 310028433            0.051000  NM3       
+13:55:40  INFO        [ODS]  │  Utility  COMPRESSED AIR                    310027904            0.002670  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Cooling Water                     310027912                   0  KM3       
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            0.150000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 NM3 of COMPRESSED AIR, you need:
+13:55:40  INFO        [ODS]  │    → 0.051000 NM3 of COMPRESED AIR_ASU
+13:55:40  INFO        [ODS]  │    → 0.002670 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │    → 0.150000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: Condensate                         
+13:55:40  INFO        [ODS]  │ SAP Code: 310027968             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 M3 of Condensate
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 M3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  COMPRESSED AIR                    310027904            0.080000  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Cooling Water                     310027912            0.017360  KM3       
+13:55:40  INFO        [ODS]  │  Utility  NITROGEN_ASU                      310028432            0.360000  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            1.460000  KWH       
+13:55:40  INFO        [ODS]  │  Utility  Ret steam condensate              310027923            1.090000  M3        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 M3 of Condensate, you need:
+13:55:40  INFO        [ODS]  │    → 0.080000 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │    → 0.017360 KM3 of Cooling Water
+13:55:40  INFO        [ODS]  │    → 0.360000 NM3 of NITROGEN_ASU
+13:55:40  INFO        [ODS]  │    → 1.460000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │    → 1.090000 M3 of Ret steam condensate
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: Cooling Water                      
+13:55:40  INFO        [ODS]  │ SAP Code: 310027912             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 KM3 of Cooling Water
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 KM3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  COMPRESSED AIR                    310027904            0.974741  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Effluent Treated                  310027994            3.800000  M3        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910          210.900000  KWH       
+13:55:40  INFO        [ODS]  │  Utility  SWRO WATER                        310028356            9.400000  M3        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 KM3 of Cooling Water, you need:
+13:55:40  INFO        [ODS]  │    → 0.974741 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │    → 3.800000 M3 of Effluent Treated
+13:55:40  INFO        [ODS]  │    → 210.900000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │    → 9.400000 M3 of SWRO WATER
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: D M Water                          
+13:55:40  INFO        [ODS]  │ SAP Code: 310027966             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 M3 of D M Water
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 M3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  COMPRESSED AIR                    310027904            0.049180  NM3       
+13:55:40  INFO        [ODS]  │  Utility  NITROGEN_ASU                      310028432            0.630000  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            0.920000  KWH       
+13:55:40  INFO        [ODS]  │  Utility  SWRO WATER                        310028356            1.150000  M3        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 M3 of D M Water, you need:
+13:55:40  INFO        [ODS]  │    → 0.049180 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │    → 0.630000 NM3 of NITROGEN_ASU
+13:55:40  INFO        [ODS]  │    → 0.920000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │    → 1.150000 M3 of SWRO WATER
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: Effluent Treated                   
+13:55:40  INFO        [ODS]  │ SAP Code: 310027994             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 M3 of Effluent Treated
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 M3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  COMPRESSED AIR                    310027904            2.209302  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Cooling Water                     310027912            0.000031  KM3       
+13:55:40  INFO        [ODS]  │  Utility  NITROGEN_ASU                      310028432            0.005814  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            3.200000  KWH       
+13:55:40  INFO        [ODS]  │  Utility  Utility Water                     310027928            0.029070  M3        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 M3 of Effluent Treated, you need:
+13:55:40  INFO        [ODS]  │    → 2.209302 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │    → 0.000031 KM3 of Cooling Water
+13:55:40  INFO        [ODS]  │    → 0.005814 NM3 of NITROGEN_ASU
+13:55:40  INFO        [ODS]  │    → 3.200000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │    → 0.029070 M3 of Utility Water
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: HP Steam PRDS                      
+13:55:40  INFO        [ODS]  │ SAP Code: 310028161             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of HP Steam PRDS
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  Boiler Feed Water                 310027927            0.064000  M3        
+13:55:40  INFO        [ODS]  │  Utility  SHP Steam_Dis                     310027924            0.936000  MT        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of HP Steam PRDS, you need:
+13:55:40  INFO        [ODS]  │    → 0.064000 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │    → 0.936000 MT of SHP Steam_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: HP Steam_Dis                       
+13:55:40  INFO        [ODS]  │ SAP Code: 310027939             Plant Code: 36H2
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of HP Steam_Dis
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  HP Steam PRDS                     310028161            1.000000  MT        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of HP Steam_Dis, you need:
+13:55:40  INFO        [ODS]  │    → 1.000000 MT of HP Steam PRDS
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: HRSG1_C2_SHP STEAM                 
+13:55:40  INFO        [ODS]  │ SAP Code: 310028383             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of HRSG1_C2_SHP STEAM
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Raw Mat.  SynGas(Unshift)                   SYNGASN_UNSHIFT      3.376244  MMBTU     
+13:55:40  INFO        [ODS]  │  Utility  Boiler Feed Water                 310027927            1.160000  M3        
+13:55:40  INFO        [ODS]  │  Utility  HRSG1_C2_LP STEAM                 310028385           -0.150000  MT        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            0.285000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of HRSG1_C2_SHP STEAM, you need:
+13:55:40  INFO        [ODS]  │    → 3.376244 MMBTU of SynGas(Unshift)
+13:55:40  INFO        [ODS]  │    → 1.160000 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │    → 0.285000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │  And as a bonus (byproduct), you also GET:
+13:55:40  INFO        [ODS]  │    → 0.150000 MT of HRSG1_C2_LP STEAM (this is extra output, not input!)
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: HRSG2_C2_SHP STEAM                 
+13:55:40  INFO        [ODS]  │ SAP Code: 310028410             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of HRSG2_C2_SHP STEAM
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Raw Mat.  SynGas(Unshift)                   SYNGASN_UNSHIFT      3.357468  MMBTU     
+13:55:40  INFO        [ODS]  │  Utility  Boiler Feed Water                 310027927            1.160000  M3        
+13:55:40  INFO        [ODS]  │  Utility  HRSG2_C2_LP STEAM                 310028409           -0.150000  MT        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            0.285000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of HRSG2_C2_SHP STEAM, you need:
+13:55:40  INFO        [ODS]  │    → 3.357468 MMBTU of SynGas(Unshift)
+13:55:40  INFO        [ODS]  │    → 1.160000 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │    → 0.285000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │  And as a bonus (byproduct), you also GET:
+13:55:40  INFO        [ODS]  │    → 0.150000 MT of HRSG2_C2_LP STEAM (this is extra output, not input!)
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: LP Steam PRDS                      
+13:55:40  INFO        [ODS]  │ SAP Code: 310028013             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of LP Steam PRDS
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  Boiler Feed Water                 310027927            0.055000  M3        
+13:55:40  INFO        [ODS]  │  Utility  MP Steam_Dis                      310027940            0.945000  MT        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of LP Steam PRDS, you need:
+13:55:40  INFO        [ODS]  │    → 0.055000 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │    → 0.945000 MT of MP Steam_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: LP Steam_Dis                       
+13:55:40  INFO        [ODS]  │ SAP Code: 310027965             Plant Code: 36H2
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of LP Steam_Dis
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  HRSG1_C2_LP STEAM                 310028385            0.387271  MT        
+13:55:40  INFO        [ODS]  │  Utility  HRSG2_C2_LP STEAM                 310028409            0.245271  MT        
+13:55:40  INFO        [ODS]  │  Utility  LP Steam PRDS                     310028013            0.367458  MT        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of LP Steam_Dis, you need:
+13:55:40  INFO        [ODS]  │    → 0.387271 MT of HRSG1_C2_LP STEAM
+13:55:40  INFO        [ODS]  │    → 0.245271 MT of HRSG2_C2_LP STEAM
+13:55:40  INFO        [ODS]  │    → 0.367458 MT of LP Steam PRDS
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: MP Steam PRDS SHP                  
+13:55:40  INFO        [ODS]  │ SAP Code: 310028012             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of MP Steam PRDS SHP
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  Boiler Feed Water                 310027927            0.100000  M3        
+13:55:40  INFO        [ODS]  │  Utility  HP Steam_Dis                      310027939            0.900000  MT        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of MP Steam PRDS SHP, you need:
+13:55:40  INFO        [ODS]  │    → 0.100000 M3 of Boiler Feed Water
+13:55:40  INFO        [ODS]  │    → 0.900000 MT of HP Steam_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: MP Steam_Dis                       
+13:55:40  INFO        [ODS]  │ SAP Code: 310027940             Plant Code: 36H2
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of MP Steam_Dis
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  MP Steam PRDS SHP                 310028012            1.000000  MT        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of MP Steam_Dis, you need:
+13:55:40  INFO        [ODS]  │    → 1.000000 MT of MP Steam PRDS SHP
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: NITROGEN_ASU                       
+13:55:40  INFO        [ODS]  │ SAP Code: 310028432             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 NM3 of NITROGEN_ASU
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 NM3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  Cooling Water                     310027912                   0  KM3       
+13:55:40  INFO        [ODS]  │  Utility  MP Steam_Dis                      310027940            0.000021  MT        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            0.474260  KWH       
+13:55:40  INFO        [ODS]  │  Utility  Ret steam condensate              310027923           -0.000011  M3        
+13:55:40  INFO        [ODS]  │  Utility  Utility Water                     310027928            0.001540  M3        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 NM3 of NITROGEN_ASU, you need:
+13:55:40  INFO        [ODS]  │    → 0.000021 MT of MP Steam_Dis
+13:55:40  INFO        [ODS]  │    → 0.474260 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │    → 0.001540 M3 of Utility Water
+13:55:40  INFO        [ODS]  │  And as a bonus (byproduct), you also GET:
+13:55:40  INFO        [ODS]  │    → 0.000011 M3 of Ret steam condensate (this is extra output, not input!)
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: Oxygen                             
+13:55:40  INFO        [ODS]  │ SAP Code: 310028126             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of Oxygen
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  Cooling Water                     310027912                   0  KM3       
+13:55:40  INFO        [ODS]  │  Utility  MP Steam_Dis                      310027940            0.017000  MT        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910          374.610000  KWH       
+13:55:40  INFO        [ODS]  │  Utility  Ret steam condensate              310027923           -0.008000  M3        
+13:55:40  INFO        [ODS]  │  Utility  Utility Water                     310027928            1.230000  M3        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of Oxygen, you need:
+13:55:40  INFO        [ODS]  │    → 0.017000 MT of MP Steam_Dis
+13:55:40  INFO        [ODS]  │    → 374.610000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │    → 1.230000 M3 of Utility Water
+13:55:40  INFO        [ODS]  │  And as a bonus (byproduct), you also GET:
+13:55:40  INFO        [ODS]  │    → 0.008000 M3 of Ret steam condensate (this is extra output, not input!)
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: POWERGEN                           
+13:55:40  INFO        [ODS]  │ SAP Code: 310027907             Plant Code: 36H0
+13:55:40  INFO        [ODS]  │ Makes: 1 KWH of POWERGEN
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  This producer has 3 sub-assets (different machines):
+13:55:40  INFO        [ODS]  │    • JMD - C2-GTG 1                  (Plant ID: 36H0)
+13:55:40  INFO        [ODS]  │    • JMD - C2-GTG 2                  (Plant ID: 36GX)
+13:55:40  INFO        [ODS]  │    • JMD - C2-STG 1                  (Plant ID: 36HM)
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 KWH):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  ▸ Sub-asset: JMD - C2-GTG 1 (Plant ID: 36H0)
+13:55:40  INFO        [ODS]  │    Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │    ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │    Raw Mat.  SynGas(Unshift)                   SYNGASN_UNSHIFT      0.004368  MMBTU     
+13:55:40  INFO        [ODS]  │    Utility  COMPRESSED AIR                    310027904            0.001280  NM3       
+13:55:40  INFO        [ODS]  │    Utility  Cooling Water                     310027912            0.000007  KM3       
+13:55:40  INFO        [ODS]  │    Utility  NITROGEN_ASU                      310028432            0.001660  NM3       
+13:55:40  INFO        [ODS]  │    Utility  Power_Dis                         310027910            0.001350  KWH       
+13:55:40  INFO        [ODS]  │    Utility  Utility Water                     310027928            0.000023  M3        
+13:55:40  INFO        [ODS]  │    In simple words: To make 1 KWH from JMD - C2-GTG 1, you need:
+13:55:40  INFO        [ODS]  │      → 0.004368 MMBTU of SynGas(Unshift)
+13:55:40  INFO        [ODS]  │      → 0.001280 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │      → 0.000007 KM3 of Cooling Water
+13:55:40  INFO        [ODS]  │      → 0.001660 NM3 of NITROGEN_ASU
+13:55:40  INFO        [ODS]  │      → 0.001350 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │      → 0.000023 M3 of Utility Water
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  ▸ Sub-asset: JMD - C2-GTG 2 (Plant ID: 36GX)
+13:55:40  INFO        [ODS]  │    Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │    ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │    Raw Mat.  SynGas(Unshift)                   SYNGASN_UNSHIFT      0.004485  MMBTU     
+13:55:40  INFO        [ODS]  │    Utility  COMPRESSED AIR                    310027904            0.001280  NM3       
+13:55:40  INFO        [ODS]  │    Utility  Cooling Water                     310027912            0.000007  KM3       
+13:55:40  INFO        [ODS]  │    Utility  NITROGEN_ASU                      310028432            0.001660  NM3       
+13:55:40  INFO        [ODS]  │    Utility  Power_Dis                         310027910            0.001350  KWH       
+13:55:40  INFO        [ODS]  │    Utility  Utility Water                     310027928            0.000023  M3        
+13:55:40  INFO        [ODS]  │    In simple words: To make 1 KWH from JMD - C2-GTG 2, you need:
+13:55:40  INFO        [ODS]  │      → 0.004485 MMBTU of SynGas(Unshift)
+13:55:40  INFO        [ODS]  │      → 0.001280 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │      → 0.000007 KM3 of Cooling Water
+13:55:40  INFO        [ODS]  │      → 0.001660 NM3 of NITROGEN_ASU
+13:55:40  INFO        [ODS]  │      → 0.001350 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │      → 0.000023 M3 of Utility Water
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  ▸ Sub-asset: JMD - C2-STG 1 (Plant ID: 36HM)
+13:55:40  INFO        [ODS]  │    Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │    ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │    Utility  Cooling Water                     310027912            0.000400  KM3       
+13:55:40  INFO        [ODS]  │    Utility  NITROGEN_ASU                      310028432            0.001030  NM3       
+13:55:40  INFO        [ODS]  │    Utility  Power_Dis                         310027910            0.007050  KWH       
+13:55:40  INFO        [ODS]  │    Utility  SHP Steam_Dis                     310027924            0.003640  MT        
+13:55:40  INFO        [ODS]  │    In simple words: To make 1 KWH from JMD - C2-STG 1, you need:
+13:55:40  INFO        [ODS]  │      → 0.000400 KM3 of Cooling Water
+13:55:40  INFO        [ODS]  │      → 0.001030 NM3 of NITROGEN_ASU
+13:55:40  INFO        [ODS]  │      → 0.007050 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │      → 0.003640 MT of SHP Steam_Dis
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: PROCESS FEED WATER                 
+13:55:40  INFO        [ODS]  │ SAP Code: 310027972             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 M3 of PROCESS FEED WATER
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 M3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  D M Water                         310027966            0.900000  M3        
+13:55:40  INFO        [ODS]  │  Utility  LP Steam_Dis                      310027965            0.100000  MT        
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910            0.631000  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 M3 of PROCESS FEED WATER, you need:
+13:55:40  INFO        [ODS]  │    → 0.900000 M3 of D M Water
+13:55:40  INFO        [ODS]  │    → 0.100000 MT of LP Steam_Dis
+13:55:40  INFO        [ODS]  │    → 0.631000 KWH of Power_Dis
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: Power_Dis                          
+13:55:40  INFO        [ODS]  │ SAP Code: 310027910             Plant Code: 36H2
+13:55:40  INFO        [ODS]  │ Makes: 1 KWH of Power_Dis
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 KWH):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  Power                             POWER                0.065453  KWH       
+13:55:40  INFO        [ODS]  │  Utility  POWERGEN                          310027907            0.572172  KWH       
+13:55:40  INFO        [ODS]  │  Utility  POWERGEN                          310027907            0.362375  KWH       
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 KWH of Power_Dis, you need:
+13:55:40  INFO        [ODS]  │    → 0.065453 KWH of Power
+13:55:40  INFO        [ODS]  │    → 0.572172 KWH of POWERGEN
+13:55:40  INFO        [ODS]  │    → 0.362375 KWH of POWERGEN
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: SHP Steam_Dis                      
+13:55:40  INFO        [ODS]  │ SAP Code: 310027924             Plant Code: 36H2
+13:55:40  INFO        [ODS]  │ Makes: 1 MT of SHP Steam_Dis
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 MT):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  AUXBOIL7_SHP STEAM                310028384            0.226682  MT        
+13:55:40  INFO        [ODS]  │  Utility  AUXBOIL8_SHP STEAM                310028411                   0  MT        
+13:55:40  INFO        [ODS]  │  Utility  HRSG1_C2_SHP STEAM                310028383            0.473460  MT        
+13:55:40  INFO        [ODS]  │  Utility  HRSG2_C2_SHP STEAM                310028410            0.299858  MT        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 MT of SHP Steam_Dis, you need:
+13:55:40  INFO        [ODS]  │    → 0.226682 MT of AUXBOIL7_SHP STEAM
+13:55:40  INFO        [ODS]  │    → 0.473460 MT of HRSG1_C2_SHP STEAM
+13:55:40  INFO        [ODS]  │    → 0.299858 MT of HRSG2_C2_SHP STEAM
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  ┌──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]  │ PRODUCER: Utility Water                      
+13:55:40  INFO        [ODS]  │ SAP Code: 310027928             Plant Code: 36H1
+13:55:40  INFO        [ODS]  │ Makes: 1 M3 of Utility Water
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Needs these ingredients (to make 1 M3):
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  Type    Ingredient (Material)             Material SAP Code  Norm          UOM       
+13:55:40  INFO        [ODS]  │  ------  --------------------------------  ---------------  ------------  ----------
+13:55:40  INFO        [ODS]  │  Utility  COMPRESSED AIR                    310027904            0.217390  NM3       
+13:55:40  INFO        [ODS]  │  Utility  Power_Dis                         310027910                   0  KWH       
+13:55:40  INFO        [ODS]  │  Utility  SWRO WATER                        310028356            1.100000  M3        
+13:55:40  INFO        [ODS]  │
+13:55:40  INFO        [ODS]  │  In simple words: To make 1 M3 of Utility Water, you need:
+13:55:40  INFO        [ODS]  │    → 0.217390 NM3 of COMPRESSED AIR
+13:55:40  INFO        [ODS]  │    → 1.100000 M3 of SWRO WATER
+13:55:40  INFO        [ODS]  └──────────────────────────────────────────────────────────────
+13:55:40  INFO        [ODS]
+13:55:40  INFO        [ODS]  Total producers with consumption norms: 24
+13:55:40  INFO        [ODS] ===================================
+13:55:40  INFO      
+13:55:40  INFO      ==============================================================================
+13:55:40  INFO      BALANCED UTILITY DISPATCH — Starting
+13:55:40  INFO      Plant: BA558F95-8A3F-4769-9C78-FF7B6C639DDF  |  Month: 4/2026
+13:55:40  INFO      ==============================================================================
+13:55:40  INFO      
+13:55:40  INFO        U4U matrix loaded: 26 consumers
+13:55:40  INFO        Initial demands loaded: 33 utilities
+13:55:40  INFO          air_fixed           : 1327713.00 
+13:55:40  INFO          air_process         : 7221792.00 
+13:55:40  INFO          cooling_water_fixed : 10872.00 
+13:55:40  INFO          cooling_water_process: 47161.00 
+13:55:40  INFO          dm_fixed            : 55713.00 
+13:55:40  INFO          dm_process          : 72074.00 
+13:55:40  INFO          effluent_fixed      : 131760.00 
+13:55:40  INFO          hp_fixed            : 238.00 
+13:55:40  INFO          lp_fixed            : 4745.00 
+13:55:40  INFO          lp_process          : 54000.00 
+13:55:40  INFO          mp_fixed            : 7925.00 
+13:55:40  INFO          nitrogen_asu_fixed  : 1952800.00 
+13:55:40  INFO          nitrogen_asu_process: 4435199.00 
+13:55:40  INFO          power_fixed         : 20341.28 
+13:55:40  INFO          power_fixed_kwh     : 20341283.00 
+13:55:40  INFO          power_process       : 11813076.00 
+13:55:40  INFO          ret_steam_condensate_fixed: 1512.00 
+13:55:40  INFO          shp_fixed           : 94290.00 
+13:55:40  INFO          shp_process         : 219588.00 
+13:55:40  INFO          utility_water_fixed : 1523650.00 
+13:55:40  INFO          utility_water_process: 3548.00 
+13:55:40  INFO      
+13:55:40  INFO      ==============================================================================
+13:55:40  INFO      UTILITY BALANCING ENGINE — Starting
+13:55:40  INFO      ==============================================================================
+13:55:40  INFO      
+13:55:41  INFO      
+13:55:41  INFO        POWER SPINNING MARGIN CONFIG
+13:55:41  INFO        Most efficient asset: JMD - C2-GTG 2 (fixed_max = 120.00 MW)
+13:55:41  INFO        Required margin: 120.00 MW
+13:55:41  INFO        Asset                          Max MW     Eff Max     Reserve
+13:55:41  INFO        -------------------------  ----------  ----------  ----------
+13:55:41  INFO        JMD - C2-GTG 1                 110.00       80.00       30.00
+13:55:41  INFO        JMD - C2-GTG 2                 110.00      110.00        0.00 (excluded)
+13:55:41  INFO        JMD - C2-STG 1                  93.00        3.00       90.00
+13:55:41  INFO        TOTAL RESERVED                                         120.00
+13:55:41  INFO        → Margin of 120.00 MW successfully reserved
+13:55:41  INFO      
+13:55:41  INFO        ==============================================================================
+13:55:41  INFO        POWER DISPATCH  (April 2026)
+13:55:41  INFO        ==============================================================================
+13:55:41  INFO        Demand:  Process = 11813.08 MWh  |  Fixed = 20341.28 MWh  |  Total = 32154.36 MWh
+13:55:41  INFO      
+13:55:41  INFO        Step 1: Mandatory assets at MIN load, then optional if needed
+13:55:41  INFO        Asset                      Priority   Man    Min MW    Max MW     Hours       Min MWh
+13:55:41  INFO        -------------------------  --------  ----  --------  --------  --------  ------------
+13:55:41  INFO        JMD - C2-GTG 1                    2     Y     80.00    110.00    676.00      54080.00
+13:55:41  INFO        JMD - C2-GTG 2                    1     Y     80.00    110.00    710.00      56800.00
+13:55:41  INFO        JMD - C2-STG 1                    1     Y      0.00     93.00    719.00          0.00
+13:55:41  INFO        TOTAL MIN GENERATION                                                        110880.00
+13:55:41  INFO      
+13:55:41  INFO        ⚠ SURPLUS: MIN generation (110880.00 MWh) EXCEEDS demand (32154.36 MWh)
+13:55:41  INFO          Surplus = 78725.64 MWh  (will be handled via export power in future)
+13:55:41  INFO      
+13:55:41  INFO        FINAL DISPATCH
+13:55:41  INFO        Asset                      Priority   Dispatched MW  Dispatched MWh    Load %   Avg Load MW   Free Steam MT        Aux Norm   Aux Power MWh
+13:55:41  INFO        -------------------------  --------  --------------  --------------  --------  ------------  --------------  --------------  --------------
+13:55:41  INFO        JMD - C2-GTG 1                    2           80.00        54080.00    100.0%         80.00       106537.60        0.001350           73.01
+13:55:41  INFO        JMD - C2-GTG 2                    1           80.00        56800.00     72.7%         80.00       111896.00        0.001350           76.68
+13:55:41  INFO        JMD - C2-STG 1                    1            0.00            0.00      0.0%          0.00            0.00        0.007050            0.00
+13:55:41  INFO        TOTAL                                                     110880.00                               218433.60                          149.69
+13:55:41  INFO      
+13:55:41  INFO        ✓ POWER SPINNING MARGIN OK: 153.00 MW reserved (required: 120.00 MW)
+13:55:41  INFO        ==============================================================================
+13:55:41  ERROR     Balancing failed: dispatch_steam() got an unexpected keyword argument 'free_steam_mt'
+Traceback (most recent call last):
+  File "C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\JMD\engine\balancing_integration.py", line 161, in run_balanced_dispatch
+    result = balancer.balance(
+             ^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\JMD\engine\balancing_engine.py", line 214, in balance
+    dispatch_result = dispatch_fn(current_state)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrik\Desktop\Project\fork repo\development\New\JMD new python script\wks-platform\apps\python\JMD\engine\balancing_integration.py", line 138, in dispatch_fn
+    steam_result = dispatch_steam(
+                   ^^^^^^^^^^^^^^^
+TypeError: dispatch_steam() got an unexpected keyword argument 'free_steam_mt'
+13:55:42  INFO      
+13:55:42  INFO        POWER SPINNING MARGIN CONFIG
+13:55:42  INFO        Most efficient asset: JMD - C2-GTG 2 (fixed_max = 120.00 MW)
+13:55:42  INFO        Required margin: 120.00 MW
+13:55:42  INFO        Asset                          Max MW     Eff Max     Reserve
+13:55:42  INFO        -------------------------  ----------  ----------  ----------
+13:55:42  INFO        JMD - C2-GTG 1                 110.00       80.00       30.00
+13:55:42  INFO        JMD - C2-GTG 2                 110.00      110.00        0.00 (excluded)
+13:55:42  INFO        JMD - C2-STG 1                  93.00        3.00       90.00
+13:55:42  INFO        TOTAL RESERVED                                         120.00
+13:55:42  INFO        → Margin of 120.00 MW successfully reserved
+13:55:42  INFO      
+13:55:42  INFO        ==============================================================================
+13:55:42  INFO        POWER DISPATCH  (April 2026)
+13:55:42  INFO        ==============================================================================
+13:55:42  INFO        Demand:  Process = 11813.08 MWh  |  Fixed = 20341.28 MWh  |  Total = 32154.36 MWh
+13:55:42  INFO      
+13:55:42  INFO        Step 1: Mandatory assets at MIN load, then optional if needed
+13:55:42  INFO        Asset                      Priority   Man    Min MW    Max MW     Hours       Min MWh
+13:55:42  INFO        -------------------------  --------  ----  --------  --------  --------  ------------
+13:55:42  INFO        JMD - C2-GTG 1                    2     Y     80.00    110.00    676.00      54080.00
+13:55:42  INFO        JMD - C2-GTG 2                    1     Y     80.00    110.00    710.00      56800.00
+13:55:42  INFO        JMD - C2-STG 1                    1     Y      0.00     93.00    719.00          0.00
+13:55:42  INFO        TOTAL MIN GENERATION                                                        110880.00
+13:55:42  INFO      
+13:55:42  INFO        ⚠ SURPLUS: MIN generation (110880.00 MWh) EXCEEDS demand (32154.36 MWh)
+13:55:42  INFO          Surplus = 78725.64 MWh  (will be handled via export power in future)
+13:55:42  INFO      
+13:55:42  INFO        FINAL DISPATCH
+13:55:42  INFO        Asset                      Priority   Dispatched MW  Dispatched MWh    Load %   Avg Load MW   Free Steam MT        Aux Norm   Aux Power MWh
+13:55:42  INFO        -------------------------  --------  --------------  --------------  --------  ------------  --------------  --------------  --------------
+13:55:42  INFO        JMD - C2-GTG 1                    2           80.00        54080.00    100.0%         80.00       106537.60        0.001350           73.01
+13:55:42  INFO        JMD - C2-GTG 2                    1           80.00        56800.00     72.7%         80.00       111896.00        0.001350           76.68
+13:55:42  INFO        JMD - C2-STG 1                    1            0.00            0.00      0.0%          0.00            0.00        0.007050            0.00
+13:55:42  INFO        TOTAL                                                     110880.00                               218433.60                          149.69
+13:55:42  INFO      
+13:55:42  INFO        ✓ POWER SPINNING MARGIN OK: 153.00 MW reserved (required: 120.00 MW)
+13:55:42  INFO        ==============================================================================
+13:55:43  INFO        ==============================================================================
+13:55:43  INFO        STEAM DISPATCH  (April 2026)
+13:55:43  INFO        ==============================================================================
+13:55:43  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+13:55:43  INFO        ---------  ----------------  ----------  ------------  ----------------
+13:55:43  INFO        LP                 58745.00    24079.54     -33264.00          25481.00
+13:55:43  INFO        MP               -119328.00        0.00          0.00         -95248.46
+13:55:43  INFO        HP                -21361.00        0.00          0.00         -21361.00
+13:55:43  INFO        SHP               313878.00        0.00          0.00         313878.00
+13:55:43  INFO      
+13:55:43  INFO        Total Free Steam available: 218433.60 MT
+13:55:43  INFO      
+13:55:43  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+13:55:43  INFO        Asset                      Priority   Man     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+13:55:43  INFO        -------------------------  --------  ----  ----------  ----------  --------  --------------  --------------  --------
+13:55:43  INFO        AUXBOIL7_SHP STEAM                1     Y       90.00      220.00    698.00           90.00        62820.00     40.9%
+13:55:43  INFO        AUXBOIL8_SHP STEAM                1     Y       90.00      220.00    720.00           90.00        64800.00     40.9%
+13:55:43  INFO        HRSG1_C2_SHP STEAM                2     Y      160.00      250.00    676.00          160.00       108160.00     64.0%
+13:55:43  INFO        HRSG2_C2_SHP STEAM                1     Y      160.00      250.00    710.00          160.00       113600.00     64.0%
+13:55:43  INFO        TOTAL SUPPLEMENTARY                                                                         349380.00          
+13:55:43  INFO        TOTAL STEAM GENERATED                                                                       567813.60          
+13:55:43  INFO        ✓ Steam demand fully met with surplus of 253935.60 MT
+13:55:43  INFO        ==============================================================================
+13:55:43  INFO        [CALC] Done  4/2026  (7.5s)  assets=3  norms=0

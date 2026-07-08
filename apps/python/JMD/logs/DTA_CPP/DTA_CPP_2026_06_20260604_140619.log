@@ -1,0 +1,21 @@
+JMD Plant Run Log
+Plant:     DTA CPP
+Period:    6/2026
+Generated: 2026-06-04 14:06:19
+================================================================================
+
+14:06:16  INFO        [CALC] DTA CPP  6/2026  (2026-27)
+14:06:16  INFO        [PROCESS] Found 0 utility types for FY 2026-27, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+14:06:17  ERROR       [FIXED] Error fetching fixed consumption: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'utilityType'. (207) (SQLExecDirectW)")
+14:06:18  ERROR       [NORMS] Error: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)")
+14:06:18  ERROR       [HRSG AVAIL] Error: ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'HRSGAvailability'. (208) (SQLExecDirectW)")
+14:06:18  ERROR       [STG LOOKUP] Error: ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'CPP_STGExtractionLookup'. (208) (SQLExecDirectW)")
+14:06:18  ERROR       [HRSG HR] Error: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)")
+14:06:19  ERROR       [GT HR] Error: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)")
+14:06:19  WARNING     [CALC] Cannot calculate — demands: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'utilityType'. (207) (SQLExecDirectW)")
+14:06:19  WARNING     [CALC] Cannot calculate — norms: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)")
+14:06:19  WARNING     [CALC] Cannot calculate — hrsg_avail: ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'HRSGAvailability'. (208) (SQLExecDirectW)")
+14:06:19  WARNING     [CALC] Cannot calculate — stg_lookup: ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'CPP_STGExtractionLookup'. (208) (SQLExecDirectW)")
+14:06:19  WARNING     [CALC] Cannot calculate — hrsg_hr: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)")
+14:06:19  WARNING     [CALC] Cannot calculate — gt_hr: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)")
+14:06:19  ERROR       [CALC] 6/2026 skipped: 6 data source(s) unavailable: demands: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'utilityType'. (207) (SQLExecDirectW)"); norms: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)"); hrsg_avail: ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'HRSGAvailability'. (208) (SQLExecDirectW)"); stg_lookup: ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'CPP_STGExtractionLookup'. (208) (SQLExecDirectW)"); hrsg_hr: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)"); gt_hr: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'CPPPlant_FK_Id'. (207) (SQLExecDirectW)")

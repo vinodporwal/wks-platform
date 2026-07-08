@@ -1,0 +1,842 @@
+NMD Plant Run Log
+Plant:     NMD CPP
+Period:    2/2026
+Generated: 2026-07-07 20:33:47
+================================================================================
+
+
+Fetching data for February 2026...
+######################################################################
+  NMD CPP  [23BCA1B3]  Period: 2/2026
+######################################################################
+
+======================================================================
+  U4U ITERATIVE BALANCING
+======================================================================
+20:33:21  ERROR       [NORMS ALL] Error: ('40001', '[40001] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Transaction (Process ID 166) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLFetch)')
+20:33:21  INFO        [NMD NormsReader] Loaded 0 rows for 2/2026 — 0 generation utilities, 0 U4U materials
+20:33:21  ERROR       [NORMS ALL] Error: ('40001', '[40001] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Transaction (Process ID 165) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+20:33:21  INFO        [NMD NormsReader] Loaded 0 rows for 3/2026 — 0 generation utilities, 0 U4U materials
+20:33:23  INFO        [CONSOLIDATED] 12 utilities (process + fixed) for 2/2026
+20:33:23  INFO        [U4U LOOP] Initial demands: 12 utilities (12 from demand, 0 from norms)
+20:33:23  INFO        [U4U LOOP] Pass-through utilities (demand but no norms): COMPRESSED AIR, Cooling Water 1, Cooling Water 2, D M Water, HP Steam_Dis, LP Steam_Dis, MP Steam_Dis, Nitrogen Gas, Oxygen, Power_Dis, SHP Steam_Dis, Water
+20:33:23  INFO      
+20:33:23  INFO        ==========================================================================================
+20:33:23  INFO        U4U ITERATION LOOP  (February 2026)
+20:33:23  INFO        ==========================================================================================
+20:33:23  INFO        Tolerance: 1.0000% (U4U)  |  0.02 MWh (power)  |  Max iterations: 50
+20:33:23  INFO        Total utilities: 12  |  Generation utilities: 0  |  Pass-through: 12
+20:33:23  INFO        Pass-through (no norms): COMPRESSED AIR, Cooling Water 1, Cooling Water 2, D M Water, HP Steam_Dis, LP Steam_Dis, MP Steam_Dis, Nitrogen Gas, Oxygen, Power_Dis, SHP Steam_Dis, Water
+20:33:23  INFO      
+20:33:23  INFO        [CONSOLIDATED] 12 utilities (process + fixed) for 3/2026
+20:33:23  INFO        [U4U LOOP] Initial demands: 12 utilities (12 from demand, 0 from norms)
+20:33:23  INFO        [U4U LOOP] Pass-through utilities (demand but no norms): COMPRESSED AIR, Cooling Water 1, Cooling Water 2, D M Water, HP Steam_Dis, LP Steam_Dis, MP Steam_Dis, Nitrogen Gas, Oxygen, Power_Dis, SHP Steam_Dis, Water
+20:33:23  INFO      
+20:33:23  INFO        ==========================================================================================
+20:33:23  INFO        U4U ITERATION LOOP  (March 2026)
+20:33:23  INFO        ==========================================================================================
+20:33:23  INFO        Tolerance: 1.0000% (U4U)  |  0.02 MWh (power)  |  Max iterations: 50
+20:33:23  INFO        Total utilities: 12  |  Generation utilities: 0  |  Pass-through: 12
+20:33:23  INFO        Pass-through (no norms): COMPRESSED AIR, Cooling Water 1, Cooling Water 2, D M Water, HP Steam_Dis, LP Steam_Dis, MP Steam_Dis, Nitrogen Gas, Oxygen, Power_Dis, SHP Steam_Dis, Water
+20:33:23  INFO      
+20:33:24  INFO        [DISPATCH] Total demand: 28168.09 MWh, Import: 22176.00 MWh, Net for GT/STG: 5992.09 MWh
+20:33:24  INFO        [DISPATCH] Total demand: 31864.57 MWh, Import: 24552.00 MWh, Net for GT/STG: 7312.57 MWh
+20:33:24  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+20:33:24  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+20:33:24  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+20:33:24  INFO        ==============================================================================
+20:33:24  INFO        POWER DISPATCH  (February 2026)
+20:33:24  INFO        ==============================================================================
+20:33:24  INFO        Demand:  Process = 28168.09 MWh  |  Fixed = 0.00 MWh  |  Total = 28168.09 MWh
+20:33:24  INFO      
+20:33:24  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+20:33:24  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+20:33:24  INFO        NMD-Power Plant-1                 1      5.00     21.90    672.00            5.00         3360.00     22.8%       6619.20          0.00
+20:33:24  INFO        NMD-Power Plant-3                 1      8.00     14.00    672.00            8.00         5376.00     57.1%      10590.72          0.00
+20:33:24  INFO        NMD-STG Power Plant               2      6.00     24.90    552.00            6.00         3312.00     24.1%          0.00          0.00
+20:33:24  INFO        TOTAL                                                                                    12048.00                17209.92          0.00
+20:33:24  INFO        DEFICIT: 16120.09 MWh under-generation
+20:33:24  INFO        ==============================================================================
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        POWER DISPATCH  (March 2026)
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        Demand:  Process = 31864.57 MWh  |  Fixed = 0.00 MWh  |  Total = 31864.57 MWh
+20:33:25  INFO      
+20:33:25  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+20:33:25  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+20:33:25  INFO        NMD-Power Plant-1                 1      5.00     21.90    744.00            5.00         3720.00     22.8%       7328.40          0.00
+20:33:25  INFO        NMD-Power Plant-3                 1      7.00     14.00    744.00            7.00         5208.00     50.0%      10259.76          0.00
+20:33:25  INFO        NMD-STG Power Plant               2      6.00     24.90    624.00            6.00         3744.00     24.1%          0.00          0.00
+20:33:25  INFO        TOTAL                                                                                    12672.00                17588.16          0.00
+20:33:25  INFO        DEFICIT: 19192.57 MWh under-generation
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        [STG EXTRACTION] STG Load: 6.00 MW, LP Extraction: 0.00 MT, MP Extraction: 0.00 MT
+20:33:25  INFO        [STG EXTRACTION] STG Load: 6.00 MW, LP Extraction: 0.00 MT, MP Extraction: 0.00 MT
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        STEAM DISPATCH  (February 2026)
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+20:33:25  INFO        ---------  ----------------  ----------  ------------  ----------------
+20:33:25  INFO        LP                 23492.87        0.00          0.00          23492.87
+20:33:25  INFO        MP                 18043.84        0.00          0.00          18043.84
+20:33:25  INFO        HP                  3769.00        0.00          0.00           3769.00
+20:33:25  INFO        SHP                19836.00        0.00          0.00          19836.00
+20:33:25  INFO      
+20:33:25  INFO        Total Free Steam available: 17209.92 MT
+20:33:25  INFO      
+20:33:25  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+20:33:25  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+20:33:25  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+20:33:25  INFO        HRSG-1                            1       50.15      126.15    672.00           50.15        33700.80     44.1%
+20:33:25  INFO        HRSG-2                          999       60.00      136.00      0.00            0.00            0.00      0.0%
+20:33:25  INFO        HRSG-3                            1       44.24      120.24    672.00           44.24        29729.28     44.1%
+20:33:25  INFO        TOTAL SUPPLEMENTARY                                                                          63430.08          
+20:33:25  INFO        TOTAL STEAM GENERATED                                                                        80640.00          
+20:33:25  INFO        SURPLUS: 60804.00 MT
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        [U4U LOOP] ⚡ EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)
+20:33:25  INFO          Excess Steam: 60804.00 MT | Desired STG Adj: 14031.70 MWh | Target STG: 13744.80 MWh | Current STG: 3312.00 MWh
+20:33:25  INFO          ACTION: Adjusting STG override to 13744.80 MWh
+20:33:25  INFO      
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        ITERATION 1
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        Power:  Demand =    28168087.90 KWH  |  Gen =       12048.00 MWh  |  Surplus =  6055.91  |  Deficit =     0.00
+20:33:25  INFO        Steam:  Gen =       80640.00 MT  |  Surplus = 60804.00  |  Deficit =     0.00
+20:33:25  INFO        Excess SHP:   60804.00 MT → STG override = 13744.80 MWh, GT reduction = 0.00 MWh
+20:33:25  INFO        Power delta: 28168087.9000 MWh  |  Converged: NO
+20:33:25  INFO      
+20:33:25  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+20:33:25  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+20:33:25  INFO        COMPRESSED AIR                           5725372.28            0.00      5725372.28   100.0000% (PT)
+20:33:25  INFO        Cooling Water 1                            14369.00            0.00        14369.00   100.0000% (PT)
+20:33:25  INFO        Cooling Water 2                             8478.76            0.00         8478.76   100.0000% (PT)
+20:33:25  INFO        D M Water                                  51443.60            0.00        51443.60   100.0000% (PT)
+20:33:25  INFO        HP Steam_Dis                                3769.00            0.00         3769.00   100.0000% (PT)
+20:33:25  INFO        LP Steam_Dis                               23492.87            0.00        23492.87   100.0000% (PT)
+20:33:25  INFO        MP Steam_Dis                               18043.84            0.00        18043.84   100.0000% (PT)
+20:33:25  INFO        Nitrogen Gas                             5331782.00            0.00      5331782.00   100.0000% (PT)
+20:33:25  INFO        Oxygen                                      4960.00            0.00         4960.00   100.0000% (PT)
+20:33:25  INFO        Power_Dis                               28168087.90            0.00     28168087.90   100.0000% (PT)
+20:33:25  INFO        SHP Steam_Dis                              19836.00            0.00        19836.00   100.0000% (PT)
+20:33:25  INFO        Water                                     261656.08            0.00       261656.08   100.0000% (PT)
+20:33:25  INFO      
+20:33:25  INFO        All U4U materials converged within tolerance
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        [DISPATCH] Total demand: 28168.09 MWh, Import: 22176.00 MWh, Net for GT/STG: 5992.09 MWh
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        POWER DISPATCH  (February 2026)
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        Demand:  Process = 28168.09 MWh  |  Fixed = 0.00 MWh  |  Total = 28168.09 MWh
+20:33:25  INFO      
+20:33:25  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+20:33:25  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+20:33:25  INFO        NMD-Power Plant-1                 1      5.00     21.90    672.00            5.00         3360.00     22.8%       6619.20          0.00
+20:33:25  INFO        NMD-Power Plant-3                 1      8.00     14.00    672.00            8.00         5376.00     57.1%      10590.72          0.00
+20:33:25  INFO        NMD-STG Power Plant               2      6.00     24.90    552.00           24.90        13744.80    100.0%          0.00          0.00
+20:33:25  INFO        TOTAL                                                                                    22480.80                17209.92          0.00
+20:33:25  INFO        DEFICIT: 5687.29 MWh under-generation
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        STEAM DISPATCH  (March 2026)
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+20:33:25  INFO        ---------  ----------------  ----------  ------------  ----------------
+20:33:25  INFO        LP                 26426.63        0.00          0.00          26426.63
+20:33:25  INFO        MP                 19981.68        0.00          0.00          19981.68
+20:33:25  INFO        HP                  4701.00        0.00          0.00           4701.00
+20:33:25  INFO        SHP                21778.00        0.00          0.00          21778.00
+20:33:25  INFO      
+20:33:25  INFO        Total Free Steam available: 17588.16 MT
+20:33:25  INFO      
+20:33:25  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+20:33:25  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+20:33:25  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+20:33:25  INFO        HRSG-1                            1       50.15      126.15    744.00           50.15        37311.60     44.1%
+20:33:25  INFO        HRSG-2                          999       60.00      136.00      0.00            0.00            0.00      0.0%
+20:33:25  INFO        HRSG-3                            1       46.21      122.21    744.00           46.21        34380.24     44.1%
+20:33:25  INFO        TOTAL SUPPLEMENTARY                                                                          71691.84          
+20:33:25  INFO        TOTAL STEAM GENERATED                                                                        89280.00          
+20:33:25  INFO        SURPLUS: 67502.00 MT
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        [U4U LOOP] ⚡ EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)
+20:33:25  INFO          Excess Steam: 67502.00 MT | Desired STG Adj: 15577.40 MWh | Target STG: 15537.60 MWh | Current STG: 3744.00 MWh
+20:33:25  INFO          ACTION: Adjusting STG override to 15537.60 MWh
+20:33:25  INFO      
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        ITERATION 1
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        Power:  Demand =    31864568.60 KWH  |  Gen =       12672.00 MWh  |  Surplus =  5359.43  |  Deficit =     0.00
+20:33:25  INFO        Steam:  Gen =       89280.00 MT  |  Surplus = 67502.00  |  Deficit =     0.00
+20:33:25  INFO        Excess SHP:   67502.00 MT → STG override = 15537.60 MWh, GT reduction = 0.00 MWh
+20:33:25  INFO        Power delta: 31864568.6000 MWh  |  Converged: NO
+20:33:25  INFO      
+20:33:25  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+20:33:25  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+20:33:25  INFO        COMPRESSED AIR                           6381525.24            0.00      6381525.24   100.0000% (PT)
+20:33:25  INFO        Cooling Water 1                            15776.00            0.00        15776.00   100.0000% (PT)
+20:33:25  INFO        Cooling Water 2                             9821.59            0.00         9821.59   100.0000% (PT)
+20:33:25  INFO        D M Water                                  57000.20            0.00        57000.20   100.0000% (PT)
+20:33:25  INFO        HP Steam_Dis                                4701.00            0.00         4701.00   100.0000% (PT)
+20:33:25  INFO        LP Steam_Dis                               26426.63            0.00        26426.63   100.0000% (PT)
+20:33:25  INFO        MP Steam_Dis                               19981.68            0.00        19981.68   100.0000% (PT)
+20:33:25  INFO        Nitrogen Gas                             5908725.00            0.00      5908725.00   100.0000% (PT)
+20:33:25  INFO        Oxygen                                      5501.00            0.00         5501.00   100.0000% (PT)
+20:33:25  INFO        Power_Dis                               31864568.60            0.00     31864568.60   100.0000% (PT)
+20:33:25  INFO        SHP Steam_Dis                              21778.00            0.00        21778.00   100.0000% (PT)
+20:33:25  INFO        Water                                     289668.16            0.00       289668.16   100.0000% (PT)
+20:33:25  INFO      
+20:33:25  INFO        All U4U materials converged within tolerance
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        [DISPATCH] Total demand: 31864.57 MWh, Import: 24552.00 MWh, Net for GT/STG: 7312.57 MWh
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-1'; using 0.0
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-Power Plant-3'; using 0.0
+20:33:25  WARNING     [DISPATCH] No aux power norm for 'NMD-STG Power Plant'; using 0.0
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        POWER DISPATCH  (March 2026)
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        Demand:  Process = 31864.57 MWh  |  Fixed = 0.00 MWh  |  Total = 31864.57 MWh
+20:33:25  INFO      
+20:33:25  INFO        Asset                      Priority    Min MW    Max MW     Hours   Dispatched MW  Dispatched MWh    Load %  Free Steam MT  Aux Power MWh
+20:33:25  INFO        -------------------------  --------  --------  --------  --------  --------------  --------------  --------  ------------  ------------
+20:33:25  INFO        NMD-Power Plant-1                 1      5.00     21.90    744.00            5.00         3720.00     22.8%       7328.40          0.00
+20:33:25  INFO        NMD-Power Plant-3                 1      7.00     14.00    744.00            7.00         5208.00     50.0%      10259.76          0.00
+20:33:25  INFO        NMD-STG Power Plant               2      6.00     24.90    624.00           24.90        15537.60    100.0%          0.00          0.00
+20:33:25  INFO        TOTAL                                                                                    24465.60                17588.16          0.00
+20:33:25  INFO        DEFICIT: 7398.97 MWh under-generation
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        [STG EXTRACTION] STG Load: 24.90 MW, LP Extraction: 14904.00 MT, MP Extraction: 3864.00 MT
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        STEAM DISPATCH  (February 2026)
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+20:33:25  INFO        ---------  ----------------  ----------  ------------  ----------------
+20:33:25  INFO        LP                 23492.87        0.00          0.00           8588.87
+20:33:25  INFO        MP                 18043.84        0.00          0.00          14179.84
+20:33:25  INFO        HP                  3769.00        0.00          0.00           3769.00
+20:33:25  INFO        SHP                19836.00        0.00          0.00          19836.00
+20:33:25  INFO      
+20:33:25  INFO        Total Free Steam available: 17209.92 MT
+20:33:25  INFO      
+20:33:25  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+20:33:25  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+20:33:25  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+20:33:25  INFO        HRSG-1                            1       50.15      126.15    672.00           50.15        33700.80     44.1%
+20:33:25  INFO        HRSG-2                          999       60.00      136.00      0.00            0.00            0.00      0.0%
+20:33:25  INFO        HRSG-3                            1       44.24      120.24    672.00           44.24        29729.28     44.1%
+20:33:25  INFO        TOTAL SUPPLEMENTARY                                                                          63430.08          
+20:33:25  INFO        TOTAL STEAM GENERATED                                                                        80640.00          
+20:33:25  INFO        SURPLUS: 60804.00 MT
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        [U4U LOOP] ⚡ EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)
+20:33:25  INFO          Excess Steam: 60804.00 MT | Desired STG Adj: 18004.69 MWh | Target STG: 13744.80 MWh | Current STG: 13744.80 MWh
+20:33:25  INFO          ACTION: Adjusting STG override to 13744.80 MWh
+20:33:25  INFO      
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        ITERATION 2
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO        Power:  Demand =    28168087.90 KWH  |  Gen =       22480.80 MWh  |  Surplus = 16488.71  |  Deficit =     0.00
+20:33:25  INFO        Steam:  Gen =       80640.00 MT  |  Surplus = 60804.00  |  Deficit =     0.00
+20:33:25  INFO        Excess SHP:   60804.00 MT → STG override = 13744.80 MWh, GT reduction = 0.00 MWh
+20:33:25  INFO        Power delta: 0.0000 MWh  |  Converged: YES
+20:33:25  INFO      
+20:33:25  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+20:33:25  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+20:33:25  INFO        COMPRESSED AIR                           5725372.28            0.00      5725372.28   100.0000% (PT)
+20:33:25  INFO        Cooling Water 1                            14369.00            0.00        14369.00   100.0000% (PT)
+20:33:25  INFO        Cooling Water 2                             8478.76            0.00         8478.76   100.0000% (PT)
+20:33:25  INFO        D M Water                                  51443.60            0.00        51443.60   100.0000% (PT)
+20:33:25  INFO        HP Steam_Dis                                3769.00            0.00         3769.00   100.0000% (PT)
+20:33:25  INFO        LP Steam_Dis                               23492.87            0.00        23492.87   100.0000% (PT)
+20:33:25  INFO        MP Steam_Dis                               18043.84            0.00        18043.84   100.0000% (PT)
+20:33:25  INFO        Nitrogen Gas                             5331782.00            0.00      5331782.00   100.0000% (PT)
+20:33:25  INFO        Oxygen                                      4960.00            0.00         4960.00   100.0000% (PT)
+20:33:25  INFO        Power_Dis                               28168087.90            0.00     28168087.90   100.0000% (PT)
+20:33:25  INFO        SHP Steam_Dis                              19836.00            0.00        19836.00   100.0000% (PT)
+20:33:25  INFO        Water                                     261656.08            0.00       261656.08   100.0000% (PT)
+20:33:25  INFO      
+20:33:25  INFO        All U4U materials converged within tolerance
+20:33:25  INFO        ------------------------------------------------------------------------------------------
+20:33:25  INFO      
+20:33:25  INFO        [U4U LOOP] === CONVERGED in 2 iterations ===
+20:33:25  INFO      
+20:33:25  INFO        ==========================================================================================
+20:33:25  INFO        FINAL BALANCE  (after 2 iterations, CONVERGED)
+20:33:25  INFO        ==========================================================================================
+20:33:25  INFO      
+20:33:25  INFO        POWER BALANCE
+20:33:25  INFO        Process + Fixed Demand                  28168087.90 KWH
+20:33:25  INFO        U4U Demand                                     0.00 KWH
+20:33:25  INFO        TOTAL DEMAND                            28168087.90 KWH
+20:33:25  INFO        GT/STG Generation                          22480.80 MWh
+20:33:25  INFO        Import Power                               22176.00 MWh
+20:33:25  INFO        TOTAL SUPPLY                               44656.80 MWh
+20:33:25  INFO        BALANCE                                    16488.71 MWh
+20:33:25  INFO      
+20:33:25  INFO        STEAM BALANCE
+20:33:25  INFO        Grade            Demand (MT)        Gen (MT)    Surplus (MT)    Deficit (MT)
+20:33:25  INFO        ------------  --------------  --------------  --------------  --------------
+20:33:25  INFO        LP                   8588.87            0.00            0.00            0.00
+20:33:25  INFO        MP                  14179.84            0.00            0.00            0.00
+20:33:25  INFO        HP                   3769.00            0.00            0.00            0.00
+20:33:25  INFO        SHP                 19836.00        80640.00        60804.00            0.00
+20:33:25  INFO      
+20:33:25  INFO        U4U CONSUMPTION SUMMARY
+20:33:25  INFO        Utility                              Initial Demand      U4U Demand    Total Demand
+20:33:25  INFO        -----------------------------------  --------------  --------------  --------------
+20:33:25  INFO        COMPRESSED AIR                           5725372.28            0.00      5725372.28 (PT)
+20:33:25  INFO        Cooling Water 1                            14369.00            0.00        14369.00 (PT)
+20:33:25  INFO        Cooling Water 2                             8478.76            0.00         8478.76 (PT)
+20:33:25  INFO        D M Water                                  51443.60            0.00        51443.60 (PT)
+20:33:25  INFO        HP Steam_Dis                                3769.00            0.00         3769.00 (PT)
+20:33:25  INFO        LP Steam_Dis                               23492.87            0.00        23492.87 (PT)
+20:33:25  INFO        MP Steam_Dis                               18043.84            0.00        18043.84 (PT)
+20:33:25  INFO        Nitrogen Gas                             5331782.00            0.00      5331782.00 (PT)
+20:33:25  INFO        Oxygen                                      4960.00            0.00         4960.00 (PT)
+20:33:25  INFO        Power_Dis                               28168087.90            0.00     28168087.90 (PT)
+20:33:25  INFO        SHP Steam_Dis                              19836.00            0.00        19836.00 (PT)
+20:33:25  INFO        Water                                     261656.08            0.00       261656.08 (PT)
+20:33:25  INFO      
+20:33:25  INFO        PASS-THROUGH UTILITIES (demand but no norms configuration):
+20:33:25  INFO          COMPRESSED AIR                       demand = 5725372.28  (assumed external supply)
+20:33:25  INFO          Cooling Water 1                      demand = 14369.00  (assumed external supply)
+20:33:25  INFO          Cooling Water 2                      demand = 8478.76  (assumed external supply)
+20:33:25  INFO          D M Water                            demand = 51443.60  (assumed external supply)
+20:33:25  INFO          HP Steam_Dis                         demand = 3769.00  (assumed external supply)
+20:33:25  INFO          LP Steam_Dis                         demand = 23492.87  (assumed external supply)
+20:33:25  INFO          MP Steam_Dis                         demand = 18043.84  (assumed external supply)
+20:33:25  INFO          Nitrogen Gas                         demand = 5331782.00  (assumed external supply)
+20:33:25  INFO          Oxygen                               demand = 4960.00  (assumed external supply)
+20:33:25  INFO          Power_Dis                            demand = 28168087.90  (assumed external supply)
+20:33:25  INFO          SHP Steam_Dis                        demand = 19836.00  (assumed external supply)
+20:33:25  INFO          Water                                demand = 261656.08  (assumed external supply)
+20:33:25  INFO        ==========================================================================================
+
+  Iterations: 2  |  Converged: YES
+  Pass-through utilities: COMPRESSED AIR, Power_Dis, MP Steam_Dis, HP Steam_Dis, Water, Cooling Water 2, D M Water, Oxygen, Cooling Water 1, SHP Steam_Dis, LP Steam_Dis, Nitrogen Gas
+
+======================================================================
+  DONE
+======================================================================
+
+======================================================================
+  U4U vs BPC COMPARISON  (February 2026)
+======================================================================
+20:33:25  INFO        [STG EXTRACTION] STG Load: 24.90 MW, LP Extraction: 16848.00 MT, MP Extraction: 4368.00 MT
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        STEAM DISPATCH  (March 2026)
+20:33:25  INFO        ==============================================================================
+20:33:25  INFO        Grade      Process/Fixed MT  Letdown MT  Byproduct MT     Net Demand MT
+20:33:25  INFO        ---------  ----------------  ----------  ------------  ----------------
+20:33:26  INFO        LP                 26426.63        0.00          0.00           9578.63
+20:33:26  INFO        MP                 19981.68        0.00          0.00          15613.68
+20:33:26  INFO        HP                  4701.00        0.00          0.00           4701.00
+20:33:26  INFO        SHP                21778.00        0.00          0.00          21778.00
+20:33:26  INFO      
+20:33:26  INFO        Total Free Steam available: 17588.16 MT
+20:33:26  INFO      
+20:33:26  INFO        FINAL SUPPLEMENTARY FIRING DISPATCH
+20:33:26  INFO        Asset                      Priority     Min TPH     Max TPH     Hours  Dispatched TPH   Dispatched MT    Load %
+20:33:26  INFO        -------------------------  --------  ----------  ----------  --------  --------------  --------------  --------
+20:33:26  INFO        HRSG-1                            1       50.15      126.15    744.00           50.15        37311.60     44.1%
+20:33:26  INFO        HRSG-2                          999       60.00      136.00      0.00            0.00            0.00      0.0%
+20:33:26  INFO        HRSG-3                            1       46.21      122.21    744.00           46.21        34380.24     44.1%
+20:33:26  INFO        TOTAL SUPPLEMENTARY                                                                          71691.84          
+20:33:26  INFO        TOTAL STEAM GENERATED                                                                        89280.00          
+20:33:26  INFO        SURPLUS: 67502.00 MT
+20:33:26  INFO        ==============================================================================
+20:33:26  INFO        [U4U LOOP] ⚡ EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)
+20:33:26  INFO          Excess Steam: 67502.00 MT | Desired STG Adj: 19988.04 MWh | Target STG: 15537.60 MWh | Current STG: 15537.60 MWh
+20:33:26  INFO          ACTION: Adjusting STG override to 15537.60 MWh
+20:33:26  INFO      
+20:33:26  INFO        ------------------------------------------------------------------------------------------
+20:33:26  INFO        ITERATION 2
+20:33:26  INFO        ------------------------------------------------------------------------------------------
+20:33:26  INFO        Power:  Demand =    31864568.60 KWH  |  Gen =       24465.60 MWh  |  Surplus = 17153.03  |  Deficit =     0.00
+20:33:26  INFO        Steam:  Gen =       89280.00 MT  |  Surplus = 67502.00  |  Deficit =     0.00
+20:33:26  INFO        Excess SHP:   67502.00 MT → STG override = 15537.60 MWh, GT reduction = 0.00 MWh
+20:33:26  INFO        Power delta: 0.0000 MWh  |  Converged: YES
+20:33:26  INFO        [BPC] Loaded BPC.ods (122 rows, 58 cols) for month 2/2026
+20:33:26  INFO      
+20:33:26  INFO        [BPC] Month columns: norm=50, qty=51
+20:33:26  INFO        Utility                                Total Demand      U4U Demand         Initial    Change %
+20:33:26  INFO        -----------------------------------  --------------  --------------  --------------  ----------
+20:33:26  INFO        [BPC] ===== BPC SUMMARY (BPC.ods 2/2026) =====
+20:33:26  INFO        COMPRESSED AIR                           6381525.24            0.00      6381525.24   100.0000% (PT)
+20:33:26  INFO        [BPC] Producers with generation quantities: 22
+20:33:26  INFO        Cooling Water 1                            15776.00            0.00        15776.00   100.0000% (PT)
+20:33:26  INFO        [BPC] Producers with consumption quantities: 25
+20:33:26  INFO        Cooling Water 2                             9821.59            0.00         9821.59   100.0000% (PT)
+20:33:26  INFO        [BPC]   Boiler Feed Water               gen=      94141.88  materials=4
+20:33:26  INFO        D M Water                                  57000.20            0.00        57000.20   100.0000% (PT)
+20:33:26  INFO        [BPC]   COMPRESSED AIR                  gen=    6681703.35  materials=2
+20:33:26  INFO        HP Steam_Dis                                4701.00            0.00         4701.00   100.0000% (PT)
+20:33:26  INFO        [BPC]   Cooling Water 1                 gen=      14369.00  materials=4
+20:33:26  INFO        LP Steam_Dis                               26426.63            0.00        26426.63   100.0000% (PT)
+20:33:26  INFO        [BPC]   Cooling Water 2                 gen=      12591.29  materials=4
+20:33:26  INFO        MP Steam_Dis                               19981.68            0.00        19981.68   100.0000% (PT)
+20:33:26  INFO        [BPC]   D M Water                       gen=     132657.05  materials=5
+20:33:26  INFO        Nitrogen Gas                             5908725.00            0.00      5908725.00   100.0000% (PT)
+20:33:26  INFO        [BPC]   Effluent Treated                gen=     230049.38  materials=3
+20:33:26  INFO        Oxygen                                      5501.00            0.00         5501.00   100.0000% (PT)
+20:33:26  INFO        [BPC]   HP Steam PRDS                   gen=       3769.98  materials=2
+20:33:26  INFO        Power_Dis                               31864568.60            0.00     31864568.60   100.0000% (PT)
+20:33:26  INFO        [BPC]   HP Steam_Dis                    gen=       3769.98  materials=1
+20:33:26  INFO        SHP Steam_Dis                              21778.00            0.00        21778.00   100.0000% (PT)
+20:33:26  INFO        [BPC]   HRSG1_SHP STEAM                 gen=      43406.56  materials=6
+20:33:26  INFO        Water                                     289668.16            0.00       289668.16   100.0000% (PT)
+20:33:26  INFO        [BPC]   HRSG3_SHP STEAM                 gen=      42098.15  materials=6
+20:33:26  INFO      
+20:33:26  INFO        [BPC]   LP Steam PRDS                   gen=      16278.48  materials=2
+20:33:26  INFO        All U4U materials converged within tolerance
+20:33:26  INFO        [BPC]   LP Steam_Dis                    gen=      32838.48  materials=2
+20:33:26  INFO        ------------------------------------------------------------------------------------------
+20:33:26  INFO        [BPC]   MP Steam PRDS SHP               gen=      24732.33  materials=2
+20:33:26  INFO      
+20:33:26  INFO        [BPC]   MP Steam_Dis                    gen=      30252.33  materials=2
+20:33:26  INFO        [U4U LOOP] === CONVERGED in 2 iterations ===
+20:33:26  INFO        [BPC]   NMD - Power Plant 1             gen=    7145017.44  materials=5
+20:33:26  INFO      
+20:33:26  INFO        [BPC]   NMD - Power Plant 3             gen=    6074880.00  materials=5
+20:33:26  INFO        ==========================================================================================
+20:33:26  INFO        [BPC]   NMD - STG Power Plant           gen=    7843920.00  materials=6
+20:33:26  INFO        FINAL BALANCE  (after 2 iterations, CONVERGED)
+20:33:26  INFO        [BPC]   Oxygen                          gen=       4960.28  materials=3
+20:33:26  INFO        ==========================================================================================
+20:33:26  INFO        [BPC]   Power_Dis                       gen=   43239817.44  materials=1
+20:33:26  INFO      
+20:33:26  INFO        [BPC]   SHP Steam_Dis                   gen=      85504.70  materials=3
+20:33:26  INFO        POWER BALANCE
+20:33:26  INFO        [BPC]   STG1_LP STEAM                   gen=      16560.00  materials=1
+20:33:26  INFO        Process + Fixed Demand                  31864568.60 KWH
+20:33:26  INFO        [BPC]   STG1_MP STEAM                   gen=       5520.00  materials=1
+20:33:26  INFO        U4U Demand                                     0.00 KWH
+  No U4U detail records from iteration loop — skipping comparison
+20:33:26  INFO        TOTAL DEMAND                            31864568.60 KWH
+20:33:26  WARNING     [NORMS SAVE] No detail_records in result — nothing to save.
+
+==============================================================================================================
+  NMD UTILITY PRICE CALCULATION — February / 2026
+  Method : Cost Cycle Gauss-Seidel  |  Max iterations : 100  |  Convergence tolerance : 0.0001 INR
+==============================================================================================================
+20:33:26  INFO        GT/STG Generation                          24465.60 MWh
+20:33:26  INFO        Import Power                               24552.00 MWh
+20:33:26  INFO        TOTAL SUPPLY                               49017.60 MWh
+20:33:26  INFO        BALANCE                                    17153.03 MWh
+20:33:26  INFO      
+20:33:26  INFO        STEAM BALANCE
+20:33:26  INFO        Grade            Demand (MT)        Gen (MT)    Surplus (MT)    Deficit (MT)
+20:33:26  INFO        ------------  --------------  --------------  --------------  --------------
+20:33:26  INFO        LP                   9578.63            0.00            0.00            0.00
+20:33:26  INFO        MP                  15613.68            0.00            0.00            0.00
+20:33:26  INFO        HP                   4701.00            0.00            0.00            0.00
+20:33:26  INFO        SHP                 21778.00        89280.00        67502.00            0.00
+20:33:26  INFO      
+20:33:26  INFO        U4U CONSUMPTION SUMMARY
+20:33:26  INFO        Utility                              Initial Demand      U4U Demand    Total Demand
+20:33:26  INFO        -----------------------------------  --------------  --------------  --------------
+20:33:26  INFO        COMPRESSED AIR                           6381525.24            0.00      6381525.24 (PT)
+20:33:26  INFO        Cooling Water 1                            15776.00            0.00        15776.00 (PT)
+20:33:26  INFO        Cooling Water 2                             9821.59            0.00         9821.59 (PT)
+20:33:26  INFO        D M Water                                  57000.20            0.00        57000.20 (PT)
+20:33:26  INFO        HP Steam_Dis                                4701.00            0.00         4701.00 (PT)
+20:33:26  INFO        LP Steam_Dis                               26426.63            0.00        26426.63 (PT)
+20:33:26  INFO        MP Steam_Dis                               19981.68            0.00        19981.68 (PT)
+20:33:26  INFO        Nitrogen Gas                             5908725.00            0.00      5908725.00 (PT)
+20:33:26  INFO        Oxygen                                      5501.00            0.00         5501.00 (PT)
+20:33:26  INFO        Power_Dis                               31864568.60            0.00     31864568.60 (PT)
+20:33:26  INFO        SHP Steam_Dis                              21778.00            0.00        21778.00 (PT)
+20:33:26  INFO        Water                                     289668.16            0.00       289668.16 (PT)
+20:33:26  INFO      
+20:33:26  INFO        PASS-THROUGH UTILITIES (demand but no norms configuration):
+20:33:26  INFO          COMPRESSED AIR                       demand = 6381525.24  (assumed external supply)
+20:33:26  INFO          Cooling Water 1                      demand = 15776.00  (assumed external supply)
+20:33:26  INFO          Cooling Water 2                      demand = 9821.59  (assumed external supply)
+20:33:26  INFO          D M Water                            demand = 57000.20  (assumed external supply)
+20:33:26  INFO          HP Steam_Dis                         demand = 4701.00  (assumed external supply)
+20:33:26  INFO          LP Steam_Dis                         demand = 26426.63  (assumed external supply)
+20:33:26  INFO          MP Steam_Dis                         demand = 19981.68  (assumed external supply)
+20:33:26  INFO          Nitrogen Gas                         demand = 5908725.00  (assumed external supply)
+20:33:26  INFO          Oxygen                               demand = 5501.00  (assumed external supply)
+20:33:26  INFO          Power_Dis                            demand = 31864568.60  (assumed external supply)
+20:33:26  INFO          SHP Steam_Dis                        demand = 21778.00  (assumed external supply)
+20:33:26  INFO          Water                                demand = 289668.16  (assumed external supply)
+20:33:26  INFO        ==========================================================================================
+20:33:27  INFO        [BPC] Loaded BPC.ods (122 rows, 58 cols) for month 3/2026
+20:33:27  INFO        [BPC] Month columns: norm=54, qty=55
+20:33:27  INFO        [BPC] ===== BPC SUMMARY (BPC.ods 3/2026) =====
+20:33:27  INFO        [BPC] Producers with generation quantities: 22
+20:33:27  INFO        [BPC] Producers with consumption quantities: 25
+20:33:27  INFO        [BPC]   Boiler Feed Water               gen=     105566.82  materials=4
+20:33:27  INFO        [BPC]   COMPRESSED AIR                  gen=    7440059.70  materials=2
+20:33:27  INFO        [BPC]   Cooling Water 1                 gen=      15775.86  materials=4
+20:33:27  INFO        [BPC]   Cooling Water 2                 gen=      14358.17  materials=4
+20:33:27  INFO        [BPC]   D M Water                       gen=     148075.87  materials=5
+20:33:27  INFO        [BPC]   Effluent Treated                gen=     253863.05  materials=3
+20:33:27  INFO        [BPC]   HP Steam PRDS                   gen=       4701.58  materials=2
+20:33:27  INFO        [BPC]   HP Steam_Dis                    gen=       4701.58  materials=1
+20:33:27  INFO        [BPC]   HRSG1_SHP STEAM                 gen=      48666.93  materials=6
+20:33:27  INFO        [BPC]   HRSG3_SHP STEAM                 gen=      47226.42  materials=6
+20:33:27  INFO        [BPC]   LP Steam PRDS                   gen=      18186.52  materials=2
+20:33:27  INFO        [BPC]   LP Steam_Dis                    gen=      36906.52  materials=2
+20:33:27  INFO        [BPC]   MP Steam PRDS SHP               gen=      27381.30  materials=2
+20:33:27  INFO        [BPC]   MP Steam_Dis                    gen=      33621.30  materials=2
+20:33:27  INFO        [BPC]   NMD - Power Plant 1             gen=    8207085.29  materials=5
+20:33:27  INFO        [BPC]   NMD - Power Plant 3             gen=    7023360.00  materials=5
+20:33:27  INFO        [BPC]   NMD - STG Power Plant           gen=    8867040.00  materials=6
+20:33:27  INFO        [BPC]   Oxygen                          gen=       5500.51  materials=3
+20:33:27  INFO        [BPC]   Power_Dis                       gen=   48649485.29  materials=1
+20:33:27  INFO        [BPC]   SHP Steam_Dis                   gen=      95893.35  materials=3
+20:33:27  INFO        [BPC]   STG1_LP STEAM                   gen=      18720.00  materials=1
+20:33:27  INFO        [BPC]   STG1_MP STEAM                   gen=       6240.00  materials=1
+20:33:27  WARNING     [NORMS SAVE] No detail_records in result — nothing to save.
+  Loaded 26 utility groups from NormsMonthDetail.
+
+  Dynamic calculation sequence: 25 utilities
+    1. NMD - Power Plant 1 | POWERGEN
+    2. NMD - Power Plant 2 | POWERGEN
+    3. NMD - Power Plant 3 | POWERGEN
+    4. NMD - STG Power Plant | POWERGEN
+    5. NMD - Utility Plant | Boiler Feed Water
+    6. NMD - Utility Plant | COMPRESSED AIR
+    7. NMD - Utility Plant | Cooling Water 1
+    8. NMD - Utility Plant | Cooling Water 2
+    9. NMD - Utility Plant | D M Water
+    10. NMD - Utility Plant | Effluent Treated
+    11. NMD - Utility Plant | HP Steam PRDS
+    12. NMD - Utility Plant | HRSG1_SHP STEAM
+    13. NMD - Utility Plant | HRSG2_SHP STEAM
+    14. NMD - Utility Plant | HRSG3_SHP STEAM
+    15. NMD - Utility Plant | LP Steam PRDS
+    16. NMD - Utility Plant | MP Steam PRDS SHP
+    17. NMD - Utility Plant | Oxygen
+    18. NMD - Utility Plant | PQR
+    19. NMD - Utility Plant | STG1_LP STEAM
+    20. NMD - Utility Plant | STG1_MP STEAM
+    21. NMD - Utility Plant | Treated Spent Caustic
+    22. NMD - Utility/Power Dist | HP Steam_Dis
+    23. NMD - Utility/Power Dist | LP Steam_Dis
+    24. NMD - Utility/Power Dist | Power_Dis
+    25. NMD - Utility/Power Dist | SHP Steam_Dis
+
+  [ITERATION] Price calculation iteration completed in 13 iteration(s). Converged: True
+  Status  : CONVERGED after 13 iteration(s)
+
+============================================================================================================================
+  UTILITY SUMMARY
+============================================================================================================================
+  #    Plant                          Utility                  UOM           Gen QTY   Calc Price       Total Cost Status
+  --------------------------------------------------------------------------------------------------------------------------
+  1    Power Plant 1                  POWERGEN                 KWH      6,846,531.06      12.7692    87,425,035.58  Converged
+  2    Power Plant 2                  POWERGEN                 KWH              0.00       0.0000             0.00  Zero QTY
+  3    Power Plant 3                  POWERGEN                 KWH      6,915,470.00      13.7384    95,007,611.17  Converged
+  4    STG Power Plant                POWERGEN                 KWH      8,558,390.00      14.4375   123,561,522.77  Converged
+  5    Utility Plant                  Boiler Feed Water        M3         102,217.60     304.4590    31,121,071.81  Converged
+  6    Utility Plant                  COMPRESSED AIR           NM3      6,744,315.34       2.5613    17,274,415.34  Converged
+  7    Utility Plant                  Cooling Water 1          KM3         14,369.00   3,182.8106    45,733,805.50  Converged
+  8    Utility Plant                  Cooling Water 2          KM3         12,780.60   3,261.4757    41,683,630.10  Converged
+  9    Utility Plant                  D M Water                M3         139,348.48      77.6696    10,823,139.47  Converged
+  10   Utility Plant                  Effluent Treated         M3               0.00       0.0000             0.00  Zero QTY
+  11   Utility Plant                  HP Steam PRDS            MT           3,769.00   3,056.6019    11,520,332.40  Converged
+  12   Utility Plant                  HRSG1_SHP STEAM          MT          46,219.77   2,974.4134   137,476,701.29  Converged
+  13   Utility Plant                  HRSG2_SHP STEAM          MT               0.00       0.0000             0.00  Zero QTY
+  14   Utility Plant                  HRSG3_SHP STEAM          MT          46,219.77   3,596.6859   166,237,993.75  Converged
+  15   Utility Plant                  LP Steam PRDS            MT          18,224.51      76.1148     1,387,153.97  Converged
+  16   Utility Plant                  MP Steam PRDS SHP        MT          30,181.57   3,017.2515    91,065,379.99  Converged
+  17   Utility Plant                  Oxygen                   MT           4,960.00  18,514.4577    91,831,710.05  Converged
+  18   Utility Plant                  PQR                                       0.00       0.0000             0.00  Zero QTY
+  19   Utility Plant                  STG1_LP STEAM            MT          20,086.42   1,577.0638    31,677,563.16  Converged
+  20   Utility Plant                  STG1_MP STEAM            MT           1,528.42   2,267.0292     3,464,976.20  Converged
+  21   Utility Plant                  Treated Spent Caustic    M3               0.00       0.0000        26,091.81  Zero QTY
+  22   Utility/Power Dist             HP Steam_Dis             MT           3,769.00   3,056.6019    11,520,332.40  Converged
+  23   Utility/Power Dist             LP Steam_Dis             MT          38,314.04     937.7993    35,930,882.20  Converged
+  24   Utility/Power Dist             Power_Dis                KWH     42,549,330.00      10.2767   437,264,748.51  Converged
+  25   Utility/Power Dist             SHP Steam_Dis            MT          92,439.54   3,285.5496   303,714,687.90  Converged
+  ==========================================================================================================================
+  GRAND TOTAL COST (All Utilities)                                             1,775,748,785.37
+  ==========================================================================================================================
+
+============================================================================================================================
+  MATERIAL COST DETAIL
+============================================================================================================================
+
+  ┌─ Power Plant 1  |  POWERGEN  (KWH)  |  Gen QTY : 6,846,531.06  |  Calculated Price : 12.7692
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0040      19,813.46      2.5613      50,748.80  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000          68.59  3,261.4757     223,713.03  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    0.0108      65,971.27  1,101.3763  72,659,192.66  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   3,422,276.68  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   2,235,947.47  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   8,128,254.72  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0140      68,592.58     10.2767     704,902.22  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  87,425,035.58   PRICE = 87,425,035.58 / 6,846,531.06 = 12.7692 /KWH
+
+  ┌─ Power Plant 2  |  POWERGEN  (KWH)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0039           0.00      2.5613           0.00  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000           0.00  3,261.4757           0.00  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    0.0101           0.00      0.0000           0.00  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0140           0.00     10.2767           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /KWH
+
+  ┌─ Power Plant 3  |  POWERGEN  (KWH)  |  Gen QTY : 6,915,470.00  |  Calculated Price : 13.7384
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0048      32,896.89      2.5613      84,259.78  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000         117.56  3,261.4757     383,428.83  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    0.0108      73,946.42  1,101.3763  81,442,830.47  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   3,290,226.81  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   6,910,853.96  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   1,901,060.80  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0140      96,816.58     10.2767     994,950.51  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  95,007,611.17   PRICE = 95,007,611.17 / 6,915,470.00 = 13.7384 /KWH
+
+  ┌─ STG Power Plant  |  POWERGEN  (KWH)  |  Gen QTY : 8,558,390.00  |  Calculated Price : 14.4375
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0049      41,790.62      2.5613     107,039.55  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0003       2,422.02  3,261.4757   7,899,373.61  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —   8,923,334.38  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   2,454,660.64  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   3,213,515.48  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0020      17,116.78     10.2767     175,903.23  Calculated
+  │  Ret steam condensate                 NMD - STG Power Plant           0.0023      19,727.09    -48.0000    -946,900.27  User Price
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.0036      30,964.26  3,285.5496 101,734,596.16  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 123,561,522.77   PRICE = 123,561,522.77 / 8,558,390.00 = 14.4375 /KWH
+
+  ┌─ Utility Plant  |  Boiler Feed Water  (M3)  |  Gen QTY : 102,217.60  |  Calculated Price : 304.4590
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  CHEM CYCLO HEXY                      NMD-Rev Proc                    0.0001          10.22    190.0000       1,942.13  User Price
+  │  CHEM MORPHOLENE                      NMD-Rev Proc                    0.0000           0.20 170,000.0000      34,753.95  User Price
+  │  Cooling Water 2                      NMD - Utility Plant             0.0011         109.68  3,261.4757     357,716.97  Calculated
+  │  D M Water                            NMD - Utility Plant             0.8600      87,907.14     77.6696   6,827,711.21  Calculated
+  │  KEM WATREAT B 70M                    NMD-Rev Proc                    0.0006          58.26    343.0000      19,984.56  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist        0.1450      14,821.55    937.7993  13,899,641.25  Calculated
+  │  Power_Dis                            NMD - Utility/Power Dist        9.5000     971,067.20     10.2767   9,979,321.73  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  31,121,071.81   PRICE = 31,121,071.81 / 102,217.60 = 304.4590 /M3
+
+  ┌─ Utility Plant  |  COMPRESSED AIR  (NM3)  |  Gen QTY : 6,744,315.34  |  Calculated Price : 2.5613
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000         175.35  3,261.4757     571,906.93  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —   5,266,524.04  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.1650   1,112,812.03     10.2767  11,435,984.37  Calculated
+  │  PQR                                  NMD - Utility Plant             0.0000           0.00      0.0000           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  17,274,415.34   PRICE = 17,274,415.34 / 6,744,315.34 = 2.5613 /NM3
+
+  ┌─ Utility Plant  |  Cooling Water 1  (KM3)  |  Gen QTY : 14,369.00  |  Calculated Price : 3,182.8106
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.1148       1,650.01      2.5613       4,226.21  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —      11,325.70  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist      245.0000   3,520,405.01     10.2767  36,177,984.78  Calculated
+  │  SULPHURIC ACID                       NMD-Rev Proc                    0.0002           2.27  6,000.0000      13,621.81  User Price
+  │  Water                                NMD-Rev Proc                   11.0500     158,777.45     60.0000   9,526,647.00  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  45,733,805.50   PRICE = 45,733,805.50 / 14,369.00 = 3,182.8106 /KM3
+
+  ┌─ Utility Plant  |  Cooling Water 2  (KM3)  |  Gen QTY : 12,780.60  |  Calculated Price : 3,261.4757
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.1310       1,674.81      2.5613       4,289.74  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —       9,924.41  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist      250.0000   3,195,151.05     10.2767  32,835,462.29  Calculated
+  │  SULPHURIC ACID                       NMD-Rev Proc                    0.0002           2.56  6,000.0000      15,336.73  User Price
+  │  Water                                NMD-Rev Proc                   11.5000     146,976.95     60.0000   8,818,616.94  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  41,683,630.10   PRICE = 41,683,630.10 / 12,780.60 = 3,261.4757 /KM3
+
+  ┌─ Utility Plant  |  D M Water  (M3)  |  Gen QTY : 139,348.48  |  Calculated Price : 77.6696
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  CAUSTIC SODA LYE – GRADE 1           NMD-Rev Proc                    0.0002          31.49 32,905.0000   1,036,269.17  User Price
+  │  CHEM  SODIUM SULPHITE;PN:MIS 19OX    NMD-Rev Proc                    0.0007          97.68     51.5000       5,030.69  User Price
+  │  CHEM ALUM.SULFATE, AL2(SO4)3,18H2O   NMD-Rev Proc                    0.0008         105.49      9.5000       1,002.12  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0770      10,729.83      2.5613      27,482.64  Calculated
+  │  HYDRO CHLORIC ACID (30%) -VIRGIN     NMD-Rev Proc                    0.0002          31.49    550.0000      17,321.02  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —     104,312.55  Direct Amount
+  │  POLYELECTROLYTE                      NMD-Rev Proc                    0.0006          80.54    140.0000      11,276.08  User Price
+  │  Power_Dis                            NMD - Utility/Power Dist        1.2100     168,611.66     10.2767   1,732,763.74  Calculated
+  │  Ret steam condensate                 NMD - STG Power Plant           0.2030      28,287.74    -32.0000    -905,207.74  User Price
+  │  SODIUM CHLORIDE IS 797 GRADE1        NMD-Rev Proc                    0.0000           1.39 10,000.0000      13,934.85  User Price
+  │  Water                                NMD-Rev Proc                    1.0500     146,315.91     60.0000   8,778,954.34  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  10,823,139.47   PRICE = 10,823,139.47 / 139,348.48 = 77.6696 /M3
+
+  ┌─ Utility Plant  |  Effluent Treated  (M3)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Power_Dis                            NMD - Utility/Power Dist        3.5400           0.00     10.2767           0.00  Calculated
+  │  UREA,NITROGEN CONTENT 46%            NMD-Rev Proc                    0.0007           0.00     46.0000           0.00  User Price
+  │  Water                                NMD-Rev Proc                    0.0007           0.00     60.0000           0.00  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /M3
+
+  ┌─ Utility Plant  |  HP Steam PRDS  (MT)  |  Gen QTY : 3,769.00  |  Calculated Price : 3,056.6019
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             0.0768         289.46    304.4590      88,128.47  Calculated
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.9232       3,479.54  3,285.5496  11,432,203.94  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  11,520,332.40   PRICE = 11,520,332.40 / 3,769.00 = 3,056.6019 /MT
+
+  ┌─ Utility Plant  |  HRSG1_SHP STEAM  (MT)  |  Gen QTY : 46,219.77  |  Calculated Price : 2,974.4134
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             1.0240      47,329.04    304.4590  14,409,755.24  Calculated
+  │  CHEM TRISODIUM PHOSPHATE             NMD-Rev Proc                    0.0009          41.60    153.0000       6,364.46  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant             9.6312     445,150.97      2.5613   1,140,178.41  Calculated
+  │  FURNACE OIL ( MEDIUM VISCOSITY GRAD  NMD-Rev Proc                    0.0001           4.53    948.9829       4,298.45  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist       -0.0780      -3,605.14  2,099.7200  -7,569,788.89  User Price
+  │  NATURAL GAS                          NMD-Rev Proc                    2.4722     114,266.27  1,101.3763 125,850,163.59  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   3,628,353.35  Direct Amount
+  │  Water                                NMD-Rev Proc                    0.0027         122.94     60.0000       7,376.68  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 137,476,701.29   PRICE = 137,476,701.29 / 46,219.77 = 2,974.4134 /MT
+
+  ┌─ Utility Plant  |  HRSG2_SHP STEAM  (MT)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             1.0542           0.00    304.4590           0.00  Calculated
+  │  CHEM TRISODIUM PHOSPHATE             NMD-Rev Proc                    0.0009           0.00      0.0000           0.00  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant            14.1733           0.00      2.5613           0.00  Calculated
+  │  FURNACE OIL ( MEDIUM VISCOSITY GRAD  NMD-Rev Proc                    0.0001           0.00      0.0000           0.00  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist       -0.0780           0.00    937.7993           0.00  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    2.8116           0.00      0.0000           0.00  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  Water                                NMD-Rev Proc                    0.0027           0.00      0.0000           0.00  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /MT
+
+  ┌─ Utility Plant  |  HRSG3_SHP STEAM  (MT)  |  Gen QTY : 46,219.77  |  Calculated Price : 3,596.6859
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             1.0240      47,329.04    304.4590  14,409,755.24  Calculated
+  │  CHEM TRISODIUM PHOSPHATE             NMD-Rev Proc                    0.0009          41.60    153.0000       6,364.46  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant            10.0662     465,259.53      2.5613   1,191,683.06  Calculated
+  │  FURNACE OIL ( MEDIUM VISCOSITY GRAD  NMD-Rev Proc                    0.0001           4.53    948.9828       4,298.45  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist       -0.0780      -3,605.14    937.7993  -3,380,899.75  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    2.9544     136,552.80  1,101.3763 150,396,015.15  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   3,603,400.46  Direct Amount
+  │  Water                                NMD-Rev Proc                    0.0027         122.94     60.0000       7,376.68  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 166,237,993.75   PRICE = 166,237,993.75 / 46,219.77 = 3,596.6859 /MT
+
+  ┌─ Utility Plant  |  LP Steam PRDS  (MT)  |  Gen QTY : 18,224.51  |  Calculated Price : 76.1148
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             0.2500       4,556.13    304.4590   1,387,153.97  Calculated
+  │  MP Steam_Dis                         NMD - Utility/Power Dist        0.7500      13,668.38      0.0000           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :   1,387,153.97   PRICE = 1,387,153.97 / 18,224.51 = 76.1148 /MT
+
+  ┌─ Utility Plant  |  MP Steam PRDS SHP  (MT)  |  Gen QTY : 30,181.57  |  Calculated Price : 3,017.2515
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             0.0900       2,716.34    304.4590     827,014.60  Calculated
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.9100      27,465.23  3,285.5496  90,238,365.39  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  91,065,379.99   PRICE = 91,065,379.99 / 30,181.57 = 3,017.2515 /MT
+
+  ┌─ Utility Plant  |  Oxygen  (MT)  |  Gen QTY : 4,960.00  |  Calculated Price : 18,514.4577
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Cooling Water 2                      NMD - Utility Plant             0.2840       1,408.64  3,261.4757   4,594,245.12  Calculated
+  │  Nitrogen Gas                         NMD - Utility Plant           923.9200   4,582,643.20      5.8100  26,625,156.99  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   6,858,040.45  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist     1054.5800   5,230,716.80     10.2767  53,754,267.48  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  91,831,710.05   PRICE = 91,831,710.05 / 4,960.00 = 18,514.4577 /MT
+
+  ┌─ Utility Plant  |  PQR  ()  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Effluent Treated                     NMD - Utility Plant             0.0010           0.00      0.0000           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /
+
+  ┌─ Utility Plant  |  STG1_LP STEAM  (MT)  |  Gen QTY : 20,086.42  |  Calculated Price : 1,577.0638
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.4800       9,641.48  3,285.5496  31,677,563.16  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  31,677,563.16   PRICE = 31,677,563.16 / 20,086.42 = 1,577.0638 /MT
+
+  ┌─ Utility Plant  |  STG1_MP STEAM  (MT)  |  Gen QTY : 1,528.42  |  Calculated Price : 2,267.0292
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.6900       1,054.61  3,285.5496   3,464,976.20  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :   3,464,976.20   PRICE = 3,464,976.20 / 1,528.42 = 2,267.0292 /MT
+
+  ┌─ Utility Plant  |  Treated Spent Caustic  (M3)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0000           0.00      2.5613           0.00  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000           8.00  3,261.4757      26,091.81  Calculated
+  │  MP Steam_Dis                         NMD - Utility/Power Dist        0.0390           0.00      0.0000           0.00  Calculated
+  │  Power_Dis                            NMD - Utility/Power Dist       17.0400           0.00     10.2767           0.00  Calculated
+  │  SULPHURIC ACID                       NMD-Rev Proc                    0.0200           0.00      0.0000           0.00  User Price
+  │  Water                                NMD-Rev Proc                    0.0934           0.00           —           0.00  Direct Amount
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :      26,091.81   PRICE = 26,091.81 / 0 = 0.0000 /M3
+
+  ┌─ Utility/Power Dist  |  HP Steam_Dis  (MT)  |  Gen QTY : 3,769.00  |  Calculated Price : 3,056.6019
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  HP Steam PRDS                        NMD - Utility Plant             1.0000       3,769.00  3,056.6019  11,520,332.40  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  11,520,332.40   PRICE = 11,520,332.40 / 3,769.00 = 3,056.6019 /MT
+
+  ┌─ Utility/Power Dist  |  LP Steam_Dis  (MT)  |  Gen QTY : 38,314.04  |  Calculated Price : 937.7993
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  LP Steam PRDS                        NMD - Utility Plant             0.4757      18,225.99     76.1148   1,387,266.81  Calculated
+  │  STG1_LP STEAM                        NMD - Utility Plant             0.5243      20,088.05  1,719.6100  34,543,615.39  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  35,930,882.20   PRICE = 35,930,882.20 / 38,314.04 = 937.7993 /MT
+
+  ┌─ Utility/Power Dist  |  Power_Dis  (KWH)  |  Gen QTY : 42,549,330.00  |  Calculated Price : 10.2767
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Power from MEL                       NMD-Rev Proc                    0.5248  22,176,000.00      6.8900 152,792,640.00  User Price
+  │  POWERGEN                             NMD - Power Plant 2             0.0000           0.00      0.0000           0.00  User Price
+  │  POWERGEN                             NMD - STG Power Plant           0.1557   6,624,675.39     14.4375  95,643,570.61  Calculated
+  │  POWERGEN                             NMD - Power Plant 3             0.1598   6,797,468.21     15.0100 102,029,997.89  User Price
+  │  POWERGEN                             NMD - Power Plant 1             0.1598   6,797,468.21     12.7692  86,798,540.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 437,264,748.51   PRICE = 437,264,748.51 / 42,549,330.00 = 10.2767 /KWH
+
+  ┌─ Utility/Power Dist  |  SHP Steam_Dis  (MT)  |  Gen QTY : 92,439.54  |  Calculated Price : 3,285.5496
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  HRSG1_SHP STEAM                      NMD - Utility Plant             0.5000      46,219.77  2,974.4134 137,476,698.06  Calculated
+  │  HRSG2_SHP STEAM                      NMD - Utility Plant             0.0000           0.00      0.0000           0.00  User Price
+  │  HRSG3_SHP STEAM                      NMD - Utility Plant             0.5000      46,219.77  3,596.6859 166,237,989.84  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 303,714,687.90   PRICE = 303,714,687.90 / 92,439.54 = 3,285.5496 /MT
+
+============================================================================================================================
+  END — February / 2026
+============================================================================================================================
+
+  [DB SAVE] NormsMonthDetail: 99 rows updated (43 Price-AmountOnly + 56 Calculation-Full) | 21 skipped (Amount/user-entered) | 0 errors | CPPMonthWisePrice: 56 Calculation rows written
+  [SNAPSHOT] CPPUtilityRateSnapshot: 26 rows upserted | 0 errors

@@ -1,0 +1,19 @@
+JMD Plant Run Log
+Plant:     SEZ CPP
+Period:    4/2025
+Generated: 2026-06-05 15:18:41
+================================================================================
+
+15:18:38  INFO        [CALC] SEZ CPP  4/2025  (2025-26)
+15:18:38  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+15:18:39  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+15:18:39  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+15:18:39  INFO      [DC] Using DB consumption data for 2DFEE33F-4CFD-4887-B9DD-53388AA95271 4/2025
+15:18:39  INFO      [DC] Using DB asset list for 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+15:18:39  INFO        [BUDGET] SEZ CPP  4/2025  LP=0  MP=0  HP=0  SHP=0
+15:18:39  INFO        [DISPATCH] Using dummy power demand 5400.0 MWh for plant 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+15:18:40  INFO        [DISPATCH] Using dummy power demand 5400.0 MWh for plant 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+15:18:41  INFO        [DISPATCH] Using dummy power demand 5400.0 MWh for plant 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+15:18:41  INFO        [DISPATCH] Using dummy power demand 5400.0 MWh for plant 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+15:18:41  WARNING     [USD] Period-2 stall at iter 4 — averaging u4u to 0.000
+15:18:41  INFO        [CALC] Done  4/2025  (0.9s)  assets=8  norms=0  budget=OK  iter=4

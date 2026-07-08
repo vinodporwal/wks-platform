@@ -1,0 +1,355 @@
+NMD Plant Run Log
+Plant:     NMD CPP
+Period:    9/2025
+Generated: 2026-07-07 21:50:39
+================================================================================
+
+
+==============================================================================================================
+  NMD UTILITY PRICE CALCULATION — September / 2025
+  Method : Cost Cycle Gauss-Seidel  |  Max iterations : 100  |  Convergence tolerance : 0.0001 INR
+==============================================================================================================
+  Loaded 26 utility groups from NormsMonthDetail.
+
+  Dynamic calculation sequence: 25 utilities
+    1. NMD - Power Plant 1 | POWERGEN
+    2. NMD - Power Plant 2 | POWERGEN
+    3. NMD - Power Plant 3 | POWERGEN
+    4. NMD - STG Power Plant | POWERGEN
+    5. NMD - Utility Plant | Boiler Feed Water
+    6. NMD - Utility Plant | COMPRESSED AIR
+    7. NMD - Utility Plant | Cooling Water 1
+    8. NMD - Utility Plant | Cooling Water 2
+    9. NMD - Utility Plant | D M Water
+    10. NMD - Utility Plant | Effluent Treated
+    11. NMD - Utility Plant | HP Steam PRDS
+    12. NMD - Utility Plant | HRSG1_SHP STEAM
+    13. NMD - Utility Plant | HRSG2_SHP STEAM
+    14. NMD - Utility Plant | HRSG3_SHP STEAM
+    15. NMD - Utility Plant | LP Steam PRDS
+    16. NMD - Utility Plant | MP Steam PRDS SHP
+    17. NMD - Utility Plant | Oxygen
+    18. NMD - Utility Plant | PQR
+    19. NMD - Utility Plant | STG1_LP STEAM
+    20. NMD - Utility Plant | STG1_MP STEAM
+    21. NMD - Utility Plant | Treated Spent Caustic
+    22. NMD - Utility/Power Dist | HP Steam_Dis
+    23. NMD - Utility/Power Dist | LP Steam_Dis
+    24. NMD - Utility/Power Dist | Power_Dis
+    25. NMD - Utility/Power Dist | SHP Steam_Dis
+
+  [ITERATION] Price calculation iteration completed in 12 iteration(s). Converged: True
+  Status  : CONVERGED after 12 iteration(s)
+
+============================================================================================================================
+  UTILITY SUMMARY
+============================================================================================================================
+  #    Plant                          Utility                  UOM           Gen QTY   Calc Price       Total Cost Status
+  --------------------------------------------------------------------------------------------------------------------------
+  1    Power Plant 1                  POWERGEN                 KWH      8,307,050.00      13.3985   111,302,277.36  Converged
+  2    Power Plant 2                  POWERGEN                 KWH              0.00       0.0000             0.00  Zero QTY
+  3    Power Plant 3                  POWERGEN                 KWH      8,307,050.00      13.1867   109,542,723.34  Converged
+  4    STG Power Plant                POWERGEN                 KWH      5,549,401.40      18.6989   103,767,762.60  Converged
+  5    Utility Plant                  Boiler Feed Water        M3         108,876.86     263.6712    28,707,690.20  Converged
+  6    Utility Plant                  COMPRESSED AIR           NM3      7,217,547.20       2.6599    19,197,812.78  Converged
+  7    Utility Plant                  Cooling Water 1          KM3         15,256.00   3,334.2423    50,867,200.15  Converged
+  8    Utility Plant                  Cooling Water 2          KM3         13,791.41   3,224.7359    44,473,655.63  Converged
+  9    Utility Plant                  D M Water                M3         148,614.80      80.2128    11,920,803.66  Converged
+  10   Utility Plant                  Effluent Treated         M3               0.00       0.0000             0.00  Zero QTY
+  11   Utility Plant                  HP Steam PRDS            MT           9,098.00   3,134.6635    28,519,168.66  Converged
+  12   Utility Plant                  HRSG1_SHP STEAM          MT          47,672.09   3,037.6490   144,811,076.88  Converged
+  13   Utility Plant                  HRSG2_SHP STEAM          MT               0.00       0.0000             0.00  Zero QTY
+  14   Utility Plant                  HRSG3_SHP STEAM          MT          47,672.09   3,709.3475   176,832,345.82  Converged
+  15   Utility Plant                  LP Steam PRDS            MT          28,399.38      65.9178     1,872,024.38  Converged
+  16   Utility Plant                  MP Steam PRDS SHP        MT          38,319.90   3,093.6138   118,546,973.96  Converged
+  17   Utility Plant                  Oxygen                   MT           5,464.00  18,918.0945   103,368,468.29  Converged
+  18   Utility Plant                  PQR                                       0.00       0.0000             0.00  Zero QTY
+  19   Utility Plant                  STG1_LP STEAM            MT          12,938.87   1,619.2792    20,951,646.63  Converged
+  20   Utility Plant                  STG1_MP STEAM            MT               0.00       0.0000             0.00  Zero QTY
+  21   Utility Plant                  Treated Spent Caustic    M3               0.00       0.0000        25,797.89  Zero QTY
+  22   Utility/Power Dist             HP Steam_Dis             MT           9,098.00   3,134.6635    28,519,168.64  Converged
+  23   Utility/Power Dist             LP Steam_Dis             MT          41,343.76     602.0844    24,892,431.36  Converged
+  24   Utility/Power Dist             Power_Dis                KWH     45,679,860.00      10.8948   497,671,520.11  Converged
+  25   Utility/Power Dist             SHP Steam_Dis            MT          95,344.18   3,373.4982   321,643,412.15  Converged
+  ==========================================================================================================================
+  GRAND TOTAL COST (All Utilities)                                             1,947,433,960.49
+  ==========================================================================================================================
+
+============================================================================================================================
+  MATERIAL COST DETAIL
+============================================================================================================================
+
+  ┌─ Power Plant 1  |  POWERGEN  (KWH)  |  Gen QTY : 8,307,050.00  |  Calculated Price : 13.3985
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0040      33,095.29      2.6599      88,029.51  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000         116.30  3,224.7359     375,032.60  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    0.0102      82,755.04  1,142.7810  94,570,888.73  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   8,831,493.05  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   3,740,389.14  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   2,429,396.87  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0140     116,298.70     10.8948   1,267,047.47  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 111,302,277.36   PRICE = 111,302,277.36 / 8,307,050.00 = 13.3985 /KWH
+
+  ┌─ Power Plant 2  |  POWERGEN  (KWH)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0039           0.00      2.6599           0.00  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000           0.00  3,224.7359           0.00  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    0.0101           0.00      0.0000           0.00  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0140           0.00     10.8948           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /KWH
+
+  ┌─ Power Plant 3  |  POWERGEN  (KWH)  |  Gen QTY : 8,307,050.00  |  Calculated Price : 13.1867
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0047      38,868.69      2.6599     103,386.06  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000         132.91  3,224.7359     428,608.68  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    0.0102      82,755.04  1,142.7810  94,570,888.73  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   7,520,335.95  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   2,068,719.36  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   3,583,737.09  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0140     116,298.70     10.8948   1,267,047.47  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 109,542,723.34   PRICE = 109,542,723.34 / 8,307,050.00 = 13.1867 /KWH
+
+  ┌─ STG Power Plant  |  POWERGEN  (KWH)  |  Gen QTY : 5,549,401.40  |  Calculated Price : 18.6989
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0048      25,541.93      2.6599      67,938.48  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0003       1,480.31  3,224.7359   4,773,599.33  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —   3,492,951.61  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   2,665,624.06  Direct Amount
+  │  No Material                          No Plant                        0.0000           0.00           —   9,690,240.65  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.0020      10,611.52     10.8948     115,610.06  Calculated
+  │  Ret steam condensate                 NMD - STG Power Plant           0.0028      14,914.49    -48.0000    -715,895.59  User Price
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.0047      24,804.43  3,373.4982  83,677,694.01  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 103,767,762.60   PRICE = 103,767,762.60 / 5,549,401.40 = 18.6989 /KWH
+
+  ┌─ Utility Plant  |  Boiler Feed Water  (M3)  |  Gen QTY : 108,876.86  |  Calculated Price : 263.6712
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  CHEM CYCLO HEXY                      NMD-Rev Proc                    0.0001          10.89    190.0000       2,068.66  User Price
+  │  CHEM MORPHOLENE                      NMD-Rev Proc                    0.0000           0.22 170,000.0000      37,018.18  User Price
+  │  Cooling Water 2                      NMD - Utility Plant             0.0010         112.47  3,224.7359     362,685.40  Calculated
+  │  D M Water                            NMD - Utility Plant             0.8600      93,634.10     80.2128   7,510,650.10  Calculated
+  │  KEM WATREAT B 70M                    NMD-Rev Proc                    0.0006          62.06    343.0000      21,286.52  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist        0.1450      15,787.14    602.0844   9,505,192.97  Calculated
+  │  Power_Dis                            NMD - Utility/Power Dist        9.5000   1,034,330.19     10.8948  11,268,788.38  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  28,707,690.20   PRICE = 28,707,690.20 / 108,876.86 = 263.6712 /M3
+
+  ┌─ Utility Plant  |  COMPRESSED AIR  (NM3)  |  Gen QTY : 7,217,547.20  |  Calculated Price : 2.6599
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000         173.22  3,224.7359     558,592.41  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —   5,664,691.36  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist        0.1650   1,190,895.29     10.8948  12,974,529.01  Calculated
+  │  PQR                                  NMD - Utility Plant             0.0000           0.00      0.0000           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  19,197,812.78   PRICE = 19,197,812.78 / 7,217,547.20 = 2.6599 /NM3
+
+  ┌─ Utility Plant  |  Cooling Water 1  (KM3)  |  Gen QTY : 15,256.00  |  Calculated Price : 3,334.2423
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.1082       1,649.97      2.6599       4,388.71  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —      12,025.13  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist      245.0000   3,737,719.98     10.8948  40,721,595.61  Calculated
+  │  SULPHURIC ACID                       NMD-Rev Proc                    0.0002           2.41  6,000.0000      14,462.69  User Price
+  │  Water                                NMD-Rev Proc                   11.0500     168,578.80     60.0000  10,114,728.00  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  50,867,200.15   PRICE = 50,867,200.15 / 15,256.00 = 3,334.2423 /KM3
+
+  ┌─ Utility Plant  |  Cooling Water 2  (KM3)  |  Gen QTY : 13,791.41  |  Calculated Price : 3,224.7359
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.1188       1,546.88      2.6599       4,114.52  Calculated
+  │  No Material                          No Plant                        0.0000           0.00           —      10,945.42  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist      250.0000   3,254,758.32     10.8948  35,459,839.91  Calculated
+  │  SULPHURIC ACID                       NMD-Rev Proc                    0.0002           2.60  6,000.0000      15,622.84  User Price
+  │  Water                                NMD-Rev Proc                   11.5000     149,718.88     60.0000   8,983,132.94  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  44,473,655.63   PRICE = 44,473,655.63 / 13,791.41 = 3,224.7359 /KM3
+
+  ┌─ Utility Plant  |  D M Water  (M3)  |  Gen QTY : 148,614.80  |  Calculated Price : 80.2128
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  CAUSTIC SODA LYE – GRADE 1           NMD-Rev Proc                    0.0003          38.34 35,485.0000   1,360,587.76  User Price
+  │  CHEM  SODIUM SULPHITE;PN:MIS 19OX    NMD-Rev Proc                    0.0008         120.53     51.5000       6,207.12  User Price
+  │  CHEM ALUM.SULFATE, AL2(SO4)3,18H2O   NMD-Rev Proc                    0.0008         112.50      9.5000       1,068.76  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0770      11,443.34      2.6599      30,437.91  Calculated
+  │  HYDRO CHLORIC ACID (30%) -VIRGIN     NMD-Rev Proc                    0.0003          38.34    550.0000      21,088.44  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —     114,144.41  Direct Amount
+  │  POLYELECTROLYTE                      NMD-Rev Proc                    0.0008         113.84    140.0000      15,937.45  User Price
+  │  Power_Dis                            NMD - Utility/Power Dist        1.2100     179,823.90     10.8948   1,959,139.88  Calculated
+  │  Ret steam condensate                 NMD - STG Power Plant           0.2030      30,168.80    -32.0000    -965,401.72  User Price
+  │  SODIUM CHLORIDE IS 797 GRADE1        NMD-Rev Proc                    0.0000           1.49 10,000.0000      14,861.48  User Price
+  │  Water                                NMD-Rev Proc                    1.0500     156,045.54     60.0000   9,362,732.15  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  11,920,803.66   PRICE = 11,920,803.66 / 148,614.80 = 80.2128 /M3
+
+  ┌─ Utility Plant  |  Effluent Treated  (M3)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Power_Dis                            NMD - Utility/Power Dist        3.5400           0.00     10.8948           0.00  Calculated
+  │  UREA,NITROGEN CONTENT 46%            NMD-Rev Proc                    0.0008           0.00     46.0000           0.00  User Price
+  │  Water                                NMD-Rev Proc                    0.0007           0.00     60.0000           0.00  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /M3
+
+  ┌─ Utility Plant  |  HP Steam PRDS  (MT)  |  Gen QTY : 9,098.00  |  Calculated Price : 3,134.6635
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             0.0768         698.73    263.6712     184,234.01  Calculated
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.9232       8,399.27  3,373.4982  28,334,934.64  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  28,519,168.66   PRICE = 28,519,168.66 / 9,098.00 = 3,134.6635 /MT
+
+  ┌─ Utility Plant  |  HRSG1_SHP STEAM  (MT)  |  Gen QTY : 47,672.09  |  Calculated Price : 3,037.6490
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             1.0240      48,816.22    263.6712  12,871,430.20  Calculated
+  │  CHEM TRISODIUM PHOSPHATE             NMD-Rev Proc                    0.0009          42.90    153.0000       6,564.45  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant            10.0822     480,637.64      2.6599   1,278,438.66  Calculated
+  │  FURNACE OIL ( MEDIUM VISCOSITY GRAD  NMD-Rev Proc                    0.0001           4.67    948.9829       4,433.52  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist       -0.0780      -3,718.42  2,169.7400  -8,068,011.16  User Price
+  │  NATURAL GAS                          NMD-Rev Proc                    2.4722     117,856.75  1,142.7810 134,684,457.41  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   4,026,155.34  Direct Amount
+  │  Water                                NMD-Rev Proc                    0.0027         126.81     60.0000       7,608.47  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 144,811,076.88   PRICE = 144,811,076.88 / 47,672.09 = 3,037.6490 /MT
+
+  ┌─ Utility Plant  |  HRSG2_SHP STEAM  (MT)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             1.0542           0.00    263.6712           0.00  Calculated
+  │  CHEM TRISODIUM PHOSPHATE             NMD-Rev Proc                    0.0009           0.00      0.0000           0.00  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant            14.1733           0.00      2.6599           0.00  Calculated
+  │  FURNACE OIL ( MEDIUM VISCOSITY GRAD  NMD-Rev Proc                    0.0001           0.00      0.0000           0.00  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist       -0.0780           0.00    602.0844           0.00  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    2.8116           0.00      0.0000           0.00  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —           0.00  Direct Amount
+  │  Water                                NMD-Rev Proc                    0.0027           0.00      0.0000           0.00  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /MT
+
+  ┌─ Utility Plant  |  HRSG3_SHP STEAM  (MT)  |  Gen QTY : 47,672.09  |  Calculated Price : 3,709.3475
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             1.0240      48,816.22    263.6712  12,871,430.20  Calculated
+  │  CHEM TRISODIUM PHOSPHATE             NMD-Rev Proc                    0.0009          42.90    153.0000       6,564.45  User Price
+  │  COMPRESSED AIR                       NMD - Utility Plant             9.7030     462,564.05      2.6599   1,230,365.09  Calculated
+  │  FURNACE OIL ( MEDIUM VISCOSITY GRAD  NMD-Rev Proc                    0.0001           4.67    948.9832       4,433.52  User Price
+  │  LP Steam_Dis                         NMD - Utility/Power Dist       -0.0780      -3,718.42    602.0844  -2,238,804.32  Calculated
+  │  NATURAL GAS                          NMD-Rev Proc                    2.9544     140,843.57  1,142.7810 160,953,352.14  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   3,997,396.28  Direct Amount
+  │  Water                                NMD-Rev Proc                    0.0027         126.81     60.0000       7,608.47  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 176,832,345.82   PRICE = 176,832,345.82 / 47,672.09 = 3,709.3475 /MT
+
+  ┌─ Utility Plant  |  LP Steam PRDS  (MT)  |  Gen QTY : 28,399.38  |  Calculated Price : 65.9178
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             0.2500       7,099.84    263.6712   1,872,024.38  Calculated
+  │  MP Steam_Dis                         NMD - Utility/Power Dist        0.7500      21,299.53      0.0000           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :   1,872,024.38   PRICE = 1,872,024.38 / 28,399.38 = 65.9178 /MT
+
+  ┌─ Utility Plant  |  MP Steam PRDS SHP  (MT)  |  Gen QTY : 38,319.90  |  Calculated Price : 3,093.6138
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Boiler Feed Water                    NMD - Utility Plant             0.0900       3,448.79    263.6712     909,346.80  Calculated
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.9100      34,871.11  3,373.4982 117,637,627.15  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 118,546,973.96   PRICE = 118,546,973.96 / 38,319.90 = 3,093.6138 /MT
+
+  ┌─ Utility Plant  |  Oxygen  (MT)  |  Gen QTY : 5,464.00  |  Calculated Price : 18,918.0945
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Cooling Water 2                      NMD - Utility Plant             0.2770       1,513.53  3,224.7359   4,880,728.15  Calculated
+  │  Nitrogen Gas                         NMD - Utility Plant          1050.0700   5,737,582.48      5.8100  33,335,354.21  User Price
+  │  No Material                          No Plant                        0.0000           0.00           —   7,553,894.46  Direct Amount
+  │  Power_Dis                            NMD - Utility/Power Dist      967.5700   5,286,802.48     10.8948  57,598,491.47  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 103,368,468.29   PRICE = 103,368,468.29 / 5,464.00 = 18,918.0945 /MT
+
+  ┌─ Utility Plant  |  PQR  ()  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Effluent Treated                     NMD - Utility Plant             0.0010           0.00      0.0000           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /
+
+  ┌─ Utility Plant  |  STG1_LP STEAM  (MT)  |  Gen QTY : 12,938.87  |  Calculated Price : 1,619.2792
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.4800       6,210.66  3,373.4982  20,951,646.63  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  20,951,646.63   PRICE = 20,951,646.63 / 12,938.87 = 1,619.2792 /MT
+
+  ┌─ Utility Plant  |  STG1_MP STEAM  (MT)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  SHP Steam_Dis                        NMD - Utility/Power Dist        0.6900           0.00  3,373.4982           0.00  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :           0.00   PRICE = 0.00 / 0 = 0.0000 /MT
+
+  ┌─ Utility Plant  |  Treated Spent Caustic  (M3)  |  Gen QTY : 0.00  |  Calculated Price : 0.0000
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  COMPRESSED AIR                       NMD - Utility Plant             0.0000           0.00      2.6599           0.00  Calculated
+  │  Cooling Water 2                      NMD - Utility Plant             0.0000           8.00  3,224.7359      25,797.89  Calculated
+  │  MP Steam_Dis                         NMD - Utility/Power Dist        0.0390           0.00      0.0000           0.00  Calculated
+  │  Power_Dis                            NMD - Utility/Power Dist       17.0400           0.00     10.8948           0.00  Calculated
+  │  SULPHURIC ACID                       NMD-Rev Proc                    0.0200           0.00      0.0000           0.00  User Price
+  │  Water                                NMD-Rev Proc                    0.0934           0.00           —           0.00  Direct Amount
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :      25,797.89   PRICE = 25,797.89 / 0 = 0.0000 /M3
+
+  ┌─ Utility/Power Dist  |  HP Steam_Dis  (MT)  |  Gen QTY : 9,098.00  |  Calculated Price : 3,134.6635
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  HP Steam PRDS                        NMD - Utility Plant             1.0000       9,098.00  3,134.6635  28,519,168.64  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  28,519,168.64   PRICE = 28,519,168.64 / 9,098.00 = 3,134.6635 /MT
+
+  ┌─ Utility/Power Dist  |  LP Steam_Dis  (MT)  |  Gen QTY : 41,343.76  |  Calculated Price : 602.0844
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  LP Steam PRDS                        NMD - Utility Plant             0.6870      28,403.16     65.9178   1,872,273.88  Calculated
+  │  STG1_LP STEAM                        NMD - Utility Plant             0.3130      12,940.60  1,778.9100  23,020,157.48  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST :  24,892,431.36   PRICE = 24,892,431.36 / 41,343.76 = 602.0844 /MT
+
+  ┌─ Utility/Power Dist  |  Power_Dis  (KWH)  |  Gen QTY : 45,679,860.00  |  Calculated Price : 10.8948
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  Power from MEL                       NMD-Rev Proc                    0.5284  23,760,000.00      6.8900 163,706,400.00  User Price
+  │  POWERGEN                             NMD - Power Plant 1             0.1742   7,957,020.49     13.3985 106,612,395.73  Calculated
+  │  POWERGEN                             NMD - Power Plant 2             0.0000           0.00      0.0000           0.00  User Price
+  │  POWERGEN                             NMD - STG Power Plant           0.1232   5,626,662.44     18.6989 105,212,459.81  Calculated
+  │  POWERGEN                             NMD - Power Plant 3             0.1742   7,957,020.49     15.3500 122,140,264.57  User Price
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 497,671,520.11   PRICE = 497,671,520.11 / 45,679,860.00 = 10.8948 /KWH
+
+  ┌─ Utility/Power Dist  |  SHP Steam_Dis  (MT)  |  Gen QTY : 95,344.18  |  Calculated Price : 3,373.4982
+  │  Material                             Issuing Plant                    Norms      Cons. Qty       Price         Amount  Type
+  │  ----------------------------------------------------------------------------------------------------------------------
+  │  HRSG1_SHP STEAM                      NMD - Utility Plant             0.5000      47,672.09  3,037.6490 144,811,072.13  Calculated
+  │  HRSG2_SHP STEAM                      NMD - Utility Plant             0.0000           0.00      0.0000           0.00  User Price
+  │  HRSG3_SHP STEAM                      NMD - Utility Plant             0.5000      47,672.09  3,709.3475 176,832,340.02  Calculated
+  │  ----------------------------------------------------------------------------------------------------------------------
+  └─ TOTAL COST : 321,643,412.15   PRICE = 321,643,412.15 / 95,344.18 = 3,373.4982 /MT
+
+============================================================================================================================
+  END — September / 2025
+============================================================================================================================
+
+  [DB SAVE] NormsMonthDetail: 99 rows updated (43 Price-AmountOnly + 56 Calculation-Full) | 21 skipped (Amount/user-entered) | 0 errors | CPPMonthWisePrice: 56 Calculation rows written
+  [SNAPSHOT] CPPUtilityRateSnapshot: 26 rows upserted | 0 errors

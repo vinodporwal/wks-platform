@@ -49,6 +49,12 @@ from database.queries import (
 from engine.u4u_iteration_loop import run_u4u_iteration
 from engine.norms_reader import NMDNormsReader
 from engine.bpc_ods_reader import BPCODSReader
+from services.norms_save_service import save_calculated_norms
+from services.cost_module_service import (
+    calculate_and_print_utility_prices,
+    build_bpc_comparison_table_text,
+    build_yearly_bpc_comparison_table_text,
+)
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FOLDER = os.path.join(_SCRIPT_DIR, "logs")
@@ -689,70 +695,42 @@ def _print_supply_vs_demand(plant_id: str, month: int, year: int):
 
 
 # ---------------------------------------------------------------------------
-# Main
+# Single Month Execution
 # ---------------------------------------------------------------------------
 
-def main():
-    setup_logging()
-
-    parser = argparse.ArgumentParser(
-        description="NMD CPP — Fetch & Display Asset Details",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-    python main.py
-    python main.py --month 4 --year 2026
-        """,
-    )
-    parser.add_argument("--month", type=int, default=None, help="Month (1-12)")
-    parser.add_argument("--year",  type=int, default=None, help="Calendar year")
-    args = parser.parse_args()
-
-    plant_id = NMD_PLANT_ID
-    plant_name = PLANT_REGISTRY[plant_id]["display_name"]
-
-    print("=" * 70)
-    print("NMD CPP — FETCH ASSET DETAILS")
-    print("=" * 70)
-    print(f"  Plant: {plant_name}")
-
-    # ── Resolve month/year ────────────────────────────────────────────────
-    month = args.month
-    year = args.year
-
-    if not month or not year:
-        print("\n--- PERIOD ---")
-        if not month:
-            month_input = input("Enter Month (1-12): ").strip()
-            month = int(month_input) if month_input else None
-        if not year:
-            year_input = input("Enter Year: ").strip()
-            year = int(year_input) if year_input else None
-
-    if not month or not year:
-        print("\nERROR: Must provide both month and year")
-        parser.print_help()
-        sys.exit(1)
-
+def execute_single_month(month: int, year: int, plant_id: str, plant_name: str, log_folder: str,
+                         verbose: bool = True, dry_run: bool = False):
+    """
+    Execute NMD model for a single month.
+    
+    Args:
+        month: Month (1-12)
+        year: Calendar year
+        plant_id: Plant ID
+        plant_name: Plant display name
+        log_folder: Folder path for saving logs
+        verbose: If True, print diagnostic tables (asset snapshots, demand
+                 breakdowns, etc.).  Set False for FY batch mode to skip ~20
+                 redundant DB queries that are only for display.
+    """
     # ── Fetch and display (wrapped in LogCapture for file logging) ────────
-    plant_log = os.path.join(LOG_FOLDER, plant_name.replace(" ", "_"))
-
     with LogCapture() as cap:
         print(f"\nFetching data for {_MONTH_NAMES.get(month, month)} {year}...")
         print("#" * 70)
         print(f"  NMD CPP  [{plant_id[:8]}]  Period: {month}/{year}")
         print("#" * 70)
 
-        _print_plant_info()
-        _print_power_assets(plant_id)
-        _print_asset_snapshot(plant_id, month, year)
-        _print_gt_heat_rate_and_free_steam(plant_id, month, year)
-        _print_steam_assets(plant_id, month, year)
-        _print_consolidated_demand(plant_id, month, year)
-        _print_import_power(plant_id, month, year)
-        _print_supply_vs_demand(plant_id, month, year)
-        _print_generation_utilities_and_u4u(month, year)
-        _print_cpp_norms_for_u4u(month, year)
+        if verbose:
+            _print_plant_info()
+            _print_power_assets(plant_id)
+            _print_asset_snapshot(plant_id, month, year)
+            _print_gt_heat_rate_and_free_steam(plant_id, month, year)
+            _print_steam_assets(plant_id, month, year)
+            _print_consolidated_demand(plant_id, month, year)
+            _print_import_power(plant_id, month, year)
+            _print_supply_vs_demand(plant_id, month, year)
+            _print_generation_utilities_and_u4u(month, year)
+            _print_cpp_norms_for_u4u(month, year)
 
         # ── Run U4U Iterative Balancing ────────────────────────────────────
         print("\n" + "=" * 70)
@@ -775,13 +753,452 @@ Examples:
         if result:
             _print_u4u_bpc_comparison(result, month, year)
 
+        # ── Norms Save ────────────────────────────────────────────────────
+        if result:
+            save_calculated_norms(month, year, result, dry_run=dry_run)
+
+        # ── Cost Module — Calculate utility prices ─────────────────────────────
+        fy_start = year if month >= 4 else year - 1
+        fy_str = f"{fy_start}-{str(fy_start + 1)[-2:]}"
+        price_result = calculate_and_print_utility_prices(month, year,
+                                           cpp_plant_id=plant_id,
+                                           financial_year=fy_str,
+                                           dry_run=dry_run)
+
     # ── Save log file ─────────────────────────────────────────────────────
     log_path = None
     try:
-        log_path = save_text_log(cap.text, plant_name, month, year, plant_log)
+        log_path = save_text_log(cap.text, plant_name, month, year, log_folder)
         print(f"\nLog saved: {log_path}")
     except Exception as e:
         print(f"\n[WARNING] Could not save log: {e}")
+
+    return {
+        "month": month,
+        "year": year,
+        "u4u_result": result,
+        "price_result": price_result,
+        "log_path": log_path,
+        "log_text": cap.text,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Cost-only helpers
+# ---------------------------------------------------------------------------
+
+def _run_cost_only_month(month, year, plant_id, plant_name, log_folder, dry_run=False):
+    """Run only the cost module for a single month (no balance model)."""
+    fy_start = year if month >= 4 else year - 1
+    fy_str = f"{fy_start}-{str(fy_start + 1)[-2:]}"
+
+    with LogCapture() as cap:
+        price_result = calculate_and_print_utility_prices(
+            month, year, cpp_plant_id=plant_id, financial_year=fy_str, dry_run=dry_run
+        )
+
+    log_path = None
+    try:
+        log_path = save_text_log(cap.text, plant_name, month, year, log_folder)
+        print(f"\n  Log saved: {log_path}")
+    except Exception as e:
+        print(f"\n  [WARNING] Could not save log: {e}")
+
+    return {
+        "month": month,
+        "year": year,
+        "u4u_result": None,
+        "price_result": price_result,
+        "log_path": log_path,
+        "log_text": cap.text,
+    }
+
+
+def _generate_yearly_bpc_comparison(month_results, fy_log_folder, fy_label):
+    """Generate yearly BPC price comparison log from cost-only results."""
+    price_comparison_log_path = None
+    try:
+        month_tables = []
+        yearly_rows = []
+
+        for mr in month_results:
+            m = mr["month"]
+            y = mr["year"]
+            m_name = _MONTH_NAMES.get(m, m)
+            pr = mr.get("price_result") or {}
+
+            if not pr or not pr.get("success"):
+                month_tables.append(
+                    "\n".join([
+                        "=" * 196,
+                        f"  CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+                        "=" * 196,
+                        "  [BPC COMPARISON] Skipped — utility price result not available",
+                    ])
+                )
+                continue
+
+            bpc_reader = BPCODSReader.get_reader(m, y)
+            bpc_reader.load()
+            if not bpc_reader.is_available:
+                month_tables.append(
+                    "\n".join([
+                        "=" * 196,
+                        f"  CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+                        "=" * 196,
+                        "  [BPC COMPARISON] Skipped — BPC.ods not available",
+                    ])
+                )
+                continue
+
+            table_text, rows, _ = build_bpc_comparison_table_text(
+                month=m,
+                year=y,
+                nmd_groups=pr.get("nmd_groups", {}),
+                utility_prices=pr.get("utility_prices", {}),
+                calc_sequence=pr.get("calc_sequence", []),
+                bpc_reader=bpc_reader,
+                title=f"CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+            )
+            if table_text:
+                month_tables.append(table_text)
+                yearly_rows.extend(rows)
+            else:
+                month_tables.append(
+                    "\n".join([
+                        "=" * 196,
+                        f"  CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+                        "=" * 196,
+                        "  [BPC COMPARISON] Skipped — NMD data not available",
+                    ])
+                )
+
+        if yearly_rows:
+            yearly_table = build_yearly_bpc_comparison_table_text(
+                yearly_rows,
+                title=f"CPP vs BPC — UTILITY PRICE COMPARISON ({fy_label} TOTAL)",
+            )
+            price_comparison_log_path = os.path.join(fy_log_folder, "utility_price_bpc_comparison.log")
+            with open(price_comparison_log_path, "w", encoding="utf-8") as f:
+                f.write(f"UTILITY PRICE COMPARISON LOG - {fy_label}\n")
+                f.write("=" * 196 + "\n\n")
+                for table in month_tables:
+                    f.write(table + "\n\n")
+                f.write(yearly_table + "\n")
+            print(f"\n  Utility price comparison log saved: {price_comparison_log_path}")
+    except Exception as exc:
+        print(f"\n  [WARN] Utility price comparison log generation failed: {exc}")
+
+    # Summary
+    summary_path = os.path.join(fy_log_folder, "summary.txt")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write(f"COST-ONLY RUN SUMMARY - {fy_label}\n")
+        f.write("=" * 120 + "\n\n")
+        f.write(f"CPP Plant: {plant_name}\n")
+        f.write(f"Months processed: {len(month_results)}\n\n")
+
+        f.write("MONTH-BY-MONTH QUICK RESULTS:\n")
+        f.write("-" * 120 + "\n")
+        for mr in month_results:
+            m = mr["month"]
+            y = mr["year"]
+            m_name = _MONTH_NAMES.get(m, m)
+            pr = mr.get("price_result") or {}
+            price_ok = pr.get("success", False)
+            price_iters = pr.get("iterations", 0)
+            converged = pr.get("converged", False)
+
+            status = "[OK]" if price_ok else "[FAIL]"
+            f.write(f"{status} {m_name} {y}: "
+                    f"Price={'YES' if price_ok else 'NO'} (iters={price_iters}, "
+                    f"converged={'YES' if converged else 'NO'}) | "
+                    f"Log: {mr.get('log_path', 'N/A')}\n")
+
+        f.write("\n")
+        if price_comparison_log_path:
+            f.write(f"Utility price comparison log: {price_comparison_log_path}\n")
+
+    print(f"  Summary saved: {summary_path}")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main():
+    setup_logging()
+
+    parser = argparse.ArgumentParser(
+        description="NMD CPP — Fetch & Display Asset Details",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    python main.py
+    python main.py --month 4 --year 2026
+    python main.py --fy 2025  (Execute full financial year April 2025 to March 2026)
+    python main.py --cost-only --month 4 --year 2026  (Cost module only, single month)
+    python main.py --cost-only --fy 2025  (Cost module only, full financial year)
+    python main.py --dry-run --month 4 --year 2025  (Dry run, no DB writes)
+    python main.py --dry-run --fy 2025  (Dry run, full financial year)
+        """,
+    )
+    parser.add_argument("--month", type=int, default=None, help="Month (1-12) - for single month execution")
+    parser.add_argument("--year",  type=int, default=None, help="Calendar year - for single month execution")
+    parser.add_argument("--fy", type=int, default=None, help="Financial year (YYYY) - for full year execution (April to March)")
+    parser.add_argument("--cost-only", action="store_true", help="Run only the cost module (utility price calculation + BPC comparison) without the balance model. Requires norms already saved for the target month(s).")
+    parser.add_argument("--dry-run", action="store_true", help="Skip all DB writes (norms save, price save, snapshot). Use to preview calculations without modifying any tables.")
+    args = parser.parse_args()
+
+    plant_id = NMD_PLANT_ID
+    plant_name = PLANT_REGISTRY[plant_id]["display_name"]
+
+    print("=" * 70)
+    print("NMD CPP — FETCH ASSET DETAILS")
+    print("=" * 70)
+    print(f"  Plant: {plant_name}")
+
+    # ── Resolve execution mode: single month vs financial year ─────────────
+    fy = args.fy
+    month = args.month
+    year = args.year
+
+    cost_only = args.cost_only
+    dry_run = args.dry_run
+
+    if dry_run:
+        print(f"  ** DRY RUN MODE — no DB writes **")
+
+    if cost_only:
+        # ── Cost-only mode: skip balance model, run just cost module ───────
+        print(f"\n  Mode: COST ONLY (no balance model)")
+
+        if fy:
+            months_to_execute = []
+            for m in range(4, 13):
+                months_to_execute.append((m, fy))
+            for m in range(1, 4):
+                months_to_execute.append((m, fy + 1))
+            run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            fy_base_folder = os.path.join(LOG_FOLDER, f"{plant_name.replace(' ', '_')}_FY{fy}-{fy+1}")
+            fy_log_folder = os.path.join(fy_base_folder, f"cost_only_{run_timestamp}")
+            os.makedirs(fy_log_folder, exist_ok=True)
+            fy_label = f"FY {fy}-{str(fy + 1)[-2:]}"
+            print(f"  Financial Year: {fy_label}")
+            print(f"  Log folder: {fy_log_folder}")
+            print("=" * 70)
+
+            month_results = []
+            for idx, (exec_month, exec_year) in enumerate(months_to_execute, 1):
+                print(f"\n{'='*70}")
+                print(f"  MONTH {idx}/{len(months_to_execute)}: {_MONTH_NAMES.get(exec_month, exec_month)} {exec_year}")
+                print(f"{'='*70}")
+                mr = _run_cost_only_month(exec_month, exec_year, plant_id, plant_name, fy_log_folder, dry_run=dry_run)
+                month_results.append(mr)
+
+            # Generate yearly BPC comparison log
+            _generate_yearly_bpc_comparison(month_results, fy_log_folder, fy_label)
+
+            print(f"\n{'='*70}")
+            print(f"  COST-ONLY RUN COMPLETED — {fy_label}")
+            print(f"  Logs: {fy_log_folder}")
+            print(f"{'='*70}")
+
+        else:
+            if not month or not year:
+                print("\n--- PERIOD ---")
+                if not month:
+                    month_input = input("Enter Month (1-12): ").strip()
+                    month = int(month_input) if month_input else None
+                if not year:
+                    year_input = input("Enter Year: ").strip()
+                    year = int(year_input) if year_input else None
+            if not month or not year:
+                print("\nERROR: Must provide both month and year")
+                parser.print_help()
+                sys.exit(1)
+
+            plant_log = os.path.join(LOG_FOLDER, plant_name.replace(" ", "_"), "cost_only")
+            os.makedirs(plant_log, exist_ok=True)
+            _run_cost_only_month(month, year, plant_id, plant_name, plant_log, dry_run=dry_run)
+
+    elif fy:
+        # Financial year mode
+        print(f"\n  Mode: FINANCIAL YEAR EXECUTION")
+        print(f"  Financial Year: {fy}-{fy+1}")
+        print(f"  Period: April {fy} to March {fy+1}")
+        # Financial year months: April (4) to March (3) of next year
+        months_to_execute = []
+        for m in range(4, 13):  # April to December
+            months_to_execute.append((m, fy))
+        for m in range(1, 4):   # January to March of next year
+            months_to_execute.append((m, fy + 1))
+
+        # Create timestamped run folder inside the FY folder
+        run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        fy_base_folder = os.path.join(LOG_FOLDER, f"{plant_name.replace(' ', '_')}_FY{fy}-{fy+1}")
+        fy_log_folder = os.path.join(fy_base_folder, f"run_{run_timestamp}")
+        os.makedirs(fy_log_folder, exist_ok=True)
+
+        fy_label = f"FY {fy}-{str(fy + 1)[-2:]}"
+
+        print(f"\n  Executing {len(months_to_execute)} months sequentially...")
+        print(f"  Log folder: {fy_log_folder}")
+        print("=" * 70)
+
+        # Collect results for yearly comparison
+        month_results = []
+
+        # Execute each month
+        for idx, (exec_month, exec_year) in enumerate(months_to_execute, 1):
+            print(f"\n{'='*70}")
+            print(f"  MONTH {idx}/{len(months_to_execute)}: {_MONTH_NAMES.get(exec_month, exec_month)} {exec_year}")
+            print(f"{'='*70}")
+
+            # Execute single month (verbose=False: skip diagnostic prints in FY mode)
+            month_result = execute_single_month(exec_month, exec_year, plant_id, plant_name, fy_log_folder,
+                                 verbose=False, dry_run=dry_run)
+            month_results.append(month_result)
+
+            print(f"\n  ✓ Completed {_MONTH_NAMES.get(exec_month, exec_month)} {exec_year}")
+
+        # ── Generate yearly BPC price comparison log ───────────────────────
+        price_comparison_log_path = None
+        try:
+            month_tables = []
+            yearly_rows = []
+
+            for mr in month_results:
+                m = mr["month"]
+                y = mr["year"]
+                m_name = _MONTH_NAMES.get(m, m)
+                pr = mr.get("price_result") or {}
+
+                if not pr or not pr.get("success"):
+                    month_tables.append(
+                        "\n".join([
+                            "=" * 196,
+                            f"  CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+                            "=" * 196,
+                            "  [BPC COMPARISON] Skipped — utility price result not available",
+                        ])
+                    )
+                    continue
+
+                bpc_reader = BPCODSReader.get_reader(m, y)
+                bpc_reader.load()
+                if not bpc_reader.is_available:
+                    month_tables.append(
+                        "\n".join([
+                            "=" * 196,
+                            f"  CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+                            "=" * 196,
+                            "  [BPC COMPARISON] Skipped — BPC.ods not available",
+                        ])
+                    )
+                    continue
+
+                table_text, rows, _ = build_bpc_comparison_table_text(
+                    month=m,
+                    year=y,
+                    nmd_groups=pr.get("nmd_groups", {}),
+                    utility_prices=pr.get("utility_prices", {}),
+                    calc_sequence=pr.get("calc_sequence", []),
+                    bpc_reader=bpc_reader,
+                    title=f"CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+                )
+                if table_text:
+                    month_tables.append(table_text)
+                    yearly_rows.extend(rows)
+                else:
+                    month_tables.append(
+                        "\n".join([
+                            "=" * 196,
+                            f"  CPP vs BPC — UTILITY PRICE COMPARISON ({m_name} {y})",
+                            "=" * 196,
+                            "  [BPC COMPARISON] Skipped — NMD data not available",
+                        ])
+                    )
+
+            if yearly_rows:
+                yearly_table = build_yearly_bpc_comparison_table_text(
+                    yearly_rows,
+                    title=f"CPP vs BPC — UTILITY PRICE COMPARISON ({fy_label} TOTAL)",
+                )
+                price_comparison_log_path = os.path.join(fy_log_folder, "utility_price_bpc_comparison.log")
+                with open(price_comparison_log_path, "w", encoding="utf-8") as f:
+                    f.write(f"UTILITY PRICE COMPARISON LOG - {fy_label}\n")
+                    f.write("=" * 196 + "\n\n")
+                    for table in month_tables:
+                        f.write(table + "\n\n")
+                    f.write(yearly_table + "\n")
+                print(f"\n  Utility price comparison log saved: {price_comparison_log_path}")
+        except Exception as exc:
+            print(f"\n  [WARN] Utility price comparison log generation failed: {exc}")
+
+        # ── Generate summary.txt ───────────────────────────────────────────
+        summary_path = os.path.join(fy_log_folder, "summary.txt")
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write(f"FULL FINANCIAL YEAR RUN SUMMARY - {fy_label}\n")
+            f.write("=" * 120 + "\n\n")
+            f.write(f"CPP Plant: {plant_name}  [{plant_id[:8]}]\n")
+            f.write(f"Run timestamp: {run_timestamp}\n")
+            f.write(f"Months processed: {len(months_to_execute)}\n\n")
+
+            f.write("MONTH-BY-MONTH QUICK RESULTS:\n")
+            f.write("-" * 120 + "\n")
+            for mr in month_results:
+                m = mr["month"]
+                y = mr["year"]
+                m_name = _MONTH_NAMES.get(m, m)
+                pr = mr.get("price_result") or {}
+                u4u = mr.get("u4u_result") or {}
+                converged = u4u.get("converged", False)
+                iters = u4u.get("iterations_used", 0)
+                price_ok = pr.get("success", False)
+                price_iters = pr.get("iterations", 0)
+
+                status = "[OK]" if (converged and price_ok) else "[WARN]"
+                f.write(f"{status} {m_name} {y}: "
+                        f"U4U={'YES' if converged else 'NO'} (iters={iters}) | "
+                        f"Price={'YES' if price_ok else 'NO'} (iters={price_iters}) | "
+                        f"Log: {mr.get('log_path', 'N/A')}\n")
+
+            f.write("\n")
+            if price_comparison_log_path:
+                f.write(f"Utility price comparison log: {price_comparison_log_path}\n")
+
+        print(f"\n  Summary saved: {summary_path}")
+
+        print(f"\n{'='*70}")
+        print(f"  FINANCIAL YEAR {fy}-{fy+1} EXECUTION COMPLETED")
+        print(f"  Total months processed: {len(months_to_execute)}")
+        print(f"  Logs saved in: {fy_log_folder}")
+        if price_comparison_log_path:
+            print(f"  Price comparison log: {price_comparison_log_path}")
+        print(f"  Summary: {summary_path}")
+        print(f"{'='*70}")
+        
+    else:
+        # Single month mode (existing logic)
+        if not month or not year:
+            print("\n--- PERIOD ---")
+            if not month:
+                month_input = input("Enter Month (1-12): ").strip()
+                month = int(month_input) if month_input else None
+            if not year:
+                year_input = input("Enter Year: ").strip()
+                year = int(year_input) if year_input else None
+
+        if not month or not year:
+            print("\nERROR: Must provide both month and year")
+            parser.print_help()
+            sys.exit(1)
+        
+        # Create standard log folder
+        plant_log = os.path.join(LOG_FOLDER, plant_name.replace(" ", "_"))
+        os.makedirs(plant_log, exist_ok=True)
+        
+        execute_single_month(month, year, plant_id, plant_name, plant_log, dry_run=dry_run)
 
 
 if __name__ == "__main__":

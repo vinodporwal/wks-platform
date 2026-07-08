@@ -1,0 +1,20 @@
+JMD Plant Run Log
+Plant:     DTA PCG CPP
+Period:    4/2025
+Generated: 2026-06-05 14:05:17
+================================================================================
+
+14:05:11  INFO        [CALC] DTA PCG CPP  4/2025  (2025-26)
+14:05:12  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant F6D82E68-C3B6-494F-9905-48F19DC611E3
+14:05:13  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+14:05:13  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+14:05:13  INFO      [DC] Using DB consumption data for F6D82E68-C3B6-494F-9905-48F19DC611E3 4/2025
+14:05:13  INFO      [DC] Using DB asset list for F6D82E68-C3B6-494F-9905-48F19DC611E3
+14:05:13  INFO        [BUDGET] DTA PCG CPP  4/2025  LP=0  MP=0  HP=0  SHP=0
+14:05:14  INFO        [DISPATCH] Using dummy power demand 3700.0 MWh for plant F6D82E68-C3B6-494F-9905-48F19DC611E3
+14:05:14  INFO        [DISPATCH] Using dummy power demand 3700.0 MWh for plant F6D82E68-C3B6-494F-9905-48F19DC611E3
+14:05:16  INFO        [DISPATCH] Using dummy power demand 3700.0 MWh for plant F6D82E68-C3B6-494F-9905-48F19DC611E3
+14:05:16  INFO        [DISPATCH] Using dummy power demand 3700.0 MWh for plant F6D82E68-C3B6-494F-9905-48F19DC611E3
+14:05:17  INFO        [DISPATCH] Using dummy power demand 3700.0 MWh for plant F6D82E68-C3B6-494F-9905-48F19DC611E3
+14:05:17  WARNING     [USD] Period-2 stall at iter 5 — averaging u4u to 28.460
+14:05:17  INFO        [CALC] Done  4/2025  (2.5s)  assets=3  norms=0  budget=OK  iter=5

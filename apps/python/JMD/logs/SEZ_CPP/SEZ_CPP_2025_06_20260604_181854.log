@@ -1,0 +1,14 @@
+JMD Plant Run Log
+Plant:     SEZ CPP
+Period:    6/2025
+Generated: 2026-06-04 18:18:54
+================================================================================
+
+18:18:10  INFO        [CALC] SEZ CPP  6/2025  (2025-26)
+18:18:10  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+18:18:12  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+18:18:12  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+18:18:12  INFO      [DC] Using DB consumption data for 2DFEE33F-4CFD-4887-B9DD-53388AA95271 6/2025
+18:18:12  INFO      [DC] Using DB asset list for 2DFEE33F-4CFD-4887-B9DD-53388AA95271
+18:18:12  INFO        [BUDGET] SEZ CPP  6/2025  LP=0  MP=0  HP=0  SHP=0
+18:18:54  INFO        [CALC] Done  6/2025  (2.0s)  assets=8  norms=0  budget=FAIL  iter=50

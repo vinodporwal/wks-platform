@@ -84,15 +84,17 @@ _DATA_START_ROW = 4
 
 
 def _get_month_cols(month: int) -> tuple:
-    """Return (norm_col, qty_col) for a given calendar month (1-12)."""
+    """Return (norm_col, qty_col, amount_col, price_col) for a given calendar month (1-12)."""
     idx = _MONTH_ORDER[month]
     if idx == 0:
-        # April
-        return (_APRIL_NORM_COL, _APRIL_QTY_COL)
+        # April: Norms=9, GenQty=10, Qty=11, Amount=12, Price=13
+        return (_APRIL_NORM_COL, _APRIL_QTY_COL, 12, 13)
     else:
         norm_col = _POST_APRIL_BASE + (idx - 1) * _COLS_PER_MONTH
         qty_col = norm_col + 1
-        return (norm_col, qty_col)
+        amount_col = norm_col + 2
+        price_col = norm_col + 3
+        return (norm_col, qty_col, amount_col, price_col)
 
 
 def _resolve_bpc_path() -> str:
@@ -134,6 +136,8 @@ class BPCODSReader:
         self._df: Optional[pd.DataFrame] = None
         self._norm_col: int = 0
         self._qty_col: int = 0
+        self._amount_col: int = 0
+        self._price_col: int = 0
         self._loaded = False
         self.is_available = False
 
@@ -167,7 +171,7 @@ class BPCODSReader:
 
         try:
             self._df = pd.read_excel(self.filepath, engine="odf", header=None)
-            self._norm_col, self._qty_col = _get_month_cols(self.month)
+            self._norm_col, self._qty_col, self._amount_col, self._price_col = _get_month_cols(self.month)
 
             # Forward-fill plant name, utility, account, and material within groups
             self._df[_COL_PLANT] = self._df[_COL_PLANT].ffill()
@@ -180,8 +184,8 @@ class BPCODSReader:
                         os.path.basename(self.filepath),
                         len(self._df), len(self._df.columns),
                         self.month, self.year)
-            logger.info("  [BPC] Month columns: norm=%d, qty=%d",
-                        self._norm_col, self._qty_col)
+            logger.info("  [BPC] Month columns: norm=%d, qty=%d, amount=%d, price=%d",
+                        self._norm_col, self._qty_col, self._amount_col, self._price_col)
 
         except Exception as e:
             logger.error("  [BPC] Error loading %s: %s", self.filepath, e)
@@ -221,6 +225,26 @@ class BPCODSReader:
         if self._norm_col != _APRIL_NORM_COL:
             return 0.0
         val = row[_APRIL_GENQTY_COL]
+        if pd.isna(val):
+            return 0.0
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return 0.0
+
+    def _get_amount_val(self, row) -> float:
+        """Extract amount (Rs.) value from the row for the configured month."""
+        val = row[self._amount_col]
+        if pd.isna(val):
+            return 0.0
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return 0.0
+
+    def _get_price_val(self, row) -> float:
+        """Extract price value from the row for the configured month."""
+        val = row[self._price_col]
         if pd.isna(val):
             return 0.0
         try:
@@ -336,6 +360,69 @@ class BPCODSReader:
 
         return result
 
+    def get_bpc_amounts(self) -> Dict[str, Dict[str, float]]:
+        """
+        Return BPC amounts (Rs.) per producer+material from the ODS file.
+
+        Returns:
+            {
+                "NMD - Power Plant 2": {"NATURAL GAS": 12345.0, ...},
+                "Boiler Feed Water": {"Cooling Water 2": 678.0, ...},
+            }
+        """
+        if not self.is_available:
+            return {}
+
+        result: dict = {}
+
+        for _, row in self._iter_data_rows():
+            utility = str(row[_COL_UTILITY]).strip()
+            account = str(row[_COL_ACCOUNT]).strip()
+            material = str(row[_COL_MATERIAL]).strip()
+
+            if account not in ("Utilities", "Raw Material", "By Product"):
+                continue
+            if not utility or utility == "nan" or not material or material == "nan":
+                continue
+            if utility == "Total" or material == "Total":
+                continue
+
+            plant = str(row[_COL_PLANT]).strip() if pd.notna(row[_COL_PLANT]) else ""
+            issuing_plant = str(row[_COL_ISSUING_PLANT]).strip() if pd.notna(row[_COL_ISSUING_PLANT]) else ""
+            amount_val = self._get_amount_val(row)
+
+            if utility == "POWERGEN":
+                key = plant
+            elif material == "POWERGEN":
+                key = issuing_plant
+            else:
+                key = utility
+
+            if key:
+                if key not in result:
+                    result[key] = {}
+                result[key][material] = amount_val
+
+        return result
+
+    def get_bpc_amount_for_utility(self, utility_name: str) -> float:
+        """Return total BPC amount (Rs.) for all materials of a given utility/producer."""
+        amount_map = self.get_bpc_amounts()
+
+        if utility_name in amount_map:
+            return sum(amount_map[utility_name].values())
+
+        prod_norm = _norm_key(utility_name)
+        for key, materials in amount_map.items():
+            if _norm_key(key) == prod_norm:
+                return sum(materials.values())
+        # Fuzzy match
+        for key, materials in amount_map.items():
+            kn = _norm_key(key)
+            if kn and prod_norm and (kn in prod_norm or prod_norm in kn):
+                return sum(materials.values())
+        return 0.0
+
     def get_bpc_data_rows(self) -> List[dict]:
         """
         Return all BPC data rows as a list of dicts, with forward-filled
@@ -368,6 +455,8 @@ class BPCODSReader:
             norm_val = self._get_norm_val(row)
             qty_val = self._get_qty_val(row)
             genqty_val = self._get_genqty_val(row)
+            amount_val = self._get_amount_val(row)
+            price_val = self._get_price_val(row)
 
             result.append({
                 "plant": plant,
@@ -380,6 +469,8 @@ class BPCODSReader:
                 "norm": norm_val,
                 "quantity": qty_val,
                 "gen_qty": genqty_val,
+                "amount": amount_val,
+                "price": price_val,
             })
 
         return result

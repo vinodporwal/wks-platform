@@ -36,6 +36,7 @@ from database.queries import fetch_consolidated_demand_with_uom
 from engine.dispatch_engine import (
     dispatch_power,
     dispatch_steam,
+    clear_db_cache,
     STEAM_TO_POWER_MT_PER_MWH,
     EXCESS_STEAM_THRESHOLD_MT,
 )
@@ -46,10 +47,25 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Convergence parameters (same as JMD)
 # ---------------------------------------------------------------------------
-CONVERGENCE_TOLERANCE = 0.0001   # 0.01% relative change in U4U demands
+CONVERGENCE_TOLERANCE = 0.01     # 1% relative change in U4U demands (increased from 0.01% for chemical utility volatility)
 POWER_DELTA_TOLERANCE = 0.02     # MWh absolute change in power demand
-MAX_ITERATIONS = 50
-STALL_LIMIT = 3                  # consecutive iterations with no significant change
+MAX_ITERATIONS = 50              # Max iterations
+STALL_LIMIT = 5                  # consecutive iterations with small power delta to force convergence
+STALL_POWER_THRESHOLD = 500.0    # MWh - if power delta < this for STALL_LIMIT iterations, force convergence
+
+# ---------------------------------------------------------------------------
+# Excess-steam proportional controller (ported from PPPython-script's
+# HRSG_MIN_EXCESS controller in iteration_service.py). Instead of hard
+# resetting STG to MIN whenever the computed excess drops to zero (which
+# causes GTs to ramp up -> more free steam -> excess reappears -> STG snaps
+# back up -> oscillation), the controller computes a target STG load from
+# the *current* STG output + steam-to-power conversion, clamps it to STG's
+# actual min/max, and only changes the override when the required
+# adjustment is meaningful. Otherwise it HOLDS the existing override.
+# ---------------------------------------------------------------------------
+EXCESS_STEAM_ACTION_THRESHOLD_MT = 1.0            # MT — minimum meaningful STG adjustment to act on
+EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 0.1         # MT — treat excess below this as balanced
+POWER_INITIAL_CONVERGENCE_AUX_ERROR_MWH = 10.0    # MWh — aux-power error below which the excess-steam controller may engage
 
 # ---------------------------------------------------------------------------
 # GT Natural Gas MMBTU Calculation Constants (from PPPython-script)
@@ -219,7 +235,8 @@ class NMDU4UIterationLoop:
         self.final_detail_records: List[dict] = []
         self.converged: bool = False
         self.iterations_used: int = 0
-        self._prev_gt_reduction: float = 0.0  # Track previous GT reduction for damping
+        self._power_initially_converged: bool = False   # excess-steam controller only engages once power has roughly stabilized
+        self._excess_steam_controller_mode: Optional[str] = None  # None or "HRSG_MIN_EXCESS"
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -227,6 +244,9 @@ class NMDU4UIterationLoop:
 
     def run(self) -> dict:
         """Run the U4U iteration loop until convergence or max iterations."""
+
+        # 0. Clear dispatch-engine DB cache (fresh data for this month)
+        clear_db_cache()
 
         # 1. Load norms and build U4U matrix
         self._u4u_matrix = self.norms_reader.get_consumption_norms_flat()
@@ -290,9 +310,19 @@ class NMDU4UIterationLoop:
                 power_result, steam_result, total_demands,
             )
 
+            # Aux power (U4U Power_Dis) change vs previous iteration — used to
+            # decide when power has stabilized enough to engage the excess-
+            # steam controller (mirrors PPPython's aux_power_error check).
+            aux_power_error_mwh = abs(
+                new_u4u.get("Power_Dis", 0.0) - u4u_demands.get("Power_Dis", 0.0)
+            ) / 1000.0
+
             # Handle excess SHP steam
             excess_steam_mt, stg_min_override_mwh, gt_reduction_mwh = \
-                self._handle_excess_steam(steam_result, power_result)
+                self._handle_excess_steam(
+                    steam_result, power_result, stg_extraction,
+                    aux_power_error_mwh, stg_min_override_mwh,
+                )
 
             # Check convergence
             converged, power_delta = self._check_convergence(
@@ -336,16 +366,16 @@ class NMDU4UIterationLoop:
                             iteration)
                 break
 
-            # Stall detection
-            if power_delta < self.power_delta_tolerance:
+            # Stall detection - force convergence if power delta is small for multiple iterations
+            if power_delta < STALL_POWER_THRESHOLD:
                 stall_counter += 1
             else:
                 stall_counter = 0
 
             if stall_counter >= STALL_LIMIT:
                 logger.info("")
-                logger.info("  [U4U LOOP] Stall detected at iteration %d — "
-                            "forcing convergence", iteration)
+                logger.info("  [U4U LOOP] Power demand stabilized (delta < %.0f MWh for %d iterations) at iteration %d — "
+                            "forcing convergence", STALL_POWER_THRESHOLD, STALL_LIMIT, iteration)
                 self.converged = True
                 break
 
@@ -447,6 +477,10 @@ class NMDU4UIterationLoop:
 
                         extraction["LP Steam_Dis"] = lp_extraction_mt
                         extraction["MP Steam_Dis"] = mp_extraction_mt
+                        # Dynamic SHP-steam-to-power conversion rate (MT/MWh) at this
+                        # load point, from the STG extraction curve — used by the
+                        # excess-steam controller instead of a fixed constant.
+                        extraction["sp_steam_power"] = extraction_data.get("sp_steam_power", 0.0)
 
                         logger.info(
                             "  [STG EXTRACTION] STG Load: %.2f MW, LP Extraction: %.2f MT, MP Extraction: %.2f MT",
@@ -559,9 +593,7 @@ class NMDU4UIterationLoop:
                     continue
                 # Create 0-quantity records for this POWERGEN asset
                 for c in consumptions:
-                    # Include Utilities, Catalyst & Chemical, and Raw Material accounts in U4U consumption
-                    if c["account"] not in ("Utilities", "Catalyst & Chemical", "Raw Material"):
-                        continue
+                    # Include ALL accounts (not just Utilities/Catalyst & Chemical/Raw Material)
                     material = c.get("material", "")
                     material_uom = c.get("material_uom", "")
                     issuing_plant = c.get("issuing_plant", "")
@@ -575,15 +607,14 @@ class NMDU4UIterationLoop:
                         "quantity": 0.0,
                         "issuing_plant": issuing_plant,
                         "is_credit": False,
+                        "norms_header_id": c.get("norms_header_id"),
+                        "norms_month_detail_id": c.get("norms_month_detail_id"),
                     })
                 continue
 
             # Multiply generation by each consumption norm
             for c in consumptions:
-                # Include Utilities, Catalyst & Chemical, and Raw Material accounts in U4U consumption
-                if c["account"] not in ("Utilities", "Catalyst & Chemical", "Raw Material"):
-                    continue
-
+                # Include ALL accounts (not just Utilities/Catalyst & Chemical/Raw Material)
                 norm = c["norm"]
                 if norm == 0:
                     continue
@@ -672,6 +703,8 @@ class NMDU4UIterationLoop:
                         "quantity": consumed,
                         "issuing_plant": issuing_plant,
                         "is_credit": True,
+                        "norms_header_id": c.get("norms_header_id"),
+                        "norms_month_detail_id": c.get("norms_month_detail_id"),
                     })
                     continue
 
@@ -690,6 +723,8 @@ class NMDU4UIterationLoop:
                     "quantity": consumed,
                     "issuing_plant": issuing_plant,
                     "is_credit": False,
+                    "norms_header_id": c.get("norms_header_id"),
+                    "norms_month_detail_id": c.get("norms_month_detail_id"),
                 })
 
         return u4u, details
@@ -746,6 +781,12 @@ class NMDU4UIterationLoop:
         if "PRDS" in util_upper:
             return total_demands.get(utility, 0.0)
 
+        # Power from MEL (imported power) — from power_result
+        if "MEL" in util_upper:
+            import_power = power_result.get("import_power", {})
+            import_mwh = float(import_power.get("total_mwh", 0.0)) if isinstance(import_power, dict) and import_power.get("success") else 0.0
+            return import_mwh * 1000.0
+
         # Distribution utilities (Power_Dis, SHP Steam_Dis, etc.)
         # Power_Dis generation = GT/STG generation + import power
         # Other distribution utilities: total demand they need to supply
@@ -766,75 +807,86 @@ class NMDU4UIterationLoop:
         self,
         steam_result: dict,
         power_result: dict,
+        stg_extraction: dict,
+        aux_power_error_mwh: float,
+        current_stg_min_override_mwh: Optional[float],
     ) -> Tuple[float, Optional[float], float]:
         """
-        Handle excess SHP steam by pushing it to STG and reducing GTs.
+        Handle excess SHP steam using a proportional controller (ported from
+        PPPython-script's HRSG_MIN_EXCESS controller).
+
+        Instead of hard-resetting STG to MIN whenever excess drops to zero
+        (which causes oscillation), the controller computes a target STG load
+        from the current STG output + steam-to-power conversion, clamps it to
+        STG's actual min/max, and only changes the override when the required
+        adjustment is meaningful. Otherwise it HOLDS the existing override.
 
         Returns:
             (excess_steam_mt, stg_min_override_mwh, gt_reduction_mwh)
         """
         excess_mt = float(steam_result.get("surplus_mt", 0.0))
-        if excess_mt <= EXCESS_STEAM_THRESHOLD_MT:
-            return 0.0, None, 0.0
 
-        # Convert excess steam to additional STG MWh
-        extra_stg_mwh = excess_mt / STEAM_TO_POWER_MT_PER_MWH
+        # Check if power has initially converged (aux error is small enough)
+        if aux_power_error_mwh < POWER_INITIAL_CONVERGENCE_AUX_ERROR_MWH:
+            self._power_initially_converged = True
 
-        # Find current STG generation
+        # Find current STG generation and min/max limits
         stg_gross_mwh = 0.0
+        stg_db_min_mwh = 0.0
+        stg_db_max_mwh = 0.0
         for asset in power_result.get("assets", []):
             name = str(asset.get("asset_name", "")).upper()
             if "STG" in name or "STEAM TURBINE" in name:
                 stg_gross_mwh = float(asset.get("dispatched_mwh", 0.0))
+                min_mw = float(asset.get("min_mw", 0.0))
+                max_mw = float(asset.get("max_mw", 0.0))
+                op_hours = float(asset.get("op_hours", 0.0))
+                stg_db_min_mwh = min_mw * op_hours
+                stg_db_max_mwh = max_mw * op_hours
                 break
 
-        # Set STG min override to consume excess steam
-        stg_min_override = (stg_gross_mwh + extra_stg_mwh) if stg_gross_mwh > 0 else extra_stg_mwh
+        # Engage the proportional controller only after power has roughly stabilized
+        if self._power_initially_converged and (
+            excess_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT
+            or self._excess_steam_controller_mode == "HRSG_MIN_EXCESS"
+        ):
+            # Use dynamic conversion factor if available from STG extraction curve
+            conversion_rate = stg_extraction.get("sp_steam_power", STEAM_TO_POWER_MT_PER_MWH) if stg_extraction else STEAM_TO_POWER_MT_PER_MWH
+            if conversion_rate <= 0:
+                conversion_rate = STEAM_TO_POWER_MT_PER_MWH
 
-        # Cap GT reduction so GT+STG max capacity still meets net demand.
-        # This prevents crushing GTs to MIN when demand is high.
-        power_deficit = float(power_result.get("deficit_mwh", 0.0))
-        demand_mwh = float(power_result.get("demand_mwh", 0.0))
-        import_mwh = 0.0
-        ip = power_result.get("import_power", {})
-        if isinstance(ip, dict) and ip.get("success"):
-            import_mwh = float(ip.get("total_mwh", 0.0))
-        net_demand = max(0.0, demand_mwh - import_mwh)
+            desired_stg_adj_mwh = excess_mt / conversion_rate
+            target_stg_mwh = stg_gross_mwh + desired_stg_adj_mwh
+            # Clamp to STG's actual min/max limits
+            target_stg_mwh = max(stg_db_min_mwh, min(target_stg_mwh, stg_db_max_mwh))
 
-        # Get STG and GT max capacities
-        stg_max_mwh = 0.0
-        gt_max_mwh = 0.0
-        for asset in power_result.get("assets", []):
-            name = str(asset.get("asset_name", "")).upper()
-            max_mw = float(asset.get("max_mw", 0.0))
-            op_hours = float(asset.get("op_hours", 0.0))
-            if "STG" in name or "STEAM TURBINE" in name:
-                stg_max_mwh = max_mw * op_hours
+            actual_stg_adj = target_stg_mwh - stg_gross_mwh
+            action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / conversion_rate
+
+            if abs(actual_stg_adj) > action_threshold_mwh or abs(excess_mt) > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT:
+                logger.info("  [U4U LOOP] ⚡ EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)")
+                logger.info("    Excess Steam: %.2f MT | Desired STG Adj: %.2f MWh | Target STG: %.2f MWh | Current STG: %.2f MWh",
+                            excess_mt, desired_stg_adj_mwh, target_stg_mwh, stg_gross_mwh)
+                logger.info("    ACTION: Adjusting STG override to %.2f MWh", target_stg_mwh)
+
+                self._excess_steam_controller_mode = "HRSG_MIN_EXCESS"
+                # GT reduction is handled naturally by power dispatch when STG increases
+                return excess_mt, target_stg_mwh, 0.0
             else:
-                gt_max_mwh += max_mw * op_hours
+                # Excess is small — HOLD the existing override to prevent oscillation
+                logger.info("  [U4U LOOP] Excess steam (%.2f MT) is small, holding STG override at %.2f MWh",
+                            excess_mt, current_stg_min_override_mwh or 0.0)
+                self._excess_steam_controller_mode = "HRSG_MIN_EXCESS"
+                return excess_mt, current_stg_min_override_mwh, 0.0
 
-        # GT reduction can't exceed what would leave net_demand unmet by GT+STG
-        max_gt_reduction = max(0.0, gt_max_mwh - max(0.0, net_demand - stg_max_mwh))
-        gt_reduction = min(extra_stg_mwh, max_gt_reduction)
-
-        if power_deficit > 0:
-            gt_reduction = 0.0
-            logger.info("  [U4U LOOP] Excess SHP: %.2f MT → STG +%.2f MWh, GT reduction skipped (power deficit: %.2f MWh)",
-                        excess_mt, extra_stg_mwh, power_deficit)
-        elif gt_reduction < extra_stg_mwh:
-            logger.info("  [U4U LOOP] Excess SHP: %.2f MT → STG +%.2f MWh, GT -%.2f MWh (capped from %.2f to meet demand)",
-                        excess_mt, extra_stg_mwh, gt_reduction, extra_stg_mwh)
+        elif not self._power_initially_converged:
+            # Power hasn't stabilized yet — don't engage excess steam controller
+            self._excess_steam_controller_mode = None
+            return 0.0, None, 0.0
         else:
-            logger.info("  [U4U LOOP] Excess SHP: %.2f MT → STG +%.2f MWh, GT -%.2f MWh",
-                        excess_mt, extra_stg_mwh, gt_reduction)
-
-        # Apply damping to prevent oscillation (weighted average: 70% current + 30% previous)
-        if self._prev_gt_reduction > 0:
-            gt_reduction = 0.7 * gt_reduction + 0.3 * self._prev_gt_reduction
-            gt_reduction = round(gt_reduction, 2)
-        self._prev_gt_reduction = gt_reduction
-
-        return excess_mt, stg_min_override, gt_reduction
+            # Power converged but no excess steam — reset controller
+            self._excess_steam_controller_mode = None
+            return 0.0, None, 0.0
 
     # ------------------------------------------------------------------
     # Convergence check
@@ -860,6 +912,14 @@ class NMDU4UIterationLoop:
         # Use higher tolerance for small-magnitude utilities to prevent oscillation
         all_materials = set(new_u4u.keys()) | set(old_u4u.keys())
         for material in all_materials:
+            # Skip chemical utilities from convergence check due to circular dependencies
+            material_upper = material.upper()
+            if ("CHEM" in material_upper or "CAUSTIC" in material_upper or 
+                "SODA" in material_upper or "ALUM" in material_upper or
+                "SULPHITE" in material_upper or "SULPHURIC" in material_upper or
+                "MORPHO" in material_upper or "CYCLO" in material_upper):
+                continue
+            
             new_val = abs(new_u4u.get(material, 0.0))
             old_val = abs(old_u4u.get(material, 0.0))
 

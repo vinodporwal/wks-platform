@@ -1,0 +1,16 @@
+JMD Plant Run Log
+Plant:     DTA CPP
+Period:    4/2025
+Generated: 2026-06-05 14:05:28
+================================================================================
+
+14:05:23  INFO        [CALC] DTA CPP  4/2025  (2025-26)
+14:05:24  INFO        [PROCESS] Found 0 utility types for FY 2025-26, plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+14:05:25  INFO        [HRSG AVAIL] Using dummy fallback (table not in DB)
+14:05:25  INFO        [STG LOOKUP] Using dummy fallback (table not in DB)
+14:05:26  INFO      [DC] Using DB consumption data for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A 4/2025
+14:05:26  INFO      [DC] Using DB asset list for A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+14:05:26  INFO        [BUDGET] DTA CPP  4/2025  LP=0  MP=0  HP=0  SHP=0
+14:05:26  INFO        [DISPATCH] Using dummy power demand 4500.0 MWh for plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+14:05:28  INFO        [DISPATCH] Using dummy power demand 4500.0 MWh for plant A4AF8441-73AD-4F9F-BCF4-6734E8202F7A
+14:05:28  INFO        [CALC] Done  4/2025  (2.8s)  assets=20  norms=0  budget=OK  iter=2
