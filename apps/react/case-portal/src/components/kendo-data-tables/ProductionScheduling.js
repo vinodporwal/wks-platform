@@ -87,54 +87,58 @@ const ProductionScheduling = ({ permissions }) => {
     }
     const columns = [
         {
-            field: 'BatchPerDay',
+            field: 'batchPerDay',
             title: 'Batch Per Day',
             editable: true,
+            type: 'number',
             widthT: 300,
             minWidth: 120,
         },
         {
-            field: 'ProductionPerBatch',
+            field: 'productionPerBatch',
             title: 'Production Per Batch',
             editable: true,
+            type: 'number',
             widthT: 300,
             minWidth: 120,
         },
         {
-            field: 'SDWashAfterBatch',
+            field: 'sdWashAfterBatch',
             title: 'SD Wash After Batch',
             editable: true,
+            type: 'number',
             widthT: 300,
             minWidth: 120,
         },
         {
-            field: 'SDFlushAfterBatch',
+            field: 'sdFlushAfterBatch',
             title: 'SD Flush After Batch',
             editable: true,
+            type: 'number',
             align: 'left',
             headerAlign: 'left',
+            minWidth: 120,
+        },
+        {
+            field: 'sdWashHr',
+            title: 'SD Wash Hr',
+            editable: true,
             type: 'number',
             minWidth: 120,
         },
         {
-            field: 'SDWashHr',
-            title: 'SD Wash Hr',
-            editable: true,
-
-
-            minWidth: 120,
-        },
-        {
-            field: 'SDFlushHr',
+            field: 'sdFlushHr',
             title: 'SD Flush Hr',
             editable: true,
+            type: 'number',
             widthT: 300,
             minWidth: 120,
         },
         {
-            field: 'QuarterlySDHr',
+            field: 'quarterlySDHr',
             title: 'Quarterly SD Hr',
             editable: true,
+            type: 'number',
             widthT: 300,
             minWidth: 120,
         },
@@ -196,12 +200,12 @@ const ProductionScheduling = ({ permissions }) => {
                 }
 
                 const dataList = res?.data?.data || []
-                setCalculationObject(res?.data?.data?.aopCalculation)
+                setCalculationObject(res?.data?.aopCalculation)
                 const mapped = dataList.map((item, index) => ({
                     ...item,
                     id: index,
                     idFromApi: item.id || null,
-                    isEditable: true,
+                    isEditable: false,
                 }))
                 setRowsTransaction(mapped)
             } else {
@@ -244,17 +248,19 @@ const ProductionScheduling = ({ permissions }) => {
             // }
             var payload = []
             payload = data.map((item) => ({
-                BatchPerDay: item.BatchPerDay,
-                ProductionPerBatch: item.ProductionPerBatch,
-                SDWashAfterBatch: item.SDWashAfterBatch,
-                SDFlushAfterBatch: item.SDFlushAfterBatch,
-                SDWashHr: item.SDWashHr,
-                SDFlushHr: item.SDFlushHr,
-                QuarterlySDHr: item.QuarterlySDHr,
                 id: item.idFromApi || null,
+                batchPerDay: item.batchPerDay,
+                productionPerBatch: item.productionPerBatch,
+                sdWashAfterBatch: item.sdWashAfterBatch,
+                sdFlushAfterBatch: item.sdFlushAfterBatch,
+                sdWashHr: item.sdWashHr,
+                sdFlushHr: item.sdFlushHr,
+                quarterlySDHr: item.quarterlySDHr,
+                aopYear: AOP_YEAR,
+                plantId: PLANT_ID,
             }))
 
-            const response = await DataService.updateProductionSchedulingData(
+            const response = await ProductionSchedulingApiService.updateProductionSchedulingData(
                 PLANT_ID,
                 payload,
                 keycloak,

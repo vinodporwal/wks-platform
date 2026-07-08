@@ -9,7 +9,7 @@ export const ProductionSchedulingApiService = {
 }
 
 async function getProductionSchedulingData(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/production-scheduling-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/prod-scheduling-config?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -29,7 +29,7 @@ async function updateProductionSchedulingData(
   keycloak,
   AOP_YEAR,
 ) {
-  var url = `${Config.CaseEngineUrl}/task/production-scheduling-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
+  var url = `${Config.CaseEngineUrl}/task/prod-scheduling-config?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ async function getProductionSchedulingTransactionData(
   PLANT_ID,
   AOP_YEAR,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/production-scheduling-transcation-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/prod-scheduling?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
