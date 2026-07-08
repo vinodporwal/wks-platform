@@ -510,7 +510,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						sheet.setColumnHidden(17, true);
 					}
 				} else {
-					// no grade named "All Grade" found ? do not aggregate everything accidentally.
+					// no grade named "All Grade" found � do not aggregate everything accidentally.
 					// Optionally: you could fall back to aggregated behavior here if desired.
 				}
 
@@ -1954,7 +1954,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			List<ShutdownNormsValueDTO> data=null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			if(vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
+			boolean ptaDmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD");
+			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
+			if(ptaDmd || staple) {
 				data = readDMDShutdownConsumptions(file.getInputStream(), plantFKId, year);
 			}else {
 				data = readShutdownConsumptions(file.getInputStream(), plantFKId, year);
