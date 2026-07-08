@@ -49,19 +49,34 @@ public class KeycloakService {
     public UserRepresentation getUserByFederatedId(String externalUserId, String idpAlias) {
         try {
             Keycloak keycloak = getKeycloakInstance();
-            // Keycloak admin API: search by idpAlias + idpUserId attributes
-            List<UserRepresentation> results = keycloak.realm(keycloakRealm).users()
-                .searchByAttributes("idp_alias:" + idpAlias + " idp_userid:" + externalUserId);
-            if (results != null && !results.isEmpty()) return results.get(0);
 
-            // Fallback for older Keycloak versions: scan federated identity links
-            List<UserRepresentation> allUsers = keycloak.realm(keycloakRealm).users().list(0, 500);
-            for (UserRepresentation u : allUsers) {
-                boolean linked = keycloak.realm(keycloakRealm).users().get(u.getId())
-                    .getFederatedIdentity().stream()
-                    .anyMatch(fi -> externalUserId.equals(fi.getUserId()));
-                if (linked) return u;
+            // Try Keycloak's dedicated federated identity search endpoint first
+            // GET /admin/realms/{realm}/users?idpAlias={alias}&idpUserId={id}
+            try {
+                List<UserRepresentation> results = keycloak.realm(keycloakRealm).users()
+                    .searchByAttributes("idp_alias:" + idpAlias + " idp_userid:" + externalUserId);
+                log.info("getUserByFederatedId searchByAttributes returned {} results for idpAlias={} externalUserId={}", 
+                    results == null ? 0 : results.size(), idpAlias, externalUserId);
+                if (results != null && !results.isEmpty()) return results.get(0);
+            } catch (Exception e) {
+                log.warn("searchByAttributes not supported, falling back to scan: {}", e.getMessage());
             }
+
+            // Scan all users and check federated identity links
+            List<UserRepresentation> allUsers = keycloak.realm(keycloakRealm).users().list(0, 500);
+            log.info("getUserByFederatedId scanning {} users for externalUserId={}", allUsers.size(), externalUserId);
+            for (UserRepresentation u : allUsers) {
+                var fedIds = keycloak.realm(keycloakRealm).users().get(u.getId()).getFederatedIdentity();
+                for (var fi : fedIds) {
+                    log.info("  user={} idpAlias={} federatedUserId={} federatedUsername={}", 
+                        u.getUsername(), fi.getIdentityProvider(), fi.getUserId(), fi.getUserName());
+                    if (externalUserId.equals(fi.getUserId())) {
+                        log.info("  -> MATCH found: keycloak user={}", u.getUsername());
+                        return u;
+                    }
+                }
+            }
+            log.warn("getUserByFederatedId: no user found for externalUserId={}", externalUserId);
             return null;
         } catch (Exception e) {
             log.warn("getUserByFederatedId failed for externalId={}, idpAlias={}: {}", externalUserId, idpAlias, e.getMessage());
