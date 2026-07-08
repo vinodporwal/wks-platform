@@ -233,19 +233,26 @@ const ProductionScheduling = ({ permissions }) => {
                 return
             }
 
-            // adjust to whichever fields are actually mandatory on this grid
-            // const requiredFields = ['remarks']
+            const requiredFields = [
+                'batchPerDay',
+                'productionPerBatch',
+                'sdWashAfterBatch',
+                'sdFlushAfterBatch',
+                'sdWashHr',
+                'sdFlushHr',
+                'quarterlySDHr',
+            ]
 
-            // const validationMessage = validateFields(data, requiredFields)
-            // if (validationMessage) {
-            //     setSnackbarOpen(true)
-            //     setSnackbarData({
-            //         message: validationMessage,
-            //         severity: 'error',
-            //     })
-            //     setLoading(false)
-            //     return
-            // }
+            const validationMessage = validateFields(data, requiredFields)
+            if (validationMessage) {
+                setSnackbarOpen(true)
+                setSnackbarData({
+                    message: validationMessage,
+                    severity: 'error',
+                })
+                setLoading(false)
+                return
+            }
             var payload = []
             payload = data.map((item) => ({
                 id: item.idFromApi || null,
@@ -275,6 +282,7 @@ const ProductionScheduling = ({ permissions }) => {
                 })
                 setModifiedCells({})
                 fetchData()
+                fetchDataTransaction()
                 setRefreshSignal((prev) => prev + 1)
             } else {
                 setSnackbarOpen(true)
