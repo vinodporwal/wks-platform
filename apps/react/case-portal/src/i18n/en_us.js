@@ -143,6 +143,7 @@ const defs = {
     materialGroupedSelection: 'Material Grouped Selection',
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
+    productionScheduling: 'Production Scheduling',
   },
   pages: {
     dashboard: {
