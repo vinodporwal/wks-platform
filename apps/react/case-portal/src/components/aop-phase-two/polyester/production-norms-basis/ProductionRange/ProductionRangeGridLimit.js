@@ -90,7 +90,7 @@ const ProductionRangeGridLimit = () => {
     {
       field: 'remarks',
       title: 'Remark',
-      editable: false,
+      editable: true,
       widthT: 250,
       autoAdjust: false,
       type: 'string',
