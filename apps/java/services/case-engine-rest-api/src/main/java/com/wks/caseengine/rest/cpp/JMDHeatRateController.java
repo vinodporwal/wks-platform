@@ -205,6 +205,37 @@ public class JMDHeatRateController {
         
         return jmdHeatRateService.importGTHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
     }
+	
+	@GetMapping(value = "/jmd/stg-heat-rate-export")
+    public ResponseEntity<byte[]> exportSTGHeatRate(
+            @RequestParam("assetId") UUID assetId,
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds,
+            @RequestParam(value = "isAfterSave", defaultValue = "false") boolean isAfterSave,
+            @RequestBody(required = false) List<STGHeatRateDTO> dtoList) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportSTGHeatRateExcelData(
+                    assetId, year, startDate, endDate, plantIds, isAfterSave, dtoList
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            
+            String filename = isAfterSave ? "STG_Heat_Rate_Import_Status.xlsx" : "STG_Heat_Rate_Data.xlsx";
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /**
      * [HRSG] GET Asset Dropdown — OLDER overload (takes only plantIds, no assetType)

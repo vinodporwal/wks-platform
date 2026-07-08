@@ -15,12 +15,14 @@ import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.entity.CppGtHeatRate;
 import com.wks.caseengine.cpp.entity.CppHrsgHeatRate;
 import com.wks.caseengine.cpp.entity.CppSteamGenerationAsset;
+import com.wks.caseengine.cpp.entity.CppStgHeatRate;
 import com.wks.caseengine.cpp.entity.HRSGHeatRateLookup;
 import com.wks.caseengine.cpp.entity.PowerGenerationAsset;
 import com.wks.caseengine.cpp.entity.STGExtractionLookup;
 import com.wks.caseengine.cpp.repository.CppGtHeatRateRepository;
 import com.wks.caseengine.cpp.repository.CppHrsgHeatRateRepository;
 import com.wks.caseengine.cpp.repository.CppSteamGenerationAssetRepository;
+import com.wks.caseengine.cpp.repository.CppStgHeatRateRepository;
 import com.wks.caseengine.cpp.repository.JMDHRSGHeatRateLookupRepository;
 import com.wks.caseengine.cpp.repository.JMDHeatRateRepository;
 import com.wks.caseengine.cpp.repository.JMDSTGExtractionLookupRepository;
@@ -93,6 +95,9 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     
     @Autowired
     private CppHrsgHeatRateRepository cppHrsgHeatRateRepository;
+    
+    @Autowired
+    private CppStgHeatRateRepository cppStgHeatRateRepository;
     
     
     
@@ -1109,6 +1114,96 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         return null;
     }
 
+    @Override
+    public byte[] exportSTGHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, 
+                                            List<UUID> plantIds, boolean isAfterSave, List<STGHeatRateDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM aopMessageVM = getSTGHeatRate(assetId.toString(), year, startDate, endDate, plantIds);
+                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+                    dtoList = (List<STGHeatRateDTO>) aopMessageVM.getData();
+                }
+            }
+            if (dtoList == null) {
+                dtoList = new java.util.ArrayList<>();
+            }
+            try (Workbook workbook = new XSSFWorkbook(); 
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                 
+                Sheet sheet = workbook.createSheet("Heat Rate");
+                 CellStyle headerStyle = createHeaderStyle(workbook);
+                CellStyle dataStyle = createDataStyle(workbook);
+                CellStyle remarksStyle = createRemarksStyle(workbook);
+                List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
+                    "Equipment Type", "CPP Utility", "STG Load (MW)", "OEM HR", 
+                    "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)", 
+                    "Final HR", "Remark", "Selected Heat Rate", "Id"
+                ));
+
+                if (isAfterSave) {
+                    headerList.add("Status");
+                    headerList.add("Error Description");
+                }
+
+                int rowNum = 0;
+                Row headerRow = sheet.createRow(rowNum++);
+                for (int i = 0; i < headerList.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headerList.get(i));
+                    cell.setCellStyle(headerStyle);
+                }
+                sheet.setColumnHidden(8, true);
+                sheet.setColumnHidden(9, true);
+                for (STGHeatRateDTO dto : dtoList) {
+                    Row row = sheet.createRow(rowNum++);
+                    int colNum = 0;
+
+                    row.createCell(colNum++).setCellValue(dto.getEquipType() != null ? dto.getEquipType() : "");
+                    row.createCell(colNum++).setCellValue(dto.getCppUtility() != null ? dto.getCppUtility() : "");
+                    row.createCell(colNum++).setCellValue(dto.getStgLoad() != null ? dto.getStgLoad() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getOemHeatRate() != null ? dto.getOemHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getPreviousYearHeatRate() != null ? dto.getPreviousYearHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getProposedHeatRate() != null ? dto.getProposedHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getFinalHeatRate() != null ? dto.getFinalHeatRate() : 0.0);
+                    
+                    Cell remarkCell = row.createCell(colNum++);
+                    remarkCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+                    remarkCell.setCellStyle(remarksStyle);
+
+                    row.createCell(colNum++).setCellValue(dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate() : "");
+                    row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
+
+                    if (isAfterSave) {
+                        row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                        row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+                    }
+
+                    for (int c = 0; c < colNum; c++) {
+                        if (c != 8) { 
+                            row.getCell(c).setCellStyle(dataStyle);
+                        }
+                    }
+                }
+
+                
+                for (int i = 0; i < headerList.size(); i++) {
+                    if (i == 8) {
+                        sheet.setColumnWidth(i, 8000); 
+                        continue;
+                    }
+                    sheet.autoSizeColumn(i);
+                    applyHeaderMinWidth(sheet, i, headerList.get(i));
+                }
+
+                workbook.write(outputStream);
+                return outputStream.toByteArray();
+            }
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] exportGTHeatRateExcelData error: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
     private PowerGenerationAssetDto convertToDto(PowerGenerationAsset entity) {
         PowerGenerationAssetDto dto = new PowerGenerationAssetDto();
 
@@ -1511,7 +1606,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         return projections.stream()
                 .map(projection -> {
                     STGHeatRateDTO dto = new STGHeatRateDTO();
-                    dto.setId(projection.getId());
+                    dto.setId(projection.getId().toString());
                     dto.setEquipType(projection.getEquipType());
                     dto.setCppUtility(projection.getCPPUtility());
                     dto.setStgLoad(projection.getSTGLoad());
@@ -1580,46 +1675,126 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     @Override
     @Transactional
     public AOPMessageVM updateSTGHeatRate(List<STGHeatRateDTO> stgHeatRateDTOs, String aopYear) {
-        logger.info("[JMDHeatRate] updateSTGHeatRate - {} records, aopYear: {}", stgHeatRateDTOs != null ? stgHeatRateDTOs.size() : 0, aopYear);
+        logger.info("[JMDHeatRate] updateSTGHeatRate - {} records, aopYear: {}", 
+                stgHeatRateDTOs != null ? stgHeatRateDTOs.size() : 0, aopYear);
+        
         AOPMessageVM vm = new AOPMessageVM();
+        
         try {
-            List<Object[]> updates = new ArrayList<>();
+            if (stgHeatRateDTOs == null || stgHeatRateDTOs.isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("Request body cannot be empty");
+                return vm;
+            }
+
+            List<STGHeatRateDTO> failedList = new java.util.ArrayList<>();
+            List<CppStgHeatRate> entitiesToSave = new java.util.ArrayList<>();
+
             for (STGHeatRateDTO dto : stgHeatRateDTOs) {
+                if (dto == null) continue;
+
+                if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+                    failedList.add(dto);
+                    continue;
+                }
+
                 String selectedHeatRate = dto.getSelectedHeatRate();
                 if (selectedHeatRate != null && !selectedHeatRate.trim().isEmpty()) {
                     if (!SelectedHeatRateType.isValid(selectedHeatRate)) {
-                        throw new IllegalArgumentException(
-                                String.format("Invalid selectedHeatRate value: '%s'. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER", selectedHeatRate));
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription(String.format("Invalid selectedHeatRate value: '%s'. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER", selectedHeatRate));
+                        failedList.add(dto);
+                        continue;
                     }
                 } else {
                     selectedHeatRate = SelectedHeatRateType.PROPOSED.getValue();
                     dto.setSelectedHeatRate(selectedHeatRate);
                 }
-                updates.add(new Object[]{
-                        dto.getStgLoad(),
-                        dto.getFinalHeatRate(),
-                        dto.getOemHeatRate(),
-                        selectedHeatRate,
-                        dto.getRemarks(),
-                        dto.getId()
-                });
+
+                CppStgHeatRate entity = null;
+                if (dto.getId() != null && !dto.getId().toString().trim().isEmpty()) {
+                    try {
+                        entity = cppStgHeatRateRepository.findById(UUID.fromString(dto.getId())).orElse(null);
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[JMDHeatRate] Invalid UUID format provided: {}", dto.getId());
+                    }
+                }
+
+                if (entity == null) {
+                    logger.warn("[JMDHeatRate] Record with ID {} not found. Skipping update.", dto.getId());
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription("Record ID not found in database");
+                    failedList.add(dto);
+                    continue;
+                }
+
+                boolean isValueChanged = false;
+                if (isDoubleChanged(entity.getStgLoad(), dto.getStgLoad())) isValueChanged = true;
+                if (isDoubleChanged(entity.getOemHeatRate(), dto.getOemHeatRate())) isValueChanged = true;
+                if (isDoubleChanged(entity.getFinalHeatRate(), dto.getFinalHeatRate())) isValueChanged = true;
+
+                String dbSelected = entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate().trim() : "";
+                String incomingSelectedHR = dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate().trim() : "";
+                if (!dbSelected.equalsIgnoreCase(incomingSelectedHR)) {
+                    isValueChanged = true;
+                }
+
+                String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+                if (isValueChanged) {
+                    if (incomingRemarks.isEmpty()) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Remarks are mandatory when data values are updated");
+                        failedList.add(dto);
+                        continue;
+                    }
+                    
+                    String dbRemarks = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+                    if (incomingRemarks.equalsIgnoreCase(dbRemarks)) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Remarks must be updated because data values changed");
+                        failedList.add(dto);
+                        continue;
+                    }
+                }
+
+                entity.setStgLoad(dto.getStgLoad());
+                entity.setFinalHeatRate(dto.getFinalHeatRate());
+                entity.setOemHeatRate(dto.getOemHeatRate());
+                entity.setSelectedHeatRate(selectedHeatRate);
+                entity.setRemarks(dto.getRemarks());
+                entity.setUpdatedDate(new java.util.Date()); 
+
+                entitiesToSave.add(entity);
             }
-            if (!updates.isEmpty()) {
-                String sql = "UPDATE CPP_STGHeatRate SET STGLoad = ?, FinalHeatRate = ?, OEMHeatRate = ?, SelectedHeatRate = ?, Remarks = ?, UpdatedDate = GETDATE() WHERE Id = ?";
-                jdbcTemplate.batchUpdate(sql, updates);
+
+            if (!entitiesToSave.isEmpty()) {
+                List<CppStgHeatRate> savedEntities = cppStgHeatRateRepository.saveAll(entitiesToSave);
+                logger.info("[JMDHeatRate] updateSTGHeatRate - successfully updated {} records", savedEntities.size());
+                
+                if (!failedList.isEmpty()) {
+                    vm.setCode(400);
+                    vm.setMessage("Partial data saved with validation exceptions");
+                } else {
+                    vm.setCode(200);
+                    vm.setMessage("STG heat rate updated successfully. " + savedEntities.size() + " records updated.");
+                }
+                vm.setData(failedList);
+            } else {
+                vm.setCode(400);
+                vm.setMessage("No valid records met conditions to update");
+                vm.setData(failedList);
             }
-            vm.setCode(200);
-            vm.setMessage("STG heat rate updated successfully. " + updates.size() + " records updated.");
-            vm.setData(null);
+
         } catch (Exception e) {
             logger.error("[JMDHeatRate] updateSTGHeatRate error: {}", e.getMessage(), e);
             vm.setCode(500);
             vm.setMessage("Failed to update STG heat rate: " + e.getMessage());
             vm.setData(null);
         }
+        
         return vm;
     }
-
+    
     // ============================================================
     // STG EXTRACTION LOOKUP
     // ============================================================
@@ -2242,7 +2417,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     STGHeatRateDTO dto = new STGHeatRateDTO();
                     String idStr = getCellValueAsString(row, 9);
                     if (idStr != null && !idStr.isEmpty()) {
-                        dto.setId(UUID.fromString(idStr));
+                        dto.setId(idStr);
                     }
                     dto.setEquipType(getCellValueAsString(row, 0));
                     dto.setCppUtility(getCellValueAsString(row, 1));
