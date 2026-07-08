@@ -466,7 +466,59 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         }
         return aopMessageVM;
     }
-    
+
+    @Override
+    public AOPMessageVM importHRSGHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            
+            List<CppHrsgHeatRateDto> data = readHRSGHeatRateData(file.getInputStream(), year);
+            
+            if (data != null && !data.isEmpty()) {
+            	CppHrsgHeatRateDto firstRow = data.get(0);
+                if (assetId == null && firstRow.getAssetFkId() != null) {
+                    assetId = UUID.fromString(firstRow.getAssetFkId());
+                }
+            }
+
+            aopMessageVM = saveHRSGHeatRateData(data, year);
+            
+            List<CppHrsgHeatRateDto> failedList = (List<CppHrsgHeatRateDto>) aopMessageVM.getData();
+
+            if (failedList != null && !failedList.isEmpty()) {
+                byte[] fileByteArray = exportHRSGHeatRateExcelData(
+                    assetId,     
+                    year,        
+                    startDate,   
+                    endDate,    
+                    plantIds,    
+                    true,        
+                    failedList   
+                );
+                
+                if (fileByteArray != null && fileByteArray.length > 0) {
+                    String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                    aopMessageVM.setData(base64File);
+                    aopMessageVM.setCode(400);
+                    aopMessageVM.setMessage("Partial data has been saved. Please check the attached error details.");
+                }
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved successfully.");
+                aopMessageVM.setData(null);
+            }
+
+            return aopMessageVM;
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] Error importing GT heat rate data: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to process file import: " + e.getMessage());
+            aopMessageVM.setData(null);
+        }
+        return aopMessageVM;
+    }
+
     public List<CppGtHeatRateDto> readGTHeatRateData(InputStream inputStream, String year) {
 	    List<CppGtHeatRateDto> cppGtHeatRateDtos = new ArrayList<>();
 
@@ -510,7 +562,50 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
 	    return cppGtHeatRateDtos;
 	}
-    
+
+    public List<CppHrsgHeatRateDto> readHRSGHeatRateData(InputStream inputStream, String year) {
+	    List<CppHrsgHeatRateDto> cppHrsgHeatRateDtos = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext())
+	            rowIterator.next();  
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+	            
+	            CppHrsgHeatRateDto dto = new CppHrsgHeatRateDto();
+	            try {
+	                dto.setEquipType(getStringCellValue(row.getCell(0), dto));
+	                dto.setCppUtility(getStringCellValue(row.getCell(1), dto));
+	                dto.setHrsgLoad(getNumericCellValue(row.getCell(2), dto));
+	                dto.setOemHeatRate(getNumericCellValue(row.getCell(3), dto));
+	                dto.setPrevYearFinalHeatRate(getNumericCellValue(row.getCell(4), dto));
+	                dto.setProposedYearFinalHeatRate(getNumericCellValue(row.getCell(5), dto));
+	                dto.setFinalHeatRate(getNumericCellValue(row.getCell(6), dto));
+	                dto.setRemarks(getStringCellValue(row.getCell(7), dto));
+	                dto.setFinancialYear(year);
+	                dto.setSelectedHeatRate(getStringCellValue(row.getCell(8), dto));
+	                dto.setId(getStringCellValue(row.getCell(9), dto));
+	              } 
+	              catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+	            cppHrsgHeatRateDtos.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return cppHrsgHeatRateDtos;
+	}
+
     private static Double getNumericCellValue(Cell cell, CppGtHeatRateDto dto) {
 	    if (cell == null || cell.getCellType() == CellType.BLANK) {
 	        return null;
@@ -537,6 +632,51 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
     
     private static String getStringCellValue(Cell cell, CppGtHeatRateDto dto) {
+	    try {
+	        if (cell == null || cell.getCellType() == CellType.BLANK) {
+	            return null;
+	        }
+	        
+	        cell.setCellType(CellType.STRING);
+	        String val = cell.getStringCellValue().trim();
+	        
+	        // Return null if the string is empty after trimming
+	        return val.isEmpty() ? null : val;
+	        
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Please enter correct values");
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+    private static Double getNumericCellValue(Cell cell, CppHrsgHeatRateDto dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } 
+	    
+	    if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        if (val.isEmpty()) {
+	            return null; // Return null for blank strings
+	        }
+	        try {
+	            return Double.parseDouble(val);
+	        } catch (NumberFormatException e) {
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    }
+	    return null;
+	}
+
+    
+    private static String getStringCellValue(Cell cell, CppHrsgHeatRateDto dto) {
 	    try {
 	        if (cell == null || cell.getCellType() == CellType.BLANK) {
 	            return null;

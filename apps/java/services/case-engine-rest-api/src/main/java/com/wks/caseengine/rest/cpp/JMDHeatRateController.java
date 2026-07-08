@@ -106,6 +106,14 @@ public class JMDHeatRateController {
         return ResponseEntity.ok(response);
     }
     
+	@PostMapping("/jmd/hrsg-heat-rate")
+    public ResponseEntity<AOPMessageVM> saveHRSGHeatRateData(
+            @RequestBody List<CppHrsgHeatRateDto> dtoList, 
+            @RequestParam String year) {
+        
+        AOPMessageVM response = jmdHeatRateService.saveHRSGHeatRateData(dtoList, year);
+        return ResponseEntity.ok(response);
+    }
     /**
      * [GT] EXPORT Excel
      * UI Component : GTHeatRate.js → handleExport() via HeatRateApiService.exportGTHeatRateExcel()
@@ -170,7 +178,7 @@ public class JMDHeatRateController {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
             
-            String filename = isAfterSave ? "HRSG_Heat_Rate_Import_Status.xlsx" : "GT_Heat_Rate_Data.xlsx";
+            String filename = isAfterSave ? "HRSG_Heat_Rate_Import_Status.xlsx" : "HRSG_Heat_Rate_Data.xlsx";
             headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
             headers.setContentLength(excelBytes.length);
 
@@ -208,6 +216,18 @@ public class JMDHeatRateController {
         logger.info("[JMDHeatRateController] GET /jmd/hrsg-heat-rate/drop-down - plantIds: {}", plantIds);
         AOPMessageVM response = jmdHeatRateService.getHRSGAssetDropdown(plantIds);
         return ResponseEntity.ok(response);
+    }
+	
+	 @PostMapping(value = "/jmd/hrsg-heat-rate/import", consumes = "multipart/form-data")
+    public AOPMessageVM importHRSGHeatRateData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "assetId", required = false) UUID assetId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        
+        return jmdHeatRateService.importHRSGHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
     }
 
     // ============================================================
