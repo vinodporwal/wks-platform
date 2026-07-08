@@ -185,11 +185,10 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 										"  AND JSON_VALUE(j.value, '$.name') = 'container'",
 								caseInstance.getBusinessKey());
 
-					}
-
 					casesToNotify.add(caseInstance);
 
 					notifiedCases.add(caseInstance.getBusinessKey());
+				}
 
 				} catch (Exception e) {
 					e.printStackTrace();
