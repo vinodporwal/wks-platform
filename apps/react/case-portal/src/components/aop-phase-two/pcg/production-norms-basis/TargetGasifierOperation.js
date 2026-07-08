@@ -7,9 +7,9 @@ import { getRoleName } from 'services/role-service'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-import { ProductionRangeApiService } from 'components/aop-phase-two/services/polyester/productionRangeApiService'
+import { ProductionNormsApiService } from '../../services/pcg/productionNormsApiService'
 
-const ProductionRange = () => {
+const TargetGasifierOperation = () => {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
@@ -45,7 +45,7 @@ const ProductionRange = () => {
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_Cat_Chem`
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_Production_Norms_Basis_Target_Gasifier_Operation_${AOP_YEAR}`
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -58,14 +58,16 @@ const ProductionRange = () => {
     {
       field: 'displayName', // matches API
       title: 'Particulars',
-      editable: false,
       widthT: 250,
       autoAdjust: false,
+      type: 'text',
+      editable: false,
       minWidth: 250,
     },
     {
       field: 'uom',
       title: 'UOM',
+      type: 'text',
       editable: false,
       widthT: 80,
       minWidth: 100,
@@ -93,7 +95,7 @@ const ProductionRange = () => {
       editable: true,
       widthT: 250,
       autoAdjust: false,
-      type: 'string',
+      type: 'text',
       minWidth: 200,
     },
     {
@@ -119,11 +121,11 @@ const ProductionRange = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Production_Norms_Production_Range_${AOP_YEAR}`,
+    ExcelName: `Production_Norms_Target_Gasifier_Operation_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Production Range',
+    titleName: 'Target Gasifier Operation',
     showCalculate: false,
     calculateDisabled: true,
   }
@@ -149,11 +151,11 @@ const ProductionRange = () => {
       })
 
       // console.log('payload', payload)
-      const response = await ProductionRangeApiService.postData(
+      const response = await ProductionNormsApiService.saveTargetGasifierOperationData(
         keycloak,
+        AOP_YEAR,
         payload,
         PLANT_ID,
-        AOP_YEAR,
       )
 
       setSnackbarOpen(true)
@@ -209,6 +211,25 @@ const ProductionRange = () => {
     }
   }, [modifiedCells])
 
+  const DUMMY_DATA = [
+    {
+      id: 1,
+      displayName: 'Target Average Gasifier Operation',
+      particulars: 'Target Average Gasifier Operation',
+      uom: 'G',
+      apr: 2.9,
+      may: 3.3,
+      remarks: 'Test',
+      originalRemark: 'Test',
+      normParameterFKId: 1,
+      normParameterFkId: 1,
+      auditYear: AOP_YEAR,
+      normTypeName: 'Target Gasifier Operation',
+      isEditable: true,
+      type: '',
+    },
+  ]
+
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
@@ -217,13 +238,18 @@ const ProductionRange = () => {
     try {
       setLoading(true)
 
-      const response = await ProductionRangeApiService.getData(
+      // ----- DUMMY DATA (remove when API is ready) -----
+      setRows(DUMMY_DATA)
+      return
+      // ----- END DUMMY DATA -----
+
+      const response = await ProductionNormsApiService.getTargetGasifierOperationData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
-      const formattedData = response?.data?.productionRangeList?.map(
+      const formattedData = response?.data?.map(
         (row, index) => ({
           ...row,
           id: row.id || index,
@@ -257,11 +283,11 @@ const ProductionRange = () => {
     })
 
     try {
-      await ProductionRangeApiService.getProductionRangeExcel(
+      await ProductionNormsApiService.exportTargetGasifierOperationExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        EXCEL_EXPORT_TITLE,
+        `${EXCEL_EXPORT_TITLE}.xlsx`,
       )
 
       setSnackbarData({
@@ -284,7 +310,7 @@ const ProductionRange = () => {
     setLoading(true)
 
     try {
-      let response = await ProductionRangeApiService.productionRangeImport(
+      let response = await ProductionNormsApiService.importTargetGasifierOperationExcel(
         rawFile,
         keycloak,
         PLANT_ID,
@@ -382,7 +408,7 @@ const ProductionRange = () => {
           }
           handleExport={downloadExcelForConfiguration}
           // customHeight={60}
-          groupBy={['normTypeName']}
+          // groupBy={['normTypeName']}
           paginationConfig={{
             threshold: 100,
             buttonCount: 5,
@@ -395,4 +421,4 @@ const ProductionRange = () => {
   )
 }
 
-export default ProductionRange
+export default TargetGasifierOperation
