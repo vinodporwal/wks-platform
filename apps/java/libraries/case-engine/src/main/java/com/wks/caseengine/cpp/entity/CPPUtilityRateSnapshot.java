@@ -19,7 +19,7 @@ import lombok.Setter;
  * The Java endpoint reads from this table directly — no stored procedure.
  */
 @Entity
-@Table(name = "CPPUtilityRateSnapshot", schema = "dbo", catalog = "RIL.AOP")
+@Table(name = "CPPUtilityRateSnapshot", schema = "dbo")
 @Getter
 @Setter
 public class CPPUtilityRateSnapshot {

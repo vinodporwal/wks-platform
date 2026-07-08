@@ -106,7 +106,7 @@ public class PowerGenerationService {
                 pga.AssetName AS assetName,
                 pga.AssetType AS assetType,
                 pl.DisplayName AS plantName
-            FROM [RIL.AOP].[dbo].[CPPAssetOperationalHours] h WITH(NOLOCK)
+            FROM [dbo].[CPPAssetOperationalHours] h WITH(NOLOCK)
             LEFT JOIN PowerGenerationAssets pga WITH(NOLOCK)
                 ON pga.AssetId = h.Asset_FK_Id
             LEFT JOIN Plants pl WITH(NOLOCK)
