@@ -916,9 +916,9 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 CellStyle dataStyle = createDataStyle(workbook);
                 CellStyle remarksStyle = createRemarksStyle(workbook);
                 List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
-                    "Equipment Type", "CPP Utility", "GT Load", "OEM HR", 
+                    "Equipment Type", "CPP Utility", "HRSG Load", "OEM HR", 
                     "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)", 
-                    "Final HR", "Free Steam Factor", "Remark", "Selected Heat Rate", "Id"
+                    "Final HR", "Remark", "Selected Heat Rate", "Id"
                 ));
 
                 if (isAfterSave) {
@@ -933,8 +933,8 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     cell.setCellValue(headerList.get(i));
                     cell.setCellStyle(headerStyle);
                 }
+                sheet.setColumnHidden(8, true);
                 sheet.setColumnHidden(9, true);
-                sheet.setColumnHidden(10, true);
                 for (CppHrsgHeatRateDto dto : dtoList) {
                     Row row = sheet.createRow(rowNum++);
                     int colNum = 0;
