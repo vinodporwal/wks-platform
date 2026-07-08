@@ -99,6 +99,7 @@ const ProductionScheduling = ({ permissions }) => {
             title: 'Production Per Batch',
             editable: true,
             type: 'number',
+            format: valueFormat,
             widthT: 300,
             minWidth: 120,
         },
