@@ -55,6 +55,28 @@ public class AOPConsumptionNormController {
 	    }
 	}
 
+	@GetMapping(value = "/overall-consumption-export-without-grades")
+	public ResponseEntity<byte[]> exportOverallConsumptionWithoutGrades(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year) {
+	    try {
+			
+	        byte[] excelBytes = aopConsumptionNormService.exportOverallConsumptionWithoutGrades(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("overall-consumption.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
 	@PostMapping(value="/overall-consumption")
 	public List<AOPConsumptionNormDTO> saveAOPConsumptionNorm(@RequestBody List<AOPConsumptionNormDTO> aOPConsumptionNormDTOList){
 		return aopConsumptionNormService.saveAOPConsumptionNorm(aOPConsumptionNormDTOList);

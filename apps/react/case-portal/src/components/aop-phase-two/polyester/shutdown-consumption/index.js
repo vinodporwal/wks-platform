@@ -107,6 +107,14 @@ const ShutdownConsumption = () => {
       editable: false,
       minWidth: 200,
     },
+    {
+      field: 'uom',
+      title: 'UOM',
+      widthT: 80,
+      minWidth: 80,
+      type: 'text',
+      editable: false,
+    },
     ...monthsConfig.map((m) => ({
       field: m.field,
       title: m.title,
@@ -174,6 +182,7 @@ const ShutdownConsumption = () => {
             (item, index) => ({
               ...item,
               idFromApi: item.id || null,
+              uom: item.UOM || item.uom || null,
               materialFKId: item.materialFKId || null,
               productName: item.productName || item.materialDisplayName || '',
               remarks: item.remarks?.trim() || '',

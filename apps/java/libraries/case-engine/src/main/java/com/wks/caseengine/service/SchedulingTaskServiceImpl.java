@@ -245,11 +245,12 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetProdSche
                 }
 
                 String sql = "UPDATE Chem_Prod_Scheduling_Config " +
-                         "SET BatchPerDay = ?, SDWashAfterBatch = ?, SDFlushAfterBatch = ?, SDWashHr = ?, SDFlushHr = ?, QuarterlySDHr = ? " +
+                         "SET BatchPerDay = ?, ProductionPerBatch = ?, SDWashAfterBatch = ?, SDFlushAfterBatch = ?, SDWashHr = ?, SDFlushHr = ?, QuarterlySDHr = ? " +
                          "WHERE Id = ?";
 
                 jdbcTemplate.update(sql,
                     dto.getBatchPerDay(),
+                    dto.getProductionPerBatch(),
                     dto.getSdWashAfterBatch(),
                     dto.getSdFlushAfterBatch(),
                     dto.getSdWashHr(),
