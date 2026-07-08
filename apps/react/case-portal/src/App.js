@@ -33,7 +33,7 @@ const App = () => {
       const payload = JSON.parse(atob(token.split('.')[1]))
 
       // The APM token is not a Keycloak token — call our backend /sso/userinfo
-      // which uses the Keycloak admin client to look up the user profile
+      // which uses the Keycloak admin client to look up the user profile + wks-portal roles
       let userInfo = {}
       try {
         const res = await fetch(`${Config.CaseEngineUrl}/sso/userinfo`, {
@@ -49,10 +49,21 @@ const App = () => {
         console.warn('SSO userinfo fetch error:', e)
       }
 
+      // Inject wks-portal roles into the token so buildMenuItems works correctly
+      const wksRoles = userInfo.wks_portal_roles || []
+      const patchedPayload = {
+        ...payload,
+        resource_access: {
+          ...(payload.resource_access || {}),
+          'wks-portal': { roles: wksRoles },
+        },
+        azp: 'wks-portal',
+      }
+
       const kcMock = {
         token,
-        tokenParsed: payload,
-        idTokenParsed: { ...payload, ...userInfo }, // merge name, email, etc.
+        tokenParsed: patchedPayload,
+        idTokenParsed: { ...patchedPayload, ...userInfo },
         isTokenExpired: () => payload.exp * 1000 < Date.now(),
         updateToken: () => Promise.resolve(false),
       }
@@ -132,7 +143,7 @@ const App = () => {
   }, [])
 
 
-   async function buildMenuItems(keycloak, userGroups = []) {
+  async function buildMenuItems(keycloak) {
 
     const token = keycloak.tokenParsed;
     const clientId = token?.azp || token?.client_id; 

@@ -108,8 +108,13 @@ public class SsoController {
         }
 
         String userId = sessionData.get("userId");
+        String idpAlias = sessionData.getOrDefault("idpAlias", "Oidc");
         try {
-            UserRepresentation user = keycloakService.getUserById(userId);
+            UserRepresentation user = keycloakService.getUserByFederatedId(userId, idpAlias);
+            if (user == null) {
+                // last resort: try direct UUID / username lookup
+                user = keycloakService.getUserById(userId);
+            }
             Map<String, Object> info = new java.util.HashMap<>();
             info.put("sub", user.getId());
             info.put("name", (user.getFirstName() != null ? user.getFirstName() : "") + " " +
@@ -118,6 +123,16 @@ public class SsoController {
             info.put("family_name", user.getLastName());
             info.put("email", user.getEmail());
             info.put("preferred_username", user.getUsername());
+
+            // Include wks-portal client roles so the frontend can build the menu correctly
+            try {
+                java.util.List<String> clientRoles = keycloakService.getClientRolesForUser(user.getId(), "wks-portal");
+                info.put("wks_portal_roles", clientRoles);
+            } catch (Exception re) {
+                log.warn("Could not fetch wks-portal roles for user {}: {}", userId, re.getMessage());
+                info.put("wks_portal_roles", java.util.Collections.emptyList());
+            }
+
             return ResponseEntity.ok(info);
         } catch (Exception e) {
             log.warn("SSO userinfo lookup failed for userId {}: {} — {}", userId, e.getMessage(),
