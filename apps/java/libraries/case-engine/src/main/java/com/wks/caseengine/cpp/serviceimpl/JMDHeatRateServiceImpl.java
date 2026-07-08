@@ -161,13 +161,12 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     
     @Override
     public AOPMessageVM getGTHeatRateData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds) {
-        logger.info("[JMDHeatRate] getGTHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, assessmentName: {}, plantIds: {}", 
+        logger.info("[JMDHeatRate] getGTHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, plantIds: {}", 
                 assetId, year, startDate, endDate, plantIds);
         
         AOPMessageVM vm = new AOPMessageVM();
         
         try {
-           
             String prevYear = null;
             if (year != null && year.contains("-")) {
                 String[] parts = year.split("-");
@@ -176,15 +175,17 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 prevYear = (startYear - 1) + "-" + (endYear - 1);
             }
 
-            
             List<CppGtHeatRate> entities = cppGtHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, year);
+            if (entities == null) {
+                entities = new java.util.ArrayList<>();
+            }
             
             List<CppGtHeatRate> prevEntities = new java.util.ArrayList<>();
             if (prevYear != null) {
                 prevEntities = cppGtHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, prevYear);
+                if (prevEntities == null) prevEntities = new java.util.ArrayList<>();
             }
           
-            
             java.util.Map<Double, Double> prevYearHeatRateMap = new java.util.HashMap<>();
             for (CppGtHeatRate prevEntity : prevEntities) {
                 if (prevEntity != null && prevEntity.getGtLoad() != null) {
@@ -201,60 +202,68 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         .collect(java.util.stream.Collectors.joining(","));
             }
             
-            String displayName = assetRepository.findDisplayNameByAssetId(assetId)
-                    .orElse("Asset Not Found");
+           
+            java.util.Optional<String> displayNameOpt = assetRepository.findDisplayNameByAssetId(assetId);
 
-            List<Object[]> spResultList = cppGtHeatRateRepository.executeCalculateCommonGTHeatRateSP(
-                    startDate, endDate, displayName, plantIdsStr
-            );
+            if (displayNameOpt.isPresent()) {
+                String displayName = displayNameOpt.get();
+                
+                
+                List<Object[]> spResultList = cppGtHeatRateRepository.executeCalculateCommonGTHeatRateSP(
+                        startDate, endDate, displayName, plantIdsStr
+                );
 
-            if (spResultList != null) {
-                for (Object[] row : spResultList) {
-                    
-                    if (row != null && row.length > 3) {
-                        Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
-                        Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
-                        
-                        if (loadVal != null && proposedHeatRate != null) {
-                            proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                if (spResultList != null) {
+                    for (Object[] row : spResultList) {
+                        if (row != null && row.length > 3) {
+                            Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
+                            Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
+                            
+                            if (loadVal != null && proposedHeatRate != null) {
+                                proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                            }
                         }
                     }
                 }
+            } else {
+                logger.warn("[JMDHeatRate] Display name not found for assetId: {}. Skipping proposed heat rate SP calculation.", assetId);
             }
             
             List<CppGtHeatRateDto> resultList = new java.util.ArrayList<>();
             for (CppGtHeatRate entity : entities) {
-                if (entity != null) {
-                    CppGtHeatRateDto dto = new CppGtHeatRateDto();
+                if (entity == null) continue;
+                
+                CppGtHeatRateDto dto = new CppGtHeatRateDto();
 
-                    dto.setId(entity.getId() != null ? entity.getId().toString() : null);
-                    dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId().toString() : null);
-                    dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
-                    dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
-                    dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
-                    dto.setGtLoad(entity.getGtLoad() != null ? entity.getGtLoad() : null);
-                    dto.setFreeSteamFactor(entity.getFreeSteamFactor() != null ? entity.getFreeSteamFactor() : null);
-                    dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
-                    dto.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate() : null);
-                    dto.setUpdatedDate(entity.getUpdatedDate() != null ? entity.getUpdatedDate() : null);
-                    dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
-                    dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
-                    dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
-                   
-                    if (entity.getGtLoad() != null && prevYearHeatRateMap.containsKey(entity.getGtLoad())) {
-                        dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getGtLoad()));
-                    } else {
-                        dto.setPrevYearFinalHeatRate(0.0); 
-                    }
-
-                    if (entity.getGtLoad() != null && proposedHeatRateMap.containsKey(entity.getGtLoad())) {
-                        dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getGtLoad()));
-                    } else {
-                        dto.setProposedYearFinalHeatRate(0.0);
-                    }
-
-                    resultList.add(dto);
+                dto.setId(entity.getId() != null ? entity.getId().toString() : null);
+                dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId().toString() : null);
+                dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
+                dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
+                dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
+                dto.setGtLoad(entity.getGtLoad() != null ? entity.getGtLoad() : null);
+                dto.setFreeSteamFactor(entity.getFreeSteamFactor() != null ? entity.getFreeSteamFactor() : null);
+                dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
+                
+                dto.setCreatedDate(entity.getCreatedDate());
+                dto.setUpdatedDate(entity.getUpdatedDate());
+                
+                dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
+                dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
+                dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
+                
+                if (entity.getGtLoad() != null && prevYearHeatRateMap.containsKey(entity.getGtLoad())) {
+                    dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getGtLoad()));
+                } else {
+                    dto.setPrevYearFinalHeatRate(0.0); 
                 }
+
+                if (entity.getGtLoad() != null && proposedHeatRateMap.containsKey(entity.getGtLoad())) {
+                    dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getGtLoad()));
+                } else {
+                    dto.setProposedYearFinalHeatRate(0.0);
+                }
+
+                resultList.add(dto);
             }
 
             logger.info("[JMDHeatRate] getGTHeatRateData - found {} heat rate records", resultList.size());
@@ -272,16 +281,15 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         
         return vm;
     }
-
+    
     @Override
     public AOPMessageVM getHRSGHeatRateData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds) {
-        logger.info("[JMDHeatRate] getHRSGHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, assessmentName: {}, plantIds: {}", 
+        logger.info("[JMDHeatRate] getHRSGHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, plantIds: {}", 
                 assetId, year, startDate, endDate, plantIds);
         
         AOPMessageVM vm = new AOPMessageVM();
         
         try {
-           
             String prevYear = null;
             if (year != null && year.contains("-")) {
                 String[] parts = year.split("-");
@@ -290,15 +298,17 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 prevYear = (startYear - 1) + "-" + (endYear - 1);
             }
 
-            
             List<CppHrsgHeatRate> entities = cppHrsgHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, year);
+            if (entities == null) {
+                entities = new java.util.ArrayList<>();
+            }
             
             List<CppHrsgHeatRate> prevEntities = new java.util.ArrayList<>();
             if (prevYear != null) {
                 prevEntities = cppHrsgHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, prevYear);
+                if (prevEntities == null) prevEntities = new java.util.ArrayList<>();
             }
           
-            
             java.util.Map<Double, Double> prevYearHeatRateMap = new java.util.HashMap<>();
             for (CppHrsgHeatRate prevEntity : prevEntities) {
                 if (prevEntity != null && prevEntity.getHrsgLoad() != null) {
@@ -315,77 +325,83 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         .collect(java.util.stream.Collectors.joining(","));
             }
             
-            String displayName = cppSteamGenerationAssetRepository.findDisplayNameByAssetId(assetId)
-                    .orElse("Asset Not Found");
+            java.util.Optional<String> displayNameOpt = cppSteamGenerationAssetRepository.findDisplayNameByAssetId(assetId);
 
-            List<Object[]> spResultList = cppHrsgHeatRateRepository.executeCalculateCommonHRSGHeatRateSP(
-                    startDate, endDate, displayName, plantIdsStr
-            );
+            if (displayNameOpt.isPresent()) {
+                String displayName = displayNameOpt.get();
+                
+                List<Object[]> spResultList = cppHrsgHeatRateRepository.executeCalculateCommonHRSGHeatRateSP(
+                        startDate, endDate, displayName, plantIdsStr
+                );
 
-            if (spResultList != null) {
-                for (Object[] row : spResultList) {
-                    
-                    if (row != null && row.length > 3) {
-                        Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
-                        Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
-                        
-                        if (loadVal != null && proposedHeatRate != null) {
-                            proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                if (spResultList != null) {
+                    for (Object[] row : spResultList) {
+                        if (row != null && row.length > 3) {
+                            Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
+                            Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
+                            
+                            if (loadVal != null && proposedHeatRate != null) {
+                                proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                            }
                         }
                     }
                 }
+            } else {
+                logger.warn("[JMDHeatRate] Display name not found for assetId: {}. Skipping proposed heat rate SP calculation.", assetId);
             }
             
             List<CppHrsgHeatRateDto> resultList = new java.util.ArrayList<>();
             for (CppHrsgHeatRate entity : entities) {
-                if (entity != null) {
-                	CppHrsgHeatRateDto dto = new CppHrsgHeatRateDto();
+                if (entity == null) continue;
+                
+                CppHrsgHeatRateDto dto = new CppHrsgHeatRateDto();
 
-                    dto.setId(entity.getId() != null ? entity.getId().toString() : null);
-                    dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId().toString() : null);
-                    dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
-                    dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
-                    dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
-                    dto.setHrsgLoad(entity.getHrsgLoad() != null ? entity.getHrsgLoad() : null);
-                    dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
-                    dto.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate() : null);
-                    dto.setUpdatedDate(entity.getUpdatedDate() != null ? entity.getUpdatedDate() : null);
-                    dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
-                    dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
-                    dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
-                   
-                    if (entity.getHrsgLoad() != null && prevYearHeatRateMap.containsKey(entity.getHrsgLoad())) {
-                        dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getHrsgLoad()));
-                    } else {
-                        dto.setPrevYearFinalHeatRate(0.0); 
-                    }
-
-                    if (entity.getHrsgLoad() != null && proposedHeatRateMap.containsKey(entity.getHrsgLoad())) {
-                        dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getHrsgLoad()));
-                    } else {
-                        dto.setProposedYearFinalHeatRate(0.0);
-                    }
-
-                    resultList.add(dto);
+                dto.setId(entity.getId() != null ? entity.getId().toString() : null);
+                dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId().toString() : null);
+                dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
+                dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
+                dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
+                dto.setHrsgLoad(entity.getHrsgLoad() != null ? entity.getHrsgLoad() : null);
+                dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
+                
+                dto.setCreatedDate(entity.getCreatedDate());
+                dto.setUpdatedDate(entity.getUpdatedDate());
+                
+                dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
+                dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
+                dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
+                
+                if (entity.getHrsgLoad() != null && prevYearHeatRateMap.containsKey(entity.getHrsgLoad())) {
+                    dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getHrsgLoad()));
+                } else {
+                    dto.setPrevYearFinalHeatRate(0.0); 
                 }
+
+                if (entity.getHrsgLoad() != null && proposedHeatRateMap.containsKey(entity.getHrsgLoad())) {
+                    dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getHrsgLoad()));
+                } else {
+                    dto.setProposedYearFinalHeatRate(0.0);
+                }
+
+                resultList.add(dto);
             }
 
-            logger.info("[JMDHeatRate] getGTHeatRateData - found {} heat rate records", resultList.size());
+            logger.info("[JMDHeatRate] getHRSGHeatRateData - found {} heat rate records", resultList.size());
             
             vm.setCode(200);
             vm.setMessage("Success");
             vm.setData(resultList);
             
         } catch (Exception e) {
-            logger.error("[JMDHeatRate] getGTHeatRateData error: {}", e.getMessage(), e);
+            logger.error("[JMDHeatRate] getHRSGHeatRateData error: {}", e.getMessage(), e);
             vm.setCode(500);
-            vm.setMessage("Failed to fetch GT heat rate data: " + e.getMessage());
+            vm.setMessage("Failed to fetch HRSG heat rate data: " + e.getMessage());
             vm.setData(null);
         }
         
         return vm;
     }
-
+    
     @Override
     public AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -865,7 +881,97 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         }
         return null;
     }
-    
+
+    @Override
+    public byte[] exportHRSGHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, 
+                                            List<UUID> plantIds, boolean isAfterSave, List<CppHrsgHeatRateDto> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM aopMessageVM = getHRSGHeatRateData(assetId, year, startDate, endDate, plantIds);
+                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+                    dtoList = (List<CppHrsgHeatRateDto>) aopMessageVM.getData();
+                }
+            }
+            if (dtoList == null) {
+                dtoList = new java.util.ArrayList<>();
+            }
+            try (Workbook workbook = new XSSFWorkbook(); 
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                 
+                Sheet sheet = workbook.createSheet("Heat Rate");
+                 CellStyle headerStyle = createHeaderStyle(workbook);
+                CellStyle dataStyle = createDataStyle(workbook);
+                CellStyle remarksStyle = createRemarksStyle(workbook);
+                List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
+                    "Equipment Type", "CPP Utility", "GT Load", "OEM HR", 
+                    "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)", 
+                    "Final HR", "Free Steam Factor", "Remark", "Selected Heat Rate", "Id"
+                ));
+
+                if (isAfterSave) {
+                    headerList.add("Status");
+                    headerList.add("Error Description");
+                }
+
+                int rowNum = 0;
+                Row headerRow = sheet.createRow(rowNum++);
+                for (int i = 0; i < headerList.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headerList.get(i));
+                    cell.setCellStyle(headerStyle);
+                }
+                sheet.setColumnHidden(9, true);
+                sheet.setColumnHidden(10, true);
+                for (CppHrsgHeatRateDto dto : dtoList) {
+                    Row row = sheet.createRow(rowNum++);
+                    int colNum = 0;
+
+                    row.createCell(colNum++).setCellValue(dto.getEquipType() != null ? dto.getEquipType() : "");
+                    row.createCell(colNum++).setCellValue(dto.getCppUtility() != null ? dto.getCppUtility() : "");
+                    row.createCell(colNum++).setCellValue(dto.getHrsgLoad() != null ? dto.getHrsgLoad() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getOemHeatRate() != null ? dto.getOemHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getPrevYearFinalHeatRate() != null ? dto.getPrevYearFinalHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getProposedYearFinalHeatRate() != null ? dto.getProposedYearFinalHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getFinalHeatRate() != null ? dto.getFinalHeatRate() : 0.0);
+                    
+                    Cell remarkCell = row.createCell(colNum++);
+                    remarkCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+                    remarkCell.setCellStyle(remarksStyle);
+
+                    row.createCell(colNum++).setCellValue(dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate() : "");
+                    row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
+
+                    if (isAfterSave) {
+                        row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                        row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+                    }
+
+                    for (int c = 0; c < colNum; c++) {
+                        if (c != 8) { 
+                            row.getCell(c).setCellStyle(dataStyle);
+                        }
+                    }
+                }
+
+                
+                for (int i = 0; i < headerList.size(); i++) {
+                    if (i == 8) {
+                        sheet.setColumnWidth(i, 8000); 
+                        continue;
+                    }
+                    sheet.autoSizeColumn(i);
+                    applyHeaderMinWidth(sheet, i, headerList.get(i));
+                }
+
+                workbook.write(outputStream);
+                return outputStream.toByteArray();
+            }
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] exportGTHeatRateExcelData error: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
     private PowerGenerationAssetDto convertToDto(PowerGenerationAsset entity) {
         PowerGenerationAssetDto dto = new PowerGenerationAssetDto();
 

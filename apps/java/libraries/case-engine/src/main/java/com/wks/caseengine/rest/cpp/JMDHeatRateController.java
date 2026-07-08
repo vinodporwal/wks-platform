@@ -114,7 +114,38 @@ public class JMDHeatRateController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
+    @GetMapping(value = "/jmd/hrsg-heat-rate-export")
+    public ResponseEntity<byte[]> exportHRSGHeatRate(
+            @RequestParam("assetId") UUID assetId,
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds,
+            @RequestParam(value = "isAfterSave", defaultValue = "false") boolean isAfterSave,
+            @RequestBody(required = false) List<CppHrsgHeatRateDto> dtoList) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportHRSGHeatRateExcelData(
+                    assetId, year, startDate, endDate, plantIds, isAfterSave, dtoList
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            
+            String filename = isAfterSave ? "HRSG_Heat_Rate_Import_Status.xlsx" : "GT_Heat_Rate_Data.xlsx";
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PostMapping(value = "/jmd/gt-heat-rate/import", consumes = "multipart/form-data")
     public AOPMessageVM importGTHeatRateData(
             @RequestParam("year") String year,

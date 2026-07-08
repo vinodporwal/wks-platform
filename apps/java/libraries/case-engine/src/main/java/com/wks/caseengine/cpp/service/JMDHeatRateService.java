@@ -38,6 +38,8 @@ public interface JMDHeatRateService {
     
     byte[] exportGTHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppGtHeatRateDto> dtoList);
     
+    byte[] exportHRSGHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppHrsgHeatRateDto> dtoList);
+    
     AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
 
     // ========================================
