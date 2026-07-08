@@ -45,7 +45,9 @@ public interface JMDHeatRateService {
     AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
     
     AOPMessageVM importHRSGHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
-
+    
+    AOPMessageVM importSTGHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
+    
     // ========================================
     // GT HEAT RATE
     // ========================================

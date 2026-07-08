@@ -20,4 +20,5 @@ public class STGHeatRateDTO {
     private Double proposedHeatRate;
     private String saveStatus;
     private String errDescription;
+    private String financialYear;
 }

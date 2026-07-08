@@ -236,6 +236,18 @@ public class JMDHeatRateController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    
+    @PostMapping(value = "/jmd/stg-heat-rate/import", consumes = "multipart/form-data")
+    public AOPMessageVM importSTGHeatRateData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "assetId", required = false) UUID assetId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        
+        return jmdHeatRateService.importSTGHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
+    }
 
     /**
      * [HRSG] GET Asset Dropdown — OLDER overload (takes only plantIds, no assetType)
