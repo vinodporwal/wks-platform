@@ -43,7 +43,7 @@ const App = () => {
           userInfo = await res.json()
           console.log('SSO userinfo fetched from backend:', userInfo)
         } else {
-          console.warn('SSO userinfo fetch failed, status:', res.status)
+          console.warn('SSO userinfo fetch failed, status:', res.status, '— user will have no roles')
         }
       } catch (e) {
         console.warn('SSO userinfo fetch error:', e)

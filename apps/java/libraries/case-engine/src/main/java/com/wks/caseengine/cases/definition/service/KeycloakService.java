@@ -1,20 +1,24 @@
-
-// kept for the future application. currently not used. 23 Nov 2025
-
 package com.wks.caseengine.cases.definition.service;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Calls the Keycloak Admin REST API directly via HTTP — same as the verified shell script.
+ * Uses keycloak.url (e.g. http://localhost:8082/cm) and admin credentials.
+ */
 @Component
 @Slf4j
 public class KeycloakService {
@@ -31,101 +35,108 @@ public class KeycloakService {
     @Value("${keycloak.password}")
     private String keycloakPassword;
 
-    private Keycloak getKeycloakInstance() {
-        return KeycloakBuilder.builder()
-            .serverUrl(keycloakUrl)
-            .realm("master")
-            .grantType(OAuth2Constants.PASSWORD)
-            .username(keycloakUsername)
-            .password(keycloakPassword)
-            .clientId("admin-cli")
-            .build();
+    private final RestTemplate rest = new RestTemplate();
+
+    // Step 1: get admin token from master realm (mirrors the script's Step 1)
+    private String getAdminToken() {
+        String url = keycloakUrl + "/realms/master/protocol/openid-connect/token";
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "password");
+        body.add("client_id", "admin-cli");
+        body.add("username", keycloakUsername);
+        body.add("password", keycloakPassword);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        ResponseEntity<Map<String, Object>> response = rest.exchange(
+            url, HttpMethod.POST,
+            new HttpEntity<>(body, headers),
+            new ParameterizedTypeReference<>() {}
+        );
+
+        Map<String, Object> tokenData = response.getBody();
+        if (tokenData == null || !tokenData.containsKey("access_token")) {
+            throw new RuntimeException("Failed to obtain admin token from Keycloak");
+        }
+        return (String) tokenData.get("access_token");
+    }
+
+    private HttpHeaders bearerHeaders(String token) {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(token);
+        return h;
     }
 
     /**
-     * Look up a Keycloak user by their external IDP user ID (the "sub" from the external token).
-     * Returns null if not found so callers can fall back gracefully.
+     * Look up a Keycloak user by their external IDP user ID.
+     * Mirrors: GET /admin/realms/{realm}/users?idpAlias={alias}&idpUserId={id}
      */
-    public UserRepresentation getUserByFederatedId(String externalUserId, String idpAlias) {
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getUserByFederatedId(String externalUserId, String idpAlias) {
         try {
-            Keycloak keycloak = getKeycloakInstance();
+            String token = getAdminToken();
+            String url = UriComponentsBuilder
+                .fromHttpUrl(keycloakUrl + "/admin/realms/" + keycloakRealm + "/users")
+                .queryParam("idpAlias", idpAlias)
+                .queryParam("idpUserId", externalUserId)
+                .toUriString();
 
-            // Try Keycloak's dedicated federated identity search endpoint first
-            // GET /admin/realms/{realm}/users?idpAlias={alias}&idpUserId={id}
-            try {
-                List<UserRepresentation> results = keycloak.realm(keycloakRealm).users()
-                    .searchByAttributes("idp_alias:" + idpAlias + " idp_userid:" + externalUserId);
-                log.info("getUserByFederatedId searchByAttributes returned {} results for idpAlias={} externalUserId={}", 
-                    results == null ? 0 : results.size(), idpAlias, externalUserId);
-                if (results != null && !results.isEmpty()) return results.get(0);
-            } catch (Exception e) {
-                log.warn("searchByAttributes not supported, falling back to scan: {}", e.getMessage());
-            }
+            log.info("getUserByFederatedId url={}", url);
 
-            // Scan all users and check federated identity links
-            List<UserRepresentation> allUsers = keycloak.realm(keycloakRealm).users().list(0, 500);
-            log.info("getUserByFederatedId scanning {} users for externalUserId={}", allUsers.size(), externalUserId);
-            for (UserRepresentation u : allUsers) {
-                var fedIds = keycloak.realm(keycloakRealm).users().get(u.getId()).getFederatedIdentity();
-                for (var fi : fedIds) {
-                    log.info("  user={} idpAlias={} federatedUserId={} federatedUsername={}", 
-                        u.getUsername(), fi.getIdentityProvider(), fi.getUserId(), fi.getUserName());
-                    if (externalUserId.equals(fi.getUserId())) {
-                        log.info("  -> MATCH found: keycloak user={}", u.getUsername());
-                        return u;
-                    }
-                }
+            ResponseEntity<List<Map<String, Object>>> response = rest.exchange(
+                url, HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(token)),
+                new ParameterizedTypeReference<>() {}
+            );
+
+            List<Map<String, Object>> users = response.getBody();
+            if (users != null && !users.isEmpty()) {
+                log.info("getUserByFederatedId found user: {}", users.get(0).get("username"));
+                return users.get(0);
             }
-            log.warn("getUserByFederatedId: no user found for externalUserId={}", externalUserId);
+            log.warn("getUserByFederatedId: no user found for externalUserId={} idpAlias={}", externalUserId, idpAlias);
             return null;
         } catch (Exception e) {
-            log.warn("getUserByFederatedId failed for externalId={}, idpAlias={}: {}", externalUserId, idpAlias, e.getMessage());
+            log.warn("getUserByFederatedId failed: {}", e.getMessage());
             return null;
         }
     }
 
     /**
-     * Look up a Keycloak user by their Keycloak UUID, username, or email.
+     * Returns the wks-portal client role names for a given Keycloak user UUID.
+     * Mirrors: GET /admin/realms/{realm}/users/{id}/role-mappings
      */
-    public UserRepresentation getUserById(String userId) {
+    @SuppressWarnings("unchecked")
+    public List<String> getClientRolesForUser(String keycloakUserId, String clientId) {
         try {
-            Keycloak keycloak = getKeycloakInstance();
-            try {
-                UserRepresentation user = keycloak.realm(keycloakRealm).users().get(userId).toRepresentation();
-                if (user != null) return user;
-            } catch (Exception e) {
-                // Not a Keycloak UUID — fall through
-            }
-            List<UserRepresentation> byUsername = keycloak.realm(keycloakRealm).users().search(userId, true);
-            if (byUsername != null && !byUsername.isEmpty()) return byUsername.get(0);
+            String token = getAdminToken();
+            String url = keycloakUrl + "/admin/realms/" + keycloakRealm + "/users/" + keycloakUserId + "/role-mappings";
 
-            List<UserRepresentation> byEmail = keycloak.realm(keycloakRealm).users().searchByEmail(userId, true);
-            if (byEmail != null && !byEmail.isEmpty()) return byEmail.get(0);
+            ResponseEntity<Map<String, Object>> response = rest.exchange(
+                url, HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(token)),
+                new ParameterizedTypeReference<>() {}
+            );
 
-            throw new RuntimeException("User not found in Keycloak for identifier: " + userId);
+            Map<String, Object> body = response.getBody();
+            if (body == null) return Collections.emptyList();
+
+            Map<String, Object> clientMappings = (Map<String, Object>) body.get("clientMappings");
+            if (clientMappings == null || !clientMappings.containsKey(clientId)) return Collections.emptyList();
+
+            Map<String, Object> clientEntry = (Map<String, Object>) clientMappings.get(clientId);
+            List<Map<String, Object>> mappings = (List<Map<String, Object>>) clientEntry.get("mappings");
+            if (mappings == null) return Collections.emptyList();
+
+            return mappings.stream()
+                .map(m -> (String) m.get("name"))
+                .filter(n -> n != null)
+                .toList();
         } catch (Exception e) {
-            throw new RuntimeException("KeycloakService: Failed to get user by id: " + userId, e);
-        }
-    }
-
-    /**
-     * Returns the effective client roles for a user under the given clientId (e.g. "wks-portal").
-     */
-    public List<String> getClientRolesForUser(String userId, String clientId) {
-        try {
-            Keycloak keycloak = getKeycloakInstance();
-            String clientInternalId = keycloak.realm(keycloakRealm).clients()
-                .findByClientId(clientId).stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Client not found: " + clientId))
-                .getId();
-            List<RoleRepresentation> roles = keycloak.realm(keycloakRealm)
-                .users().get(userId)
-                .roles().clientLevel(clientInternalId).listEffective();
-            return roles.stream().map(RoleRepresentation::getName).collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get client roles for user: " + userId, e);
+            log.warn("getClientRolesForUser failed for userId={}: {}", keycloakUserId, e.getMessage());
+            return Collections.emptyList();
         }
     }
 }
-

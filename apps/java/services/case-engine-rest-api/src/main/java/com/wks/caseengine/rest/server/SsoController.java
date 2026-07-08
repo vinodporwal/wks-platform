@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import com.wks.caseengine.cases.definition.service.KeycloakService;
 import com.wks.api.security.SsoSessionStore;
-import org.keycloak.representations.idm.UserRepresentation;
 
 @RestController
 @RequestMapping("/sso")
@@ -108,36 +107,36 @@ public class SsoController {
         }
 
         String userId = sessionData.get("userId");
-        String idpAlias = sessionData.getOrDefault("idpAlias", "Oidc");
+        String idpAlias = sessionData.getOrDefault("idpAlias", "oidc");
         try {
-            UserRepresentation user = keycloakService.getUserByFederatedId(userId, idpAlias);
+            Map<String, Object> user = keycloakService.getUserByFederatedId(userId, idpAlias);
             if (user == null) {
-                // last resort: try direct UUID / username lookup
-                user = keycloakService.getUserById(userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found in Keycloak for sub: " + userId);
             }
+
+            String keycloakId = (String) user.get("id");
+            String firstName = (String) user.getOrDefault("firstName", "");
+            String lastName = (String) user.getOrDefault("lastName", "");
+
             Map<String, Object> info = new java.util.HashMap<>();
-            info.put("sub", user.getId());
-            info.put("name", (user.getFirstName() != null ? user.getFirstName() : "") + " " +
-                             (user.getLastName() != null ? user.getLastName() : ""));
-            info.put("given_name", user.getFirstName());
-            info.put("family_name", user.getLastName());
-            info.put("email", user.getEmail());
-            info.put("preferred_username", user.getUsername());
+            info.put("sub", keycloakId);
+            info.put("name", (firstName + " " + lastName).trim());
+            info.put("given_name", firstName);
+            info.put("family_name", lastName);
+            info.put("email", user.getOrDefault("email", ""));
+            info.put("preferred_username", user.getOrDefault("username", ""));
 
-            // Include wks-portal client roles so the frontend can build the menu correctly
-            try {
-                java.util.List<String> clientRoles = keycloakService.getClientRolesForUser(user.getId(), "wks-portal");
-                info.put("wks_portal_roles", clientRoles);
-            } catch (Exception re) {
-                log.warn("Could not fetch wks-portal roles for user {}: {}", userId, re.getMessage());
-                info.put("wks_portal_roles", java.util.Collections.emptyList());
-            }
+            // wks-portal client roles
+            java.util.List<String> clientRoles = keycloakService.getClientRolesForUser(keycloakId, "wks-portal");
+            info.put("wks_portal_roles", clientRoles);
 
+            log.info("SSO userinfo success for sub={} keycloakId={} roles={}", userId, keycloakId, clientRoles);
             return ResponseEntity.ok(info);
         } catch (Exception e) {
-            log.warn("SSO userinfo lookup failed for userId {}: {} — {}", userId, e.getMessage(),
-                     e.getCause() != null ? e.getCause().getMessage() : "no cause");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch user info: " + e.getMessage());
+            log.warn("SSO userinfo lookup failed for userId {}: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to fetch user info: " + e.getMessage());
         }
     }
 
