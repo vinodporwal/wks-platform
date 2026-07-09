@@ -41,7 +41,7 @@ async function saveCatChemChemGradeData(keycloak, plantId, aopYear, payload) {
 }
 
 async function exportCatChemChemGradeExcel(keycloak, plantId, aopYear, fileName) {
-  const url = `${Config.CaseEngineUrl}/task/chem-grade-data-export?plantId=${plantId}&aopYear=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/chem-grade-export?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/octet-stream',
     Authorization: `Bearer ${keycloak.token}`,
@@ -64,7 +64,7 @@ async function exportCatChemChemGradeExcel(keycloak, plantId, aopYear, fileName)
 }
 
 async function importCatChemChemGradeExcel(file, keycloak, plantId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/chem-grade-data-import?plantId=${plantId}&aopYear=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/chem-grade-import?plantId=${plantId}&aopYear=${aopYear}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {

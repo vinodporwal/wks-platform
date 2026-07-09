@@ -45,8 +45,9 @@ async function exportCatChemFinalCalculatedExcel(keycloak, plantId, aopYear, fil
     return await Promise.reject(e)
   }
 }
-async function handleCatChemFinalCalculatedData(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/calculate-cat-chem-final-calculated-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+
+async function handleCatChemFinalCalculatedData(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-final-calculated-cat-chem?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

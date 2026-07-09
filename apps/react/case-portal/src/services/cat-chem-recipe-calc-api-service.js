@@ -6,6 +6,7 @@ export const CatChemRecipeCalcApiService = {
   saveCatChemCalcData,
   exportCatChemCalcExcel,
   importCatChemCalcExcel,
+  calculateMakeupBatchRecipeCalc,
 }
 
 async function getCatChemCalcData(keycloak, plantId, aopYear) {
@@ -72,6 +73,22 @@ async function importCatChemCalcExcel(file, keycloak, plantId, aopYear) {
   }
   try {
     const resp = await fetch(url, { method: 'POST', headers, body: formData })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function calculateMakeupBatchRecipeCalc(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-makeup-batch-recipe-calc?plantId=${plantId}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

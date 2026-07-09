@@ -6,8 +6,9 @@ import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { CatChemRecipeChemGradeApiService } from 'services/cat-chem-recipe-chem-grade-api-service'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 
-const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
+const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions, onSaveOrImport, refreshTrigger }) => {
      const [modifiedCells, setModifiedCells] = React.useState({})
      const [refreshSignal, setRefreshSignal] = useState(0)
      const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -19,6 +20,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
           year,
           isReleased,
           yearChanged,
+          screenTitle,
      } = dataGridStore
 
      const PLANT_ID = plantObject?.id
@@ -26,6 +28,8 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
      const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
      const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
      const AOP_YEAR = year?.selectedYear
+     const SCREEN_NAME = screenTitle?.title
+     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Catchem Grade`
      const IS_OLD_YEAR = oldYear?.oldYear
      const IS_RELEASED = isReleased
      const isOldYear = false
@@ -44,6 +48,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
      const [currentRowId, setCurrentRowId] = useState(null)
      const keycloak = useSession()
      const [rows, setRows] = useState()
+     const valueFormat = ValueFormatterConsumption()
      const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
      const handleRemarkCellClick = (row) => {
@@ -67,8 +72,8 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                field: 'particulars',
                title: 'Particulars',
                editable: false,
-               widthT: 250,
-               minWidth: 200,
+               minWidth: 350,
+               locked: true,
           },
           {
                field: 'l1K67',
@@ -77,6 +82,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                type: 'number',
                widthT: 120,
                minWidth: 100,
+               format: valueFormat,
           },
           {
                field: 'l2K67',
@@ -85,6 +91,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                type: 'number',
                widthT: 120,
                minWidth: 100,
+               format: valueFormat,
           },
           {
                field: 'l2K67F',
@@ -93,6 +100,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                type: 'number',
                widthT: 120,
                minWidth: 100,
+               format: valueFormat,
           },
           {
                field: 'l2K57',
@@ -101,6 +109,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                type: 'number',
                widthT: 120,
                minWidth: 100,
+               format: valueFormat,
           },
           {
                field: 'l1K67Id',
@@ -160,7 +169,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
           } finally {
                setLoading(false)
           }
-     }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR])
+     }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, refreshTrigger])
 
      const saveChanges = React.useCallback(async () => {
           try {
@@ -203,8 +212,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                          severity: 'success',
                     })
                     setModifiedCells({})
-                    fetchData()
-                    setRefreshSignal((prev) => prev + 1)
+                    if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)
                     setSnackbarData({
@@ -221,11 +229,11 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
           } finally {
                setLoading(false)
           }
-     }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal])
+     }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal, onSaveOrImport])
 
      useEffect(() => {
           fetchData()
-     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, refreshTrigger])
 
      const downloadExcelForConfiguration = async () => {
           try {
@@ -235,7 +243,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                     keycloak,
                     PLANT_ID,
                     AOP_YEAR,
-                    `CatChem_ChemGrade_${PLANT_NAME_NO_CASE}`,
+                    `${EXCEL_EXPORT_TITLE}`,
                )
                setSnackbarData({ message: 'Excel Export Successful!', severity: 'success' })
                setSnackbarOpen(true)
@@ -259,6 +267,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                     setSnackbarData({ message: 'Data Uploaded Successfully!', severity: 'success' })
                     setModifiedCells({})
                     fetchData()
+                    if (onSaveOrImport) onSaveOrImport()
                } else if (response?.code === 400 && response?.data) {
                     const byteCharacters = atob(response.data)
                     const byteNumbers = new Array(byteCharacters.length)
@@ -280,6 +289,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                     setSnackbarOpen(true)
                     setSnackbarData({ message: 'Partial data saved. Error file downloaded.', severity: 'warning' })
                     fetchData()
+                    if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)
                     setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
@@ -319,9 +329,11 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                customHeight: permissions?.customHeight,
                allAction: true,
                downloadExcelBtn: true,
+               downloadExcelBtnFromUI: false,
+               ExcelName: `${EXCEL_EXPORT_TITLE}`,
                showNoteWhileDeleting: false,
                showTitleNameBusiness: true,
-               titleName: 'Catchem Chem Grade',
+               titleName: 'Catchem Grade',
                uploadExcelBtn: true,
           },
           isOldYear,

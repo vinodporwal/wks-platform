@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -10,9 +10,12 @@ import { validateFields } from 'utils/validationUtils'
 import Notification from 'components/Utilities/Notification'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import CatChemReceipe from './CatChemReceipe'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 
-const CatalystChecmicalsCalculationConstants = () => {
+
+const CatalystChecmicalsCalculationConstants = ({ onSaveOrImport }) => {
   const [loading, setLoading] = useState(false)
+  const valueFormat = ValueFormatterConsumption()
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -44,8 +47,6 @@ const CatalystChecmicalsCalculationConstants = () => {
     rowsBeforeChange: {},
   })
 
-  const IS_PVC_DMD =
-    VERTICAL_NAME_NO_CASE === 'PVC' && SITE_NAME_NO_CASE === 'DMD'
 
   // Grid 1: Constant Columns
   const colDefsConstants = [
@@ -53,8 +54,8 @@ const CatalystChecmicalsCalculationConstants = () => {
       field: 'DisplayName',
       title: 'Particulars',
       editable: false,
-      minWidth: 250,
-      hidden: false,
+      minWidth: 350,
+      locked: true,
     },
     {
       field: 'UOM',
@@ -68,6 +69,7 @@ const CatalystChecmicalsCalculationConstants = () => {
       editable: true,
       type: 'number',
       minWidth: 120,
+      format: valueFormat,
     },
     {
       field: 'remarks',
@@ -160,6 +162,7 @@ const CatalystChecmicalsCalculationConstants = () => {
         })
         setModifiedConstantCells({})
         setLoading(false)
+        if (onSaveOrImport) onSaveOrImport()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -239,6 +242,7 @@ const CatalystChecmicalsCalculationConstants = () => {
         setModifiedConstantCells({})
         setLoading(false)
         fetchConstantsData()
+        if (onSaveOrImport) onSaveOrImport()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
@@ -263,6 +267,7 @@ const CatalystChecmicalsCalculationConstants = () => {
           severity: 'warning',
         })
         fetchConstantsData()
+        if (onSaveOrImport) onSaveOrImport()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

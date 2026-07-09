@@ -18,7 +18,7 @@ import { ProductionSchedulingApiService } from 'services/production-scheduling-a
 import { CatChemRecipeApiService } from 'services/cat-chem-recipe-api-service'
 
 
-const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
+const CatalystChecmicalsCalculationRecipe = ({ permissions, onSaveOrImport, refreshTrigger }) => {
      const [modifiedCells, setModifiedCells] = React.useState({})
      const [refreshSignal, setRefreshSignal] = useState(0)
      const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -50,7 +50,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
      const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
      const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Catchem Receipe`
 
      const lowerVertName = vertName?.toLowerCase()
      const lowerSiteName = SITE_NAME?.toLowerCase()
@@ -99,8 +99,8 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                field: 'recipe',
                title: 'Recipe',
                editable: false,
-               widthT: 220,
-               minWidth: 160,
+               minWidth: 350,
+               locked: true,
           },
           {
                field: 'sodBiCarb',
@@ -109,6 +109,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'polystat',
@@ -117,6 +118,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'evicas',
@@ -125,6 +127,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'pva88',
@@ -133,6 +136,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'pva55',
@@ -141,6 +145,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'b72',
@@ -149,6 +154,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'l9p',
@@ -157,6 +163,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'versene',
@@ -165,6 +172,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'nonylPhe',
@@ -173,6 +181,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'irgastab',
@@ -181,6 +190,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'atsc',
@@ -189,6 +199,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'antiswelling',
@@ -197,6 +208,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'antifoam',
@@ -205,6 +217,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'k57Catalyst',
@@ -213,6 +226,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'k67Catalyst',
@@ -221,6 +235,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'sodiBiCarbId',
@@ -405,7 +420,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
           } finally {
                setLoading(false)
           }
-     }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR])
+     }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, refreshTrigger])
 
      const saveChanges = React.useCallback(async () => {
           try {
@@ -471,8 +486,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                          severity: 'success',
                     })
                     setModifiedCells({})
-                    fetchData()
-                    setRefreshSignal((prev) => prev + 1)
+                    if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)
                     setSnackbarData({
@@ -489,11 +503,11 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
           } finally {
                setLoading(false)
           }
-     }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal])
+     }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal, onSaveOrImport])
 
      useEffect(() => {
           fetchData()
-     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, refreshTrigger])
 
      const downloadExcelForConfiguration = async () => {
           try {
@@ -527,6 +541,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                     setSnackbarData({ message: 'Data Uploaded Successfully!', severity: 'success' })
                     setModifiedCells({})
                     fetchData()
+                    if (onSaveOrImport) onSaveOrImport()
                } else if (response?.code === 400 && response?.data) {
                     const byteCharacters = atob(response.data)
                     const byteNumbers = new Array(byteCharacters.length)
@@ -548,6 +563,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                     setSnackbarOpen(true)
                     setSnackbarData({ message: 'Partial data saved. Error file downloaded.', severity: 'warning' })
                     fetchData()
+                    if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)
                     setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
@@ -587,6 +603,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                customHeight: permissions?.customHeight,
                allAction: true,
                downloadExcelBtn: true,
+               ExcelName: `${EXCEL_EXPORT_TITLE}`,
                showNoteWhileDeleting: false,
                showTitleNameBusiness: true,
                titleName: 'Catchem Receipe',
