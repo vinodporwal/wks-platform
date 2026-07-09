@@ -296,10 +296,10 @@ const hrsgApi = createHeatRateApi('HRSG', {
   hasSeparateDropdown: true,
 })
 
-// AUXBOILER - follows HRSG pattern
+// AUXBOILER - has its own dedicated endpoints
 const auxBoilerApi = createHeatRateApi('AUXBOILER', {
   dropdownEndpoint: 'steam-heat-rate/drop-down',
-  dataEndpoint: 'hrsg-heat-rate',
+  dataEndpoint: 'auxboiler-heat-rate',
   paramName: 'year',
   hasSeparateDropdown: true,
 })

@@ -98,7 +98,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       radioValue: 'OEM',
     },
     {
-      field: 'previousYearHeatRate',
+      field: 'prevYearFinalHeatRate',
       title: 'PREVIOUS YEAR BUDGET HR',
       widthT: 230,
       type: 'numberWithRadio',
@@ -111,7 +111,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       radioValue: 'PREVIOUS_YEAR',
     },
     {
-      field: 'proposedHeatRate',
+      field: 'proposedYearFinalHeatRate',
       title: 'PROPOSED HR',
       subtitle: '(Based On Actual Data)',
       widthT: 200,
@@ -251,8 +251,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
           // Validate if selectedHeatRate matches the actual finalHeatRate value
           const fieldMapping = {
             OEM: 'oemHeatRate',
-            PREVIOUS_YEAR: 'previousYearHeatRate',
-            PROPOSED: 'proposedHeatRate',
+            PREVIOUS_YEAR: 'prevYearFinalHeatRate',
+            PROPOSED: 'proposedYearFinalHeatRate',
           }
 
           const selectedField = fieldMapping[selectedHeatRate]
@@ -516,8 +516,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       // Map radioValue to field name
       const fieldMapping = {
         OEM: 'oemHeatRate',
-        PREVIOUS_YEAR: 'previousYearHeatRate',
-        PROPOSED: 'proposedHeatRate',
+        PREVIOUS_YEAR: 'prevYearFinalHeatRate',
+        PROPOSED: 'proposedYearFinalHeatRate',
       }
 
       const selectedField = fieldMapping[value]
@@ -565,8 +565,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     // When a source column is edited, update finalHeatRate ONLY if that source is currently selected
     const sourceFieldMapping = {
       oemHeatRate: 'OEM',
-      previousYearHeatRate: 'PREVIOUS_YEAR',
-      proposedHeatRate: 'PROPOSED',
+      prevYearFinalHeatRate: 'PREVIOUS_YEAR',
+      proposedYearFinalHeatRate: 'PROPOSED',
     }
 
     if (sourceFieldMapping[field]) {
@@ -648,13 +648,13 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         },
         {
           radioValue: 'PREVIOUS_YEAR',
-          field: 'previousYearHeatRate',
-          value: dataItem.previousYearHeatRate,
+          field: 'prevYearFinalHeatRate',
+          value: dataItem.prevYearFinalHeatRate,
         },
         {
           radioValue: 'PROPOSED',
-          field: 'proposedHeatRate',
-          value: dataItem.proposedHeatRate,
+          field: 'proposedYearFinalHeatRate',
+          value: dataItem.proposedYearFinalHeatRate,
         },
       ]
 
