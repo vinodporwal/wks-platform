@@ -375,7 +375,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
         businessKey: null,
         owner: {
           // id: keycloak.subject || '',
-          id: keycloak.idTokenParsed.sub ,
+          id: keycloak.idTokenParsed.sub,
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
           phone: keycloak.idTokenParsed.phone || '',
@@ -407,7 +407,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
 		  caseNo: businessKey,
 			caseNumber: businessKey,
             owner: {
-              id: keycloak.subject || '',
+              id: keycloak.idTokenParsed.sub || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
@@ -544,7 +544,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
       caseNo: null,
         businessKey: null,
         owner: {
-          id: keycloak.subject || '',
+          id: keycloak.idTokenParsed.sub || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
@@ -582,7 +582,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
 	 		caseNo: businessKey,
 			caseNumber: businessKey,	
             owner: {
-              id: keycloak.subject || '',
+              id: keycloak.idTokenParsed.sub|| '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',

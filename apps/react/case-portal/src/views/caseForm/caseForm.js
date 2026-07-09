@@ -597,7 +597,7 @@ console.log('*****  taskId:  ', taskId);
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.businessKey,
         owner: {
-          id: keycloak.subject || '',
+          id: keycloak.idTokenParsed.sub || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
@@ -625,7 +625,7 @@ console.log('*****  taskId:  ', taskId);
 			caseNo: businessKey,
       	caseNumber: businessKey,	
             owner: {
-              id: keycloak.subject || '',
+              id: keycloak.idTokenParsed.sub || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
@@ -692,7 +692,7 @@ console.log('*****  taskId:  ', taskId);
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.businessKey,
         owner: {
-          id: keycloak.subject || '',
+          id: keycloak.idTokenParsed.sub || '',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
           phone: keycloak.idTokenParsed.phone || '1234567890',
@@ -716,7 +716,7 @@ console.log('*****  taskId:  ', taskId);
             eventIds: eventIds,
             businessKey: businessKey,
             owner: {
-              id: keycloak.subject || '',
+              id: keycloak.idTokenParsed.sub || '',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
               phone: keycloak.idTokenParsed.phone || '',
@@ -865,7 +865,7 @@ console.log('*****  taskId:  ', taskId);
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.businessKey,
         owner: {
-          id: keycloak.subject || '',
+          id: keycloak.idTokenParsed.sub  || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
@@ -895,7 +895,7 @@ console.log('*****  taskId:  ', taskId);
 			caseNo: businessKey,
       	caseNumber: businessKey,	
             owner: {
-              id: keycloak.subject || '',
+              id: keycloak.idTokenParsed.sub  || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
