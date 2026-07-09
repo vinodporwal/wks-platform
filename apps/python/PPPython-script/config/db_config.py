@@ -25,7 +25,7 @@ def get_available_driver():
 
 DB_CONFIG = {
     "server": os.environ.get("DB_SERVER", "216.48.180.83"),
-    "database": os.environ.get("DB_DATABASE", "RIL.AOP"),
+    "database": os.environ.get("DB_DATABASE", "RIL.AOP_BACKUP"),
     "username": os.environ.get("DB_USERNAME", "sa"),
     "password": os.environ.get("DB_PASSWORD", "#Qwer123"),
     "driver": get_available_driver(),
