@@ -1,6 +1,7 @@
 package com.wks.caseengine.rest.server;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,6 +169,19 @@ public class NormalOperationNormsController {
 			@RequestParam("file") MultipartFile file
 	        ) {
 			return	normalOperationNormsService.importChemicalExcel(year,UUID.fromString(plantId), file); 
+	}
+
+	@GetMapping(value = "/catalyst-chemicals-calculation-data")
+	public AOPMessageVM getCatChemCalculationData(@RequestParam String plantId, @RequestParam String year) {
+		return normalOperationNormsService.getCatChemCalculationData(plantId, year);
+	}
+
+	@PostMapping(value = "/save-catalyst-chemicals-calculation-data")
+	public AOPMessageVM saveCatChemCalculationData(
+			@RequestParam String plantId,
+			@RequestParam String year,
+			@RequestBody List<Map<String, Object>> payload) {
+		return normalOperationNormsService.saveCatChemCalculationData(plantId, year, payload);
 	}
 	
 }

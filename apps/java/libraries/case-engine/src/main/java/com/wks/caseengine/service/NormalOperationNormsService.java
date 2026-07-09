@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -25,5 +26,7 @@ public interface NormalOperationNormsService {
     public AOPMessageVM importChemicalExcel(String year, UUID fromString, MultipartFile file);
     public AOPMessageVM getNormalOperationNormsGrades(String year,String plantId);
 	// public int getCalculatedNormalOpsNorms( String year, String plantId);
+	public AOPMessageVM getCatChemCalculationData(String plantId, String year);
+	public AOPMessageVM saveCatChemCalculationData(String plantId, String year, List<Map<String, Object>> payload);
 
 }
