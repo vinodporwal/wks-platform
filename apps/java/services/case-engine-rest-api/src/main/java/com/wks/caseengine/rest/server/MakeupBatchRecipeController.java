@@ -117,4 +117,14 @@ public class MakeupBatchRecipeController {
             @RequestParam("file") MultipartFile file) {
         return makeupBatchRecipeService.importChemGradeExcel(plantId, aopYear, file);
     }
+
+    @GetMapping("/calculate-makeup-batch-recipe-calc")
+    public AOPMessageVM calculateMakeupBatchRecipeCalc(@RequestParam String plantId, @RequestParam String aopYear) {
+        return makeupBatchRecipeService.calculateMakeupBatchRecipeCalc(UUID.fromString(plantId), aopYear);
+    }
+
+    @GetMapping("/calculate-final-calculated-cat-chem")
+    public AOPMessageVM calculateFinalCalculatedCatChem(@RequestParam String plantId, @RequestParam String aopYear) {
+        return makeupBatchRecipeService.calculateFinalCalculatedCatChem(UUID.fromString(plantId), aopYear);
+    }
 }

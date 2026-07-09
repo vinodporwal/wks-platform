@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,4 +33,8 @@ public interface MakeupBatchRecipeService {
     byte[] createChemGradeExcel(String plantId, String aopYear, boolean isAfterSave, List<ChemGradeDTO> dtoList);
 
     AOPMessageVM importChemGradeExcel(String plantId, String aopYear, MultipartFile file);
+
+    AOPMessageVM calculateMakeupBatchRecipeCalc(UUID plantId, String aopYear);
+
+    AOPMessageVM calculateFinalCalculatedCatChem(UUID plantId, String aopYear);
 }

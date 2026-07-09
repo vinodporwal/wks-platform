@@ -35,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.hibernate.Session;
 import org.hibernate.jdbc.ReturningWork;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.ChemGradeDTO;
@@ -85,6 +86,9 @@ public class MakeupBatchRecipeServiceImpl implements MakeupBatchRecipeService {
 
     @Autowired
     private ScreenMappingRepository screenMappingRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
 
     @Override
@@ -571,8 +575,12 @@ public class MakeupBatchRecipeServiceImpl implements MakeupBatchRecipeService {
                 dtoList.add(dto);
             }
 
+            List<AopCalculation> aopCalculation = aopCalculationRepository
+            .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "catchem-recipe-calc");
+  
             java.util.Map<String, Object> map = new java.util.HashMap<>();
             map.put("Data", dtoList);
+            map.put("aopCalculation", aopCalculation);
 
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
@@ -1703,5 +1711,83 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
             throw new RuntimeException("Failed to import Chem Grade data", ex);
         }
     }
+
+    @Override
+    public AOPMessageVM calculateMakeupBatchRecipeCalc(UUID plantId, String aopYear) {
+        
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalsRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_CalculateMakeupBatchRecipeCalc";
+
+        Integer result = executeCalculationSP(String.valueOf(plantId), aopYear, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
+				"catchem-recipe-calc");
+                
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("catchem-recipe-calc");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			AopCalculation aopCalculation = new AopCalculation();
+			aopCalculation.setAopYear(aopYear);
+			aopCalculation.setIsChanged(true);
+			aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+			aopCalculation.setPlantId(plantId);
+			aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+			aopCalculationRepository.save(aopCalculation);
+		}
+		return aopMessageVM;
+    }
+
+
+    @Override
+    public AOPMessageVM calculateFinalCalculatedCatChem(UUID plantId, String aopYear) {
+        
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalsRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_CalculateFinalCalculatedCatChem";
+
+        Integer result = executeCalculationSP(String.valueOf(plantId), aopYear, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
+				"catchem-final-calculation");
+                
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("catchem-final-calculation");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			AopCalculation aopCalculation = new AopCalculation();
+			aopCalculation.setAopYear(aopYear);
+			aopCalculation.setIsChanged(true);
+			aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+			aopCalculation.setPlantId(plantId);
+			aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+			aopCalculationRepository.save(aopCalculation);
+		}
+		return aopMessageVM;
+    }
+
+
+    
+	public Integer executeCalculationSP( String plantId, String aopYear, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
+		}
+	}
 
 }
