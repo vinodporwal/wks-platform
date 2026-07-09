@@ -19,7 +19,7 @@ public interface CppGtHeatRateRepository extends JpaRepository<CppGtHeatRate, UU
 
     List<CppGtHeatRate> findByAssetFkIdInAndFinancialYear(List<UUID> assetFkIds, String financialYear);
     
-    @Query(value = "SELECT * FROM CPP_GTHeatRate WHERE Asset_FK_Id = :assetFkId AND FinancialYear = :financialYear", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPP_GTHeatRate WHERE Asset_FK_Id = :assetFkId AND FinancialYear = :financialYear order by GTLoad", nativeQuery = true)
     List<CppGtHeatRate> findByAssetFkIdAndFinancialYearNative(
         @Param("assetFkId") UUID assetFkId, 
         @Param("financialYear") String financialYear

@@ -14,7 +14,7 @@ import java.util.UUID;
 @Repository
 public interface CppAuxBoilerHeatRateRepository extends JpaRepository<CppAuxBoilerHeatRate, UUID> {
 
-	@Query(value = "SELECT * FROM CPP_AUXBoilerHeatRate WHERE Asset_FK_Id = :assetFkId AND FinancialYear = :financialYear", nativeQuery = true)
+	@Query(value = "SELECT * FROM CPP_AUXBoilerHeatRate WHERE Asset_FK_Id = :assetFkId AND FinancialYear = :financialYear order by AUXBoilerLoad", nativeQuery = true)
     List<CppAuxBoilerHeatRate> findByAssetFkIdAndFinancialYearNative(
         @Param("assetFkId") UUID assetFkId, 
         @Param("financialYear") String financialYear

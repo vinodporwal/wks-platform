@@ -22,7 +22,7 @@ public interface CppHrsgHeatRateRepository extends JpaRepository<CppHrsgHeatRate
 
     List<CppHrsgHeatRate> findByAssetFkIdInAndFinancialYear(List<UUID> assetFkIds, String financialYear);
     
-    @Query(value = "SELECT * FROM CPP_HRSGHeatRate WHERE Asset_FK_Id = :assetFkId AND FinancialYear = :financialYear", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPP_HRSGHeatRate WHERE Asset_FK_Id = :assetFkId AND FinancialYear = :financialYear order by HRSGLoad", nativeQuery = true)
     List<CppHrsgHeatRate> findByAssetFkIdAndFinancialYearNative(
         @Param("assetFkId") UUID assetFkId, 
         @Param("financialYear") String financialYear
