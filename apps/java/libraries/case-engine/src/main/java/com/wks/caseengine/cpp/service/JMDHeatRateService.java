@@ -25,6 +25,8 @@ public interface JMDHeatRateService {
     
     AOPMessageVM getHRSGHeatRateData(UUID assetId, String year,  String startDate,  String endDate,   List<UUID> plantIds);
     
+    AOPMessageVM getAuxboilerHeatRateData(UUID assetId, String year,  String startDate,  String endDate,   List<UUID> plantIds);
+    
     AOPMessageVM getHRSGAssetDropdown(List<UUID> plantIds);
     
     public AOPMessageVM saveGTHeatRateData(

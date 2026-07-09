@@ -326,7 +326,17 @@ public class JMDHeatRateController {
     // AUXBOILER HEAT RATE APIs
     // ============================================================
 
-  
+    @GetMapping("/jmd/auxboiler-heat-rate")
+    public ResponseEntity<AOPMessageVM> getAuxboilerHeatRateData(
+            @RequestParam UUID assetId,
+            @RequestParam String year,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam List<UUID> plantIds) {
+        logger.info("[JMDHeatRateController] GET /jmd/hrsg-heat-rate - assetId: {}, year: {}", assetId, year);
+        AOPMessageVM response = jmdHeatRateService.getAuxboilerHeatRateData(assetId, year, startDate, endDate, plantIds);
+        return ResponseEntity.ok(response);
+    }
 
 
 }

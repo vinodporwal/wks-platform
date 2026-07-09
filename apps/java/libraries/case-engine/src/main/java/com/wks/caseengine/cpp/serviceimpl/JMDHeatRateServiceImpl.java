@@ -1,5 +1,6 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
+import com.wks.caseengine.cpp.dto.heatrate.CppAuxBoilerHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppSteamGenerationAssetDto;
@@ -12,6 +13,7 @@ import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateProjection;
 import com.wks.caseengine.cpp.dto.heatrate.SelectedHeatRateType;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
+import com.wks.caseengine.cpp.entity.CppAuxBoilerHeatRate;
 import com.wks.caseengine.cpp.entity.CppGtHeatRate;
 import com.wks.caseengine.cpp.entity.CppHrsgHeatRate;
 import com.wks.caseengine.cpp.entity.CppSteamGenerationAsset;
@@ -19,6 +21,7 @@ import com.wks.caseengine.cpp.entity.CppStgHeatRate;
 import com.wks.caseengine.cpp.entity.HRSGHeatRateLookup;
 import com.wks.caseengine.cpp.entity.PowerGenerationAsset;
 import com.wks.caseengine.cpp.entity.STGExtractionLookup;
+import com.wks.caseengine.cpp.repository.CppAuxBoilerHeatRateRepository;
 import com.wks.caseengine.cpp.repository.CppGtHeatRateRepository;
 import com.wks.caseengine.cpp.repository.CppHrsgHeatRateRepository;
 import com.wks.caseengine.cpp.repository.CppSteamGenerationAssetRepository;
@@ -85,9 +88,6 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     private  PowerGenerationAssetRepository assetRepository;
     
     @Autowired
-    private  SteamGenerationAssetRepository steamGenerationAssetRepository;
-    
-    @Autowired
     private  CppSteamGenerationAssetRepository cppSteamGenerationAssetRepository;
     
     @Autowired
@@ -98,6 +98,9 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     
     @Autowired
     private CppStgHeatRateRepository cppStgHeatRateRepository;
+    
+    @Autowired
+    private CppAuxBoilerHeatRateRepository cppAuxBoilerHeatRateRepository;
     
     
     
@@ -285,6 +288,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         return vm;
     }
     
+    
     @Override
     public AOPMessageVM getHRSGHeatRateData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds) {
         logger.info("[JMDHeatRate] getHRSGHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, plantIds: {}", 
@@ -403,7 +407,126 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         
         return vm;
     }
-    
+
+    @Override
+    public AOPMessageVM getAuxboilerHeatRateData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds) {
+        logger.info("[JMDHeatRate] getAuxBoilerHeatRateData - assetId: {}, year: {}, startDate: {}, endDate: {}, plantIds: {}", 
+                assetId, year, startDate, endDate, plantIds);
+        
+        AOPMessageVM vm = new AOPMessageVM();
+        
+        try {
+            String prevYear = null;
+            if (year != null && year.contains("-")) {
+                String[] parts = year.split("-");
+                int startYear = Integer.parseInt(parts[0]);
+                int endYear = Integer.parseInt(parts[1]);
+                prevYear = (startYear - 1) + "-" + (endYear - 1);
+            }
+
+            List<CppAuxBoilerHeatRate> entities = cppAuxBoilerHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, year);
+            if (entities == null) {
+                entities = new java.util.ArrayList<>();
+            }
+            
+            List<CppAuxBoilerHeatRate> prevEntities = new java.util.ArrayList<>();
+            if (prevYear != null) {
+                prevEntities = cppAuxBoilerHeatRateRepository.findByAssetFkIdAndFinancialYearNative(assetId, prevYear);
+                if (prevEntities == null) prevEntities = new java.util.ArrayList<>();
+            }
+          
+            java.util.Map<Double, Double> prevYearHeatRateMap = new java.util.HashMap<>();
+            for (CppAuxBoilerHeatRate prevEntity : prevEntities) {
+                if (prevEntity != null && prevEntity.getAuxBoilerLoad() != null) {
+                    prevYearHeatRateMap.put(prevEntity.getAuxBoilerLoad(), prevEntity.getFinalHeatRate());
+                }
+            }
+
+            java.util.Map<Double, Double> proposedHeatRateMap = new java.util.HashMap<>();
+            
+            String plantIdsStr = "";
+            if (plantIds != null && !plantIds.isEmpty()) {
+                plantIdsStr = plantIds.stream()
+                        .map(UUID::toString)
+                        .collect(java.util.stream.Collectors.joining(","));
+            }
+            
+            // ISOLATED TRY-CATCH GUARD: Prevents custom Stored Procedure business rule violations from breaking execution flow
+            try {
+                List<Object[]> spResultList = cppAuxBoilerHeatRateRepository.executeCalculateCommonAUXBoilerHeatRateSP(
+                        startDate, endDate, assetId, plantIdsStr
+                );
+
+                if (spResultList != null) {
+                    for (Object[] row : spResultList) {
+                        if (row != null && row.length > 3) {
+                            Double loadVal = row[1] != null ? Double.valueOf(row[1].toString()) : null;
+                            Double proposedHeatRate = row[3] != null ? Double.valueOf(row[3].toString()) : null;
+                            
+                            if (loadVal != null && proposedHeatRate != null) {
+                                proposedHeatRateMap.put(loadVal, proposedHeatRate);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception dbEx) {
+                // Catches 'InvalidDataAccessResourceUsageException' or any custom DB error like 'Asset not found for selected plants.'
+                logger.warn("[JMDHeatRate] HRSG Stored procedure execution bypassed/failed for AssetId: [{}] and Plant IDs: [{}]. Exception Message: {}. Proceeding with default values.",
+                        assetId, plantIdsStr, dbEx.getMessage());
+            }
+            
+            List<CppAuxBoilerHeatRateDto> resultList = new java.util.ArrayList<>();
+            for (CppAuxBoilerHeatRate entity : entities) {
+                if (entity == null) continue;
+                
+                CppAuxBoilerHeatRateDto dto = new CppAuxBoilerHeatRateDto();
+
+                dto.setId(entity.getId() != null ? entity.getId().toString() : null);
+                dto.setAssetFkId(entity.getAssetFkId() != null ? entity.getAssetFkId().toString() : null);
+                dto.setEquipType(entity.getAssetName() != null ? entity.getAssetName() : null);
+                dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
+                dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
+                dto.setAuxBoilerLoad(entity.getAuxBoilerLoad() != null ? entity.getAuxBoilerLoad() : null);
+                dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
+                
+                dto.setCreatedDate(entity.getCreatedDate());
+                dto.setUpdatedDate(entity.getUpdatedDate());
+                
+                dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
+                dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
+                dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
+                
+                if (entity.getAuxBoilerLoad() != null && prevYearHeatRateMap.containsKey(entity.getAuxBoilerLoad())) {
+                    dto.setPrevYearFinalHeatRate(prevYearHeatRateMap.get(entity.getAuxBoilerLoad()));
+                } else {
+                    dto.setPrevYearFinalHeatRate(0.0); 
+                }
+
+                if (entity.getAuxBoilerLoad() != null && proposedHeatRateMap.containsKey(entity.getAuxBoilerLoad())) {
+                    dto.setProposedYearFinalHeatRate(proposedHeatRateMap.get(entity.getAuxBoilerLoad()));
+                } else {
+                    dto.setProposedYearFinalHeatRate(0.0);
+                }
+
+                resultList.add(dto);
+            }
+
+            logger.info("[JMDHeatRate] getAuxBoilerHeatRateData - found {} heat rate records", resultList.size());
+            
+            vm.setCode(200);
+            vm.setMessage("Success");
+            vm.setData(resultList);
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] getAuxBoilerHeatRateData error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Failed to fetch HRSG heat rate data: " + e.getMessage());
+            vm.setData(null);
+        }
+        
+        return vm;
+    }
+
     @Override
     public AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
