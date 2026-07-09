@@ -1182,10 +1182,123 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             vm.setMessage("Failed to update GT heat rate data: " + e.getMessage());
             vm.setData(null);
         }
-        
         return vm;
     }
 
+    @Override
+    public AOPMessageVM updateAuxboilerHeatRate(List<CppAuxBoilerHeatRateDto> dtoList, String year) {
+        logger.info("[JMDHeatRate] saveAuxboilerHeatRateData - processing {} records for year: {}", 
+                dtoList != null ? dtoList.size() : 0, year);
+        
+        AOPMessageVM vm = new AOPMessageVM();
+        
+        try {
+            if (dtoList == null || dtoList.isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("Request body cannot be empty");
+                return vm;
+            }
+
+            List<CppAuxBoilerHeatRateDto> failedList = new java.util.ArrayList<>();
+            List<CppAuxBoilerHeatRate> entitiesToSave = new java.util.ArrayList<>();
+
+            for (CppAuxBoilerHeatRateDto dto : dtoList) {
+                if (dto == null) continue;
+                if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+                    failedList.add(dto);
+                    continue;
+                }
+                CppAuxBoilerHeatRate entity = null;
+                if (dto.getId() != null && !dto.getId().trim().isEmpty()) {
+                    try {
+                        entity = cppAuxBoilerHeatRateRepository.findById(UUID.fromString(dto.getId())).orElse(null);
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[JMDHeatRate] Invalid UUID format provided: {}", dto.getId());
+                    }
+                }
+                
+                if (entity == null) {
+                    logger.warn("[JMDHeatRate] Record with ID {} not found. Skipping update.", dto.getId());
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription("Record ID not found in database");
+                    failedList.add(dto);
+                    continue; 
+                }
+
+                
+                boolean isValueChanged = false;
+
+                if (isDoubleChanged(entity.getAuxBoilerLoad(), dto.getAuxBoilerLoad())) isValueChanged = true;
+                if (isDoubleChanged(entity.getOemHeatRate(), dto.getOemHeatRate())) isValueChanged = true;
+                if (isDoubleChanged(entity.getFinalHeatRate(), dto.getFinalHeatRate())) isValueChanged = true;
+               
+                
+                String existingSelectedHR = entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate().trim() : "";
+                String incomingSelectedHR = dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate().trim() : "";
+                if (!existingSelectedHR.equalsIgnoreCase(incomingSelectedHR)) {
+                    isValueChanged = true;
+                }
+
+                
+                String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+                if (isValueChanged) {
+                    if (incomingRemarks.isEmpty()) {
+                        
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Remarks are mandatory when data values are updated");
+                        failedList.add(dto);
+                        continue;
+                    }
+                    
+                    String existingRemarks = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+                    if (incomingRemarks.equalsIgnoreCase(existingRemarks)) {
+                        
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Remarks must be updated because data values changed");
+                        failedList.add(dto);
+                        continue;
+                    }
+                }
+
+                
+                entity.setAuxBoilerLoad(dto.getAuxBoilerLoad());
+                entity.setOemHeatRate(dto.getOemHeatRate());
+                entity.setFinalHeatRate(dto.getFinalHeatRate());
+               
+                entity.setSelectedHeatRate(dto.getSelectedHeatRate());
+                entity.setRemarks(dto.getRemarks()); 
+                
+                entitiesToSave.add(entity);
+            }
+         
+            
+            if (!entitiesToSave.isEmpty()) {
+                List<CppAuxBoilerHeatRate> savedEntities = cppAuxBoilerHeatRateRepository.saveAll(entitiesToSave);
+                logger.info("[JMDHeatRate] saveAuxBoilerHeatRateData - successfully updated {} records", savedEntities.size());
+                
+                if (!failedList.isEmpty()) {
+                    vm.setCode(400);
+                    vm.setMessage("Partial data saved with validation exceptions");
+                } else {
+                    vm.setCode(200);
+                    vm.setMessage("Data updated successfully");
+                }
+                vm.setData(failedList);
+            } else {
+                vm.setCode(400);
+                vm.setMessage("No valid records met conditions to update");
+                vm.setData(failedList);
+            }
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] saveGTHeatRateData error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Failed to update AuxBoiler heat rate data: " + e.getMessage());
+            vm.setData(null);
+        }
+        return vm;
+    }
     
     private boolean isDoubleChanged(Double dbValue, Double incomingValue) {
         double dbPrimitive = (dbValue == null) ? 0.0 : dbValue;

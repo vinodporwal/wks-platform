@@ -1,5 +1,6 @@
 package com.wks.caseengine.rest.cpp;
 
+import com.wks.caseengine.cpp.dto.heatrate.CppAuxBoilerHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
@@ -337,6 +338,14 @@ public class JMDHeatRateController {
         AOPMessageVM response = jmdHeatRateService.getAuxboilerHeatRateData(assetId, year, startDate, endDate, plantIds);
         return ResponseEntity.ok(response);
     }
-
+    
+    @PostMapping("/jmd/auxboiler-heat-rate/{aopYear}")
+    public ResponseEntity<AOPMessageVM> updateAuxboilerHeatRate(
+            @RequestBody List<CppAuxBoilerHeatRateDto> dtoList,
+            @PathVariable String aopYear) {
+        logger.info("[JMDAuxboilerRateController] POST /jmd/hrsg-heat-rate/{} - {} records", aopYear, dtoList.size());
+        AOPMessageVM response = jmdHeatRateService.updateAuxboilerHeatRate(dtoList, aopYear);
+        return ResponseEntity.ok(response);
+    }
 
 }
