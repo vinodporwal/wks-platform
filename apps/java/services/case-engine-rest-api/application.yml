@@ -50,8 +50,10 @@ opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
 keycloak.url: ${KEYCLOAK_URL:http://localhost:8082/cm}
 keycloak.realm: ${KEYCLOAK_REALM:localhost}
 keycloak.client-id: ${KEYCLOAK_CLIENT_ID:wks-portal}
-keycloak.username: ${KEYCLOAK_USERNAME:admin}
-keycloak.password: ${KEYCLOAK_PASSWORD:admin}
+keycloak.username: ${KEYCLOAK_ADMIN:admin}
+keycloak.password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+keycloak.admin-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8082/cm}
+keycloak.idp-alias: ${KEYCLOAK_IDP_ALIAS:oidc}
 ge.authentication.datasource: ${GE_AUTHENTICATION_DATASOURCE}
 ge.authentication.id: ${GE_AUTHENTICATION_ID}
 ge.authentication.password: ${GE_AUTHENTICATION_PASSWORD}
