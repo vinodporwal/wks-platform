@@ -80,13 +80,14 @@ public class KeycloakService {
     public Map<String, Object> getUserByFederatedId(String externalUserId) {
         try {
             String token = getAdminToken();
+            log.info("************************************************ Token first 30 chars : {}", token.substring(0,30));
             String url = UriComponentsBuilder
                 .fromHttpUrl(keycloakUrl + "/admin/realms/" + keycloakRealm + "/users")
                 .queryParam("idpAlias", idpAlias)
-                .queryParam("idpUserId", externalUserId)
+                .queryParam("idpUserId", externalUserId.trim())
                 .toUriString();
 
-            log.info("getUserByFederatedId GET {}", url);
+            log.info("************************************************ getUserByFederatedId GET {}", url);
 
             ResponseEntity<List<Map<String, Object>>> response = rest.exchange(
                 url, HttpMethod.GET,
@@ -94,7 +95,7 @@ public class KeycloakService {
                 new ParameterizedTypeReference<>() {}
             );
 
-            log.info("getUserByFederatedId status={} body={}", response.getStatusCode(), response.getBody());
+            log.info("************************************************ getUserByFederatedId status={} body={}", response.getStatusCode(), response.getBody());
 
             List<Map<String, Object>> users = response.getBody();
             if (users != null && !users.isEmpty()) {
@@ -104,6 +105,7 @@ public class KeycloakService {
             log.warn("getUserByFederatedId: empty result for externalUserId={} idpAlias={}", externalUserId, idpAlias);
             return null;
         } catch (Exception e) {
+            e.printStackTrace();
             log.warn("getUserByFederatedId failed for externalUserId={}: {}", externalUserId, e.getMessage());
             return null;
         }
@@ -140,6 +142,7 @@ public class KeycloakService {
                 .filter(n -> n != null)
                 .toList();
         } catch (Exception e) {
+            e.printStackTrace();
             log.warn("getClientRolesForUser failed for userId={}: {}", keycloakUserId, e.getMessage());
             return Collections.emptyList();
         }
