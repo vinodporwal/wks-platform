@@ -1,5 +1,7 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,13 +9,28 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.web.multipart.MultipartFile;
 
 import org.hibernate.Session;
 import org.hibernate.jdbc.ReturningWork;
@@ -1183,6 +1200,300 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
                 return "boolean";
             default:
                 return "string";
+        }
+    }
+
+    // ─── Makeup Batch Recipe Export ───────────────────────────────────────────────
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public byte[] createMakeupBatchRecipeExcel(String plantId, String aopYear, boolean isAfterSave,
+            List<MakeupBatchRecipeDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM result = getMakeupBatchRecipeData(plantId, aopYear);
+                Map<String, Object> dataMap = (Map<String, Object>) result.getData();
+                dtoList = (List<MakeupBatchRecipeDTO>) dataMap.get("Data");
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("MakeupBatchRecipe");
+            int currentRow = 0;
+
+            List<String> visibleHeaders = Arrays.asList(
+                    "Recipe", "SodBiCarb", "Polystat", "Evicas", "PVA88", "PVA-55",
+                    "B72", "L9P", "Versene", "Nonyl Phe", "IRGASTAB", "ATSC",
+                    "Antiswelling", "Antifoam", "K57 Catalyst", "K67 Catalyst");
+
+            List<String> hiddenHeaders = Arrays.asList(
+                    "sodiBiCarbId", "polystatId", "evicasId", "pva88Id", "pva55Id",
+                    "b72Id", "l9pId", "verseneId", "nonylPheId", "irgastabId",
+                    "atscId", "antiswellingId", "antifoamId", "k57CatalystId", "k67CatalystId",
+                    "isEditable");
+
+            if (isAfterSave) {
+                visibleHeaders = new ArrayList<>(visibleHeaders);
+                visibleHeaders.add("Status");
+                visibleHeaders.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            int colIdx = 0;
+            for (String header : visibleHeaders) {
+                Cell cell = headerRow.createCell(colIdx++);
+                cell.setCellValue(header);
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+            for (String header : hiddenHeaders) {
+                Cell cell = headerRow.createCell(colIdx++);
+                cell.setCellValue(header);
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            CellStyle readOnlyStyle = workbook.createCellStyle();
+            readOnlyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            readOnlyStyle.setBorderBottom(BorderStyle.THIN);
+            readOnlyStyle.setBorderTop(BorderStyle.THIN);
+            readOnlyStyle.setBorderLeft(BorderStyle.THIN);
+            readOnlyStyle.setBorderRight(BorderStyle.THIN);
+
+            for (MakeupBatchRecipeDTO dto : dtoList) {
+                Row row = sheet.createRow(currentRow++);
+                boolean editable = dto.getIsEditable() == null || dto.getIsEditable();
+                CellStyle dataStyle = editable ? Utility.createBorderedStyle(workbook) : readOnlyStyle;
+
+                colIdx = 0;
+                createCell(row, colIdx++, dto.getRecipe(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getSodBiCarb(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getPolystat(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getEvicas(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getPva88(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getPva55(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getB72(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getL9p(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getVersene(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getNonylPhe(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getIrgastab(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getAtsc(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getAntiswelling(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getAntifoam(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getK57Catalyst(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getK67Catalyst(), dataStyle);
+
+                if (isAfterSave) {
+                    createCell(row, colIdx++, dto.getSaveStatus(), Utility.createBorderedStyle(workbook));
+                    createCell(row, colIdx++, dto.getErrDescription(), Utility.createBorderedStyle(workbook));
+                }
+
+                createCell(row, colIdx++, dto.getSodiBiCarbId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getPolystatId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getEvicasId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getPva88Id(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getPva55Id(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getB72Id(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getL9pId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getVerseneId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getNonylPheId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getIrgastabId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getAtscId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getAntiswellingId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getAntifoamId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getK57CatalystId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getK67CatalystId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getIsEditable() != null ? dto.getIsEditable().toString() : "true",
+                        Utility.createBorderedStyle(workbook));
+            }
+
+            int totalVisibleCols = isAfterSave ? visibleHeaders.size() : 16;
+            for (int col = 0; col < totalVisibleCols; col++) {
+                sheet.autoSizeColumn(col);
+            }
+
+            int hiddenStartCol = isAfterSave ? visibleHeaders.size() : 16;
+            for (int col = hiddenStartCol; col < hiddenStartCol + hiddenHeaders.size(); col++) {
+                sheet.setColumnHidden(col, true);
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void createCell(Row row, int colIndex, String value, CellStyle style) {
+        Cell cell = row.createCell(colIndex);
+        cell.setCellValue(value != null ? value : "");
+        cell.setCellStyle(style);
+    }
+
+    private void createNumericCell(Row row, int colIndex, Double value, CellStyle style) {
+        Cell cell = row.createCell(colIndex);
+        if (value != null) {
+            cell.setCellValue(value);
+        } else {
+            cell.setCellValue("");
+        }
+        cell.setCellStyle(style);
+    }
+
+    // ─── Makeup Batch Recipe Import – Excel Reader ────────────────────────────────
+
+    public List<MakeupBatchRecipeDTO> readMakeupBatchRecipeExcel(InputStream inputStream) {
+        List<MakeupBatchRecipeDTO> resultList = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) {
+                rowIterator.next(); // skip header row
+            }
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+
+                // skip completely empty rows
+                boolean allEmpty = true;
+                for (int c = 0; c <= 15; c++) {
+                    Cell cell = row.getCell(c);
+                    if (cell != null && cell.getCellType() != CellType.BLANK) {
+                        String strVal = getCellStringValue(cell);
+                        if (!strVal.isBlank()) {
+                            allEmpty = false;
+                            break;
+                        }
+                    }
+                }
+                if (allEmpty) {
+                    continue;
+                }
+
+                MakeupBatchRecipeDTO dto = new MakeupBatchRecipeDTO();
+                try {
+                    dto.setRecipe(getCellStringValue(row.getCell(0)));
+                    dto.setSodBiCarb(getCellDoubleValue(row.getCell(1)));
+                    dto.setPolystat(getCellDoubleValue(row.getCell(2)));
+                    dto.setEvicas(getCellDoubleValue(row.getCell(3)));
+                    dto.setPva88(getCellDoubleValue(row.getCell(4)));
+                    dto.setPva55(getCellDoubleValue(row.getCell(5)));
+                    dto.setB72(getCellDoubleValue(row.getCell(6)));
+                    dto.setL9p(getCellDoubleValue(row.getCell(7)));
+                    dto.setVersene(getCellDoubleValue(row.getCell(8)));
+                    dto.setNonylPhe(getCellDoubleValue(row.getCell(9)));
+                    dto.setIrgastab(getCellDoubleValue(row.getCell(10)));
+                    dto.setAtsc(getCellDoubleValue(row.getCell(11)));
+                    dto.setAntiswelling(getCellDoubleValue(row.getCell(12)));
+                    dto.setAntifoam(getCellDoubleValue(row.getCell(13)));
+                    dto.setK57Catalyst(getCellDoubleValue(row.getCell(14)));
+                    dto.setK67Catalyst(getCellDoubleValue(row.getCell(15)));
+
+                    // hidden ID columns start at 16
+                    dto.setSodiBiCarbId(getCellStringValue(row.getCell(16)));
+                    dto.setPolystatId(getCellStringValue(row.getCell(17)));
+                    dto.setEvicasId(getCellStringValue(row.getCell(18)));
+                    dto.setPva88Id(getCellStringValue(row.getCell(19)));
+                    dto.setPva55Id(getCellStringValue(row.getCell(20)));
+                    dto.setB72Id(getCellStringValue(row.getCell(21)));
+                    dto.setL9pId(getCellStringValue(row.getCell(22)));
+                    dto.setVerseneId(getCellStringValue(row.getCell(23)));
+                    dto.setNonylPheId(getCellStringValue(row.getCell(24)));
+                    dto.setIrgastabId(getCellStringValue(row.getCell(25)));
+                    dto.setAtscId(getCellStringValue(row.getCell(26)));
+                    dto.setAntiswellingId(getCellStringValue(row.getCell(27)));
+                    dto.setAntifoamId(getCellStringValue(row.getCell(28)));
+                    dto.setK57CatalystId(getCellStringValue(row.getCell(29)));
+                    dto.setK67CatalystId(getCellStringValue(row.getCell(30)));
+
+                    String isEditableStr = getCellStringValue(row.getCell(31));
+                    dto.setIsEditable(isEditableStr.isBlank() || Boolean.parseBoolean(isEditableStr));
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+                }
+
+                resultList.add(dto);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Makeup Batch Recipe Excel", e);
+        }
+        return resultList;
+    }
+
+    private String getCellStringValue(Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue() != null ? cell.getStringCellValue().trim() : "";
+    }
+
+    private Double getCellDoubleValue(Cell cell) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) return null;
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return cell.getNumericCellValue();
+        }
+        cell.setCellType(CellType.STRING);
+        String str = cell.getStringCellValue().trim();
+        if (str.isBlank()) return null;
+        try {
+            return Double.parseDouble(str);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // ─── Makeup Batch Recipe Import – API ─────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM importMakeupBatchRecipeExcel(String plantId, String aopYear, MultipartFile file) {
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+            throw new IllegalArgumentException("Invalid or empty Excel file.");
+        }
+        try {
+            List<MakeupBatchRecipeDTO> data = readMakeupBatchRecipeExcel(file.getInputStream());
+
+            List<MakeupBatchRecipeDTO> failedRecords = new ArrayList<>();
+
+            for (MakeupBatchRecipeDTO dto : data) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+                try {
+                    saveMakeupBatchRecipeData(plantId, aopYear, java.util.Collections.singletonList(dto));
+                } catch (IllegalArgumentException e) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");
+                    failedRecords.add(dto);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to import Makeup Batch Recipe data", e);
+                }
+            }
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedRecords.isEmpty()) {
+                byte[] fileByteArray = createMakeupBatchRecipeExcel(plantId, aopYear, true, failedRecords);
+                String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid argument: " + e.getMessage());
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to import Makeup Batch Recipe data", ex);
         }
     }
 

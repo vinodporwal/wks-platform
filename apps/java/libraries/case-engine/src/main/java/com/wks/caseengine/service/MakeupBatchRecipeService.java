@@ -2,6 +2,8 @@ package com.wks.caseengine.service;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.wks.caseengine.dto.ChemGradeDTO;
 import com.wks.caseengine.dto.MakeupBatchRecipeCalcDTO;
 import com.wks.caseengine.dto.MakeupBatchRecipeDTO;
@@ -22,4 +24,8 @@ public interface MakeupBatchRecipeService {
     AOPMessageVM saveChemGradeData(String plantId, String aopYear, List<ChemGradeDTO> dtoList);
 
     AOPMessageVM getFinalCalculatedCatChem(String plantId, String aopYear);
+
+    byte[] createMakeupBatchRecipeExcel(String plantId, String aopYear, boolean isAfterSave, List<MakeupBatchRecipeDTO> dtoList);
+
+    AOPMessageVM importMakeupBatchRecipeExcel(String plantId, String aopYear, MultipartFile file);
 }

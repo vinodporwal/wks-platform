@@ -45,4 +45,7 @@ public class MakeupBatchRecipeDTO {
     private String k57CatalystId;
     private String k67CatalystId;
     private Boolean isEditable;
+
+    private String saveStatus;
+    private String errDescription;
 }
