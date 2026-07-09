@@ -963,61 +963,89 @@ public class MakeupBatchRecipeServiceImpl implements MakeupBatchRecipeService {
 				if(chemGradeDTO.getL1K67Id()!=null && !chemGradeDTO.getL1K67Id().isBlank() && chemGradeDTO.getL1K67()!=null) {
 					UUID L1K67Id =UUID.fromString(chemGradeDTO.getL1K67Id());
 					Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(L1K67Id,4,aopYear);
-
-                    if(!normAttributeTransactions.isPresent()) { 
-                      throw new IllegalArgumentException("L1K67Id not found");
-                    }
-					
+                    if(normAttributeTransactions.isPresent()) {
 						NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
 						normAttributeTransaction.setAttributeValue(chemGradeDTO.getL1K67().toString());
 						normAttributeTransaction.setModifiedOn(new Date());
 						normAttributeTransaction.setUserName(Utility.getUserName());
-						normAttributeTransactionsRepository.save(normAttributeTransaction);
+						normAttributeTransactionsRepository.save(normAttributeTransaction); 
+                    
+                    } else {
+                        NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
+                        normAttributeTransaction.setAopMonth(4);
+                        normAttributeTransaction.setAttributeValue(chemGradeDTO.getL1K67().toString());
+                        normAttributeTransaction.setAuditYear(aopYear);
+                        normAttributeTransaction.setCreatedOn(new Date());
+                        normAttributeTransaction.setNormParameterFKId(L1K67Id);
+                        normAttributeTransaction.setUserName(Utility.getUserName());
+                        normAttributeTransactionsRepository.save(normAttributeTransaction);
+                    }
+
+
 					
 				}
                 if(chemGradeDTO.getL2K67Id()!=null && !chemGradeDTO.getL2K67Id().isBlank() && chemGradeDTO.getL2K67()!=null) {
                     UUID L2K67Id =UUID.fromString(chemGradeDTO.getL2K67Id());
                     Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(L2K67Id,4,aopYear);
 
-                    if(!normAttributeTransactions.isPresent()) { 
-                        throw new IllegalArgumentException("L2K67Id not found");
-                      }
-                
+                    if(normAttributeTransactions.isPresent()) {
                         NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
                         normAttributeTransaction.setAttributeValue(chemGradeDTO.getL2K67().toString());
                         normAttributeTransaction.setModifiedOn(new Date());
                         normAttributeTransaction.setUserName(Utility.getUserName());
                         normAttributeTransactionsRepository.save(normAttributeTransaction);
-
-                        
+                    } else {
+                        NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
+                        normAttributeTransaction.setAopMonth(4);
+                        normAttributeTransaction.setAttributeValue(chemGradeDTO.getL2K67().toString());
+                        normAttributeTransaction.setAuditYear(aopYear);
+                        normAttributeTransaction.setCreatedOn(new Date());
+                        normAttributeTransaction.setNormParameterFKId(L2K67Id);
+                        normAttributeTransaction.setUserName(Utility.getUserName());
+                        normAttributeTransactionsRepository.save(normAttributeTransaction);
+                    }
                 }
                 if(chemGradeDTO.getL2K67FId()!=null && !chemGradeDTO.getL2K67FId().isBlank() && chemGradeDTO.getL2K67F()!=null) {
                     UUID L2K67FId =UUID.fromString(chemGradeDTO.getL2K67FId());
                     Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(L2K67FId,4,aopYear);
                     
-                    if(!normAttributeTransactions.isPresent()) { 
-                        throw new IllegalArgumentException("L2K67FId not found");
-                      }
+                    if(normAttributeTransactions.isPresent()) {
                         NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
                         normAttributeTransaction.setAttributeValue(chemGradeDTO.getL2K67F().toString());
                         normAttributeTransaction.setModifiedOn(new Date());
                         normAttributeTransaction.setUserName(Utility.getUserName());
                         normAttributeTransactionsRepository.save(normAttributeTransaction);
-                   
+                    } else {
+                        NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
+                        normAttributeTransaction.setAopMonth(4);
+                        normAttributeTransaction.setAttributeValue(chemGradeDTO.getL2K67F().toString());
+                        normAttributeTransaction.setAuditYear(aopYear);
+                        normAttributeTransaction.setCreatedOn(new Date());
+                        normAttributeTransaction.setNormParameterFKId(L2K67FId);
+                        normAttributeTransaction.setUserName(Utility.getUserName());
+                        normAttributeTransactionsRepository.save(normAttributeTransaction);
+                    }
                 }
                 if(chemGradeDTO.getL2K57Id()!=null && !chemGradeDTO.getL2K57Id().isBlank() && chemGradeDTO.getL2K57()!=null) {
                     UUID L2K57Id =UUID.fromString(chemGradeDTO.getL2K57Id());
                     Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(L2K57Id,4,aopYear);
                     
-                    if(!normAttributeTransactions.isPresent()) { 
-                        throw new IllegalArgumentException("L2K57Id not found");
-                      }
+                    if(normAttributeTransactions.isPresent()) {
                         NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
                         normAttributeTransaction.setAttributeValue(chemGradeDTO.getL2K57().toString());
                         normAttributeTransaction.setModifiedOn(new Date());
                         normAttributeTransaction.setUserName(Utility.getUserName());
                         normAttributeTransactionsRepository.save(normAttributeTransaction);
-                   
+                    } else {
+                        NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
+                        normAttributeTransaction.setAopMonth(4);
+                        normAttributeTransaction.setAttributeValue(chemGradeDTO.getL2K57().toString());
+                        normAttributeTransaction.setAuditYear(aopYear);
+                        normAttributeTransaction.setCreatedOn(new Date());
+                        normAttributeTransaction.setNormParameterFKId(L2K57Id);
+                        normAttributeTransaction.setUserName(Utility.getUserName());
+                        normAttributeTransactionsRepository.save(normAttributeTransaction);
+                    }
                 }
              
                    
