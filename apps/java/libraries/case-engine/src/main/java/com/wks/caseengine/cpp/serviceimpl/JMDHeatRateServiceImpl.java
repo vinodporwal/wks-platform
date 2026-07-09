@@ -1646,7 +1646,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 CellStyle dataStyle = createDataStyle(workbook);
                 CellStyle remarksStyle = createRemarksStyle(workbook);
                 List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
-                    "Equipment Type", "CPP Utility", "Auxboiler Load", "OEM HR", 
+                    "Equipment Type", "CPP Utility", "Aux Boiler Load", "OEM HR", 
                     "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)", 
                     "Final HR", "Remark", "Selected Heat Rate", "Id"
                 ));
