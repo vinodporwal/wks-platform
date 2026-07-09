@@ -28,4 +28,8 @@ public interface MakeupBatchRecipeService {
     byte[] createMakeupBatchRecipeExcel(String plantId, String aopYear, boolean isAfterSave, List<MakeupBatchRecipeDTO> dtoList);
 
     AOPMessageVM importMakeupBatchRecipeExcel(String plantId, String aopYear, MultipartFile file);
+
+    byte[] createChemGradeExcel(String plantId, String aopYear, boolean isAfterSave, List<ChemGradeDTO> dtoList);
+
+    AOPMessageVM importChemGradeExcel(String plantId, String aopYear, MultipartFile file);
 }

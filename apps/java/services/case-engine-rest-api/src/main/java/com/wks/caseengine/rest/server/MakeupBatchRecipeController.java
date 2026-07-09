@@ -90,4 +90,31 @@ public class MakeupBatchRecipeController {
             @RequestParam("file") MultipartFile file) {
         return makeupBatchRecipeService.importMakeupBatchRecipeExcel(plantId, aopYear, file);
     }
+
+    @GetMapping("/chem-grade-export")
+    public ResponseEntity<byte[]> exportChemGrade(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = makeupBatchRecipeService.createChemGradeExcel(plantId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("chem_grade.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/chem-grade-import", consumes = "multipart/form-data")
+    public AOPMessageVM importChemGrade(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return makeupBatchRecipeService.importChemGradeExcel(plantId, aopYear, file);
+    }
 }

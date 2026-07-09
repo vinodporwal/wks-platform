@@ -1495,6 +1495,213 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
         } catch (Exception ex) {
             throw new RuntimeException("Failed to import Makeup Batch Recipe data", ex);
         }
+ }
+
+    // ─── Chem Grade Export ────────────────────────────────────────────────────────
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public byte[] createChemGradeExcel(String plantId, String aopYear, boolean isAfterSave,
+            List<ChemGradeDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM result = getChemGradeData(plantId, aopYear);
+                Map<String, Object> dataMap = (Map<String, Object>) result.getData();
+                dtoList = (List<ChemGradeDTO>) dataMap.get("Data");
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("ChemGrade");
+            int currentRow = 0;
+
+            List<String> visibleHeaders = Arrays.asList(
+                    "Particulars", "L1_K67", "L2_K67", "L2_K67F", "L2_K57");
+
+            List<String> hiddenHeaders = Arrays.asList(
+                    "l1K67Id", "l2K67Id", "l2K67FId", "l2K57Id", "isEditable");
+
+            if (isAfterSave) {
+                visibleHeaders = new ArrayList<>(visibleHeaders);
+                visibleHeaders.add("Status");
+                visibleHeaders.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            int colIdx = 0;
+            for (String header : visibleHeaders) {
+                Cell cell = headerRow.createCell(colIdx++);
+                cell.setCellValue(header);
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+            for (String header : hiddenHeaders) {
+                Cell cell = headerRow.createCell(colIdx++);
+                cell.setCellValue(header);
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            CellStyle readOnlyStyle = workbook.createCellStyle();
+            readOnlyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            readOnlyStyle.setBorderBottom(BorderStyle.THIN);
+            readOnlyStyle.setBorderTop(BorderStyle.THIN);
+            readOnlyStyle.setBorderLeft(BorderStyle.THIN);
+            readOnlyStyle.setBorderRight(BorderStyle.THIN);
+
+            for (ChemGradeDTO dto : dtoList) {
+                Row row = sheet.createRow(currentRow++);
+                boolean editable = dto.getIsEditable() == null || dto.getIsEditable();
+                CellStyle dataStyle = editable ? Utility.createBorderedStyle(workbook) : readOnlyStyle;
+
+                colIdx = 0;
+                createCell(row, colIdx++, dto.getParticulars(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getL1K67(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getL2K67(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getL2K67F(), dataStyle);
+                createNumericCell(row, colIdx++, dto.getL2K57(), dataStyle);
+
+                if (isAfterSave) {
+                    createCell(row, colIdx++, dto.getSaveStatus(), Utility.createBorderedStyle(workbook));
+                    createCell(row, colIdx++, dto.getErrDescription(), Utility.createBorderedStyle(workbook));
+                }
+
+                createCell(row, colIdx++, dto.getL1K67Id(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getL2K67Id(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getL2K67FId(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getL2K57Id(), Utility.createBorderedStyle(workbook));
+                createCell(row, colIdx++, dto.getIsEditable() != null ? dto.getIsEditable().toString() : "true",
+                        Utility.createBorderedStyle(workbook));
+            }
+
+            int totalVisibleCols = isAfterSave ? visibleHeaders.size() : 5;
+            for (int col = 0; col < totalVisibleCols; col++) {
+                sheet.autoSizeColumn(col);
+            }
+
+            int hiddenStartCol = isAfterSave ? visibleHeaders.size() : 5;
+            for (int col = hiddenStartCol; col < hiddenStartCol + hiddenHeaders.size(); col++) {
+                sheet.setColumnHidden(col, true);
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
- }
+    // ─── Chem Grade Import – Excel Reader ─────────────────────────────────────────
+
+    public List<ChemGradeDTO> readChemGradeExcel(InputStream inputStream) {
+        List<ChemGradeDTO> resultList = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) {
+                rowIterator.next(); // skip header row
+            }
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+
+                boolean allEmpty = true;
+                for (int c = 0; c <= 4; c++) {
+                    Cell cell = row.getCell(c);
+                    if (cell != null && cell.getCellType() != CellType.BLANK) {
+                        String strVal = getCellStringValue(cell);
+                        if (!strVal.isBlank()) {
+                            allEmpty = false;
+                            break;
+                        }
+                    }
+                }
+                if (allEmpty) {
+                    continue;
+                }
+
+                ChemGradeDTO dto = new ChemGradeDTO();
+                try {
+                    dto.setParticulars(getCellStringValue(row.getCell(0)));
+                    dto.setL1K67(getCellDoubleValue(row.getCell(1)));
+                    dto.setL2K67(getCellDoubleValue(row.getCell(2)));
+                    dto.setL2K67F(getCellDoubleValue(row.getCell(3)));
+                    dto.setL2K57(getCellDoubleValue(row.getCell(4)));
+
+                    // hidden ID columns start at 5
+                    dto.setL1K67Id(getCellStringValue(row.getCell(5)));
+                    dto.setL2K67Id(getCellStringValue(row.getCell(6)));
+                    dto.setL2K67FId(getCellStringValue(row.getCell(7)));
+                    dto.setL2K57Id(getCellStringValue(row.getCell(8)));
+
+                    String isEditableStr = getCellStringValue(row.getCell(9));
+                    dto.setIsEditable(isEditableStr.isBlank() || Boolean.parseBoolean(isEditableStr));
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+                }
+
+                resultList.add(dto);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Chem Grade Excel", e);
+        }
+        return resultList;
+    }
+
+    // ─── Chem Grade Import – API ───────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM importChemGradeExcel(String plantId, String aopYear, MultipartFile file) {
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+            throw new IllegalArgumentException("Invalid or empty Excel file.");
+        }
+        try {
+            List<ChemGradeDTO> data = readChemGradeExcel(file.getInputStream());
+
+            List<ChemGradeDTO> failedRecords = new ArrayList<>();
+
+            for (ChemGradeDTO dto : data) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+                try {
+                    saveChemGradeData(plantId, aopYear, java.util.Collections.singletonList(dto));
+                } catch (IllegalArgumentException e) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");
+                    failedRecords.add(dto);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to import Chem Grade data", e);
+                }
+            }
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedRecords.isEmpty()) {
+                byte[] fileByteArray = createChemGradeExcel(plantId, aopYear, true, failedRecords);
+                String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid argument: " + e.getMessage());
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to import Chem Grade data", ex);
+        }
+    }
+
+}

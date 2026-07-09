@@ -22,4 +22,7 @@ public class ChemGradeDTO {
     private String l2K67FId;
     private String l2K57Id;
     private Boolean isEditable;
+
+    private String saveStatus;
+    private String errDescription;
 }
