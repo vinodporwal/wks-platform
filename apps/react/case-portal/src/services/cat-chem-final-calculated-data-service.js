@@ -7,7 +7,7 @@ export const CatChemFinalCalculatedDataService = {
 }
 
 async function getCatChemFinalCalculatedData(keycloak, plantId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/cat-chem-final-calculated-data?plantId=${plantId}&year=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/final-calculated-cat-chem?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -23,7 +23,7 @@ async function getCatChemFinalCalculatedData(keycloak, plantId, aopYear) {
 }
 
 async function exportCatChemFinalCalculatedExcel(keycloak, plantId, aopYear, fileName) {
-  const url = `${Config.CaseEngineUrl}/task/cat-chem-final-calculated-data-export?plantId=${plantId}&year=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/final-calculated-cat-chem-export?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/octet-stream',
     Authorization: `Bearer ${keycloak.token}`,
