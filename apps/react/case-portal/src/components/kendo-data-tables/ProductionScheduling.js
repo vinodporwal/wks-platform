@@ -387,6 +387,8 @@ const ProductionScheduling = ({ permissions }) => {
             customHeight: permissions?.customHeight,
             allAction: true,
             downloadExcelBtn: false,
+            downloadExcelBtnFromUI: true,
+            ExcelName: `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Production-Scheduling`,
             showNoteWhileDeleting: false,
             showTitleNameBusiness: true,
             uploadExcelBtn: false,
