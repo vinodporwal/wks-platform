@@ -99,128 +99,128 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                field: 'recipe',
                title: 'Recipe',
                editable: false,
-               widthT: 200,
-               minWidth: 150,
+               widthT: 220,
+               minWidth: 160,
           },
           {
                field: 'sodBiCarb',
                title: 'SodBiCarb',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'polystat',
                title: 'Polystat',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'evicas',
                title: 'Evicas',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'pva88',
                title: 'PVA88',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'pva55',
                title: 'PVA-55',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'b72',
                title: 'B72',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'l9p',
                title: 'L9P',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'versene',
                title: 'Versene',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'nonylPhe',
                title: 'Nonyl Phe',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'irgastab',
                title: 'IRGASTAB',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'atsc',
                title: 'ATSC',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'antiswelling',
                title: 'Antiswelling',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'antifoam',
                title: 'Antifoam',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'k57Catalyst',
                title: 'K57 Catalyst',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'k67Catalyst',
                title: 'K67 Catalyst',
                editable: true,
                type: 'number',
-               widthT: 110,
-               minWidth: 90,
+               widthT: 200,
+               minWidth: 150,
           },
           {
                field: 'sodiBiCarbId',
@@ -329,6 +329,54 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
           },
      ];
 
+     const totalRowConfiguration = useMemo(() => [
+          { field: 'sodBiCarb', aggregate: 'sum' },
+          { field: 'hcl', aggregate: 'sum' },
+          { field: 'sodiumSulphate', aggregate: 'sum' },
+          { field: 'causticLye', aggregate: 'sum' },
+          { field: 'polystat', aggregate: 'sum' },
+          { field: 'evicas', aggregate: 'sum' },
+          { field: 'pva88', aggregate: 'sum' },
+          { field: 'pva55', aggregate: 'sum' },
+          { field: 'b72', aggregate: 'sum' },
+          { field: 'l9p', aggregate: 'sum' },
+          { field: 'nonylPhe', aggregate: 'sum' },
+          { field: 'versene', aggregate: 'sum' },
+          { field: 'antiswelling', aggregate: 'sum' },
+          { field: 'atsc', aggregate: 'sum' },
+          { field: 'irgastab', aggregate: 'sum' },
+          { field: 'k67Catalyst', aggregate: 'sum' },
+          { field: 'k57Catalyst', aggregate: 'sum' },
+          { field: 'antifoam', aggregate: 'sum' },
+     ], [])
+
+     const rowsWithTotal = useMemo(() => {
+          if (!rows || rows.length === 0) return []
+
+          const totalRow = {
+               id: 'total_row',
+               recipe: 'Total',
+               isTotal: true,
+               isEditable: false,
+          }
+
+          totalRowConfiguration.forEach(({ field }) => {
+               const sum = rows.reduce((acc, row) => {
+                    const val = parseFloat(row[field])
+                    return acc + (isNaN(val) ? 0 : val)
+               }, 0)
+               totalRow[field] = Math.round(sum * 10000) / 10000
+          })
+
+          return [...rows, totalRow]
+     }, [rows, totalRowConfiguration])
+
+     const handleSetRows = useCallback((newRowsOrFunc) => {
+          setRows((prev) => {
+               const resolvedRows = typeof newRowsOrFunc === 'function' ? newRowsOrFunc(prev) : newRowsOrFunc
+               return resolvedRows ? resolvedRows.filter((r) => !r.isTotal) : []
+          })
+     }, [])
      const fetchData = useCallback(async () => {
           if (!PLANT_ID || !AOP_YEAR) return
           setModifiedCells({})
@@ -556,9 +604,9 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions }) => {
                <KendoDataTables
                     modifiedCells={modifiedCells}
                     setModifiedCells={setModifiedCells}
-                    setRows={setRows}
+                    setRows={handleSetRows}
                     columns={columns}
-                    rows={rows}
+                    rows={rowsWithTotal}
                     fetchData={fetchData}
                     saveChanges={saveChanges}
                     paginationOptions={[100, 200, 300]}

@@ -107,6 +107,40 @@ const CatChemFinalCalutedData = ({ permissions }) => {
           }
      }
 
+     const handleCalculate = async () => {
+          setRows([])
+          setLoading(true)
+          try {
+               const response =
+                    await CatChemFinalCalculatedDataService.handleCatChemFinalCalculatedData(
+                         keycloak,
+                         PLANT_ID,
+                         AOP_YEAR,
+                    )
+
+               if (response?.code == 200) {
+                    setSnackbarOpen(true)
+                    setSnackbarData({
+                         message: 'Data refreshed successfully!',
+                         severity: 'success',
+                    })
+
+                    // load grades and pick the 0th index
+                    await fetchData()
+               } else {
+                    setSnackbarOpen(true)
+                    setSnackbarData({
+                         message: 'Data Refresh Failed!',
+                         severity: 'error',
+                    })
+               }
+          } catch (error) {
+               console.error('Error saving refresh data:', error)
+          } finally {
+               setLoading(false)
+          }
+     }
+
      const getAdjustedPermissions = (permissions, isOldYear) => {
           if (isOldYear != 1) return permissions
           return {
@@ -138,6 +172,8 @@ const CatChemFinalCalutedData = ({ permissions }) => {
                showTitleNameBusiness: true,
                titleName: 'Catchem Final Calculated Data',
                uploadExcelBtn: false,
+               showCalculate: true,
+               showCalculateVisibility: true,
           },
           isOldYear,
      )
@@ -160,6 +196,8 @@ const CatChemFinalCalutedData = ({ permissions }) => {
                     permissions={adjustedPermissions}
                     disableRedHighlight={true}
                     downloadExcelForConfiguration={downloadExcelForConfiguration}
+                    handleCalculate={handleCalculate}
+
                />
           </div>
      )
