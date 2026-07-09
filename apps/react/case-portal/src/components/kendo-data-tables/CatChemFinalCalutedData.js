@@ -6,8 +6,9 @@ import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { CatChemFinalCalculatedDataService } from 'services/cat-chem-final-calculated-data-service'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 
-const CatChemFinalCalutedData = ({ permissions }) => {
+const CatChemFinalCalutedData = ({ permissions, refreshTrigger }) => {
      const [refreshSignal, setRefreshSignal] = useState(0)
      const dataGridStore = useSelector((state) => state.dataGridStore)
      const {
@@ -18,6 +19,7 @@ const CatChemFinalCalutedData = ({ permissions }) => {
           year,
           isReleased,
           yearChanged,
+          screenTitle,
      } = dataGridStore
 
      const PLANT_ID = plantObject?.id
@@ -25,6 +27,8 @@ const CatChemFinalCalutedData = ({ permissions }) => {
      const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
      const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
      const AOP_YEAR = year?.selectedYear
+     const SCREEN_NAME = screenTitle?.title
+     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Catchem Final Calculated Data`
      const IS_OLD_YEAR = oldYear?.oldYear
      const IS_RELEASED = isReleased
      const isOldYear = false
@@ -39,6 +43,8 @@ const CatChemFinalCalutedData = ({ permissions }) => {
      const keycloak = useSession()
      const [rows, setRows] = useState([])
      const [columns, setColumns] = useState([])
+     const [calculationObject, setCalculationObject] = useState([])
+     const valueFormat = ValueFormatterConsumption()
      const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
      const fetchData = useCallback(async () => {
@@ -54,19 +60,22 @@ const CatChemFinalCalutedData = ({ permissions }) => {
                if (res?.code === 200) {
                     const cols = res?.data?.column || res?.data?.columns
                     if (cols && Array.isArray(cols)) {
-                         const dynamicCols = cols.map((col) => ({
+                         const dynamicCols = cols.map((col, index) => ({
                               field: col.field,
                               title: col.title || col.headerName || col.field,
                               editable: false,
                               widthT: col.widthT ?? 150,
-                              minWidth: col.minWidth ?? 120,
+                              minWidth: index === 0 ? 350 : (col.minWidth ?? 120),
                               align: col.align || (col.type === 'number' ? 'right' : 'left'),
                               type: col.type || 'string',
+                              format: col.type === 'number' ? valueFormat : undefined,
+                              locked: index === 0 ? true : undefined,
                          }))
                          setColumns(dynamicCols)
                     }
 
                     const dataList = res?.data?.data || []
+                    setCalculationObject(res?.data?.aopCalculation)
                     const mapped = dataList.map((item, index) => ({
                          ...item,
                          id: index,
@@ -83,11 +92,11 @@ const CatChemFinalCalutedData = ({ permissions }) => {
           } finally {
                setLoading(false)
           }
-     }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR])
+     }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, refreshTrigger])
 
      useEffect(() => {
           fetchData()
-     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, refreshTrigger])
 
      const downloadExcelForConfiguration = async () => {
           try {
@@ -167,13 +176,15 @@ const CatChemFinalCalutedData = ({ permissions }) => {
                saveBtn: false,
                customHeight: permissions?.customHeight,
                allAction: true,
-               downloadExcelBtn: true,
+               downloadExcelBtn: false,
+               downloadExcelBtnFromUI: true,
+               ExcelName: `${EXCEL_EXPORT_TITLE}`,
                showNoteWhileDeleting: false,
                showTitleNameBusiness: true,
                titleName: 'Catchem Final Calculated Data',
                uploadExcelBtn: false,
                showCalculate: true,
-               showCalculateVisibility: true,
+               showCalculateVisibility: Object.keys(calculationObject || {}).length > 0,
           },
           isOldYear,
      )

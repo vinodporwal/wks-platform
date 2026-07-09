@@ -41,7 +41,7 @@ async function saveCatChemRecipeData(keycloak, plantId, aopYear, payload) {
 }
 
 async function exportCatChemRecipeExcel(keycloak, plantId, aopYear, fileName) {
-  const url = `${Config.CaseEngineUrl}/task/makeup-batch-recipe-data-export?plantId=${plantId}&aopYear=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/makeup-batch-recipe-export?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/octet-stream',
     Authorization: `Bearer ${keycloak.token}`,
@@ -64,7 +64,7 @@ async function exportCatChemRecipeExcel(keycloak, plantId, aopYear, fileName) {
 }
 
 async function importCatChemRecipeExcel(file, keycloak, plantId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/makeup-batch-recipe-data-import?plantId=${plantId}&aopYear=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/makeup-batch-recipe-import?plantId=${plantId}&aopYear=${aopYear}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {

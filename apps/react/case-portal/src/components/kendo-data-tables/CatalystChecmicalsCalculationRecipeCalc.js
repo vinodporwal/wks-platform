@@ -18,7 +18,7 @@ import { ProductionSchedulingApiService } from 'services/production-scheduling-a
 import { CatChemRecipeCalcApiService } from 'services/cat-chem-recipe-calc-api-service'
 
 
-const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
+const CatalystChecmicalsCalculationRecipeCalc = ({ permissions, onSaveOrImport, refreshTrigger }) => {
      const [modifiedCells, setModifiedCells] = React.useState({})
      const [refreshSignal, setRefreshSignal] = useState(0)
      const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -50,7 +50,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
      const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
      const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Catchem Calc`
 
      const lowerVertName = vertName?.toLowerCase()
      const lowerSiteName = SITE_NAME?.toLowerCase()
@@ -99,8 +99,8 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                field: 'recipe',
                title: 'Recipe',
                editable: false,
-               widthT: 220,
-               minWidth: 160,
+               minWidth: 350,
+               locked: true,
           },
           {
                field: 'sodBiCarb',
@@ -109,6 +109,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'polystat',
@@ -117,6 +118,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'evicas',
@@ -125,6 +127,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'pva88',
@@ -133,6 +136,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'pva55',
@@ -141,14 +145,16 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
-           },
-           {
-                field: 'b72',
-                title: 'B72',
-                editable: true,
-                type: 'number',
+               format: valueFormat,
+          },
+          {
+               field: 'b72',
+               title: 'B72',
+               editable: true,
+               type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'l9p',
@@ -157,6 +163,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'versene',
@@ -165,6 +172,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'nonylPhe',
@@ -173,6 +181,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'irgastab',
@@ -181,14 +190,16 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
-           },
-           {
-                field: 'atsc',
-                title: 'ATSC',
-                editable: true,
-                type: 'number',
+               format: valueFormat,
+          },
+          {
+               field: 'atsc',
+               title: 'ATSC',
+               editable: true,
+               type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'antiswelling',
@@ -197,14 +208,16 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
-           },
-           {
-                field: 'antifoam',
-                title: 'Antifoam',
-                editable: true,
-                type: 'number',
+               format: valueFormat,
+          },
+          {
+               field: 'antifoam',
+               title: 'Antifoam',
+               editable: true,
+               type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'k57Catalyst',
@@ -213,6 +226,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
                field: 'k67Catalyst',
@@ -221,200 +235,202 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                type: 'number',
                widthT: 200,
                minWidth: 150,
+               format: valueFormat,
           },
           {
-               field: 'dmWaterCalcSodiBiCarbId',
-               title: 'dmWaterCalcSodiBiCarbId',
+               field: 'sodiBiCarbId',
+               title: 'sodiBiCarbId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcPolystatId',
-               title: 'dmWaterCalcPolystatId',
+               field: 'polystatId',
+               title: 'polystatId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcEvicasId',
-               title: 'dmWaterCalcEvicasId',
+               field: 'evicasId',
+               title: 'evicasId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcPva88Id',
-               title: 'dmWaterCalcPva88Id',
+               field: 'pva88Id',
+               title: 'pva88Id',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcPva55Id',
-               title: 'dmWaterCalcPva55Id',
+               field: 'pva55Id',
+               title: 'pva55Id',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcB72Id',
-               title: 'dmWaterCalcB72Id',
+               field: 'b72Id',
+               title: 'b72Id',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcL9pId',
-               title: 'dmWaterCalcL9pId',
+               field: 'l9pId',
+               title: 'l9pId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcVerseneId',
-               title: 'dmWaterCalcVerseneId',
+               field: 'verseneId',
+               title: 'verseneId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcNonylPheId',
-               title: 'dmWaterCalcNonylPheId',
+               field: 'nonylPheId',
+               title: 'nonylPheId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcIrgastabId',
-               title: 'dmWaterCalcIrgastabId',
+               field: 'irgastabId',
+               title: 'irgastabId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcAtscId',
-               title: 'dmWaterCalcAtscId',
+               field: 'atscId',
+               title: 'atscId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcAntiswellingId',
-               title: 'dmWaterCalcAntiswellingId',
+               field: 'antiswellingId',
+               title: 'antiswellingId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcAntifoamId',
-               title: 'dmWaterCalcAntifoamId',
+               field: 'antifoamId',
+               title: 'antifoamId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcK57CatalystId',
-               title: 'dmWaterCalcK57CatalystId',
+               field: 'k57CatalystId',
+               title: 'k57CatalystId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'dmWaterCalcK67CatalystId',
-               title: 'dmWaterCalcK67CatalystId',
+               field: 'k67CatalystId',
+               title: 'k67CatalystId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
      ];
 
-      const fetchData = useCallback(async () => {
-           if (!PLANT_ID || !AOP_YEAR) return
-           setModifiedCells({})
-           setLoading(true)
-           try {
-                const res = await CatChemRecipeCalcApiService.getCatChemCalcData(
-                     keycloak,
-                     PLANT_ID,
-                     AOP_YEAR,
-                )
+     const fetchData = useCallback(async () => {
+          if (!PLANT_ID || !AOP_YEAR) return
+          setModifiedCells({})
+          setLoading(true)
+          try {
+               const res = await CatChemRecipeCalcApiService.getCatChemCalcData(
+                    keycloak,
+                    PLANT_ID,
+                    AOP_YEAR,
+               )
 
-                if (res?.code === 200) {
-                     const mapped = (res?.data?.Data || []).map((item, index) => ({
-                          ...item,
-                          id: index,
-                          idFromApi: item.id || null,
-                          isEditable: item.isEditable ?? true,
-                     }))
-                     setRows(mapped)
-                } else {
-                     setRows([])
-                }
-           } catch (err) {
-                console.error('Error fetching data:', err)
-                setRows([])
-           } finally {
-                setLoading(false)
-           }
-      }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR])
+               if (res?.code === 200) {
+                    setCalculationObject(res?.data?.aopCalculation)
+                    const mapped = (res?.data?.Data || []).map((item, index) => ({
+                         ...item,
+                         id: index,
+                         idFromApi: item.id || null,
+                         isEditable: item.isEditable ?? true,
+                    }))
+                    setRows(mapped)
+               } else {
+                    setRows([])
+               }
+          } catch (err) {
+               console.error('Error fetching data:', err)
+               setRows([])
+          } finally {
+               setLoading(false)
+          }
+     }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, refreshTrigger])
 
-      const saveChanges = React.useCallback(async () => {
-           try {
-                setLoading(true)
-                const data = Object.values(modifiedCells)
+     const saveChanges = React.useCallback(async () => {
+          try {
+               setLoading(true)
+               const data = Object.values(modifiedCells)
 
-                if (data.length === 0) {
-                     setSnackbarOpen(true)
-                     setSnackbarData({
-                          message: 'No Records to Save!',
-                          severity: 'info',
-                     })
-                     return
-                }
+               if (data.length === 0) {
+                    setSnackbarOpen(true)
+                    setSnackbarData({
+                         message: 'No Records to Save!',
+                         severity: 'info',
+                    })
+                    return
+               }
 
-                var payload = []
-                payload = data.map((item) => ({
-                     id: item.idFromApi || null,
-                     recipe: item.recipe || '',
-                     sodBiCarb: item.sodBiCarb,
-                     polystat: item.polystat,
-                     evicas: item.evicas,
-                     pva88: item.pva88,
-                     pva55: item.pva55,
-                     b72: item.b72,
-                     l9p: item.l9p,
-                     versene: item.versene,
-                     nonylPhe: item.nonylPhe,
-                     irgastab: item.irgastab,
-                     atsc: item.atsc,
-                     antiswelling: item.antiswelling,
-                     antifoam: item.antifoam,
-                     k57Catalyst: item.k57Catalyst,
-                     k67Catalyst: item.k67Catalyst,
-                     sodiBiCarbId: item.sodiBiCarbId || null,
-                     polystatId: item.polystatId || null,
-                     evicasId: item.evicasId || null,
-                     pva88Id: item.pva88Id || null,
-                     pva55Id: item.pva55Id || null,
-                     b72Id: item.b72Id || null,
-                     l9pId: item.l9pId || null,
-                     verseneId: item.verseneId || null,
-                     nonylPheId: item.nonylPheId || null,
-                     irgastabId: item.irgastabId || null,
-                     atscId: item.atscId || null,
-                     antiswellingId: item.antiswellingId || null,
-                     antifoamId: item.antifoamId || null,
-                     k57CatalystId: item.k57CatalystId || null,
-                     k67CatalystId: item.k67CatalystId || null,
-                }))
+               var payload = []
+               payload = data.map((item) => ({
+                    id: item.idFromApi || null,
+                    recipe: item.recipe || '',
+                    sodBiCarb: item.sodBiCarb,
+                    polystat: item.polystat,
+                    evicas: item.evicas,
+                    pva88: item.pva88,
+                    pva55: item.pva55,
+                    b72: item.b72,
+                    l9p: item.l9p,
+                    versene: item.versene,
+                    nonylPhe: item.nonylPhe,
+                    irgastab: item.irgastab,
+                    atsc: item.atsc,
+                    antiswelling: item.antiswelling,
+                    antifoam: item.antifoam,
+                    k57Catalyst: item.k57Catalyst,
+                    k67Catalyst: item.k67Catalyst,
+                    sodiBiCarbId: item.sodiBiCarbId || null,
+                    polystatId: item.polystatId || null,
+                    evicasId: item.evicasId || null,
+                    pva88Id: item.pva88Id || null,
+                    pva55Id: item.pva55Id || null,
+                    b72Id: item.b72Id || null,
+                    l9pId: item.l9pId || null,
+                    verseneId: item.verseneId || null,
+                    nonylPheId: item.nonylPheId || null,
+                    irgastabId: item.irgastabId || null,
+                    atscId: item.atscId || null,
+                    antiswellingId: item.antiswellingId || null,
+                    antifoamId: item.antifoamId || null,
+                    k57CatalystId: item.k57CatalystId || null,
+                    k67CatalystId: item.k67CatalystId || null,
+               }))
 
-                const response = await CatChemRecipeCalcApiService.saveCatChemCalcData(
-                     keycloak,
-                     PLANT_ID,
-                     AOP_YEAR,
-                     payload,
-                )
+               const response = await CatChemRecipeCalcApiService.saveCatChemCalcData(
+                    keycloak,
+                    PLANT_ID,
+                    AOP_YEAR,
+                    payload,
+               )
 
                if (response) {
                     setSnackbarOpen(true)
@@ -423,8 +439,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                          severity: 'success',
                     })
                     setModifiedCells({})
-                    fetchData()
-                    setRefreshSignal((prev) => prev + 1)
+                    if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)
                     setSnackbarData({
@@ -441,11 +456,43 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
           } finally {
                setLoading(false)
           }
-     }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal])
+     }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal, onSaveOrImport])
 
      useEffect(() => {
           fetchData()
-     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+     }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, refreshTrigger])
+
+     const handleCalculate = async () => {
+          setRows([])
+          setLoading(true)
+          try {
+               const response = await CatChemRecipeCalcApiService.calculateMakeupBatchRecipeCalc(
+                    keycloak,
+                    PLANT_ID,
+                    AOP_YEAR,
+               )
+
+               if (response?.code == 200) {
+                    setSnackbarOpen(true)
+                    setSnackbarData({
+                         message: 'Data refreshed successfully!',
+                         severity: 'success',
+                    })
+                    await fetchData()
+                    if (onSaveOrImport) onSaveOrImport()
+               } else {
+                    setSnackbarOpen(true)
+                    setSnackbarData({
+                         message: 'Data Refresh Failed!',
+                         severity: 'error',
+                    })
+               }
+          } catch (error) {
+               console.error('Error saving refresh data:', error)
+          } finally {
+               setLoading(false)
+          }
+     }
 
      const downloadExcelForConfiguration = async () => {
           try {
@@ -479,6 +526,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                     setSnackbarData({ message: 'Data Uploaded Successfully!', severity: 'success' })
                     setModifiedCells({})
                     fetchData()
+                    if (onSaveOrImport) onSaveOrImport()
                } else if (response?.code === 400 && response?.data) {
                     const byteCharacters = atob(response.data)
                     const byteNumbers = new Array(byteCharacters.length)
@@ -500,6 +548,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                     setSnackbarOpen(true)
                     setSnackbarData({ message: 'Partial data saved. Error file downloaded.', severity: 'warning' })
                     fetchData()
+                    if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)
                     setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
@@ -538,11 +587,15 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                saveBtn: permissions?.saveBtn ?? true,
                customHeight: permissions?.customHeight,
                allAction: true,
-               downloadExcelBtn: true,
+               downloadExcelBtn: false,
+               downloadExcelBtnFromUI: true,
+               ExcelName: `${EXCEL_EXPORT_TITLE}`,
                showNoteWhileDeleting: false,
                showTitleNameBusiness: true,
                titleName: 'Catchem Calc',
-               uploadExcelBtn: true,
+               uploadExcelBtn: false,
+               showCalculate: true,
+               showCalculateVisibility: Object.keys(calculationObject || {}).length > 0,
           },
           isOldYear,
      )
@@ -581,6 +634,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions }) => {
                     disableRedHighlight={true}
                     downloadExcelForConfiguration={downloadExcelForConfiguration}
                     handleExcelUpload={handleExcelUpload}
+                    handleCalculate={handleCalculate}
                />
           </div>
      )
