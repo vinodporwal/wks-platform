@@ -233,13 +233,13 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
           PLANT_ID_LIST,
         )
 
-        if (res?.length === 0) {
+        if (res?.data?.length === 0) {
           setRows([])
           setSnackbarOpen(true)
           setSnackbarData({ message: 'No data found', severity: 'info' })
           return
         }
-        let tempRes = res?.map((item, index) => {
+        let tempRes = res?.data?.map((item, index) => {
           const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
 
           // Validate if selectedHeatRate matches the actual finalHeatRate value

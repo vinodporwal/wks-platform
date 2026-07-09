@@ -2,9 +2,6 @@ package com.wks.caseengine.rest.cpp;
 
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
-import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
-import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
-import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
 import com.wks.caseengine.cpp.service.JMDHeatRateService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -38,88 +35,58 @@ public class JMDHeatRateController {
     private JMDHeatRateService jmdHeatRateService;
 
     // ============================================================
-    // DROPDOWN ENDPOINTS
+    // GT HEAT RATE APIs
     // ============================================================
 
     /**
      * [GT + STG] GET Asset Dropdown
-     * UI Component : GTHeatRate.js  → getPlantList() via HeatRateApiService.getGTAssetDropdown()
-     *                STGHeatRate.js → getPlantList() via HeatRateApiService.getGTAssetDropdown()  ← STG reuses this
-     * JS Service   : heatRateApiService.js → getGTAssetDropdown()
-     * Endpoint     : GET /task/jmd/heat-rate/drop-down?plantIds=...&assetType=...
+     * Used by: GTHeatRate.js, STGHeatRate.js
+     * Endpoint: GET /task/jmd/power-heat-rate/drop-down?plantIds=...&assetType=...
      */
-    @GetMapping("/jmd/heat-rate/drop-down")
-    public ResponseEntity<AOPMessageVM> getGTAssetDropdown(@RequestParam List<UUID> plantIds, @RequestParam String assetType) {
-        logger.info("[JMDHeatRateController] GET /jmd/heat-rate/drop-down - plantIds: {}, assetType: {}", plantIds, assetType);
+    @GetMapping("/jmd/power-heat-rate/drop-down")
+    public ResponseEntity<AOPMessageVM> getGTAssetDropdown(
+            @RequestParam List<UUID> plantIds, 
+            @RequestParam String assetType) {
+        logger.info("[JMDHeatRateController] GET /jmd/power-heat-rate/drop-down - plantIds: {}, assetType: {}", plantIds, assetType);
         AOPMessageVM response = jmdHeatRateService.getGTAssetDropdown(plantIds, assetType);
         return ResponseEntity.ok(response);
     }
-    
-    /**
-     * [HRSG] GET Asset Dropdown
-     * UI Component : HRSGHeatRate.js → getPlantList() via HeatRateApiService.getHRSGAssetDropdown()
-     * JS Service   : heatRateApiService.js → getHRSGAssetDropdown()
-     * Endpoint     : GET /task/jmd/hrsg/drop-down?plantIds=...&assetType=HRSG
-     */
-    @GetMapping("/jmd/hrsg/drop-down")
-    public ResponseEntity<AOPMessageVM> getHRSGAssetDropdown(@RequestParam List<UUID> plantIds, @RequestParam(required = false) String assetType) {
-        AOPMessageVM response = jmdHeatRateService.getHRSGAssetDropdown(plantIds, assetType);
-        return ResponseEntity.ok(response);
-    }
-    
+
     /**
      * [GT] GET Heat Rate Data
-     * UI Component : GTHeatRate.js → fetchHeatRateData() via HeatRateApiService.getGTHeatRateData()
-     * JS Service   : heatRateApiService.js → getGTHeatRateData()
-     * Endpoint     : GET /task/jmd/gt-heat-rate?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
+     * Used by: GTHeatRate.js
+     * Endpoint: GET /task/jmd/gt-heat-rate?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
      */
     @GetMapping("/jmd/gt-heat-rate")
-    public ResponseEntity<AOPMessageVM> getGTHeatRateData(@RequestParam UUID assetId, @RequestParam String year, @RequestParam String startDate, @RequestParam String endDate, @RequestParam List<UUID> plantIds) {
-        AOPMessageVM response = jmdHeatRateService.getGTHeatRateData(assetId,year,startDate,endDate,plantIds);
+    public ResponseEntity<AOPMessageVM> getGTHeatRateData(
+            @RequestParam UUID assetId,
+            @RequestParam String year,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam List<UUID> plantIds) {
+        logger.info("[JMDHeatRateController] GET /jmd/gt-heat-rate - assetId: {}, year: {}", assetId, year);
+        AOPMessageVM response = jmdHeatRateService.getGTHeatRateData(assetId, year, startDate, endDate, plantIds);
         return ResponseEntity.ok(response);
     }
-    
-    /**
-     * [HRSG] GET Heat Rate Data
-     * UI Component : HRSGHeatRate.js → fetchHeatRateData() via HeatRateApiService.getHRSGHeatRateData()
-     * JS Service   : heatRateApiService.js → getHRSGHeatRateData()
-     * Endpoint     : GET /task/jmd/hrsg-heat-rate?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
-     */
-    @GetMapping("/jmd/hrsg-heat-rate")
-    public ResponseEntity<AOPMessageVM> getHRSGHeatRateData(@RequestParam UUID assetId, @RequestParam String year, @RequestParam String startDate, @RequestParam String endDate, @RequestParam List<UUID> plantIds) {
-        AOPMessageVM response = jmdHeatRateService.getHRSGHeatRateData(assetId,year,startDate,endDate,plantIds);
-        return ResponseEntity.ok(response);
-    }
-    
+
     /**
      * [GT] SAVE Heat Rate Data
-     * UI Component : GTHeatRate.js → saveChanges() via HeatRateApiService.saveGTHeatRateData()
-     * JS Service   : heatRateApiService.js → saveGTHeatRateData()
-     * Endpoint     : POST /task/jmd/gt-heat-rate?year=...
+     * Used by: GTHeatRate.js
+     * Endpoint: POST /task/jmd/gt-heat-rate?year=...
      */
     @PostMapping("/jmd/gt-heat-rate")
     public ResponseEntity<AOPMessageVM> saveGTHeatRateData(
-            @RequestBody List<CppGtHeatRateDto> dtoList, 
+            @RequestBody List<CppGtHeatRateDto> dtoList,
             @RequestParam String year) {
-        
+        logger.info("[JMDHeatRateController] POST /jmd/gt-heat-rate - {} records, year: {}", dtoList.size(), year);
         AOPMessageVM response = jmdHeatRateService.saveGTHeatRateData(dtoList, year);
         return ResponseEntity.ok(response);
     }
-    
-	@PostMapping("/jmd/hrsg-heat-rate")
-    public ResponseEntity<AOPMessageVM> saveHRSGHeatRateData(
-            @RequestBody List<CppHrsgHeatRateDto> dtoList, 
-            @RequestParam String year) {
-        
-        AOPMessageVM response = jmdHeatRateService.saveHRSGHeatRateData(dtoList, year);
-        return ResponseEntity.ok(response);
-    }
+
     /**
      * [GT] EXPORT Excel
-     * UI Component : GTHeatRate.js → handleExport() via HeatRateApiService.exportGTHeatRateExcel()
-     * JS Service   : heatRateApiService.js → exportGTHeatRateExcel()
-     * Endpoint     : GET  /task/jmd/gt-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...&isAfterSave=false
-     *                POST /task/jmd/gt-heat-rate/export?...&isAfterSave=true  (sends dtoList in request body)
+     * Used by: GTHeatRate.js
+     * Endpoint: GET /task/jmd/gt-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
      */
     @GetMapping(value = "/jmd/gt-heat-rate/export")
     public ResponseEntity<byte[]> exportGTHeatRate(
@@ -127,12 +94,10 @@ public class JMDHeatRateController {
             @RequestParam("year") String year,
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate,
-            @RequestParam("plantIds") List<UUID> plantIds,
-            @RequestParam(value = "isAfterSave", defaultValue = "false") boolean isAfterSave,
-            @RequestBody(required = false) List<CppGtHeatRateDto> dtoList) {
+            @RequestParam("plantIds") List<UUID> plantIds) {
         try {
             byte[] excelBytes = jmdHeatRateService.exportGTHeatRateExcelData(
-                    assetId, year, startDate, endDate, plantIds, isAfterSave, dtoList
+                    assetId, year, startDate, endDate, plantIds, false, null
             );
 
             if (excelBytes == null || excelBytes.length == 0) {
@@ -141,58 +106,20 @@ public class JMDHeatRateController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-            
-            String filename = isAfterSave ? "GT_Heat_Rate_Import_Status.xlsx" : "GT_Heat_Rate_Data.xlsx";
-            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("GT_Heat_Rate_Data.xlsx").build());
             headers.setContentLength(excelBytes.length);
 
             return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * [HRSG] EXPORT Excel — OLD/UNUSED endpoint
-     * ⚠ NOT used by current UI. The UI calls /task/jmd/hrsg-heat-rate/export (path-variable version).
-     *   Kept for backward compatibility. Endpoint: GET /task/jmd/hrsg-heat-rate-export
-     */
-    @GetMapping(value = "/jmd/hrsg-heat-rate-export")
-    public ResponseEntity<byte[]> exportHRSGHeatRate(
-            @RequestParam("assetId") UUID assetId,
-            @RequestParam("year") String year,
-            @RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate,
-            @RequestParam("plantIds") List<UUID> plantIds,
-            @RequestParam(value = "isAfterSave", defaultValue = "false") boolean isAfterSave,
-            @RequestBody(required = false) List<CppHrsgHeatRateDto> dtoList) {
-        try {
-            byte[] excelBytes = jmdHeatRateService.exportHRSGHeatRateExcelData(
-                    assetId, year, startDate, endDate, plantIds, isAfterSave, dtoList
-            );
-
-            if (excelBytes == null || excelBytes.length == 0) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-            
-            String filename = isAfterSave ? "HRSG_Heat_Rate_Import_Status.xlsx" : "HRSG_Heat_Rate_Data.xlsx";
-            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
-            headers.setContentLength(excelBytes.length);
-
-            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
-        } catch (Exception e) {
+            logger.error("Error exporting GT heat rate: ", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * [GT] IMPORT Excel
-     * UI Component : GTHeatRate.js → handleExcelUpload() via HeatRateApiService.saveGTHeatRateExcel()
-     * JS Service   : heatRateApiService.js → saveGTHeatRateExcel()
-     * Endpoint     : POST /task/jmd/gt-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
+     * Used by: GTHeatRate.js
+     * Endpoint: POST /task/jmd/gt-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
      */
     @PostMapping(value = "/jmd/gt-heat-rate/import", consumes = "multipart/form-data")
     public AOPMessageVM importGTHeatRateData(
@@ -202,139 +129,19 @@ public class JMDHeatRateController {
             @RequestParam(value = "endDate", required = false) String endDate,
             @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
             @RequestParam("file") MultipartFile file) {
-        
-        return jmdHeatRateService.importGTHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
-    }
-	
-	@GetMapping(value = "/jmd/stg-heat-rate/export")
-    public ResponseEntity<byte[]> exportSTGHeatRate(
-            @RequestParam("assetId") UUID assetId,
-            @RequestParam("year") String year,
-            @RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate,
-            @RequestParam("plantIds") List<UUID> plantIds,
-            @RequestParam(value = "isAfterSave", defaultValue = "false") boolean isAfterSave,
-            @RequestBody(required = false) List<STGHeatRateDTO> dtoList) {
-        try {
-            byte[] excelBytes = jmdHeatRateService.exportSTGHeatRateExcelData(
-                    assetId, year, startDate, endDate, plantIds, isAfterSave, dtoList
-            );
-
-            if (excelBytes == null || excelBytes.length == 0) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-            
-            String filename = isAfterSave ? "STG_Heat_Rate_Import_Status.xlsx" : "STG_Heat_Rate_Data.xlsx";
-            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
-            headers.setContentLength(excelBytes.length);
-
-            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @PostMapping(value = "/jmd/stg-heat-rate/import", consumes = "multipart/form-data")
-    public AOPMessageVM importSTGHeatRateData(
-            @RequestParam("year") String year,
-            @RequestParam(value = "assetId", required = false) UUID assetId,
-            @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
-            @RequestParam("file") MultipartFile file) {
-        
-        return jmdHeatRateService.importSTGHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
-    }
-
-    /**
-     * [HRSG] GET Asset Dropdown — OLDER overload (takes only plantIds, no assetType)
-     * ⚠ NOT used by current UI. The UI calls /task/jmd/hrsg/drop-down (with assetType param).
-     *   This overload exists as an alternate/legacy endpoint.
-     */
-    @GetMapping("/jmd/hrsg-heat-rate/drop-down")
-    public ResponseEntity<AOPMessageVM> getHRSGAssetDropdown(@RequestParam List<UUID> plantIds) {
-        logger.info("[JMDHeatRateController] GET /jmd/hrsg-heat-rate/drop-down - plantIds: {}", plantIds);
-        AOPMessageVM response = jmdHeatRateService.getHRSGAssetDropdown(plantIds);
-        return ResponseEntity.ok(response);
-    }
-	
-	 @PostMapping(value = "/jmd/hrsg-heat-rate/import", consumes = "multipart/form-data")
-    public AOPMessageVM importHRSGHeatRateData(
-            @RequestParam("year") String year,
-            @RequestParam(value = "assetId", required = false) UUID assetId,
-            @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
-            @RequestParam("file") MultipartFile file) {
-        
-        return jmdHeatRateService.importHRSGHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
+        logger.info("[JMDHeatRateController] POST /jmd/gt-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importGTHeatRateData(year, assetId, startDate, endDate, plantIds, file);
     }
 
     // ============================================================
-    // GT HEAT RATE ENDPOINTS  —  OLD PATH-VARIABLE VERSIONS (Not used by current UI)
-    // ⚠ The current UI uses query-param endpoints above (getGTHeatRateData / saveGTHeatRateData).
-    //   These path-variable endpoints are legacy/unused. Keep for backward compatibility.
-    // ============================================================
-
-    @GetMapping({"/jmd/heat-rate/{assetId}/{aopYear}", "/jmd/heat-rate/{assetId}/{aopYear}/{startDate}/{endDate}"})
-    public ResponseEntity<AOPMessageVM> getGTHeatRate(
-            @PathVariable String assetId,
-            @PathVariable String aopYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
-        logger.info("[JMDHeatRateController] GET GT heat rate - assetId: {}, aopYear: {}, startDate: {}, endDate: {}", assetId, aopYear, startDate, endDate);
-        AOPMessageVM response = jmdHeatRateService.getGTHeatRate(assetId, aopYear, startDate, endDate);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/jmd/heat-rate/{aopYear}")
-    public ResponseEntity<AOPMessageVM> updateGTHeatRate(
-            @RequestBody List<HeatRateDTO> heatRateDTOs,
-            @PathVariable String aopYear) {
-        logger.info("[JMDHeatRateController] POST GT heat rate update - {} records, aopYear: {}", heatRateDTOs != null ? heatRateDTOs.size() : 0, aopYear);
-        AOPMessageVM response = jmdHeatRateService.updateGTHeatRate(heatRateDTOs, aopYear);
-        return ResponseEntity.ok(response);
-    }
-
-    // ============================================================
-    // HRSG HEAT RATE ENDPOINTS  —  OLD PATH-VARIABLE VERSIONS (Not used by current UI)
-    // ⚠ The current UI uses query-param endpoints above (getHRSGHeatRateData / saveHRSGHeatRateData).
-    //   These path-variable endpoints are legacy/unused. Keep for backward compatibility.
-    // ============================================================
-
-    @GetMapping({"/jmd/hrsg-heat-rate/{assetId}/{aopYear}", "/jmd/hrsg-heat-rate/{assetId}/{aopYear}/{startDate}/{endDate}"})
-    public ResponseEntity<AOPMessageVM> getHRSGHeatRate(
-            @PathVariable String assetId,
-            @PathVariable String aopYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
-        logger.info("[JMDHeatRateController] GET HRSG heat rate - assetId: {}, aopYear: {}, startDate: {}, endDate: {}", assetId, aopYear, startDate, endDate);
-        AOPMessageVM response = jmdHeatRateService.getHRSGHeatRate(assetId, aopYear, startDate, endDate);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/jmd/hrsg-heat-rate/{aopYear}")
-    public ResponseEntity<AOPMessageVM> updateHRSGHeatRate(
-            @RequestBody List<com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateDTO> hrsgHeatRateDTOs,
-            @PathVariable String aopYear) {
-        logger.info("[JMDHeatRateController] POST HRSG heat rate update - {} records, aopYear: {}", hrsgHeatRateDTOs != null ? hrsgHeatRateDTOs.size() : 0, aopYear);
-        AOPMessageVM response = jmdHeatRateService.updateHRSGHeatRate(hrsgHeatRateDTOs, aopYear);
-        return ResponseEntity.ok(response);
-    }
-
-    // ============================================================
-    // STG HEAT RATE ENDPOINTS
+    // STG HEAT RATE APIs
     // ============================================================
 
     /**
      * [STG] GET Heat Rate Data
-     * UI Component : STGHeatRate.js → fetchHeatRateData() via HeatRateApiService.getSTGHeatRateData()
-     * JS Service   : heatRateApiService.js → getSTGHeatRateData()
-     * Endpoint     : GET /task/jmd/stg-heat-rate?assetId=...&aopYear=...&startDate=...&endDate=...&plantIds=...
-     * NOTE: Uses 'aopYear' as param name (unlike GT/HRSG which use 'year').
+     * Used by: STGHeatRate.js
+     * Endpoint: GET /task/jmd/stg-heat-rate?assetId=...&aopYear=...&startDate=...&endDate=...&plantIds=...
+     * NOTE: Uses 'aopYear' as param name (unlike GT which uses 'year')
      */
     @GetMapping("/jmd/stg-heat-rate")
     public ResponseEntity<AOPMessageVM> getSTGHeatRate(
@@ -343,214 +150,183 @@ public class JMDHeatRateController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam List<UUID> plantIds) {
-        logger.info("[JMDHeatRateController] GET STG heat rate - assetId: {}, aopYear: {}, startDate: {}, endDate: {}, plantIds: {}", assetId, aopYear, startDate, endDate, plantIds);
+        logger.info("[JMDHeatRateController] GET /jmd/stg-heat-rate - assetId: {}, aopYear: {}", assetId, aopYear);
         AOPMessageVM response = jmdHeatRateService.getSTGHeatRate(assetId, aopYear, startDate, endDate, plantIds);
         return ResponseEntity.ok(response);
     }
 
     /**
      * [STG] SAVE Heat Rate Data
-     * UI Component : STGHeatRate.js → saveChanges() via HeatRateApiService.saveSTGHeatRateData()
-     * JS Service   : heatRateApiService.js → saveSTGHeatRateData()
-     * Endpoint     : POST /task/jmd/stg-heat-rate/{aopYear}
+     * Used by: STGHeatRate.js
+     * Endpoint: POST /task/jmd/stg-heat-rate/{aopYear}
      */
     @PostMapping("/jmd/stg-heat-rate/{aopYear}")
     public ResponseEntity<AOPMessageVM> updateSTGHeatRate(
             @RequestBody List<STGHeatRateDTO> stgHeatRateDTOs,
             @PathVariable String aopYear) {
-        logger.info("[JMDHeatRateController] POST STG heat rate update - {} records, aopYear: {}", stgHeatRateDTOs != null ? stgHeatRateDTOs.size() : 0, aopYear);
+        logger.info("[JMDHeatRateController] POST /jmd/stg-heat-rate/{} - {} records", aopYear, stgHeatRateDTOs.size());
         AOPMessageVM response = jmdHeatRateService.updateSTGHeatRate(stgHeatRateDTOs, aopYear);
         return ResponseEntity.ok(response);
     }
 
-    // ============================================================
-    // STG EXTRACTION LOOKUP ENDPOINTS
-    // ============================================================
-
-    @GetMapping("/jmd/stg-extraction-lookup")
-    public ResponseEntity<AOPMessageVM> getSTGExtractionLookup() {
-        logger.info("[JMDHeatRateController] GET STG extraction lookup");
-        AOPMessageVM response = jmdHeatRateService.getSTGExtractionLookup();
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/jmd/stg-extraction-lookup/{aopYear}")
-    public ResponseEntity<AOPMessageVM> updateSTGExtraction(
-            @RequestBody List<STGExtractionLookupDTO> stgExtractionLookupDTOs,
-            @PathVariable String aopYear) {
-        logger.info("[JMDHeatRateController] POST STG extraction update - {} records", stgExtractionLookupDTOs != null ? stgExtractionLookupDTOs.size() : 0);
-        AOPMessageVM response = jmdHeatRateService.updateSTGExtraction(stgExtractionLookupDTOs, aopYear);
-        return ResponseEntity.ok(response);
-    }
-
-    // ============================================================
-    // HRSG HEAT RATE LOOKUP ENDPOINTS
-    // ============================================================
-
-    @GetMapping("/jmd/hrsg-heat-rate-lookup")
-    public ResponseEntity<AOPMessageVM> getHRSGHeatRateLookup() {
-        logger.info("[JMDHeatRateController] GET HRSG heat rate lookup");
-        AOPMessageVM response = jmdHeatRateService.getHRSGHeatRateLookup();
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/jmd/hrsg-heat-rate-lookup/equipment/{equipmentName}")
-    public ResponseEntity<AOPMessageVM> getHRSGHeatRateByEquipmentName(@PathVariable String equipmentName) {
-        logger.info("[JMDHeatRateController] GET HRSG heat rate by equipment: {}", equipmentName);
-        AOPMessageVM response = jmdHeatRateService.getHRSGHeatRateByEquipmentName(equipmentName);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/jmd/hrsg-heat-rate-lookup/cpp-utility/{cppUtility}")
-    public ResponseEntity<AOPMessageVM> getHRSGHeatRateByCppUtility(@PathVariable String cppUtility) {
-        logger.info("[JMDHeatRateController] GET HRSG heat rate by cpp utility: {}", cppUtility);
-        AOPMessageVM response = jmdHeatRateService.getHRSGHeatRateByCppUtility(cppUtility);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/jmd/hrsg-heat-rate-lookup/{aopYear}")
-    public ResponseEntity<AOPMessageVM> updateHRSGHeatRateLookup(
-            @RequestBody List<HRSGHeatRateLookupDTO> hrsgHeatRateLookupDTOs,
-            @PathVariable String aopYear) {
-        logger.info("[JMDHeatRateController] POST HRSG heat rate lookup update - {} records", hrsgHeatRateLookupDTOs != null ? hrsgHeatRateLookupDTOs.size() : 0);
-        AOPMessageVM response = jmdHeatRateService.updateHRSGHeatRateLookup(hrsgHeatRateLookupDTOs, aopYear);
-        return ResponseEntity.ok(response);
-    }
-
-    // ============================================================
-    // EXPORT ENDPOINTS
-    // ============================================================
-
     /**
-     * [GT] EXPORT Excel — OLD PATH-VARIABLE VERSION (Not used by current UI)
-     * ⚠ The UI calls /task/jmd/gt-heat-rate/export (query-param version with isAfterSave support).
-     *   This path-variable version is legacy/unused. Keep for backward compatibility.
+     * [STG] EXPORT Excel
+     * Used by: STGHeatRate.js
+     * Endpoint: GET /task/jmd/stg-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
      */
-    @GetMapping({"/jmd/heat-rate/export/{assetId}/{aopYear}", "/jmd/heat-rate/export/{assetId}/{aopYear}/{startDate}/{endDate}"})
-    public ResponseEntity<byte[]> exportGTHeatRate(
-            @PathVariable String assetId,
-            @PathVariable String aopYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
-        logger.info("[JMDHeatRateController] Export GT heat rate - assetId: {}, aopYear: {}", assetId, aopYear);
-        byte[] excelData = jmdHeatRateService.exportGTHeatRate(assetId, aopYear, startDate, endDate);
-        if (excelData == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    @GetMapping(value = "/jmd/stg-heat-rate/export")
+    public ResponseEntity<byte[]> exportSTGHeatRate(
+            @RequestParam("assetId") UUID assetId,
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportSTGHeatRateExcelData(
+                    assetId, year, startDate, endDate, plantIds, false, null
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("STG_Heat_Rate_Data.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting STG heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "GT_Heat_Rate.xlsx");
-        return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
-    }
-
-    
-
-    /**
-     * [HRSG] EXPORT Excel — PATH-VARIABLE VERSION
-     * UI Component : HRSGHeatRate.js → handleExport() via HeatRateApiService.exportHRSGHeatRateExcel()
-     * JS Service   : heatRateApiService.js → exportHRSGHeatRateExcel()
-     * Endpoint     : GET /task/jmd/hrsg-heat-rate/export/{assetId}/{aopYear}
-     * NOTE: UI currently builds a query-param URL (/hrsg-heat-rate/export?assetId=...),
-     *       but controller only handles path-variable form — verify the routing aligns.
-     */
-    @GetMapping({"/jmd/hrsg-heat-rate/export/{assetId}/{aopYear}", "/jmd/hrsg-heat-rate/export/{assetId}/{aopYear}/{startDate}/{endDate}"})
-    public ResponseEntity<byte[]> exportHRSGHeatRate(
-            @PathVariable String assetId,
-            @PathVariable String aopYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
-        logger.info("[JMDHeatRateController] Export HRSG heat rate - assetId: {}, aopYear: {}", assetId, aopYear);
-        byte[] excelData = jmdHeatRateService.exportHRSGHeatRate(assetId, aopYear, startDate, endDate);
-        if (excelData == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "HRSG_Heat_Rate.xlsx");
-        return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
-    }
-
-    @GetMapping("/jmd/hrsg-heat-rate-lookup/export")
-    public ResponseEntity<byte[]> exportHRSGHeatRateLookup() {
-        logger.info("[JMDHeatRateController] Export HRSG heat rate lookup");
-        byte[] excelData = jmdHeatRateService.exportHRSGHeatRateLookup();
-        if (excelData == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "HRSG_Heat_Rate_Lookup.xlsx");
-        return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
-    }
-
-    @GetMapping("/jmd/stg-extraction-lookup/export")
-    public ResponseEntity<byte[]> exportSTGExtractionLookup() {
-        logger.info("[JMDHeatRateController] Export STG extraction lookup");
-        byte[] excelData = jmdHeatRateService.exportSTGExtractionLookup();
-        if (excelData == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "STG_Extraction_Lookup.xlsx");
-        return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
-    }
-
-    // ============================================================
-    // IMPORT ENDPOINTS
-    // ============================================================
-
-    /**
-     * [GT] IMPORT Excel — OLD (No query params, file only)
-     * ⚠ NOT used by current UI. The UI calls /task/jmd/gt-heat-rate/import (with year, assetId, plantIds params).
-     *   This simpler import is legacy/unused.
-     */
-    @PostMapping("/jmd/heat-rate/import")
-    public ResponseEntity<AOPMessageVM> importGTHeatRate(@RequestParam("file") MultipartFile file) {
-        logger.info("[JMDHeatRateController] Import GT heat rate - file: {}", file.getOriginalFilename());
-        AOPMessageVM response = jmdHeatRateService.importGTHeatRate(file);
-        return ResponseEntity.ok(response);
     }
 
     /**
      * [STG] IMPORT Excel
-     * UI Component : STGHeatRate.js → handleExcelUpload() via HeatRateApiService.saveSTGHeatRateExcel()
-     * JS Service   : heatRateApiService.js → saveSTGHeatRateExcel()
-     * Endpoint     : POST /task/jmd/stg-heat-rate/import
-     * NOTE: UI sends year/assetId/plantIds as query params but this endpoint only reads 'file'.
-     *       Consider adding @RequestParam handling if params are needed server-side.
+     * Used by: STGHeatRate.js
+     * Endpoint: POST /task/jmd/stg-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
      */
-    @PostMapping("/jmd/stg-heat-rate/import")
-    public ResponseEntity<AOPMessageVM> importSTGHeatRate(@RequestParam("file") MultipartFile file) {
-        logger.info("[JMDHeatRateController] Import STG heat rate - file: {}", file.getOriginalFilename());
-        AOPMessageVM response = jmdHeatRateService.importSTGHeatRate(file);
+    @PostMapping(value = "/jmd/stg-heat-rate/import", consumes = "multipart/form-data")
+    public AOPMessageVM importSTGHeatRateData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "assetId", required = false) UUID assetId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/stg-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importSTGHeatRateData(year, assetId, startDate, endDate, plantIds, file);
+    }
+
+    // ============================================================
+    // HRSG + AUXBOILER HEAT RATE APIs (Shared Dropdown)
+    // ============================================================
+
+    /**
+     * [HRSG + AUXBOILER] GET Asset Dropdown
+     * Used by: HRSGHeatRate.js, AUXBOILERHeatRate.js
+     * Endpoint: GET /task/jmd/hrsg/drop-down?plantIds=...&assetType=HRSG or AUXBOILER
+     */
+    @GetMapping("/jmd/steam-heat-rate/drop-down")
+    public ResponseEntity<AOPMessageVM> getHRSGAssetDropdown(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam(required = false) String assetType) {
+        logger.info("[JMDHeatRateController] GET /jmd/hrsg/drop-down - plantIds: {}, assetType: {}", plantIds, assetType);
+        AOPMessageVM response = jmdHeatRateService.getHRSGAssetDropdown(plantIds, assetType);
+        return ResponseEntity.ok(response);
+    }
+
+    // ============================================================
+    // HRSG HEAT RATE APIs
+    // ============================================================
+
+    /**
+     * [HRSG] GET Heat Rate Data
+     * Used by: HRSGHeatRate.js
+     * Endpoint: GET /task/jmd/hrsg-heat-rate?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @GetMapping("/jmd/hrsg-heat-rate")
+    public ResponseEntity<AOPMessageVM> getHRSGHeatRateData(
+            @RequestParam UUID assetId,
+            @RequestParam String year,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam List<UUID> plantIds) {
+        logger.info("[JMDHeatRateController] GET /jmd/hrsg-heat-rate - assetId: {}, year: {}", assetId, year);
+        AOPMessageVM response = jmdHeatRateService.getHRSGHeatRateData(assetId, year, startDate, endDate, plantIds);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * [HRSG] IMPORT Excel
-     * UI Component : HRSGHeatRate.js → handleExcelUpload() via HeatRateApiService.saveHRSGHeatRateExcel()
-     * JS Service   : heatRateApiService.js → saveHRSGHeatRateExcel()
-     * Endpoint     : POST /task/jmd/hrsg-heat-rate/import
+     * [HRSG] SAVE Heat Rate Data
+     * Used by: HRSGHeatRate.js
+     * Endpoint: POST /task/jmd/hrsg-heat-rate/{aopYear}
      */
-    @PostMapping("/jmd/hrsg-heat-rate/import")
-    public ResponseEntity<AOPMessageVM> importHRSGHeatRate(@RequestParam("file") MultipartFile file) {
-        logger.info("[JMDHeatRateController] Import HRSG heat rate - file: {}", file.getOriginalFilename());
-        AOPMessageVM response = jmdHeatRateService.importHRSGHeatRate(file);
+    @PostMapping("/jmd/hrsg-heat-rate/{aopYear}")
+    public ResponseEntity<AOPMessageVM> updateHRSGHeatRate(
+            @RequestBody List<CppHrsgHeatRateDto> dtoList,
+            @PathVariable String aopYear) {
+        logger.info("[JMDHeatRateController] POST /jmd/hrsg-heat-rate/{} - {} records", aopYear, dtoList.size());
+        AOPMessageVM response = jmdHeatRateService.saveHRSGHeatRateData(dtoList, aopYear);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/jmd/hrsg-heat-rate-lookup/import")
-    public ResponseEntity<AOPMessageVM> importHRSGHeatRateLookup(@RequestParam("file") MultipartFile file) {
-        logger.info("[JMDHeatRateController] Import HRSG heat rate lookup - file: {}", file.getOriginalFilename());
-        AOPMessageVM response = jmdHeatRateService.importHRSGHeatRateLookup(file);
-        return ResponseEntity.ok(response);
+    /**
+     * [HRSG] EXPORT Excel
+     * Used by: HRSGHeatRate.js
+     * Endpoint: GET /task/jmd/hrsg-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @GetMapping(value = "/jmd/hrsg-heat-rate/export")
+    public ResponseEntity<byte[]> exportHRSGHeatRate(
+            @RequestParam("assetId") UUID assetId,
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportHRSGHeatRateExcelData(
+                    assetId, year, startDate, endDate, plantIds, false, null
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("HRSG_Heat_Rate_Data.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting HRSG heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @PostMapping("/jmd/stg-extraction-lookup/import")
-    public ResponseEntity<AOPMessageVM> importSTGExtractionLookup(@RequestParam("file") MultipartFile file) {
-        logger.info("[JMDHeatRateController] Import STG extraction lookup - file: {}", file.getOriginalFilename());
-        AOPMessageVM response = jmdHeatRateService.importSTGExtractionLookup(file);
-        return ResponseEntity.ok(response);
+    /**
+     * [HRSG] IMPORT Excel
+     * Used by: HRSGHeatRate.js
+     * Endpoint: POST /task/jmd/hrsg-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
+     */
+    @PostMapping(value = "/jmd/hrsg-heat-rate/import", consumes = "multipart/form-data")
+    public AOPMessageVM importHRSGHeatRateData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "assetId", required = false) UUID assetId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/hrsg-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importHRSGHeatRateData(year, assetId, startDate, endDate, plantIds, file);
     }
+
+    // ============================================================
+    // AUXBOILER HEAT RATE APIs
+    // ============================================================
+
+  
+
+
 }

@@ -238,17 +238,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
           PLANT_ID_LIST,
         )
 
-        if (res?.code === 500) {
-          setRows([])
-          setOriginalRows([])
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: res?.message || 'Error fetching HRSG heat rate data',
-            severity: 'error',
-          })
-          return
-        }
-
         if (!res?.data || res?.data?.length === 0) {
           setRows([])
           setOriginalRows([])

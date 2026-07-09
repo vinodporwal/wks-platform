@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
@@ -66,8 +66,8 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
       minWidth: 150,
     },
     {
-      field: 'hrsgLoad',
-      title: 'HRSG Load',
+      field: 'auxBoilerLoad',
+      title: 'Aux Boiler Load',
       width: 120,
       type: 'number1',
       format: customValueFormat(1),
@@ -154,7 +154,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
   const getPlantList = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await HeatRateApiService.getHRSGAssetDropdown(
+      const res = await HeatRateApiService.getAuxBoilerAssetDropdown(
         keycloak,
         PLANT_ID_LIST,
         'AUXBOILER',
@@ -193,7 +193,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
       setSelectedPlant(convertedData[0]?.id)
       setDropdownOptions(convertedData)
     } catch (error) {
-      console.error('Error fetching HRSG dropdown options:', error)
+      console.error('Error fetching AUXBOILER dropdown options:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
@@ -216,7 +216,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
     async (assetId, startDate, endDate) => {
       setLoading(true)
       try {
-        const res = await HeatRateApiService.getHRSGHeatRateData(
+        const res = await HeatRateApiService.getAuxBoilerHeatRateData(
           keycloak,
           assetId,
           AOP_YEAR,
@@ -264,7 +264,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
         setRows(tempRes)
         setOriginalRows(tempRes)
       } catch (error) {
-        console.error('Error fetching HRSG heat rate data:', error)
+        console.error('Error fetching AUXBOILER heat rate data:', error)
         setRows([])
         setOriginalRows([])
         setSnackbarOpen(true)
@@ -329,12 +329,12 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
     }
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = ['hrsgLoad', 'oemHeatRate', 'finalHeatRate']
+    const fieldsToCheck = ['auxBoilerLoad', 'oemHeatRate', 'finalHeatRate']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'hrsgLoad',
+      'auxBoilerLoad',
     )
 
     if (validationError) {
@@ -352,9 +352,8 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
         const { inEdit, ...rest } = item
         return rest
       })
-      const tempPayload = JSON.stringify(payload)
 
-      const res = await HeatRateApiService.saveHRSGHeatRateData(
+      const res = await HeatRateApiService.saveAuxBoilerHeatRateData(
         keycloak,
         AOP_YEAR,
         payload,
@@ -374,7 +373,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
         formattedEndDate,
       )
     } catch (error) {
-      console.error('Error saving heat rate data:', error)
+      console.error('Error saving AUXBOILER heat rate data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -384,6 +383,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
       setLoading(false)
     }
   }
+
   const handleExcelUpload = async (file) => {
     if (!file) return
 
@@ -392,7 +392,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      const response = await HeatRateApiService.saveHRSGHeatRateExcel(
+      const response = await HeatRateApiService.saveAuxBoilerHeatRateExcel(
         file,
         keycloak,
         AOP_YEAR,
@@ -415,7 +415,10 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
           formattedEndDate,
         )
       } else if (response?.code === 400 && response?.data) {
-        downloadBase64Excel(response.data, 'HRSG_Heat_Rate_Import_Status.xlsx')
+        downloadBase64Excel(
+          response.data,
+          'AUXBOILER_Heat_Rate_Import_Status.xlsx',
+        )
         setSnackbarOpen(true)
         setSnackbarData({
           message:
@@ -462,9 +465,9 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
       const selectedAsset = dropdownOptions.find(
         (opt) => opt.id === selectedPlant,
       )
-      const assetDisplayName = selectedAsset?.name || 'HRSG_Heat_Rate'
+      const assetDisplayName = selectedAsset?.name || 'AUXBOILER_Heat_Rate'
 
-      await HeatRateApiService.exportHRSGHeatRateExcel(
+      await HeatRateApiService.exportAuxBoilerHeatRateExcel(
         keycloak,
         selectedPlant,
         AOP_YEAR,
@@ -478,7 +481,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting HRSG Heat Rate data:', error)
+      console.error('Error exporting AUXBOILER Heat Rate data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
