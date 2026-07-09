@@ -64,14 +64,14 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                isVisible: false,
           },
           {
-               field: 'Particulars',
+               field: 'particulars',
                title: 'Particulars',
                editable: false,
                widthT: 250,
                minWidth: 200,
           },
           {
-               field: 'L1_K67',
+               field: 'l1K67',
                title: 'L1_K67',
                editable: true,
                type: 'number',
@@ -79,7 +79,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                minWidth: 100,
           },
           {
-               field: 'L2_K67',
+               field: 'l2K67',
                title: 'L2_K67',
                editable: true,
                type: 'number',
@@ -87,7 +87,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                minWidth: 100,
           },
           {
-               field: 'L2_K67F',
+               field: 'l2K67F',
                title: 'L2_K67F',
                editable: true,
                type: 'number',
@@ -95,7 +95,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                minWidth: 100,
           },
           {
-               field: 'L2_K57',
+               field: 'l2K57',
                title: 'L2_K57',
                editable: true,
                type: 'number',
@@ -103,29 +103,29 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                minWidth: 100,
           },
           {
-               field: 'CHEM_Sodium_Bicarbonate_Food_Grade_L1_K67_Id',
-               title: 'CHEM_Sodium_Bicarbonate_Food_Grade_L1_K67_Id',
+               field: 'l1K67Id',
+               title: 'l1K67Id',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67_Id',
-               title: 'CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67_Id',
+               field: 'l2K67Id',
+               title: 'l2K67Id',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67F_Id',
-               title: 'CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67F_Id',
+               field: 'l2K67FId',
+               title: 'l2K67FId',
                editable: false,
                hidden: true,
                isVisible: false,
           },
           {
-               field: 'CHEM_Sodium_Bicarbonate_Food_Grade_L2_K57_Id',
-               title: 'CHEM_Sodium_Bicarbonate_Food_Grade_L2_K57_Id',
+               field: 'l2K57Id',
+               title: 'l2K57Id',
                editable: false,
                hidden: true,
                isVisible: false,
@@ -144,11 +144,11 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
                )
 
                if (res?.code === 200) {
-                    const mapped = (res?.data || []).map((item, index) => ({
+                    const mapped = (res?.data?.Data || []).map((item, index) => ({
                          ...item,
                          id: index,
                          idFromApi: item.id || null,
-                         isEditable: true,
+                         isEditable: item.isEditable ?? true,
                     }))
                     setRows(mapped)
                } else {
@@ -178,15 +178,15 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions }) => {
 
                var payload = data.map((item) => ({
                     id: item.idFromApi || null,
-                    Particulars: item.Particulars || '',
-                    L1_K67: item.L1_K67,
-                    L2_K67: item.L2_K67,
-                    L2_K67F: item.L2_K67F,
-                    L2_K57: item.L2_K57,
-                    CHEM_Sodium_Bicarbonate_Food_Grade_L1_K67_Id: item.CHEM_Sodium_Bicarbonate_Food_Grade_L1_K67_Id || null,
-                    CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67_Id: item.CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67_Id || null,
-                    CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67F_Id: item.CHEM_Sodium_Bicarbonate_Food_Grade_L2_K67F_Id || null,
-                    CHEM_Sodium_Bicarbonate_Food_Grade_L2_K57_Id: item.CHEM_Sodium_Bicarbonate_Food_Grade_L2_K57_Id || null,
+                    particulars: item.particulars || '',
+                    l1K67: item.l1K67,
+                    l2K67: item.l2K67,
+                    l2K67F: item.l2K67F,
+                    l2K57: item.l2K57,
+                    l1K67Id: item.l1K67Id || null,
+                    l2K67Id: item.l2K67Id || null,
+                    l2K67FId: item.l2K67FId || null,
+                    l2K57Id: item.l2K57Id || null,
                }))
 
                const response = await CatChemRecipeChemGradeApiService.saveCatChemChemGradeData(

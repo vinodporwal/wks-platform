@@ -396,6 +396,7 @@ const ProductionScheduling = ({ permissions }) => {
             showCalculateVisibility: Object.keys(calculationObject || {}).length > 0
                 ? true
                 : false,
+            makePagable: false,
         },
         isOldYear,
     )
@@ -437,7 +438,6 @@ const ProductionScheduling = ({ permissions }) => {
                 columns={columnsTransaction}
                 rows={rowsTransaction}
                 fetchData={fetchDataTransaction}
-                paginationOptions={[100, 200, 300]}
                 snackbarData={snackbarData}
                 snackbarOpen={snackbarOpen}
                 apiRef={apiRef}
