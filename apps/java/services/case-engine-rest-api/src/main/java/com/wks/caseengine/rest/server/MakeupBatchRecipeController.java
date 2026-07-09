@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.wks.caseengine.service.MakeupBatchRecipeService;
+import com.wks.caseengine.dto.ChemGradeDTO;
 import com.wks.caseengine.dto.MakeupBatchRecipeCalcDTO;
 import com.wks.caseengine.dto.MakeupBatchRecipeDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -40,5 +41,20 @@ public class MakeupBatchRecipeController {
     @PostMapping("/makeup-batch-recipe-calc-data")
     public AOPMessageVM saveMakeupBatchRecipeCalcData(@RequestParam String plantId, @RequestParam String aopYear, @RequestBody List<MakeupBatchRecipeCalcDTO> dtoList) {
         return makeupBatchRecipeService.saveMakeupBatchRecipeCalcData(plantId, aopYear, dtoList);
+    }
+
+    @GetMapping("/chem-grade-data")
+    public AOPMessageVM getChemGradeData(@RequestParam String plantId, @RequestParam String aopYear) {
+        return makeupBatchRecipeService.getChemGradeData(plantId, aopYear);
+    }
+
+    @PostMapping("/chem-grade-data")
+    public AOPMessageVM saveChemGradeData(@RequestParam String plantId, @RequestParam String aopYear, @RequestBody List<ChemGradeDTO> dtoList) {
+        return makeupBatchRecipeService.saveChemGradeData(plantId, aopYear, dtoList);
+    }
+
+    @GetMapping("/final-calculated-cat-chem")
+    public AOPMessageVM getFinalCalculatedCatChem(@RequestParam String plantId, @RequestParam String aopYear) {
+        return makeupBatchRecipeService.getFinalCalculatedCatChem(plantId, aopYear);
     }
 }

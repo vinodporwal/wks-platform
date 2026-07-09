@@ -29,19 +29,20 @@ public class MakeupBatchRecipeDTO {
     private Double k57Catalyst;
     private Double k67Catalyst;
     
-    private String dmWaterSodiBiCarbId;
-    private String dmWaterPolystatId;
-    private String dmWaterEvicasId;
-    private String dmWaterPva88Id;
-    private String dmWaterPva55Id;
-    private String dmWaterB72Id;
-    private String dmWaterL9pId;
-    private String dmWaterVerseneId;
-    private String dmWaterNonylPheId;
-    private String dmWaterIrgastabId;
-    private String dmWaterAtscId;
-    private String dmWaterAntiswellingId;
-    private String dmWaterAntifoamId;
-    private String dmWaterK57CatalystId;
-    private String dmWaterK67CatalystId;
+    private String sodiBiCarbId;
+    private String polystatId;
+    private String evicasId;
+    private String pva88Id;
+    private String pva55Id;
+    private String b72Id;
+    private String l9pId;
+    private String verseneId;
+    private String nonylPheId;
+    private String irgastabId;
+    private String atscId;
+    private String antiswellingId;
+    private String antifoamId;
+    private String k57CatalystId;
+    private String k67CatalystId;
+    private Boolean isEditable;
 }
