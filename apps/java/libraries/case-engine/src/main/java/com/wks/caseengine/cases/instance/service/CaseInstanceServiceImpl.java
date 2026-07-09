@@ -46,6 +46,9 @@ import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
 import com.wks.caseengine.cases.instance.command.FindCaseInstanceByAssetNameCmd;
 import com.wks.caseengine.cases.instance.command.UpdateEventIdsCmd;
 
+import com.wks.caseengine.rest.db2.repository.UsersRepository;
+import java.util.ArrayList;
+
 @Component
 public class CaseInstanceServiceImpl implements CaseInstanceService {
 
@@ -60,6 +63,9 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 
 	@Autowired
 	private CaseDefinitionService caseDefinitionService;
+
+	@Autowired
+	private UsersRepository usersRepository;
 
 	@Value("${spring.data.mongodb.database.tenant}")
 	private String dbTenant;
@@ -181,8 +187,23 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 							
 						   String caseName = node.get("caseTitle").asText();
 						   //check for null
-						   String caseAssignedToLabel = node.path("caseAssignedToLabel").asText(null);
-						   String caseAssignedBy = node.path("caseOwner").asText(null);
+						  String caseAssignedToLabel = null;
+						   if (caseAssignedTo != null && !caseAssignedTo.isEmpty()) {
+						   	   var resolvedUser = usersRepository.findByEmailId(caseAssignedTo.get(0));
+						   	   caseAssignedToLabel = (resolvedUser != null) ? resolvedUser.getUserId() : caseAssignedTo.get(0);
+						   }
+						   String caseAssignedBy = (caseInstance.getOwner() != null) ? caseInstance.getOwner().getName() : null;
+
+						   List<String> ccList = new ArrayList<>();
+						   JsonNode analysisTeamNode = node.path("analysisTeam");
+						   if (analysisTeamNode.isArray()) {
+						   	   for (JsonNode member : analysisTeamNode) {
+						   	   	   ccList.add(member.asText());
+						   	   }
+						   }
+						   if (caseInstance.getOwner() != null && caseInstance.getOwner().getEmail() != null) {
+						   	   ccList.add(caseInstance.getOwner().getEmail());
+						   }
 						   String  caseNo = caseInstance.getBusinessKey();
 						   String caseStatus = "Overdue";
 						   Map<String, Object> data = new HashMap<>();
@@ -190,12 +211,12 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 						   data.put("status", caseStatus);
 						   data.put("caseNumber" , caseNo);
 						   data.put("assignedTo", caseAssignedToLabel);
+						   data.put("assignedToLabel", caseAssignedToLabel);
 						   data.put("assignedBy", caseAssignedBy);
 
 					
 					
-			 emailservice.send(caseAssignedTo.toArray(new String[0]), caseName, null, null, null,"reminder-notification", data);
-					  
+                        emailservice.send(caseAssignedTo.toArray(new String[0]), caseName, ccList.toArray(new String[0]), null, null,"reminder-notification", data);					  
 					
 				}catch(Exception e) {
 					e.printStackTrace();
