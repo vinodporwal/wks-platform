@@ -347,5 +347,44 @@ public class JMDHeatRateController {
         AOPMessageVM response = jmdHeatRateService.updateAuxboilerHeatRate(dtoList, aopYear);
         return ResponseEntity.ok(response);
     }
+    
+    @GetMapping(value = "/jmd/auxboiler-heat-rate/export")
+    public ResponseEntity<byte[]> exportAuxboilerHeatRate(
+            @RequestParam("assetId") UUID assetId,
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportAuxboilerHeatRateExcelData(
+                    assetId, year, startDate, endDate, plantIds, false, null
+            );
 
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("Auxboiler_Heat_Rate_Data.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting Auxboiler heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/jmd/auxboiler-heat-rate/import", consumes = "multipart/form-data")
+    public AOPMessageVM importAuxboilerHeatRateData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "assetId", required = false) UUID assetId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/Auxboiler-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importAuxboilerHeatRateData(year, assetId, startDate, endDate, plantIds, file);
+    }
 }

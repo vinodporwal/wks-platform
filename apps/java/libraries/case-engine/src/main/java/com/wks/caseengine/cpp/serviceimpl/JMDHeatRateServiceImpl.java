@@ -487,11 +487,9 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 dto.setCppUtility(entity.getUtilityId() != null ? entity.getUtilityId() : null);
                 dto.setFinancialYear(entity.getFinancialYear() != null ? entity.getFinancialYear() : null);
                 dto.setAuxBoilerLoad(entity.getAuxBoilerLoad() != null ? entity.getAuxBoilerLoad() : null);
-                dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");
-                
+                dto.setRemarks(entity.getRemarks() != null ? entity.getRemarks() : "");    
                 dto.setCreatedDate(entity.getCreatedDate());
-                dto.setUpdatedDate(entity.getUpdatedDate());
-                
+                dto.setUpdatedDate(entity.getUpdatedDate()); 
                 dto.setFinalHeatRate(entity.getFinalHeatRate() != null ? entity.getFinalHeatRate() : null);
                 dto.setOemHeatRate(entity.getOemHeatRate() != null ? entity.getOemHeatRate() : null);
                 dto.setSelectedHeatRate(entity.getSelectedHeatRate() != null ? entity.getSelectedHeatRate() : "");
@@ -630,7 +628,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         }
         return aopMessageVM;
     }
-
+    
     @Override
     public AOPMessageVM importHRSGHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -676,6 +674,58 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             
         } catch (Exception e) {
             logger.error("[JMDHeatRate] Error importing GT heat rate data: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to process file import: " + e.getMessage());
+            aopMessageVM.setData(null);
+        }
+        return aopMessageVM;
+    }
+
+    @Override
+    public AOPMessageVM importAuxboilerHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            
+            List<CppAuxBoilerHeatRateDto> data = readAuxboilerHeatRateData(file.getInputStream(), year);
+            
+            if (data != null && !data.isEmpty()) {
+            	CppAuxBoilerHeatRateDto firstRow = data.get(0);
+                if (assetId == null && firstRow.getAssetFkId() != null) {
+                    assetId = UUID.fromString(firstRow.getAssetFkId());
+                }
+            }
+
+            aopMessageVM = updateAuxboilerHeatRate(data, year);
+            
+            List<CppAuxBoilerHeatRateDto> failedList = (List<CppAuxBoilerHeatRateDto>) aopMessageVM.getData();
+
+            if (failedList != null && !failedList.isEmpty()) {
+                byte[] fileByteArray = exportAuxboilerHeatRateExcelData(
+                    assetId,     
+                    year,        
+                    startDate,   
+                    endDate,    
+                    plantIds,    
+                    true,        
+                    failedList   
+                );
+                
+                if (fileByteArray != null && fileByteArray.length > 0) {
+                    String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                    aopMessageVM.setData(base64File);
+                    aopMessageVM.setCode(400);
+                    aopMessageVM.setMessage("Partial data has been saved. Please check the attached error details.");
+                }
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved successfully.");
+                aopMessageVM.setData(null);
+            }
+
+            return aopMessageVM;
+            
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] Error importing Auxboiler heat rate data: {}", e.getMessage(), e);
             aopMessageVM.setCode(500);
             aopMessageVM.setMessage("Failed to process file import: " + e.getMessage());
             aopMessageVM.setData(null);
@@ -768,6 +818,49 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 	    }
 
 	    return cppHrsgHeatRateDtos;
+	}
+
+    public List<CppAuxBoilerHeatRateDto> readAuxboilerHeatRateData(InputStream inputStream, String year) {
+	    List<CppAuxBoilerHeatRateDto> cppAuxBoilerHeatRateDtos = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext())
+	            rowIterator.next();  
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+	            
+	            CppAuxBoilerHeatRateDto dto = new CppAuxBoilerHeatRateDto();
+	            try {
+	                dto.setEquipType(getStringCellValue(row.getCell(0), dto));
+	                dto.setCppUtility(getStringCellValue(row.getCell(1), dto));
+	                dto.setAuxBoilerLoad(getNumericCellValue(row.getCell(2), dto));
+	                dto.setOemHeatRate(getNumericCellValue(row.getCell(3), dto));
+	                dto.setPrevYearFinalHeatRate(getNumericCellValue(row.getCell(4), dto));
+	                dto.setProposedYearFinalHeatRate(getNumericCellValue(row.getCell(5), dto));
+	                dto.setFinalHeatRate(getNumericCellValue(row.getCell(6), dto));
+	                dto.setRemarks(getStringCellValue(row.getCell(7), dto));
+	                dto.setFinancialYear(year);
+	                dto.setSelectedHeatRate(getStringCellValue(row.getCell(8), dto));
+	                dto.setId(getStringCellValue(row.getCell(9), dto));
+	              } 
+	              catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+	            cppAuxBoilerHeatRateDtos.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return cppAuxBoilerHeatRateDtos;
 	}
 
     public List<STGHeatRateDTO> readSTGHeatRateData(InputStream inputStream, String year) {
@@ -881,7 +974,51 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 	    }
 	    return null;
 	}
-    
+
+    private static String getStringCellValue(Cell cell, CppAuxBoilerHeatRateDto dto) {
+	    try {
+	        if (cell == null || cell.getCellType() == CellType.BLANK) {
+	            return null;
+	        }
+	        
+	        cell.setCellType(CellType.STRING);
+	        String val = cell.getStringCellValue().trim();
+	        
+	        // Return null if the string is empty after trimming
+	        return val.isEmpty() ? null : val;
+	        
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Please enter correct values");
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+    private static Double getNumericCellValue(Cell cell, CppAuxBoilerHeatRateDto dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } 
+	    
+	    if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        if (val.isEmpty()) {
+	            return null; // Return null for blank strings
+	        }
+	        try {
+	            return Double.parseDouble(val);
+	        } catch (NumberFormatException e) {
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    }
+	    return null;
+	}
+
     private static String getStringCellValue(Cell cell, CppGtHeatRateDto dto) {
 	    try {
 	        if (cell == null || cell.getCellType() == CellType.BLANK) {
@@ -1484,6 +1621,96 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             }
         } catch (Exception e) {
             logger.error("[JMDHeatRate] exportGTHeatRateExcelData error: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] exportAuxboilerHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, 
+                                            List<UUID> plantIds, boolean isAfterSave, List<CppAuxBoilerHeatRateDto> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM aopMessageVM = getAuxboilerHeatRateData(assetId, year, startDate, endDate, plantIds);
+                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+                    dtoList = (List<CppAuxBoilerHeatRateDto>) aopMessageVM.getData();
+                }
+            }
+            if (dtoList == null) {
+                dtoList = new java.util.ArrayList<>();
+            }
+            try (Workbook workbook = new XSSFWorkbook(); 
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                 
+                Sheet sheet = workbook.createSheet("Heat Rate");
+                 CellStyle headerStyle = createHeaderStyle(workbook);
+                CellStyle dataStyle = createDataStyle(workbook);
+                CellStyle remarksStyle = createRemarksStyle(workbook);
+                List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
+                    "Equipment Type", "CPP Utility", "Auxboiler Load", "OEM HR", 
+                    "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)", 
+                    "Final HR", "Remark", "Selected Heat Rate", "Id"
+                ));
+
+                if (isAfterSave) {
+                    headerList.add("Status");
+                    headerList.add("Error Description");
+                }
+
+                int rowNum = 0;
+                Row headerRow = sheet.createRow(rowNum++);
+                for (int i = 0; i < headerList.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headerList.get(i));
+                    cell.setCellStyle(headerStyle);
+                }
+                sheet.setColumnHidden(8, true);
+                sheet.setColumnHidden(9, true);
+                for (CppAuxBoilerHeatRateDto dto : dtoList) {
+                    Row row = sheet.createRow(rowNum++);
+                    int colNum = 0;
+
+                    row.createCell(colNum++).setCellValue(dto.getEquipType() != null ? dto.getEquipType() : "");
+                    row.createCell(colNum++).setCellValue(dto.getCppUtility() != null ? dto.getCppUtility() : "");
+                    row.createCell(colNum++).setCellValue(dto.getAuxBoilerLoad() != null ? dto.getAuxBoilerLoad() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getOemHeatRate() != null ? dto.getOemHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getPrevYearFinalHeatRate() != null ? dto.getPrevYearFinalHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getProposedYearFinalHeatRate() != null ? dto.getProposedYearFinalHeatRate() : 0.0);
+                    row.createCell(colNum++).setCellValue(dto.getFinalHeatRate() != null ? dto.getFinalHeatRate() : 0.0);
+                    
+                    Cell remarkCell = row.createCell(colNum++);
+                    remarkCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+                    remarkCell.setCellStyle(remarksStyle);
+
+                    row.createCell(colNum++).setCellValue(dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate() : "");
+                    row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
+
+                    if (isAfterSave) {
+                        row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                        row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+                    }
+
+                    for (int c = 0; c < colNum; c++) {
+                        if (c != 8) { 
+                            row.getCell(c).setCellStyle(dataStyle);
+                        }
+                    }
+                }
+
+                
+                for (int i = 0; i < headerList.size(); i++) {
+                    if (i == 8) {
+                        sheet.setColumnWidth(i, 8000); 
+                        continue;
+                    }
+                    sheet.autoSizeColumn(i);
+                    applyHeaderMinWidth(sheet, i, headerList.get(i));
+                }
+
+                workbook.write(outputStream);
+                return outputStream.toByteArray();
+            }
+        } catch (Exception e) {
+            logger.error("[JMDHeatRate] export AuxboilerHeatRateExcelData error: {}", e.getMessage(), e);
         }
         return null;
     }
