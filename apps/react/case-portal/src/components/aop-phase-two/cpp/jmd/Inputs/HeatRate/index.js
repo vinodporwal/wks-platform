@@ -5,6 +5,7 @@ import GTHeatRate from './GTHeatRate'
 import STGHeatRate from './STGHeatRate'
 import HRSGHeatRate from './HRSGHeatRate'
 import { Box, Stack } from '@mui/material'
+import AUXBOILERHeatRate from './AUXBOILERHeatRate'
 
 const index = () => {
   const { startDate, endDate, loading, error } = useConfigurationDates()
@@ -41,8 +42,15 @@ const index = () => {
           dateLoading={loading}
         />
       </Stack>
-      <Stack>
+      <Stack sx={{ mb: 2 }}>
         <HRSGHeatRate
+          startDate={startDate}
+          endDate={endDate}
+          dateLoading={loading}
+        />
+      </Stack>
+      <Stack sx={{ mb: 2 }}>
+        <AUXBOILERHeatRate
           startDate={startDate}
           endDate={endDate}
           dateLoading={loading}

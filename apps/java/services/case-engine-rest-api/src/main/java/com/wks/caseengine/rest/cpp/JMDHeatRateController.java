@@ -206,7 +206,7 @@ public class JMDHeatRateController {
         return jmdHeatRateService.importGTHeatRateData(year, assetId, startDate, endDate, plantIds, file); 
     }
 	
-	@GetMapping(value = "/jmd/stg-heat-rate-export")
+	@GetMapping(value = "/jmd/stg-heat-rate/export")
     public ResponseEntity<byte[]> exportSTGHeatRate(
             @RequestParam("assetId") UUID assetId,
             @RequestParam("year") String year,
@@ -443,29 +443,7 @@ public class JMDHeatRateController {
         return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
     }
 
-    /**
-     * [STG] EXPORT Excel
-     * UI Component : STGHeatRate.js → handleExport() via HeatRateApiService.exportSTGHeatRateExcel()
-     * JS Service   : heatRateApiService.js → exportSTGHeatRateExcel()
-     * Endpoint     : GET /task/jmd/stg-heat-rate/export?assetId=...&aopYear=...&startDate=...&endDate=...&plantIds=...
-     */
-    @GetMapping("/jmd/stg-heat-rate/export")
-    public ResponseEntity<byte[]> exportSTGHeatRate(
-            @RequestParam String assetId,
-            @RequestParam String aopYear,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam List<UUID> plantIds) {
-        logger.info("[JMDHeatRateController] Export STG heat rate - assetId: {}, aopYear: {}, plantIds: {}", assetId, aopYear, plantIds);
-        byte[] excelData = jmdHeatRateService.exportSTGHeatRate(assetId, aopYear, startDate, endDate, plantIds);
-        if (excelData == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "STG_Heat_Rate.xlsx");
-        return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
-    }
+    
 
     /**
      * [HRSG] EXPORT Excel — PATH-VARIABLE VERSION

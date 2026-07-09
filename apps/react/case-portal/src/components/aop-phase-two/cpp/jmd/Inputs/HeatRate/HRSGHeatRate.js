@@ -61,11 +61,11 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'equipType',
       title: 'Equipment Type',
-      width: 150,
+      width: 180,
       type: 'text',
       editable: false,
       locked: true,
-      minWidth: 150,
+      minWidth: 180,
     },
     {
       field: 'cppUtility',
@@ -754,12 +754,12 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         dropdownConfig={dropdownConfig}
         selectedDropdownValue={selectedPlant}
         setSelectedDropdownValue={setSelectedPlant}
-        customHeight={60}
+        customHeight={70}
         paginationConfig={{
           threshold: 20,
           buttonCount: 5,
           pageSizes: [10, 20, 50, 100],
-          defaultPageSize: 20,
+          defaultPageSize: 100,
         }}
       />
     </Box>

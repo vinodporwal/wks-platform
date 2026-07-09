@@ -44,11 +44,11 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'equipType',
       title: 'Equipment Type',
-      widthT: 150,
+      widthT: 180,
       type: 'text',
       editable: false,
       locked: true,
-      minWidth: 150,
+      minWidth: 180,
     },
     {
       field: 'cppUtility',
@@ -735,9 +735,9 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         selectedDropdownValue={selectedPlant}
         setSelectedDropdownValue={setSelectedPlant}
         customItemChange={handleCustomItemChange}
-        customHeight={60}
+        customHeight={70}
         paginationConfig={{
-          threshold: 20, // Show pagination if > 50 rows
+          threshold: 20,
           buttonCount: 5,
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 100,

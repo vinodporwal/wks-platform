@@ -577,10 +577,8 @@ async function saveSTGHeatRateData(keycloak, aopYear, payload) {
 // [STG] IMPORT EXCEL
 // Used by   : STGHeatRate.js → handleExcelUpload()
 // Endpoint  : POST /task/jmd/stg-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
-// Controller: importSTGHeatRate() — @PostMapping("/jmd/stg-heat-rate/import")
-// NOTE: UI sends 'year' param but import endpoint in controller receives only 'file' — verify if extra params needed.
+// Controller: importSTGHeatRateData() — @PostMapping("/jmd/stg-heat-rate/import")
 // -----------------------------------------------------------------------
-// POST /task/jmd/stg-heat-rate/import?year=...&assetId=...&startDate=...&endDate=...&plantIds=...
 async function saveSTGHeatRateExcel(
   file,
   keycloak,
@@ -627,10 +625,9 @@ async function saveSTGHeatRateExcel(
 // -----------------------------------------------------------------------
 // [STG] EXPORT EXCEL
 // Used by   : STGHeatRate.js → handleExport()
-// Endpoint  : GET /task/jmd/stg-heat-rate/export?assetId=...&aopYear=...&startDate=...&endDate=...&plantIds=id1,id2
+// Endpoint  : GET /task/jmd/stg-heat-rate/export?assetId=...&year=...&startDate=...&endDate=...&plantIds=id1&plantIds=id2
 // Controller: exportSTGHeatRate() — @GetMapping("/jmd/stg-heat-rate/export")
 // -----------------------------------------------------------------------
-// GET /task/jmd/stg-heat-rate/export?assetId=...&aopYear=...&startDate=...&endDate=...&plantIds=id1,id2
 async function exportSTGHeatRateExcel(
   keycloak,
   assetId,
@@ -642,7 +639,7 @@ async function exportSTGHeatRateExcel(
 ) {
   const queryParams = new URLSearchParams()
   queryParams.append('assetId', assetId)
-  queryParams.append('aopYear', aopYear)
+  queryParams.append('year', aopYear)
   if (startDate) queryParams.append('startDate', startDate)
   if (endDate) queryParams.append('endDate', endDate)
   if (plantIds && plantIds.length > 0) {
