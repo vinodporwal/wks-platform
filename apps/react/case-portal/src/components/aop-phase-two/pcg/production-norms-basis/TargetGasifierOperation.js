@@ -240,32 +240,32 @@ const TargetGasifierOperation = () => {
       setLoading(true)
 
       // ----- DUMMY DATA (remove when API is ready) -----
-      setRows(DUMMY_DATA)
-      return
+      // setRows(DUMMY_DATA)
+      // return
       // ----- END DUMMY DATA -----
 
-      // const response =
-      //   await ProductionNormsApiService.getTargetGasifierOperationData(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
+      const response =
+        await ProductionNormsApiService.getTargetGasifierOperationData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
-      // const formattedData = response?.data?.map((row, index) => ({
-      //   ...row,
-      //   id: row.id || index,
-      //   particulars: row.displayName,
+      const formattedData = response?.data?.productionRangeList?.map((row, index) => ({
+        ...row,
+        id: row.id || index,
+        particulars: row.displayName,
 
-      //   originalRemark: row.remarks || '',
-      //   normParameterFKId: row.normParameterFKId,
-      //   auditYear: row.auditYear,
-      //   normTypeName: row.normTypeName,
-      //   isEditable: row.isEditable,
-      //   displayName: row.displayName,
-      //   type: row.type,
-      // }))
+        originalRemark: row.remarks || '',
+        normParameterFKId: row.normParameterFKId,
+        auditYear: row.auditYear,
+        normTypeName: row.normTypeName,
+        isEditable: row.isEditable,
+        displayName: row.displayName,
+        type: row.type,
+      }))
 
-      // setRows(formattedData || [])
+      setRows(formattedData || [])
     } catch (error) {
       setRows([])
       console.error('Error fetching Cat Chem data:', error)

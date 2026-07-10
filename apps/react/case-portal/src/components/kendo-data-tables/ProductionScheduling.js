@@ -106,7 +106,9 @@ const ProductionScheduling = ({ permissions }) => {
         {
             field: 'sdWashAfterBatch',
             title: 'SD Wash After Batch',
-            editable: true,
+            editable: false,
+            isEditable: false,
+            isDisabled: true,
             type: 'integerNumberOnly',
             widthT: 300,
             minWidth: 120,
@@ -114,7 +116,9 @@ const ProductionScheduling = ({ permissions }) => {
         {
             field: 'sdFlushAfterBatch',
             title: 'SD Flush After Batch',
-            editable: true,
+            editable: false,
+            isEditable: false,
+            isDisabled: true,
             type: 'integerNumberOnly',
             align: 'left',
             headerAlign: 'left',
@@ -123,7 +127,9 @@ const ProductionScheduling = ({ permissions }) => {
         {
             field: 'sdWashHr',
             title: 'SD Wash Hr',
-            editable: true,
+            editable: false,
+            isEditable: false,
+            isDisabled: true,
             type: 'integerNumberOnly',
             minWidth: 120,
         },

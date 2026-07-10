@@ -9,7 +9,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "CPP_SRMapping", schema = "dbo", catalog = "RIL.AOP")
+@Table(name = "CPP_SRMapping", schema = "dbo")
 @Data
 public class CPPSRMapping {
 
