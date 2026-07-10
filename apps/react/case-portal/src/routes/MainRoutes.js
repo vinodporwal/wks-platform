@@ -174,9 +174,9 @@ import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/pro
 import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
 import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
 import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUpload'
-import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities/index'
-import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown/index'
-import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown/index'
+import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
+import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
+import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
 
 // Naphthasplitter Ended
 
