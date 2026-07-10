@@ -661,6 +661,7 @@ const ConsumptionNorms = () => {
       saveBtn: false,
       showCalculate: true,
       allAction: true,
+      dontClearGradeOnCalculate: true,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
       showRefresh: false,
@@ -841,10 +842,15 @@ const ConsumptionNorms = () => {
         </Dialog>{' '}
         <Dialog
           open={openMaterialGroupedSelectionDialog}
-          onClose={() => setOpenMaterialGroupedSelectionDialog(false)}
+          onClose={(event, reason) => {
+            if (reason !== 'backdropClick') {
+              setOpenMaterialGroupedSelectionDialog(false)
+            }
+          }}
           maxWidth="md"
           fullWidth
           disableScrollLock
+          disableEnforceFocus={true}
           PaperProps={{
             sx: {
               borderRadius: '20px',
