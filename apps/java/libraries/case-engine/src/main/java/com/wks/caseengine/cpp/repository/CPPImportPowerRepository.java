@@ -35,7 +35,7 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
             SELECT DISTINCT
                 p.Id                                          AS importPlantId,
                 TRY_CONVERT(UNIQUEIDENTIFIER, p.SourceName)  AS cppPlantId
-            FROM [RIL.AOP].[dbo].[Plants] p WITH(NOLOCK)
+            FROM [dbo].[Plants] p WITH(NOLOCK)
             WHERE TRY_CONVERT(UNIQUEIDENTIFIER, p.SourceName) IN :plantIds
               AND p.BusinessCategoryName = 'Import'
         )
@@ -68,15 +68,15 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
             ip.ImportPlantFK_ID                             AS importPlantFkId,
             ip.CPPPlant_FK_ID                               AS cppPlantFkId,
             ip.NormParameter_FK_Id                          AS normParameterFkId
-        FROM [RIL.AOP].[dbo].[CPPImportPower] ip WITH(NOLOCK)
+        FROM [dbo].[CPPImportPower] ip WITH(NOLOCK)
         INNER JOIN ImportPlants imp
             ON ip.ImportPlantFK_ID = imp.importPlantId
            AND ip.CPPPlant_FK_ID   = imp.cppPlantId
-        LEFT JOIN [RIL.AOP].[dbo].[Plants] importPlant WITH(NOLOCK)
+        LEFT JOIN [dbo].[Plants] importPlant WITH(NOLOCK)
             ON importPlant.Id = ip.ImportPlantFK_ID
-        LEFT JOIN [RIL.AOP].[dbo].[Plants] cppPlant WITH(NOLOCK)
+        LEFT JOIN [dbo].[Plants] cppPlant WITH(NOLOCK)
             ON cppPlant.Id = ip.CPPPlant_FK_ID
-        LEFT JOIN [RIL.AOP].[dbo].[NormParameters] np WITH(NOLOCK)
+        LEFT JOIN [dbo].[NormParameters] np WITH(NOLOCK)
             ON np.Id = ip.NormParameter_FK_Id
         WHERE ip.AOPYear = :aopYear
           AND ISNULL(np.isVisible, 1) = 1
@@ -106,8 +106,8 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
             np.DisplayName                                  AS normDisplayName,
             np.SAPMaterialCode                              AS sapCode,
             np.UOM                                          AS uom
-        FROM [RIL.AOP].[dbo].[Plants] p WITH(NOLOCK)
-        LEFT JOIN [RIL.AOP].[dbo].[NormParameters] np WITH(NOLOCK)
+        FROM [dbo].[Plants] p WITH(NOLOCK)
+        LEFT JOIN [dbo].[NormParameters] np WITH(NOLOCK)
             ON np.Plant_FK_Id = p.Id
            AND np.NormParameterType_FK_Id = 'E9C9FCFB-C5C6-49D6-8017-6D1E4C46868E'
            AND ISNULL(np.isVisible, 1) = 1

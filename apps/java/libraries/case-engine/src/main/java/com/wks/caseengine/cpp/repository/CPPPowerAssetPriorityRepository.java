@@ -52,7 +52,7 @@ public interface CPPPowerAssetPriorityRepository extends JpaRepository<CPPPowerA
                     THEN TRY_CAST(RIGHT(a.DisplayName, LEN(a.DisplayName) - CHARINDEX('-', a.DisplayName)) AS INT)
                     ELSE 0
                 END AS nameNumber
-            FROM [RIL.AOP].[dbo].[CPPPowerAssetPriority] p WITH(NOLOCK)
+            FROM [dbo].[CPPPowerAssetPriority] p WITH(NOLOCK)
             LEFT JOIN PowerGenerationAssets a WITH(NOLOCK) ON p.Asset_FK_Id = a.AssetId
             LEFT JOIN Plants pl WITH(NOLOCK) ON p.Plant_FK_Id = pl.Id
             WHERE p.Plant_FK_Id IN :plantIds
@@ -97,8 +97,8 @@ public interface CPPPowerAssetPriorityRepository extends JpaRepository<CPPPowerA
                     THEN TRY_CAST(RIGHT(sa.DisplayName, LEN(sa.DisplayName) - CHARINDEX('-', sa.DisplayName)) AS INT)
                     ELSE 0
                 END AS nameNumber
-            FROM [RIL.AOP].[dbo].[CPPSteamAssetsPriority] s WITH(NOLOCK)
-            LEFT JOIN [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sa WITH(NOLOCK) ON s.Asset_FK_Id = sa.AssetId
+            FROM [dbo].[CPPSteamAssetsPriority] s WITH(NOLOCK)
+            LEFT JOIN [dbo].[CPPSteamGenerationAsset] sa WITH(NOLOCK) ON s.Asset_FK_Id = sa.AssetId
             LEFT JOIN Plants pl2 WITH(NOLOCK) ON s.Plant_FK_Id = pl2.Id
             WHERE s.Plant_FK_Id IN :plantIds
               AND s.AOPYear = :aopYear
@@ -206,7 +206,7 @@ public interface CPPPowerAssetPriorityRepository extends JpaRepository<CPPPowerA
                             LEN(sga.DisplayName) - CHARINDEX('-', sga.DisplayName)) AS INT)
                     ELSE 0
                 END AS nameNumber
-            FROM [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
+            FROM [dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
             LEFT JOIN Plants pl2 WITH(NOLOCK) ON pl2.Id = sga.CPPPLANT_FK_Id
             WHERE sga.CPPPLANT_FK_Id IN :plantIds
         )

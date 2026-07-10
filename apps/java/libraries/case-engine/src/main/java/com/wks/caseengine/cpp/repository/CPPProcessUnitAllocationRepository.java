@@ -21,7 +21,7 @@ public interface CPPProcessUnitAllocationRepository extends JpaRepository<CPPPro
      * @param plantIds comma-separated UUID string, e.g. "uuid1,uuid2"
      * @param aopYear  financial year, e.g. "2026-27"
      */
-    @Query(value = "EXEC [RIL.AOP].[dbo].[CPP_GetProcessUnitAllocation] @PlantIds = :plantIds, @FinancialYear = :aopYear",
+    @Query(value = "EXEC [dbo].[CPP_GetProcessUnitAllocation] @PlantIds = :plantIds, @FinancialYear = :aopYear",
            nativeQuery = true)
     List<CPPProcessUnitAllocationProjection> findByPlantIdsAndAopYear(
             @Param("plantIds") String plantIds,
@@ -35,7 +35,7 @@ public interface CPPProcessUnitAllocationRepository extends JpaRepository<CPPPro
      */
     @Query(value = """
         SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
-        FROM [RIL.AOP].[dbo].[CPPProcessUnitAllocation] WITH(NOLOCK)
+        FROM [dbo].[CPPProcessUnitAllocation] WITH(NOLOCK)
         WHERE CPPPlant_FK_ID    = :cppPlantId
           AND ImportPower_FK_ID = :importPowerId
           AND Process_Plant_Name  = :processPlantName
@@ -54,7 +54,7 @@ public interface CPPProcessUnitAllocationRepository extends JpaRepository<CPPPro
      */
     @Modifying
     @Query(value = """
-        DELETE FROM [RIL.AOP].[dbo].[CPPProcessUnitAllocation]
+        DELETE FROM [dbo].[CPPProcessUnitAllocation]
         WHERE Id = :id
         """, nativeQuery = true)
     void deleteAllocationById(@Param("id") UUID id);

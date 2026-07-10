@@ -571,7 +571,7 @@ async function exportPIMSThroughputExcel(keycloak, plantId, year) {
  * @returns {Promise} Target Gasifier Operation data
  */
 async function getTargetGasifierOperationData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/production-norms/target-gasifier-operation?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/production-range?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -603,7 +603,7 @@ async function saveTargetGasifierOperationData(
   payload,
   plantId,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/production-norms/target-gasifier-operation?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/production-norms?year=${year}&plantFKId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -636,13 +636,11 @@ async function saveTargetGasifierOperationData(
  * @returns {Promise} Import response
  */
 async function importTargetGasifierOperationExcel(file, keycloak, plantId, year) {
-  return ImportExportApiService.saveExcelData(
-    file,
-    keycloak,
-    'production-norms/vgoht/target-gasifier-operation/import',
-    plantId,
-    year,
-  )
+  return saveExcelData(file, keycloak, 'production-range-import', {
+    year: year,
+    plantId: plantId,
+    isMinMax: true,
+  })
 }
 
 /**
@@ -655,7 +653,7 @@ async function importTargetGasifierOperationExcel(file, keycloak, plantId, year)
  */
 async function exportTargetGasifierOperationExcel(keycloak, plantId, year, fileName) {
   return ImportExportApiService.exportExcelData(keycloak, {
-    endpoint: `production-norms/vgoht/target-gasifier-operation/export/${plantId}/${year}`,
+    endpoint: `production-range-export?year=${year}&plantId=${plantId}`,
     queryParams: {},
     fileName: fileName || `Production_Norms_Target_Gasifier_Operation_${year}.xlsx`,
     method: 'GET',

@@ -12,8 +12,8 @@ import java.util.UUID;
 @Repository
 public interface CPPSteamAssetCapacityRepository extends JpaRepository<CPPSteamAssetCapacity, UUID> {
 
-    @Query(value = "SELECT s.* FROM [RIL.AOP].[dbo].[CPPSteamAssetCapacity] s WITH(NOLOCK) " +
-                   "LEFT JOIN [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sa WITH(NOLOCK) ON s.Asset_FK_Id = sa.AssetId " +
+    @Query(value = "SELECT s.* FROM [dbo].[CPPSteamAssetCapacity] s WITH(NOLOCK) " +
+                   "LEFT JOIN [dbo].[CPPSteamGenerationAsset] sa WITH(NOLOCK) ON s.Asset_FK_Id = sa.AssetId " +
                    "WHERE sa.CPPPLANT_FK_Id = :plantId AND s.AOPYear = :aopYear", nativeQuery = true)
     List<CPPSteamAssetCapacity> findByPlantIdAndAopYear(@Param("plantId") UUID plantId, @Param("aopYear") String aopYear);
 }

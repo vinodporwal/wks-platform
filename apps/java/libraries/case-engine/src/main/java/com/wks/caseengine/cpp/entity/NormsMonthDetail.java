@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "NormsMonthDetail", schema = "dbo", catalog = "RIL.AOP")
+@Table(name = "NormsMonthDetail", schema = "dbo")
 @Getter
 @Setter
 public class NormsMonthDetail {
