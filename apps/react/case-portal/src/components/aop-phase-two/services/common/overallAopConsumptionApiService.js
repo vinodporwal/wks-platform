@@ -142,7 +142,7 @@ async function exportOverallAopConsumption(
   excelExportTitle,
   screenName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/overall-consumption-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const url = `${Config.CaseEngineUrl}/task/overall-consumption-export-without-grades?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

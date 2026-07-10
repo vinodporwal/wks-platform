@@ -6,6 +6,7 @@ export const RemarkCell = ({
   onRemarkClick,
   allRedCell,
   setEdit,
+  suppressRemarksPlaceholder = false,
   ...tdProps
 }) => {
   const rawValue = dataItem[field]
@@ -51,7 +52,7 @@ export const RemarkCell = ({
       id={id}
       role={role}
       data-testid={dataTestId}
-      title={rawValue || 'Add'}
+      title={suppressRemarksPlaceholder ? rawValue || '' : rawValue || 'Add'}
       // title={rawValue}
       style={{
         cursor: 'pointer',
@@ -75,7 +76,7 @@ export const RemarkCell = ({
         setEdit?.({})
       }}
     >
-      {displayText || 'Add'}
+      {suppressRemarksPlaceholder ? displayText || '' : displayText || 'Add'}
       {/* {displayText} */}
     </td>
   )

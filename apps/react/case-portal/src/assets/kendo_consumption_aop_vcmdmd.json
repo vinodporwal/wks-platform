@@ -12,7 +12,6 @@
     "hidden": true,
     "minWidth": 100
   },
-
   {
     "field": "productName",
     "title": "Particulars",
@@ -103,7 +102,7 @@
     "field": "wtAverage",
     "title": "Weighted Avg",
     "editable": false,
-    "minWidth": 100
+    "minWidth": 140
   },
   {
     "field": "isEditable",

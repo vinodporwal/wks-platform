@@ -443,8 +443,15 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
         String sheetName = Utility.sanitizeSheetName(sheetLabel);
         Sheet sheet = workbook.createSheet(sheetName);
 
+        // Protect the sheet with an empty password so that locked cells become read-only in Excel.
+        sheet.protectSheet("");
+
+        // Per-row styles: editable rows are unlocked; non-editable rows are locked and greyed out.
+        CellStyle editableStyle = Utility.createBorderedUnlockedStyle(workbook);
+        CellStyle readOnlyStyle = Utility.createBorderedLockedStyle(workbook);
+
         List<String> headers = new ArrayList<>();
-        headers.add("DisplayName");
+        headers.add("Particulars");
         headers.addAll(dynamicMonthHeaders);
         headers.add("Remarks");
         headers.add("Id");
@@ -464,26 +471,27 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
         int rowIdx = 1;
         for (BudgetedOperatingHoursDTO dto : data) {
             Row row = sheet.createRow(rowIdx++);
+            CellStyle rowStyle = dto.isEditable() ? editableStyle : readOnlyStyle;
             int col = 0;
-            setCell(row.createCell(col++), dto.getDisplayName(), dataStyle);
-            setCell(row.createCell(col++), dto.getApr(), dataStyle);
-            setCell(row.createCell(col++), dto.getMay(), dataStyle);
-            setCell(row.createCell(col++), dto.getJun(), dataStyle);
-            setCell(row.createCell(col++), dto.getJul(), dataStyle);
-            setCell(row.createCell(col++), dto.getAug(), dataStyle);
-            setCell(row.createCell(col++), dto.getSep(), dataStyle);
-            setCell(row.createCell(col++), dto.getOct(), dataStyle);
-            setCell(row.createCell(col++), dto.getNov(), dataStyle);
-            setCell(row.createCell(col++), dto.getDec(), dataStyle);
-            setCell(row.createCell(col++), dto.getJan(), dataStyle);
-            setCell(row.createCell(col++), dto.getFeb(), dataStyle);
-            setCell(row.createCell(col++), dto.getMar(), dataStyle);
-            setCell(row.createCell(col++), dto.getRemarks(), dataStyle);
-            setCell(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : "", dataStyle);
-            setCell(row.createCell(col++), dto.getGradeId() != null ? dto.getGradeId().toString() : "", dataStyle);
+            setCell(row.createCell(col++), dto.getDisplayName(), rowStyle);
+            setCell(row.createCell(col++), dto.getApr(), rowStyle);
+            setCell(row.createCell(col++), dto.getMay(), rowStyle);
+            setCell(row.createCell(col++), dto.getJun(), rowStyle);
+            setCell(row.createCell(col++), dto.getJul(), rowStyle);
+            setCell(row.createCell(col++), dto.getAug(), rowStyle);
+            setCell(row.createCell(col++), dto.getSep(), rowStyle);
+            setCell(row.createCell(col++), dto.getOct(), rowStyle);
+            setCell(row.createCell(col++), dto.getNov(), rowStyle);
+            setCell(row.createCell(col++), dto.getDec(), rowStyle);
+            setCell(row.createCell(col++), dto.getJan(), rowStyle);
+            setCell(row.createCell(col++), dto.getFeb(), rowStyle);
+            setCell(row.createCell(col++), dto.getMar(), rowStyle);
+            setCell(row.createCell(col++), dto.getRemarks(), rowStyle);
+            setCell(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : "", rowStyle);
+            setCell(row.createCell(col++), dto.getGradeId() != null ? dto.getGradeId().toString() : "", rowStyle);
             if (includeErrorColumns) {
-                setCell(row.createCell(col++), dto.getSaveStatus() != null ? dto.getSaveStatus() : "", dataStyle);
-                setCell(row.createCell(col++), dto.getErrDescription() != null ? dto.getErrDescription() : "", dataStyle);
+                setCell(row.createCell(col++), dto.getSaveStatus() != null ? dto.getSaveStatus() : "", rowStyle);
+                setCell(row.createCell(col++), dto.getErrDescription() != null ? dto.getErrDescription() : "", rowStyle);
             }
         }
 

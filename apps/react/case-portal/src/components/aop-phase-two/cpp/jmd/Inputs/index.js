@@ -2,19 +2,20 @@ import { useEffect, useState, useCallback } from 'react'
 import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ImportPower from './ImportPower'
 import AssetCapacity from './AssetCapacity/index'
 import ShutdownAndOperational from './ShutdownAndOperational/index'
 import { generateMockData } from './InputUtility'
 import ExportAvailability from './ExportAvailability'
 import HeatRate from './HeatRate/index'
-import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
 import FuelPriority from './FuelPriority/index'
+import ImportPower from './ImportPowerMain/index'
+import SRMapping from '../../common/SRMapping/index'
+import InputNorms from './InputNorms/index'
 
 const InputsJMD = () => {
   const keycloak = useSession()
@@ -77,22 +78,28 @@ const InputsJMD = () => {
         displaySequence: 5,
       },
       {
+        id: 'sr-mapping',
+        name: 'srMapping',
+        displayName: 'SR Mapping',
+        displaySequence: 6,
+      },
+      {
         id: 'fixed-norms',
         name: 'Norms',
         displayName: 'Norms',
-        displaySequence: 6,
+        displaySequence: 7,
       },
       {
         id: 'fuel-availability',
         name: 'fuelAvailability',
         displayName: 'Fuel Availability',
-        displaySequence: 7,
+        displaySequence: 8,
       },
       {
         id: 'fuel-priority',
         name: 'fuelPriority',
         displayName: 'Fuel Priority',
-        displaySequence: 8,
+        displaySequence: 9,
       },
       // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
     ]
@@ -169,11 +176,13 @@ const InputsJMD = () => {
       case 'heat-rate':
         return <HeatRate />
       case 'fixed-norms':
-        return <FixedNorms />
+        return <InputNorms />
       case 'fuel-availability':
         return <Fuel />
       case 'fuel-priority':
         return <FuelPriority />
+      case 'sr-mapping':
+        return <SRMapping />
       default:
         return null
     }

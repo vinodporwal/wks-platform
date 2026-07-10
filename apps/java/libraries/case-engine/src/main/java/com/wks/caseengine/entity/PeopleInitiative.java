@@ -48,6 +48,4 @@ public class PeopleInitiative {
 
     @Column(name = "Remark")
     private String remark;
-
-    private Date modifiedOn;
 }

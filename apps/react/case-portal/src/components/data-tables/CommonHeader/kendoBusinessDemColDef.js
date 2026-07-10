@@ -79,8 +79,15 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
     })
   }
 
-  colDefsCache.set(cacheKey, enhancedColDefs)
-  return enhancedColDefs
+  const IS_PVC_DMD = lowerVertName === 'pvc' && siteName === 'dmd'
+
+  let finalColDefs = enhancedColDefs
+  if (IS_PVC_DMD) {
+    finalColDefs = enhancedColDefs.filter((col) => col.field !== 'remark')
+  }
+
+  colDefsCache.set(cacheKey, finalColDefs)
+  return finalColDefs
 }
 
 export const clearColDefsCache = () => colDefsCache.clear()

@@ -68,7 +68,7 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
             ELSE 0
         END AS nameNumber
 
-        FROM [RIL.AOP].[dbo].[CPPAssetOperationalHours] h WITH(NOLOCK)
+        FROM [dbo].[CPPAssetOperationalHours] h WITH(NOLOCK)
 
         LEFT JOIN PowerGenerationAssets pga WITH(NOLOCK)
             ON pga.AssetId = h.Asset_FK_Id
@@ -135,9 +135,9 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
                 ELSE 0
             END AS nameNumber
 
-        FROM [RIL.AOP].[dbo].[CPPSteamAssetsOperationalHours] sh WITH(NOLOCK)
+        FROM [dbo].[CPPSteamAssetsOperationalHours] sh WITH(NOLOCK)
 
-        LEFT JOIN [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
+        LEFT JOIN [dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
             ON sga.AssetId = sh.SteamAsset_FK_Id
 
         LEFT JOIN NormParameters npg2 WITH(NOLOCK)
@@ -295,7 +295,7 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
                             LEN(sga.DisplayName) - CHARINDEX('-', sga.DisplayName)) AS INT)
                     ELSE 0
                 END AS nameNumber
-            FROM [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
+            FROM [dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
             LEFT JOIN Plants pl2 WITH(NOLOCK) ON pl2.Id = sga.CPPPLANT_FK_Id
             LEFT JOIN NormParameters npg2 WITH(NOLOCK) ON npg2.Id = sga.UtilityGeneration_FK_Id
             LEFT JOIN NormParameters npd2 WITH(NOLOCK) ON npd2.Id = sga.UtilityDistributed_FK_Id

@@ -31,6 +31,7 @@ import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
 import com.wks.caseengine.cpp.dto.SRMappingDTO;
+import com.wks.caseengine.cpp.dto.norm.NormParameterDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.repository.CPPSRMappingRepository;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
@@ -588,12 +589,10 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     db1JdbcTemplate.update(insertSql,
                             srMappingId.toString(),
                             dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
-                            // resolvedReceiverCostCenterId   != null ? resolvedReceiverCostCenterId.toString() : null,
-                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                            // resolvedSenderCostCenterId     != null ? resolvedSenderCostCenterId.toString()   : null,
                             dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
+                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             dto.getRemarks()
                     );
                     logger.info("updateSRMappingsByPlant: inserted new CPP_SR_Mapping_Master ID={}", srMappingId);
@@ -612,12 +611,10 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                             "WHERE ID = ?";
                     db1JdbcTemplate.update(updateSql,
                             dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
-                            // resolvedReceiverCostCenterId   != null ? resolvedReceiverCostCenterId.toString() : null,
-                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                            // resolvedSenderCostCenterId     != null ? resolvedSenderCostCenterId.toString()   : null,
                             dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
+                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
                             dto.getRemarks(),
                             srMappingId.toString()
                     );
@@ -677,6 +674,90 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         }
         return response;
     }
+
+    // ── Delete SR Mapping ─────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteSRMapping(UUID id) {
+        logger.info("deleteSRMapping: id={}", id);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            if (id == null) {
+                response.setCode(400);
+                response.setMessage("Id must not be null.");
+                return response;
+            }
+
+            // ── Step 1: Verify the master record exists ─────────────────────────────────
+            List<String> masterCheck = db1JdbcTemplate.queryForList(
+                    "SELECT TOP 1 ID FROM CPP_SR_Mapping_Master WITH(NOLOCK) WHERE ID = ?",
+                    String.class, id.toString());
+
+            if (masterCheck.isEmpty()) {
+                logger.warn("deleteSRMapping: no CPP_SR_Mapping_Master found for id={}", id);
+                response.setCode(404);
+                response.setMessage("SR Mapping record not found for id: " + id);
+                return response;
+            }
+
+            // ── Step 2: Fetch all NormsHeader IDs linked to this SR Mapping ────────────
+            List<String> normsHeaderIds = db1JdbcTemplate.queryForList(
+                    "SELECT Id FROM NormsHeader WITH(NOLOCK) WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                    String.class, id.toString());
+
+            logger.info("deleteSRMapping: found {} NormsHeader record(s) linked to id={}", normsHeaderIds.size(), id);
+
+            if (!normsHeaderIds.isEmpty()) {
+                // Build an IN-clause placeholder string: ?,?,?...
+                String inClause = normsHeaderIds.stream()
+                        .map(h -> "?")
+                        .collect(java.util.stream.Collectors.joining(","));
+                Object[] headerIdArgs = normsHeaderIds.toArray();
+
+                // ── Step 3: Delete NormsMonthDetail (child of NormsHeader) ──────────────
+                int deletedMonthDetail = db1JdbcTemplate.update(
+                        "DELETE FROM NormsMonthDetail WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} NormsMonthDetail row(s)", deletedMonthDetail);
+
+                // ── Step 4: Delete CPPNorms (child of NormsHeader) ──────────────────────
+                int deletedNorms = db1JdbcTemplate.update(
+                        "DELETE FROM CPPNorms WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} CPPNorms row(s)", deletedNorms);
+
+                // ── Step 5: Delete CPPMonthWisePrice (child of NormsHeader) ────────────
+                int deletedMonthWisePrice = db1JdbcTemplate.update(
+                        "DELETE FROM CPPMonthWisePrice WHERE NormsHeader_FK_Id IN (" + inClause + ")",
+                        headerIdArgs);
+                logger.info("deleteSRMapping: deleted {} CPPMonthWisePrice row(s)", deletedMonthWisePrice);
+
+                // ── Step 6: Delete NormsHeader rows ─────────────────────────────────────
+                int deletedHeaders = db1JdbcTemplate.update(
+                        "DELETE FROM NormsHeader WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                        id.toString());
+                logger.info("deleteSRMapping: deleted {} NormsHeader row(s)", deletedHeaders);
+            }
+
+            // ── Step 7: Delete CPP_SR_Mapping_Master ────────────────────────────────────
+            int deletedMaster = db1JdbcTemplate.update(
+                    "DELETE FROM CPP_SR_Mapping_Master WHERE ID = ?",
+                    id.toString());
+            logger.info("deleteSRMapping: deleted {} CPP_SR_Mapping_Master row(s) for id={}", deletedMaster, id);
+
+            response.setCode(200);
+            response.setMessage("SR Mapping record deleted successfully.");
+            response.setData(null);
+
+        } catch (Exception e) {
+            logger.error("deleteSRMapping error for id={}: {}", id, e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
 
     /**
      * Returns true if the given plantId belongs to a Site whose Name = 'NMD'.
@@ -774,19 +855,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "IsActive = 1 " +
                         "WHERE Id = ?";
                 db1JdbcTemplate.update(updateSql,
-                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
-                        dto.getSenderUtilityName(),                                                               // UtilityName
-                        dto.getSenderUtilityCode(),                                                               // UtilityId
-                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // Plant_FK_Id
+                        dto.getReceiverUtilityName(),                                                             // UtilityName
+                        dto.getReceiverUtilityCode(),                                                             // UtilityId
+                        dto.getReceiverUtilityUOM(),                                                              // UtilityUOM
                         "Utilities",                                                                              // AccountName
-                        dto.getReceiverUtilityName(),                                                             // MaterialName
-                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
-                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
-                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
-                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getSenderUtilityName(),                                                               // MaterialName
+                        dto.getSenderPlantName(),                                                                 // IssuingPlantName
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // IssuingPlant_FK_Id
+                        resolvedSenderUtilityId          != null ? resolvedSenderUtilityId.toString()          : null,  // NormParameter_FK_Id
+                        dto.getSenderUtilityUOM(),                                                                // IssuingUOM
+                        dto.getSenderUtilityCode(),                                                               // MaterialId
                         dto.getRemarks(),                                                                         // Remarks
-                        dto.getReceiverPlantCode(),                                                               // plantCode
+                        dto.getSenderPlantCode(),                                                                 // plantCode
                         existingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: updated NormsHeader Id={} for srMappingId={}", existingId, srMappingId);
@@ -803,19 +884,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?)";
                 db1JdbcTemplate.update(insertSql,
                         newId.toString(),
-                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
-                        dto.getSenderUtilityName(),                                                               // UtilityName
-                        dto.getSenderUtilityCode(),                                                               // UtilityId
-                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // Plant_FK_Id
+                        dto.getReceiverUtilityName(),                                                             // UtilityName
+                        dto.getReceiverUtilityCode(),                                                             // UtilityId
+                        dto.getReceiverUtilityUOM(),                                                              // UtilityUOM
                         "Utilities",                                                                              // AccountName
-                        dto.getReceiverUtilityName(),                                                             // MaterialName
-                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
-                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
-                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
-                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getSenderUtilityName(),                                                               // MaterialName
+                        dto.getSenderPlantName(),                                                                 // IssuingPlantName
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // IssuingPlant_FK_Id
+                        resolvedSenderUtilityId          != null ? resolvedSenderUtilityId.toString()          : null,  // NormParameter_FK_Id
+                        dto.getSenderUtilityUOM(),                                                                // IssuingUOM
+                        dto.getSenderUtilityCode(),                                                               // MaterialId
                         dto.getRemarks(),                                                                         // Remarks
-                        dto.getReceiverPlantCode(),                                                               // plantCode
+                        dto.getSenderPlantCode(),                                                                 // plantCode
                         srMappingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: inserted NormsHeader Id={} for srMappingId={}", newId, srMappingId);
@@ -1103,5 +1184,86 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             logger.error("resolveOrCreateNormParameter error (name={}, plant={}, normType={}): {}", utilityName, plantId, normTypeId, e.getMessage(), e);
             return null;
         }
+    }
+
+    // ── Norm Parameters by Source Plant ──────────────────────────────────────
+
+    @Override
+    public AOPMessageVM getNormParametersBySourcePlant(String plantId, Integer normTypeId) {
+        logger.info("getNormParametersBySourcePlant: plantId={}, normTypeId={}", plantId, normTypeId);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            StringBuilder sql = new StringBuilder(
+                "SELECT DISTINCT np.*, nt.NormName AS NormTypeName " +
+                "FROM Plants p " +
+                "INNER JOIN NormParameters np ON np.Plant_FK_Id = p.Id " +
+                "INNER JOIN NormTypes nt ON nt.Id = np.NormType_FK_Id " +
+                "WHERE p.SourceName = CAST(? AS VARCHAR(36))"
+            );
+            List<Object> params = new ArrayList<>();
+            params.add(plantId);
+
+            if (normTypeId != null) {
+                sql.append(" AND np.NormType_FK_Id = ?");
+                params.add(normTypeId);
+            }
+            sql.append(" ORDER BY nt.NormName, np.DisplayOrder, np.Name");
+
+            List<Map<String, Object>> rows = db1JdbcTemplate.queryForList(sql.toString(), params.toArray());
+
+            List<NormParameterDTO> data = new ArrayList<>();
+            for (Map<String, Object> row : rows) {
+                NormParameterDTO dto = new NormParameterDTO();
+                dto.setId(toUuid(row, "Id"));
+                dto.setName(str(row, "Name"));
+                dto.setDisplayName(str(row, "DisplayName"));
+                dto.setUom(str(row, "UOM"));
+                dto.setExpression(str(row, "Expression"));
+                dto.setExecuteQuery(str(row, "ExecuteQuery"));
+                dto.setDependantAttributeId(toUuid(row, "DependantAttributeId"));
+                dto.setType(str(row, "Type"));
+                dto.setNormParameterTypeFkId(toUuid(row, "NormParameterType_FK_Id"));
+                dto.setPlantFkId(toUuid(row, "Plant_FK_Id"));
+                dto.setNormTypeFkId(toInt(row, "NormType_FK_Id"));
+                dto.setIsHistorical(toBool(row, "IsHistorical"));
+                dto.setDisplayOrder(toInt(row, "DisplayOrder"));
+                dto.setIsEditable(toBool(row, "IsEditable"));
+                dto.setIsVisible(toBool(row, "IsVisible"));
+                dto.setCalculationType(str(row, "CalculationType"));
+                dto.setSapMaterialCode(str(row, "SAPMaterialCode"));
+                dto.setNormTypeName(str(row, "NormTypeName"));
+                data.add(dto);
+            }
+
+            logger.info("getNormParametersBySourcePlant: {} records returned", data.size());
+            response.setCode(200);
+            response.setMessage(data.size() + " record(s) found.");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("getNormParametersBySourcePlant error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private Integer toInt(Map<String, Object> row, String key) {
+        Object val = row.get(key);
+        if (val == null) return null;
+        if (val instanceof Number) return ((Number) val).intValue();
+        try { return Integer.parseInt(val.toString()); }
+        catch (NumberFormatException e) {
+            logger.warn("Could not parse Integer for column {}: {}", key, val);
+            return null;
+        }
+    }
+
+    private Boolean toBool(Map<String, Object> row, String key) {
+        Object val = row.get(key);
+        if (val == null) return null;
+        if (val instanceof Boolean) return (Boolean) val;
+        if (val instanceof Number) return ((Number) val).intValue() != 0;
+        return Boolean.parseBoolean(val.toString());
     }
 }

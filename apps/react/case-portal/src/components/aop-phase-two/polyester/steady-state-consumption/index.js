@@ -9,6 +9,7 @@ import { SteadyStateConsumptionApiService } from '../../services/polyester/stead
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -190,65 +191,11 @@ const SteadyStateConsumption = () => {
     },
   ]
 
-  // ===================== Fetch Grade Dropdown (for PE — same as NormalOpNorms fetchGradeDropdowns) =====================
 
-  const fetchGrades = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    try {
-      let response = await SteadyStateConsumptionApiService.getGrades(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (response?.code === 200) {
-        const gradeList = response?.data || []
-        setGrades(gradeList)
-        // Auto-select first grade (index 0) on initial load
-        if (gradeList.length > 0 && !selectedGradeId) {
-          setSelectedGradeId(gradeList[0].gradeId)
-        }
-        if (!Array.isArray(gradeList) || gradeList.length === 0) {
-          setLoading(false)
-        }
-      } else {
-        setGrades([])
-      }
-    } catch (error) {
-      setGrades([])
-      console.error('Error fetching grades:', error)
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak])
-
-  // ===================== Fetch Norm Transactions (allRedCell for red highlight) =====================
-
-  const fetchNormTransactions = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    try {
-      let res = await SteadyStateConsumptionApiService.getNormTransactions(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (res?.code === 200) {
-        const normalized = (res?.data || []).map((obj) => ({
-          ...obj,
-          normParameterFKId: obj.normParameterFKId?.toUpperCase(),
-        }))
-        setAllRedCell(normalized)
-      }
-    } catch (error) {
-      console.error('Error fetching norm transactions:', error)
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak])
-
-  // ===================== Fetch Main Data (requires gradeId for PE — same as NormalOpNorms fetchData) =====================
 
   const fetchData = useCallback(
-    async (gradeId) => {
+    async () => {
       if (!PLANT_ID || !AOP_YEAR) return
-      // if (!gradeId) return
 
       setLoading(true)
       setRows([])
@@ -283,8 +230,6 @@ const SteadyStateConsumption = () => {
     [PLANT_ID, AOP_YEAR, keycloak],
   )
 
-  // ===================== Initial load & Grade change (same as NormalOpNorms fetchAllData) =====================
-
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
@@ -292,16 +237,11 @@ const SteadyStateConsumption = () => {
     setAllRedCell([])
     setGrades([])
     setSelectedGradeId(null)
-    // Promise.all([fetchNormTransactions()])
   }, [PLANT_ID, AOP_YEAR])
 
-  // Re-fetch data when selectedGradeId changes
   useEffect(() => {
-    // if (selectedGradeId) {
-    // }
     fetchData()
-    fetchNormTransactions()
-  }, [fetchData, fetchNormTransactions])
+  }, [fetchData])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -311,16 +251,34 @@ const SteadyStateConsumption = () => {
       return
     }
 
-    const requiredFields = ['remarks']
-    const hasEmptyRemark = modifiedData.some(
-      (row) => !row.remarks || row.remarks.trim() === '',
+    const fieldsToCheck = [
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+      'january',
+      'february',
+      'march',
+    ]
+    const validationError = validateRowDataWithRemarks(
+      modifiedData,
+      originalRows,
+      fieldsToCheck,
+      'productName',
     )
-    if (hasEmptyRemark) {
+
+    if (validationError) {
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Remark is required for all modified rows.',
+        message: validationError,
         severity: 'error',
       })
+      setLoading(false)
       return
     }
 
@@ -369,7 +327,6 @@ const SteadyStateConsumption = () => {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setModifiedCells({})
         await fetchData()
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Norms not saved!', severity: 'error' })
@@ -390,7 +347,6 @@ const SteadyStateConsumption = () => {
     AOP_YEAR,
     keycloak,
     fetchData,
-    fetchNormTransactions,
   ])
 
   // ===================== Calculate (PE uses site + vertical — same as NormalOpNorms handleCalculateNormalOperationNormsPe) =====================
@@ -400,14 +356,11 @@ const SteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Calculating...', severity: 'info' })
     try {
-      // Same as NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe
       const data =
-        await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
-          PLANT_ID,
-          SITE_ID,
-          VERTICAL_ID,
-          AOP_YEAR,
+        await SteadyStateConsumptionApiService.calculateSteadyStateConsumption(
           keycloak,
+          PLANT_ID,
+          AOP_YEAR,
         )
 
       if (data == 0 || data) {
@@ -416,9 +369,7 @@ const SteadyStateConsumption = () => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        // await fetchGrades()
         await fetchData()
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -444,7 +395,7 @@ const SteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel export started!', severity: 'info' })
     try {
-      await SteadyStateConsumptionApiService.exportSteadyStateConsumptionPE(
+      await SteadyStateConsumptionApiService.exportSteadyStateConsumption(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -488,7 +439,6 @@ const SteadyStateConsumption = () => {
         })
         setModifiedCells({})
         await fetchData()
-        await fetchNormTransactions()
       } else if (response?.code === 400 && response?.data) {
         // Partial save — download error file
         downloadBase64Excel(response.data, 'Error File Steady state Norms.xlsx')
@@ -498,7 +448,6 @@ const SteadyStateConsumption = () => {
           severity: 'warning',
         })
         await fetchData()
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

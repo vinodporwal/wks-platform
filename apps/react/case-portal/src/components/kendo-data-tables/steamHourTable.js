@@ -59,7 +59,7 @@ const computeCalculatedRows = (currentRows) => {
     }
 
     if (metricName === 'Total S/D Hours') {
-      const updated = { ...row }
+      const updated = { ...row, Remarks: '' }
       STEAM_MONTHS.forEach((month) => {
         const routine = getVal('Routine shutdown Duration', month)
         const planned = getVal(
@@ -73,7 +73,7 @@ const computeCalculatedRows = (currentRows) => {
     }
 
     if (metricName === 'Net Operating Hrs') {
-      const updated = { ...row }
+      const updated = { ...row, Remarks: '' }
       STEAM_MONTHS.forEach((month) => {
         const totalAvail = getVal('Total available hours', month)
         const routine = getVal('Routine shutdown Duration', month)
@@ -212,7 +212,16 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const [calculationObject, setCalculationObject] = useState([])
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    // if (!row?.isEditable) return
+    if (
+      row?.IsEditable === 0 ||
+      row?.isEditable === 0 ||
+      row?.IsEditable === '0' ||
+      row?.isEditable === '0' ||
+      row?.IsEditable === false ||
+      row?.isEditable === false
+    ) {
+      return
+    }
 
     setCurrentRemark(row.Remarks || '')
     setCurrentRowId(row.id)
@@ -225,6 +234,22 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     if (!year) return false
     return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
   }
+  const getNextRemark = (originalRemark) => {
+    const remark = (originalRemark || '').trim()
+    if (!remark) {
+      return 'V1'
+    }
+    const match = remark.match(/(.*?)\s*[vV](\d+)$/)
+    if (match) {
+      const base = match[1].trim()
+      const version = parseInt(match[2], 10)
+      const nextVersion = version + 1
+      return base ? `${base} V${nextVersion}` : `V${nextVersion}`
+    } else {
+      return `${remark} V1`
+    }
+  }
+
   const saveChanges = useCallback(async () => {
     try {
       setLoading(true)
@@ -236,20 +261,40 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       }
 
       const rawData = Object.values(modifiedCells)
-      const data = rawData.filter((row) => row.inEdit)
-      if (data.length === 0) {
+      const processedData = rawData
+        .filter((row) => row.inEdit)
+        .map((row) => {
+          const metricName = (row.Metric || '').trim()
+          const isTargetMetric = ['Total S/D Hours', 'Net Operating Hrs'].includes(metricName)
+          if (isTargetMetric) {
+            const nextRemark = getNextRemark(row.originalRemark)
+            return {
+              ...row,
+              isEditable: true,
+              Remarks: nextRemark,
+            }
+          }
+          return row
+        })
+        .filter((row) => row.isEditable == true || row.isEditable === 1)
+
+      if (processedData.length === 0) {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
         setLoading(false)
         return
       }
+
       // --- MONTHLY SUM VALIDATION (move here) ---
-      // 1. Filter the data to only include editable rows
-      // This check covers: row.isEditable === true OR row.isEditable === 1
-      const editableRows = data.filter((row) => row.isEditable == true)
+      // 1. Filter the data to only include non-target editable rows for validation
+      const editableRowsForValidation = processedData.filter((row) => {
+        const metricName = (row.Metric || '').trim()
+        const isTargetMetric = ['Total S/D Hours', 'Net Operating Hrs'].includes(metricName)
+        return !isTargetMetric
+      })
 
       // 2. Run the validation only on those filtered rows
-      const validationMessage = validateFields(editableRows, ['Remarks'])
+      const validationMessage = validateFields(editableRowsForValidation, ['Remarks'])
 
       if (validationMessage) {
         setSnackbarOpen(true)
@@ -257,7 +302,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         setLoading(false)
         return
       }
-      await saveStreamHoursData(data)
+      await saveStreamHoursData(processedData)
     } catch (err) {
       console.error('Save Stream Hours Data Error:', err)
     } finally {
@@ -290,6 +335,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           remarks: row.Remarks || '00',
           id: null,
           UOM: '',
+          isEditable: row.isEditable === true || row.isEditable === 1,
         }
 
         months.forEach((m) => {

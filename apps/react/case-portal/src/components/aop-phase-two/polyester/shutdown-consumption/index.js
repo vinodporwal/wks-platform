@@ -95,10 +95,25 @@ const ShutdownConsumption = () => {
       minWidth: 120,
     },
     {
+      field: 'normParameterTypeDisplayName',
+      title: 'Type',
+      editable: false,
+      hidden: true,
+      minWidth: 120,
+    },
+    {
       field: 'productName',
       title: 'Particulars',
       editable: false,
       minWidth: 200,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      widthT: 80,
+      minWidth: 80,
+      type: 'text',
+      editable: false,
     },
     ...monthsConfig.map((m) => ({
       field: m.field,
@@ -167,6 +182,7 @@ const ShutdownConsumption = () => {
             (item, index) => ({
               ...item,
               idFromApi: item.id || null,
+              uom: item.UOM || item.uom || null,
               materialFKId: item.materialFKId || null,
               productName: item.productName || item.materialDisplayName || '',
               remarks: item.remarks?.trim() || '',
@@ -468,6 +484,7 @@ const ShutdownConsumption = () => {
       setSnackbarOpen={setSnackbarOpen}
       snackbarData={snackbarData}
       setSnackbarData={setSnackbarData}
+      groupBy={['normParameterTypeDisplayName']}
     />
   )
 }

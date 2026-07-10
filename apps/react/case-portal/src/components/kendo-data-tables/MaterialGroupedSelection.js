@@ -8,8 +8,9 @@ import { useSelector } from 'react-redux'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { validateFields } from 'utils/validationUtils'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
-export default function MaterialGroupedSelection() {
+export default function MaterialGroupedSelection({ onSaveSuccess }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -55,13 +56,16 @@ export default function MaterialGroupedSelection() {
     return `${start - 1}-${(end - 1).toString().slice(-2)}`
   }, [thisYear])
 
+  const FORMATE_DECIMAL = ValueFormatterProduction()
+
   const columns = useMemo(
     () => [
       {
         field: 'particular',
         title: 'Particular',
         editable: false,
-        minWidth: 150,
+        minWidth: 200,
+        locked: true
       },
       {
         field: 'sapCode',
@@ -73,10 +77,11 @@ export default function MaterialGroupedSelection() {
         field: 'value',
         title: 'Value',
         editable: false,
-        type: 'number',
         minWidth: 100,
         isEditable: false,
         isDisabled: false,
+        type: 'groupedColumn',
+        format: FORMATE_DECIMAL,
       },
       {
         field: 'status',
@@ -89,9 +94,10 @@ export default function MaterialGroupedSelection() {
         field: 'groupName',
         title: 'Group',
         hidden: true,
+        isVisible: false
       },
     ],
-    [],
+    [FORMATE_DECIMAL],
   )
 
   const fetchData = useCallback(async () => {
@@ -104,6 +110,9 @@ export default function MaterialGroupedSelection() {
         PLANT_ID,
         AOP_YEAR,
       )
+
+
+
       if (res?.code === 200) {
         const rawData = Array.isArray(res?.data)
           ? res.data
@@ -121,6 +130,7 @@ export default function MaterialGroupedSelection() {
           status: item.status,
           groupName: item.normParameterType,
           isEditable: item.isEditable,
+          originalValueStr: item.value,
         }))
         setRows(mapped)
       } else {
@@ -174,7 +184,10 @@ export default function MaterialGroupedSelection() {
   const saveChanges = useCallback(async () => {
     try {
       setLoading(true)
-      const data = Object.values(modifiedCells)
+      const data = Object.keys(modifiedCells).length > 0
+        ? Object.values(modifiedCells)
+        : rows
+
       if (!data.length) {
         setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
         setSnackbarOpen(true)
@@ -182,13 +195,13 @@ export default function MaterialGroupedSelection() {
       }
 
       const payload = data.map((item) => ({
-        id: item.idFromApi,
+        id: item.idFromApi || item.id,
         name: item.name,
         displayName: item.displayName,
         uom: item.uom,
         value:
           item.value !== null && item.value !== undefined
-            ? String(item.value)
+            ? parseFloat(item.value)
             : null,
         status: !!item.status,
         dependantAttributeId: item.dependantAttributeId || null,
@@ -212,6 +225,9 @@ export default function MaterialGroupedSelection() {
         })
         setModifiedCells({})
         fetchData()
+        if (onSaveSuccess) {
+          await onSaveSuccess()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -229,9 +245,9 @@ export default function MaterialGroupedSelection() {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, fetchData])
+  }, [modifiedCells, rows, keycloak, PLANT_ID, fetchData])
 
-  const handleCalculate = () => {}
+  const handleCalculate = () => { }
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')
@@ -258,6 +274,7 @@ export default function MaterialGroupedSelection() {
     {
       allAction: true,
       saveBtn: true,
+      alwaysEnableSave: true,
       showTitleNameBusiness: true,
       titleName: 'Material Grouped Selection',
       adjustedPermissions: true,

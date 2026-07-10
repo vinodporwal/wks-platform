@@ -25,6 +25,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { DataService } from 'services/DataService'
 import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
 import { useMenuContext } from 'menu/menuProvider'
+import MaterialGroupedSelection from './MaterialGroupedSelection'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -32,6 +33,7 @@ const ConsumptionNorms = () => {
   const keycloak = useSession()
 
   const [open1, setOpen1] = useState(false)
+  const [openMaterialGroupedSelectionDialog, setOpenMaterialGroupedSelectionDialog] = useState(false)
   const valueFormat = ValueFormatterConsumption()
 
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
@@ -535,7 +537,11 @@ const ConsumptionNorms = () => {
   }
 
   const handleCalculate = () => {
-    handleCalculateMeg()
+    if (lowerVertName === 'pe' && lowerSiteName === 'c2') {
+      setOpenMaterialGroupedSelectionDialog(true)
+    } else {
+      handleCalculateMeg()
+    }
   }
 
   const handleCalculateMeg = async () => {
@@ -833,6 +839,40 @@ const ConsumptionNorms = () => {
             </Button>
           </DialogActions>
         </Dialog>{' '}
+        <Dialog
+          open={openMaterialGroupedSelectionDialog}
+          onClose={() => setOpenMaterialGroupedSelectionDialog(false)}
+          maxWidth="md"
+          fullWidth
+          disableScrollLock
+          PaperProps={{
+            sx: {
+              borderRadius: '20px',
+              p: 1,
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+            },
+          }}
+        >
+          <DialogContent sx={{ p: 1 }}>
+            <MaterialGroupedSelection
+              onSaveSuccess={async () => {
+                setOpenMaterialGroupedSelectionDialog(false)
+                await handleCalculateMeg()
+              }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 1.5, pb: 1 }}>
+            <Button
+              onClick={() => setOpenMaterialGroupedSelectionDialog(false)}
+              variant="contained"
+              className="btn-no"
+              sx={{ textTransform: 'none' }}
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   )

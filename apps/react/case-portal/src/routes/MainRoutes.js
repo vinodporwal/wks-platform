@@ -177,6 +177,7 @@ import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUploa
 import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
 import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
 import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
+import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
 
 // Naphthasplitter Ended
 
@@ -407,7 +408,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
+          {
+            path: 'production-scheduling',
+            element: (
+              <PrivateRoute routeId='production-scheduling'>
+                <ProductionScheduling />
+              </PrivateRoute>
+            ),
+          },
           {
             path: 'aop-design-basis',
             element: (

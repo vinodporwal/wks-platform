@@ -157,6 +157,7 @@ const KendoDataTablesReports = ({
   handleRelease = () => { },
   isReleaseDisabled = true,
   supressGridHeight = false,
+  isProposedAOP = false,
 }) => {
   const grid = React.useRef(null)
   const minGridWidth = useRef(0)
@@ -499,8 +500,12 @@ const KendoDataTablesReports = ({
         READ_ONLY ||
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
 
+      const dataIndex = (isProposedAOP && rows) ? rows.indexOf(dataItem) : -1
+      const isEvenRow = dataIndex !== -1 && dataIndex % 2 === 1
+
       const rowClassName = [
         className,
+        isEvenRow ? 'k-alt' : '',
         isDisabled ? 'custom-disabled-row' : '',
         dataItem.isBold ? 'custom-bold-row' : '',
       ]
@@ -512,7 +517,7 @@ const KendoDataTablesReports = ({
         </tr>
       )
     },
-    [IS_OLD_YEAR],
+    [IS_OLD_YEAR, READ_ONLY, rows, isProposedAOP],
   )
   useEffect(() => {
     if (!permissions?.showG || !grades?.length) return

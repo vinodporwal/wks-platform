@@ -1954,7 +1954,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			List<ShutdownNormsValueDTO> data=null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			if(vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
+			boolean ptaDmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD");
+			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
+			if(ptaDmd || staple) {
 				data = readDMDShutdownConsumptions(file.getInputStream(), plantFKId, year);
 			}else {
 				data = readShutdownConsumptions(file.getInputStream(), plantFKId, year);

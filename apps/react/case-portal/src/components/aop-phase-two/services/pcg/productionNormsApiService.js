@@ -32,6 +32,12 @@ export const ProductionNormsApiService = {
   getPIMSThroughputData,
   importPIMSThroughputExcel,
   exportPIMSThroughputExcel,
+
+  // Target Gasifier Operation APIs
+  saveTargetGasifierOperationData,
+  getTargetGasifierOperationData,
+  importTargetGasifierOperationExcel,
+  exportTargetGasifierOperationExcel,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -552,6 +558,104 @@ async function exportPIMSThroughputExcel(keycloak, plantId, year) {
     endpoint: `production-norms/pims-throughput/export/${plantId}/${year}`,
     queryParams: {},
     fileName: `Production_Norms_PIMS_Throughput_${year}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// ======================= Target Gasifier Operation APIs =======================//
+/**
+ * Get Target Gasifier Operation data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Target Gasifier Operation data
+ */
+async function getTargetGasifierOperationData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/production-range?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Target Gasifier Operation data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {Array} payload - Data to save
+ * @param {string} plantId - Plant ID
+ * @returns {Promise} Save response
+ */
+async function saveTargetGasifierOperationData(
+  keycloak,
+  year,
+  payload,
+  plantId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-norms?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Import Target Gasifier Operation Excel file
+ * @param {File} file - Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Import response
+ */
+async function importTargetGasifierOperationExcel(file, keycloak, plantId, year) {
+  return saveExcelData(file, keycloak, 'production-range-import', {
+    year: year,
+    plantId: plantId,
+    isMinMax: true,
+  })
+}
+
+/**
+ * Export Target Gasifier Operation Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @param {string} fileName - File name
+ * @returns {Promise} Export response
+ */
+async function exportTargetGasifierOperationExcel(keycloak, plantId, year, fileName) {
+  return ImportExportApiService.exportExcelData(keycloak, {
+    endpoint: `production-range-export?year=${year}&plantId=${plantId}`,
+    queryParams: {},
+    fileName: fileName || `Production_Norms_Target_Gasifier_Operation_${year}.xlsx`,
     method: 'GET',
   })
 }

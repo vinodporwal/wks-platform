@@ -106,6 +106,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 		String siteId = site.getId().toString();
 		String verticalId = vertical.getId().toString();
+		boolean crackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
 		String procedureName = vertical.getName() + "_" + site.getName() + "_GetSpyroInput";
 		try {
 			List<Object[]> results = getData(plantId, year, siteId, verticalId, Mode, procedureName);
@@ -139,6 +140,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
+					// fetch weighted average only for cracker C2
+					if(crackerC2) {
+					map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+					}
 					spyroInputDataList.add(map);
 				} else {
 					
@@ -163,6 +168,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 							map.put("isEditable", row[22]);
+							if(crackerC2) {
+							map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+							}
 							spyroInputDataList.add(map); // Add the map to the list here
 						}
 					}
@@ -597,9 +605,17 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		}
 
 		try {
-
-		
-			Map<String, List<SpyroInputDTO>> map = readSpyroInputsExcel(file.getInputStream(), year);
+             Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
+			Map<String, List<SpyroInputDTO>> map = new HashMap<>();
+			if(crackerC2) { 
+				map = readSpyroInputsExcelWithWeightedAverage(file.getInputStream(), year);
+			}
+			// read excel without weighted average
+			else {
+			map = readSpyroInputsExcel(file.getInputStream(), year);  }
 
 			// remove Optimizer Input from map
 		
@@ -697,6 +713,86 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
 					dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
 					dto.setTableId(getStringCellValue(row.getCell(16), dto));
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setErrDescription(e.getMessage());
+					dto.setSaveStatus("Failed");
+				}
+				map.putIfAbsent(dto.getTableId(), new ArrayList<>());
+
+				map.get(dto.getTableId()).add(dto);
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Data", e);
+		}
+
+		return map;
+	}
+
+	public Map<String, List<SpyroInputDTO>> readSpyroInputsExcelWithWeightedAverage(InputStream inputStream, String year) {
+
+		Map<String, List<SpyroInputDTO>> map = new HashMap<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			List<SpyroInputDTO> spyroInputDTOs = new ArrayList<>();
+			if (rowIterator.hasNext())
+				rowIterator.next(); // Skip header
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+
+				// if tableId is Optimizer Input, then skip the row
+
+Cell tableId = row.getCell(17);
+String tableIdValue = null;
+if (tableId != null) {
+	try {
+	tableId.setCellType(CellType.STRING);
+	 tableIdValue = tableId.getStringCellValue().trim(); }
+	 catch (Exception e) {
+		e.printStackTrace();
+	 }
+}
+
+if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
+	continue;
+}
+
+
+
+
+				Cell tableIdCell = row.getCell(17, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
+					continue;
+				}
+
+				SpyroInputDTO dto = new SpyroInputDTO();
+
+				try {
+
+					dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+					dto.setUom(getStringCellValue(row.getCell(1), dto));
+					dto.setAuditYear(year);
+					dto.setApr(getNumericCellValue(row.getCell(2), dto));
+					dto.setMay(getNumericCellValue(row.getCell(3), dto));
+					dto.setJun(getNumericCellValue(row.getCell(4), dto));
+					dto.setJul(getNumericCellValue(row.getCell(5), dto));
+					dto.setAug(getNumericCellValue(row.getCell(6), dto));
+					dto.setSep(getNumericCellValue(row.getCell(7), dto));
+					dto.setOct(getNumericCellValue(row.getCell(8), dto));
+					dto.setNov(getNumericCellValue(row.getCell(9), dto));
+					dto.setDec(getNumericCellValue(row.getCell(10), dto));
+					dto.setJan(getNumericCellValue(row.getCell(11), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+					dto.setMar(getNumericCellValue(row.getCell(13), dto));
+					// col 14 = weightAverage — display/export only, not imported
+					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
+					dto.setTableId(getStringCellValue(row.getCell(17), dto));
 
 				} catch (Exception e) {
 					e.printStackTrace();

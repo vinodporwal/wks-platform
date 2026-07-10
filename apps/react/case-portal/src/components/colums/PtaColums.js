@@ -470,7 +470,7 @@ export const NormalOpNormPtaColumns = [
     editable: false,
     width: 100,
     type: 'number',
-    minWidth: 100,
+    minWidth: 140,
   },
   {
     field: 'remarks',

@@ -12,6 +12,7 @@ import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
+import TargetGasifierOperation from './TargetGasifierOperation'
 
 const ProductionNormsBasisPCG = () => {
   const keycloak = useSession()
@@ -245,6 +246,8 @@ const ProductionNormsBasisPCG = () => {
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
       case 'Report Manual Entry':
         return <ManualEntry />
+      case 'Target Gasifier Operation':
+        return <TargetGasifierOperation />
       default:
         return null
     }

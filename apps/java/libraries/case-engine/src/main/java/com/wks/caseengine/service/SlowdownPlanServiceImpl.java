@@ -20,7 +20,9 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheetProtection;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.PersistenceContext;
@@ -490,9 +492,14 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
 			lockedBorderedStyle.setLocked(true);
 
-			Sheet sheet = workbook.createSheet("Sheet1");
-			sheet.protectSheet("");
-			int currentRow = 0;
+		Sheet sheet = workbook.createSheet("Sheet1");
+		XSSFSheet xssfSheet = (XSSFSheet) sheet;
+		CTSheetProtection sp = xssfSheet.getCTWorksheet().addNewSheetProtection();
+		sp.setSheet(true);
+		sp.setObjects(true);
+		sp.setScenarios(true);
+		sp.setInsertRows(false);
+		int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
 			List<String> rowTypes = new ArrayList<>();
 

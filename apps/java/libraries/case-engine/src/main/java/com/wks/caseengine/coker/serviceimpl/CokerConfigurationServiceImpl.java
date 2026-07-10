@@ -1,10 +1,15 @@
 package com.wks.caseengine.coker.serviceimpl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.LinkedHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.coker.dto.CokerConfigurationDto;
@@ -17,6 +22,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.service.ConfigurationService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -36,6 +42,12 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ConfigurationService configurationService;
 
     public AOPMessageVM getConfigurationData(String year, UUID plantFKId, String type, String version) {
         try {
@@ -140,18 +152,122 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
         }
     }
 
-    /**
-     * Map SQL result row to CokerConfigurationDto
-     * SQL Column Order (19 columns - indices 0-18):
-     * 0: NormParameter_FK_Id (UUID)
-     * 1: DisplayName (String)
-     * 2-13: Jan-Dec (String values)
-     * 14: Remarks (String)
-     * 15: AuditYear (String)
-     * 16: UOM (String)
-     * 17: NormParameterTypeDisplayName (String)
-     * 18: Type (String)
-     */
+   
+
+    @Override
+    public AOPMessageVM getHistoricalPiggingStatus(String plantId, String aopYear) {
+        try {
+            AOPMessageVM executionResult = configurationService.getConfigurationExecution(aopYear, plantId);
+
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+            Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+           String procedureName = vertical.getName() + "_" + site.getName() + "_" + "GetHistoricalPiggingStatus";
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> executionData = (List<Map<String, Object>>) executionResult.getData();
+
+            String periodFrom = null;
+            String periodTo = null;
+            for (Map<String, Object> row : executionData) {
+                String name = row.get("Name") != null ? row.get("Name").toString() : "";
+                String value = row.get("AttributeValue") != null ? row.get("AttributeValue").toString() : null;
+                if ("StartDate".equals(name)) {
+                    periodFrom = value;
+                } else if ("EndDate".equals(name)) {
+                    periodTo = value;
+                }
+            }
+
+            if (periodFrom == null || periodTo == null) {
+                throw new IllegalStateException(
+                        "StartDate or EndDate not found in configuration execution for plant=" + plantId
+                                + ", year=" + aopYear);
+            }
+
+            List<Map<String, Object>> spResult = executeStoredProcedure(
+                    procedureName,
+                    plantId, aopYear, periodFrom, periodTo);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Data fetched successfully");
+            response.setData(spResult);
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid argument for Historical Pigging Status", e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to fetch Historical Pigging Status", ex);
+        }
+    }
+
+    @Override
+    public AOPMessageVM saveHistoricalPiggingStatus(String plantId, String aopYear,
+            List<Map<String, Object>> payload) {
+
+         Set<String> NON_MONTH_KEYS = Set.of("Particulars", "Remarks");
+
+        try {
+            int totalUpdated = 0;
+
+            for (Map<String, Object> row : payload) {
+                for (Map.Entry<String, Object> entry : row.entrySet()) {
+                    String key = entry.getKey();
+                    String piggingStatus = null;
+                    String monthName = null;
+                    int fullYear = 0;
+                    if(!NON_MONTH_KEYS.contains(key)) {
+                     piggingStatus = entry.getValue() != null ? entry.getValue().toString() : null;
+                    String[] parts = key.split("-");
+                    if (parts.length != 2) {
+                        continue;
+                    }
+
+                     monthName = parts[0];
+                    int yy = Integer.parseInt(parts[1]);
+                     fullYear = (yy >= 50) ? (1900 + yy) : (2000 + yy);
+
+                     String sql = "UPDATE HistoricalPigging SET Pigging_Status = ? WHERE Year = ? AND MonthName = ?";
+                     int updated = jdbcTemplate.update(sql, piggingStatus, fullYear, monthName);
+                     totalUpdated += updated;
+                }
+                   // update remarks for all entries
+                 else if("Remarks".equalsIgnoreCase(key))  {
+                      String sql = "UPDATE HistoricalPigging SET Remarks = ?";
+
+                      int updated = jdbcTemplate.update(sql, entry.getValue());
+                 }
+                  
+                }
+            }
+
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("rowsUpdated", totalUpdated);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Historical Pigging Status updated successfully");
+            response.setData(result);
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid argument for Historical Pigging Status", e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to save Historical Pigging Status", ex);
+        }
+    }
+
+    public List<Map<String, Object>> executeStoredProcedure(String spName, Object... params) {
+        String placeholders = String.join(", ", Collections.nCopies(params.length, "?"));
+        String sql = "EXEC " + spName + " " + placeholders;
+        return jdbcTemplate.queryForList(sql, params);
+    }
+
     private CokerConfigurationDto mapRowToDto(Object[] row) {
         CokerConfigurationDto dto = new CokerConfigurationDto();
 
@@ -192,4 +308,64 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
 
         return dto;
     }
+
+     @Override
+    public AOPMessageVM calculateHistoricalPiggingStatus(String plantId, String aopYear) {
+        
+          Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+            Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+           String procedureName = vertical.getName() + "_" + site.getName() + "_" + "HistoricalPiggingStatus";
+
+        // fetch start date and end date 
+
+         AOPMessageVM executionResult = configurationService.getConfigurationExecution(aopYear, plantId);
+
+           @SuppressWarnings("unchecked")
+            List<Map<String, Object>> executionData = (List<Map<String, Object>>) executionResult.getData();
+
+            String periodFrom = null;
+            String periodTo = null;
+            for (Map<String, Object> row : executionData) {
+                String name = row.get("Name") != null ? row.get("Name").toString() : "";
+                String value = row.get("AttributeValue") != null ? row.get("AttributeValue").toString() : null;
+                if ("StartDate".equals(name)) {
+                    periodFrom = value;
+                } else if ("EndDate".equals(name)) {
+                    periodTo = value;
+                }
+            }
+
+            if (periodFrom == null || periodTo == null) {
+                throw new IllegalStateException(
+                        "StartDate or EndDate not found in configuration execution for plant=" + plantId
+                                + ", year=" + aopYear);
+            }
+
+        Integer result = executeCalculateHistoricalPiggingStatusSP(
+                    plantId, aopYear, periodFrom, periodTo, procedureName);
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		return aopMessageVM;
+    }
+
+    
+	public Integer executeCalculateHistoricalPiggingStatusSP( String plantId, String aopYear, String periodFrom, String periodTo, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear, periodFrom, periodTo);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
+		}
+	}
 }

@@ -444,7 +444,7 @@ export const ShutDownPVCDMDColumns = [
     locked: true,
   },
   {
-    field: 'lineId',
+    field: 'lineDisplayName',
     title: 'Line',
     type: 'lineDropdown',
     editable: true,

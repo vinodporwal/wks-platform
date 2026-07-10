@@ -33,6 +33,7 @@ export const ProductionNormsApiService = {
   ProductionOptimizerExport,
   calculateLIMSData,
   getAOPCombinedData,
+  MonthwiseProductionExportCombinedLineWise,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -654,5 +655,45 @@ async function getAOPCombinedData(keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+export async function MonthwiseProductionExportCombinedLineWise(
+  keycloak,
+  plantId,
+  year,
+  type,
+  fileName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/monthly-production-export-by-line?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&type=${encodeURIComponent(type)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = fileName
+      ? `${fileName}.xlsx`
+      : 'MEG_Month wise Production plan.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error(
+      'Error exporting Month wise Production plan Excel (Combined):',
+      e,
+    )
+    return Promise.reject(e)
   }
 }

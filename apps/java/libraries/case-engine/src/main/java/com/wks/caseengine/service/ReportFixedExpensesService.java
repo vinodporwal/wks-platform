@@ -9,4 +9,5 @@ public interface ReportFixedExpensesService {
 
 	public AOPMessageVM getReportFixedExpensesTransaction(String siteId,String year);
 	public AOPMessageVM saveReportFixedExpensesTransaction( String year, String plantFKId, List<ReportFixedExpensesDTO> reportFixedExpensesDTOs);
+	public AOPMessageVM deleteReportFixedExpensesTransaction(String id);
 }

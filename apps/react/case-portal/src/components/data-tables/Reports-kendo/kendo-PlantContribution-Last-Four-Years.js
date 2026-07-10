@@ -82,43 +82,46 @@ export default function PlantContributionLastFourYears() {
 
   const IS_CRACKER = lowerVertName === 'cracker'
 
-  const FORMAT_VALUES_3_DECIMAL = IS_CRACKER
-    ? '{0:0.0000}'
-    : lowerVertName === 'elastomer'
-      ? '{0:0.000}'
-      : lowerVertName === 'pta'
-        ? '{0:0.00000}'
-        : '{0:0.00}'
-
-  const FORMAT_VALUES_2_DECIMAL = IS_CRACKER
-    ? '{0:0.0000}'
-    : lowerVertName === 'vcm'
-      ? '{0:0.000}'
-      : lowerVertName === 'pta'
-        ? '{0:0.00000}'
-        : '{0:0.00}'
-
-  const FORMAT_VALUES_COST = IS_CRACKER
-    ? '{0:0.0000}'
-    : lowerVertName === 'elastomer'
-      ? '{0:0}'
-      : lowerVertName === 'vcm'
-        ? '{0:0.000}'
-        : lowerVertName === 'pta'
+  const formats = IS_CRACKER
+    ? {
+        dec3: '{0:0.0000}',
+        dec2: '{0:0.0000}',
+        cost: '{0:0.0000}',
+        norms: '{0:0.0000}',
+      }
+    : {
+        dec3:
+          lowerVertName === 'elastomer'
+            ? '{0:0.000}'
+            : lowerVertName === 'pta'
+              ? '{0:0.00000}'
+              : '{0:0.00}',
+        dec2:
+          lowerVertName === 'vcm'
+            ? '{0:0.000}'
+            : lowerVertName === 'pta'
+              ? '{0:0.00000}'
+              : '{0:0.00}',
+        cost:
+          lowerVertName === 'elastomer'
+            ? '{0:0}'
+            : lowerVertName === 'vcm'
+              ? '{0:0.000}'
+              : lowerVertName === 'pta'
+                ? '{0:0.00000}'
+                : '{0:0.00}',
+        norms: ['meg', 'elastomer', 'pta'].includes(lowerVertName)
           ? '{0:0.00000}'
-          : '{0:0.00}'
+          : lowerVertName === 'vcm'
+            ? '{0:0.000}'
+            : '{0:0.00}',
+      }
 
+  const FORMAT_VALUES_3_DECIMAL = formats.dec3
+  const FORMAT_VALUES_2_DECIMAL = formats.dec2
+  const FORMAT_VALUES_COST = formats.cost
   const FORMAT_VALUES_PRICE = '{0:0}'
-
-  const FORMAT_VALUES_NORMS = IS_CRACKER
-    ? '{0:0.0000}'
-    : lowerVertName === 'meg' || lowerVertName === 'elastomer'
-      ? '{0:0.00000}'
-      : lowerVertName === 'vcm'
-        ? '{0:0.000}'
-        : lowerVertName === 'pta'
-          ? '{0:0.00000}'
-          : '{0:0.00}'
+  const FORMAT_VALUES_NORMS = formats.norms
 
   const loadAll = async () => {
     setLoading(true)
@@ -146,59 +149,20 @@ export default function PlantContributionLastFourYears() {
         )
         let rows = apiResp.data?.plantProductionData || []
         if (apiResp?.code == 200) {
+          const suffixCountMap = {
+            ProductMixAndProduction: 4,
+            ByProducts: 2,
+            RawMaterial: 3,
+            ProductionCostCalculations: 6,
+            CatChem: 2,
+            Utilities: 2,
+            OtherVariableCost: 2,
+          }
+          const suffixCount = suffixCountMap[key] || 0
+
           rows = apiResp?.data?.plantProductionData.map((item, index, arr) => {
-            let isBold = false
-            // Set bold for last N rows as per category
-            // no bold required
-            if (
-              key === 'ProductMixAndProduction' &&
-              index >= arr.length - 4 &&
-              lowerVertName === 'meg'
-            ) {
-              isBold = false
-            }
-            if (
-              key === 'ByProducts' &&
-              index >= arr.length - 2 &&
-              lowerVertName === 'meg'
-            ) {
-              isBold = false
-            }
-            if (
-              key === 'RawMaterial' &&
-              index >= arr.length - 3 &&
-              lowerVertName === 'meg'
-            ) {
-              isBold = false
-            }
-            if (
-              key === 'ProductionCostCalculations' &&
-              index >= arr.length - 6 &&
-              lowerVertName === 'meg'
-            ) {
-              isBold = false
-            }
-            if (
-              key === 'CatChem' &&
-              index >= arr.length - 2 &&
-              lowerVertName === 'meg'
-            ) {
-              isBold = false
-            }
-            if (
-              key === 'Utilities' &&
-              index >= arr.length - 2 &&
-              lowerVertName === 'meg'
-            ) {
-              isBold = false
-            }
-            if (
-              key === 'OtherVariableCost' &&
-              index >= arr.length - 2 &&
-              lowerVertName === 'meg'
-            ) {
-              isBold = false
-            }
+            const isBold =
+              lowerVertName !== 'meg' && index >= arr.length - suffixCount
             return {
               ...item,
               id: index,

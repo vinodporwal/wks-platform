@@ -65,6 +65,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.sql.Connection;
 import javax.sql.DataSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 @Service
 public class NormalOperationNormsServiceImpl implements NormalOperationNormsService {
@@ -2577,6 +2578,113 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getCatChemCalculationData(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetMakeupBatchRecipe";
+			String sql = "EXEC [dbo].[" + storedProcedure + "] @plantId = :plantId, @aopYear = :year";
+			Map<String, Object> params = new HashMap<>();
+			params.put("plantId", plantId);
+			params.put("year", year);
+
+			List<Map<String, Object>> resultList = namedParameterJdbcTemplate.queryForList(sql, params);
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Recipe data fetched successfully");
+			aopMessageVM.setData(resultList);
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to fetch Recipe data: " + e.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM saveCatChemCalculationData(String plantId, String year, List<Map<String, Object>> payload) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+			String userName = com.wks.caseengine.utility.Utility.getUserName();
+
+			String mergeSql = "MERGE INTO NormAttributeTransactions AS target " +
+					"USING (SELECT :normParameterId AS NormParameter_FK_Id, :year AS AuditYear) AS source " +
+					"ON target.NormParameter_FK_Id = source.NormParameter_FK_Id " +
+					"AND target.AuditYear = source.AuditYear " +
+					"AND target.AOPMonth = 4 " +
+					"WHEN MATCHED THEN " +
+					"    UPDATE SET AttributeValue = :value, " +
+					"            UserName = :userName, " +
+					"            ModifiedOn = GETDATE() " +
+					"WHEN NOT MATCHED THEN " +
+					"    INSERT (Id, NormParameter_FK_Id, AuditYear, AOPMonth, AttributeValue, CreatedOn, UserName, AttributeValueVersion) " +
+					"    VALUES (NEWID(), :normParameterId, :year, 4, :value, GETDATE(), :userName, 'V1');";
+
+			String[][] keyMappings = {
+				{"Sod Bi Carb", "DM_Water_Sodi_Bi_Carb_Id"},
+				{"SodBiCarb", "DM_Water_Sodi_Bi_Carb_Id"},
+				{"Polystat", "DM_Water_Polystat_Id"},
+				{"Evicas", "DM_Water_Evicas_Id"},
+				{"PVA88", "DM_Water_PVA88_Id"},
+				{"PVA-55", "DM_Water_PVA55_Id"},
+				{"PVA55", "DM_Water_PVA55_Id"},
+				{"B72", "DM_Water_B72_Id"},
+				{"L9P", "DM_Water_L9P_Id"},
+				{"Versene", "DM_Water_Versene_Id"},
+				{"Nonyl Phe", "DM_Water_Nonyl_Phe_Id"},
+				{"IRGASTAB", "DM_Water_IRGASTAB_Id"},
+				{"ATSC", "DM_Water_ATSC_Id"},
+				{"Antiswelling", "DM_Water_Antiswelling_Id"},
+				{"Antifoam", "DM_Water_Antifoam_Id"},
+				{"K57 Catalyst", "DM_Water_K57_Catalyst_Id"},
+				{"K67 Catalyst", "DM_Water_K67_Catalyst_Id"}
+			};
+
+			for (Map<String, Object> row : payload) {
+				for (String[] mapping : keyMappings) {
+					String valueKey = mapping[0];
+					String idKey = mapping[1];
+
+					if (row.containsKey(idKey) && row.containsKey(valueKey)) {
+						Object idObj = row.get(idKey);
+						Object valObj = row.get(valueKey);
+
+						if (idObj != null && !idObj.toString().trim().isEmpty()) {
+							String normParameterId = idObj.toString();
+							String valueStr = valObj != null ? valObj.toString() : "0";
+
+							Map<String, Object> params = new HashMap<>();
+							params.put("normParameterId", normParameterId);
+							params.put("year", year);
+							params.put("value", valueStr);
+							params.put("userName", userName);
+
+							namedParameterJdbcTemplate.update(mergeSql, params);
+						}
+					}
+				}
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Recipe data saved successfully");
+			aopMessageVM.setData(true);
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to save Recipe data: " + e.getMessage());
+			aopMessageVM.setData(false);
+			return aopMessageVM;
 		}
 	}
 

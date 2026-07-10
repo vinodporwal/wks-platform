@@ -97,7 +97,7 @@ const ProductionNorms = ({ permissions }) => {
   const IS_AROMATIC_DTA_PLATFORMER =
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'dta' &&
-    plantName === 'plat'
+    (plantName === 'platformer' || plantName === 'plat')
   const IS_AROMATIC_HMD =
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'hmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -1246,6 +1246,15 @@ const ProductionNorms = ({ permissions }) => {
             AOP_YEAR,
             `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`,
           )
+      } else if (IS_PVC_DMD) {
+        response =
+          await ProductionNormsApiService.MonthwiseProductionExportCombinedLineWise(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            'Production',
+            `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`,
+          )
       }
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -1328,10 +1337,11 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ||
             lowerVertName === 'chemical'
               ? true
-              : lowerVertName === 'meg'
+              : lowerVertName === 'meg' || IS_PVC_DMD
                 ? false
                 : !permissions?.hideExportBtn,
-          downloadExcelBtn: lowerVertName === 'meg' ? true : false,
+          downloadExcelBtn:
+            lowerVertName === 'meg' || IS_PVC_DMD ? true : false,
 
           ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan`,
           unitForExcelToadd:
@@ -1378,7 +1388,7 @@ const ProductionNorms = ({ permissions }) => {
           showCalculateVisibility: false,
           saveBtn: false,
           customHeight: permissions?.customHeight,
-          downloadExcelBtnFromUI: true,
+          downloadExcelBtnFromUI: false,
           ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Combined Month-Wise Production Plan`,
         },
         isOldYear,

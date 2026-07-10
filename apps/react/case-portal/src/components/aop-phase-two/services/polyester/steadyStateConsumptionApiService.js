@@ -262,28 +262,95 @@ async function saveSteadyStateConsumption(keycloak, plantId, year, data) {
   }
 }
 
-async function exportSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/staple/steady-state-norms-export`
-  const queryParams = new URLSearchParams({ plantId, year })
+/**
+ * Export Steady State Consumption to Excel
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Number} plantId - Plant ID
+ * @param {Number} year - AOP Year
+ * @param {String} EXCEL_NAME - Optional mode parameter
+ * @param {String} mode - Optional mode parameter
+ * @param {String} gradeId - Optional grade ID parameter
+ * @returns {Promise<Blob>} Excel file blob
+ */
+async function exportSteadyStateConsumption(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_NAME,
+  mode,
+  gradeId,
+) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-export`
+  const queryParams = new URLSearchParams({
+    plantId,
+    year,
+  })
+
+  if (mode) {
+    queryParams.append('mode', mode)
+  }
+  if (gradeId) {
+    queryParams.append('gradeId', gradeId)
+  }
+
   const url = `${baseUrl}?${queryParams.toString()}`
-  const headers = { Authorization: `Bearer ${keycloak.token}` }
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
-    if (!resp.ok) throw new Error(`Export failed: ${resp.statusText}`)
-    return await resp.blob()
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
   }
 }
 
-async function importSteadyStateConsumption(keycloak, plantId, year, file) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/staple/steady-state-norms-import`
+/**
+ * Import Steady State Consumption from Excel
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Number} plantId - Plant ID
+ * @param {Number} year - AOP Year
+ * @param {File} file - Excel file to import
+ * @param {String} mode - Optional mode parameter
+ * @param {String} gradeId - Optional grade ID parameter
+ * @returns {Promise<Array>} Imported data
+ */
+async function importSteadyStateConsumption(
+  keycloak,
+  plantId,
+  year,
+  file,
+  mode,
+  gradeId,
+) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-import`
   const formData = new FormData()
   formData.append('file', file)
   formData.append('plantId', plantId)
   formData.append('year', year)
-  const headers = { Authorization: `Bearer ${keycloak.token}` }
+
+  if (mode) {
+    formData.append('mode', mode)
+  }
+  if (gradeId) {
+    formData.append('gradeId', gradeId)
+  }
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
   try {
     const resp = await fetch(baseUrl, {
       method: 'POST',
@@ -297,8 +364,15 @@ async function importSteadyStateConsumption(keycloak, plantId, year, file) {
   }
 }
 
+/**
+ * Calculate Steady State Consumption
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Number} plantId - Plant ID
+ * @param {Number} year - AOP Year
+ * @returns {Promise<Array>} Calculated data
+ */
 async function calculateSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/staple/calculate-steady-state-norms`
+  const baseUrl = `${Config.CaseEngineUrl}/task/calculate-steady-state-norms`
   const queryParams = new URLSearchParams({ year, plantId })
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {
