@@ -212,7 +212,16 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const [calculationObject, setCalculationObject] = useState([])
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    // if (!row?.isEditable) return
+    if (
+      row?.IsEditable === 0 ||
+      row?.isEditable === 0 ||
+      row?.IsEditable === '0' ||
+      row?.isEditable === '0' ||
+      row?.IsEditable === false ||
+      row?.isEditable === false
+    ) {
+      return
+    }
 
     setCurrentRemark(row.Remarks || '')
     setCurrentRowId(row.id)
