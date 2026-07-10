@@ -523,7 +523,7 @@ public class HeatRateService {
         List<STGHeatRateDTO> result = projections.stream()
                 .map(projection -> {
                     STGHeatRateDTO dto = new STGHeatRateDTO();
-                    dto.setId(projection.getId());
+                    dto.setId(projection.getId().toString());
                     dto.setEquipType(projection.getEquipType());
                     dto.setCppUtility(projection.getCPPUtility());
                     dto.setStgLoad(projection.getSTGLoad());
@@ -1236,7 +1236,7 @@ public void importSTGHeatRate(MultipartFile file) throws IOException {
 
             String idStr = getCellValueAsString(row, 9);
             if (idStr != null && !idStr.isEmpty()) {
-                dto.setId(UUID.fromString(idStr));
+                dto.setId(idStr);
             }
 
             dto.setEquipType(getCellValueAsString(row, 0));
