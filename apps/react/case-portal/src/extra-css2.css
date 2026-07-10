@@ -205,3 +205,8 @@
 .btn-calculate:disabled svg {
   opacity: 0.6;
 }
+
+/* Force Kendo Tooltips / Popups to render on top of Material UI Dialogs */
+.k-tooltip, .k-animation-container, .k-popup {
+  z-index: 20000 !important;
+}

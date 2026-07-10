@@ -88,6 +88,7 @@ import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
+import { GroupedColumnCell } from './Utilities-Kendo/GroupedColumnCell'
 import {
   FileExportIcon,
   FileImportIcon,
@@ -286,57 +287,7 @@ const KendoDataTables = ({
     }
   }, [rows, filter, sort])
 
-  const GroupedColumnCell = (props) => {
-    const { dataItem, field, tdProps } = props
-    const value = dataItem[field]
 
-    const gName = dataItem.groupName
-    if (!gName) {
-      return (
-        <td
-          {...tdProps}
-          style={{
-            ...tdProps?.style,
-            textAlign: 'right',
-          }}
-        >
-          {value !== null && value !== undefined ? value : ''}
-        </td>
-      )
-    }
-
-    const groupRows = processedRows.filter((r) => r.groupName === gName)
-    const indexInGroup = groupRows.findIndex((r) => r.id === dataItem.id)
-
-    if (indexInGroup > 0) {
-      return (
-        <td
-          {...tdProps}
-          style={{
-            ...tdProps?.style,
-            display: 'none',
-          }}
-        />
-      )
-    }
-
-    const rowSpan = groupRows.length
-
-    return (
-      <td
-        {...tdProps}
-        rowSpan={rowSpan}
-        style={{
-          ...tdProps?.style,
-          verticalAlign: 'middle',
-          textAlign: 'right',
-          backgroundColor: '#FFFFFF',
-        }}
-      >
-        {value !== null && value !== undefined ? value : ''}
-      </td>
-    )
-  }
 
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
@@ -2750,7 +2701,7 @@ const KendoDataTables = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                    (!permissions?.alwaysEnableSave && !summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
                   {...(loading ? {} : {})}
                 >
@@ -4531,7 +4482,13 @@ const KendoDataTables = ({
                         editable={col?.editable ? true : false}
                         headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
-                          data: GroupedColumnCell,
+                          data: (props) => (
+                            <GroupedColumnCell
+                              {...props}
+                              processedRows={processedRows}
+                              columns={columns}
+                            />
+                          ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
