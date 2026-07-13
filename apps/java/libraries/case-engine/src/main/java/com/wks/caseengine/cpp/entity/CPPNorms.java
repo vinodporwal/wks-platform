@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "CPPNorms", schema = "dbo", catalog = "RIL.AOP")
+@Table(name = "CPPNorms", schema = "dbo")
 @Getter
 @Setter
 public class CPPNorms {

@@ -19,6 +19,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import InputsJMD from '../jmd/Inputs/index'
 import Prices from './Prices/index'
 import InputsDMD from '../dmd/Inputs/index'
+import SRMapping from '../common/SRMapping/index'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -84,23 +85,29 @@ const Inputs = () => {
         displayName: 'Heat Rate',
         displaySequence: 5,
       },
+      // {
+      //   id: 'sr-mapping',
+      //   name: 'srMapping',
+      //   displayName: 'SR Mapping',
+      //   displaySequence: 6,
+      // },
       {
         id: 'fixed-norms',
         name: 'Norms',
         displayName: 'Norms',
-        displaySequence: 6,
+        displaySequence: 7,
       },
       {
         id: 'fuel-availability',
         name: 'fuelAvailability',
         displayName: 'Fuel Availability',
-        displaySequence: 7,
+        displaySequence: 8,
       },
       {
         id: 'prices',
         name: 'prices',
         displayName: 'Prices',
-        displaySequence: 8,
+        displaySequence: 9,
       },
       // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
     ]
@@ -176,6 +183,8 @@ const Inputs = () => {
         return <ExportAvailability />
       case 'heat-rate':
         return <HeatRate />
+      case 'sr-mapping':
+        return <SRMapping />
       case 'fixed-norms':
         return <FixedNorms />
       case 'fuel-availability':

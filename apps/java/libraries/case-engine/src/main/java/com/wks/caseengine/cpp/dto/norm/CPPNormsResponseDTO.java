@@ -11,6 +11,12 @@ public class CPPNormsResponseDTO {
 
     private Long id;
 
+    @JsonProperty("cppPlantId")
+    private UUID cppPlantId;
+
+    @JsonProperty("cppPlantName")
+    private String cppPlantName;
+
     @JsonProperty("cppNormsId")
     private UUID cppNormsId;
 
