@@ -1271,8 +1271,80 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         if (caseData.getCaseUrl() != null && !caseData.getCaseUrl().contains("&caseNo")) {
             caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
         }
+     System.out.println("Saving Exsting Case Details....");
+        caseData.setCaseNo(caseNo);
+        if (caseData.getCaseUrl() != null && !caseData.getCaseUrl().contains("&caseNo")) {
+            caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
+        }
         Case savedCase = caseRepository.getByCaseNo(caseNo);
         caseData.setCreationDate(savedCase.getCreationDate());
+
+        // ---- Notify Analysis Team on edit/status change ----
+        try {
+            String rawAttrValue = attributeValue.replace("\\\"", "\"");
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(rawAttrValue);
+
+            JsonNode analysisTeamNode = rootNode.path("analysisTeam");
+            List<String> analysisTeamEmails = new ArrayList<>();
+            if (analysisTeamNode.isArray()) {
+                for (JsonNode member : analysisTeamNode) {
+                    analysisTeamEmails.add(member.asText());
+                }
+            }
+
+            if (!analysisTeamEmails.isEmpty()) {
+                String caseTitle = rootNode.path("caseTitle").asText();
+                String caseStatusValue = (caseData.getStatus() != null) ? caseData.getStatus().getName() : "";
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("caseTitle", "This is to inform that the case is "+caseStatusValue);
+                data.put("headerText", "Case has been updated");
+                data.put("headerColor", caseStatusValue.equalsIgnoreCase("Closed") ? "#D32F2F" : "#2F8B8B");
+                data.put("caseNumber", caseNo);
+                data.put("status", caseStatusValue);
+                data.put("caseName", caseTitle);
+                data.put("caseUrl", caseData.getCaseUrl());
+                data.put("assignedBy", caseData.getOwner() != null ? caseData.getOwner().getName() : "");
+
+                String assignedToLabel = "";
+if (caseData.getAssignedTo() != null && !caseData.getAssignedTo().isEmpty()) {
+    assignedToLabel = caseData.getAssignedTo().get(0).getUserId();
+} else if (caseData.getAssignedToLabel() != null && !caseData.getAssignedToLabel().isBlank()) {
+    assignedToLabel = caseData.getAssignedToLabel();
+} else {
+    String caseAssignedToValue = rootNode.path("caseAssignedTo").asText();
+    if (caseAssignedToValue != null && !caseAssignedToValue.isBlank()) {
+        com.wks.caseengine.rest.db2.entity.Users resolvedUser = usersRepository.findByEmailId(caseAssignedToValue);
+        if (resolvedUser != null) {
+            assignedToLabel = resolvedUser.getUserId();
+        } else {
+            com.wks.caseengine.rest.db2.entity.Groups resolvedGroup = groupsRepository.findByGroupId(caseAssignedToValue);
+            if (resolvedGroup != null) {
+                assignedToLabel = resolvedGroup.getGroupId();
+            }
+        }
+    }
+}
+data.put("assignedToLabel", assignedToLabel);
+
+                caseEmailService.send(
+                    from,
+                    analysisTeamEmails.toArray(new String[0]),
+                    "CASE MANAGEMENT : " + caseTitle,
+                    null,
+                    null,
+                    null,
+                    "email-template",
+                    data
+                );
+                System.out.println("Analysis Team notification sent to: " + analysisTeamEmails);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // ---- END Analysis Team notification ----
+
         caseDetails = caseRepository.save(caseData);
         return caseDetails;
     }
