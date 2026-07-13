@@ -489,17 +489,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			remarkWrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
 			remarkWrapStyle.setLocked(false);
 
-			CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
-			lockedBorderedStyle.setLocked(true);
+		CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
+		lockedBorderedStyle.setLocked(false);
 
-		Sheet sheet = workbook.createSheet("Sheet1");
-		XSSFSheet xssfSheet = (XSSFSheet) sheet;
-		CTSheetProtection sp = xssfSheet.getCTWorksheet().addNewSheetProtection();
-		sp.setSheet(true);
-		sp.setObjects(true);
-		sp.setScenarios(true);
-		sp.setInsertRows(false);
-		int currentRow = 0;
+	Sheet sheet = workbook.createSheet("Sheet1");
+	int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
 			List<String> rowTypes = new ArrayList<>();
 
