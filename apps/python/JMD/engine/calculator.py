@@ -44,8 +44,9 @@ from plant_mapper import PLANT_REGISTRY
 from engine.demand_capacity import run_demand_capacity
 from engine.budget import calculate_budget
 from engine.dispatch_engine import dispatch_power, dispatch_steam
-from engine.ods_norms_reader import ODSNormsReader
+from engine.norms_reader_factory import get_norms_reader
 from engine.u4u_iteration_loop import U4UIterationLoop
+from services.norms_save_service import save_calculated_norms
 
 logger = logging.getLogger(__name__)
 
@@ -256,10 +257,11 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
         logger.warning("  [CALC] demand_capacity skipped: %s", e)
         result["demand_capacity"] = None
 
-    # Load ODS norms once — shared by power dispatch and steam dispatch
-    ods_reader = ODSNormsReader.get_reader(plant_id, month, year)
-    if ods_reader.is_available:
-        ods_reader.log_all_norms()
+    # Load norms once — shared by power dispatch and steam dispatch
+    # Uses factory to select ODS or DB reader based on feature flag
+    norms_reader = get_norms_reader(plant_id, month, year)
+    if norms_reader.is_available:
+        norms_reader.log_all_norms()
 
     # U4U Iteration Loop — iteratively dispatches power + steam and calculates
     # U4U consumption cascades until convergence (0.01% tolerance on all utilities).
@@ -271,8 +273,9 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
             month=month,
             year=year,
             initial_demands=demands,
-            ods_reader=ods_reader,
+            ods_reader=norms_reader,
             external_import_mwh=ext_import,
+            gt_heat_rate_df=gt_df,
         )
         u4u_result = u4u_loop.run()
         result["u4u_iteration"] = u4u_result
@@ -280,6 +283,10 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
         result["new_steam_dispatch"] = u4u_result.get("final_steam_result")
         result["u4u_converged"] = u4u_result.get("converged", False)
         result["u4u_iterations"] = u4u_result.get("iterations_used", 0)
+
+        # Save calculated norms to database
+        save_result = save_calculated_norms(month, year, u4u_result, dry_run=False)
+        result["norms_save"] = save_result
     except Exception as e:
         logger.warning("  [CALC] U4U iteration loop failed: %s", e)
         result["u4u_iteration"] = None

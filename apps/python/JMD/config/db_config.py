@@ -33,3 +33,12 @@ DB_CONFIG = {
     "encrypt": "yes",
     "Connection Timeout": 30
 }
+
+# ---------------------------------------------------------------------------
+# Feature Flags
+# ---------------------------------------------------------------------------
+
+# Use database-based norms reader instead of ODS file reader
+# Set to True to use DBNormsReader, False to use ODSNormsReader
+# This flag allows safe migration and instant rollback if needed
+USE_DATABASE_NORMS = os.environ.get("USE_DATABASE_NORMS", "True").lower() in ("true", "1", "yes")

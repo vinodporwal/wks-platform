@@ -17,9 +17,12 @@ No hardcoded norm values.
 """
 
 import logging
-from typing import Dict, Optional, Set
+from typing import TYPE_CHECKING, Dict, Optional, Set
 
-from engine.ods_norms_reader import ODSNormsReader
+if TYPE_CHECKING:
+    from engine.ods_norms_reader import ODSNormsReader
+
+from engine.norms_reader_factory import get_norms_reader
 from engine.dispatch_engine import dispatch_power, dispatch_steam
 from database.queries import fetch_process_demands_raw, fetch_fixed_consumption_raw
 
@@ -103,17 +106,20 @@ class U4UIterationLoop:
         month: int,
         year: int,
         initial_demands: dict,
-        ods_reader: Optional[ODSNormsReader] = None,
+        ods_reader: Optional["ODSNormsReader"] = None,
         allowed_accounts: Optional[Set[str]] = None,
         convergence_tolerance: float = CONVERGENCE_TOLERANCE,
         max_iterations: int = MAX_ITERATIONS,
         external_import_mwh: float = 0.0,
+        gt_heat_rate_df = None,
     ):
         self.plant_id = plant_id
         self.month = month
         self.year = year
         self.initial_demands = initial_demands
-        self.ods_reader = ods_reader or ODSNormsReader.get_reader(plant_id, month, year)
+        self.gt_heat_rate_df = gt_heat_rate_df
+        # Use factory to get norms reader (ODS or DB based on feature flag)
+        self.ods_reader = ods_reader or get_norms_reader(plant_id, month, year)
         self.allowed_accounts = allowed_accounts or DEFAULT_ALLOWED_ACCOUNTS
         self.convergence_tolerance = convergence_tolerance
         self.max_iterations = max_iterations
@@ -178,6 +184,7 @@ class U4UIterationLoop:
             power_result = dispatch_power(
                 self.plant_id, self.month, self.year,
                 demands=dispatch_demands, ods_reader=self.ods_reader,
+                gt_heat_rate_df=self.gt_heat_rate_df,
             )
 
             steam_result = dispatch_steam(
@@ -460,6 +467,8 @@ class U4UIterationLoop:
                     "material_uom": material_uom,
                     "norm": norm,
                     "quantity": quantity,
+                    "norms_header_id": c.get("norms_header_id"),
+                    "norms_month_detail_id": c.get("norms_month_detail_id"),
                 })
 
         return u4u, details
@@ -519,6 +528,8 @@ class U4UIterationLoop:
                         "material_uom": material_uom,
                         "norm": norm,
                         "quantity": quantity,
+                        "norms_header_id": c.get("norms_header_id"),
+                        "norms_month_detail_id": c.get("norms_month_detail_id"),
                     })
                     continue
 
@@ -538,6 +549,8 @@ class U4UIterationLoop:
                     "material_uom": material_uom,
                     "norm": norm,
                     "quantity": quantity,
+                    "norms_header_id": c.get("norms_header_id"),
+                    "norms_month_detail_id": c.get("norms_month_detail_id"),
                 })
 
         return u4u, details
@@ -595,6 +608,8 @@ class U4UIterationLoop:
                     "material_uom": material_uom,
                     "norm": norm,
                     "quantity": quantity,
+                    "norms_header_id": c.get("norms_header_id"),
+                    "norms_month_detail_id": c.get("norms_month_detail_id"),
                 })
 
         return u4u, details
@@ -728,6 +743,8 @@ class U4UIterationLoop:
                 "material_uom": "MT",
                 "norm": norm,
                 "quantity": higher_grade_consumed,
+                "norms_header_id": None,  # PRDS norms don't have individual IDs in current schema
+                "norms_month_detail_id": None,
             })
 
         return u4u, details

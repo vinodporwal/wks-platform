@@ -20,6 +20,10 @@ Designed to be reusable across all 5 CPP plants — parameterised by plant_id.
 import os
 import logging
 from collections import defaultdict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from engine.ods_norms_reader import ODSNormsReader
 
 from database.queries import (
     fetch_process_demands,
@@ -32,7 +36,7 @@ from database.queries import (
     fetch_steam_asset_priority,
     fetch_steam_asset_capacity_all_months,
 )
-from engine.ods_norms_reader import ODSNormsReader
+from engine.norms_reader_factory import get_norms_reader
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +44,8 @@ logger = logging.getLogger(__name__)
 DEFAULT_FREE_STEAM_FACTOR = 1.97
 
 # ---------------------------------------------------------------------------
-# GT per-load heat rate & free steam factor lookup (hardcoded copy of BPC data)
-# Later this will be replaced by the CPP_GTHeatRate table.
+# GT per-load heat rate & free steam factor lookup
+# Can be populated from CPP_GTHeatRate table or use hardcoded fallback
 # Format: (GTLOAD_MW, HEAT_RATE_Kcal_kWh, FREESTM_FACTOR)
 # ---------------------------------------------------------------------------
 _GT_LOAD_LOOKUP = {
@@ -96,8 +100,38 @@ _GT_LOAD_LOOKUP = {
 }
 
 
+def build_gt_heat_rate_lookup(gt_heat_rate_df):
+    """
+    Build GT heat rate lookup dictionary from database DataFrame.
+    
+    Args:
+        gt_heat_rate_df: DataFrame with columns AssetId, GTName, LoadMW, HeatRateKCALKWH, FreeSteamFactor
+    
+    Returns:
+        Dictionary mapping AssetId to list of (LoadMW, HeatRateKCALKWH, FreeSteamFactor) tuples
+    """
+    if gt_heat_rate_df is None or gt_heat_rate_df.empty:
+        logger.warning("  [GT HR] No database data provided, using hardcoded fallback")
+        return _GT_LOAD_LOOKUP
+    
+    lookup = {}
+    for asset_id in gt_heat_rate_df['AssetId'].unique():
+        gt_data = gt_heat_rate_df[gt_heat_rate_df['AssetId'] == asset_id]
+        # Sort by LoadMW to ensure proper interpolation
+        gt_data = gt_data.sort_values('LoadMW')
+        # Convert to list of tuples
+        lookup[asset_id] = [
+            (row['LoadMW'], row['HeatRateKCALKWH'], row['FreeSteamFactor'])
+            for _, row in gt_data.iterrows()
+        ]
+    
+    logger.info("  [GT HR] Built lookup from database for %d GT assets", len(lookup))
+    return lookup
+
+
 # Map model asset names to the equipment types in the BPC lookup table.
 # Extend this as more plant assets are validated.
+# Used only as fallback when database lookup fails.
 _ASSET_TO_EQUIPMENT_TYPE = {
     "JMD - C2-GTG 1": "C2GT1_FRAME9",
     "JMD - C2-GTG 2": "C2GT2_FRAME9",
@@ -377,7 +411,8 @@ def _dispatch_all_min_first(
     plant_id: str,
     month: int,
     year: int,
-    ods_reader: ODSNormsReader = None,
+    ods_reader = None,
+    gt_lookup: dict = None,
 ) -> list:
     """
     Dispatch algorithm (Option A with mandatory load):
@@ -394,6 +429,7 @@ def _dispatch_all_min_first(
         month: selected month
         year: selected year
         ods_reader: pre-loaded ODSNormsReader for norms (avoids re-reading ODS)
+        gt_lookup: GT heat rate lookup dict from database or fallback
 
     Returns:
         list of asset dicts with added keys:
@@ -498,11 +534,11 @@ def _dispatch_all_min_first(
 
                 remaining -= (allocation_mwh - remaining_to_allocate)
 
-    # Fetch POWERGEN norms from ODS reader (or fallback to cached reader)
+    # Fetch POWERGEN norms from norms reader (or fallback to factory)
     if ods_reader is not None:
         excel_norms = ods_reader.get_powergen_norms()
     else:
-        excel_norms = ODSNormsReader.get_reader(plant_id, month, year).get_powergen_norms()
+        excel_norms = get_norms_reader(plant_id, month, year).get_powergen_norms()
 
     # Calculate derived fields
     for d in dispatch:
@@ -518,11 +554,19 @@ def _dispatch_all_min_first(
         )
 
         # Free Steam MT — only for GT assets
-        # Use per-load factor from BPC lookup when available; otherwise fallback.
+        # Use per-load factor from database lookup when available; otherwise fallback.
         is_gt = "GT" in d["asset_type"].upper()
         if is_gt and d["dispatched_mwh"] > 0:
-            equip_type = _get_asset_equipment_type(d["asset_name"])
-            table = _GT_LOAD_LOOKUP.get(equip_type)
+            # Try database lookup by asset_id first
+            table = None
+            if gt_lookup:
+                table = gt_lookup.get(d["asset_id"])
+            
+            # Fallback to hardcoded lookup if database lookup fails
+            if not table:
+                equip_type = _get_asset_equipment_type(d["asset_name"])
+                table = _GT_LOAD_LOOKUP.get(equip_type)
+            
             if table:
                 d["heat_rate"] = _lookup_gt_heat_rate(d["avg_load_mw"], table)
                 d["free_steam_factor"] = _lookup_gt_load_factor(d["avg_load_mw"], table)
@@ -562,7 +606,8 @@ def _dispatch_one_by_one(
     plant_id: str,
     month: int,
     year: int,
-    ods_reader: ODSNormsReader = None,
+    ods_reader = None,
+    gt_lookup: dict = None,
 ) -> list:
     """
     Dispatch algorithm: bring assets online one-by-one by priority.
@@ -572,7 +617,7 @@ def _dispatch_one_by_one(
     """
     # For now, fall back to all_min_first
     logger.warning("  [DISPATCH] one_by_one mode not yet implemented — falling back to all_min_first")
-    return _dispatch_all_min_first(assets, demand_mwh, plant_id, month, year, ods_reader=ods_reader)
+    return _dispatch_all_min_first(assets, demand_mwh, plant_id, month, year, ods_reader=ods_reader, gt_lookup=gt_lookup)
 
 
 # ---------------------------------------------------------------------------
@@ -669,7 +714,8 @@ def dispatch_power(
     year: int,
     dispatch_mode: str = "all_min_first",
     demands: dict = None,
-    ods_reader: ODSNormsReader = None,
+    ods_reader = None,
+    gt_heat_rate_df = None,
 ) -> dict:
     """
     Dispatch power generation assets for a JMD CPP plant/month.
@@ -683,6 +729,8 @@ def dispatch_power(
                         skips DB round-trip for process + fixed consumption.
         ods_reader:     pre-loaded ODSNormsReader for norms. If None, a cached
                         reader is used automatically.
+        gt_heat_rate_df: DataFrame with GT heat rate data from CPP_GTHeatRate table.
+                        If None, uses hardcoded fallback lookup.
 
     Returns:
         {
@@ -695,9 +743,9 @@ def dispatch_power(
             "assets":               list  (per-asset dispatch detail),
         }
     """
-    # Ensure we have an ODS reader (cached if not provided)
+    # Ensure we have a norms reader (cached if not provided)
     if ods_reader is None:
-        ods_reader = ODSNormsReader.get_reader(plant_id, month, year)
+        ods_reader = get_norms_reader(plant_id, month, year)
 
     # 1. Build asset table (available assets with capacity + priority)
     assets = _build_asset_table(plant_id, month, year)
@@ -718,14 +766,17 @@ def dispatch_power(
     demand = _get_power_demand(plant_id, month, year, demands=demands)
     total_demand = demand["total_mwh"]
 
-    # 2b. Apply spinning margin — reduces effective_max_mw per asset
+    # 2b. Build GT heat rate lookup from database or use fallback
+    gt_lookup = build_gt_heat_rate_lookup(gt_heat_rate_df)
+
+    # 2c. Apply spinning margin — reduces effective_max_mw per asset
     power_spinning_margin = _apply_power_spinning_margin(assets, plant_id)
 
     # 3. Run dispatch
     if dispatch_mode == "one_by_one":
-        dispatch = _dispatch_one_by_one(assets, total_demand, plant_id, month, year, ods_reader=ods_reader)
+        dispatch = _dispatch_one_by_one(assets, total_demand, plant_id, month, year, ods_reader=ods_reader, gt_lookup=gt_lookup)
     else:
-        dispatch = _dispatch_all_min_first(assets, total_demand, plant_id, month, year, ods_reader=ods_reader)
+        dispatch = _dispatch_all_min_first(assets, total_demand, plant_id, month, year, ods_reader=ods_reader, gt_lookup=gt_lookup)
 
     # 4. Compute totals
     total_gen = sum(d["dispatched_mwh"] for d in dispatch)
@@ -837,7 +888,7 @@ def dispatch_steam(
     power_result: dict,
     dispatch_mode: str = "all_min_first",
     demands: dict = None,
-    ods_reader: ODSNormsReader = None,
+    ods_reader = None,
 ) -> dict:
     """
     Dispatch steam generation assets (HRSGs + Aux Boilers) to meet SHP demand.
@@ -854,9 +905,9 @@ def dispatch_steam(
                         reader is used automatically.
     """
     import re
-    # Ensure we have an ODS reader (cached if not provided)
+    # Ensure we have a norms reader (cached if not provided)
     if ods_reader is None:
-        ods_reader = ODSNormsReader.get_reader(plant_id, month, year)
+        ods_reader = get_norms_reader(plant_id, month, year)
 
     # 1. Fetch norms from ODS — letdown cascade drives the grade list
     letdown_norms = ods_reader.get_steam_letdown_norms()

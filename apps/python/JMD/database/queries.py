@@ -1878,6 +1878,103 @@ def fetch_norms(plant_id: str, month: int, year: int) -> list:
 
 
 # ---------------------------------------------------------------------------
+# 8.5. JMD Norms from Database (for migration from ODS)
+# ---------------------------------------------------------------------------
+
+def fetch_norm_rows_for_jmd(plant_id: str, month: int, year: int) -> list:
+    """
+    Fetch all active norm rows for JMD plant/month/year from NormsMonthDetail table.
+    
+    Follows CPP_JMD_GetCPPNorms SP approach:
+    - Uses SourceName relationship to find sub-plants
+    - Includes multiple account types: 'Utilities', 'Catalyst & Chemical', 'Raw Material', 'By Product'
+    - Uses NormsMonthDetail table (not CPPNorms)
+    - Uses WITH (NOLOCK) hints to prevent data locks during read operations.
+    
+    Returns list of dicts with structure matching ODS file layout.
+    
+    Args:
+        plant_id: CPP plant UUID (main plant)
+        month: Month (1-12)
+        year: Year (e.g., 2026)
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        query = f"""
+        WITH GeneratingPlants AS
+        (
+            SELECT Id AS GeneratingPlantId
+            FROM Plants WITH (NOLOCK)
+            WHERE TRY_CONVERT(uniqueidentifier, SourceName) = ?
+              AND IsActive = 1
+        )
+        SELECT
+            p.Name                      AS PlantName,
+            nh.UtilityName,
+            nh.UtilityId,
+            nh.UtilityUOM,
+            nh.AccountName,
+            nh.MaterialName,
+            nh.MaterialId,
+            nh.IssuingUOM              AS MaterialUOM,
+            nh.IssuingPlantName,
+            nmd.Norms,
+            nmd.Quantity,
+            nmd.QTY                    AS Generation,
+            nmd.GenerationUOM,
+            nmd.Amount,
+            nmd.Price,
+            nh.Id                      AS NormsHeaderId,
+            nmd.Id                     AS NormsMonthDetailId
+        FROM {T.NORMS_MONTH_DETAIL} nmd WITH (NOLOCK)
+        INNER JOIN {T.NORMS_HEADER} nh WITH (NOLOCK) ON nh.Id = nmd.NormsHeader_FK_Id
+        INNER JOIN GeneratingPlants gp ON gp.GeneratingPlantId = nh.{T.NORMS_HEADER_PLANT_FK}
+        INNER JOIN {T.PLANTS} p WITH (NOLOCK) ON p.Id = nh.{T.NORMS_HEADER_PLANT_FK}
+        INNER JOIN {T.FINANCIAL_YEAR_MONTH} fym WITH (NOLOCK) ON fym.Id = nmd.FinancialYearMonth_FK_Id
+        WHERE fym.Month = ? AND fym.Year = ?
+          AND nh.IsActive = 1
+          AND nh.AccountName IN ('Utilities', 'Catalyst & Chemical', 'Raw Material', 'By Product')
+        ORDER BY p.Name, nh.DisplayOrder, nmd.DisplayOrder
+        """
+        cur.execute(query, (plant_id, month, year))
+        
+        rows = []
+        for row in cur.fetchall():
+            rows.append({
+                "plant_name": row[0],
+                "utility_name": row[1],
+                "utility_id": row[2],
+                "utility_uom": row[3],
+                "account_name": row[4],
+                "material_name": row[5],
+                "material_id": row[6],
+                "material_uom": row[7],
+                "issuing_plant_name": row[8],
+                "norm": float(row[9]) if row[9] is not None else 0.0,
+                "qty": float(row[10]) if row[10] is not None else 0.0,
+                "generation": float(row[11]) if row[11] is not None else 0.0,
+                "generation_uom": row[12],
+                "amount": float(row[13]) if row[13] is not None else 0.0,
+                "price": float(row[14]) if row[14] is not None else 0.0,
+                "norms_header_id": row[15],
+                "norms_month_detail_id": row[16],
+            })
+        
+        logger.info("  [JMD NORMS] Fetched %d norm rows for plant %s, month %d, year %d", 
+                    len(rows), plant_id, month, year)
+        return rows
+        
+    except Exception as e:
+        logger.error("  [JMD NORMS] Error fetching norms: %s", e)
+        if _is_schema_error(e):
+            raise DataFetchError("JMD NORMS", e)
+        return []
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
 # 9. STG Extraction Lookup
 # ---------------------------------------------------------------------------
 
@@ -2093,7 +2190,7 @@ def fetch_gt_heat_rate_lookup(plant_id: str, month: int = None, year: int = None
 
     Returns:
         DataFrame with columns:
-            GTName, LoadMW, HeatRateKCALKWH, FreeSteamFactor, FinancialYear
+            AssetId, GTName, LoadMW, HeatRateKCALKWH, FreeSteamFactor, FinancialYear
     """
     fy = _fy_string(month, year) if (month and year) else None
 
@@ -2103,25 +2200,25 @@ def fetch_gt_heat_rate_lookup(plant_id: str, month: int = None, year: int = None
         if fy:
             cur.execute(
                 f"""
-                SELECT g.AssetName AS GTName, g.{T.GT_HR_LOAD_COL} AS LoadMW,
+                SELECT a.AssetId, g.AssetName AS GTName, g.{T.GT_HR_LOAD_COL} AS LoadMW,
                        g.{T.GT_HR_VALUE_COL} AS HeatRateKCALKWH, g.FreeSteamFactor, g.{T.GT_HR_YEAR_COL}
                 FROM {T.CPP_GT_HEAT_RATE} g
                 JOIN {T.POWER_GENERATION_ASSETS} a ON a.AssetId = g.{T.GT_HR_ASSET_FK}
                 WHERE a.{T.PGA_PLANT_FK}       = ?
                   AND g.{T.GT_HR_YEAR_COL}     = ?
-                ORDER BY g.AssetName, g.{T.GT_HR_LOAD_COL} ASC
+                ORDER BY a.AssetId, g.{T.GT_HR_LOAD_COL} ASC
                 """,
                 (plant_id, fy),
             )
         else:
             cur.execute(
                 f"""
-                SELECT g.AssetName AS GTName, g.{T.GT_HR_LOAD_COL} AS LoadMW,
+                SELECT a.AssetId, g.AssetName AS GTName, g.{T.GT_HR_LOAD_COL} AS LoadMW,
                        g.{T.GT_HR_VALUE_COL} AS HeatRateKCALKWH, g.FreeSteamFactor, g.{T.GT_HR_YEAR_COL}
                 FROM {T.CPP_GT_HEAT_RATE} g
                 JOIN {T.POWER_GENERATION_ASSETS} a ON a.AssetId = g.{T.GT_HR_ASSET_FK}
                 WHERE a.{T.PGA_PLANT_FK} = ?
-                ORDER BY g.AssetName, g.{T.GT_HR_LOAD_COL} ASC
+                ORDER BY a.AssetId, g.{T.GT_HR_LOAD_COL} ASC
                 """,
                 (plant_id,),
             )
@@ -2130,8 +2227,14 @@ def fetch_gt_heat_rate_lookup(plant_id: str, month: int = None, year: int = None
         if not rows:
             return pd.DataFrame()
 
-        cols = ["GTName", "LoadMW", "HeatRateKCALKWH", "FreeSteamFactor", "FinancialYear"]
-        return pd.DataFrame([list(r) for r in rows], columns=cols)
+        cols = ["AssetId", "GTName", "LoadMW", "HeatRateKCALKWH", "FreeSteamFactor", "FinancialYear"]
+        df = pd.DataFrame([list(r) for r in rows], columns=cols)
+        # Ensure AssetId is string to match asset_id format used in dispatch dicts
+        df["AssetId"] = df["AssetId"].astype(str)
+        # Convert numeric columns to float (DB may return Decimal)
+        for col in ["LoadMW", "HeatRateKCALKWH", "FreeSteamFactor"]:
+            df[col] = df[col].astype(float)
+        return df
     except Exception as e:
         logger.error("  [GT HR] Error: %s", e)
         if _is_schema_error(e):

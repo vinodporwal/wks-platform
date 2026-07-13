@@ -137,18 +137,18 @@ IMPLEMENTATION_SUMMARY_ImportPower.md
 NormParameter.sql
 RIL.AOP_GenerateScriptReport_*.html
 SQL_STORED_PROCEDURES_LIST.md
-# database/scripts/CPPImportPower_*.sql
-# database/scripts/CPPNorms_*.sql
-# database/scripts/CPPNorms_*.md
-# database/scripts/CPP_*.sql
-# apps/python/PPPython-script/
-# apps/python/JMD/logs/
-# apps/python/JMD/output/
-# apps/python/JMD/**/*.pyc
-# !apps/python/PPPython-script/
-# apps/python/PPPython-script/**
-# !apps/python/PPPython-script/**/*.py
-# script1createandinsert.sql
+database/scripts/CPPImportPower_*.sql
+database/scripts/CPPNorms_*.sql
+database/scripts/CPPNorms_*.md
+database/scripts/CPP_*.sql
+apps/python/PPPython-script/
+apps/python/JMD/logs/
+apps/python/JMD/output/
+apps/python/JMD/**/*.pyc
+!apps/python/PPPython-script/
+apps/python/PPPython-script/**
+!apps/python/PPPython-script/**/*.py
+script1createandinsert.sql
 scripts/linux/build-specific-services.sh
 formulaDocument.md
 

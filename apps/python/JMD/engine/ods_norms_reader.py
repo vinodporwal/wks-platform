@@ -84,7 +84,8 @@ def _resolve_excel_path(plant_id: str) -> str:
 
     filenames = [f"{short_code}_JMD.ods", f"JMD_{short_code}.ods"]
     for filename in filenames:
-        for path in [filename, f"../{filename}", f"engine/{filename}"]:
+        # Try common paths including files/ directory
+        for path in [filename, f"../{filename}", f"engine/{filename}", f"files/{filename}", f"../files/{filename}"]:
             if os.path.exists(path):
                 return os.path.abspath(path)
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -92,6 +93,10 @@ def _resolve_excel_path(plant_id: str) -> str:
             p = os.path.join(base_dir, filename)
             if os.path.exists(p):
                 return p
+            # Also try files/ subdirectory
+            p_files = os.path.join(base_dir, "files", filename)
+            if os.path.exists(p_files):
+                return os.path.abspath(p_files)
             base_dir = os.path.dirname(base_dir)
     return f"{short_code}_JMD.ods"
 
