@@ -74,7 +74,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}`
   const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
   const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
   const { items: menuItems } = useMenuContext()
@@ -372,6 +372,108 @@ const ConfigurationOtherCost = ({ permissions }) => {
     fetchData()
   }, [yearChanged, PLANT_ID, AOP_YEAR])
 
+  const handleExcelUpload = (rawFile) => {
+    saveExcelFile(rawFile)
+  }
+  const saveExcelFile = async (rawFile) => {
+    setLoading(true)
+    try {
+      let response =
+        await ConfigurationOtherCostApiService.saveConfigurationOtherCostExcelData(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        await fetchData(gradeId)
+        await getNormTransactions()
+      } else if (response?.code === 400 && response?.data) {
+        // Partial save, error file download
+        const byteCharacters = atob(response.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File Other Cost Norms.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        await fetchData(gradeId)
+        await getNormTransactions()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Save Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setLoading(false)
+    } finally {
+      // fetchData()
+      setLoading(false)
+    }
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    setLoading(true)
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+
+      const resp = await ConfigurationOtherCostApiService.getConfigurationOtherCostExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+        SCREEN_NAME,
+      )
+
+
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error!', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      // optional cleanup or logging
+      setLoading(false)
+    }
+  }
+
   const handleCalculate = async () => {
     setLoading(true)
     try {
@@ -501,12 +603,12 @@ const ConfigurationOtherCost = ({ permissions }) => {
       showCheckbox: false,
       marginBottom: true,
       allAction: true,
-      downloadExcelBtn: false,
-      downloadExcelBtnFromUI: true,
+      downloadExcelBtn: true,
+      downloadExcelBtnFromUI: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: `${SCREEN_NAME}`,
-      uploadExcelBtn: false,
+      uploadExcelBtn: true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       showCalculate: true,
       showCalculateVisibility: calculationObject.length > 0,
@@ -613,6 +715,8 @@ const ConfigurationOtherCost = ({ permissions }) => {
             setCurrentRemark={setCurrentRemark}
             currentRowId={currentRowId}
             handleRemarkCellClick={handleRemarkCellClick}
+            handleExcelUpload={handleExcelUpload}
+            downloadExcelForConfiguration={downloadExcelForConfiguration}
             handleCalculate={handleCalculate}
             isReleaseDisabled={isReleaseDisabled}
             handleRelease={handleRelease}
