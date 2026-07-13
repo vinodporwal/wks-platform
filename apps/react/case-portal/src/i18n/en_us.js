@@ -143,6 +143,7 @@ const defs = {
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
+    configurationOtherCost: 'Other Cost'
   },
   pages: {
     dashboard: {
