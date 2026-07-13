@@ -18,6 +18,7 @@ import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCracker
 import MaintenanceTable from 'components/kendo-data-tables/MaintenanceTable'
 import NormalOpNormsScreen from 'components/kendo-data-tables/NormalOpNorms'
 import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
+import ConfigurationOtherCost from 'components/kendo-data-tables/ConfigurationOtherCost'
 import ProductionvolumeData from 'components/kendo-data-tables/ProductionVoluemData'
 import ShutDown from 'components/kendo-data-tables/ShutDown'
 import ShutdownNorms from 'components/kendo-data-tables/ShutdownNorms'
@@ -442,6 +443,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
             // element: <SelectivityData />,
+          },
+          {
+            path: 'configuration-other-cost',
+            element: (
+              <PrivateRoute routeId='configuration-other-cost'>
+                <ConfigurationOtherCost />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'spyro-menu',
