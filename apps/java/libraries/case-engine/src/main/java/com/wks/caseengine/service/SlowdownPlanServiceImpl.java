@@ -543,54 +543,57 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				list.add(formattedDuration);
 				list.add(dto.getRateEOE());
 				list.add(dto.getRateEO());
-				list.add(dto.getRemark());
-				list.add(dto.getId());
-				list.add(dto.getProduct());
+			list.add(dto.getRemark());
+			list.add(dto.getId());
+			list.add(dto.getProduct());
+			list.add(dto.getType());
 
-				if (isAfterSave) {
-					list.add(dto.getSaveStatus());
-					list.add(dto.getErrDescription());
-				}
-
-				rows.add(list);
-				rowTypes.add(dto.getType());
-			}
-
-			List<String> innerHeaders = new ArrayList<>();
-			innerHeaders.add("Slowdown Desc");
-			innerHeaders.add("SD-From");
-			innerHeaders.add("SD-To");
-			innerHeaders.add("Duration (hrs)");
-			innerHeaders.add("EOE Production Rate");
-			innerHeaders.add("EO Production Rate");
-			innerHeaders.add("Remarks");
-			innerHeaders.add("Id");
-			innerHeaders.add("Product");
 			if (isAfterSave) {
-				innerHeaders.add("Status");
-				innerHeaders.add("Error Description");
-			}
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
-
-			final int remarkColIndex = 6;
-			final int sdFromColIndex = 1;
-			final int sdToColIndex = 2;
-			final int remarksFixedWidth = 50;
-
-			int[] maxColWidths = new int[innerHeaders.size()];
-			for (int i = 0; i < innerHeaders.size(); i++) {
-				maxColWidths[i] = innerHeaders.get(i).length();
+				list.add(dto.getSaveStatus());
+				list.add(dto.getErrDescription());
 			}
 
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-				}
+			rows.add(list);
+			rowTypes.add(dto.getType());
 			}
+
+		List<String> innerHeaders = new ArrayList<>();
+		innerHeaders.add("Slowdown Desc");
+		innerHeaders.add("SD-From");
+		innerHeaders.add("SD-To");
+		innerHeaders.add("Duration (hrs)");
+		innerHeaders.add("EOE Production Rate");
+		innerHeaders.add("EO Production Rate");
+		innerHeaders.add("Remarks");
+		innerHeaders.add("Id");
+		innerHeaders.add("Product");
+		innerHeaders.add("type");
+		if (isAfterSave) {
+			innerHeaders.add("Status");
+			innerHeaders.add("Error Description");
+		}
+		List<List<String>> headers = new ArrayList<>();
+		headers.add(innerHeaders);
+
+	final int remarkColIndex = 6;
+	final int sdFromColIndex = 1;
+	final int sdToColIndex = 2;
+	final int remarksFixedWidth = 50;
+	final int typeColIndex = innerHeaders.indexOf("type");
+
+		int[] maxColWidths = new int[innerHeaders.size()];
+		for (int i = 0; i < innerHeaders.size(); i++) {
+			maxColWidths[i] = innerHeaders.get(i).length();
+		}
+
+		for (List<String> headerRowData : headers) {
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerRowData.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerRowData.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+		}
 
 			int dataRowIndex = 0;
 			for (List<Object> rowData : rows) {
@@ -654,22 +657,25 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				}
 			}
 
-			sheet.setColumnHidden(7, true);
-			sheet.setColumnHidden(8, true);
-			try {
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				workbook.write(outputStream);
-				workbook.close();
-				return outputStream.toByteArray();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
+		sheet.setColumnHidden(7, true);
+		sheet.setColumnHidden(8, true);
+		if (typeColIndex >= 0) {
+			sheet.setColumnHidden(typeColIndex, true);
+		}
+		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+
+	} catch (Exception e) {
+		e.printStackTrace();
 	}
+	return null;
+}
 
 	public byte[] slowdownExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
 		try {
@@ -1666,8 +1672,16 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        Iterator<Row> rowIterator = sheet.iterator();
 	        FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
 
-	        if (rowIterator.hasNext())
-	            rowIterator.next(); 
+	        int typeColIdx = -1;
+	        if (rowIterator.hasNext()) {
+	            Row headerRow = rowIterator.next();
+	            for (Cell headerCell : headerRow) {
+	                if (headerCell != null && "type".equalsIgnoreCase(headerCell.getStringCellValue())) {
+	                    typeColIdx = headerCell.getColumnIndex();
+	                    break;
+	                }
+	            }
+	        }
 
 	        while (rowIterator.hasNext()) {
 	            Row row = rowIterator.next();
@@ -1843,6 +1857,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 	                String idString = getStringCellValue(row.getCell(7), dto);
 	                dto.setId(idString); 
+
+	                if (typeColIdx >= 0) {
+	                    dto.setType(getStringCellValue(row.getCell(typeColIdx), dto));
+	                }
 
 	                if (dto.getId() == null && dto.getSaveStatus() == null) {
 	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown", plantFKId.toString(), year, dto.getDiscription());
@@ -2973,6 +2991,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean vcmHMD = verticalName.equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("HMD");
+		boolean meg = verticalName.equalsIgnoreCase("MEG");
 		Boolean monthDropdown = false;
 		if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
 			monthDropdown=true;
@@ -3118,6 +3137,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    failedList.add(shutDownPlanDTO);
 	                    continue;
 	                }
+// discard the values of start date or  end date based on ramp-up or ramp-down
+				if(meg) {
+					preserveMaintenanceDates(shutDownPlanDTO, plantMaintenanceTransaction);
+				}
+
 					if(vcmHMD) { 
 						double updatedRate = shutDownPlanDTO.getRate();
 						String desc = shutDownPlanDTO.getDiscription();
@@ -4680,5 +4704,18 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 		return style;
+	}
+
+
+	private void preserveMaintenanceDates(ShutDownPlanDTO dto,
+			PlantMaintenanceTransaction existing) {
+		if (dto.getType() == null) {
+			return;
+		}
+		if (dto.getType().equalsIgnoreCase("ramp-up")) {
+			dto.setMaintStartDateTime(existing.getMaintStartDateTime());
+		} else if (dto.getType().equalsIgnoreCase("ramp-down")) {
+			dto.setMaintEndDateTime(existing.getMaintEndDateTime());
+		}
 	}
 }
