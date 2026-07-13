@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @JsonInclude(JsonInclude.Include.ALWAYS)
-public class NormBasedUtilityBudgetResponseDTO {
+public class OutputNormsUtilityBudgetResponseDTO {
 
     @JsonProperty("id")
     private Integer id;
@@ -52,40 +52,40 @@ public class NormBasedUtilityBudgetResponseDTO {
     private String normHeaderId;
 
     @JsonProperty("apr")
-    private NormBasedUtilityBudgetMonthDTO apr;
+    private OutputNormsUtilityBudgetMonthDTO apr;
 
     @JsonProperty("may")
-    private NormBasedUtilityBudgetMonthDTO may;
+    private OutputNormsUtilityBudgetMonthDTO may;
 
     @JsonProperty("jun")
-    private NormBasedUtilityBudgetMonthDTO jun;
+    private OutputNormsUtilityBudgetMonthDTO jun;
 
     @JsonProperty("jul")
-    private NormBasedUtilityBudgetMonthDTO jul;
+    private OutputNormsUtilityBudgetMonthDTO jul;
 
     @JsonProperty("aug")
-    private NormBasedUtilityBudgetMonthDTO aug;
+    private OutputNormsUtilityBudgetMonthDTO aug;
 
     @JsonProperty("sep")
-    private NormBasedUtilityBudgetMonthDTO sep;
+    private OutputNormsUtilityBudgetMonthDTO sep;
 
     @JsonProperty("oct")
-    private NormBasedUtilityBudgetMonthDTO oct;
+    private OutputNormsUtilityBudgetMonthDTO oct;
 
     @JsonProperty("nov")
-    private NormBasedUtilityBudgetMonthDTO nov;
+    private OutputNormsUtilityBudgetMonthDTO nov;
 
     @JsonProperty("dec")
-    private NormBasedUtilityBudgetMonthDTO dec;
+    private OutputNormsUtilityBudgetMonthDTO dec;
 
     @JsonProperty("jan")
-    private NormBasedUtilityBudgetMonthDTO jan;
+    private OutputNormsUtilityBudgetMonthDTO jan;
 
     @JsonProperty("feb")
-    private NormBasedUtilityBudgetMonthDTO feb;
+    private OutputNormsUtilityBudgetMonthDTO feb;
 
     @JsonProperty("mar")
-    private NormBasedUtilityBudgetMonthDTO mar;
+    private OutputNormsUtilityBudgetMonthDTO mar;
 
     @JsonProperty("remarks")
     private String remarks;
