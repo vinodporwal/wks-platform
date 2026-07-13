@@ -5744,4 +5744,298 @@ continue;
 			throw new RuntimeException("Failed to save configuration other cost data", ex);
 		}
 	}
+
+	// ─── Configuration Other Cost – Export Excel ─────────────────────────────────
+
+	@Override
+	public byte[] createConfigurationOtherCostExcel(String year, UUID plantFKId, boolean isAfterSave,
+			List<ConfigurationDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getConfigurationOtherCost(year, plantFKId);
+				Map<String, Object> dataMap = (Map<String, Object>) result.getData();
+				dtoList = (List<ConfigurationDTO>) dataMap.get("configurationDTOList");
+			}
+
+			// Build dynamic month header labels from year like "2026-27"
+			String[] parts = year.split("-");
+			String startYearFull = parts[0];                       // e.g. "2026"
+			String startYearShort = startYearFull.substring(2);   // e.g. "26"
+			String endYearShort = parts[1];                        // e.g. "27"
+
+			// Visible headers (Apr to Mar in fiscal-year order)
+			// Col  0: Particulars
+			// Col  1: UOM
+			// Col  2-13: months Apr-26…Mar-27
+			// Col 14: Remark
+			// Col 15: NormParameterFKId (hidden)
+			// Col 16: Id (hidden)
+			List<String> headerNames = new ArrayList<>(Arrays.asList(
+					"Particulars", "UOM",
+					"Apr-" + startYearShort,
+					"May-" + startYearShort,
+					"Jun-" + startYearShort,
+					"Jul-" + startYearShort,
+					"Aug-" + startYearShort,
+					"Sep-" + startYearShort,
+					"Oct-" + startYearShort,
+					"Nov-" + startYearShort,
+					"Dec-" + startYearShort,
+					"Jan-" + endYearShort,
+					"Feb-" + endYearShort,
+					"Mar-" + endYearShort,
+					"Remark",
+					"NormParameterFKId",
+					"Id"
+			));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("OtherCost");
+
+			// Locked (read-only) style – grey background
+			CellStyle lockedStyle = workbook.createCellStyle();
+			lockedStyle.setLocked(true);
+			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			lockedStyle.setBorderBottom(BorderStyle.THIN);
+			lockedStyle.setBorderTop(BorderStyle.THIN);
+			lockedStyle.setBorderLeft(BorderStyle.THIN);
+			lockedStyle.setBorderRight(BorderStyle.THIN);
+
+			// Unlocked (editable) style
+			CellStyle unlockedStyle = workbook.createCellStyle();
+			unlockedStyle.setLocked(false);
+			unlockedStyle.setBorderBottom(BorderStyle.THIN);
+			unlockedStyle.setBorderTop(BorderStyle.THIN);
+			unlockedStyle.setBorderLeft(BorderStyle.THIN);
+			unlockedStyle.setBorderRight(BorderStyle.THIN);
+
+			// Wrap styles for the Remark column
+			CellStyle wrapUnlockedStyle = workbook.createCellStyle();
+			wrapUnlockedStyle.setWrapText(true);
+			wrapUnlockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+			wrapUnlockedStyle.setLocked(false);
+			wrapUnlockedStyle.setBorderBottom(BorderStyle.THIN);
+			wrapUnlockedStyle.setBorderTop(BorderStyle.THIN);
+			wrapUnlockedStyle.setBorderLeft(BorderStyle.THIN);
+			wrapUnlockedStyle.setBorderRight(BorderStyle.THIN);
+
+			CellStyle wrapLockedStyle = workbook.createCellStyle();
+			wrapLockedStyle.setWrapText(true);
+			wrapLockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+			wrapLockedStyle.setLocked(true);
+			wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			wrapLockedStyle.setBorderBottom(BorderStyle.THIN);
+			wrapLockedStyle.setBorderTop(BorderStyle.THIN);
+			wrapLockedStyle.setBorderLeft(BorderStyle.THIN);
+			wrapLockedStyle.setBorderRight(BorderStyle.THIN);
+
+			int currentRow = 0;
+
+			// Header row
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerNames.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerNames.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			final int REMARK_COL = 14;
+
+			for (ConfigurationDTO dto : dtoList) {
+				boolean editable = dto.getIsEditable() == null || dto.getIsEditable();
+
+				Row row = sheet.createRow(currentRow++);
+
+				// Col 0: Particulars
+				Cell c0 = row.createCell(0);
+				c0.setCellValue(dto.getProductName() != null ? dto.getProductName() : "");
+				c0.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				// Col 1: UOM
+				Cell c1 = row.createCell(1);
+				c1.setCellValue(dto.getUOM() != null ? dto.getUOM() : "");
+				c1.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				// Col 2-13: months Apr…Mar
+				Double[] monthValues = {
+						dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+						dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+						dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+				};
+				for (int m = 0; m < 12; m++) {
+					Cell mc = row.createCell(2 + m);
+					if (monthValues[m] != null) {
+						mc.setCellValue(monthValues[m]);
+					} else {
+						mc.setCellValue("");
+					}
+					mc.setCellStyle(editable ? unlockedStyle : lockedStyle);
+				}
+
+				// Col 14: Remark
+				Cell remarkCell = row.createCell(REMARK_COL);
+				String remarkVal = dto.getRemarks() != null ? dto.getRemarks() : "";
+				remarkCell.setCellValue(remarkVal);
+				remarkCell.setCellStyle(editable ? wrapUnlockedStyle : wrapLockedStyle);
+
+				// Col 15: NormParameterFKId (hidden)
+				Cell c15 = row.createCell(15);
+				c15.setCellValue(dto.getNormParameterFKId() != null ? dto.getNormParameterFKId() : "");
+				c15.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				// Col 16: Id (hidden)
+				Cell c16 = row.createCell(16);
+				c16.setCellValue(dto.getId() != null ? dto.getId() : "");
+				c16.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				if (isAfterSave) {
+					Cell statusCell = row.createCell(17);
+					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					statusCell.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+					Cell errCell = row.createCell(18);
+					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+					errCell.setCellStyle(editable ? unlockedStyle : lockedStyle);
+				}
+
+				// Adjust row height for wrapped remarks
+				if (!remarkVal.isEmpty()) {
+					final int REMARK_CHARS = 50;
+					long explicitLines = remarkVal.chars().filter(c -> c == '\n').count() + 1;
+					long wrappedLines = (long) Math.ceil((double) remarkVal.length() / REMARK_CHARS);
+					int numLines = (int) Math.max(explicitLines, wrappedLines);
+					float neededHeight = numLines * 15.0f;
+					if (row.getHeightInPoints() < neededHeight) {
+						row.setHeightInPoints(neededHeight);
+					}
+				}
+			}
+
+			// Column widths
+			int totalCols = isAfterSave ? 19 : 17;
+			final int REMARK_CHARS = 50;
+			for (int col = 0; col < totalCols; col++) {
+				if (col == REMARK_COL) {
+					sheet.setColumnWidth(col, REMARK_CHARS * 256);
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
+
+			// Hide internal-use columns
+			sheet.setColumnHidden(15, true);
+			sheet.setColumnHidden(16, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// ─── Configuration Other Cost – Read Excel ────────────────────────────────────
+
+	public List<ConfigurationDTO> readConfigurationOtherCostExcel(InputStream inputStream, UUID plantFKId,
+			String year) {
+		List<ConfigurationDTO> configList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); // skip header row
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				ConfigurationDTO dto = new ConfigurationDTO();
+				try {
+					// Col 0: Particulars
+					String particulars = getStringCellValue(row.getCell(0), dto);
+					if (particulars == null || particulars.trim().isEmpty()) {
+						continue; // skip empty rows
+					}
+					dto.setProductName(particulars);
+
+					// Col 1: UOM
+					dto.setUOM(getStringCellValue(row.getCell(1), dto));
+					dto.setAuditYear(year);
+
+					// Col 2-13: Apr…Mar
+					dto.setApr(getNumericCellValue(row.getCell(2), dto));
+					dto.setMay(getNumericCellValue(row.getCell(3), dto));
+					dto.setJun(getNumericCellValue(row.getCell(4), dto));
+					dto.setJul(getNumericCellValue(row.getCell(5), dto));
+					dto.setAug(getNumericCellValue(row.getCell(6), dto));
+					dto.setSep(getNumericCellValue(row.getCell(7), dto));
+					dto.setOct(getNumericCellValue(row.getCell(8), dto));
+					dto.setNov(getNumericCellValue(row.getCell(9), dto));
+					dto.setDec(getNumericCellValue(row.getCell(10), dto));
+					dto.setJan(getNumericCellValue(row.getCell(11), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+					dto.setMar(getNumericCellValue(row.getCell(13), dto));
+
+					// Col 14: Remark
+					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+
+					// Col 15: NormParameterFKId (hidden)
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(15), dto));
+
+					// Col 16: Id (hidden)
+					dto.setId(getStringCellValue(row.getCell(16), dto));
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+				}
+				configList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Configuration Other Cost Excel", e);
+		}
+		return configList;
+	}
+
+	// ─── Configuration Other Cost – Import API ────────────────────────────────────
+
+	@Override
+	@Transactional
+	public AOPMessageVM importConfigurationOtherCostExcel(String year, UUID plantFKId, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<ConfigurationDTO> data = readConfigurationOtherCostExcel(file.getInputStream(), plantFKId, year);
+
+			List<ConfigurationDTO> failedRecords = saveConfigurationOtherCost(year, plantFKId.toString(), data);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && !failedRecords.isEmpty()) {
+				byte[] fileByteArray = createConfigurationOtherCostExcel(year, plantFKId, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import Configuration Other Cost data", ex);
+		}
+	}
 }

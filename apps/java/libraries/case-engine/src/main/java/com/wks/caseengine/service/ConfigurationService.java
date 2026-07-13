@@ -92,4 +92,7 @@ public interface ConfigurationService {
 
         public AOPMessageVM getConfigurationOtherCost(String year, UUID plantFKId);
         public List<ConfigurationDTO> saveConfigurationOtherCost(String year, String plantFKId, List<ConfigurationDTO> configurationDTOList);
+
+        public byte[] createConfigurationOtherCostExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList);
+        public AOPMessageVM importConfigurationOtherCostExcel(String year, UUID plantFKId, MultipartFile file);
 }
