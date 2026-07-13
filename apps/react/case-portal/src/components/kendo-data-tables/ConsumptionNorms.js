@@ -715,7 +715,7 @@ const ConsumptionNorms = () => {
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
-      showReleaseBtn: showReleaseButton ? true : false,
+      showReleaseBtn: false,
       titleName: `${SCREEN_NAME}`,
     },
     isOldYear,

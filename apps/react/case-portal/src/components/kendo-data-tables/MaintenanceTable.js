@@ -262,6 +262,7 @@ const MaintenanceTable = () => {
 
   // Step 1: Reset lineDetails and fetch line details first (for verticals that need it)
   useEffect(() => {
+    setTabIndex(0)
     setLineDetails([])
     if (needsLineDetails) {
       setLineDetailsReady(false)
