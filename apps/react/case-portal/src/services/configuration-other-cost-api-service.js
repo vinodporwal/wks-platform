@@ -108,7 +108,7 @@ async function saveConfigurationOtherCostExcelData(
   AOP_YEAR,
 ) {
   let url = ''
-  url = `${Config.CaseEngineUrl}/task/other-cost-norms-import-excel?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  url = `${Config.CaseEngineUrl}/task/configuration-other-cost-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
 
   const formData = new FormData()
   formData.append('file', file)
