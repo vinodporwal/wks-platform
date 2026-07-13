@@ -304,6 +304,14 @@ const auxBoilerApi = createHeatRateApi('AUXBOILER', {
   hasSeparateDropdown: true,
 })
 
+// CCPP - has its own dedicated endpoints
+const ccppApi = createHeatRateApi('CCPP', {
+  dropdownEndpoint: 'steam-heat-rate/drop-down',
+  dataEndpoint: 'ccpp-heat-rate',
+  paramName: 'year',
+  hasSeparateDropdown: true,
+})
+
 // ===================== EXPORT ===================== //
 
 export const HeatRateApiService = {
@@ -333,4 +341,11 @@ export const HeatRateApiService = {
   saveAuxBoilerHeatRateData: auxBoilerApi.saveHeatRateData,
   saveAuxBoilerHeatRateExcel: auxBoilerApi.saveHeatRateExcel,
   exportAuxBoilerHeatRateExcel: auxBoilerApi.exportHeatRateExcel,
+
+  // CCPP
+  getCcppAssetDropdown: ccppApi.getAssetDropdown,
+  getCcppHeatRateData: ccppApi.getHeatRateData,
+  saveCcppHeatRateData: ccppApi.saveHeatRateData,
+  saveCcppHeatRateExcel: ccppApi.saveHeatRateExcel,
+  exportCcppHeatRateExcel: ccppApi.exportHeatRateExcel,
 }

@@ -1,6 +1,7 @@
 package com.wks.caseengine.rest.cpp;
 
 import com.wks.caseengine.cpp.dto.heatrate.CppAuxBoilerHeatRateDto;
+import com.wks.caseengine.cpp.dto.heatrate.CppCcppHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
@@ -386,5 +387,70 @@ public class JMDHeatRateController {
             @RequestParam("file") MultipartFile file) {
         logger.info("[JMDHeatRateController] POST /jmd/Auxboiler-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
         return jmdHeatRateService.importAuxboilerHeatRateData(year, assetId, startDate, endDate, plantIds, file);
+    }
+
+      // ============================================================
+    // CCPP HEAT RATE APIs
+    // ============================================================
+
+    @GetMapping("/jmd/ccpp-heat-rate")
+    public ResponseEntity<AOPMessageVM> getCcppHeatRateData(
+            @RequestParam UUID assetId,
+            @RequestParam String year,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam List<UUID> plantIds) {
+        logger.info("[JMDHeatRateController] GET /jmd/ccpp-heat-rate - assetId: {}, year: {}", assetId, year);
+        AOPMessageVM response = jmdHeatRateService.getCcppHeatRateData(assetId, year, startDate, endDate, plantIds);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/jmd/ccpp-heat-rate/{aopYear}")
+    public ResponseEntity<AOPMessageVM> updateCcppHeatRate(
+            @RequestBody List<CppCcppHeatRateDto> dtoList,
+            @PathVariable String aopYear) {
+        logger.info("[JMDHeatRateController] POST /jmd/ccpp-heat-rate/{} - {} records", aopYear, dtoList.size());
+        AOPMessageVM response = jmdHeatRateService.updateCcppHeatRate(dtoList, aopYear);
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping(value = "/jmd/ccpp-heat-rate/export")
+    public ResponseEntity<byte[]> exportCcppHeatRate(
+            @RequestParam("assetId") UUID assetId,
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportCcppHeatRateExcelData(
+                    assetId, year, startDate, endDate, plantIds, false, null
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("CCPP_Heat_Rate_Data.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting CCPP heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/jmd/ccpp-heat-rate/import", consumes = "multipart/form-data")
+    public AOPMessageVM importCcppRateData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "assetId", required = false) UUID assetId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/ccpp-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importCcppHeatRateData(year, assetId, startDate, endDate, plantIds, file);
     }
 }

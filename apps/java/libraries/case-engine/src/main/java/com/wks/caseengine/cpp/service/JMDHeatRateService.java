@@ -1,6 +1,7 @@
 package com.wks.caseengine.cpp.service;
 
 import com.wks.caseengine.cpp.dto.heatrate.CppAuxBoilerHeatRateDto;
+import com.wks.caseengine.cpp.dto.heatrate.CppCcppHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppGtHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.CppHrsgHeatRateDto;
 import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
@@ -27,6 +28,8 @@ public interface JMDHeatRateService {
     AOPMessageVM getHRSGHeatRateData(UUID assetId, String year,  String startDate,  String endDate,   List<UUID> plantIds);
     
     AOPMessageVM getAuxboilerHeatRateData(UUID assetId, String year,  String startDate,  String endDate,   List<UUID> plantIds);
+   
+    AOPMessageVM getCcppHeatRateData(UUID assetId, String year,  String startDate,  String endDate,   List<UUID> plantIds);
     
     AOPMessageVM getHRSGAssetDropdown(List<UUID> plantIds);
     
@@ -41,6 +44,8 @@ public interface JMDHeatRateService {
     public AOPMessageVM updateAuxboilerHeatRate(
             List<CppAuxBoilerHeatRateDto> dtoList, 
             String year);
+            
+    AOPMessageVM updateCcppHeatRate(List<CppCcppHeatRateDto> dtoList, String year);
     
     byte[] exportGTHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppGtHeatRateDto> dtoList);
     
@@ -50,11 +55,15 @@ public interface JMDHeatRateService {
     
     byte[] exportSTGHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<STGHeatRateDTO> dtoList);
     
+    byte[] exportCcppHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppCcppHeatRateDto> dtoList);
+    
     AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
     
     AOPMessageVM importHRSGHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
     
     AOPMessageVM importAuxboilerHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
+    
+    AOPMessageVM importCcppHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
     
     AOPMessageVM importSTGHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
     
