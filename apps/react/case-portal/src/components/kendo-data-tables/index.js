@@ -4,6 +4,7 @@ import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import { DatePicker as KendoDatePicker } from '@progress/kendo-react-dateinputs'
 import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
@@ -113,6 +114,49 @@ const OnOffSwitchEditCell = (props) => {
     />
   )
 }
+const ConstantValueEditCell = (props) => {
+  const { dataItem, field, onChange } = props
+  const uom = (dataItem?.UOM || '').toLowerCase()
+  const isDateOrDay = uom === 'date' || uom === 'day'
+
+  if (isDateOrDay) {
+    const currentRaw = dataItem[field]
+    const currentDate = currentRaw ? new Date(currentRaw) : null
+
+    const handleChange = (event) => {
+      onChange({
+        dataItem,
+        field,
+        value: event.value ? event.value.getTime() : null,
+        syntheticEvent: event.syntheticEvent,
+      })
+    }
+
+    return (
+      <KendoDatePicker
+        value={currentDate}
+        format='dd-MM-yyyy'
+        onChange={handleChange}
+        width='100%'
+        size='small'
+        style={{
+          width: '100%',
+          fontSize: '15px',
+          height: '40px',
+        }}
+        className='input-editor'
+      />
+    )
+  }
+
+  const isInteger = props.column?.isInteger
+  if (isInteger) {
+    return <NoSpinnerNumericIntegerEditor {...props} />
+  }
+
+  return <NoSpinnerNumericEditor {...props} />
+}
+
 
 export const dateFields = [
   'maintStartDateTime',
@@ -1804,6 +1848,54 @@ const KendoDataTables = ({
       >
         {children}
       </td>
+    )
+  }
+
+  const ConstantValueDataCell = (props) => {
+    const { dataItem, field, tdProps } = props
+    const value = dataItem[field]
+    const uom = (dataItem?.UOM || '').toLowerCase()
+    const isDateOrDay = uom === 'date' || uom === 'day'
+
+    if (isDateOrDay) {
+      let displayValue = value
+      if (value) {
+        const d = new Date(value)
+        if (!isNaN(d.getTime())) {
+          const day = String(d.getDate()).padStart(2, '0')
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          const year = d.getFullYear()
+          displayValue = `${day}-${month}-${year}`
+        }
+      }
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'center',
+          }}
+        >
+          {displayValue !== null && displayValue !== undefined ? displayValue : ''}
+        </td>
+      )
+    }
+
+    return showThreeColors ? (
+      <RedHighlightCell2
+        {...props}
+        customModifiedCells={customModifiedCells}
+        allRedCell={allRedCell}
+        allRedCell2={allRedCell2}
+        disableRedHighlight={disableRedHighlight}
+      />
+    ) : (
+      <RedHighlightCell
+        {...props}
+        customModifiedCells={customModifiedCells}
+        allRedCell={allRedCell}
+        disableRedHighlight={disableRedHighlight}
+      />
     )
   }
 
@@ -4423,6 +4515,36 @@ const KendoDataTables = ({
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
+                      />
+                    )
+                  }
+                  if (col?.type === 'constantValue') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+                          ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                          ${col?.isBold ? 'bold-text' : ''}
+                        `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: {
+                            numeric: ConstantValueEditCell,
+                            text: ConstantValueEditCell,
+                            date: ConstantValueEditCell,
+                          },
+                          data: ConstantValueDataCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
                       />
                     )
                   }
