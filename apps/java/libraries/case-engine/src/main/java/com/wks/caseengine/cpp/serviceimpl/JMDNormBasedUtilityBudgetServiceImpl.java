@@ -900,15 +900,15 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     }
 
     @Override
-    public byte[] exportNormBasedUtilityBudget(List<UUID> cppPlantIds, String financialYear, boolean isAfterSave, List<NormBasedUtilityBudgetResponseDTO> dtoList) {
+    public byte[] exportNormBasedUtilityBudget(List<UUID> cppPlantIds, String financialYear, boolean isAfterSave, List<OutputNormsUtilityBudgetResponseDTO> dtoList) {
         try {
             if (!isAfterSave) {
                 AOPMessageVM result = getNormBasedUtilityBudget(cppPlantIds, financialYear);
                 Object data = result.getData();
                 if (data instanceof List) {
                     @SuppressWarnings("unchecked")
-                    List<NormBasedUtilityBudgetResponseDTO> dataList =
-                            (List<NormBasedUtilityBudgetResponseDTO>) data;
+                    List<OutputNormsUtilityBudgetResponseDTO> dataList =
+                            (List<OutputNormsUtilityBudgetResponseDTO>) data;
                     dtoList = dataList;
                 } else if (data instanceof Map) {
                     @SuppressWarnings("unchecked")
@@ -916,7 +916,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                     Object listObj = map.get("list");
                     if (listObj instanceof List) {
                         @SuppressWarnings("unchecked")
-                        List<NormBasedUtilityBudgetResponseDTO> dataList = (List<NormBasedUtilityBudgetResponseDTO>) listObj;
+                        List<OutputNormsUtilityBudgetResponseDTO> dataList = (List<OutputNormsUtilityBudgetResponseDTO>) listObj;
                         dtoList = dataList;
                     }
                 }
@@ -1071,7 +1071,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             }
 
             // Data rows
-            for (NormBasedUtilityBudgetResponseDTO dto : dtoList) {
+            for (OutputNormsUtilityBudgetResponseDTO dto : dtoList) {
                 Row row = sheet.createRow(currentRow++);
                 col = 0;
 
@@ -1592,16 +1592,16 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         try {
 
           
-            List<NormBasedUtilityBudgetResponseDTO> data = readNormBasedUtilityBudget(file.getInputStream(), cppPlantIds, financialYear);
+            List<OutputNormsUtilityBudgetResponseDTO> data = readNormBasedUtilityBudget(file.getInputStream(), cppPlantIds, financialYear);
             
            
             
             // Separate failed records from successful ones
-            List<NormBasedUtilityBudgetResponseDTO> validRecords = new ArrayList<>();
-            List<NormBasedUtilityBudgetResponseDTO> failedRecords = new ArrayList<>(); 
+            List<OutputNormsUtilityBudgetResponseDTO> validRecords = new ArrayList<>();
+            List<OutputNormsUtilityBudgetResponseDTO> failedRecords = new ArrayList<>(); 
 
 
-            for (NormBasedUtilityBudgetResponseDTO dto : data) {
+            for (OutputNormsUtilityBudgetResponseDTO dto : data) {
                 if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
                     failedRecords.add(dto);
                 } else {
@@ -1621,7 +1621,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 } catch (Exception e) {
                     System.out.println("error in import method: " + e.getMessage());
                     // Mark all valid records as failed if save fails
-                    for (NormBasedUtilityBudgetResponseDTO dto : validRecords) {
+                    for (OutputNormsUtilityBudgetResponseDTO dto : validRecords) {
                         dto.setSaveStatus("Failed");
                         dto.setErrDescription("Save failed: " + e.getMessage());
                         failedRecords.add(dto);
@@ -1651,8 +1651,8 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         }
     }
 
-    private List<NormBasedUtilityBudgetResponseDTO> readNormBasedUtilityBudget(InputStream inputStream, List<UUID> cppPlantIds, String financialYear) {
-        List<NormBasedUtilityBudgetResponseDTO> dataList = new ArrayList<>();
+    private List<OutputNormsUtilityBudgetResponseDTO> readNormBasedUtilityBudget(InputStream inputStream, List<UUID> cppPlantIds, String financialYear) {
+        List<OutputNormsUtilityBudgetResponseDTO> dataList = new ArrayList<>();
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -1668,7 +1668,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
 
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
-                NormBasedUtilityBudgetResponseDTO dto = new NormBasedUtilityBudgetResponseDTO();
+                OutputNormsUtilityBudgetResponseDTO dto = new OutputNormsUtilityBudgetResponseDTO();
                 
                 try {
                     int col = 0;
@@ -1752,10 +1752,10 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         return dataList;
     }
 
-    private List<NormsMonthUpdateRequestDTO> convertToUpdateRequests(List<NormBasedUtilityBudgetResponseDTO> dtoList) {
+    private List<NormsMonthUpdateRequestDTO> convertToUpdateRequests(List<OutputNormsUtilityBudgetResponseDTO> dtoList) {
         List<NormsMonthUpdateRequestDTO> requests = new ArrayList<>();
         
-        for (NormBasedUtilityBudgetResponseDTO dto : dtoList) {
+        for (OutputNormsUtilityBudgetResponseDTO dto : dtoList) {
             NormsMonthUpdateRequestDTO request = new NormsMonthUpdateRequestDTO();
             
             if (dto.getNormHeaderId() != null && !dto.getNormHeaderId().isEmpty()) {
@@ -1782,7 +1782,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         return requests;
     }
 
-    private NormsMonthValueDTO convertToNormsMonthValueDTO(NormBasedUtilityBudgetMonthDTO monthDTO) {
+    private NormsMonthValueDTO convertToNormsMonthValueDTO(OutputNormsUtilityBudgetMonthDTO monthDTO) {
         if (monthDTO == null) {
             return null;
         }
@@ -1802,7 +1802,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         return valueDTO;
     }
 
-    private void setMonthCellValues(Row row, int startCol, NormBasedUtilityBudgetMonthDTO monthDTO, CellStyle dataStyle) {
+    private void setMonthCellValues(Row row, int startCol, OutputNormsUtilityBudgetMonthDTO monthDTO, CellStyle dataStyle) {
         if (monthDTO != null) {
             // Commented out Qty column
             // setDoubleCellValue(row.createCell(startCol), monthDTO.getQty());
@@ -1825,8 +1825,8 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         }
     }
 
-    private NormBasedUtilityBudgetMonthDTO readMonthData(Row row, int startCol) {
-        NormBasedUtilityBudgetMonthDTO monthDTO = new NormBasedUtilityBudgetMonthDTO();
+    private OutputNormsUtilityBudgetMonthDTO readMonthData(Row row, int startCol) {
+        OutputNormsUtilityBudgetMonthDTO monthDTO = new OutputNormsUtilityBudgetMonthDTO();
         // Commented out Qty column reading
         // monthDTO.setQty(getDoubleCellValue(row.getCell(startCol)));
         // Commented out Generation UOM column reading
