@@ -89,4 +89,7 @@ public interface ConfigurationService {
         public AOPMessageVM importManualEntryExcel(String year, UUID plantFKId, MultipartFile file);
 
         public AOPMessageVM calculateCombine(UUID plantId, String aopYear);
+
+        public AOPMessageVM getConfigurationOtherCost(String year, UUID plantFKId);
+        public List<ConfigurationDTO> saveConfigurationOtherCost(String year, String plantFKId, List<ConfigurationDTO> configurationDTOList);
 }

@@ -210,6 +210,7 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
         isEditable: item.isEditable,
         sapMaterialCode: item.sapCode || item.sapMaterialCode,
         normParameterType: item.groupName || item.normParameterType,
+        aopYear: item.aopYear || AOP_YEAR,
       }))
 
       const response = await PlantAopReportApiService.saveGroupedSelection(
@@ -245,7 +246,7 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, rows, keycloak, PLANT_ID, fetchData])
+  }, [modifiedCells, rows, keycloak, PLANT_ID, fetchData, AOP_YEAR])
 
   const handleCalculate = () => { }
 

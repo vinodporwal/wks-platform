@@ -1309,7 +1309,9 @@ const KendoDataTables = ({
       openCalculateDialogBox()
     } else {
       // old code
-      setSelectedGrade('')
+      if (!permissions?.dontClearGradeOnCalculate) {
+        setSelectedGrade('')
+      }
       setIsButtonDisabled(true)
 
       handleCalculate()
