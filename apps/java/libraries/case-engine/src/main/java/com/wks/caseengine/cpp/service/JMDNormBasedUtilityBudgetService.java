@@ -30,6 +30,8 @@ public interface JMDNormBasedUtilityBudgetService {
     byte[] exportNormBasedUtilityBudgetDetailed(List<UUID> cppPlantId, String financialYear);
 
     AOPMessageVM importExcel(List<UUID> cppPlantIds, String financialYear, MultipartFile file);
+    
+    Map<String, Object> runFullYear(Map<String, Object> request);
 }
 
 

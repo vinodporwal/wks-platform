@@ -4,7 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.wks.caseengine.cpp.dto.norm.NormsMonthUpdateRequestDTO;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -30,6 +31,8 @@ public class JMDNormBasedUtilityBudgetController {
 
     @Autowired
     private JMDNormBasedUtilityBudgetService normBasedUtilityBudgetService;
+    
+    private static final Logger logger = LoggerFactory.getLogger(JMDNormBasedUtilityBudgetController.class);
 
     @GetMapping("/jmd-norm-based-utility-budget")
     public ResponseEntity<?> getNormBasedUtilityBudget(
@@ -221,7 +224,27 @@ public class JMDNormBasedUtilityBudgetController {
         return ResponseEntity.ok(result);
     }
 
-    
+    @PostMapping("/jmd-run-full-year")
+    public ResponseEntity<Map<String, Object>> runFullYear(@RequestBody Map<String, Object> request) {
+        logger.info("Received runFullYear request: financialYear={},   cpp_ids={},  saveToDb={}, saveLogs={}, pythonExePath={}, pythonScriptFolder={}", 
+            request.get("financial_year"),
+            request.get("cpp_ids"),
+            request.get("save_to_db"),
+            request.get("save_logs"),
+            request.get("python_exe_path"),
+            request.get("python_script_folder"));
+        
+        Map<String, Object> result = normBasedUtilityBudgetService.runFullYear(request);
+        
+        if (Boolean.TRUE.equals(result.get("success"))) {
+            logger.info("Full year budget calculation completed successfully");
+            return ResponseEntity.ok(result);
+        } else {
+            logger.error("Full year budget calculation failed: {}", result.get("error"));
+            return ResponseEntity.status(500).body(result);
+        }
+    }
+
 
   
 
