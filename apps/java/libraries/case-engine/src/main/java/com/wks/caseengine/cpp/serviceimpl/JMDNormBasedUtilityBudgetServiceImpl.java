@@ -40,6 +40,8 @@ import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetSummaryPeriodDTO;
 import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetSummaryResponseDTO;
 import com.wks.caseengine.cpp.dto.norm.NormsMonthUpdateRequestDTO;
 import com.wks.caseengine.cpp.dto.norm.NormsMonthValueDTO;
+import com.wks.caseengine.cpp.dto.norm.OutputNormsUtilityBudgetMonthDTO;
+import com.wks.caseengine.cpp.dto.norm.OutputNormsUtilityBudgetResponseDTO;
 import com.wks.caseengine.cpp.entity.NormsMonthDetail;
 import com.wks.caseengine.cpp.repository.NormsMonthDetailRepository;
 import com.wks.caseengine.cpp.service.JMDNormBasedUtilityBudgetService;
@@ -272,11 +274,11 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 return vm;
             }
 
-            List<NormBasedUtilityBudgetResponseDTO> list = new ArrayList<>();
+            List<OutputNormsUtilityBudgetResponseDTO> list = new ArrayList<>();
             for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
                 Object[] row = rows.get(rowIndex);
                 try {
-                    NormBasedUtilityBudgetResponseDTO dto = mapRowToDto(row, rowIndex);
+                	OutputNormsUtilityBudgetResponseDTO dto = mapRowToDto(row, rowIndex);
                     list.add(dto);
                 } catch (Exception e) {
                     log.error("Skipping bad row {} due to mapping error: {}", rowIndex, e.getMessage());
@@ -324,8 +326,8 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     // =========================
     //  ROW → DTO MAPPING
     // =========================
-    private NormBasedUtilityBudgetResponseDTO mapRowToDto(Object[] r, int rowIndex) {
-        NormBasedUtilityBudgetResponseDTO dto = new NormBasedUtilityBudgetResponseDTO();
+    private OutputNormsUtilityBudgetResponseDTO mapRowToDto(Object[] r, int rowIndex) {
+    	OutputNormsUtilityBudgetResponseDTO dto = new OutputNormsUtilityBudgetResponseDTO();
 
         try {
             if (r == null) {
@@ -453,22 +455,22 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     // =========================
     //  JSON → Month DTO
     // =========================
-    private NormBasedUtilityBudgetMonthDTO parseMonthJson(String json, String monthName, int rowIndex) { 
+    private OutputNormsUtilityBudgetMonthDTO parseMonthJson(String json, String monthName, int rowIndex) { 
         try {
             if (json == null) {
                 log.debug("Row {} - {} is null, returning empty DTO with all null fields", rowIndex, monthName);
-                return createEmptyMonthDTO();
+                return createEmptyNormsMonthDTO();
             }
 
             json = json.trim();
             if (json.isEmpty() || "null".equalsIgnoreCase(json)) {
                 log.debug("Row {} - {} is empty or 'null', returning empty DTO with all null fields", rowIndex, monthName);
-                return createEmptyMonthDTO();
+                return createEmptyNormsMonthDTO();
             }
 
-            NormBasedUtilityBudgetMonthDTO result = objectMapper.readValue(
+            OutputNormsUtilityBudgetMonthDTO result = objectMapper.readValue(
                     json,
-                    NormBasedUtilityBudgetMonthDTO.class);
+                    OutputNormsUtilityBudgetMonthDTO.class);
 
             log.debug("Row {} - Successfully parsed {} month data", rowIndex, monthName);
 
@@ -477,15 +479,27 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         } catch (Exception e) {
             log.error("Row {} - Failed to parse {} JSON, returning empty DTO with all null fields", rowIndex, monthName, e);
             log.debug("JSON content: {}", json);
-            return createEmptyMonthDTO();
+            return createEmptyNormsMonthDTO();
         }
     }
-
+    
     // =========================
     //  CREATE EMPTY MONTH DTO
     // =========================
     private NormBasedUtilityBudgetMonthDTO createEmptyMonthDTO() {
         NormBasedUtilityBudgetMonthDTO dto = new NormBasedUtilityBudgetMonthDTO();
+        dto.setNorms(null);
+        dto.setQuantity(null);
+        dto.setAmount(null);
+        dto.setPrice(null);
+        dto.setFinancialYearMonthFkId(null);
+        dto.setQty(null);
+        dto.setGenerationUom(null);
+        return dto;
+    }
+    
+    private OutputNormsUtilityBudgetMonthDTO createEmptyNormsMonthDTO() {
+    	OutputNormsUtilityBudgetMonthDTO dto = new OutputNormsUtilityBudgetMonthDTO();
         dto.setNorms(null);
         dto.setQuantity(null);
         dto.setAmount(null);
