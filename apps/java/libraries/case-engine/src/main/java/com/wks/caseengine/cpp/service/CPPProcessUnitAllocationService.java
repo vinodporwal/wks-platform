@@ -2,6 +2,7 @@ package com.wks.caseengine.cpp.service;
 
 import com.wks.caseengine.cpp.dto.CPPProcessUnitAllocationDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -40,4 +41,24 @@ public interface CPPProcessUnitAllocationService {
      * @return AOPMessageVM confirming deletion
      */
     AOPMessageVM deleteProcessUnitAllocation(UUID id);
+
+    /**
+     * EXPORT — generate an Excel file of all process unit allocations for the given plants and year.
+     *
+     * @param plantIds  list of CPP plant UUIDs
+     * @param aopYear   financial year string e.g. "2026-27"
+     * @return byte[] containing the .xlsx file content
+     */
+    byte[] exportProcessUnitAllocations(List<UUID> plantIds, String aopYear);
+
+    /**
+     * IMPORT — parse an Excel file, validate each record, and save valid records.
+     * Returns an error Excel (base64) if any records fail validation.
+     *
+     * @param plantIds  list of CPP plant UUIDs
+     * @param aopYear   financial year string
+     * @param file      uploaded .xlsx file
+     * @return AOPMessageVM with success/failure summary
+     */
+    AOPMessageVM importProcessUnitAllocations(List<UUID> plantIds, String aopYear, MultipartFile file);
 }
