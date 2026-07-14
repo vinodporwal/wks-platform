@@ -99,6 +99,7 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import { ConstantValueEditCell, ConstantValueDataCell } from './ConstantValueCells'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
 
@@ -114,49 +115,6 @@ const OnOffSwitchEditCell = (props) => {
     />
   )
 }
-const ConstantValueEditCell = (props) => {
-  const { dataItem, field, onChange } = props
-  const uom = (dataItem?.UOM || '').toLowerCase()
-  const isDateOrDay = uom === 'date' || uom === 'day'
-
-  if (isDateOrDay) {
-    const currentRaw = dataItem[field]
-    const currentDate = currentRaw ? new Date(currentRaw) : null
-
-    const handleChange = (event) => {
-      onChange({
-        dataItem,
-        field,
-        value: event.value ? event.value.getTime() : null,
-        syntheticEvent: event.syntheticEvent,
-      })
-    }
-
-    return (
-      <KendoDatePicker
-        value={currentDate}
-        format='dd-MM-yyyy'
-        onChange={handleChange}
-        width='100%'
-        size='small'
-        style={{
-          width: '100%',
-          fontSize: '15px',
-          height: '40px',
-        }}
-        className='input-editor'
-      />
-    )
-  }
-
-  const isInteger = props.column?.isInteger
-  if (isInteger) {
-    return <NoSpinnerNumericIntegerEditor {...props} />
-  }
-
-  return <NoSpinnerNumericEditor {...props} />
-}
-
 
 export const dateFields = [
   'maintStartDateTime',
@@ -1848,54 +1806,6 @@ const KendoDataTables = ({
       >
         {children}
       </td>
-    )
-  }
-
-  const ConstantValueDataCell = (props) => {
-    const { dataItem, field, tdProps } = props
-    const value = dataItem[field]
-    const uom = (dataItem?.UOM || '').toLowerCase()
-    const isDateOrDay = uom === 'date' || uom === 'day'
-
-    if (isDateOrDay) {
-      let displayValue = value
-      if (value) {
-        const d = new Date(value)
-        if (!isNaN(d.getTime())) {
-          const day = String(d.getDate()).padStart(2, '0')
-          const month = String(d.getMonth() + 1).padStart(2, '0')
-          const year = d.getFullYear()
-          displayValue = `${day}-${month}-${year}`
-        }
-      }
-      return (
-        <td
-          {...tdProps}
-          style={{
-            ...tdProps?.style,
-            textAlign: 'center',
-          }}
-        >
-          {displayValue !== null && displayValue !== undefined ? displayValue : ''}
-        </td>
-      )
-    }
-
-    return showThreeColors ? (
-      <RedHighlightCell2
-        {...props}
-        customModifiedCells={customModifiedCells}
-        allRedCell={allRedCell}
-        allRedCell2={allRedCell2}
-        disableRedHighlight={disableRedHighlight}
-      />
-    ) : (
-      <RedHighlightCell
-        {...props}
-        customModifiedCells={customModifiedCells}
-        allRedCell={allRedCell}
-        disableRedHighlight={disableRedHighlight}
-      />
     )
   }
 
@@ -4518,7 +4428,7 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col?.type === 'constantValue') {
+                  if (col?.type === 'crackerC2DatePicker') {
                     return (
                       <GridColumn
                         locked={col.locked || false}
@@ -4539,7 +4449,18 @@ const KendoDataTables = ({
                             text: ConstantValueEditCell,
                             date: ConstantValueEditCell,
                           },
-                          data: ConstantValueDataCell,
+                          data: (props) => (
+                            <ConstantValueDataCell
+                              {...props}
+                              showThreeColors={showThreeColors}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              allRedCell2={allRedCell2}
+                              disableRedHighlight={disableRedHighlight}
+                              RedHighlightCell={RedHighlightCell}
+                              RedHighlightCell2={RedHighlightCell2}
+                            />
+                          ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
