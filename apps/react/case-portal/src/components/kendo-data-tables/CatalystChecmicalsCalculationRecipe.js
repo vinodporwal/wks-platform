@@ -367,24 +367,8 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions, onSaveOrImport, refr
 
      const rowsWithTotal = useMemo(() => {
           if (!rows || rows.length === 0) return []
-
-          const totalRow = {
-               id: 'total_row',
-               recipe: 'Total',
-               isTotal: true,
-               isEditable: false,
-          }
-
-          totalRowConfiguration.forEach(({ field }) => {
-               const sum = rows.reduce((acc, row) => {
-                    const val = parseFloat(row[field])
-                    return acc + (isNaN(val) ? 0 : val)
-               }, 0)
-               totalRow[field] = Math.round(sum * 10000) / 10000
-          })
-
-          return [...rows, totalRow]
-     }, [rows, totalRowConfiguration])
+          return [...rows]
+     }, [rows])
 
      const handleSetRows = useCallback((newRowsOrFunc) => {
           setRows((prev) => {
