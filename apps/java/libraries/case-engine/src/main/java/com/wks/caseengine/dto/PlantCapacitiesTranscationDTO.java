@@ -19,12 +19,14 @@ public class PlantCapacitiesTranscationDTO {
     private String siteName;
     private String plantName;
     private String uom;
-    private String min;
-    private String max;
+    private Double min;
+    private Double max;
     private String remarks;
     private String aopYear;
     private Integer displayOrder;
     private Boolean isEditable;
     private Boolean isVisible;
     private String plantId;
+    private String saveStatus;
+    private String errDescription;
 }
