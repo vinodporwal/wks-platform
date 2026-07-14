@@ -373,7 +373,7 @@ const CrakcerProductionConst = () => {
       showTitleNameBusiness: true,
       titleName:
         siteObject?.name?.toLowerCase() === 'c2'
-          ? ' Data Configuration'
+          ? 'Production Basis'
           : 'Production Target Constraints',
       saveWithRemark: true,
       saveBtn: true,

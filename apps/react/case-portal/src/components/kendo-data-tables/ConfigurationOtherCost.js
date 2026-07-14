@@ -392,8 +392,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchData(gradeId)
-        await getNormTransactions()
+        await fetchData()
       } else if (response?.code === 400 && response?.data) {
         // Partial save, error file download
         const byteCharacters = atob(response.data)
@@ -418,8 +417,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchData(gradeId)
-        await getNormTransactions()
+        await fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -610,7 +608,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
       titleName: `${SCREEN_NAME}`,
       uploadExcelBtn: true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
-      showCalculate: true,
+      showCalculate: false,
       showCalculateVisibility: calculationObject.length > 0,
       showReleaseBtn: showReleaseButton ? true : false,
     },
