@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,10 +8,10 @@ import ValueFormatterPhaseTwo, {
 } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { InputNormsApiService } from 'components/aop-phase-two/services/cpp/jmd/inputNormsApiService'
 import useConfigurationDates from 'components/aop-phase-two/common/hooks/useConfigurationDates'
-import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
 
 const FixedNorms = () => {
   const keycloak = useSession()
@@ -41,14 +41,21 @@ const FixedNorms = () => {
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+
+  const PLANT_ID_LIST = plantObject?.id;
+  // useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+  //   [jmdSelectedPlants],
+  // )
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(6)
   const customFormatFive = customValueFormatterPhaseTwo(5)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -305,87 +312,95 @@ const FixedNorms = () => {
     }
   }, [configError])
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && startDate && endDate) {
-      const formattedStartDate = formatDate(startDate)
-      const formattedEndDate = formatDate(endDate)
-      fetchNormsData(formattedStartDate, formattedEndDate)
-      setModifiedCells({})
-    }
-  }, [PLANT_ID, AOP_YEAR, startDate, endDate])
+  const fetchNormsData = useCallback(
+    async (startDate, endDate) => {
+      setLoading(true)
+      try {
+        const res = await InputNormsApiService.getNormsData(
+          keycloak,
+          PLANT_ID_LIST,
+          AOP_YEAR,
+          startDate,
+          endDate,
+        )
 
-  const fetchNormsData = async (startDate, endDate) => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getNormBasedUtilityBudget(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        startDate,
-        endDate,
-      )
+        if (res?.data?.length === 0) {
+          setRows([])
+          setSnackbarOpen(true)
+          setSnackbarData({ message: 'No data found', severity: 'info' })
+          return
+        }
+        let tempRes = res?.data?.map((item, index) => {
+          const actualNormValue =
+            item.actualNorm !== null && item.actualNorm !== undefined
+              ? item.actualNorm
+              : 0
+          const applyToAll = item.applyActualNormToAll || false
 
-      if (res?.data?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        return
-      }
-      let tempRes = res?.data?.map((item, index) => {
-        const actualNormValue =
-          item.actualNorm !== null && item.actualNorm !== undefined
-            ? item.actualNorm
-            : 0
-        const applyToAll = item.applyActualNormToAll || false
+          // If applyActualNormToAll is true, populate all 12 months with actualNorm value
+          if (
+            applyToAll &&
+            actualNormValue !== null &&
+            actualNormValue !== undefined
+          ) {
+            return {
+              ...item,
+              id: item.id || index + 1,
+              remarks: item.remarks || '',
+              actualNorm: actualNormValue,
+              applyActualNormToAll: applyToAll,
+              isEditable: false, // Row not editable when checkbox is checked
+              aprNorms: actualNormValue,
+              mayNorms: actualNormValue,
+              junNorms: actualNormValue,
+              julNorms: actualNormValue,
+              augNorms: actualNormValue,
+              sepNorms: actualNormValue,
+              octNorms: actualNormValue,
+              novNorms: actualNormValue,
+              decNorms: actualNormValue,
+              janNorms: actualNormValue,
+              febNorms: actualNormValue,
+              marNorms: actualNormValue,
+            }
+          }
 
-        // If applyActualNormToAll is true, populate all 12 months with actualNorm value
-        if (
-          applyToAll &&
-          actualNormValue !== null &&
-          actualNormValue !== undefined
-        ) {
+          // Otherwise, keep the original month values
           return {
             ...item,
             id: item.id || index + 1,
             remarks: item.remarks || '',
             actualNorm: actualNormValue,
             applyActualNormToAll: applyToAll,
-            isEditable: false, // Row not editable when checkbox is checked
-            aprNorms: actualNormValue,
-            mayNorms: actualNormValue,
-            junNorms: actualNormValue,
-            julNorms: actualNormValue,
-            augNorms: actualNormValue,
-            sepNorms: actualNormValue,
-            octNorms: actualNormValue,
-            novNorms: actualNormValue,
-            decNorms: actualNormValue,
-            janNorms: actualNormValue,
-            febNorms: actualNormValue,
-            marNorms: actualNormValue,
+            isEditable: true, // Row editable when checkbox unchecked
           }
-        }
+        })
 
-        // Otherwise, keep the original month values
-        return {
-          ...item,
-          id: item.id || index + 1,
-          remarks: item.remarks || '',
-          actualNorm: actualNormValue,
-          applyActualNormToAll: applyToAll,
-          isEditable: true, // Row editable when checkbox unchecked
-        }
-      })
-      setRows(tempRes)
-      setOriginalRows(tempRes)
-    } catch (error) {
-      console.error('Error fetching fixed consumption data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
+        setRows(tempRes)
+        setOriginalRows(tempRes)
+      } catch (error) {
+        console.error('Error fetching fixed consumption data:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID_LIST, AOP_YEAR],
+  )
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR && startDate && endDate) {
+        const formattedStartDate = formatDate(startDate)
+        const formattedEndDate = formatDate(endDate)
+        fetchNormsData(formattedStartDate, formattedEndDate)
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, startDate, endDate, fetchNormsData],
+  )
 
   // Permissions (adjust as needed)
   const permissions = {
@@ -428,6 +443,7 @@ const FixedNorms = () => {
       setLoading(false)
       return
     }
+
     // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
       'aprNorms',
@@ -473,7 +489,7 @@ const FixedNorms = () => {
 
       console.log('payload', tempPayload)
 
-      const response = await InputApiService.saveNormsData(
+      const response = await InputNormsApiService.saveNormsData(
         keycloak,
         tempPayload,
         AOP_YEAR,
@@ -486,7 +502,6 @@ const FixedNorms = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchNormsData()
     } catch (error) {
       console.error('Error saving plant requirement data:', error)
       setSnackbarOpen(true)
@@ -504,10 +519,10 @@ const FixedNorms = () => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveCPPNormsExcel(
-        file,
+      const response = await InputNormsApiService.importNormsData(
         keycloak,
-        PLANT_ID,
+        file,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -591,9 +606,9 @@ const FixedNorms = () => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      await InputApiService.exportCPPNormsExcel(
+      await InputNormsApiService.exportNormsData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
@@ -723,6 +738,7 @@ const FixedNorms = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
+
       <NestedKendoTable
         columns={nestedColumns}
         rows={rows}
@@ -746,16 +762,8 @@ const FixedNorms = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={70}
-        groupBy={['generatingPlantName', 'accountName']}
+        groupBy={['generatingPlantName']}
         customItemChange={handleCustomItemChange}
-      />
-
-      {/* Notification for configuration warnings */}
-      <Notification
-        open={snackbarOpen}
-        onClose={() => setSnackbarOpen(false)}
-        message={snackbarData.message}
-        severity={snackbarData.severity}
       />
     </Box>
   )

@@ -7,7 +7,6 @@ import ShutdownAndOperational from './ShutdownAndOperational/index'
 import { generateMockData } from './InputUtility'
 import ExportAvailability from './ExportAvailability'
 import HeatRate from './HeatRate/index'
-import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -16,6 +15,7 @@ import AssetAvailability from './AssetAvailability/index'
 import Prices from '../../Inputs/Prices/index'
 import FuelPriority from './FuelPriority/index'
 import ImportPower from '../../dmd/Inputs/ImportPowerMain/index'
+import InputNorms from './InputNorms/index'
 
 const InputsDMD = () => {
   const keycloak = useSession()
@@ -313,7 +313,7 @@ const InputsDMD = () => {
       case 'heat-rate':
         return <HeatRate />
       case 'fixed-norms':
-        return <FixedNorms />
+        return <InputNorms />
       case 'fuel-availability':
         return <Fuel />
       case 'fuel-priority':
