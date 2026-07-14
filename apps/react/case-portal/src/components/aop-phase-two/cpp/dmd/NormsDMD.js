@@ -623,7 +623,7 @@ const NormsDMD = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={80}
-        groupBy={['cppPlantName', 'generatingPlantName', 'accountName']}
+        groupBy={['generatingPlantName', 'accountName']}
         handleRelease={handleRelease}
         isReleaseDisabled={isReleaseDisabled}
       />
