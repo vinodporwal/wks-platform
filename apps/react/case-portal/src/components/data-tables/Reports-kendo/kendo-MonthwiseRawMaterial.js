@@ -637,7 +637,8 @@ const MonthwiseRawMaterial = () => {
         lowerVertName !== 'pet' &&
         lowerVertName !== 'vcm' &&
         lowerVertName !== 'elastomer' &&
-        lowerVertName !== 'pta' && (
+        lowerVertName !== 'pta' &&
+        lowerVertName !== 'pvc' && (
           <KendoDataTablesReports
             rows={row2}
             columns={columns}
@@ -671,7 +672,8 @@ const MonthwiseRawMaterial = () => {
         lowerVertName === 'pta' ||
         lowerVertName === 'pp' ||
         lowerVertName === 'vcm' ||
-        lowerVertName === 'elastomer') && (
+        lowerVertName === 'elastomer' ||
+        lowerVertName === 'pvc') && (
         <Typography component='div' className='grid-title' sx={{ mb: 1 }}>
           {'Monthwise Consumption (T-18)'}
         </Typography>

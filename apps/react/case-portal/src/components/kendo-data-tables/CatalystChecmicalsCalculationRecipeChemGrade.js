@@ -212,6 +212,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions, onSaveOrImp
                          severity: 'success',
                     })
                     setModifiedCells({})
+                    fetchData()
                     if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)
