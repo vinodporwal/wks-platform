@@ -39,6 +39,48 @@ _EXCLUDED_NON_DISPATCHABLE = {"Power_Dis"}
 _KCAL_TO_BTU = 3.96567
 _BTU_TO_MMBTU = 1_000_000
 _FREE_STEAM_ENERGY_KCAL_KG = 760.87  # (810 - 110) / 0.92
+_BTU_LB_TO_MMBTU_MT = 0.00396567  # HRSG: BTU/lb → MMBTU/MT
+
+
+def _interpolate_hrsg_heat_rate(hrsg_name: str, steam_flow_tph: float, lookup_df) -> float:
+    """Interpolate HRSG heat rate (BTU/lb) from CPP_HRSGHeatRate lookup by steam flow (TPH).
+
+    Returns 0.0 if no data is found or steam_flow_tph <= 0.
+    """
+    if lookup_df is None or lookup_df.empty or steam_flow_tph <= 0:
+        return 0.0
+
+    normalized_name = _normalize_for_match(hrsg_name)
+    lookup_norm = lookup_df["HRSGName"].apply(_normalize_for_match)
+    hrsg_df = lookup_df[lookup_norm == normalized_name]
+
+    if hrsg_df.empty:
+        for idx, row in lookup_df.iterrows():
+            db_norm = _normalize_for_match(str(row["HRSGName"]))
+            if normalized_name in db_norm or db_norm in normalized_name:
+                hrsg_df = lookup_df[lookup_df["HRSGName"] == row["HRSGName"]]
+                break
+
+    if hrsg_df.empty:
+        return 0.0
+
+    hrsg_df = hrsg_df.sort_values("LoadTPH").reset_index(drop=True)
+    loads = hrsg_df["LoadTPH"].astype(float).values
+    heat_rates = hrsg_df["HeatRateBTUlb"].astype(float).values
+
+    if steam_flow_tph <= loads[0]:
+        return float(heat_rates[0])
+    if steam_flow_tph >= loads[-1]:
+        return float(heat_rates[-1])
+
+    for i in range(len(loads) - 1):
+        if loads[i] <= steam_flow_tph <= loads[i + 1]:
+            if loads[i] == loads[i + 1]:
+                return float(heat_rates[i])
+            frac = (steam_flow_tph - loads[i]) / (loads[i + 1] - loads[i])
+            return float(heat_rates[i] + frac * (heat_rates[i + 1] - heat_rates[i]))
+
+    return float(heat_rates[-1])
 
 
 def _normalize_for_match(name: str) -> str:
@@ -112,12 +154,14 @@ class U4UIterationLoop:
         max_iterations: int = MAX_ITERATIONS,
         external_import_mwh: float = 0.0,
         gt_heat_rate_df = None,
+        hrsg_heat_rate_df = None,
     ):
         self.plant_id = plant_id
         self.month = month
         self.year = year
         self.initial_demands = initial_demands
         self.gt_heat_rate_df = gt_heat_rate_df
+        self.hrsg_heat_rate_df = hrsg_heat_rate_df
         # Use factory to get norms reader (ODS or DB based on feature flag)
         self.ods_reader = ods_reader or get_norms_reader(plant_id, month, year)
         self.allowed_accounts = allowed_accounts or DEFAULT_ALLOWED_ACCOUNTS
@@ -499,6 +543,13 @@ class U4UIterationLoop:
 
             producer_uom = producer_norms.get("producer_uom", "MT")
 
+            # Reverse-calculate HRSG heat rate for fuel norm override
+            hrsg_hr_btu_lb = 0.0
+            if asset.get("asset_type", "").upper() == "HRSG" and self.hrsg_heat_rate_df is not None:
+                op_hours = asset.get("op_hours", 0)
+                steam_flow_tph = total_output_mt / op_hours if op_hours > 0 else 0.0
+                hrsg_hr_btu_lb = _interpolate_hrsg_heat_rate(asset_name, steam_flow_tph, self.hrsg_heat_rate_df)
+
             for c in producer_norms.get("consumptions", []):
                 if c["account"] not in self.allowed_accounts:
                     continue
@@ -510,6 +561,13 @@ class U4UIterationLoop:
                 material = c["material"]
                 material_uom = c.get("material_uom", "")
                 account = c["account"]
+
+                # Reverse-calculate MMBTU norm for Raw Material (fuel) on HRSG
+                # assets using heat rate from CPP_HRSGHeatRate table
+                if account == "Raw Material" and hrsg_hr_btu_lb > 0:
+                    reverse_norm = hrsg_hr_btu_lb * _BTU_LB_TO_MMBTU_MT
+                    if reverse_norm > 0:
+                        norm = reverse_norm
 
                 quantity = total_output_mt * norm
                 u4u_amount = quantity
@@ -1231,11 +1289,22 @@ class U4UIterationLoop:
                 power_asset_heat[name] = (hr, fsf)
 
         steam_asset_gens: dict = {}
+        hrsg_asset_heat: dict = {}  # asset_name → heat_rate_btu_lb
         for asset in (self.final_steam_result or {}).get("assets", []):
-            steam_asset_gens[asset.get("asset_name", "")] = asset.get(
+            aname = asset.get("asset_name", "")
+            total_mt = asset.get(
                 "total_output_mt",
                 asset.get("dispatched_mt", 0.0) + asset.get("free_steam_mt", 0.0),
             )
+            steam_asset_gens[aname] = total_mt
+
+            # Build HRSG heat rate lookup for reverse norm calculation
+            if asset.get("asset_type", "").upper() == "HRSG" and self.hrsg_heat_rate_df is not None:
+                op_hours = asset.get("op_hours", 0)
+                steam_flow_tph = total_mt / op_hours if op_hours > 0 else 0.0
+                hr_btu_lb = _interpolate_hrsg_heat_rate(aname, steam_flow_tph, self.hrsg_heat_rate_df)
+                if hr_btu_lb > 0:
+                    hrsg_asset_heat[aname] = hr_btu_lb
 
         # PRDS generation from the cascade details already calculated
         prds_generation: dict = {}
@@ -1337,6 +1406,14 @@ class U4UIterationLoop:
                             _KCAL_TO_BTU * (hr - fsf * _FREE_STEAM_ENERGY_KCAL_KG)
                             / _BTU_TO_MMBTU
                         )
+                        if reverse_norm > 0:
+                            norm = reverse_norm
+
+                    # Reverse-calculate MMBTU norm for Raw Material (fuel) entries
+                    # on HRSG steam assets using heat rate from CPP_HRSGHeatRate
+                    elif c["account"] == "Raw Material" and gen_entry["producer"] in hrsg_asset_heat:
+                        hr_btu_lb = hrsg_asset_heat[gen_entry["producer"]]
+                        reverse_norm = hr_btu_lb * _BTU_LB_TO_MMBTU_MT
                         if reverse_norm > 0:
                             norm = reverse_norm
 

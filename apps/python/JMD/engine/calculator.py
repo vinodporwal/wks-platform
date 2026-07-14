@@ -276,6 +276,7 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
             ods_reader=norms_reader,
             external_import_mwh=ext_import,
             gt_heat_rate_df=gt_df,
+            hrsg_heat_rate_df=hrsg_df,
         )
         u4u_result = u4u_loop.run()
         result["u4u_iteration"] = u4u_result
