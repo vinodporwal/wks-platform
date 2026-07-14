@@ -60,6 +60,7 @@ import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
+import com.wks.caseengine.dto.AopBasisDTO;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
@@ -2046,6 +2047,58 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getAopBasis(String year, String plantFKId, String type) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Map<String, Object>> productionConstraintsList = new ArrayList<>();
+
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			List<Object[]> obj = new ArrayList<>();
+
+				String procedureName = verticalName + "_GetProduction_Constraints";
+				if (type != null && !type.trim().isEmpty()) {
+					obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId, procedureName, type);
+				} else {
+					obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+				}
+			
+
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("NormTypeName", row[0]);
+				map.put("NormParameter_FK_Id", row[1]);
+				map.put("Name", row[2]);
+				map.put("DisplayName", row[3]);
+				map.put("UOM", row[4]);
+				map.put("ConstantValue", row[5]);
+				map.put("AuditYear", row[6]);
+				map.put("Remarks", row[7]);
+				boolean isEditable;
+				Object flagObj = row[8];
+				if (flagObj instanceof Boolean) {
+					isEditable = (Boolean) flagObj;
+				} else if (flagObj instanceof Number) {
+					isEditable = ((Number) flagObj).intValue() == 1;
+				} else {
+					isEditable = false;
+				}
+				map.put("isEditable", isEditable);
+				productionConstraintsList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(productionConstraintsList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -2294,6 +2347,81 @@ continue;
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Override
+	public List<AopBasisDTO> saveAopBasis(String year, String plantFKId,
+			List<AopBasisDTO> configurationDTOList) {
+		try {
+
+			
+			List<AopBasisDTO> failedList = new ArrayList<>();
+			 UUID plantId = UUID.fromString(plantFKId);
+			 String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+
+			for (AopBasisDTO configurationDTO : configurationDTOList) {
+				System.out.println("configurationDTO: " + configurationDTO);
+				if (configurationDTO.getSaveStatus() != null
+						&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(configurationDTO);
+					continue;
+				}
+
+	     	// skip the empty rows
+			if(configurationDTO.getNormParameterFKId() == null || configurationDTO.getNormParameterFKId().isEmpty()) { 
+			continue;
+
+			}
+
+				UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
+
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					configurationDTO.setSaveStatus("Failed");
+					configurationDTO.setErrDescription("Norm Paramter not found");
+					failedList.add(configurationDTO);
+					continue;
+				}
+			if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
+				continue;
+			}
+
+
+				for (int i = 1; i <= 12; i++) {
+		
+					String attributeValue = getAttributeValueForAopBasis(configurationDTO, i);
+					
+
+					configurationDTO.setVertical(verticalName);
+					saveAopBasisData(optionNormParameters.get(), i, year, attributeValue, configurationDTO,plantFKId);
+					if(configurationDTO.getSaveStatus()!=null && configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+						failedList.add(configurationDTO);
+						break;
+					}
+
+					
+
+				}
+				
+			}
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("configuration");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantFKId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			
+			
+			return failedList;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
 	
 	private Optional<UUID> getStartEndDateNormsId(UUID plantId, String name) {
 	    UUID id = normParametersRepository.findNormParameterIdByNameAndPlant(name, plantId);
@@ -2439,29 +2567,20 @@ continue;
 		return null;
 	}
 	
-	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
-            ConfigurationDTO configurationDTO, String plantFKId) {
+	void saveAopBasisData(NormParameters normParameter, Integer i, String year, String attributeValue,
+            AopBasisDTO configurationDTO, String plantFKId) {
   
 		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 	  String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
-	  String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
-	                   ? getVersion(year, UUID.fromString(plantFKId)) 
-	                   : "V1";
+	
 	  
 	  Optional<NormAttributeTransactions> existingRecord;
-	  if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
-	      existingRecord = normAttributeTransactionsRepository
-	          .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
-
-		// existingRecord = normAttributeTransactionsRepository
-		// 	.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
-	  } else {
-	      existingRecord = normAttributeTransactionsRepository
+	existingRecord = normAttributeTransactionsRepository
 	          .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
-	  }
+	  
 	
-	  String newValue = (attributeValue != null) ? attributeValue.toString() : "0.0";
+	  String newValue = (attributeValue != null) ? attributeValue : "";
 	  String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
 	                     ? configurationDTO.getRemarks().trim() 
 	                     : "";
@@ -2470,19 +2589,22 @@ continue;
 	
 	  if (existingRecord.isPresent()) {
 	      NormAttributeTransactions entity = existingRecord.get();
-	      String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "0.0";
+	      String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "";
 	      String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
 	
 	      boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
 	      boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
 	
 	      if (isRemarkEmpty) {
-	          setError(configurationDTO, "Remark is mandatory to update an existing record.");
+	        
+			  configurationDTO.setSaveStatus("Failed");
+		      configurationDTO.setErrDescription("Remark is mandatory to update an existing record.");
 	          return;
 	      }
 	
 	      if (isValueChanged && !isRemarkChanged) {
-	          setError(configurationDTO, "Value has changed; please provide a updated remark.");
+			  configurationDTO.setSaveStatus("Failed");
+		      configurationDTO.setErrDescription("Value has changed; please provide a updated remark.");
 	          return;
 	      }
 	
@@ -2494,12 +2616,13 @@ continue;
 	      }
 	  } 
 	  else {
-	      if ("0.0".equals(newValue)) {
+	      if ("".equals(newValue)) {
 	          return; 
 	      }
 	
 	      if (isRemarkEmpty) {
-	          setError(configurationDTO, "Remark is mandatory for new records.");
+			  configurationDTO.setSaveStatus("Failed");
+		      configurationDTO.setErrDescription("Remark is mandatory for new records.");
 	          return;
 	      }
 	
@@ -2507,7 +2630,6 @@ continue;
 	      newEntity.setNormParameterFKId(normParameter.getId());
 	      newEntity.setAopMonth(i);
 	      newEntity.setAuditYear(year);
-	      newEntity.setAttributeValueVersion(version);
 	      newEntity.setUserName(Utility.getUserName());
 	      newEntity.setCreatedOn(new Date());
 	      newEntity.setModifiedOn(new Date());
@@ -2518,6 +2640,86 @@ continue;
 	      normAttributeTransactionsRepository.save(newEntity);
 	  }
 	}
+
+	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
+		ConfigurationDTO configurationDTO, String plantFKId) {
+
+	Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
+	Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+  String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+  String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
+				   ? getVersion(year, UUID.fromString(plantFKId)) 
+				   : "V1";
+  
+  Optional<NormAttributeTransactions> existingRecord;
+  if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
+	  existingRecord = normAttributeTransactionsRepository
+		  .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+
+	// existingRecord = normAttributeTransactionsRepository
+	// 	.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+  } else {
+	  existingRecord = normAttributeTransactionsRepository
+		  .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+  }
+
+  String newValue = (attributeValue != null) ? attributeValue.toString() : "0.0";
+  String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
+					 ? configurationDTO.getRemarks().trim() 
+					 : "";
+  
+  boolean isRemarkEmpty = newRemark.isEmpty();
+
+  if (existingRecord.isPresent()) {
+	  NormAttributeTransactions entity = existingRecord.get();
+	  String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "0.0";
+	  String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+
+	  boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
+	  boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
+
+	  if (isRemarkEmpty) {
+		  setError(configurationDTO, "Remark is mandatory to update an existing record.");
+		  return;
+	  }
+
+	  if (isValueChanged && !isRemarkChanged) {
+		  setError(configurationDTO, "Value has changed; please provide a updated remark.");
+		  return;
+	  }
+
+	  if (isValueChanged || isRemarkChanged) {
+		  entity.setAttributeValue(newValue);
+		  entity.setRemarks(newRemark);
+		  entity.setModifiedOn(new Date());
+		  normAttributeTransactionsRepository.save(entity);
+	  }
+  } 
+  else {
+	  if ("0.0".equals(newValue)) {
+		  return; 
+	  }
+
+	  if (isRemarkEmpty) {
+		  setError(configurationDTO, "Remark is mandatory for new records.");
+		  return;
+	  }
+
+	  NormAttributeTransactions newEntity = new NormAttributeTransactions();
+	  newEntity.setNormParameterFKId(normParameter.getId());
+	  newEntity.setAopMonth(i);
+	  newEntity.setAuditYear(year);
+	  newEntity.setAttributeValueVersion(version);
+	  newEntity.setUserName(Utility.getUserName());
+	  newEntity.setCreatedOn(new Date());
+	  newEntity.setModifiedOn(new Date());
+	  
+	  newEntity.setAttributeValue(newValue);
+	  newEntity.setRemarks(newRemark);
+	  
+	  normAttributeTransactionsRepository.save(newEntity);
+  }
+}
 
 		private void setError(ConfigurationDTO dto, String message) {
 		  if (dto != null) {
@@ -2531,6 +2733,37 @@ continue;
 			}
 
 	public Double getAttributeValue(ConfigurationDTO configurationDTO, Integer i) {
+		switch (i) {
+			case 1:
+				return configurationDTO.getJan();
+			case 2:
+				return configurationDTO.getFeb();
+			case 3:
+				return configurationDTO.getMar();
+			case 4:
+				return configurationDTO.getApr();
+			case 5:
+				return configurationDTO.getMay();
+			case 6:
+				return configurationDTO.getJun();
+			case 7:
+				return configurationDTO.getJul();
+			case 8:
+				return configurationDTO.getAug();
+			case 9:
+				return configurationDTO.getSep();
+			case 10:
+				return configurationDTO.getOct();
+			case 11:
+				return configurationDTO.getNov();
+			case 12:
+				return configurationDTO.getDec();
+
+		}
+		return configurationDTO.getJan();
+	}
+
+	public String getAttributeValueForAopBasis(AopBasisDTO configurationDTO, Integer i) {
 		switch (i) {
 			case 1:
 				return configurationDTO.getJan();
@@ -5585,4 +5818,457 @@ continue;
 		}
 	}
 
+	@Override
+	public AOPMessageVM getConfigurationOtherCost(String year, UUID plantFKId) {
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+			Plants plant = plantsRepository.findById(plantFKId)
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = verticalName.toUpperCase() + "_" + site.getName().toUpperCase() + "_GetConfigurationOtherCost";
+			List<Object[]> obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
+
+			List<ConfigurationDTO> configurationDTOList = new ArrayList<>();
+			int i = 0;
+			for (Object[] row : obj) {
+				ConfigurationDTO configurationDTO = new ConfigurationDTO();
+				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+
+				configurationDTO.setJan(
+						(row[1] != null && !row[1].toString().trim().isEmpty())
+								? Double.parseDouble(row[1].toString().trim())
+								: 0.0);
+				configurationDTO.setFeb(
+						(row[2] != null && !row[2].toString().trim().isEmpty()) ? Double.parseDouble(row[2].toString())
+								: 0.0);
+				configurationDTO.setMar(
+						(row[3] != null && !row[3].toString().trim().isEmpty()) ? Double.parseDouble(row[3].toString())
+								: 0.0);
+				configurationDTO.setApr(
+						(row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString())
+								: 0.0);
+				configurationDTO.setMay(
+						(row[5] != null && !row[5].toString().trim().isEmpty()) ? Double.parseDouble(row[5].toString())
+								: 0.0);
+				configurationDTO.setJun(
+						(row[6] != null && !row[6].toString().trim().isEmpty()) ? Double.parseDouble(row[6].toString())
+								: 0.0);
+				configurationDTO.setJul(
+						(row[7] != null && !row[7].toString().trim().isEmpty()) ? Double.parseDouble(row[7].toString())
+								: 0.0);
+				configurationDTO.setAug(
+						(row[8] != null && !row[8].toString().trim().isEmpty()) ? Double.parseDouble(row[8].toString())
+								: 0.0);
+				configurationDTO.setSep(
+						(row[9] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString())
+								: 0.0);
+				configurationDTO.setOct((row[10] != null && !row[10].toString().trim().isEmpty())
+						? Double.parseDouble(row[10].toString())
+						: 0.0);
+				configurationDTO.setNov((row[11] != null && !row[11].toString().trim().isEmpty())
+						? Double.parseDouble(row[11].toString())
+						: 0.0);
+				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
+						? Double.parseDouble(row[12].toString())
+						: 0.0);
+
+				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
+				configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
+				configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
+				configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
+
+				if (row[17] != null) {
+					if (row[17] instanceof Boolean) {
+						configurationDTO.setIsEditable((Boolean) row[17]);
+					} else if (row[17] instanceof Number) {
+						configurationDTO.setIsEditable(((Number) row[17]).intValue() == 1);
+					} else {
+						configurationDTO.setIsEditable(row[17].toString().equals("1") || row[17].toString().equalsIgnoreCase("true"));
+					}
+				} else {
+					configurationDTO.setIsEditable(null);
+				}
+
+				configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
+
+				configurationDTOList.add(configurationDTO);
+			}
+
+			Map<String, Object> map = new HashMap<>();
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(plantFKId, year, "other-cost");
+			map.put("configurationDTOList", configurationDTOList);
+			map.put("aopCalculation", aopCalculation);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Override
+	public List<ConfigurationDTO> saveConfigurationOtherCost(String year, String plantFKId,
+			List<ConfigurationDTO> configurationDTOList) {
+		try {
+			List<ConfigurationDTO> failedList = new ArrayList<>();
+			UUID plantId = UUID.fromString(plantFKId);
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+
+			for (ConfigurationDTO configurationDTO : configurationDTOList) {
+				if (configurationDTO.getSaveStatus() != null
+						&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(configurationDTO);
+					continue;
+				}
+
+				if (configurationDTO.getNormParameterFKId() == null || configurationDTO.getNormParameterFKId().isEmpty()) {
+					continue;
+				}
+
+				UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
+
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					configurationDTO.setSaveStatus("Failed");
+					configurationDTO.setErrDescription("Norm Parameter not found");
+					failedList.add(configurationDTO);
+					continue;
+				}
+				if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
+					continue;
+				}
+
+				for (int i = 1; i <= 12; i++) {
+					Double attributeValue = getAttributeValue(configurationDTO, i);
+					configurationDTO.setVertical(verticalName);
+					saveData(optionNormParameters.get(), i, year, attributeValue, configurationDTO, plantFKId);
+					if (configurationDTO.getSaveStatus() != null
+							&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+						failedList.add(configurationDTO);
+						break;
+					}
+				}
+			}
+
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("other-cost");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
+			return failedList;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save configuration other cost data", ex);
+		}
+	}
+
+	// ─── Configuration Other Cost – Export Excel ─────────────────────────────────
+
+	@Override
+	public byte[] createConfigurationOtherCostExcel(String year, UUID plantFKId, boolean isAfterSave,
+			List<ConfigurationDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getConfigurationOtherCost(year, plantFKId);
+				Map<String, Object> dataMap = (Map<String, Object>) result.getData();
+				dtoList = (List<ConfigurationDTO>) dataMap.get("configurationDTOList");
+			}
+
+			// Build dynamic month header labels from year like "2026-27"
+			String[] parts = year.split("-");
+			String startYearFull = parts[0];                       // e.g. "2026"
+			String startYearShort = startYearFull.substring(2);   // e.g. "26"
+			String endYearShort = parts[1];                        // e.g. "27"
+
+			// Visible headers (Apr to Mar in fiscal-year order)
+			// Col  0: Particulars
+			// Col  1: UOM
+			// Col  2-13: months Apr-26…Mar-27
+			// Col 14: Remark
+			// Col 15: NormParameterFKId (hidden)
+			// Col 16: Id (hidden)
+			List<String> headerNames = new ArrayList<>(Arrays.asList(
+					"Particulars", "UOM",
+					"Apr-" + startYearShort,
+					"May-" + startYearShort,
+					"Jun-" + startYearShort,
+					"Jul-" + startYearShort,
+					"Aug-" + startYearShort,
+					"Sep-" + startYearShort,
+					"Oct-" + startYearShort,
+					"Nov-" + startYearShort,
+					"Dec-" + startYearShort,
+					"Jan-" + endYearShort,
+					"Feb-" + endYearShort,
+					"Mar-" + endYearShort,
+					"Remark",
+					"NormParameterFKId",
+					"Id"
+			));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("OtherCost");
+
+			// Locked (read-only) style – grey background
+			CellStyle lockedStyle = workbook.createCellStyle();
+			lockedStyle.setLocked(true);
+			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			lockedStyle.setBorderBottom(BorderStyle.THIN);
+			lockedStyle.setBorderTop(BorderStyle.THIN);
+			lockedStyle.setBorderLeft(BorderStyle.THIN);
+			lockedStyle.setBorderRight(BorderStyle.THIN);
+
+			// Unlocked (editable) style
+			CellStyle unlockedStyle = workbook.createCellStyle();
+			unlockedStyle.setLocked(false);
+			unlockedStyle.setBorderBottom(BorderStyle.THIN);
+			unlockedStyle.setBorderTop(BorderStyle.THIN);
+			unlockedStyle.setBorderLeft(BorderStyle.THIN);
+			unlockedStyle.setBorderRight(BorderStyle.THIN);
+
+			// Wrap styles for the Remark column
+			CellStyle wrapUnlockedStyle = workbook.createCellStyle();
+			wrapUnlockedStyle.setWrapText(true);
+			wrapUnlockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+			wrapUnlockedStyle.setLocked(false);
+			wrapUnlockedStyle.setBorderBottom(BorderStyle.THIN);
+			wrapUnlockedStyle.setBorderTop(BorderStyle.THIN);
+			wrapUnlockedStyle.setBorderLeft(BorderStyle.THIN);
+			wrapUnlockedStyle.setBorderRight(BorderStyle.THIN);
+
+			CellStyle wrapLockedStyle = workbook.createCellStyle();
+			wrapLockedStyle.setWrapText(true);
+			wrapLockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+			wrapLockedStyle.setLocked(true);
+			wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			wrapLockedStyle.setBorderBottom(BorderStyle.THIN);
+			wrapLockedStyle.setBorderTop(BorderStyle.THIN);
+			wrapLockedStyle.setBorderLeft(BorderStyle.THIN);
+			wrapLockedStyle.setBorderRight(BorderStyle.THIN);
+
+			int currentRow = 0;
+
+			// Header row
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerNames.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerNames.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			final int REMARK_COL = 14;
+
+			for (ConfigurationDTO dto : dtoList) {
+				boolean editable = dto.getIsEditable() == null || dto.getIsEditable();
+
+				Row row = sheet.createRow(currentRow++);
+
+				// Col 0: Particulars
+				Cell c0 = row.createCell(0);
+				c0.setCellValue(dto.getProductName() != null ? dto.getProductName() : "");
+				c0.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				// Col 1: UOM
+				Cell c1 = row.createCell(1);
+				c1.setCellValue(dto.getUOM() != null ? dto.getUOM() : "");
+				c1.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				// Col 2-13: months Apr…Mar
+				Double[] monthValues = {
+						dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+						dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+						dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+				};
+				for (int m = 0; m < 12; m++) {
+					Cell mc = row.createCell(2 + m);
+					if (monthValues[m] != null) {
+						mc.setCellValue(monthValues[m]);
+					} else {
+						mc.setCellValue("");
+					}
+					mc.setCellStyle(editable ? unlockedStyle : lockedStyle);
+				}
+
+				// Col 14: Remark
+				Cell remarkCell = row.createCell(REMARK_COL);
+				String remarkVal = dto.getRemarks() != null ? dto.getRemarks() : "";
+				remarkCell.setCellValue(remarkVal);
+				remarkCell.setCellStyle(editable ? wrapUnlockedStyle : wrapLockedStyle);
+
+				// Col 15: NormParameterFKId (hidden)
+				Cell c15 = row.createCell(15);
+				c15.setCellValue(dto.getNormParameterFKId() != null ? dto.getNormParameterFKId() : "");
+				c15.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				// Col 16: Id (hidden)
+				Cell c16 = row.createCell(16);
+				c16.setCellValue(dto.getId() != null ? dto.getId() : "");
+				c16.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+				if (isAfterSave) {
+					Cell statusCell = row.createCell(17);
+					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					statusCell.setCellStyle(editable ? unlockedStyle : lockedStyle);
+
+					Cell errCell = row.createCell(18);
+					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+					errCell.setCellStyle(editable ? unlockedStyle : lockedStyle);
+				}
+
+				// Adjust row height for wrapped remarks
+				if (!remarkVal.isEmpty()) {
+					final int REMARK_CHARS = 50;
+					long explicitLines = remarkVal.chars().filter(c -> c == '\n').count() + 1;
+					long wrappedLines = (long) Math.ceil((double) remarkVal.length() / REMARK_CHARS);
+					int numLines = (int) Math.max(explicitLines, wrappedLines);
+					float neededHeight = numLines * 15.0f;
+					if (row.getHeightInPoints() < neededHeight) {
+						row.setHeightInPoints(neededHeight);
+					}
+				}
+			}
+
+			// Column widths
+			int totalCols = isAfterSave ? 19 : 17;
+			final int REMARK_CHARS = 50;
+			for (int col = 0; col < totalCols; col++) {
+				if (col == REMARK_COL) {
+					sheet.setColumnWidth(col, REMARK_CHARS * 256);
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
+
+			// Hide internal-use columns
+			sheet.setColumnHidden(15, true);
+			sheet.setColumnHidden(16, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// ─── Configuration Other Cost – Read Excel ────────────────────────────────────
+
+	public List<ConfigurationDTO> readConfigurationOtherCostExcel(InputStream inputStream, UUID plantFKId,
+			String year) {
+		List<ConfigurationDTO> configList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); // skip header row
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				ConfigurationDTO dto = new ConfigurationDTO();
+				try {
+					// Col 0: Particulars
+					String particulars = getStringCellValue(row.getCell(0), dto);
+					if (particulars == null || particulars.trim().isEmpty()) {
+						continue; // skip empty rows
+					}
+					dto.setProductName(particulars);
+
+					// Col 1: UOM
+					dto.setUOM(getStringCellValue(row.getCell(1), dto));
+					dto.setAuditYear(year);
+
+					// Col 2-13: Apr…Mar
+					dto.setApr(getNumericCellValue(row.getCell(2), dto));
+					dto.setMay(getNumericCellValue(row.getCell(3), dto));
+					dto.setJun(getNumericCellValue(row.getCell(4), dto));
+					dto.setJul(getNumericCellValue(row.getCell(5), dto));
+					dto.setAug(getNumericCellValue(row.getCell(6), dto));
+					dto.setSep(getNumericCellValue(row.getCell(7), dto));
+					dto.setOct(getNumericCellValue(row.getCell(8), dto));
+					dto.setNov(getNumericCellValue(row.getCell(9), dto));
+					dto.setDec(getNumericCellValue(row.getCell(10), dto));
+					dto.setJan(getNumericCellValue(row.getCell(11), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+					dto.setMar(getNumericCellValue(row.getCell(13), dto));
+
+					// Col 14: Remark
+					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+
+					// Col 15: NormParameterFKId (hidden)
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(15), dto));
+
+					// Col 16: Id (hidden)
+					dto.setId(getStringCellValue(row.getCell(16), dto));
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+				}
+				configList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Configuration Other Cost Excel", e);
+		}
+		return configList;
+	}
+
+	// ─── Configuration Other Cost – Import API ────────────────────────────────────
+
+	@Override
+	@Transactional
+	public AOPMessageVM importConfigurationOtherCostExcel(String year, UUID plantFKId, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<ConfigurationDTO> data = readConfigurationOtherCostExcel(file.getInputStream(), plantFKId, year);
+
+			List<ConfigurationDTO> failedRecords = saveConfigurationOtherCost(year, plantFKId.toString(), data);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && !failedRecords.isEmpty()) {
+				byte[] fileByteArray = createConfigurationOtherCostExcel(year, plantFKId, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import Configuration Other Cost data", ex);
+		}
+	}
 }

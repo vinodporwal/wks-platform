@@ -62,6 +62,7 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
                 .isEditable(rs.getBoolean("IsEditable"))
                 .sapMaterialCode(rs.getString("SAPMaterialCode"))
                 .normParameterType(rs.getString("NormParameterType"))
+                .aopYear(aopYear)
                 .build(),
             plantId.toString(), aopYear
         );
@@ -71,19 +72,33 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
     @Transactional
     public AOPMessageVM saveGroupedSelection( List<GroupedSelectionDTO> dtoList) {
         try {
-     
+            String userName = com.wks.caseengine.utility.Utility.getUserName();
+            if (userName == null || userName.isEmpty()) {
+                userName = "System";
+            }
 
             for (GroupedSelectionDTO dto : dtoList) {
-                if (dto.getId() == null) {
+                if (dto.getId() == null || dto.getAopYear() == null || dto.getPlantFkId() == null) {
                     continue;
                 } else {
-                   
-                    String updateSql = "UPDATE NormParameters " +
-                        "SET Expression = ? " +
-                        "WHERE Id = ?";
-                    jdbcTemplate.update(updateSql,
-                        String.valueOf(dto.isStatus()), dto.getId().toString());
-            
+                    String selectSql = "SELECT COUNT(*) FROM MaterialGroupedSelection " +
+                        "WHERE NormparamterFkId = ? AND AopYear = ? AND PlantFkId = ?";
+                    Integer count = jdbcTemplate.queryForObject(selectSql, Integer.class,
+                        dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
+                    
+                    if (count != null && count > 0) {
+                        String updateSql = "UPDATE MaterialGroupedSelection " +
+                            "SET Value = ?, ModifiedOn = GETDATE(), ModifiedBy = ? " +
+                            "WHERE NormparamterFkId = ? AND AopYear = ? AND PlantFkId = ?";
+                        jdbcTemplate.update(updateSql,
+                            String.valueOf(dto.isStatus()), userName, dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
+                    } else {
+                        String insertSql = "INSERT INTO MaterialGroupedSelection " +
+                            "(Id, NormparamterFkId, AopYear, PlantFkId, Value, ModifiedOn, ModifiedBy) " +
+                            "VALUES (?, ?, ?, ?, ?, GETDATE(), ?)";
+                        jdbcTemplate.update(insertSql,
+                            UUID.randomUUID().toString(), dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString(), String.valueOf(dto.isStatus()), userName);
+                    }
                 }
             }
             AOPMessageVM vm = new AOPMessageVM();

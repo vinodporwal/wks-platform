@@ -4,6 +4,7 @@ import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import { DatePicker as KendoDatePicker } from '@progress/kendo-react-dateinputs'
 import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
@@ -88,6 +89,7 @@ import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
+import { GroupedColumnCell } from './Utilities-Kendo/GroupedColumnCell'
 import {
   FileExportIcon,
   FileImportIcon,
@@ -97,6 +99,7 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import { ConstantValueEditCell, ConstantValueDataCell } from './ConstantValueCells'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
 
@@ -286,57 +289,7 @@ const KendoDataTables = ({
     }
   }, [rows, filter, sort])
 
-  const GroupedColumnCell = (props) => {
-    const { dataItem, field, tdProps } = props
-    const value = dataItem[field]
 
-    const gName = dataItem.groupName
-    if (!gName) {
-      return (
-        <td
-          {...tdProps}
-          style={{
-            ...tdProps?.style,
-            textAlign: 'right',
-          }}
-        >
-          {value !== null && value !== undefined ? value : ''}
-        </td>
-      )
-    }
-
-    const groupRows = processedRows.filter((r) => r.groupName === gName)
-    const indexInGroup = groupRows.findIndex((r) => r.id === dataItem.id)
-
-    if (indexInGroup > 0) {
-      return (
-        <td
-          {...tdProps}
-          style={{
-            ...tdProps?.style,
-            display: 'none',
-          }}
-        />
-      )
-    }
-
-    const rowSpan = groupRows.length
-
-    return (
-      <td
-        {...tdProps}
-        rowSpan={rowSpan}
-        style={{
-          ...tdProps?.style,
-          verticalAlign: 'middle',
-          textAlign: 'right',
-          backgroundColor: '#FFFFFF',
-        }}
-      >
-        {value !== null && value !== undefined ? value : ''}
-      </td>
-    )
-  }
 
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
@@ -2750,7 +2703,7 @@ const KendoDataTables = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                    (!permissions?.alwaysEnableSave && !summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
                   {...(loading ? {} : {})}
                 >
@@ -4473,6 +4426,47 @@ const KendoDataTables = ({
                       />
                     )
                   }
+                  if (col?.type === 'crackerC2DatePicker') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+                          ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                          ${col?.isBold ? 'bold-text' : ''}
+                        `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: {
+                            numeric: ConstantValueEditCell,
+                            text: ConstantValueEditCell,
+                            date: ConstantValueEditCell,
+                          },
+                          data: (props) => (
+                            <ConstantValueDataCell
+                              {...props}
+                              showThreeColors={showThreeColors}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              allRedCell2={allRedCell2}
+                              disableRedHighlight={disableRedHighlight}
+                              RedHighlightCell={RedHighlightCell}
+                              RedHighlightCell2={RedHighlightCell2}
+                            />
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
                   if (col?.type === 'integerNumberOnly') {
                     return (
                       <GridColumn
@@ -4531,7 +4525,13 @@ const KendoDataTables = ({
                         editable={col?.editable ? true : false}
                         headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
-                          data: GroupedColumnCell,
+                          data: (props) => (
+                            <GroupedColumnCell
+                              {...props}
+                              processedRows={processedRows}
+                              columns={columns}
+                            />
+                          ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}

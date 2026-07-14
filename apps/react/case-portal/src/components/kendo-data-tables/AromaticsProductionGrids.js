@@ -1078,12 +1078,16 @@ const AromaticsProductionGrids = ({ permissions }) => {
     isOldYear,
   )
 
+  const isAromaticsHmd = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
+
   const adjustedPermissionsLast = getAdjustedPermissions(
     {
       allAction: true,
-      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
-      titleAndInformation: 'Percentage Summary (Ethylene)',
-      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+      showTitleAndInformation: VERTICAL_NAME === 'cracker' || isAromaticsHmd ? true : false,
+      titleAndInformation: isAromaticsHmd
+        ? 'Proposed Operating Capacity compared with Max Achieved Capacity'
+        : 'Percentage Summary (Ethylene)',
+      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' && !isAromaticsHmd ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'

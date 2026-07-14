@@ -143,7 +143,10 @@ const CrakcerProductionConst = () => {
         field: 'ConstantValue',
         title: 'Value',
         editable: true,
-        type: 'number',
+        type:
+          lowerVertName === 'cracker' && SITE_NAME_NO_CASE === 'C2'
+            ? 'crackerC2DatePicker'
+            : 'number',
         widthT: 120,
         format: FORMATE_VALUE,
         minWidth: 100,
@@ -159,21 +162,10 @@ const CrakcerProductionConst = () => {
         type: 'string',
       },
     ]
-    if (SITE_NAME_NO_CASE === 'C2') {
-      return cols.map((col) => {
-        if (col.field === 'ConstantValue') {
-          return {
-            ...col,
-            type: 'integerNumberOnly',
-          }
-        }
-        return col
-      })
-    }
     return cols
-  }, [FORMATE_VALUE, SITE_NAME_NO_CASE])
+  }, [FORMATE_VALUE, SITE_NAME_NO_CASE, lowerVertName])
 
-  const saveCatalystData = async (newRow) => {
+  const saveProductionConstrant = async (newRow) => {
     setLoading1(true)
     try {
       var payload = []
@@ -198,7 +190,7 @@ const CrakcerProductionConst = () => {
         id: row.idFromApi || null,
       }))
 
-      const response = await DataService.saveCatalystData(
+      const response = await ProductionConstarintsApiService.saveProductionConstraint(
         PLANT_ID,
         payload,
         keycloak,
@@ -381,7 +373,7 @@ const CrakcerProductionConst = () => {
       showTitleNameBusiness: true,
       titleName:
         siteObject?.name?.toLowerCase() === 'c2'
-          ? 'Production Basis'
+          ? ' Data Configuration'
           : 'Production Target Constraints',
       saveWithRemark: true,
       saveBtn: true,
@@ -407,7 +399,7 @@ const CrakcerProductionConst = () => {
         })
         return
       }
-      saveCatalystData(data)
+      saveProductionConstrant(data)
     } catch (error) {
       // Handle error if necessary
     }

@@ -486,6 +486,7 @@ const CatalystChecmicalsCalculationRecipe = ({ permissions, onSaveOrImport, refr
                          severity: 'success',
                     })
                     setModifiedCells({})
+                    fetchData()
                     if (onSaveOrImport) onSaveOrImport()
                } else {
                     setSnackbarOpen(true)

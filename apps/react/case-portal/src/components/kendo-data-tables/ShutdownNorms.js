@@ -314,26 +314,26 @@ const ShutdownNorms = () => {
 
         const finalMonths =
           IS_PE_PP_VERTICAL ||
-            IS_ELASTOMER_JMD_HIIR ||
-            IS_PET_VERTICAL ||
-            IS_PVC_VMD ||
-            IS_PVC_DMD ||
-            IS_PVC_HMD
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
             ? [
-              ...new Set([
-                ...(Array.isArray(shutdownMonthsRes)
-                  ? shutdownMonthsRes
-                  : []),
-                ...(Array.isArray(slowdownMonthsRes)
-                  ? slowdownMonthsRes
-                  : []),
-              ]),
-            ]
+                ...new Set([
+                  ...(Array.isArray(shutdownMonthsRes)
+                    ? shutdownMonthsRes
+                    : []),
+                  ...(Array.isArray(slowdownMonthsRes)
+                    ? slowdownMonthsRes
+                    : []),
+                ]),
+              ]
             : [
-              ...new Set(
-                Array.isArray(shutdownMonthsRes) ? shutdownMonthsRes : [],
-              ),
-            ]
+                ...new Set(
+                  Array.isArray(shutdownMonthsRes) ? shutdownMonthsRes : [],
+                ),
+              ]
 
         setShutdownMonths(finalMonths)
       } catch (error) {
@@ -858,7 +858,7 @@ const ShutdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
-      showCalulcationPromt: IS_PE_C2 ? true : false,
+      showCalulcationPromt: IS_PE_C2 || lowerVertName === 'pta' ? true : false,
 
       showNote:
         lowerVertName === 'meg' ||

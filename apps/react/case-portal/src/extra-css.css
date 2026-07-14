@@ -252,3 +252,8 @@ button:disabled svg {
   color: #94a3b8 !important;
   cursor: not-allowed !important;
 }
+
+/* Force Kendo Tooltips / Column Menus / Popups to render on top of Material UI Dialogs */
+.k-tooltip, .k-animation-container, .k-popup {
+  z-index: 20000 !important;
+}

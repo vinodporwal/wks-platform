@@ -3091,6 +3091,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean filament = verticalName.equalsIgnoreCase("Filament");
 		boolean staple = verticalName.equalsIgnoreCase("Staple");
+		boolean meg = verticalName.equalsIgnoreCase("MEG");
         boolean chemicalHmdDropdown = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD") && (
 			plant.getName().equalsIgnoreCase("butadiene") || plant.getName().equalsIgnoreCase("mtbe") || plant.getName().equalsIgnoreCase("butene") || plant.getName().equalsIgnoreCase("pdeb")
 		);
@@ -3484,6 +3485,13 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 							// Save updated record
 							plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
+
+							if(meg) {
+								shutDownPlanDTO.setId(null);
+								updateSlowdownActivities(shutDownPlanDTO, plantMaintenanceTransaction, plantId);
+
+							}	
+							
 							if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD") && !descriptions.contains(plantMaintenanceTransaction.getDiscription())) {	
 								String monthName = shutDownPlanDTO.getMonth().toUpperCase(); 
 								Integer monthNumber = Month.valueOf(monthName).getValue();
@@ -3514,6 +3522,87 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
+	}
+
+	private void updateSlowdownActivities(ShutDownPlanDTO shutDownPlanDTO, PlantMaintenanceTransaction plantMaintenanceTransaction, UUID plantId) {  
+
+ // delete existing records
+		
+	UUID normparameterId1 = normParametersRepository.findNormParameterIdByNameAndPlant("EO", plantId);
+	if (normparameterId1 != null) {
+
+		List<UUID> ids = plantMaintenanceTransactionRepository.findRampActivityIdsByNormAndName(
+				normparameterId1, plantMaintenanceTransaction.getId().toString());
+		for (UUID id : ids) {
+			// Delete dependent NormAttributeTransactions first
+			List<NormAttributeTransactions> normAttributeTransactionsLists = normAttributeTransactionsRepository
+					.findByMaintenanceId(id);
+
+			if (normAttributeTransactionsLists != null && !normAttributeTransactionsLists.isEmpty()) {
+				for (NormAttributeTransactions normAttr : normAttributeTransactionsLists) {
+					if (normAttr != null) {
+		//				normAttributeTransactionsRepository.delete(normAttr);
+					}
+				}
+		//		normAttributeTransactionsRepository.flush(); // Ensure delete is committed before parent
+																// delete
+			}
+
+			plantMaintenanceTransactionRepository.deleteById(id);
+
+		}
+		
+	}
+
+	UUID normparameterId2 = normParametersRepository.findNormParameterIdByNameAndPlant("EOE", plantId);
+	if (normparameterId2 != null) {
+		List<UUID> ids = plantMaintenanceTransactionRepository.findRampActivityIdsByNormAndName(
+				normparameterId2, plantMaintenanceTransaction.getId().toString());
+		for (UUID id : ids) {
+			// Delete dependent NormAttributeTransactions first
+			List<NormAttributeTransactions> normAttributeTransactionsLists = normAttributeTransactionsRepository
+					.findByMaintenanceId(id);
+
+			if (normAttributeTransactionsLists != null && !normAttributeTransactionsLists.isEmpty()) {
+				for (NormAttributeTransactions normAttr : normAttributeTransactionsLists) {
+					if (normAttr != null) {
+					//	normAttributeTransactionsRepository.delete(normAttr);
+					}
+				}
+		//		normAttributeTransactionsRepository.flush(); // Ensure delete is committed before parent
+																// delete
+			}
+			plantMaintenanceTransactionRepository.deleteById(id);
+		}
+
+	}
+
+	plantMaintenanceTransactionRepository.flush();
+
+		// insert new records 
+		String description = shutDownPlanDTO.getDiscription();
+
+		shutDownPlanDTO.setCreatedOn(plantMaintenanceTransaction.getCreatedOn());
+						// shutDownPlanDTO.setMaintEndDateTime(shutDownPlanDTO.getMaintStartDateTime());
+						shutDownPlanDTO
+								.setPlantMaintenanceTransactionName(plantMaintenanceTransaction.getId().toString());
+						List<ShutDownPlanDTO> list = new ArrayList<>();
+						shutDownPlanDTO.setDurationInHrs(0.00);
+						shutDownPlanDTO.setDurationInMins(0);
+						shutDownPlanDTO.setDiscription(description + " Ramp Up");
+						shutDownPlanDTO.setProductId(
+								plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO", plantId));
+						list.add(shutDownPlanDTO);
+						slowdownPlanService.saveRampUpData(plantId, list);
+
+						List<ShutDownPlanDTO> list2 = new ArrayList<>();
+						shutDownPlanDTO.setDiscription(description + " Ramp Down");
+						shutDownPlanDTO.setProductId(
+								plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EOE", plantId));
+						shutDownPlanDTO.setDurationInHrs(0.00);
+						shutDownPlanDTO.setDurationInMins(0);
+						list2.add(shutDownPlanDTO);
+						slowdownPlanService.saveRampDownData(plantId, list2);
 	}
 
 	@Override

@@ -70,6 +70,46 @@ public class ReliabilityController {
 			return	reliabilityService.importExcel(year, plantId, file); 
 	}
 
+	@GetMapping(value="/reliability-performance-plant-wise")
+	public AOPMessageVM getReliabilityPerformancePlantWise(@RequestParam String plantId,@RequestParam String year,@RequestParam(required=false) String type){
+		 return  reliabilityService.getReliabilityPerformancePlantWise(plantId,year,type);
+	}
+	
+	@GetMapping(value = "/reliability-performance-export-excel-plant-wise")
+	public ResponseEntity<byte[]> exportReliabilityPerformancePlantWise(
+	         @RequestParam(value = "year", required = false) String year,@RequestParam String plantId) {
+	    try {
+			byte[] excelBytes = reliabilityService.createExcelPlantWise(year,plantId,false, null);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("reliability-performance-plant-wise.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value="/reliability-performance-plant-wise")
+	public AOPMessageVM updateReliabilityPerformancePlantWise(@RequestBody List<ReliabilityPerformanceDto> reliabilityPerformanceDtos){
+		 return  reliabilityService.updateReliabilityPerformancePlantWise(reliabilityPerformanceDtos,null);
+	}
+	
+	@PostMapping(value = "/reliability-performance-import-excel-plant-wise", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelPlantWise(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	reliabilityService.importExcelPlantWise(year, plantId, file); 
+	}
+
+
 	
 	@GetMapping(value="/reliability-records")
 	public AOPMessageVM getReliabilityRecords(@RequestParam String plantId,@RequestParam String year,@RequestParam(required=false) String type){
