@@ -46,6 +46,7 @@ import AopBudget from 'components/kendo-data-tables/AopBudget'
 
 import PlantTeam from 'components/kendo-data-tables/PlantTeam'
 import RelPerf from 'components/kendo-data-tables/RelPerf'
+import RelPerfPlantWise from 'components/kendo-data-tables/RelPerfPlantWise'
 import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
 import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
 import RawDataSet from 'components/data-tables/Reports/RawDataSet'
@@ -1403,6 +1404,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='reliability-performance'>
                 <RelPerf />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'plant-reliability-performance',
+            element: (
+              <PrivateRoute routeId='plant-reliability-performance'>
+                <RelPerfPlantWise />
               </PrivateRoute>
             ),
           },

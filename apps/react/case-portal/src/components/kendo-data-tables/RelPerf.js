@@ -96,6 +96,10 @@ export default function RelPerf() {
   const AOP_YEAR = year?.selectedYear
   const [startYear, endYear] = AOP_YEAR.split('-')
 
+  const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
+
   const [remarkDialogOpenMajorIncidents, setRemarkDialogOpenMajorIncidents] =
     useState(false)
   const [currentRemarkMajorIncidents, setCurrentRemarkMajorIncidents] =
@@ -1023,28 +1027,18 @@ export default function RelPerf() {
     })
 
     try {
-      const response = await FunctionalApiService.exportReliabilityExcel(
+      await FunctionalApiService.exportReliabilityExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
         excelName,
       )
 
-      if (response?.code === 200) {
-        setSnackbarOpenReliabilityPerformance(true)
-
-        setSnackbarDataReliabilityPerformance({
-          message: 'Excel download completed successfully!',
-          severity: 'success',
-        })
-      } else {
-        setSnackbarOpenReliabilityPerformance(true)
-
-        setSnackbarDataReliabilityPerformance({
-          message: 'Failed to download Excel.',
-          severity: 'error',
-        })
-      }
+      setSnackbarOpenReliabilityPerformance(true)
+      setSnackbarDataReliabilityPerformance({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarOpenReliabilityPerformance(true)
@@ -1053,8 +1047,6 @@ export default function RelPerf() {
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
-      setSnackbarOpenReliabilityPerformance(false)
     }
   }
   //importReliabilityIncidentExcel
@@ -1195,7 +1187,7 @@ export default function RelPerf() {
       <KendoDataTables
         rows={reliabilityRows}
         setRows={setReliabilityRows}
-        title='Reliability Performance'
+        title='Reliability Performance (Site)'
         modifiedCells={modifiedReliabilityCells}
         setModifiedCells={setModifiedReliabilityCells}
         remarkDialogOpen={remarkDialogOpenReliability}
@@ -1213,8 +1205,8 @@ export default function RelPerf() {
         OpenReliabilityPerformance={OpenReliabilityPerformance}
         permissions={{
           ...gridPermissions,
-          titleName: 'Reliability Performance',
-          ExcelName: 'Reliability_Performance',
+          titleName: 'Reliability Performance (Site)',
+          ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_Reliability_Performance`,
           downloadExcelBtn: true,
           uploadExcelBtn: true,
         }}
@@ -1247,7 +1239,7 @@ export default function RelPerf() {
         permissions={{
           ...gridPermissions,
           titleName: 'Financial Aspect',
-          ExcelName: 'Financial_Aspect',
+          ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_Financial_Aspect`,
         }}
         columns={financialAspectColumns}
         saveChanges={saveChangesFinancial}
@@ -1275,7 +1267,7 @@ export default function RelPerf() {
         permissions={{
           ...gridPermissions,
           titleName: 'Common Parameter',
-          ExcelName: 'Common_Parameter',
+          ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_Common_Parameter`,
         }}
         columns={financialAspectColumns}
         saveChanges={saveChangesCommonParameter}
@@ -1304,7 +1296,7 @@ export default function RelPerf() {
         permissions={{
           ...gridPermissions,
           titleName: `Major Reliability Incidents FY${startYear.slice(-2)} (High & Medium Risks)`,
-          ExcelName: 'Major_Reliability_Incidents',
+          ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_Major_Reliability_Incidents`,
           downloadExcelBtn: true,
           uploadExcelBtn: true,
         }}
@@ -1344,7 +1336,7 @@ export default function RelPerf() {
         permissions={{
           ...gridPermissions,
           titleName: 'Reliability Improvement Initiative',
-          ExcelName: 'Reliability_Improvement_Initiative',
+          ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_Reliability_Improvement_Initiative`,
         }}
         columns={reliabilityInitiativeColumns}
         saveChanges={saveChangesImprovement}
