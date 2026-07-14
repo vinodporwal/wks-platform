@@ -97,7 +97,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 validateRemarkChange(existing, dto);
 
                 // skip records with failed remark validation
-                if(dto.getSaveStatus().equals("Failed")) {
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
                     failedRecords.add(dto);
                     continue;
                 }
