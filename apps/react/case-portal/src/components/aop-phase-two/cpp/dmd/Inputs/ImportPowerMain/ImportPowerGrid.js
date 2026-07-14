@@ -631,7 +631,7 @@ const ImportPowerGrid = ({ setImportData }) => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customItemChange={customItemChange}
-        groupBy={['plantName']}
+        //groupBy={['plantName']}
         customAddRow={() => {
           setEditRowData(null)
           setAddRowDialogOpen(true)

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Box, Tooltip, IconButton } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -16,6 +16,8 @@ import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import AddProcessUnitDialog from './components/AddProcessUnitDialog'
+import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 const MONTH_FIELDS = [
   'apr',
@@ -69,19 +71,18 @@ const ProcessUnitGrid = ({ importData }) => {
   const lowerSiteName = siteObject?.name?.toLowerCase()
   const selectedPlantId = plantObject?.id
 
-  // const PLANT_ID_LIST = useMemo(
+  const PLANT_ID_LIST = plantObject?.id
+  // useMemo(
   //   () =>
   //     lowerSiteName === 'jmd'
   //       ? jmdSelectedPlants?.map((plant) => plant.id) || []
   //       : [selectedPlantId],
   //   [jmdSelectedPlants, selectedPlantId],
   // )
-  const PLANT_ID = plantObject?.id
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [sourceRows, setSourceRows] = useState([])
-  const sourceRowsRef = useRef(sourceRows)
   const [plantRequirementData, setPlantRequirementData] = useState([])
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -184,7 +185,7 @@ const ProcessUnitGrid = ({ importData }) => {
     try {
       const res = await InputApiService.getProcessUnitAllocations(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -204,7 +205,9 @@ const ProcessUnitGrid = ({ importData }) => {
         return
       }
 
-      const rowsWithBalance = computeBalanceRows(allocations, sourceRowsRef.current)
+      // sourceRows is set from importData (parent component) via useEffect
+      // Use current sourceRows ref to compute balances
+      const rowsWithBalance = computeBalanceRows(allocations, sourceRows)
       const finalRows = buildTotalRows(rowsWithBalance)
 
       setRows(finalRows)
@@ -216,14 +219,14 @@ const ProcessUnitGrid = ({ importData }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, sourceRows])
 
   const fetchPlantRequirementData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await UtilityPlantApiServiceV2.getPlantRequirementData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       if (res?.length === 0) {
@@ -249,24 +252,21 @@ const ProcessUnitGrid = ({ importData }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
   useDebounce(
     () => {
-      if (PLANT_ID?.length && AOP_YEAR) {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
         fetchProcessUnitData()
         fetchPlantRequirementData()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID, AOP_YEAR],
+    [PLANT_ID_LIST, AOP_YEAR, fetchProcessUnitData, fetchPlantRequirementData],
   )
 
-  useEffect(() => {
-    sourceRowsRef.current = importData
-    setSourceRows(importData)
-  }, [importData])
+  useEffect(() => setSourceRows(importData), [importData])
 
   // ── Balance / total helpers ────────────────────────────────────────────────
 
@@ -505,7 +505,7 @@ const ProcessUnitGrid = ({ importData }) => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showImport: false,
+    showImport: true,
     showExport: true,
     ExcelName: `Process Unit Allocation - ${AOP_YEAR}`,
     showTitleNameBusiness: true,
@@ -557,6 +557,19 @@ const ProcessUnitGrid = ({ importData }) => {
       return
     }
 
+    const remarksError = validateRowDataWithRemarks(
+      modifiedData,
+      originalRows,
+      MONTH_FIELDS,
+      'processUnit',
+    )
+    if (remarksError) {
+      setSnackbarOpen(true)
+      setSnackbarData({ message: remarksError, severity: 'error' })
+      setLoading(false)
+      return
+    }
+
     // Body = direct array of allocation records (plantIds + aopYear sent as query params)
     const processUnitAllocations = modifiedData.map((row) => {
       const stripped = { ...row }
@@ -589,7 +602,7 @@ const ProcessUnitGrid = ({ importData }) => {
     })
 
     console.log('SAVE PAYLOAD', {
-      plantIds: PLANT_ID,
+      plantIds: PLANT_ID_LIST,
       aopYear: AOP_YEAR,
       processUnitAllocations,
     })
@@ -597,7 +610,7 @@ const ProcessUnitGrid = ({ importData }) => {
     try {
       await InputApiService.saveProcessUnitAllocations(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         processUnitAllocations,
       )
@@ -626,9 +639,9 @@ const ProcessUnitGrid = ({ importData }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      await InputApiService.exportImportPowerCapacityExcel(
+      await InputApiService.exportProcessUnitAllocationsExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -642,6 +655,55 @@ const ProcessUnitGrid = ({ importData }) => {
         message: 'Excel download failed. Please try again.',
         severity: 'error',
       })
+    }
+  }
+
+  // ── Excel Import ───────────────────────────────────────────────────────────
+
+  const handleExcelUpload = async (file) => {
+    if (!file) return
+    setLoading(true)
+    try {
+      const response = await InputApiService.saveProcessUnitAllocationsExcel(
+        file,
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Excel file imported successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        await fetchProcessUnitData()
+      } else if (response?.code === 400 && response?.data) {
+        downloadBase64Excel(
+          response.data,
+          'Error File - Process Unit Allocation.xlsx',
+        )
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        await fetchProcessUnitData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
+      }
+    } catch (error) {
+      console.error('Error uploading Excel file:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Failed to import Excel file: ${error.message}`,
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -711,6 +773,7 @@ const ProcessUnitGrid = ({ importData }) => {
         currentRowId={currentRowId}
         setCurrentRowId={() => { }}
         handleExport={handleExport}
+        handleExcelUpload={handleExcelUpload}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
