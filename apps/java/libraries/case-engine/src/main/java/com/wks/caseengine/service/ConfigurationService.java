@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.AopBasisDTO;
 import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
@@ -95,4 +96,7 @@ public interface ConfigurationService {
 
         public byte[] createConfigurationOtherCostExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList);
         public AOPMessageVM importConfigurationOtherCostExcel(String year, UUID plantFKId, MultipartFile file);
+
+        public List<AopBasisDTO> saveAopBasis(String year, String plantFKId, List<AopBasisDTO> configurationDTOList);
+        public AOPMessageVM getAopBasis(String year, String plantFKId, String type);
 }

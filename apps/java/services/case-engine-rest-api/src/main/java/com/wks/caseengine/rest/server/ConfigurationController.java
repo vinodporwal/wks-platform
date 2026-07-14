@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.AopBasisDTO;
 import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
@@ -67,9 +68,16 @@ public class ConfigurationController {
 		return configurationService.getConfigurationIntermediateValuesData(year,plantFKId);
 	}
 	
+
 	@PostMapping(value="/production-norms")
 	public List<ConfigurationDTO> saveConfigurationData(@RequestParam String year,@RequestParam String plantFKId,@RequestParam(required=false) String version, @RequestBody List<ConfigurationDTO> configurationDTOList,@RequestParam(required=false) Boolean calculation,@RequestParam(required=false) boolean isMinMax) {
 		configurationService.saveConfigurationData(year,plantFKId,version,configurationDTOList,calculation,isMinMax);
+		return configurationDTOList;
+	}
+
+	@PostMapping(value="/aop-basis")
+	public List<AopBasisDTO> saveAopBasis(@RequestParam String year,@RequestParam String plantFKId, @RequestBody List<AopBasisDTO> configurationDTOList) {
+		configurationService.saveAopBasis(year, plantFKId, configurationDTOList);
 		return configurationDTOList;
 	}
 	
@@ -96,6 +104,11 @@ public class ConfigurationController {
 												 @RequestParam String plantFKId,
 												 @RequestParam(required = false) String type) {
 		return configurationService.getProductionConstraints(year, plantFKId, type);
+	}
+
+	@GetMapping(value="/aop-basis")
+	public AOPMessageVM getAopBasis(@RequestParam String year,@RequestParam String plantFKId, @RequestParam(required = false) String type) {
+		return configurationService.getAopBasis(year, plantFKId, type);
 	}
 
 

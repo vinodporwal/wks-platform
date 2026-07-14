@@ -60,6 +60,7 @@ import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
+import com.wks.caseengine.dto.AopBasisDTO;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
@@ -2046,6 +2047,58 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getAopBasis(String year, String plantFKId, String type) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Map<String, Object>> productionConstraintsList = new ArrayList<>();
+
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			List<Object[]> obj = new ArrayList<>();
+
+				String procedureName = verticalName + "_GetProduction_Constraints";
+				if (type != null && !type.trim().isEmpty()) {
+					obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId, procedureName, type);
+				} else {
+					obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+				}
+			
+
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("NormTypeName", row[0]);
+				map.put("NormParameter_FK_Id", row[1]);
+				map.put("Name", row[2]);
+				map.put("DisplayName", row[3]);
+				map.put("UOM", row[4]);
+				map.put("ConstantValue", row[5]);
+				map.put("AuditYear", row[6]);
+				map.put("Remarks", row[7]);
+				boolean isEditable;
+				Object flagObj = row[8];
+				if (flagObj instanceof Boolean) {
+					isEditable = (Boolean) flagObj;
+				} else if (flagObj instanceof Number) {
+					isEditable = ((Number) flagObj).intValue() == 1;
+				} else {
+					isEditable = false;
+				}
+				map.put("isEditable", isEditable);
+				productionConstraintsList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(productionConstraintsList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -2294,6 +2347,81 @@ continue;
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Override
+	public List<AopBasisDTO> saveAopBasis(String year, String plantFKId,
+			List<AopBasisDTO> configurationDTOList) {
+		try {
+
+			
+			List<AopBasisDTO> failedList = new ArrayList<>();
+			 UUID plantId = UUID.fromString(plantFKId);
+			 String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+
+			for (AopBasisDTO configurationDTO : configurationDTOList) {
+				System.out.println("configurationDTO: " + configurationDTO);
+				if (configurationDTO.getSaveStatus() != null
+						&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(configurationDTO);
+					continue;
+				}
+
+	     	// skip the empty rows
+			if(configurationDTO.getNormParameterFKId() == null || configurationDTO.getNormParameterFKId().isEmpty()) { 
+			continue;
+
+			}
+
+				UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
+
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					configurationDTO.setSaveStatus("Failed");
+					configurationDTO.setErrDescription("Norm Paramter not found");
+					failedList.add(configurationDTO);
+					continue;
+				}
+			if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
+				continue;
+			}
+
+
+				for (int i = 1; i <= 12; i++) {
+		
+					String attributeValue = getAttributeValueForAopBasis(configurationDTO, i);
+					
+
+					configurationDTO.setVertical(verticalName);
+					saveAopBasisData(optionNormParameters.get(), i, year, attributeValue, configurationDTO,plantFKId);
+					if(configurationDTO.getSaveStatus()!=null && configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+						failedList.add(configurationDTO);
+						break;
+					}
+
+					
+
+				}
+				
+			}
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("configuration");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantFKId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			
+			
+			return failedList;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
 	
 	private Optional<UUID> getStartEndDateNormsId(UUID plantId, String name) {
 	    UUID id = normParametersRepository.findNormParameterIdByNameAndPlant(name, plantId);
@@ -2439,29 +2567,20 @@ continue;
 		return null;
 	}
 	
-	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
-            ConfigurationDTO configurationDTO, String plantFKId) {
+	void saveAopBasisData(NormParameters normParameter, Integer i, String year, String attributeValue,
+            AopBasisDTO configurationDTO, String plantFKId) {
   
 		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 	  String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
-	  String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
-	                   ? getVersion(year, UUID.fromString(plantFKId)) 
-	                   : "V1";
+	
 	  
 	  Optional<NormAttributeTransactions> existingRecord;
-	  if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
-	      existingRecord = normAttributeTransactionsRepository
-	          .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
-
-		// existingRecord = normAttributeTransactionsRepository
-		// 	.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
-	  } else {
-	      existingRecord = normAttributeTransactionsRepository
+	existingRecord = normAttributeTransactionsRepository
 	          .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
-	  }
+	  
 	
-	  String newValue = (attributeValue != null) ? attributeValue.toString() : "0.0";
+	  String newValue = (attributeValue != null) ? attributeValue : "";
 	  String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
 	                     ? configurationDTO.getRemarks().trim() 
 	                     : "";
@@ -2470,19 +2589,22 @@ continue;
 	
 	  if (existingRecord.isPresent()) {
 	      NormAttributeTransactions entity = existingRecord.get();
-	      String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "0.0";
+	      String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "";
 	      String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
 	
 	      boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
 	      boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
 	
 	      if (isRemarkEmpty) {
-	          setError(configurationDTO, "Remark is mandatory to update an existing record.");
+	        
+			  configurationDTO.setSaveStatus("Failed");
+		      configurationDTO.setErrDescription("Remark is mandatory to update an existing record.");
 	          return;
 	      }
 	
 	      if (isValueChanged && !isRemarkChanged) {
-	          setError(configurationDTO, "Value has changed; please provide a updated remark.");
+			  configurationDTO.setSaveStatus("Failed");
+		      configurationDTO.setErrDescription("Value has changed; please provide a updated remark.");
 	          return;
 	      }
 	
@@ -2494,12 +2616,13 @@ continue;
 	      }
 	  } 
 	  else {
-	      if ("0.0".equals(newValue)) {
+	      if ("".equals(newValue)) {
 	          return; 
 	      }
 	
 	      if (isRemarkEmpty) {
-	          setError(configurationDTO, "Remark is mandatory for new records.");
+			  configurationDTO.setSaveStatus("Failed");
+		      configurationDTO.setErrDescription("Remark is mandatory for new records.");
 	          return;
 	      }
 	
@@ -2507,7 +2630,6 @@ continue;
 	      newEntity.setNormParameterFKId(normParameter.getId());
 	      newEntity.setAopMonth(i);
 	      newEntity.setAuditYear(year);
-	      newEntity.setAttributeValueVersion(version);
 	      newEntity.setUserName(Utility.getUserName());
 	      newEntity.setCreatedOn(new Date());
 	      newEntity.setModifiedOn(new Date());
@@ -2518,6 +2640,86 @@ continue;
 	      normAttributeTransactionsRepository.save(newEntity);
 	  }
 	}
+
+	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
+		ConfigurationDTO configurationDTO, String plantFKId) {
+
+	Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
+	Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+  String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+  String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
+				   ? getVersion(year, UUID.fromString(plantFKId)) 
+				   : "V1";
+  
+  Optional<NormAttributeTransactions> existingRecord;
+  if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
+	  existingRecord = normAttributeTransactionsRepository
+		  .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+
+	// existingRecord = normAttributeTransactionsRepository
+	// 	.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+  } else {
+	  existingRecord = normAttributeTransactionsRepository
+		  .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+  }
+
+  String newValue = (attributeValue != null) ? attributeValue.toString() : "0.0";
+  String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
+					 ? configurationDTO.getRemarks().trim() 
+					 : "";
+  
+  boolean isRemarkEmpty = newRemark.isEmpty();
+
+  if (existingRecord.isPresent()) {
+	  NormAttributeTransactions entity = existingRecord.get();
+	  String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "0.0";
+	  String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+
+	  boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
+	  boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
+
+	  if (isRemarkEmpty) {
+		  setError(configurationDTO, "Remark is mandatory to update an existing record.");
+		  return;
+	  }
+
+	  if (isValueChanged && !isRemarkChanged) {
+		  setError(configurationDTO, "Value has changed; please provide a updated remark.");
+		  return;
+	  }
+
+	  if (isValueChanged || isRemarkChanged) {
+		  entity.setAttributeValue(newValue);
+		  entity.setRemarks(newRemark);
+		  entity.setModifiedOn(new Date());
+		  normAttributeTransactionsRepository.save(entity);
+	  }
+  } 
+  else {
+	  if ("0.0".equals(newValue)) {
+		  return; 
+	  }
+
+	  if (isRemarkEmpty) {
+		  setError(configurationDTO, "Remark is mandatory for new records.");
+		  return;
+	  }
+
+	  NormAttributeTransactions newEntity = new NormAttributeTransactions();
+	  newEntity.setNormParameterFKId(normParameter.getId());
+	  newEntity.setAopMonth(i);
+	  newEntity.setAuditYear(year);
+	  newEntity.setAttributeValueVersion(version);
+	  newEntity.setUserName(Utility.getUserName());
+	  newEntity.setCreatedOn(new Date());
+	  newEntity.setModifiedOn(new Date());
+	  
+	  newEntity.setAttributeValue(newValue);
+	  newEntity.setRemarks(newRemark);
+	  
+	  normAttributeTransactionsRepository.save(newEntity);
+  }
+}
 
 		private void setError(ConfigurationDTO dto, String message) {
 		  if (dto != null) {
@@ -2531,6 +2733,37 @@ continue;
 			}
 
 	public Double getAttributeValue(ConfigurationDTO configurationDTO, Integer i) {
+		switch (i) {
+			case 1:
+				return configurationDTO.getJan();
+			case 2:
+				return configurationDTO.getFeb();
+			case 3:
+				return configurationDTO.getMar();
+			case 4:
+				return configurationDTO.getApr();
+			case 5:
+				return configurationDTO.getMay();
+			case 6:
+				return configurationDTO.getJun();
+			case 7:
+				return configurationDTO.getJul();
+			case 8:
+				return configurationDTO.getAug();
+			case 9:
+				return configurationDTO.getSep();
+			case 10:
+				return configurationDTO.getOct();
+			case 11:
+				return configurationDTO.getNov();
+			case 12:
+				return configurationDTO.getDec();
+
+		}
+		return configurationDTO.getJan();
+	}
+
+	public String getAttributeValueForAopBasis(AopBasisDTO configurationDTO, Integer i) {
 		switch (i) {
 			case 1:
 				return configurationDTO.getJan();
