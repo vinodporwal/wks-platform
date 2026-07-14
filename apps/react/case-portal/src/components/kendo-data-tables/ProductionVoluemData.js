@@ -1520,19 +1520,22 @@ const ProductionvolumeData = ({
     isOldYear,
   )
 
+  const isAromaticsHmd = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
+
   const adjustedPermissionsLast = getAdjustedPermissions(
     {
       allAction: true,
       showTitleAndInformation:
-        VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
-      titleAndInformation:
-        VERTICAL_NAME == 'cracker'
+        VERTICAL_NAME === 'cracker' || VERTICAL_NAME === 'vcm' || isAromaticsHmd ? true : false,
+      titleAndInformation: isAromaticsHmd
+        ? 'Proposed Operating Capacity compared with Max Achieved Capacity'
+        : VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
-          : VERTICAL_NAME == 'vcm'
+          : VERTICAL_NAME === 'vcm'
             ? `Percentage summary represent a month-wise percentage summary, comparing each months value against the highest ${PLANT_NAME_NO_CASE} production rate over the past 12 months.`
             : '',
       showTitleNameBusiness:
-        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
+        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' && !isAromaticsHmd ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'

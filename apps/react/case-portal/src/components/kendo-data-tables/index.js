@@ -115,8 +115,6 @@ const OnOffSwitchEditCell = (props) => {
     />
   )
 }
-// ConstantValueEditCell and parseDateRobust are imported from ./ConstantValueCells.js
-
 
 export const dateFields = [
   'maintStartDateTime',
@@ -1810,8 +1808,6 @@ const KendoDataTables = ({
       </td>
     )
   }
-
-  // ConstantValueDataCell is imported from ./ConstantValueCells.js
 
   const lowerCurrentTabDisplayName = currentTabDisplayName
     ?.toLowerCase()
