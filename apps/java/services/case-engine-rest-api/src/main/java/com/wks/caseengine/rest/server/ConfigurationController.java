@@ -75,7 +75,8 @@ public class ConfigurationController {
 		return configurationDTOList;
 	}
 
-	@PostMapping(value="/aop-basis")
+	// ref : /production-norms | months values are String to handle dates
+	@PostMapping(value="/production-configuration-basis")
 	public List<AopBasisDTO> saveAopBasis(@RequestParam String year,@RequestParam String plantFKId, @RequestBody List<AopBasisDTO> configurationDTOList) {
 		configurationService.saveAopBasis(year, plantFKId, configurationDTOList);
 		return configurationDTOList;
@@ -106,7 +107,8 @@ public class ConfigurationController {
 		return configurationService.getProductionConstraints(year, plantFKId, type);
 	}
 
-	@GetMapping(value="/aop-basis")
+	// ref : /production-constraints | months values are String to handle dates
+	@GetMapping(value="/production-configuration-basis")
 	public AOPMessageVM getAopBasis(@RequestParam String year,@RequestParam String plantFKId, @RequestParam(required = false) String type) {
 		return configurationService.getAopBasis(year, plantFKId, type);
 	}
