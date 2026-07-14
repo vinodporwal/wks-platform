@@ -124,8 +124,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 		Boolean withGrade = false;
 		Boolean elastomer = verticalName.equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
-		if (plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
-				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+		if ((plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
+				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() )) {
 			withGrade = true;
 		}
 		try {
@@ -491,8 +491,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				MCUNormsValueGrade mCUNormsValueGrade = new MCUNormsValueGrade();
 
 				if (mCUNormsValueDTO.getId() != null || !mCUNormsValueDTO.getId().isEmpty()) {
+					
+
 					if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-							|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
+							|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc ) {
 
 						Optional<MCUNormsValueGrade> optionalNormsValue = mcuNormsValueGradeRepository
 								.findById(UUID.fromString(mCUNormsValueDTO.getId()));
@@ -1158,13 +1160,13 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 
 			Boolean withGrade = false;
-			if (elastomerHmdSbr || pvc) {
+			if (elastomerHmdSbr || pvc || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() )) {
 				withGrade = true;
 			}
 			
 			Boolean elastomer=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			String viewName = "vwScrn" + vertical.getName() + "NormalOperationNorms";
-			if (withGrade || elastomer) {
+			if (withGrade || elastomer ) {
 				viewName = "vwScrn" + vertical.getName() + "NormalOperationNormsGrade";
 			}
 			// Validate or sanitize viewName before using it directly in the query to
@@ -1263,7 +1265,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-					|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
+					|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc) {
 				data = readSteadyState(file.getInputStream(), plantFKId, year);
 			} else {
 				data = readConfigurations(file.getInputStream(), plantFKId, year);
@@ -1275,7 +1277,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = null;
 				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-						|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
+						|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc) {
 					fileByteArray = exportSteadyStateNorms(year, plantFKId, true, failedRecords, mode);
 				} else {
 					fileByteArray = createExcel(year, plantFKId, true, failedRecords, mode, gradeId);
