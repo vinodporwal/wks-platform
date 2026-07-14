@@ -302,7 +302,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
   }
 
   const handleClose = () => {
-   
+    const params = currentParams.length > 0 ? currentParams : window.location.search
     if (openedFromList && typeof handleFormClose === 'function') {
     
       handleFormClose()
@@ -310,6 +310,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
     } else {
       navigate(`/case-list/create`)
     }
+    navigate(`/case-list/create${params}`)
   }
 
   const onSave = () => {
@@ -399,7 +400,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
           JSON.stringify({
             caseDefinitionId: caseDefId,
             assetName: assetName,
-            isDraft: 'n',
+            isDraft: 'y',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,

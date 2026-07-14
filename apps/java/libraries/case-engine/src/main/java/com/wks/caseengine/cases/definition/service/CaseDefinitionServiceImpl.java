@@ -310,6 +310,82 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         }
         return faultEventsList;
     }
+
+    @Override
+    public void linkEventsToCase(String businessKey, List<Long> eventIds) {
+        // 1. Fetch event details
+        List<FaultEvents> faultEvents = getAllEvents(eventIds);
+
+        // 2. Find the case in SQL by businessKey
+        Case caseData = caseRepository.getByBusinessKey(businessKey);
+        if (caseData == null) {
+            caseData = caseRepository.getByCaseNo(businessKey);
+        }
+        if (caseData == null) {
+            throw new RuntimeException("Case not found for businessKey: " + businessKey);
+        }
+
+        // 3. Parse the attributes JSON and find dataGrid2
+        List<Attribute> attributes = caseData.getAttributes();
+        if (attributes == null || attributes.isEmpty()) {
+            throw new RuntimeException("Case has no attributes for businessKey: " + businessKey);
+        }
+
+        Attribute attribute = attributes.get(0);
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String rawValue = attribute.getValue();
+            com.fasterxml.jackson.databind.node.ObjectNode rootNode =
+                (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(rawValue);
+
+            // Get existing dataGrid2 or create new array
+            com.fasterxml.jackson.databind.node.ArrayNode dataGrid2;
+            if (rootNode.has("dataGrid2") && rootNode.get("dataGrid2").isArray()) {
+                dataGrid2 = (com.fasterxml.jackson.databind.node.ArrayNode) rootNode.get("dataGrid2");
+            } else {
+                dataGrid2 = mapper.createArrayNode();
+            }
+
+            // 4. Append new event entries
+            for (FaultEvents event : faultEvents) {
+                com.fasterxml.jackson.databind.node.ObjectNode entry = mapper.createObjectNode();
+                entry.put("subAsset", event.getAssetDisplayName() != null ? event.getAssetDisplayName() : "");
+                entry.put("events", event.getEvents() != null ? event.getEvents().getEventName() : "");
+                entry.put("eventCategory", event.getEventCategory() != null ? event.getEventCategory().getName() : "");
+                String startTime = event.getStartTime() != null ? event.getStartTime() : "";
+                entry.put("TextFaultStartTimeDate", startTime);
+                entry.put("TextFaultEndTimeDate", event.getEndTime() != null ? event.getEndTime() : "");
+                entry.put("btnEventLink", false);
+                entry.put("btnEventTrend", false);
+                if (event.getEvents() != null) {
+                    entry.put("eventPkId", event.getEvents().getEventPkId());
+                }
+                dataGrid2.add(entry);
+            }
+
+            rootNode.set("dataGrid2", dataGrid2);
+            attribute.setValue(mapper.writeValueAsString(rootNode));
+            attributes.set(0, attribute);
+            caseData.setAttributes(attributes);
+
+            // Also update eventIds on the case
+            List<String> existingEventIds = caseData.getEventIds() != null ? new java.util.ArrayList<>(caseData.getEventIds()) : new java.util.ArrayList<>();
+            for (Long eid : eventIds) {
+                String eidStr = String.valueOf(eid);
+                if (!existingEventIds.contains(eidStr)) {
+                    existingEventIds.add(eidStr);
+                }
+            }
+            caseData.setEventIds(existingEventIds);
+
+            // 5. Save
+            caseRepository.save(caseData);
+            System.out.println("linkEventsToCase: Updated case " + businessKey + " with " + faultEvents.size() + " new events");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update dataGrid2 for case " + businessKey + ": " + e.getMessage(), e);
+        }
+    }
+
 //	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
 //		System.out.println(eventIds);
 //		System.out.println(eventIds.get(0));
@@ -1411,6 +1487,96 @@ data.put("assignedToLabel", assignedToLabel);
 //    }
         return false;
     }
+
+    @Override
+	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus) {
+		return filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, 10, 0);
+	}
+
+	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset) {
+		StringBuilder query = new StringBuilder(
+			"SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
+			"WHERE c.caseDefinitionId = :caseDefinitionId " +
+			// "AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+			// 	"SELECT hn.HierarchyNode_PK_ID " +
+			// 	"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+			// 	"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+			// 	"ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+			// 	"WHERE hn.IsDeleted = 0 " +
+				"AND c.asset_name = :assetName " +
+				"AND c.hierarchy_name = :hierarchyName" 
+			// ")"
+		);
+
+		boolean hasSearch = search != null && !search.isBlank();
+		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
+
+		if (hasSearch) {
+			query.append(" AND (c.case_no LIKE :search OR c.path LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
+		}
+		if (hasCaseStatus) {
+			query.append(" AND c.status_id = :caseStatus");
+		}
+
+		query.append(" ORDER BY c.case_no DESC");
+		query.append(" OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY");
+
+		Query nativeQuery = entityManager.createNativeQuery(query.toString(), Case.class);
+		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+		nativeQuery.setParameter("assetName", assetName);
+		nativeQuery.setParameter("hierarchyName", hierarchyName);
+		nativeQuery.setParameter("offset", offset);
+		nativeQuery.setParameter("limit", limit);
+		if (hasSearch) {
+			nativeQuery.setParameter("search", "%" + search + "%");
+		}
+		if (hasCaseStatus) {
+			nativeQuery.setParameter("caseStatus", Long.parseLong(caseStatus));
+		}
+
+		return nativeQuery.getResultList();
+	}
+
+	@Override
+	public long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus) {
+		StringBuilder query = new StringBuilder(
+			"SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
+			"WHERE c.caseDefinitionId = :caseDefinitionId " +
+			// "AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+			// 	"SELECT hn.HierarchyNode_PK_ID " +
+			// 	"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+			// 	"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+			// 	"ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+			// 	"WHERE hn.IsDeleted = 0 " +
+				"AND c.asset_name = :assetName " +
+				"AND c.hierarchy_name = :hierarchyName"
+			// ")"
+		);
+
+		boolean hasSearch = search != null && !search.isBlank();
+		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
+
+		if (hasSearch) {
+			query.append(" AND (c.case_no LIKE :search OR c.path LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
+		}
+		if (hasCaseStatus) {
+			query.append(" AND c.status_id = :caseStatus");
+		}
+
+		Query nativeQuery = entityManager.createNativeQuery(query.toString());
+		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+		nativeQuery.setParameter("assetName", assetName);
+		nativeQuery.setParameter("hierarchyName", hierarchyName);
+		if (hasSearch) {
+			nativeQuery.setParameter("search", "%" + search + "%");
+		}
+		if (hasCaseStatus) {
+			nativeQuery.setParameter("caseStatus", Long.parseLong(caseStatus));
+		}
+
+		Object result = nativeQuery.getSingleResult();
+		return ((Number) result).longValue();
+	}
 
     public Boolean checkUserAvailableInGEAPM(String geAPMAcsessToken, String userId) throws Exception {
         RestTemplate restTemplate = new RestTemplate();

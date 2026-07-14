@@ -43,6 +43,7 @@ import Config from '../../consts'
 import { buildCreateUrl } from 'utils/util'
 import { Formio } from 'formiojs'
 import { Form } from '@formio/react'
+import { accountStore } from './../../store'
 
 Formio.options = {
   vm: {
@@ -81,23 +82,31 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
   const [apiBody, setApiBody] = useState(null)
   const [loading, setLoading] = useState(false)
-  
+  const [isFinalRecommendationConfirmationOpen, setIsFinalRecommendationConfirmationOpen] = useState(false)
   const [processErrorSnackbarOpen, setProcessErrorSnackbarOpen] = useState(false)
   const [processSuccessSnackbarOpen, setProcessSuccessSnackbarOpen] = useState(false)
+const [currentData, setCurrentData] = useState(null);
   const [taskCompletedSnackbarOpen, setTaskCompletedSnackbarOpen] = useState(false)
 
 // if the task is completed use this state to show modal and block code execution
   const [isBlocked, setIsBlocked] = useState(true);
   const [showBlockedModal, setShowBlockedModal] = useState(false);
   const[taskExists, setTaskExists] = useState(false);
+  const [isCommentEnabled, setIsCommentEnabled] = useState(true);
+  const [isAttachmentEnabled, setIsAttachmentEnabled] = useState(true);
+  const [isDraft, setIsDraft] = useState(true);
   const [processExistsForBusinessKey, setProcessExistsForBusinessKey] = useState(false)
 
+const initialDataRef = useRef(null);
+const isFormReadyRef = useRef(false);
+const hasUnsavedChangesRef = useRef(false); 
   const isLastStageofProcessRef = useRef(false);
   
 
 
 
 console.log('*****  taskId:  ', taskId);
+
 
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing)
@@ -336,23 +345,23 @@ console.log('*****  taskId:  ', taskId);
         // for role based access control. if the user has editor role, disable only two fields else if is the user is not a admin or isCaseViewer then disable all the feilds 
 
         // if isCaseCreator then do not disable the fields regardless of other conditons
-        if(data.formKey === 'case-management-system'){
-        if((isCaseEditor ||!isAdmin || isCaseViewer) && !isCaseCreator){
+      //   if(data.formKey === 'case-management-system'){
+      //   if((isCaseEditor ||!isAdmin || isCaseViewer) && !isCaseCreator){
 
-          console.log("*** isCaseEditor : ", isCaseEditor)
-          formData.structure.components[0].components.forEach((c) => {
+      //     console.log("*** isCaseEditor : ", isCaseEditor)
+      //     formData.structure.components[0].components.forEach((c) => {
 
-            if(isCaseEditor)  {
-            if(c.title === 'Analysis' || c.title === 'Value Realization' || c.label === 'Columns')
-             return;
+      //       if(isCaseEditor)  {
+      //       if(c.title === 'Analysis' || c.title === 'Value Realization' || c.label === 'Columns')
+      //        return;
 
-              c.disabled = isCaseEditor 
-             }
-             else c.disabled = true;
-          })
+      //         c.disabled = isCaseEditor 
+      //        }
+      //        else c.disabled = true;
+      //     })
       
-        }
-      }
+      //   }
+      // }
         setFormStructure(formData)
         let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
@@ -396,52 +405,160 @@ console.log('*****  taskId:  ', taskId);
       })
       .then(({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
+        setIsDraft(isDraft);
+        const isFinalRecommendationSubmitted = caseData?.isFinalRecommendationSubmitted;
 
+        const attributeValue = caseData.attributes[0].value;
+        const parsedAttributeValue = JSON.parse(attributeValue);
+        parsedAttributeValue.caseNo = aCase.caseNo;
+        setCurrentData(parsedAttributeValue)
+        initialDataRef.current = JSON.parse(JSON.stringify(parsedAttributeValue));
+        const userEmailIds = [];
+        const currentUserName = keycloak.idTokenParsed.preferred_username;
+        const caseAssignedToEmail = caseData?.assignedTo?.emailId;
+        userEmailIds.push(caseData?.owner?.email);
+        userEmailIds.push(parsedAttributeValue.caseAssignedTo);
+        
+
+        const analysisTeamEmails = Array.isArray(parsedAttributeValue.analysisTeam) ? parsedAttributeValue.analysisTeam : (parsedAttributeValue.analysisTeam ? [parsedAttributeValue.analysisTeam] : []);
+        const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(analysisTeamEmails);
+
+        const currentUserEmail = keycloak.idTokenParsed.email;
+        const checkEmailMatch = (email) => {
+          if (!email) return false;
+          const emailLower = email.toLowerCase();
+          return (
+            emailLower.startsWith(currentUserName.toLowerCase() + '@') ||
+            emailLower === currentUserName.toLowerCase() ||
+            emailLower === currentUserName.toLowerCase() + '@' ||
+            (currentUserEmail && emailLower === currentUserEmail.toLowerCase())
+          );
+        };
+        let shouldDisable = !userEmailIds.some(checkEmailMatch);
+        let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(checkEmailMatch);
+
+        console.log('--- Permissions Check ---');
+        console.log('Current Logged-in Username:', currentUserName);
+        console.log('Analysis Team Emails on Case:', analysisTeamEmails);
+        console.log('All Authorized Emails (Including Analysis Team):', userEmailIdsIncludingAnalysisTeam);
+        console.log('Is User an Analysis Team Member? (!shouldDisableAnalysis):', !shouldDisableAnalysis);
+
+        const recommendations = parsedAttributeValue.dataGrid1;
+        const recommendationAssignees = recommendations?.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
+        const recommendationReviewers = recommendations?.map((item) => item.recommendationReviewer).filter((assignee) => assignee !== "");
+        const userEmailIdsWithRecommendationAssignees = userEmailIds.concat(recommendationAssignees);
+        const userEmailIdsWithRecommendationUsers = userEmailIdsWithRecommendationAssignees.concat(recommendationReviewers);
+        let shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.some(email => email.startsWith(currentUserName + '@'));
+
+        if(accountStore.isManagerUser(keycloak)){
+          shouldDisable = shouldDisableAnalysis = shouldDisableValueRealization = false;
+        }
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
-          if(!isDraft){
-          const analysis = level1.components?.[5] ?? null;
-          const recommendation = level1.components?.[6] ?? null;
-          const caseDetails = level1.components?.[3] ?? null;
-          level1.components?.forEach((component) => {
-            if (
-              component.id !== recommendation?.id &&
-              component.id !== caseDetails?.id && 
-              component.id !== analysis?.id
-            ) {
-              //component.disabled = true;
+
+        if (shouldDisable && shouldDisableAnalysis && shouldDisableValueRealization) {
+          // Disable the top-level component
+          level1.disabled = true;
+          setIsAttachmentEnabled(false);
+          setIsCommentEnabled(false);
+          if (level1?.components) {
+            const [level2, , , , analysisSection, , level6, valueRealizationSection, level7] = level1.components;
+
+            // Analysis Section: Hide submit and edit buttons
+            if (analysisSection?.components[0]?.columns.length > 2) {
+              const analysisColumns = analysisSection.components[0].columns[2];
+              const analysisSubmitButton = analysisColumns.components?.[3] ?? null;
+              const analysisEditButton = analysisColumns.components?.[4] ?? null;
+
+              analysisSubmitButton && (analysisSubmitButton.hidden = true);
+              analysisEditButton && (analysisEditButton.hidden = true);
             }
-          });
-          const caseDetails0 = caseDetails?.components?.[0];
-          if (caseDetails0) {
-            //caseDetails0.disabled = true;
+
+            // Level 7: Hide draft, create, and save buttons
+            if (level7?.columns) {
+              const saveAsDraft = level7.columns?.[2]?.components?.[0] ?? null;
+              const createButton = level7.columns?.[2]?.components?.[1] ?? null;
+              const saveButton = level7.columns?.[3]?.components?.[0] ?? null;
+
+              saveAsDraft && (saveAsDraft.hidden = true);
+              createButton && (createButton.hidden = true);
+              saveButton && (saveButton.hidden = true);
+            }
+
+            // Level 6: Hide add-more and final submit buttons
+            if (level6?.components) {
+              const [submitContainer, addMoreContainer] = level6.components;
+              const recommendationAddMore = addMoreContainer?.columns?.[0]?.components?.[0] ?? null;
+              const recommendationFinalSubmit = addMoreContainer?.columns?.[1]?.components?.[0] ?? null;
+
+              recommendationAddMore && (recommendationAddMore.hidden = true);
+              recommendationFinalSubmit && (recommendationFinalSubmit.hidden = true);
+            }
+
+            // Value Realization Section: Hide value realization submit button
+            if (valueRealizationSection?.components) {
+              const valueRealizationSubmit = valueRealizationSection.components?.[3] ?? null;
+              valueRealizationSubmit && (valueRealizationSubmit.hidden = true);
+            }
           }
-        
-          const caseDetails1 = caseDetails?.components?.[1];
-          const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
-        
-          // Disable all components inside columns of caseDetails1, except caseStatus
-          caseDetails1?.columns?.forEach((column) => {
-            column?.components?.forEach((component) => {
-              if (component.id !== caseStatus?.id) {
-                //component.disabled = true;
+        } else {
+          if (!isDraft) {
+            const analysis = level1.components?.[4] ?? null;
+            const recommendationRadio = level1.components?.[5] ?? null;
+            const recommendation = level1.components?.[6] ?? null;
+            const caseDetails = level1.components?.[3] ?? null;
+            const valueRealization = level1.components?.[7] ?? null;
+            const level7Buttons = level1.components?.[8] ?? null;
+            level1.components?.forEach((component) => {
+              if (
+                component.id !== recommendation?.id &&
+                component.id !== caseDetails?.id &&
+                component.id !== analysis?.id &&
+                component.id !== valueRealization?.id &&
+                component.id !== recommendationRadio.id &&
+                component.id !== level7Buttons?.id
+              ) {
+                component.disabled = true;
               }
             });
-          });
-        }
 
-        if (level1 && level1.components) {
-          const level2 = level1.components[0]
-          const level7 =
-            level1.components.length > 8 ? level1.components[8] : null
-          const level6 =
-            level1.components.length > 6 ? level1.components[6] : null
-          if (level2 && level2.components) {
-            const caseDescriptionField =
-              level2.components.length > 1 ? level2.components[1] : null
-            if (caseDescriptionField) {
-              //caseDescriptionField.disabled = false
+            if (parsedAttributeValue.valueRealizationCategory !== '') {
+              valueRealization.disabled = true;
             }
+            const caseDetails0 = caseDetails?.components?.[0];
+            if (caseDetails0) {
+              caseDetails0.disabled = true;
+            }
+
+            const caseDetails1 = caseDetails?.components?.[1];
+            const analysisTeam = caseDetails1?.columns?.[0]?.components?.[0] ?? null;
+            const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
+
+            // Disable all components inside columns of caseDetails1, except caseStatus
+            caseDetails1?.columns?.forEach((column) => {
+              column?.components?.forEach((component) => {
+                if (component.id !== caseStatus?.id) {
+                  if (component.id === analysisTeam?.id && !shouldDisableAnalysis) {
+                    console.log('Unlocking Analysis Team dropdown for Analysis Team member.');
+                    component.disabled = false;
+                  } else {
+                    component.disabled = true;
+                  }
+                }
+              });
+            });
+          }
+
+          if (level1 && level1.components) {
+            const level2 = level1.components[0]
+            const level7 =
+              level1.components.length > 8 ? level1.components[8] : null
+            if (level2 && level2.components) {
+              const caseDescriptionField =
+                level2.components.length > 1 ? level2.components[1] : null
+              if (caseDescriptionField) {
+                caseDescriptionField.disabled = false
+              }
 
             // const recommendation =
             //   level1.components.length > 5 ? level1.components[5] : null
@@ -473,56 +590,54 @@ console.log('*****  taskId:  ', taskId);
 
               const caseStatus = level3?.components?.[1]?.columns?.[1]?.components?.[0] ?? null;
 
-              const caseOwner = caseData?.owner?.id;
-              const currentUser = keycloak?.subject;
+                if (shouldDisable && caseStatus) {
+                  caseStatus.disabled = true;
+                }
 
-              if (caseOwner !== currentUser && caseStatus) {
-               // caseStatus.disabled = true;
-              }
-
-              const faultCategorySelect =
-                level2.components[0].columns.length > 2
-                  ? level2.components[0].columns[3].components[0]
-                  : null
-              if (faultCategorySelect && caseData.isDraft == 'n') {
-                //faultCategorySelect.disabled = true
-              }
+                const faultCategorySelect =
+                  level2.components[0].columns.length > 2
+                    ? level2.components[0].columns[3].components[0]
+                    : null
+                if (faultCategorySelect && caseData.isDraft == 'n') {
+                  faultCategorySelect.disabled = true
+                }
 
               
             }
 
-            if (level7 && level7.columns) {
-              const saveAsDraft =
-                level7.columns.length > 2
-                  ? level7.columns[2].components[0]
-                  : null
-              if (saveAsDraft) {
-                //saveAsDraft.hidden = isDraft ? false : true;
-              }
-              
-              const createButton =
-                level7.columns.length > 2
-                  ? level7.columns[2].components[1]
-                  : null
-              if (createButton) {
-                //createButton.hidden = true
-              }
+              //Hide analysis save and edit button conditionally.
+              const analysisSection = level1.components.find(comp => comp.title === 'Analysis') || null
 
-              const saveButton =
-                level7.columns.length > 3
-                  ? level7.columns[3].components[0]
-                  : null
-              if (saveButton) {
-                  //saveButton.hidden =  isDraft ? false : true;
+              if (analysisSection) {
+                const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3] : null;
+                const analysisEditButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[4] : null;
+
+                if (isFinalRecommendationSubmitted) {
+                  analysisSection.disabled = true
+                  analysisSubmitButton.hidden = true;
+                  analysisEditButton.hidden = true;
+                } else {
+                  if (analysisSubmitButton && parsedAttributeValue.analysisDesc !== '') {
+                    analysisSubmitButton.hidden = true;
+                  }
+                  if (analysisEditButton && parsedAttributeValue.analysisDesc === '') {
+                    analysisEditButton.hidden = true;
+                  }
+
+                  if (shouldDisableAnalysis) {
+                    // analysisSubmitButton.disabled = true;
+                    // analysisEditButton.disabled = true;
+                  }
+                }
               }
             }
 
           }
         }
 
-        setForm({
-          ...updatedFormStructure,
-        })
+        setForm(
+          JSON.parse(JSON.stringify(updatedFormStructure))
+        )
 
        
 
@@ -655,7 +770,7 @@ console.log('*****  taskId:  ', taskId);
       })
   }
 
-  const onAnalysisAndValueRealizationSave = (eventData) => {
+  const onAnalysisAndValueRealizationSave = (eventData, isDraftFlag) => {
     // eventData comes from onCustomEvent and always has the latest form values
     const liveData = eventData || formData?.data
     const liveContainer = {container: liveData};
@@ -710,7 +825,7 @@ console.log('*****  taskId:  ', taskId);
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
-            isDraft: aCase?.isDraft,
+            isDraft: isDraftFlag,
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
@@ -1544,18 +1659,18 @@ console.log('*****  taskId:  ', taskId);
                 <Tabs value={mainTabIndex} onChange={handleMainTabChanged} >
                   <Tab
                     label={t('pages.caseform.tabs.details')}
-                    disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed'}
                     {...a11yProps(0)}
                   />
                   <Tab
                     label={t('pages.caseform.tabs.attachments')}
-                    disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed'}
                     {...a11yProps(1)}
                    
                   />
                   <Tab
                     label={t('pages.caseform.tabs.comments')}
-                    disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed'}
                     {...a11yProps(2)}
                   
                   />
@@ -1635,11 +1750,12 @@ console.log('*****  taskId:  ', taskId);
 {console.log('***** formData at render', formData)}
                     
                     {isFormData && (
+                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${aCase?.status?.name === 'Closed' ? 'case-closed' : ''}`}>
                       <Form
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
                         options={{
-                          readOnly: isCaseViewer,
+                          readOnly: isCaseViewer || aCase?.status?.name === 'Closed',
                           fileService: new StorageService(),
                         }}
                         onSubmit={(submission) => {
@@ -1664,7 +1780,9 @@ console.log('*****  taskId:  ', taskId);
                             // onSubmitRecommendation()
                             onSave()
                           }  else if (event.component.key === 'analysisSubmit') {
-                            onAnalysisAndValueRealizationSave(event.data)
+                            onAnalysisAndValueRealizationSave(event.data, 'n')
+                          }else if (event.component.key === 'analysisSubmitAsDraft') {
+                            onAnalysisAndValueRealizationSave(event.data, 'y')
                           }
                             
                           else if (event.component.key === 'btnEventTrend') {
@@ -1675,6 +1793,7 @@ console.log('*****  taskId:  ', taskId);
                           }
                         }}
                       />
+                    </div>
                     )}
                     <Dialog
                       open={isConfirmationOpen}

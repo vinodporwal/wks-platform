@@ -112,6 +112,21 @@ public class CaseDefinitionController {
         return ResponseEntity.ok(caseDefinitionService.CaseNoGenerator());
     }
 
+	@PostMapping(value = "/link-events")
+	public ResponseEntity<?> linkEventsToCase(@RequestBody java.util.Map<String, Object> request) {
+		try {
+			String businessKey = (String) request.get("businessKey");
+			@SuppressWarnings("unchecked")
+			List<Number> eventIdNums = (List<Number>) request.get("eventIds");
+			List<Long> eventIds = eventIdNums.stream().map(Number::longValue).collect(Collectors.toList());
+
+			caseDefinitionService.linkEventsToCase(businessKey, eventIds);
+			return ResponseEntity.ok(java.util.Map.of("status", "updated", "businessKey", businessKey));
+		} catch (Exception e) {
+			return ResponseEntity.status(500).body("Failed to link events: " + e.getMessage());
+		}
+	}
+
 	@PostMapping
 	public ResponseEntity<CaseDefinition> save(@RequestBody final CaseDefinition caseDefinition) {
 		try {
@@ -141,6 +156,32 @@ public class CaseDefinitionController {
 		return ResponseEntity.ok(cases);
 	}
 
+	//Controller API For Search and Filtering on case list page
+	@GetMapping("/cases/{caseDefinitionId}/filter")
+	public ResponseEntity<List<Case>> filterCasesByCaseDefinition(
+			@PathVariable("caseDefinitionId") String caseDefinitionId,
+			@RequestParam String assetName,
+			@RequestParam String hierarchyName,
+			@RequestParam(required = false) String search,
+			@RequestParam(required = false) String caseStatus,
+			@RequestParam(defaultValue = "10") int limit,
+			@RequestParam(defaultValue = "0") int offset) {
+		List<Case> cases = caseDefinitionService
+				.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, limit, offset);
+		return ResponseEntity.ok(cases);
+	}
+
+	@GetMapping("/cases/{caseDefinitionId}/count")
+	public ResponseEntity<Long> countCasesByCaseDefinition(
+			@PathVariable("caseDefinitionId") String caseDefinitionId,
+			@RequestParam String assetName,
+			@RequestParam String hierarchyName,
+			@RequestParam(required = false) String search,
+			@RequestParam(required = false) String caseStatus) {
+		long count = caseDefinitionService.countCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus);
+		return ResponseEntity.ok(count);
+	}
+	
 	@GetMapping("/cases-to-link")
 	public ResponseEntity<Object> getCasesToLink(
 			@RequestParam String assetName,

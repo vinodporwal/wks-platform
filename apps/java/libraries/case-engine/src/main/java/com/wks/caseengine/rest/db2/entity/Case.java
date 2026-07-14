@@ -82,7 +82,7 @@ public class Case {
 //    @JoinColumn(name = "assigned_to", nullable = true)
 //    private Users assignedTo;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "case-users",
       joinColumns = @JoinColumn(name = "case_id"),
       inverseJoinColumns = @JoinColumn(name = "user_id")  )

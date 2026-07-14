@@ -94,6 +94,23 @@ export const CaseList = ({ status, caseDefId }) => {
     hasNext: false,
   })
 
+  // Copied from EED for export and filter
+  const [exportLoading, setExportLoading] = useState(false)
+    const [searchText, setSearchText] = useState('')
+    const [caseStatusFilter, setCaseStatusFilter] = useState('')
+    const searchDebounceRef = React.useRef(null)
+    const [totalCount, setTotalCount] = useState(0)
+    const [page, setPage] = useState(0)
+    const [rowsPerPage, setRowsPerPage] = useState(10)
+  
+    const getUrlParams = () => {
+      const searchParams = new URLSearchParams(window.location.search)
+      return {
+        assetName: searchParams.get('assetName') || '',
+        hierarchyName: searchParams.get('hierarchyName') || '',
+      }
+    }
+  
   const columns = React.useMemo(() => makeColumns(), []);
 
   // XOM - Route changes -Start
@@ -235,18 +252,8 @@ export const CaseList = ({ status, caseDefId }) => {
       const topic = Config.WebsocketsTopicCaseCreated
       const ws = new WebSocket(`${websocketUrl}/${topic}`)
       ws.onmessage = () => {
-        fetchCases(
-          setFetching,
-          keycloak,
-          caseDefId,
-          setStages,
-          status,
-          filter,
-          setCases,
-          setFilter,
-          setACase,
-          setOpenCaseForm,
-        )
+        const { assetName, hierarchyName } = getUrlParams()
+        fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
       }
       return () => {
         ws.close() // Close WebSocket connection when component unmounts
@@ -360,62 +367,39 @@ export const CaseList = ({ status, caseDefId }) => {
             }
 
             // If not found, fallback to full list fetch behavior
-            fetchCases(
-              setFetching,
-              keycloak,
-              caseDefId,
-              setStages,
-              status,
-              filter,
-              setCases,
-              setFilter,
-              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-            );
+          const { assetName, hierarchyName } = getUrlParams()
+          fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
+
           })
           .catch((err) => {
             console.error('Error in getCasesById for nav-to-view', err);
-            fetchCases(
-              setFetching,
-              keycloak,
-              caseDefId,
-              setStages,
-              status,
-              filter,
-              setCases,
-              setFilter,
-              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-            );
+            const { assetName, hierarchyName } = getUrlParams()
+            fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
           })
           .finally(() => {
             setFetching(false);
           });
       } catch (err) {
         console.error('nav-to-view error', err);
-        fetchCases(
-          setFetching,
-          keycloak,
-          caseDefId,
-          setStages,
-          status,
-          filter,
-          setCases,
-          setFilter,
-          isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-        );
+        const { assetName, hierarchyName } = getUrlParams()
+        fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
         setFetching(false);
       }
     } else {
-      fetchCases(
-        setFetching,
-        keycloak,
-        caseDefId,
-        setStages,
-        status,
-        filter,
-        setCases,
-        setFilter,
-        isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-      );
+      if (isLinkCaseUrl) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mainAssetName = urlParams.get('assetName');
+        const eventIds = urlParams.get('eventIds');
+        setFetching(true);
+        CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds).then((data) => {
+          const cases = Array.isArray(data) ? data : (data?.data || []);
+          setCases(cases);
+          setFetching(false);
+        }).catch(() => setFetching(false));
+      } else {
+        const { assetName, hierarchyName } = getUrlParams()
+        fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
+      }
     }
   }, [caseDefId, status, openNewCaseForm, isLinkCaseUrl])
 
@@ -590,12 +574,12 @@ export const CaseList = ({ status, caseDefId }) => {
           }
         },
       },
-      // {
-      //   field: 'isDraft',
-      //   headerName: 'Status',
-      //   width: 150,
-      //   valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
-      // },
+      {
+        field: 'isDraft',
+        headerName: 'Status',
+        width: 150,
+        valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
+      },
       {
         field: 'assignedTo',
         headerName: 'Case Assigned To',
@@ -760,24 +744,14 @@ export const CaseList = ({ status, caseDefId }) => {
     }
  else {
     // Remove all URL parameters
-    navigate(location.pathname, { replace: true });
+    // navigate(location.pathname, { replace: true });
  }
 
    
    
     setOpenCaseForm(false);
-    fetchCases(
-      setFetching,
-      keycloak,
-      caseDefId,
-      setStages,
-      status,
-      filter,
-      setCases,
-      setFilter,
-      setACase,
-      setOpenCaseForm,
-    )
+    const { assetName, hierarchyName } = getUrlParams()
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
   }
 
   const handleCloseNewCaseForm = () => {
@@ -851,6 +825,13 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
   
   CaseService.updateEventIds(keycloak, businessKeys, eventIdsArray, eventTrendUrlArray, eventReportUrlArray).then((resp) => {
       
+    // Also update SQL table with the event details in dataGrid2
+    CaseService.linkEventsToCase(keycloak, businessKeys[0], eventIdsArray).then((sqlResp) => {
+      console.log("linkEventsToCase SQL response: ", sqlResp);
+    }).catch((err) => {
+      console.error("linkEventsToCase SQL update failed: ", err);
+    });
+
     // clean url parameters
     const urlParams = new URLSearchParams(window.location.search);
     urlParams.delete('eventIds');
@@ -862,7 +843,7 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
     CaseService.getSingleCaseByBusinessKey(keycloak, caseDefId, businessKeys[0]).then((data) => {
       console.log("In handleLinkCaseAction getCaseByBusinessKey data: ", data)
       setACase(data.data[0]);
-      setLinkSnackMessage(`Successfully linked the case ${data.data[0]?.caseTitle} to the events: ${eventIds}`);
+      setLinkSnackMessage(`Successfully linked the case ${data.data[0]?.businessKey} to the events: ${eventIds}`);
     })
    
     
@@ -1552,5 +1533,48 @@ else
         setFetching(false)
       })
     }
+}
+
+function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, search, caseStatus, limit, offset, setTotalCount, setACase, setOpenCaseForm) {
+  setFetching(true)
+  Promise.all([
+    CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus, limit, offset),
+    CaseService.countCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus),
+  ])
+    .then(([data, total]) => {
+      const updatedCases = data.map((singleCase) => {
+        let caseTitle = ''
+        let caseNumber = ''
+        try {
+          const containerValue = singleCase.attributes?.find((attr) => attr.name === 'container')?.value
+          if (containerValue) {
+            const parsed = JSON.parse(containerValue)
+            caseTitle = parsed?.textField5 || parsed?.caseTitle || ''
+            caseNumber = parsed?.textField || parsed?.caseNo || ''
+          }
+        } catch (e) {
+          console.error('Error parsing container value:', e)
+        }
+        return { ...singleCase, caseTitle, caseNumber }
+      })
+      setCases(updatedCases)
+      if (setTotalCount) setTotalCount(total)
+
+      // Auto-open case if caseNo is in the URL (e.g. after case creation redirect)
+      const searchParams = new URLSearchParams(window.location.search)
+      const caseNo = getQueryParamValue(window.location.href, 'caseNo')
+      if (caseNo && setACase && setOpenCaseForm) {
+        const selectedCase = updatedCases.find((c) => c.caseNo == caseNo)
+        if (selectedCase) {
+          setACase(selectedCase)
+          setOpenCaseForm(true)
+          searchParams.delete('caseNo')
+          const newUrl = `${window.location.pathname}?${searchParams.toString()}`
+          window.history.replaceState(null, '', newUrl)
+        }
+      }
+    })
+    .catch((e) => console.error('Filter error:', e))
+    .finally(() => setFetching(false))
 }
 

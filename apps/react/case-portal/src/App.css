@@ -190,3 +190,15 @@ input[disabled][id*="TextFaultEndTimeDate"].form-control {
   --bs-alert-border-color: #f5c2c7; */
   display: none;
 }
+
+/* Hide Save as Draft button when case is not a draft */
+.hide-draft-button [name="data[container][analysisSubmitAsDraft]"] {
+  display: none !important;
+}
+
+/* Disable all form interactions when case is Closed */
+.case-closed [name="data[container][analysisSubmitAsDraft]"],
+.case-closed [name="data[container][submit]"],
+.case-closed button[type="button"].btn {
+  display: none !important;
+}

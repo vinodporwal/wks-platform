@@ -48,6 +48,8 @@ public interface CaseDefinitionService {
 //
 	List<FaultEvents> getAllEvents(List<Long> eventIds);
 
+	void linkEventsToCase(String businessKey, List<Long> eventIds);
+
 	Case saveCase(Case caseData);
 
 	String CaseNoGenerator();
@@ -74,4 +76,8 @@ public interface CaseDefinitionService {
 	List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() throws Exception;
 	List<Case> updateRecommendationStatus() throws JsonMappingException, JsonProcessingException, Exception;
 	Case saveAnalysis(Case caseData);
+	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
+	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset);
+
+	long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
 }
