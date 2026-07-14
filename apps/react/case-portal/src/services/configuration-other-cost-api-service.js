@@ -72,7 +72,7 @@ async function getConfigurationOtherCostExcel(
   EXCEL_EXPORT_TITLE,
   SCREEN_NAME,
 ) {
-  var url = `${Config.CaseEngineUrl}/task/configuration-other-cost-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  var url = `${Config.CaseEngineUrl}/task/configuration-other-cost-export?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ async function saveConfigurationOtherCostExcelData(
   AOP_YEAR,
 ) {
   let url = ''
-  url = `${Config.CaseEngineUrl}/task/configuration-other-cost-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  url = `${Config.CaseEngineUrl}/task/configuration-other-cost-import?plantFKId=${PLANT_ID}&year=${AOP_YEAR}`
 
   const formData = new FormData()
   formData.append('file', file)
