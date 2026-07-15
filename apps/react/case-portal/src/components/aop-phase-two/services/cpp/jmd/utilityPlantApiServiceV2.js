@@ -6,6 +6,9 @@ export const UtilityPlantApiServiceV2 = {
   saveFixedConsumptionData,
   saveFixedConsumptionExcel,
   exportFixedConsumptionExcel,
+  addFixedConsumptionRow,
+  updateFixedConsumptionRow,
+  deleteFixedConsumptionRow,
 
   //   Plant requirement APIs
   getPlantRequirementData,
@@ -91,6 +94,77 @@ async function saveFixedConsumptionData(
     return result || { success: true }
   } catch (e) {
     console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ===================== || Fixed Consumption Row CRUD APIs || ===================== //
+
+// Create a new fixed consumption row
+async function addFixedConsumptionRow(keycloak, rowData, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/create`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({
+    ...rowData,
+    aopYear: financialYear,
+  })
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error creating fixed consumption row:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Update an existing fixed consumption row
+async function updateFixedConsumptionRow(keycloak, rowData, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/update`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({
+    ...rowData,
+    aopYear: financialYear,
+  })
+  try {
+    const resp = await fetch(url, { method: 'PUT', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error updating fixed consumption row:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Delete a fixed consumption row by id
+async function deleteFixedConsumptionRow(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/delete/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const text = await resp.text()
+    return text ? JSON.parse(text) : { success: true }
+  } catch (e) {
+    console.error('Error deleting fixed consumption row:', e)
     return await Promise.reject(e)
   }
 }

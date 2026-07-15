@@ -905,7 +905,7 @@ const SenderReceiverMapping = () => {
           setRows={setRows}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
-          title={permissions.showTitle ? permissions.titleName : ''}
+          title={'Sender Reciver Mapping'}
           permissions={permissions}
           handleExport={handleExport}
           handleExcelUpload={handleExcelUpload}
