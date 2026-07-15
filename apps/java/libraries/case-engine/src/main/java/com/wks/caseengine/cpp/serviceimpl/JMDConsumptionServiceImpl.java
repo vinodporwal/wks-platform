@@ -191,6 +191,7 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 
 		// Header row
 		List<String> headers = new ArrayList<>();
+		headers.add("Parent Plant");
 		headers.add("Process Plant");
 		headers.add("CPP Utilities");
 		headers.add("CPP Utility Ids");
@@ -218,8 +219,8 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 			cell.setCellStyle(headerStyle);
 		}
 		
-		// Hide Plant Code column (index 18)
-		sheet.setColumnHidden(18, true);
+		// Hide Plant Code column (index 19)
+		sheet.setColumnHidden(19, true);
 
 		// Data rows
 		for (CalculatedProcessDemandDTO dto : dtoList) {
@@ -227,6 +228,9 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 			int col = 0;
 
 			Cell cell = row.createCell(col++);
+			cell.setCellValue(dto.getParentPlantName() != null ? dto.getParentPlantName() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
 			cell.setCellValue(dto.getProcessPlant() != null ? dto.getProcessPlant() : "");
 			cell.setCellStyle(dataStyle);
 			cell = row.createCell(col++);

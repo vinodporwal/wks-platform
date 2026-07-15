@@ -219,6 +219,8 @@ System.out.println("total results: " + results.size());
 				.mar(row[20] != null ? Double.parseDouble(row[20].toString()) : 0.0)
 				.isCalculated(row[21] != null && Integer.parseInt(row[21].toString()) == 1)
 				.remarks(row[22] != null ? row[22].toString() : null)
+				.parentPlantId(row[23] != null ? row[23].toString() : null)
+				.parentPlantName(row[24] != null ? row[24].toString() : null)
 				.build();
 	}
 
@@ -362,6 +364,7 @@ System.out.println("total results: " + results.size());
 
 		// Header row
 		List<String> headers = new ArrayList<>();
+		headers.add("Parent Plant");
 		headers.add("Process Plant");
 		headers.add("CPP Utilities");
 		headers.add("CPP Utility Ids");
@@ -394,8 +397,8 @@ System.out.println("total results: " + results.size());
 			cell.setCellStyle(headerStyle);
 		}
 		
-		// Hide Plant Code column (index 18)
-		sheet.setColumnHidden(18, true);
+		// Hide Plant Code column (index 19)
+		sheet.setColumnHidden(19, true);
 
 		// Data rows
 		for (CalculatedProcessDemandDTO dto : dtoList) {
@@ -403,6 +406,9 @@ System.out.println("total results: " + results.size());
 			int col = 0;
 
 			Cell cell = row.createCell(col++);
+			cell.setCellValue(dto.getParentPlantName() != null ? dto.getParentPlantName() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
 			cell.setCellValue(dto.getProcessPlant() != null ? dto.getProcessPlant() : "");
 			cell.setCellStyle(dataStyle);
 			cell = row.createCell(col++);
@@ -452,7 +458,7 @@ System.out.println("total results: " + results.size());
 
 		int totalColumns = headers.size();
 		for (int col = 0; col < totalColumns; col++) {
-			if (col == 17) {
+			if (col == 18) {
 				sheet.setColumnWidth(col, 8000);
 				continue;
 			}
@@ -584,6 +590,7 @@ System.out.println("total results: " + results.size());
 				
 			try {
 				int col = 0;
+				col++; // Skip Parent Plant column (display only, not needed for import)
 				dto.setProcessPlant(getStringCellValue(row.getCell(col++)));
 				dto.setCppUtility(getStringCellValue(row.getCell(col++)));
 				dto.setCppUtilityId(getStringCellValue(row.getCell(col++)));

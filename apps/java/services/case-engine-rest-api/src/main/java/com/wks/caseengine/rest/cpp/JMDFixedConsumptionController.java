@@ -9,8 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import org.springframework.http.HttpStatus;
 
+import com.wks.caseengine.cpp.dto.FixedConsumptionCreateRequestDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -135,5 +139,55 @@ public class JMDFixedConsumptionController {
             errorResponse.setData(null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
+    }
+
+    // ========================================
+    // CREATE FIXED CONSUMPTION ROW ENDPOINT
+    // ========================================
+
+    @PostMapping("/jmd/fixed-consumption/create")
+    public AOPMessageVM createFixedConsumption(@RequestBody FixedConsumptionCreateRequestDto request) {
+        logger.info("[POST /jmd/fixed-consumption/create] Request received - parentPlantId: {}, recieverPlantId: {}, costCenterId: {}, senderPlantId: {}, cppUtilityId: {}",
+                request.getParentPlantId(), request.getRecieverPlantId(), request.getCostCenterId(), request.getSenderPlantId(), request.getCppUtilityId());
+
+        AOPMessageVM response = jmdFixedConsumptionService.createFixedConsumption(request);
+
+        logger.info("[POST /jmd/fixed-consumption/create] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        return response;
+    }
+
+    // ========================================
+    // UPDATE FIXED CONSUMPTION ROW ENDPOINT
+    // ========================================
+
+    @PutMapping("/jmd/fixed-consumption/update")
+    public AOPMessageVM updateFixedConsumption(@RequestBody FixedConsumptionCreateRequestDto request) {
+        logger.info("[PUT /jmd/fixed-consumption/update] Request received - id: {}, recieverPlantId: {}, costCenterId: {}",
+                request.getId(), request.getRecieverPlantId(), request.getCostCenterId());
+
+        AOPMessageVM response = jmdFixedConsumptionService.updateFixedConsumption(request);
+
+        logger.info("[PUT /jmd/fixed-consumption/update] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        return response;
+    }
+
+    // ========================================
+    // DELETE FIXED CONSUMPTION ROW ENDPOINT
+    // ========================================
+
+    @DeleteMapping("/jmd/fixed-consumption/delete/{id}")
+    public AOPMessageVM deleteFixedConsumption(@PathVariable UUID id) {
+        logger.info("[DELETE /jmd/fixed-consumption/{}] Request received", id);
+
+        AOPMessageVM response = jmdFixedConsumptionService.deleteFixedConsumption(id);
+
+        logger.info("[DELETE /jmd/fixed-consumption/{}] Response - code: {}, message: {}",
+                id, response.getCode(), response.getMessage());
+
+        return response;
     }
 }
