@@ -584,9 +584,10 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             return;
         }
 
-        // Resolve siteId by name (use queryForList to avoid EmptyResultDataAccessException)
+       // fetch siteId from database if not present in dto ( for add new record)
+        if(dto.getSiteFkId() == null) {
         List<String> siteIds = jdbcTemplate.queryForList(
-                "SELECT id FROM Sites WHERE name = ?", String.class, siteName);
+                "SELECT id FROM Sites WHERE DisplayName = ?", String.class, siteName);
         if (siteIds.isEmpty()) {
             dto.setSaveStatus("Failed");
             dto.setErrorMessage("Site not found: " + siteName);
@@ -594,9 +595,14 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
         String siteId = siteIds.get(0);
 
-        // Resolve plantId by name
+        dto.setSiteFkId(siteId);
+
+    }
+
+    // fetch plantId from database if not present in dto ( for add new record)
+      if(dto.getPlantFkId() == null) {
         List<String> plantIds = jdbcTemplate.queryForList(
-                "SELECT id FROM Plants WHERE name = ?", String.class, plantName);
+                "SELECT id FROM Plants WHERE DisplayName = ?", String.class, plantName);
         if (plantIds.isEmpty()) {
             dto.setSaveStatus("Failed");
             dto.setErrorMessage("Plant not found: " + plantName);
@@ -604,9 +610,12 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
         String plantId = plantIds.get(0);
 
+        dto.setPlantFkId(plantId);
+    }
+
         // Validate that the site belongs to the selected vertical
         SitesDTO matchedSite = vertical.getSites().stream()
-                .filter(s -> s.getId() != null && s.getId().equalsIgnoreCase(siteId))
+                .filter(s -> s.getId() != null && s.getId().equalsIgnoreCase(dto.getSiteFkId()))
                 .findFirst()
                 .orElse(null);
 
@@ -619,7 +628,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         // Validate that the plant belongs specifically to the matched site.
         // A plant from a different site is rejected even if it exists elsewhere in the vertical.
         boolean plantBelongsToSite = matchedSite.getPlants().stream()
-                .anyMatch(p -> p.getId() != null && p.getId().equalsIgnoreCase(plantId));
+                .anyMatch(p -> p.getId() != null && p.getId().equalsIgnoreCase(dto.getPlantFkId()));
 
         if (!plantBelongsToSite) {
             dto.setSaveStatus("Failed");
@@ -642,11 +651,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             Sheet sheet = workbook.createSheet("RefineryShutdown");
             int currentRow = 0;
 
-            // Columns 0-4 are visible; 5=Id is hidden (used on import)
-            // When isAfterSave, columns 6=Status and 7=Error Description are appended
+            // Columns 0-4 are visible; 5=Id, 6=SiteFkId, 7=PlantFkId are hidden (used on import)
+            // When isAfterSave, columns 8=Status and 9=Error Description are appended
             List<String> headers = new ArrayList<>(Arrays.asList(
                     "Site", "Plant", "SD Total duration in days",
-                    "Date of Commencement", "Purpose of Shutdown", "Id"));
+                    "Date of Commencement", "Purpose of Shutdown", "Id", "SiteFkId", "PlantFkId"));
             if (isAfterSave) {
                 headers.add("Status");
                 headers.add("Error Description");
@@ -699,14 +708,24 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
                 idCell.setCellStyle(greyStyle);
 
+                // Col 6 – SiteFkId (hidden)
+                Cell siteFkIdCell = row.createCell(6);
+                siteFkIdCell.setCellValue(dto.getSiteFkId() != null ? dto.getSiteFkId() : "");
+                siteFkIdCell.setCellStyle(greyStyle);
+
+                // Col 7 – PlantFkId (hidden)
+                Cell plantFkIdCell = row.createCell(7);
+                plantFkIdCell.setCellValue(dto.getPlantFkId() != null ? dto.getPlantFkId() : "");
+                plantFkIdCell.setCellStyle(greyStyle);
+
                 if (isAfterSave) {
-                    // Col 6 – Status
-                    Cell statusCell = row.createCell(6);
+                    // Col 8 – Status
+                    Cell statusCell = row.createCell(8);
                     statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                     statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-                    // Col 7 – Error Description
-                    Cell errCell = row.createCell(7);
+                    // Col 9 – Error Description
+                    Cell errCell = row.createCell(9);
                     errCell.setCellValue(dto.getErrorMessage() != null ? dto.getErrorMessage() : "");
                     errCell.setCellStyle(Utility.createBorderedStyle(workbook));
                 }
@@ -715,17 +734,19 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             }
 
             // Auto-size visible columns; fixed wider width for Purpose of Shutdown and Error Description
-            int totalCols = isAfterSave ? 8 : 5;
+            int totalCols = isAfterSave ? 10 : 5;
             for (int col = 0; col < totalCols; col++) {
-                if (col == 4 || col == 7) {
+                if (col == 4 || col == 9) {
                     sheet.setColumnWidth(col, 15000);
                 } else {
                     sheet.autoSizeColumn(col);
                 }
             }
 
-            // Hide the Id column from end-users
+            // Hide the identifier columns from end-users
             sheet.setColumnHidden(5, true);
+            sheet.setColumnHidden(6, true);
+            sheet.setColumnHidden(7, true);
 
             // Protect the sheet so locked/unlocked cell styles are enforced (only for regular export)
             if (!isAfterSave) {
@@ -782,12 +803,41 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                 RefineryShutdownDTO dto = new RefineryShutdownDTO();
                 try {
+// Col 0 – Site
+                    Cell siteCell = row.getCell(0);
+                    if (siteCell != null) {
+                        siteCell.setCellType(CellType.STRING);
+                        String siteStr = siteCell.getStringCellValue().trim();
+                        dto.setSiteName(siteStr.isEmpty() ? null : siteStr);
+                    }
+                    
+                    // Col 1 – Plant
+                    Cell plantCell = row.getCell(1);
+                    if (plantCell != null) {
+                        plantCell.setCellType(CellType.STRING);
+                        String plantStr = plantCell.getStringCellValue().trim();
+                        dto.setPlantName(plantStr.isEmpty() ? null : plantStr);
+                    }
+
                     // Col 2 – SD Total duration in days
                     Cell sdCell = row.getCell(2);
                     if (sdCell != null) {
                         sdCell.setCellType(CellType.STRING);
                         String sdStr = sdCell.getStringCellValue().trim();
-                        dto.setSdTotalDurationDays(sdStr.isEmpty() ? null : Integer.parseInt(sdStr));
+                        if (!sdStr.isEmpty()) {
+                            try {
+                                double sdDouble = Double.parseDouble(sdStr);
+                                if (sdDouble != Math.floor(sdDouble)) {
+                                    dto.setSaveStatus("Failed");
+                                    dto.setErrorMessage("SD Total Duration Days must be a whole number");
+                                } else {
+                                    dto.setSdTotalDurationDays((int) sdDouble);
+                                }
+                            } catch (NumberFormatException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("SD Total Duration Days must be a valid integer");
+                            }
+                        }
                     }
 
                     // Col 3 – Date of Commencement
@@ -813,6 +863,22 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setId(id.isEmpty() ? null : id);
                     }
 
+                    // Col 6 – SiteFkId (hidden)
+                    Cell siteFkIdCell = row.getCell(6);
+                    if (siteFkIdCell != null) {
+                        siteFkIdCell.setCellType(CellType.STRING);
+                        String siteFkId = siteFkIdCell.getStringCellValue().trim();
+                        dto.setSiteFkId(siteFkId.isEmpty() ? null : siteFkId);
+                    }
+
+                    // Col 7 – PlantFkId (hidden)
+                    Cell plantFkIdCell = row.getCell(7);
+                    if (plantFkIdCell != null) {
+                        plantFkIdCell.setCellType(CellType.STRING);
+                        String plantFkId = plantFkIdCell.getStringCellValue().trim();
+                        dto.setPlantFkId(plantFkId.isEmpty() ? null : plantFkId);
+                    }
+
                     dto.setPlantId(plantId);
                     dto.setAopYear(aopYear);
 
@@ -820,7 +886,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     e.printStackTrace();
                 }
 
-                validatePlantAndSiteName(dto, vertical);
+              
+                    validatePlantAndSiteName(dto, vertical);
+                
 
                 resultList.add(dto);
             }
