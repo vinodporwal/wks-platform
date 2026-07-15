@@ -87,7 +87,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     @Override
     @Transactional
     public List<PlantCapacitiesTranscationDTO> savePlantCapacitiesTranscation(List<PlantCapacitiesTranscationDTO> plantCapacitiesTranscationDTOs) {
-        try {
+       
             String updatedBy = Utility.getUserName();
            
             List<PlantCapacitiesTranscationDTO> failedRecords = new ArrayList<>();
@@ -113,8 +113,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     throw new RuntimeException("Record not found");
                 }
                 validateRemarkChangeForPlantCapacities(existing, dto);
+                minMaxValidation(dto);
 
-                // skip records with failed remark validation
+                // skip records with failed validations
                 if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
                     failedRecords.add(dto);
                     continue;
@@ -135,10 +136,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
             return failedRecords;
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("Failed to save plant report data", ex);
-        }
+       
     }
 
     private PlantCapacitiesTranscationDTO fetchExistingPlantCapacitiesRecord(String transactionId) {
@@ -172,6 +170,15 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
     private String normalise(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private void minMaxValidation(PlantCapacitiesTranscationDTO dto) {
+        if (dto.getMin() != null && dto.getMax() != null && dto.getMin() > dto.getMax()) {
+            dto.setSaveStatus("Failed");
+            dto.setErrDescription("Min value cannot be greater than max value");
+            return;
+        }
+        return;
     }
 
     // ─── Plant Capacities Export ──────────────────────────────────────────────────
