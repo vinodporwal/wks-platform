@@ -577,7 +577,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         System.out.println("eventTrendUrls: " + caseData.getEventTrendUrls());
        
        
-        if(!caseData.getIsDraft().equals("y")) {
+        // if(!caseData.getIsDraft().equals("y")) { // commented as per requiremnet from XOM team on 12th July 2026
             attributeValue = attributeValue.replace("\\\"", "\"");
             System.out.println("Attribute Value: " + attributeValue);
 
@@ -724,7 +724,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             } catch(Exception e) {
                 e.printStackTrace();
             }
-        }
+        // }
         return caseDetails;
     }
 
@@ -1360,7 +1360,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             String rawAttrValue = attributeValue.replace("\\\"", "\"");
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(rawAttrValue);
-
+            String mainAsset = rootNode.path("mainAsset").asText();
             JsonNode analysisTeamNode = rootNode.path("analysisTeam");
             List<String> analysisTeamEmails = new ArrayList<>();
             if (analysisTeamNode.isArray()) {
@@ -1381,6 +1381,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                 data.put("status", caseStatusValue);
                 data.put("caseName", caseTitle);
                 data.put("caseUrl", caseData.getCaseUrl());
+                data.put("mainAsset", mainAsset);
                 data.put("assignedBy", caseData.getOwner() != null ? caseData.getOwner().getName() : "");
 
                 String assignedToLabel = "";

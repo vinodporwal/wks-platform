@@ -1,112 +1,112 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <title>Case Update Notification</title>
     <style>
         .header {
-           /* background-color: #2F8B8B;*/
+            /* background-color: #2F8B8B;*/
             color: white;
             padding: 10px;
         }
+
         .content {
             margin: 20px;
             font-family: Arial, sans-serif;
         }
+
         .case-details {
             margin: 15px 0;
         }
+
         .label {
             font-weight: bold;
             width: 120px;
             display: inline-block;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ccc;
             padding: 6px 10px;
             text-align: left;
         }
+
         th {
             background-color: #f4f4f4;
         }
     </style>
 </head>
+
 <body>
-<div class="header" th:style="'background-color: ' + ${headerColor} + ';'">
-    <h2 th:text="${headerText}">New case has been assigned to you</h2>
-</div>
-
-<div class="content">
-    <div>
-        <p th:text="'' + ${caseTitle} + ''">Case Title placeholder</p>
+    <div class="header" th:style="'background-color: ' + ${headerColor} + ';'">
+        <h2 th:text="${headerText}">New case has been assigned to you</h2>
     </div>
+    <div class="content">
+        <div>
+            <p th:text="'' + ${caseTitle} + ''">Case Title placeholder</p>
+        </div>
+        <div class="case-details">
+            <h3>Case Details:</h3>
+            <p><span class="label">Number:</span> <span th:text="${caseNumber}">Case-001</span></p>
+            <p><span class="label">Status:</span> <span th:text="${status}">Status</span></p>
+            <p><span class="label">AssignedTo:</span> <span th:text="${assignedToLabel}">Assigned To</span></p>
+            <p><span class="label">AssignedBy:</span> <span th:text="${assignedBy}">Assigned By</span></p>
+            <p><span class="label">Title:</span> <span th:text="${caseName}">Case Name</span></p>
+            <p><span class="label">Main Asset:</span> <span th:text="${mainAsset}">Main Asset</span></p>
+            <p><span class="label">URL:</span> <span th:text="${caseUrl}">URL</span></p>
+        </div>
 
-    <div class="case-details">
-        <h3>Case Details:</h3>
-        <p><span class="label">Number:</span> <span th:text="${caseNumber}">Case-001</span></p>
-        <p><span class="label">Status:</span> <span th:text="${status}">Status</span></p>
-        <p><span class="label">AssignedTo:</span> <span th:text="${assignedToLabel}">Assigned To</span></p>
-        <p><span class="label">AssignedBy:</span> <span th:text="${assignedBy}">Assigned By</span></p>
-        <p><span class="label">Title:</span> <span th:text="${caseName}">Case Name</span></p>
-        <p><span class="label">URL:</span> <span th:text="${caseUrl}">URL</span></p>
-        <p><span class="label">Main Asset:</span> <span th:text="${mainAsset}">Main Asset</span></p>
-    </div>
+        <div class="sub-assets" th:if="${subAssets != null and !subAssets.isEmpty()}">
+            <h3>Related Assets & Events:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sub Asset</th>
+                        <th>Events</th>
+                        <th>Event Category</th>
+                        <th>Fault Start Time Date</th>
+                        <th>Fault End Time Date</th>
+                        <th>Event Trend</th>
+                        <th>Event Report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${subAssets}">
+                        <td th:text="${item.subAsset}">Sub Asset</td>
+                        <td th:text="${item.events}">Events</td>
+                        <td th:text="${item.eventCategory}">Event Category</td>
+                        <td th:text="${item.faultStart}">Fault Start Time Date</td>
+                        <td th:text="${item.faultEnd}">Fault End Time Date</td>
 
-    <div class="sub-assets">
-        <h3>Related Assets & Events:</h3>
-        <table>
-            <thead>
-            <tr>
-                <th>Sub Asset</th>
-                <th>Events</th>
-                <th>Event Category</th>
-                <th>Fault Start Time Date</th>
-                <th>Fault End Time Date</th>
-                <th>Event Trend</th>
-                <th>Event Report</th>
-                
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="item : ${subAssets}">
-                <td th:text="${item.subAsset}">Sub Asset</td>
-                <td th:text="${item.events}">Events</td>
-                <td th:text="${item.eventCategory}">Event Category</td>
-                <td th:text="${item.faultStart}">Fault Start Time Date</td>
-                <td th:text="${item.faultEnd}">Fault End Time Date</td>
-
-                <td th:if="${item.eventPkId != null}">
-                    <a th:if="${eventTrendUrlsMap[item.eventPkId] != null}"
-                       th:href="${eventTrendUrlsMap[item.eventPkId]}"
-                       style="background:#2F8B8B; color:#ffffff; padding:10px 20px;
+                        <td th:if="${item.eventPkId != null}">
+                            <a th:if="${eventTrendUrlsMap[item.eventPkId] != null}"
+                                th:href="${eventTrendUrlsMap[item.eventPkId]}" style="background:#2F8B8B; color:#ffffff; padding:10px 20px;
                               text-decoration:none; border-radius:5px; display:inline-block;">
-                        Event Trend
-                    </a>
-                </td>
+                                Event Trend
+                            </a>
+                        </td>
 
-                <td th:if="${item.eventPkId != null}">
-                    <a th:if="${eventReportUrlsMap[item.eventPkId] != null}"
-                       th:href="${eventReportUrlsMap[item.eventPkId]}"
-                       style="background:#2F8B8B; color:#ffffff; padding:10px 20px;
+                        <td th:if="${item.eventPkId != null}">
+                            <a th:if="${eventReportUrlsMap[item.eventPkId] != null}"
+                                th:href="${eventReportUrlsMap[item.eventPkId]}" style="background:#2F8B8B; color:#ffffff; padding:10px 20px;
                               text-decoration:none; border-radius:5px; display:inline-block;">
-                        Event Report
-                    </a>
-                </td>
-                
-            </tr>
-            </tbody>
-        </table>
+                                Event Report
+                            </a>
+                        </td>
+
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-	
-
-
-
-
-</div>
 </body>
+
 </html>
