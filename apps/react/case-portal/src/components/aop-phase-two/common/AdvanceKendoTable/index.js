@@ -609,6 +609,10 @@ const AdvanceKendoTable = ({
         }
       }
 
+      const isDropdownSiteplant = columns?.some(
+        (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant'
+      )
+
       // First update modifiedCells to accumulate all changes
       let updatedModifiedCells
       setModifiedCells((prev) => {
@@ -616,7 +620,7 @@ const AdvanceKendoTable = ({
         const previousModified = prev[itemId] || {}
         const base = { ...dataItem, ...previousModified, [field]: value }
 
-        if (field === 'siteName') {
+        if (field === 'siteName' && isDropdownSiteplant) {
           base.plantName = ''
         }
 
@@ -655,7 +659,7 @@ const AdvanceKendoTable = ({
             updated[field] = value
           }
 
-          if (field === 'siteName') {
+          if (field === 'siteName' && isDropdownSiteplant) {
             updated.plantName = ''
           }
 
@@ -684,7 +688,7 @@ const AdvanceKendoTable = ({
       setCustomModifiedCells((prev) => {
         const base = { ...(prev[itemId] || {}), [field]: value }
 
-        if (field === 'siteName') {
+        if (field === 'siteName' && isDropdownSiteplant) {
           base.plantName = ''
         }
 
