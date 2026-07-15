@@ -1,14 +1,15 @@
 import Config from 'consts/index'
 import { json } from 'services/request'
 
-export const PlantsCapacitiesApiService = {
-     getPlantsCapacitiesData,
-     savePlantsCapacitiesData,
-     exportPlantsCapacities,
-     importPlantsCapacities,
+export const ShutdownApiService = {
+     getShutdownData,
+     saveShutdownData,
+     exportShutdownData,
+     importShutdownData,
+     getSitePlantDropdownData,
 }
 
-async function getPlantsCapacitiesData(keycloak, plantId, year) {
+async function getShutdownData(keycloak, plantId, year) {
      let url = `${Config.CaseEngineUrl}/task/plant-capacities-transcation?plantId=${plantId}&aopYear=${year}`
      const headers = {
           Accept: 'application/json',
@@ -26,7 +27,7 @@ async function getPlantsCapacitiesData(keycloak, plantId, year) {
           return await Promise.reject(e)
      }
 }
-async function savePlantsCapacitiesData(
+async function saveShutdownData(
      PLANT_ID,
      payload,
      keycloak,
@@ -51,7 +52,7 @@ async function savePlantsCapacitiesData(
      }
 }
 
-async function exportPlantsCapacities(keycloak, plantId, year, EXCEL_NAME) {
+async function exportShutdownData(keycloak, plantId, year, EXCEL_NAME) {
      const url = `${Config.CaseEngineUrl}/task/plant-capacities-transcation-export?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
      const headers = {
           'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ async function exportPlantsCapacities(keycloak, plantId, year, EXCEL_NAME) {
      }
 }
 
-async function importPlantsCapacities(file, keycloak, plantId, year) {
+async function importShutdownData(file, keycloak, plantId, year) {
      const url = `${Config.CaseEngineUrl}/task/plant-capacities-transcation-import?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
      const formData = new FormData()
      formData.append('file', file)
@@ -91,6 +92,25 @@ async function importPlantsCapacities(file, keycloak, plantId, year) {
                headers,
                body: formData,
           })
+          return json(keycloak, resp)
+     } catch (e) {
+          console.log(e)
+          return await Promise.reject(e)
+     }
+}
+
+async function getSitePlantDropdownData(keycloak, PLANT_ID) {
+     let url = `${Config.CaseEngineUrl}/task/site-dropdown-data?plantId=${PLANT_ID}`
+     const headers = {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, { method: 'GET', headers })
+          if (!resp.ok) {
+               throw new Error(`HTTP error! Status: ${resp.status}`)
+          }
           return json(keycloak, resp)
      } catch (e) {
           console.log(e)

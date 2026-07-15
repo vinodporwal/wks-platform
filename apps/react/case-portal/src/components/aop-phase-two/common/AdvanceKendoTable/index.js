@@ -269,6 +269,8 @@ const AdvanceKendoTable = ({
   handleRelease = () => {},
   handleDeleteSelected = (selectedItems) => {},
   screenType = null,
+  siteDropdown = [],
+  plantDropdown = [],
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -607,12 +609,20 @@ const AdvanceKendoTable = ({
         }
       }
 
+      const isDropdownSiteplant = columns?.some(
+        (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant'
+      )
+
       // First update modifiedCells to accumulate all changes
       let updatedModifiedCells
       setModifiedCells((prev) => {
         // Merge with previous modified cells to get all accumulated changes
         const previousModified = prev[itemId] || {}
         const base = { ...dataItem, ...previousModified, [field]: value }
+
+        if (field === 'siteName' && isDropdownSiteplant) {
+          base.plantName = ''
+        }
 
         // Apply date calculations if config is provided (convert dates to ISO strings)
         const dateUpdates = applyDateCalculations(
@@ -649,6 +659,10 @@ const AdvanceKendoTable = ({
             updated[field] = value
           }
 
+          if (field === 'siteName' && isDropdownSiteplant) {
+            updated.plantName = ''
+          }
+
           // Apply date calculations using the accumulated modified data
           if (updatedModifiedCells && dateCalculationConfig) {
             const { dateField1, dateField2, daysField } = dateCalculationConfig
@@ -674,6 +688,10 @@ const AdvanceKendoTable = ({
       setCustomModifiedCells((prev) => {
         const base = { ...(prev[itemId] || {}), [field]: value }
 
+        if (field === 'siteName' && isDropdownSiteplant) {
+          base.plantName = ''
+        }
+
         // For customModifiedCells, use dataItem as source for unchanged fields
         const sourceData = { ...dataItem, ...base }
         const dateUpdates = applyDateCalculations(
@@ -693,7 +711,7 @@ const AdvanceKendoTable = ({
 
       // Call custom itemChange handler if provided
       if (customItemChange) {
-        customItemChange(e, setRows)
+        customItemChange(e, setRows, setModifiedCells, setCustomModifiedCells)
       }
     },
     [setRows, setModifiedCells, setCustomModifiedCells, customItemChange],
@@ -2069,6 +2087,79 @@ const AdvanceKendoTable = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+      if (col?.type === 'dropdownSiteplant') {
+        const isSiteColumn = col.field === 'siteName'
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  let options = []
+                  if (isSiteColumn) {
+                    options = siteDropdown.map((s) => ({
+                      label: s.displayName || s.name,
+                      value: s.name,
+                    }))
+                  } else {
+                    const selectedSiteName = cellProps.dataItem.siteName
+                    const site = siteDropdown.find((s) => s.name === selectedSiteName)
+                    const plants = site?.plants || []
+                    options = plants.map((p) => ({
+                      label: p.displayName || p.name,
+                      value: p.name,
+                    }))
+                  }
+                  return (
+                    <SelectCellEditor
+                      {...cellProps}
+                      options={options}
+                      textField='label'
+                      valueField='value'
+                      placeholder='Select...'
+                      searchable={col.searchable || false}
+                      showClearOption={col.showClearOption || false}
+                    />
+                  )
+                },
+              },
+              data: (props) => {
+                let options = []
+                if (isSiteColumn) {
+                  options = siteDropdown.map((s) => ({
+                    label: s.displayName || s.name,
+                    value: s.name,
+                  }))
+                } else {
+                  const selectedSiteName = props.dataItem.siteName
+                  const site = siteDropdown.find((s) => s.name === selectedSiteName)
+                  const plants = site?.plants || []
+                  options = plants.map((p) => ({
+                    label: p.displayName || p.name,
+                    value: p.name,
+                  }))
+                }
+                return createSelectToolTipRenderer(
+                  options,
+                  toolTipRenderer,
+                )({ ...props, displayMode: col.displayMode || 'label' })
+              },
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
         )
