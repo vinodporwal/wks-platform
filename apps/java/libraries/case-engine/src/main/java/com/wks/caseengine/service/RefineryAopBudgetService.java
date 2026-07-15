@@ -18,4 +18,5 @@ public interface RefineryAopBudgetService {
     public VerticalsDTO getDropDownData(String verticalId);
     public AOPMessageVM getRefineryShutdownData(String plantId, String aopYear);
     public List<RefineryShutdownDTO> saveRefineryShutdownData(List<RefineryShutdownDTO> refineryShutdownDTOs);
+    public AOPMessageVM deleteRefineryShutdownData(String id);
 }

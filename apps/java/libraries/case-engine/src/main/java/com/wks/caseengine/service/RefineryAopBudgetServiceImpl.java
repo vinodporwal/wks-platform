@@ -555,4 +555,18 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
         return;
     }
+
+    @Override
+    public AOPMessageVM deleteRefineryShutdownData(String id) {
+        try {
+            String sql = "DELETE FROM RefineryShutdownTranscation WHERE id = ?";
+            jdbcTemplate.update(sql, id);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Data deleted successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete refinery shutdown data", e);
+        }
+    }
 }
