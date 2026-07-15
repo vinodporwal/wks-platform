@@ -1426,7 +1426,6 @@ const AdvanceKendoTable = ({
       const isActive = isColumnActive(col.field, filter, sort)
 
       const headerColorClass = undefined
-
       if (col.children) {
         return (
           <GridColumn
@@ -2193,6 +2192,83 @@ const AdvanceKendoTable = ({
                   disableRedHighlight={disableRedHighlight}
                 />
               ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Checkbox Type Handler — column-level checkbox (col.type === 'checkbox')
+      // Fires itemChange like any other editor so changes are tracked in modifiedCells
+      if (col.type === 'checkbox') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={!isEditable ? 'non-editable-cell' : undefined}
+            headerClassName={`${isActive ? 'active-column' : ''}`}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  const { dataItem, field, onChange } = cellProps
+                  const checked = !!dataItem[field]
+                  return (
+                    <td style={{ textAlign: 'center', padding: '6px 2px' }}>
+                      <Checkbox
+                        checked={checked}
+                        onChange={(e) => {
+                          const newVal =
+                            e.value ?? e.target?.checked ?? !checked
+                          onChange({ dataItem, field, value: newVal })
+                        }}
+                        size='medium'
+                      />
+                    </td>
+                  )
+                },
+              },
+              data: (cellProps) => {
+                const { dataItem, field, tdProps } = cellProps
+                const rowId = dataItem.id
+                const isEdited = Object.prototype.hasOwnProperty.call(
+                  customModifiedCells?.[rowId] || {},
+                  field,
+                )
+                const checked = !!dataItem[field]
+                return (
+                  <td
+                    {...tdProps}
+                    style={{
+                      textAlign: 'center',
+                      ...tdProps?.style,
+                      outline: isEdited ? '2px solid orange' : undefined,
+                    }}
+                    // Prevent the row-click from propagating so the grid
+                    // doesn't enter full row-edit mode on checkbox click
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onChange={(e) => {
+                        if (!isEditable) return
+                        const newVal =
+                          e.value ?? e.target?.checked ?? !checked
+                        // Call itemChange directly — it's in closure scope
+                        itemChange({ dataItem, field, value: newVal })
+                      }}
+                      size='medium'
+                    />
+                  </td>
+                )
+              },
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,

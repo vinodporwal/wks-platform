@@ -5,7 +5,7 @@ import ConfigurationAccordian from '../../common/components/ConfigurationAccordi
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
-import Configuration from './Configuration'
+import Configuration from './Configuration/index'
 import Constants from './Constants'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
@@ -208,10 +208,6 @@ const ProductionNormsBasisPCG = () => {
       if (!tabInfo) return null
 
       const name = tabInfo.displayName
-
-      if (name === 'Configuration') {
-        return null
-      }
 
       return {
         id: tabId,
