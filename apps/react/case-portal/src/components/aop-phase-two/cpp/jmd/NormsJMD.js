@@ -228,8 +228,7 @@ const NormsJMD = () => {
         return
       }
       let tempRes = res?.data?.list
-        ?.filter((item) => item?.accountName !== 'Stores & Spares')
-        .map((item, index) => {
+        ?.map((item, index) => {
           // Transform month data from API response to match column structure
           const transformedItem = {
             ...item,
