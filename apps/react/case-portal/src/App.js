@@ -66,6 +66,8 @@ const App = () => {
         idTokenParsed: { ...patchedPayload, ...userInfo },
         isTokenExpired: () => payload.exp * 1000 < Date.now(),
         updateToken: () => Promise.resolve(false),
+        hasRealmRole: (role) => (patchedPayload.resource_access?.['wks-portal']?.roles || []).includes(role),
+        hasResourceRole: (role, clientId) => (patchedPayload.resource_access?.[clientId || 'wks-portal']?.roles || []).includes(role),
       }
       initApp(kcMock, true)
     },
