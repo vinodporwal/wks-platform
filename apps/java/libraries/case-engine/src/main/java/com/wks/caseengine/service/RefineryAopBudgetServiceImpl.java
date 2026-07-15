@@ -5,10 +5,13 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -24,7 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
+import com.wks.caseengine.dto.VerticalsDTO;
+import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.utility.Utility;
 
 @Service
@@ -32,6 +38,12 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private VerticalsService verticalsService;
+
+    @Autowired
+    private PlantsRepository plantsRepository;
 
     @Override
     @Transactional
@@ -396,4 +408,19 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             throw new RuntimeException("Failed to import Plant Capacities data", ex);
         }
     }
+
+
+    @Override
+	public VerticalsDTO getDropDownData(String plantId) {
+
+        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
+
+        String verticalId = plants.getVerticalFKId().toString();
+
+		List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
+		return hierarchyData.stream()
+				.filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
+				.findFirst()
+				.orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
+	}
 }

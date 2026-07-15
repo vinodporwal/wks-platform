@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
+import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.service.RefineryAopBudgetService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -68,5 +69,10 @@ public class RefineryAopBudgetController {
             @RequestParam String aopYear,
             @RequestParam("file") MultipartFile file) {
         return refineryAopBudgetService.importPlantCapacitiesExcel(plantId, aopYear, file);
+    }
+
+    @GetMapping("/site-dropdown-data")
+    public VerticalsDTO getDropDownData(@RequestParam String plantId) {
+        return refineryAopBudgetService.getDropDownData(plantId);
     }
 }
