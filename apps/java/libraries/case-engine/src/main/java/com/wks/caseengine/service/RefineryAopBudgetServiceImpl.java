@@ -27,10 +27,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
+import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 
 @Service
@@ -44,6 +47,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
     @Autowired
     private PlantsRepository plantsRepository;
+
+    @Autowired
+    private VerticalsRepository verticalsRepository;
 
     @Override
     @Transactional
@@ -102,11 +108,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     continue;
                 }
 
-                PlantCapacitiesTranscationDTO existing = fetchExistingRecord(dto.getTransactionId());
+                PlantCapacitiesTranscationDTO existing = fetchExistingPlantCapacitiesRecord(dto.getTransactionId());
                 if (existing == null) {  
                     throw new RuntimeException("Record not found");
                 }
-                validateRemarkChange(existing, dto);
+                validateRemarkChangeForPlantCapacities(existing, dto);
 
                 // skip records with failed remark validation
                 if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
@@ -135,7 +141,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
-    private PlantCapacitiesTranscationDTO fetchExistingRecord(String transactionId) {
+    private PlantCapacitiesTranscationDTO fetchExistingPlantCapacitiesRecord(String transactionId) {
         String sql = "SELECT id, min, max, remarks FROM PlantCapacityTransaction WHERE id = ?";
         List<PlantCapacitiesTranscationDTO> results = jdbcTemplate.query(sql, (rs, rowNum) ->
             PlantCapacitiesTranscationDTO.builder()
@@ -152,7 +158,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             || !Objects.equals(existing.getMax(), incoming.getMax());
     }
 
-    private void validateRemarkChange(PlantCapacitiesTranscationDTO existing, PlantCapacitiesTranscationDTO incoming) {
+    private void validateRemarkChangeForPlantCapacities(PlantCapacitiesTranscationDTO existing, PlantCapacitiesTranscationDTO incoming) {
       
         if (hasBusinessFieldsChanged(existing, incoming)
                 && normalise(existing.getRemarks()).equals(normalise(incoming.getRemarks()))) {
@@ -423,4 +429,130 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 				.findFirst()
 				.orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
 	}
+
+    @Override
+    @Transactional
+    public AOPMessageVM getRefineryShutdownData(String plantId, String aopYear) {
+        try {
+
+            Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
+            Verticals verticals = verticalsRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found for id: " + plants.getVerticalFKId()));
+
+            String procedureName =  verticals.getName() + "_GetRefineryShutdownTranscation";
+            String sql = "EXEC "+ procedureName + " @plantId = ?, @aopYear = ?";
+
+            List<RefineryShutdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                RefineryShutdownDTO.builder()
+                    .id(rs.getString("id"))
+                    .siteFkId(rs.getString("siteFkId"))
+                    .plantFkId(rs.getString("plantFkId"))
+                    .siteName(rs.getString("siteName"))
+                    .plantName(rs.getString("plantName"))
+                    .sdTotalDurationDays(rs.getInt("sdTotalDurationDays"))
+                    .dateOfCommencement(rs.getDate("dateOfCommencement"))
+                    .remark(rs.getString("remark"))
+                    .plantId(rs.getString("plantId"))
+                    .aopYear(rs.getString("aopYear"))
+                    .isEditable(rs.getBoolean("isEditable"))
+                    .isVisible(rs.getBoolean("isVisible"))
+                    .build(), plantId, aopYear);
+
+                AOPMessageVM response = new AOPMessageVM();
+                response.setCode(200);
+                response.setData(data);
+                response.setMessage("Data fetched successfully");
+                return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<RefineryShutdownDTO> saveRefineryShutdownData(List<RefineryShutdownDTO> refineryShutdownDTOs) {
+        try {
+            String updatedBy = Utility.getUserName();
+           
+            List<RefineryShutdownDTO> failedRecords = new ArrayList<>();
+
+            for (RefineryShutdownDTO dto : refineryShutdownDTOs) {
+                if (dto.getId() == null) {
+                    String insertSql = "INSERT INTO RefineryShutdownTranscation (id, SiteFkId, PlantFkId, SDTotalDurationDays, DateOfCommencement, Remark, PlantId, AopYear, ModifiedBy, ModifiedOn, IsEditable, IsVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql,
+                        UUID.randomUUID().toString(),
+                        dto.getSiteFkId().toString(),
+                        dto.getPlantFkId().toString(),
+                        dto.getSdTotalDurationDays(),
+                        dto.getDateOfCommencement(),
+                        dto.getRemark(),
+                        dto.getPlantId(),
+                        dto.getAopYear(),
+                        updatedBy,
+                        new Date(),
+                        dto.getIsEditable(),
+                        dto.getIsVisible());
+                    continue;
+                }
+
+                RefineryShutdownDTO existing = fetchExistingRefineryShutdownRecord(dto.getId());
+                if (existing == null) {  
+                    throw new RuntimeException("Record not found");
+                }
+                validateRemarkChangeForRefineryShutdown(existing, dto);
+
+                // skip records with failed remark validation
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+               
+
+                String updateSql = "UPDATE RefineryShutdownTranscation " +
+                    "SET SDTotalDurationDays = ?, DateOfCommencement = ?, Remark = ?, ModifiedBy = ?, ModifiedOn = ? " +
+                    "WHERE id = ?";
+                jdbcTemplate.update(updateSql,
+                    dto.getSdTotalDurationDays(),
+                    dto.getDateOfCommencement(),
+                    dto.getRemark(),
+                    updatedBy,
+                    new Date(),
+                    dto.getId());
+            }
+
+            return failedRecords;
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to save plant report data", ex);
+        }
+    }
+
+    private RefineryShutdownDTO fetchExistingRefineryShutdownRecord(String id) {
+        String sql = "SELECT id, SiteFkId, PlantFkId, SDTotalDurationDays, DateOfCommencement, Remark, PlantId, AopYear, ModifiedBy, ModifiedOn, IsEditable, IsVisible FROM RefineryShutdownTranscation WHERE id = ?";
+        List<RefineryShutdownDTO> results = jdbcTemplate.query(sql, (rs, rowNum) ->
+            RefineryShutdownDTO.builder()
+                .id(rs.getString("id"))
+                .siteFkId(rs.getString("siteFkId"))
+                .plantFkId(rs.getString("plantFkId"))
+                .sdTotalDurationDays(rs.getInt("sdTotalDurationDays"))
+                .dateOfCommencement(rs.getDate("dateOfCommencement"))
+                .remark(rs.getString("remark"))
+                .build(), id);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+
+    private void validateRemarkChangeForRefineryShutdown(RefineryShutdownDTO existing, RefineryShutdownDTO incoming) {
+
+        boolean hasBusinessFieldsChanged = !Objects.equals(existing.getSdTotalDurationDays(), incoming.getSdTotalDurationDays())
+            || !Objects.equals(existing.getDateOfCommencement(), incoming.getDateOfCommencement());
+
+        if (hasBusinessFieldsChanged && normalise(existing.getRemark()).equals(normalise(incoming.getRemark()))) {
+            incoming.setSaveStatus("Failed");
+            incoming.setErrorMessage("Please update remark");
+            return;
+        }
+        return;
+    }
 }

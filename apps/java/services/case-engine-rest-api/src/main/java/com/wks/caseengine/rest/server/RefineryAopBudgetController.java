@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
+import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.service.RefineryAopBudgetService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -74,5 +75,20 @@ public class RefineryAopBudgetController {
     @GetMapping("/site-dropdown-data")
     public VerticalsDTO getDropDownData(@RequestParam String plantId) {
         return refineryAopBudgetService.getDropDownData(plantId);
+    }
+
+    @GetMapping("/refinery-shutdown-data")
+    public AOPMessageVM getRefineryShutdownData(@RequestParam String plantId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.getRefineryShutdownData(plantId, aopYear);
+    }
+
+    @PostMapping("/refinery-shutdown-data")
+    public AOPMessageVM saveRefineryShutdownData(@RequestBody List<RefineryShutdownDTO> refineryShutdownDTOs) {
+        List<RefineryShutdownDTO> failedRecords = refineryAopBudgetService.saveRefineryShutdownData(refineryShutdownDTOs);
+        if (failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "All data has been saved", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
+        }
     }
 }
