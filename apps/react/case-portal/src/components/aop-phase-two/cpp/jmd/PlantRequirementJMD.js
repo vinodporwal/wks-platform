@@ -493,7 +493,7 @@ const PlantRequirementJMD = () => {
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 100,
         }}
-        groupBy={'processPlant'}
+        groupBy={['parentPlantName','processPlant']}
       />
     </Box>
   )

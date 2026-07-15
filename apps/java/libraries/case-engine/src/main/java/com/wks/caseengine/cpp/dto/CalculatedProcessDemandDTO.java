@@ -15,6 +15,8 @@ public class CalculatedProcessDemandDTO {
 
     private UUID id;
     private String financialYear;
+    private String parentPlantId;
+    private String parentPlantName;
     private String processPlant;
     private String processPlantId;
     private String cppUtility;
