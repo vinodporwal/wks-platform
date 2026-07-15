@@ -1415,7 +1415,7 @@ data.put("assignedToLabel", assignedToLabel);
                     from,
                     analysisTeamEmails.toArray(new String[0]),
                     "CASE MANAGEMENT : " + caseTitle,
-                    reviewers,
+                    reviewers.toArray(new String[0]),
                     null,
                     null,
                     "email-template",
