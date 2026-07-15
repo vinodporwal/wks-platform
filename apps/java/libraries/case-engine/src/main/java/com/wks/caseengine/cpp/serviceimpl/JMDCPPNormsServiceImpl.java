@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -75,37 +76,43 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
                 return vm;
             }
 
+            // Convert List<UUID> to comma-separated string for SP parameter
+            String plantIdsStr = plantIds.stream()
+                    .map(UUID::toString)
+                    .collect(Collectors.joining(","));
+
             List<CPPNormsResponseDTO> allResults = new ArrayList<>();
 
-            for (UUID plantId : plantIds) {
-                log.info("Fetching CPP norms for plantId: {}", plantId);
+            try {
+                StoredProcedureQuery sp = entityManager
+                        .createStoredProcedureQuery("dbo.CPP_JMD_GetCPPNorms")
+                        .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
+                        .registerStoredProcedureParameter(2, String.class, ParameterMode.IN)
+                        .registerStoredProcedureParameter(3, String.class, ParameterMode.IN)
+                        .registerStoredProcedureParameter(4, String.class, ParameterMode.IN);
 
-                try {
-                    StoredProcedureQuery sp = entityManager
-                            .createStoredProcedureQuery("dbo.CPP_JMD_GetCPPNorms")
-                            .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
-                            .registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
+                sp.setParameter(1, plantIdsStr);
+                sp.setParameter(2, financialYear);
+                sp.setParameter(3, fromDate);
+                sp.setParameter(4, toDate);
 
-                    sp.setParameter(1, plantId.toString());
-                    sp.setParameter(2, financialYear);
+                log.info("Executing stored procedure dbo.CPP_JMD_GetCPPNorms for plantIds: {}, financialYear: {}, fromDate: {}, toDate: {}",
+                        plantIdsStr, financialYear, fromDate, toDate);
+                sp.execute();
 
-                    log.info("Executing stored procedure dbo.CPP_JMD_GetCPPNorms for plantId: {}", plantId);
-                    sp.execute();
+                @SuppressWarnings("unchecked")
+                List<Object[]> rawResults = sp.getResultList();
+                log.info("Raw result count: {}", rawResults.size());
 
-                    @SuppressWarnings("unchecked")
-                    List<Object[]> rawResults = sp.getResultList();
-                    log.info("PlantId: {}, raw result count: {}", plantId, rawResults.size());
-
-                    for (Object[] row : rawResults) {
-                        CPPNormsResponseDTO dto = mapRowToDto(row);
-                        allResults.add(dto);
-                    }
-                } catch (Exception e) {
-                    log.error("Error fetching CPP norms for plantId: {}", plantId, e);
+                for (Object[] row : rawResults) {
+                    CPPNormsResponseDTO dto = mapRowToDto(row);
+                    allResults.add(dto);
                 }
+            } catch (Exception e) {
+                log.error("Error fetching CPP norms for plantIds: {}", plantIds, e);
             }
 
-            log.info("Total aggregated CPP norms records from {} plants: {}", plantIds.size(), allResults.size());
+            log.info("Total aggregated CPP norms records: {}", allResults.size());
 
             vm.setCode(200);
             vm.setMessage("Success");

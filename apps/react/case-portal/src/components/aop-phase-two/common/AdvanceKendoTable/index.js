@@ -17,7 +17,6 @@ import { handleTabKeyNavigation, applyDateCalculations } from './utility'
 import RemarkDialog from './components/RemarkDialog'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
-import ApproveDialog from '../../tcs/TcsInput/workflow/ApproveDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
 import { SelectCellEditor } from '../utilities/SelectCellEditor'
 import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
@@ -37,17 +36,9 @@ import {
   InlineRadioDisplayCell,
 } from '../utilities/RadioCellEditor'
 import {
-  Backdrop,
   Box,
-  Button,
-  CircularProgress,
-  Divider,
-  MenuItem,
-  TextField,
-  Typography,
+  Button, Typography
 } from '../../../../../node_modules/@mui/material/index'
-import { Tooltip as MuiTooltip } from '@mui/material'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { keyframes } from '@mui/material/styles'
 import {
   FileExportIcon,
@@ -55,9 +46,7 @@ import {
   SaveIcon as SaveImageIcon,
   CalculateIcon as CalculateImageIcon,
 } from 'assets/images/icons'
-import { DashboardColors } from 'themes/colors'
 import DateOnlyPicker from '../utilities/DatePicker'
-import { recalcDuration, recalcEndDate } from '../commonUtilityFunctions'
 import {
   DurationEditor,
   DurationDisplayWithTooltipCell,
@@ -70,15 +59,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
 import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Collapse from '@mui/material/Collapse'
 import { useSelector } from 'react-redux'
 import DeleteSelectedDialog from './components/DeleteSelectedDialog'
@@ -2862,7 +2843,7 @@ const AdvanceKendoTable = ({
                   />
                 )}
 
-                {customActionCell && (
+                {!READ_ONLY && customActionCell && (
                   <GridColumn
                     key='customActions'
                     field='customActions'
