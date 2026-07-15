@@ -203,6 +203,7 @@ export const dateFields = [
   'ibrDueDate',
   'exclusionStartDate',
   'exclusionEndDate',
+  'dateOfCommencement'
 ]
 export const monthMap = {
   january: 1,

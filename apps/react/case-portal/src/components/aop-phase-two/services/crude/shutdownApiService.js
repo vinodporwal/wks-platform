@@ -10,7 +10,7 @@ export const ShutdownApiService = {
 }
 
 async function getShutdownData(keycloak, plantId, year) {
-     let url = `${Config.CaseEngineUrl}/task/plant-capacities-transcation?plantId=${plantId}&aopYear=${year}`
+     let url = `${Config.CaseEngineUrl}/task/refinery-shutdown-data?plantId=${plantId}&aopYear=${year}`
      const headers = {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -28,12 +28,10 @@ async function getShutdownData(keycloak, plantId, year) {
      }
 }
 async function saveShutdownData(
-     PLANT_ID,
      payload,
      keycloak,
-     AOP_YEAR,
 ) {
-     const url = `${Config.CaseEngineUrl}/task/plant-capacities-transcation`
+     const url = `${Config.CaseEngineUrl}/task/refinery-shutdown-data`
      const headers = {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -53,7 +51,7 @@ async function saveShutdownData(
 }
 
 async function exportShutdownData(keycloak, plantId, year, EXCEL_NAME) {
-     const url = `${Config.CaseEngineUrl}/task/plant-capacities-transcation-export?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+     const url = `${Config.CaseEngineUrl}/task/refinery-shutdown-data-export?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
      const headers = {
           'Content-Type': 'application/json',
           Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -80,7 +78,7 @@ async function exportShutdownData(keycloak, plantId, year, EXCEL_NAME) {
 }
 
 async function importShutdownData(file, keycloak, plantId, year) {
-     const url = `${Config.CaseEngineUrl}/task/plant-capacities-transcation-import?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+     const url = `${Config.CaseEngineUrl}/task/refinery-shutdown-data-import?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
      const formData = new FormData()
      formData.append('file', file)
      const headers = {

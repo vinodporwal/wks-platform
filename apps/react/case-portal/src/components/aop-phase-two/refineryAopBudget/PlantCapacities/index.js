@@ -161,6 +161,24 @@ const PlantCapacities = ({ permissions }) => {
       setLoading(false)
       return
     }
+    // Check if max is greater than min
+    const invalidMinMaxRows = modifiedData.filter((row) => {
+      const minVal = row.min !== undefined && row.min !== null && row.min !== '' ? Number(row.min) : null
+      const maxVal = row.max !== undefined && row.max !== null && row.max !== '' ? Number(row.max) : null
+      return minVal !== null && maxVal !== null && maxVal <= minVal
+    })
+
+    if (invalidMinMaxRows.length > 0) {
+      const displayNames = invalidMinMaxRows
+        .map((row) => row.Particulars || `Row ${row.id}`)
+        .join(', ')
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Max  must be greater than Min for: ${displayNames}`,
+        severity: 'error',
+      })
+      return
+    }
 
     setLoading(true)
     try {
@@ -220,7 +238,7 @@ const PlantCapacities = ({ permissions }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      const EXCEL_NAME = `${verticalObject?.name}_${plantObject?.name}_${AOP_YEAR}_Plant_Capacities.xlsx`
+      const EXCEL_NAME = `Plant_Capacities.xlsx`
       await PlantsCapacitiesApiService.exportPlantsCapacities(
         keycloak,
         PLANT_ID,
@@ -263,18 +281,31 @@ const PlantCapacities = ({ permissions }) => {
           setModifiedCells({})
           await fetchData()
         } else if (response?.code === 400 && response?.data) {
-          // Partial save — download error Excel
-          downloadBase64Excel(
-            response.data,
-            `Error File - ${MAINTENANCE_TYPE}.xlsx`,
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
           )
+          const byteArray = new Uint8Array(byteNumbers)
+
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', 'Error File - Plant Capacities.xlsx')
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
           setSnackbarOpen(true)
           setSnackbarData({
-            message:
-              response?.message || 'Partial data saved. Error file downloaded.',
+            message: 'Partial data saved. Error file downloaded.',
             severity: 'warning',
           })
-          await fetchData()
+          fetchData()
         } else {
           setSnackbarOpen(true)
           setSnackbarData({

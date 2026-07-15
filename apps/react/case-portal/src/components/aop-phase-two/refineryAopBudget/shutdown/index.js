@@ -34,34 +34,12 @@ const Shutdown = ({ permissions }) => {
   const [plantDropdown, setPlantDropdown] = useState([])
 
   const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
   const columns = [
-    {
-      field: 'particulars',
-      title: 'Particulars',
-      editable: false,
-      widthT: 300,
-      minWidth: 180,
-      hidden: true,
-    },
-    {
-      field: 'pimsCode',
-      title: 'PIMS Code',
-      editable: true, // "Reference in backend By EPS Mumbai"
-      minWidth: 130,
-      hidden: true,
-    },
-    {
-      field: 'sapProductId',
-      title: 'SAP Product_ID',
-      editable: true, // "Reference in backend By EPS Mumbai"
-      minWidth: 150,
-      hidden: true,
-    },
     {
       field: 'siteName',
       title: 'Site',
@@ -90,9 +68,10 @@ const Shutdown = ({ permissions }) => {
       title: 'Date of Commencement',
       editable: true, // "Manual in Digital AOP"
       minWidth: 220,
+      type: 'date',
     },
     {
-      field: 'remarks',
+      field: 'remark',
       title: 'Purpose of Shutdown',
       editable: true,
       widthT: 250,
@@ -138,10 +117,13 @@ const Shutdown = ({ permissions }) => {
           ...item,
           idFromApi: item.id,
           id: `${index}`,
-          originalRemark: item.remarks,
-          transactionId: item.transactionId,
-          masterId: item.masterId,
-          Particulars: item.normParameterTypeDispla || item.Particulars,
+          originalRemark: item.remark,
+          remark: item.remark,
+          siteFkId: item.siteFkId,
+          plantFkId: item.plantFkId,
+          siteName: item.siteName,
+          plantName: item.plantName,
+          dateOfCommencement: item.dateOfCommencement ? new Date(item.dateOfCommencement) : null,
           isEditable: item.isEditable
         }
       })
@@ -155,6 +137,13 @@ const Shutdown = ({ permissions }) => {
   }, [PLANT_ID, AOP_YEAR, keycloak])
 
   // TODO: replace with the real SAVE API call once it's available.
+  function addTimeOffset(dateTime) {
+    if (!dateTime) return null
+    const date = new Date(dateTime)
+    date.setUTCHours(date.getUTCHours() + 5)
+    date.setUTCMinutes(date.getUTCMinutes() + 30)
+    return date
+  }
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
@@ -165,8 +154,9 @@ const Shutdown = ({ permissions }) => {
     const validationError = validateRowDataWithRemarks(
       modifiedData,
       originalRows,
-      ['min', 'max'],
-      'Particulars',
+      ['sdTotalDurationDays', 'dateOfCommencement', 'remark'],
+      'plantName',
+      'remark',
     )
 
     if (validationError) {
@@ -181,24 +171,28 @@ const Shutdown = ({ permissions }) => {
 
     setLoading(true)
     try {
-      const payload = modifiedData.map((row) => ({
-        transactionId: row.transactionId,
-        masterId: row.masterId,
-        siteName: row.siteName,
-        plantName: row.plantName,
-        min: row.min,
-        max: row.max,
-        remarks: row.remarks,
-        aopYear: AOP_YEAR,
-      }))
+      const payload = modifiedData.map((row) => {
+        const matchedSite = siteDropdown.find((s) => s.name === row.siteName)
+        const matchedPlant = matchedSite?.plants?.find((p) => p.name === row.plantName)
+
+        return {
+          id: row.idFromApi ?? null,
+          siteFkId: matchedSite ? matchedSite.id : (row.siteFkId ?? null),
+          plantFkId: matchedPlant ? matchedPlant.id : (row.plantFkId ?? null),
+          siteName: row.siteName,
+          plantName: row.plantName,
+          sdTotalDurationDays: row.sdTotalDurationDays,
+          dateOfCommencement: addTimeOffset(row.dateOfCommencement),
+          remark: row.remark,
+          plantId: PLANT_ID,
+          aopYear: AOP_YEAR,
+        }
+      })
 
       const response =
         await ShutdownApiService.saveShutdownData(
-          PLANT_ID,
           payload,
           keycloak,
-          null,
-          AOP_YEAR,
         )
 
       if (response) {
@@ -237,7 +231,7 @@ const Shutdown = ({ permissions }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      const EXCEL_NAME = `${verticalObject?.name}_${plantObject?.name}_${AOP_YEAR}_Plant_Capacities.xlsx`
+      const EXCEL_NAME = `Shutdown.xlsx`
       await ShutdownApiService.exportShutdownData(
         keycloak,
         PLANT_ID,
@@ -280,19 +274,32 @@ const Shutdown = ({ permissions }) => {
           setModifiedCells({})
           await fetchData()
         } else if (response?.code === 400 && response?.data) {
-          // Partial save — download error Excel
-          downloadBase64Excel(
-            response.data,
-            `Error File - ${MAINTENANCE_TYPE}.xlsx`,
-          )
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message:
-              response?.message || 'Partial data saved. Error file downloaded.',
-            severity: 'warning',
-          })
-          await fetchData()
-        } else {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Shutdown.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
           setSnackbarOpen(true)
           setSnackbarData({
             message: response?.message || 'Upload Failed!',
