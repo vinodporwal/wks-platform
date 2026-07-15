@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
+import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Verticals;
@@ -479,12 +480,19 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     @Override
     @Transactional
     public List<RefineryShutdownDTO> saveRefineryShutdownData(List<RefineryShutdownDTO> refineryShutdownDTOs) {
-      
+
             String updatedBy = Utility.getUserName();
            
             List<RefineryShutdownDTO> failedRecords = new ArrayList<>();
 
             for (RefineryShutdownDTO dto : refineryShutdownDTOs) {
+
+                // skip records with failed validations in readRefineryShutdownExcel method
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+                
                 if (dto.getId() == null) {
                     String insertSql = "INSERT INTO RefineryShutdownTranscation (id, SiteFkId, PlantFkId, SDTotalDurationDays, DateOfCommencement, Remark, PlantId, AopYear, ModifiedBy, ModifiedOn, IsEditable, IsVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
@@ -509,7 +517,6 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     throw new RuntimeException("Record not found");
                 }
                 validateRemarkChangeForRefineryShutdown(existing, dto);
-                validatePlantAndSiteName(dto);
 
                 // skip records with failed remark validation
                 if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
@@ -565,15 +572,59 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         return;
     }
 
-    private void validatePlantAndSiteName(RefineryShutdownDTO dto) {  
+    private void validatePlantAndSiteName(RefineryShutdownDTO dto, VerticalsDTO vertical) {
 
         String plantName = dto.getPlantName();
         String siteName = dto.getSiteName();
 
-        String sql = "SELECT id FROM Plants WHERE name = ?";
+        // Names are absent in Excel-import path; skip name-based validation in that case
+        if (plantName == null || plantName.isBlank() || siteName == null || siteName.isBlank()) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Plant and site names are required");
+            return;
+        }
 
-        String plantId = jdbcTemplate.queryForObject(sql, String.class, plantName);
-        String siteId = jdbcTemplate.queryForObject(sql, String.class, siteName);
+        // Resolve siteId by name (use queryForList to avoid EmptyResultDataAccessException)
+        List<String> siteIds = jdbcTemplate.queryForList(
+                "SELECT id FROM Sites WHERE name = ?", String.class, siteName);
+        if (siteIds.isEmpty()) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Site not found: " + siteName);
+            return;
+        }
+        String siteId = siteIds.get(0);
+
+        // Resolve plantId by name
+        List<String> plantIds = jdbcTemplate.queryForList(
+                "SELECT id FROM Plants WHERE name = ?", String.class, plantName);
+        if (plantIds.isEmpty()) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Plant not found: " + plantName);
+            return;
+        }
+        String plantId = plantIds.get(0);
+
+        // Validate that the site belongs to the selected vertical
+        SitesDTO matchedSite = vertical.getSites().stream()
+                .filter(s -> s.getId() != null && s.getId().equalsIgnoreCase(siteId))
+                .findFirst()
+                .orElse(null);
+
+        if (matchedSite == null) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Site '" + siteName + "' does not belong to the selected vertical");
+            return;
+        }
+
+        // Validate that the plant belongs specifically to the matched site.
+        // A plant from a different site is rejected even if it exists elsewhere in the vertical.
+        boolean plantBelongsToSite = matchedSite.getPlants().stream()
+                .anyMatch(p -> p.getId() != null && p.getId().equalsIgnoreCase(plantId));
+
+        if (!plantBelongsToSite) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Plant '" + plantName + "' does not belong to site '" + siteName + "'");
+        }
     }
 
     // ─── Refinery Shutdown Export ─────────────────────────────────────────────────
@@ -678,7 +729,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
             // Protect the sheet so locked/unlocked cell styles are enforced (only for regular export)
             if (!isAfterSave) {
-                sheet.protectSheet("");
+             //   sheet.protectSheet("");
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -697,6 +748,14 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     private List<RefineryShutdownDTO> readRefineryShutdownExcel(InputStream inputStream, String plantId, String aopYear) {
         List<RefineryShutdownDTO> resultList = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+
+        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
+        String verticalId = plants.getVerticalFKId().toString();
+        List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
+        VerticalsDTO vertical = hierarchyData.stream()
+            .filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -760,6 +819,8 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
+                validatePlantAndSiteName(dto, vertical);
 
                 resultList.add(dto);
             }
