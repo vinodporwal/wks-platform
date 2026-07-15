@@ -1363,6 +1363,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             String mainAsset = rootNode.path("mainAsset").asText();
             JsonNode analysisTeamNode = rootNode.path("analysisTeam");
             List<String> analysisTeamEmails = new ArrayList<>();
+            List<String> reviewers = new ArrayList<>();
             if (analysisTeamNode.isArray()) {
                 for (JsonNode member : analysisTeamNode) {
                     analysisTeamEmails.add(member.asText());
@@ -1383,10 +1384,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                 data.put("caseUrl", caseData.getCaseUrl());
                 data.put("mainAsset", mainAsset);
                 data.put("assignedBy", caseData.getOwner() != null ? caseData.getOwner().getName() : "");
-
+                
+                String ownerEmail = caseData.getOwner() != null ? caseData.getOwner().getEmail() : "";
+                 reviewers.add(ownerEmail);
                 String assignedToLabel = "";
 if (caseData.getAssignedTo() != null && !caseData.getAssignedTo().isEmpty()) {
     assignedToLabel = caseData.getAssignedTo().get(0).getUserId();
+    reviewers.add(caseData.getAssignedTo().get(0).getEmailId());
+
 } else if (caseData.getAssignedToLabel() != null && !caseData.getAssignedToLabel().isBlank()) {
     assignedToLabel = caseData.getAssignedToLabel();
 } else {
@@ -1395,6 +1400,7 @@ if (caseData.getAssignedTo() != null && !caseData.getAssignedTo().isEmpty()) {
         com.wks.caseengine.rest.db2.entity.Users resolvedUser = usersRepository.findByEmailId(caseAssignedToValue);
         if (resolvedUser != null) {
             assignedToLabel = resolvedUser.getUserId();
+            reviewers.add(resolvedUser.getEmailId());
         } else {
             com.wks.caseengine.rest.db2.entity.Groups resolvedGroup = groupsRepository.findByGroupId(caseAssignedToValue);
             if (resolvedGroup != null) {
@@ -1409,7 +1415,7 @@ data.put("assignedToLabel", assignedToLabel);
                     from,
                     analysisTeamEmails.toArray(new String[0]),
                     "CASE MANAGEMENT : " + caseTitle,
-                    null,
+                    reviewers,
                     null,
                     null,
                     "email-template",
