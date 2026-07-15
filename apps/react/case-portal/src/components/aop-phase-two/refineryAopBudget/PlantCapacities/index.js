@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useGridApiRef } from '@mui/x-data-grid'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { validateFields } from 'utils/validationUtils'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { useSession } from 'SessionStoreContext'
 import { PlantsCapacitiesApiService } from 'components/aop-phase-two/services/crude/plantsCapacitiesApiService'
 import { useSelector } from 'react-redux'
@@ -216,6 +216,86 @@ const PlantCapacities = ({ permissions }) => {
     fetchData()
   }, [fetchData])
 
+  const handleExport = useCallback(async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({ message: 'Excel download started!', severity: 'info' })
+    try {
+      const EXCEL_NAME = `${verticalObject?.name}_${plantObject?.name}_${AOP_YEAR}_Plant_Capacities.xlsx`
+      await PlantsCapacitiesApiService.exportPlantsCapacities(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_NAME,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel downloaded successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error exporting Plant Capacities plan:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel download failed. Please try again.',
+        severity: 'error',
+      })
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  const handleExcelUpload = useCallback(
+    async (file) => {
+      if (!file) return
+      setLoading(true)
+      try {
+        const response = await PlantsCapacitiesApiService.importPlantsCapacities(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+        if (response?.code === 200) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Uploaded Successfully!',
+            severity: 'success',
+          })
+          setModifiedCells({})
+          await fetchData()
+        } else if (response?.code === 400 && response?.data) {
+          // Partial save — download error Excel
+          downloadBase64Excel(
+            response.data,
+            `Error File - ${MAINTENANCE_TYPE}.xlsx`,
+          )
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message:
+              response?.message || 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          await fetchData()
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Upload Failed!',
+            severity: 'error',
+          })
+        }
+      } catch (error) {
+        console.error('Error importing slowdown plan:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Unexpected error during import.',
+          severity: 'error',
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID, AOP_YEAR, fetchData],
+  )
+
   const adjustedPermissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
     textAlignment: 'center',
@@ -266,6 +346,8 @@ const PlantCapacities = ({ permissions }) => {
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
         disableRedHighlight={true}
+        handleExport={handleExport}
+        handleExcelUpload={handleExcelUpload}
         screenType='pims-product-master'
       />
     </div>
