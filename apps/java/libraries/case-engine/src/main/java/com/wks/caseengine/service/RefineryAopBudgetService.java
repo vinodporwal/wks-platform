@@ -18,5 +18,7 @@ public interface RefineryAopBudgetService {
     public VerticalsDTO getDropDownData(String verticalId);
     public AOPMessageVM getRefineryShutdownData(String plantId, String aopYear);
     public List<RefineryShutdownDTO> saveRefineryShutdownData(List<RefineryShutdownDTO> refineryShutdownDTOs);
+    public byte[] createRefineryShutdownExcel(String plantId, String aopYear, boolean isAfterSave, List<RefineryShutdownDTO> dtoList);
+    public AOPMessageVM importRefineryShutdownExcel(String plantId, String aopYear, MultipartFile file);
     public AOPMessageVM deleteRefineryShutdownData(String id);
 }

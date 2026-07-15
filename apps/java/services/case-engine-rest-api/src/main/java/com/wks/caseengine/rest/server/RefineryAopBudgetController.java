@@ -93,6 +93,33 @@ public class RefineryAopBudgetController {
         }
     }
 
+    @GetMapping("/refinery-shutdown-data-export")
+    public ResponseEntity<byte[]> exportRefineryShutdownData(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = refineryAopBudgetService.createRefineryShutdownExcel(plantId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("refinery_shutdown.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/refinery-shutdown-data-import", consumes = "multipart/form-data")
+    public AOPMessageVM importRefineryShutdownData(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return refineryAopBudgetService.importRefineryShutdownExcel(plantId, aopYear, file);
+    }
+
     @DeleteMapping("/refinery-shutdown-data")
     public AOPMessageVM deleteRefineryShutdownData(@RequestParam String id) {
         return refineryAopBudgetService.deleteRefineryShutdownData(id);

@@ -2,6 +2,7 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
@@ -478,7 +479,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     @Override
     @Transactional
     public List<RefineryShutdownDTO> saveRefineryShutdownData(List<RefineryShutdownDTO> refineryShutdownDTOs) {
-        try {
+      
             String updatedBy = Utility.getUserName();
            
             List<RefineryShutdownDTO> failedRecords = new ArrayList<>();
@@ -497,8 +498,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.getAopYear(),
                         updatedBy,
                         new Date(),
-                        dto.getIsEditable(),
-                        dto.getIsVisible());
+                        Boolean.TRUE,
+                        Boolean.TRUE
+                        );
                     continue;
                 }
 
@@ -507,6 +509,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     throw new RuntimeException("Record not found");
                 }
                 validateRemarkChangeForRefineryShutdown(existing, dto);
+                validatePlantAndSiteName(dto);
 
                 // skip records with failed remark validation
                 if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
@@ -516,9 +519,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                
 
                 String updateSql = "UPDATE RefineryShutdownTranscation " +
-                    "SET SDTotalDurationDays = ?, DateOfCommencement = ?, Remark = ?, ModifiedBy = ?, ModifiedOn = ? " +
+                    "SET SiteFkId = ?, PlantFkId = ?, SDTotalDurationDays = ?, DateOfCommencement = ?, Remark = ?, ModifiedBy = ?, ModifiedOn = ? " +
                     "WHERE id = ?";
                 jdbcTemplate.update(updateSql,
+                    dto.getSiteFkId().toString(),
+                    dto.getPlantFkId().toString(),
                     dto.getSdTotalDurationDays(),
                     dto.getDateOfCommencement(),
                     dto.getRemark(),
@@ -529,10 +534,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
             return failedRecords;
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("Failed to save plant report data", ex);
-        }
+       
     }
 
     private RefineryShutdownDTO fetchExistingRefineryShutdownRecord(String id) {
@@ -561,6 +563,244 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             return;
         }
         return;
+    }
+
+    private void validatePlantAndSiteName(RefineryShutdownDTO dto) {  
+
+        String plantName = dto.getPlantName();
+        String siteName = dto.getSiteName();
+
+        String sql = "SELECT id FROM Plants WHERE name = ?";
+
+        String plantId = jdbcTemplate.queryForObject(sql, String.class, plantName);
+        String siteId = jdbcTemplate.queryForObject(sql, String.class, siteName);
+    }
+
+    // ─── Refinery Shutdown Export ─────────────────────────────────────────────────
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public byte[] createRefineryShutdownExcel(String plantId, String aopYear, boolean isAfterSave, List<RefineryShutdownDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM result = getRefineryShutdownData(plantId, aopYear);
+                dtoList = (List<RefineryShutdownDTO>) result.getData();
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("RefineryShutdown");
+            int currentRow = 0;
+
+            // Columns 0-4 are visible; 5=Id is hidden (used on import)
+            // When isAfterSave, columns 6=Status and 7=Error Description are appended
+            List<String> headers = new ArrayList<>(Arrays.asList(
+                    "Site", "Plant", "SD Total duration in days",
+                    "Date of Commencement", "Purpose of Shutdown", "Id"));
+            if (isAfterSave) {
+                headers.add("Status");
+                headers.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            for (int col = 0; col < headers.size(); col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers.get(col));
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            CellStyle greyStyle = Utility.createBorderedLockedStyle(workbook);
+            CellStyle editableStyle = Utility.createBorderedUnlockedStyle(workbook);
+            CellStyle editableWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+
+            for (RefineryShutdownDTO dto : dtoList) {
+                Row row = sheet.createRow(currentRow++);
+                boolean isEditable = Boolean.TRUE.equals(dto.getIsEditable());
+
+                // Col 0 – Site (always locked)
+                Cell siteCell = row.createCell(0);
+                siteCell.setCellValue(dto.getSiteName() != null ? dto.getSiteName() : "");
+                siteCell.setCellStyle(greyStyle);
+
+                // Col 1 – Plant (always locked)
+                Cell plantCell = row.createCell(1);
+                plantCell.setCellValue(dto.getPlantName() != null ? dto.getPlantName() : "");
+                plantCell.setCellStyle(greyStyle);
+
+                // Col 2 – SD Total duration in days
+                Cell sdCell = row.createCell(2);
+                sdCell.setCellValue(dto.getSdTotalDurationDays() != null ? String.valueOf(dto.getSdTotalDurationDays()) : "");
+                sdCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 3 – Date of Commencement
+                Cell dateCell = row.createCell(3);
+                dateCell.setCellValue(dto.getDateOfCommencement() != null ? sdf.format(dto.getDateOfCommencement()) : "");
+                dateCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 4 – Purpose of Shutdown (remark, wrapped)
+                Cell remarkCell = row.createCell(4);
+                remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                remarkCell.setCellStyle(isEditable ? editableWrapStyle : greyStyle);
+
+                // Col 5 – Id (hidden; present means update on import)
+                Cell idCell = row.createCell(5);
+                idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+                idCell.setCellStyle(greyStyle);
+
+                if (isAfterSave) {
+                    // Col 6 – Status
+                    Cell statusCell = row.createCell(6);
+                    statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                    statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+                    // Col 7 – Error Description
+                    Cell errCell = row.createCell(7);
+                    errCell.setCellValue(dto.getErrorMessage() != null ? dto.getErrorMessage() : "");
+                    errCell.setCellStyle(Utility.createBorderedStyle(workbook));
+                }
+
+                row.setHeight((short) -1);
+            }
+
+            // Auto-size visible columns; fixed wider width for Purpose of Shutdown and Error Description
+            int totalCols = isAfterSave ? 8 : 5;
+            for (int col = 0; col < totalCols; col++) {
+                if (col == 4 || col == 7) {
+                    sheet.setColumnWidth(col, 15000);
+                } else {
+                    sheet.autoSizeColumn(col);
+                }
+            }
+
+            // Hide the Id column from end-users
+            sheet.setColumnHidden(5, true);
+
+            // Protect the sheet so locked/unlocked cell styles are enforced (only for regular export)
+            if (!isAfterSave) {
+                sheet.protectSheet("");
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // ─── Refinery Shutdown Import – Excel Reader ──────────────────────────────────
+
+    private List<RefineryShutdownDTO> readRefineryShutdownExcel(InputStream inputStream, String plantId, String aopYear) {
+        List<RefineryShutdownDTO> resultList = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) rowIterator.next(); // Skip header row
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+
+                // Skip completely empty rows (check visible columns 0-4)
+                boolean isEmpty = true;
+                for (int col = 0; col <= 4; col++) {
+                    Cell cell = row.getCell(col);
+                    if (cell != null) {
+                        cell.setCellType(CellType.STRING);
+                        if (!cell.getStringCellValue().trim().isEmpty()) {
+                            isEmpty = false;
+                            break;
+                        }
+                    }
+                }
+                if (isEmpty) continue;
+
+                RefineryShutdownDTO dto = new RefineryShutdownDTO();
+                try {
+                    // Col 2 – SD Total duration in days
+                    Cell sdCell = row.getCell(2);
+                    if (sdCell != null) {
+                        sdCell.setCellType(CellType.STRING);
+                        String sdStr = sdCell.getStringCellValue().trim();
+                        dto.setSdTotalDurationDays(sdStr.isEmpty() ? null : Integer.parseInt(sdStr));
+                    }
+
+                    // Col 3 – Date of Commencement
+                    Cell dateCell = row.getCell(3);
+                    if (dateCell != null) {
+                        dateCell.setCellType(CellType.STRING);
+                        String dateStr = dateCell.getStringCellValue().trim();
+                        dto.setDateOfCommencement(dateStr.isEmpty() ? null : sdf.parse(dateStr));
+                    }
+
+                    // Col 4 – Purpose of Shutdown (remark)
+                    Cell remarkCell = row.getCell(4);
+                    if (remarkCell != null) {
+                        remarkCell.setCellType(CellType.STRING);
+                        dto.setRemark(remarkCell.getStringCellValue().trim());
+                    }
+
+                    // Col 5 – Id (hidden; present → update, absent → insert)
+                    Cell idCell = row.getCell(5);
+                    if (idCell != null) {
+                        idCell.setCellType(CellType.STRING);
+                        String id = idCell.getStringCellValue().trim();
+                        dto.setId(id.isEmpty() ? null : id);
+                    }
+
+                    dto.setPlantId(plantId);
+                    dto.setAopYear(aopYear);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                resultList.add(dto);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Refinery Shutdown Excel", e);
+        }
+        return resultList;
+    }
+
+    // ─── Refinery Shutdown Import – API ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM importRefineryShutdownExcel(String plantId, String aopYear, MultipartFile file) {
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+            throw new IllegalArgumentException("Invalid or empty Excel file.");
+        }
+
+        List<RefineryShutdownDTO> failedRecords = new ArrayList<>();
+        try {
+            List<RefineryShutdownDTO> data = readRefineryShutdownExcel(file.getInputStream(), plantId, aopYear);
+            failedRecords = saveRefineryShutdownData(data);
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedRecords.isEmpty()) {
+                byte[] fileByteArray = createRefineryShutdownExcel(plantId, aopYear, true, failedRecords);
+                String base64File = java.util.Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to import Refinery Shutdown data", ex);
+        }
     }
 
     @Override
