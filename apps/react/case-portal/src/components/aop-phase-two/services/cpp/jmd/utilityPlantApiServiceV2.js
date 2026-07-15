@@ -6,6 +6,9 @@ export const UtilityPlantApiServiceV2 = {
   saveFixedConsumptionData,
   saveFixedConsumptionExcel,
   exportFixedConsumptionExcel,
+  addFixedConsumptionRow,
+  updateFixedConsumptionRow,
+  deleteFixedConsumptionRow,
 
   //   Plant requirement APIs
   getPlantRequirementData,
@@ -91,6 +94,77 @@ async function saveFixedConsumptionData(
     return result || { success: true }
   } catch (e) {
     console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ===================== || Fixed Consumption Row CRUD APIs || ===================== //
+
+// Create a new fixed consumption row
+async function addFixedConsumptionRow(keycloak, rowData, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/create`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({
+    ...rowData,
+    aopYear: financialYear,
+  })
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error creating fixed consumption row:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Update an existing fixed consumption row
+async function updateFixedConsumptionRow(keycloak, rowData, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/update`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({
+    ...rowData,
+    aopYear: financialYear,
+  })
+  try {
+    const resp = await fetch(url, { method: 'PUT', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error updating fixed consumption row:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Delete a fixed consumption row by id
+async function deleteFixedConsumptionRow(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/delete/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const text = await resp.text()
+    return text ? JSON.parse(text) : { success: true }
+  } catch (e) {
+    console.error('Error deleting fixed consumption row:', e)
     return await Promise.reject(e)
   }
 }
@@ -185,8 +259,10 @@ async function saveImportConsumptionData(keycloak, PLANT_ID, payload) {
 }
 
 //====================|| NORM BASED UTILITY BUDGET APIs ||====================//
-async function getNormBasedUtilityBudget(keycloak, PLANT_ID, financialYear) {
-  const url = `${Config.CaseEngineUrl}/task/norm-based-utility-budget?cppPlantId=${PLANT_ID}&financialYear=${financialYear}`
+async function getNormBasedUtilityBudget(keycloak, plantIds, financialYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd-norm-based-utility-budget?cppPlantIds=${queryParams}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -204,18 +280,19 @@ async function getNormBasedUtilityBudget(keycloak, PLANT_ID, financialYear) {
   }
 }
 
-async function calculateNormsData(keycloak, PLANT_ID, financialYear) {
-  const url = `${Config.CaseEngineUrl}/task/budget/run-full-year`
+async function calculateNormsData(keycloak, plantIds, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd-run-full-year`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   let financial_year = financialYear.split('-')[0]
   const body = JSON.stringify({
     financial_year: financial_year,
     save_to_db: true,
-    cpp_plant_id: PLANT_ID,
+    cpp_ids: plantIdArray,
   })
   try {
     const resp = await fetch(url, { method: 'POST', headers, body })
@@ -451,22 +528,26 @@ async function exportPlantRequirementExcel(
 }
 
 // Norms Excel Import
-async function saveNormsExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
+async function saveNormsExcel(file, keycloak, plantIds, AOP_YEAR) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
   return saveExcelData(
     file,
     keycloak,
-    `norm-based-utility-budget/import?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`,
-    PLANT_ID,
-    AOP_YEAR,
+    `jmd-norm-based-utility-budget/import?cppPlantIds=${queryParams}&financialYear=${AOP_YEAR}`,
+    null,
+    null,
   )
 }
 
 // Norms Excel Export
-async function exportNormsExcel(keycloak, PLANT_ID, AOP_YEAR) {
+async function exportNormsExcel(keycloak, plantIds, AOP_YEAR, fileName) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
   return exportExcelData(keycloak, {
-    endpoint: `norm-based-utility-budget/export?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`,
-    queryParams: {},
-    fileName: `Norms_${AOP_YEAR}.xlsx`,
+    endpoint: `jmd-norm-based-utility-budget/export`,
+    queryParams: { cppPlantIds: queryParams, financialYear: AOP_YEAR },
+    fileName: fileName || `Norms_${AOP_YEAR}.xlsx`,
     method: 'GET',
   })
 }

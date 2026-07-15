@@ -92,6 +92,8 @@ export const InputApiService = {
   getProcessUnitAllocations,
   saveProcessUnitAllocations,
   deleteProcessUnitAllocation,
+  exportProcessUnitAllocationsExcel,
+  saveProcessUnitAllocationsExcel,
 }
 
 // ===================== ||Shutdown and Operational hrs APIs || ===================== //
@@ -1483,6 +1485,38 @@ async function saveProcessUnitAllocations(
     console.error('Error saving process unit allocations:', e)
     return await Promise.reject(e)
   }
+}
+
+// GET /task/process-unit-allocation/export?plantIds=UUID,UUID&aopYear=2026-27
+async function exportProcessUnitAllocationsExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'process-unit-allocation/export',
+    queryParams: { plantIds: plantIdArray.join(','), aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/process-unit-allocation/import?plantIds=UUID,UUID&aopYear=2026-27
+async function saveProcessUnitAllocationsExcel(file, keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(
+    file,
+    keycloak,
+    'process-unit-allocation/import',
+    null,
+    null,
+    {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+    },
+  )
 }
 
 // DELETE /task/process-unit-allocation/{id}

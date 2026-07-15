@@ -16,6 +16,8 @@ import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import AddProcessUnitDialog from './components/AddProcessUnitDialog'
+import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 const MONTH_FIELDS = [
   'apr',
@@ -502,7 +504,7 @@ const ProcessUnitGrid = ({ importData }) => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showImport: false,
+    showImport: true,
     showExport: true,
     ExcelName: `Process Unit Allocation - ${AOP_YEAR}`,
     showTitleNameBusiness: true,
@@ -545,6 +547,19 @@ const ProcessUnitGrid = ({ importData }) => {
       setLoading(false)
       return
     }
+       // Validate remarks
+        const validationErrorRemark = validateRowDataWithRemarks(
+          modifiedData,
+          originalRows,
+          MONTH_FIELDS,
+          'processUnit',
+        )
+        if (validationErrorRemark) {
+          setSnackbarOpen(true)
+          setSnackbarData({ message: validationErrorRemark, severity: 'error' })
+          setLoading(false)
+          return
+        }
 
     const validationError = validateAllocations()
     if (validationError) {
@@ -623,7 +638,7 @@ const ProcessUnitGrid = ({ importData }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      await InputApiService.exportImportPowerCapacityExcel(
+      await InputApiService.exportProcessUnitAllocationsExcel(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
@@ -639,6 +654,55 @@ const ProcessUnitGrid = ({ importData }) => {
         message: 'Excel download failed. Please try again.',
         severity: 'error',
       })
+    }
+  }
+
+  // ── Excel Import ───────────────────────────────────────────────────────────
+
+  const handleExcelUpload = async (file) => {
+    if (!file) return
+    setLoading(true)
+    try {
+      const response = await InputApiService.saveProcessUnitAllocationsExcel(
+        file,
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Excel file imported successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        await fetchProcessUnitData()
+      } else if (response?.code === 400 && response?.data) {
+        downloadBase64Excel(
+          response.data,
+          'Error File - Process Unit Allocation.xlsx',
+        )
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        await fetchProcessUnitData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
+      }
+    } catch (error) {
+      console.error('Error uploading Excel file:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Failed to import Excel file: ${error.message}`,
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -708,6 +772,7 @@ const ProcessUnitGrid = ({ importData }) => {
         currentRowId={currentRowId}
         setCurrentRowId={() => {}}
         handleExport={handleExport}
+        handleExcelUpload={handleExcelUpload}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}

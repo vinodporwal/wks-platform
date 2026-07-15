@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class STGHeatRateDTO {
     
-    private UUID id;
+    private String id;
     private String equipType;
     private String cppUtility;
     private Double stgLoad;
@@ -18,4 +18,7 @@ public class STGHeatRateDTO {
     private Double oemHeatRate;
     private String selectedHeatRate;
     private Double proposedHeatRate;
+    private String saveStatus;
+    private String errDescription;
+    private String financialYear;
 }
