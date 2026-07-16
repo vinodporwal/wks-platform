@@ -60,7 +60,7 @@ const Shutdown = ({ permissions }) => {
       editable: true, // "Note that provide days specific to days in that month."
       align: 'right',
       headerAlign: 'right',
-      type: 'number',
+      type: 'wholeNumber',
       minWidth: 220,
     },
     {

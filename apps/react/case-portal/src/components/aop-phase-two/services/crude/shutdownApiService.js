@@ -6,6 +6,10 @@ export const ShutdownApiService = {
      saveShutdownData,
      exportShutdownData,
      importShutdownData,
+     getSlowdownData,
+     saveSlowdownData,
+     exportSlowdownData,
+     importSlowdownData,
      getSitePlantDropdownData,
 }
 
@@ -109,6 +113,94 @@ async function getSitePlantDropdownData(keycloak, PLANT_ID) {
           if (!resp.ok) {
                throw new Error(`HTTP error! Status: ${resp.status}`)
           }
+          return json(keycloak, resp)
+     } catch (e) {
+          console.log(e)
+          return await Promise.reject(e)
+     }
+}
+
+async function getSlowdownData(keycloak, plantId, year) {
+     let url = `${Config.CaseEngineUrl}/task/refinery-slowdown-data?plantId=${plantId}&aopYear=${year}`
+     const headers = {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, { method: 'GET', headers })
+          if (!resp.ok) {
+               throw new Error(`HTTP error! Status: ${resp.status}`)
+          }
+          return json(keycloak, resp)
+     } catch (e) {
+          console.log(e)
+          return await Promise.reject(e)
+     }
+}
+
+async function saveSlowdownData(
+     payload,
+     keycloak,
+) {
+     const url = `${Config.CaseEngineUrl}/task/refinery-slowdown-data`
+     const headers = {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, {
+               method: 'POST',
+               headers,
+               body: JSON.stringify(payload),
+          })
+          return json(keycloak, resp)
+     } catch (e) {
+          console.log(e)
+          return await Promise.reject(e)
+     }
+}
+
+async function exportSlowdownData(keycloak, plantId, year, EXCEL_NAME) {
+     const url = `${Config.CaseEngineUrl}/task/refinery-slowdown-data-export?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+     const headers = {
+          'Content-Type': 'application/json',
+          Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, { method: 'GET', headers })
+          if (!resp.ok) {
+               throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+          }
+          const blob = await resp.blob()
+          const urlBlob = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = urlBlob
+          a.download = EXCEL_NAME
+          a.click()
+          a.remove()
+          window.URL.revokeObjectURL(urlBlob)
+     } catch (e) {
+          console.log(e)
+          return await Promise.reject(e)
+     }
+}
+
+async function importSlowdownData(file, keycloak, plantId, year) {
+     const url = `${Config.CaseEngineUrl}/task/refinery-slowdown-data-import?aopYear=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+     const formData = new FormData()
+     formData.append('file', file)
+     const headers = {
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, {
+               method: 'POST',
+               headers,
+               body: formData,
+           })
           return json(keycloak, resp)
      } catch (e) {
           console.log(e)
