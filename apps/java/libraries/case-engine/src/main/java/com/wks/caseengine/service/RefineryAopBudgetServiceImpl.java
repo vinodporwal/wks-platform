@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
+import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.Plants;
@@ -970,4 +971,533 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             throw new RuntimeException("Failed to delete refinery shutdown data", e);
         }
     }
+
+    @Override
+    @Transactional
+    public AOPMessageVM getRefinerySlowdownData(String plantId, String aopYear) {
+        try {
+
+            Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
+            Verticals verticals = verticalsRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found for id: " + plants.getVerticalFKId()));
+
+            String procedureName =  verticals.getName() + "_GetRefinerySlowdownTranscation";
+            String sql = "EXEC "+ procedureName + " @plantId = ?, @aopYear = ?";
+
+            List<RefinerySlowdownTranscationDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                RefinerySlowdownTranscationDTO.builder()
+                    .id(rs.getString("id"))
+                    .siteFkId(rs.getString("siteFkId"))
+                    .siteName(rs.getString("siteName"))
+                    .plantFkId(rs.getString("plantFkId"))
+                    .plantName(rs.getString("plantName"))
+                    .tentativeDurationDays(rs.getInt("tentativeDurationDays"))
+                    .throughputDuringTheSlowdown(rs.getDouble("throughputDuringTheSlowdown"))
+                    .throughputUom(rs.getString("throughputUom"))
+                    .tentativeMonth(rs.getInt("tentativeMonth"))
+                    .remark(rs.getString("remark"))
+                    .aopYear(rs.getString("aopYear"))
+                    .isEditable(rs.getBoolean("isEditable"))
+                    .isVisible(rs.getBoolean("isVisible"))
+                    .build(), plantId, aopYear);
+
+                AOPMessageVM response = new AOPMessageVM();
+                response.setCode(200);
+                response.setData(data);
+                response.setMessage("Data fetched successfully");
+                return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<RefinerySlowdownTranscationDTO> saveRefinerySlowdownData(List<RefinerySlowdownTranscationDTO> refinerySlowdownDTOs) {
+
+            String updatedBy = Utility.getUserName();
+           
+            List<RefinerySlowdownTranscationDTO> failedRecords = new ArrayList<>();
+
+            for (RefinerySlowdownTranscationDTO dto : refinerySlowdownDTOs) {
+
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+                
+                if (dto.getId() == null) {
+                    String insertSql = "INSERT INTO RefinerySlowdownTransacation (id, SiteFkId, PlantFkId, TentativeDurationDays, ThroughputDuringTheSlowdown, ThroughputUom, TentativeMonth, Remark, PlantId, AopYear, ModifiedBy, ModifiedOn, IsEditable, IsVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql,
+                        UUID.randomUUID().toString(),
+                        dto.getSiteFkId().toString(),
+                        dto.getPlantFkId().toString(),
+                        dto.getTentativeDurationDays(),
+                        dto.getThroughputDuringTheSlowdown(),
+                        dto.getThroughputUom(),
+                        dto.getTentativeMonth(),
+                        dto.getRemark(),
+                        dto.getAopYear(),
+                        updatedBy,
+                        new Date(),
+                        Boolean.TRUE,
+                        Boolean.TRUE
+                        );
+                    continue;
+                }
+
+                RefinerySlowdownTranscationDTO existing = fetchExistingRefinerySlowdownData(dto.getId());
+                if (existing == null) {  
+                    throw new RuntimeException("Record not found");
+                }
+                validateRemarkChangeForRefinerySlowdown(existing, dto);
+
+                // skip records with failed remark validation
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+               
+
+                String updateSql = "UPDATE RefinerySlowdownTransacation " +
+                    "SET SiteFkId = ?, PlantFkId = ?, TentativeDurationDays = ?, ThroughputDuringTheSlowdown = ?, ThroughputUom = ?, TentativeMonth = ?, Remark = ?, ModifiedBy = ?, ModifiedOn = ? " +
+                    "WHERE id = ?";
+                jdbcTemplate.update(updateSql,
+                    dto.getSiteFkId().toString(),
+                    dto.getPlantFkId().toString(),
+                    dto.getTentativeDurationDays(),
+                    dto.getThroughputDuringTheSlowdown(),
+                    dto.getThroughputUom(),
+                    dto.getTentativeMonth(),
+                    dto.getRemark(),
+                    updatedBy,
+                    new Date(),
+                    dto.getId());
+            }
+
+            return failedRecords;
+
+       
+    }
+
+    private RefinerySlowdownTranscationDTO fetchExistingRefinerySlowdownData(String id) {
+        String sql = "SELECT id, SiteFkId, PlantFkId, TentativeDurationDays, ThroughputDuringTheSlowdown, ThroughputUom, TentativeMonth, Remark, PlantId, AopYear, ModifiedBy, ModifiedOn, IsEditable, IsVisible FROM RefinerySlowdownTransacation WHERE id = ?";
+        List<RefinerySlowdownTranscationDTO> results = jdbcTemplate.query(sql, (rs, rowNum) ->
+            RefinerySlowdownTranscationDTO.builder()
+                .id(rs.getString("id"))
+                .siteFkId(rs.getString("siteFkId"))
+                .plantFkId(rs.getString("plantFkId"))
+                .tentativeDurationDays(rs.getInt("tentativeDurationDays"))
+                .throughputDuringTheSlowdown(rs.getDouble("throughputDuringTheSlowdown"))
+                .throughputUom(rs.getString("throughputUom"))
+                .tentativeMonth(rs.getInt("tentativeMonth"))
+                .remark(rs.getString("remark"))
+                .aopYear(rs.getString("aopYear"))
+                .modifiedBy(rs.getString("modifiedBy"))
+                .modifiedOn(rs.getDate("modifiedOn"))
+                .isEditable(rs.getBoolean("isEditable"))
+                .isVisible(rs.getBoolean("isVisible"))
+                .build(), id);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    private void validateRemarkChangeForRefinerySlowdown(RefinerySlowdownTranscationDTO existing, RefinerySlowdownTranscationDTO incoming) {
+
+        boolean hasBusinessFieldsChanged = !Objects.equals(existing.getTentativeDurationDays(), incoming.getTentativeDurationDays())
+            || !Objects.equals(existing.getThroughputDuringTheSlowdown(), incoming.getThroughputDuringTheSlowdown())
+            || !Objects.equals(existing.getTentativeMonth(), incoming.getTentativeMonth());
+
+        if (hasBusinessFieldsChanged && normalise(existing.getRemark()).equals(normalise(incoming.getRemark()))) {
+            incoming.setSaveStatus("Failed");
+            incoming.setErrorMessage("Please update remark");
+            return;
+        }
+        return;
+    }
+
+    // ─── Refinery Slowdown Export ─────────────────────────────────────────────────
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public byte[] createRefinerySlowdownExcel(String plantId, String aopYear, boolean isAfterSave, List<RefinerySlowdownTranscationDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM result = getRefinerySlowdownData(plantId, aopYear);
+                dtoList = (List<RefinerySlowdownTranscationDTO>) result.getData();
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("RefinerySlowdown");
+            int currentRow = 0;
+
+            // Columns 0-6 are visible; 7=Id, 8=SiteFkId, 9=PlantFkId are hidden (used on import)
+            // When isAfterSave, columns 10=Status and 11=Error Description are appended
+            List<String> headers = new ArrayList<>(Arrays.asList(
+                    "Site", "Plant", "Tentative Duration in days",
+                    "Throughput during the Slowdown", "Throughput UOM",
+                    "Tentative Month", "Purpose of Slowdown",
+                    "Id", "SiteFkId", "PlantFkId"));
+            if (isAfterSave) {
+                headers.add("Status");
+                headers.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            for (int col = 0; col < headers.size(); col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers.get(col));
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            CellStyle greyStyle = Utility.createBorderedLockedStyle(workbook);
+            CellStyle editableStyle = Utility.createBorderedUnlockedStyle(workbook);
+            CellStyle editableWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+
+            for (RefinerySlowdownTranscationDTO dto : dtoList) {
+                Row row = sheet.createRow(currentRow++);
+                boolean isEditable = Boolean.TRUE.equals(dto.getIsEditable());
+
+                // Col 0 – Site (always locked)
+                Cell siteCell = row.createCell(0);
+                siteCell.setCellValue(dto.getSiteName() != null ? dto.getSiteName() : "");
+                siteCell.setCellStyle(greyStyle);
+
+                // Col 1 – Plant (always locked)
+                Cell plantCell = row.createCell(1);
+                plantCell.setCellValue(dto.getPlantName() != null ? dto.getPlantName() : "");
+                plantCell.setCellStyle(greyStyle);
+
+                // Col 2 – Tentative Duration in days
+                Cell durationCell = row.createCell(2);
+                durationCell.setCellValue(dto.getTentativeDurationDays() != null ? String.valueOf(dto.getTentativeDurationDays()) : "");
+                durationCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 3 – Throughput during the Slowdown
+                Cell throughputCell = row.createCell(3);
+                throughputCell.setCellValue(dto.getThroughputDuringTheSlowdown() != null ? String.valueOf(dto.getThroughputDuringTheSlowdown()) : "");
+                throughputCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 4 – Throughput UOM
+                Cell uomCell = row.createCell(4);
+                uomCell.setCellValue(dto.getThroughputUom() != null ? dto.getThroughputUom() : "");
+                uomCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 5 – Tentative Month
+                Cell monthCell = row.createCell(5);
+                monthCell.setCellValue(dto.getTentativeMonth() != null ? String.valueOf(dto.getTentativeMonth()) : "");
+                monthCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 6 – Purpose of Slowdown (remark, wrapped)
+                Cell remarkCell = row.createCell(6);
+                remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                remarkCell.setCellStyle(isEditable ? editableWrapStyle : greyStyle);
+
+                // Col 7 – Id (hidden; present means update on import)
+                Cell idCell = row.createCell(7);
+                idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+                idCell.setCellStyle(greyStyle);
+
+                // Col 8 – SiteFkId (hidden)
+                Cell siteFkIdCell = row.createCell(8);
+                siteFkIdCell.setCellValue(dto.getSiteFkId() != null ? dto.getSiteFkId() : "");
+                siteFkIdCell.setCellStyle(greyStyle);
+
+                // Col 9 – PlantFkId (hidden)
+                Cell plantFkIdCell = row.createCell(9);
+                plantFkIdCell.setCellValue(dto.getPlantFkId() != null ? dto.getPlantFkId() : "");
+                plantFkIdCell.setCellStyle(greyStyle);
+
+                if (isAfterSave) {
+                    // Col 10 – Status
+                    Cell statusCell = row.createCell(10);
+                    statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                    statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+                    // Col 11 – Error Description
+                    Cell errCell = row.createCell(11);
+                    errCell.setCellValue(dto.getErrorMessage() != null ? dto.getErrorMessage() : "");
+                    errCell.setCellStyle(Utility.createBorderedStyle(workbook));
+                }
+
+                row.setHeight((short) -1);
+            }
+
+            // Auto-size visible columns; fixed wider width for Purpose of Slowdown and Error Description
+            int totalCols = isAfterSave ? 12 : 7;
+            for (int col = 0; col < totalCols; col++) {
+                if (col == 6 || col == 11) {
+                    sheet.setColumnWidth(col, 15000);
+                } else {
+                    sheet.autoSizeColumn(col);
+                }
+            }
+
+            // Hide the identifier columns from end-users
+            sheet.setColumnHidden(7, true);
+            sheet.setColumnHidden(8, true);
+            sheet.setColumnHidden(9, true);
+
+            // Protect the sheet so locked/unlocked cell styles are enforced (only for regular export)
+            if (!isAfterSave) {
+                sheet.protectSheet("");
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // ─── Refinery Slowdown Import – Excel Reader ──────────────────────────────────
+
+    private List<RefinerySlowdownTranscationDTO> readRefinerySlowdownExcel(InputStream inputStream, String plantId, String aopYear) {
+        List<RefinerySlowdownTranscationDTO> resultList = new ArrayList<>();
+
+        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
+        String verticalId = plants.getVerticalFKId().toString();
+        List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
+        VerticalsDTO vertical = hierarchyData.stream()
+            .filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) rowIterator.next(); // Skip header row
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+
+                // Skip completely empty rows (check visible columns 0-6)
+                boolean isEmpty = true;
+                for (int col = 0; col <= 6; col++) {
+                    Cell cell = row.getCell(col);
+                    if (cell != null) {
+                        cell.setCellType(CellType.STRING);
+                        if (!cell.getStringCellValue().trim().isEmpty()) {
+                            isEmpty = false;
+                            break;
+                        }
+                    }
+                }
+                if (isEmpty) continue;
+
+                RefinerySlowdownTranscationDTO dto = new RefinerySlowdownTranscationDTO();
+                try {
+                    // Col 0 – Site
+                    Cell siteCell = row.getCell(0);
+                    if (siteCell != null) {
+                        siteCell.setCellType(CellType.STRING);
+                        String siteStr = siteCell.getStringCellValue().trim();
+                        dto.setSiteName(siteStr.isEmpty() ? null : siteStr);
+                    }
+
+                    // Col 1 – Plant
+                    Cell plantCell = row.getCell(1);
+                    if (plantCell != null) {
+                        plantCell.setCellType(CellType.STRING);
+                        String plantStr = plantCell.getStringCellValue().trim();
+                        dto.setPlantName(plantStr.isEmpty() ? null : plantStr);
+                    }
+
+                    // Col 2 – Tentative Duration in days
+                    Cell durationCell = row.getCell(2);
+                    if (durationCell != null) {
+                        durationCell.setCellType(CellType.STRING);
+                        String durationStr = durationCell.getStringCellValue().trim();
+                        if (!durationStr.isEmpty()) {
+                            try {
+                                double durationDouble = Double.parseDouble(durationStr);
+                                if (durationDouble != Math.floor(durationDouble)) {
+                                    dto.setSaveStatus("Failed");
+                                    dto.setErrorMessage("Tentative Duration in days must be a whole number");
+                                } else {
+                                    dto.setTentativeDurationDays((int) durationDouble);
+                                }
+                            } catch (NumberFormatException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("Tentative Duration in days must be a valid integer");
+                            }
+                        }
+                    }
+
+                    // Col 3 – Throughput during the Slowdown
+                    Cell throughputCell = row.getCell(3);
+                    if (throughputCell != null) {
+                        throughputCell.setCellType(CellType.STRING);
+                        String throughputStr = throughputCell.getStringCellValue().trim();
+                        dto.setThroughputDuringTheSlowdown(throughputStr.isEmpty() ? null : Double.parseDouble(throughputStr));
+                    }
+
+                    // Col 4 – Throughput UOM
+                    Cell uomCell = row.getCell(4);
+                    if (uomCell != null) {
+                        uomCell.setCellType(CellType.STRING);
+                        String uomStr = uomCell.getStringCellValue().trim();
+                        dto.setThroughputUom(uomStr.isEmpty() ? null : uomStr);
+                    }
+
+                    // Col 5 – Tentative Month
+                    Cell monthCell = row.getCell(5);
+                    if (monthCell != null) {
+                        monthCell.setCellType(CellType.STRING);
+                        String monthStr = monthCell.getStringCellValue().trim();
+                        if (!monthStr.isEmpty()) {
+                            try {
+                                double monthDouble = Double.parseDouble(monthStr);
+                                if (monthDouble != Math.floor(monthDouble)) {
+                                    dto.setSaveStatus("Failed");
+                                    dto.setErrorMessage("Tentative Month must be a whole number");
+                                } else {
+                                    dto.setTentativeMonth((int) monthDouble);
+                                }
+                            } catch (NumberFormatException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("Tentative Month must be a valid integer");
+                            }
+                        }
+                    }
+
+                    // Col 6 – Purpose of Slowdown (remark)
+                    Cell remarkCell = row.getCell(6);
+                    if (remarkCell != null) {
+                        remarkCell.setCellType(CellType.STRING);
+                        dto.setRemark(remarkCell.getStringCellValue().trim());
+                    }
+
+                    // Col 7 – Id (hidden; present → update, absent → insert)
+                    Cell idCell = row.getCell(7);
+                    if (idCell != null) {
+                        idCell.setCellType(CellType.STRING);
+                        String id = idCell.getStringCellValue().trim();
+                        dto.setId(id.isEmpty() ? null : id);
+                    }
+
+                    // Col 8 – SiteFkId (hidden)
+                    Cell siteFkIdCell = row.getCell(8);
+                    if (siteFkIdCell != null) {
+                        siteFkIdCell.setCellType(CellType.STRING);
+                        String siteFkId = siteFkIdCell.getStringCellValue().trim();
+                        dto.setSiteFkId(siteFkId.isEmpty() ? null : siteFkId);
+                    }
+
+                    // Col 9 – PlantFkId (hidden)
+                    Cell plantFkIdCell = row.getCell(9);
+                    if (plantFkIdCell != null) {
+                        plantFkIdCell.setCellType(CellType.STRING);
+                        String plantFkId = plantFkIdCell.getStringCellValue().trim();
+                        dto.setPlantFkId(plantFkId.isEmpty() ? null : plantFkId);
+                    }
+
+                    dto.setAopYear(aopYear);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                validatePlantAndSiteNameForSlowdown(dto, vertical);
+
+                resultList.add(dto);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Refinery Slowdown Excel", e);
+        }
+        return resultList;
+    }
+
+    private void validatePlantAndSiteNameForSlowdown(RefinerySlowdownTranscationDTO dto, VerticalsDTO vertical) {
+
+        String plantName = dto.getPlantName();
+        String siteName = dto.getSiteName();
+
+        if (plantName == null || plantName.isBlank() || siteName == null || siteName.isBlank()) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Plant and site names are required");
+            return;
+        }
+
+        if (dto.getSiteFkId() == null) {
+            List<String> siteIds = jdbcTemplate.queryForList(
+                    "SELECT id FROM Sites WHERE DisplayName = ?", String.class, siteName);
+            if (siteIds.isEmpty()) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage("Site not found: " + siteName);
+                return;
+            }
+            dto.setSiteFkId(siteIds.get(0));
+        }
+
+        if (dto.getPlantFkId() == null) {
+            List<String> plantIds = jdbcTemplate.queryForList(
+                    "SELECT id FROM Plants WHERE DisplayName = ?", String.class, plantName);
+            if (plantIds.isEmpty()) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage("Plant not found: " + plantName);
+                return;
+            }
+            dto.setPlantFkId(plantIds.get(0));
+        }
+
+        SitesDTO matchedSite = vertical.getSites().stream()
+                .filter(s -> s.getId() != null && s.getId().equalsIgnoreCase(dto.getSiteFkId()))
+                .findFirst()
+                .orElse(null);
+
+        if (matchedSite == null) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Site '" + siteName + "' does not belong to the selected vertical");
+            return;
+        }
+
+        boolean plantBelongsToSite = matchedSite.getPlants().stream()
+                .anyMatch(p -> p.getId() != null && p.getId().equalsIgnoreCase(dto.getPlantFkId()));
+
+        if (!plantBelongsToSite) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Plant '" + plantName + "' does not belong to site '" + siteName + "'");
+        }
+    }
+
+    // ─── Refinery Slowdown Import – API ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM importRefinerySlowdownExcel(String plantId, String aopYear, MultipartFile file) {
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+            throw new IllegalArgumentException("Invalid or empty Excel file.");
+        }
+
+        List<RefinerySlowdownTranscationDTO> failedRecords = new ArrayList<>();
+        try {
+            List<RefinerySlowdownTranscationDTO> data = readRefinerySlowdownExcel(file.getInputStream(), plantId, aopYear);
+            failedRecords = saveRefinerySlowdownData(data);
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedRecords.isEmpty()) {
+                byte[] fileByteArray = createRefinerySlowdownExcel(plantId, aopYear, true, failedRecords);
+                String base64File = java.util.Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to import Refinery Slowdown data", ex);
+        }
+    }
+
+ 
 }

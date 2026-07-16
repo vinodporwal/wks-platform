@@ -2650,6 +2650,8 @@ continue;
   String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
 				   ? getVersion(year, UUID.fromString(plantFKId)) 
 				   : "V1";
+
+boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
   
   Optional<NormAttributeTransactions> existingRecord;
   if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
@@ -2696,7 +2698,8 @@ continue;
 	  }
   } 
   else {
-	  if ("0.0".equals(newValue)) {
+	// allow 0.0 for PVC DMD
+	  if ( !pvcDmd && "0.0".equals(newValue)) {
 		  return; 
 	  }
 

@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
+import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -21,4 +22,9 @@ public interface RefineryAopBudgetService {
     public byte[] createRefineryShutdownExcel(String plantId, String aopYear, boolean isAfterSave, List<RefineryShutdownDTO> dtoList);
     public AOPMessageVM importRefineryShutdownExcel(String plantId, String aopYear, MultipartFile file);
     public AOPMessageVM deleteRefineryShutdownData(String id);
+    public AOPMessageVM getRefinerySlowdownData(String plantId, String aopYear);
+    public List<RefinerySlowdownTranscationDTO> saveRefinerySlowdownData(List<RefinerySlowdownTranscationDTO> refinerySlowdownDTOs);
+    public byte[] createRefinerySlowdownExcel(String plantId, String aopYear, boolean isAfterSave, List<RefinerySlowdownTranscationDTO> dtoList);
+    public AOPMessageVM importRefinerySlowdownExcel(String plantId, String aopYear, MultipartFile file);
+   
 }
