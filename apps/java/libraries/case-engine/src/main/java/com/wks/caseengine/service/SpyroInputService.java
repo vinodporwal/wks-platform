@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -24,5 +25,9 @@ public interface SpyroInputService {
 	AOPMessageVM calculateSpyroInputData(String year, String plantId, String Mode, String type);
 
 	AOPMessageVM getFurnaceDropdown(String plantId);
+
+	AOPMessageVM getOptimizingVariablesDropdown(String plantId, String aopYear);
+
+	AOPMessageVM updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear);
 
 }

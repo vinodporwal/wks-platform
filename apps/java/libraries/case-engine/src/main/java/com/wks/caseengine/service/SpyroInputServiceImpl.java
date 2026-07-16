@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
+import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.ExcelConfigurations;
@@ -1521,6 +1522,147 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			throw new RestInvalidArgumentException("Invalid UUID format", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch furnace dropdown data", ex);
+		}
+		return aopMessageVM;
+	}
+
+	@Override
+	public AOPMessageVM updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			for (OptimizingVariablesDropdownDTO dto : dtoList) {
+				if (dto.getId() == null || dto.getId().isBlank()) {
+					continue;
+				}
+				if (!UUID_PATTERN.matcher(dto.getId()).matches()) {
+					continue;
+				}
+
+				UUID normParameterFKId = UUID.fromString(dto.getId());
+
+				Optional<NormParameters> optNormParam = normParametersRepository.findById(normParameterFKId);
+				if (!optNormParam.isPresent()) {
+					continue;
+				}
+
+				if (!optNormParam.get().getIsEditable()) {
+					continue;
+				}
+
+				for (int month = 1; month <= 12; month++) {
+					String attributeValue = getOptimizingVariableMonthValue(dto, month);
+					saveOptimizingVariableData(normParameterFKId, month, attributeValue, aopYear);
+				}
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(null);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to update optimizing variables dropdown data", ex);
+		}
+		return aopMessageVM;
+	}
+
+	private String getOptimizingVariableMonthValue(OptimizingVariablesDropdownDTO dto, int month) {
+		switch (month) {
+			case 1: return dto.getJanuary();
+			case 2: return dto.getFebruary();
+			case 3: return dto.getMarch();
+			case 4: return dto.getApril();
+			case 5: return dto.getMay();
+			case 6: return dto.getJune();
+			case 7: return dto.getJuly();
+			case 8: return dto.getAugust();
+			case 9: return dto.getSeptember();
+			case 10: return dto.getOctober();
+			case 11: return dto.getNovember();
+			case 12: return dto.getDecember();
+			default: return null;
+		}
+	}
+
+	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String aopYear) {
+		String newValueStr = attributeValue != null ? attributeValue.trim() : "";
+
+		Optional<NormAttributeTransactions> existingOpt =
+				normAttributeTransactionsRepository
+						.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, aopYear);
+
+		if (existingOpt.isPresent()) {
+			NormAttributeTransactions existing = existingOpt.get();
+			existing.setAttributeValue(newValueStr);
+			existing.setModifiedOn(new Date());
+			existing.setUserName(Utility.getUserName());
+			normAttributeTransactionsRepository.save(existing);
+		} else {
+			NormAttributeTransactions newRecord = new NormAttributeTransactions();
+			newRecord.setCreatedOn(new Date());
+			newRecord.setAttributeValueVersion("V1");
+			newRecord.setUserName(Utility.getUserName());
+			newRecord.setNormParameterFKId(normParameterFKId);
+			newRecord.setAopMonth(month);
+			newRecord.setAuditYear(aopYear);
+			newRecord.setAttributeValue(newValueStr);
+			normAttributeTransactionsRepository.save(newRecord);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getOptimizingVariablesDropdown(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<OptimizingVariablesDropdownDTO> resultList = new ArrayList<>();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetDropDownOptimizingVariablesScrn";
+
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				OptimizingVariablesDropdownDTO dto = OptimizingVariablesDropdownDTO.builder()
+						.id(row[0] != null ? row[0].toString() : null)
+						.name(row[1] != null ? row[1].toString() : null)
+						.displayName(row[2] != null ? row[2].toString() : null)
+						.uom(row[3] != null ? row[3].toString() : null)
+						.normParameterTypeFKId(row[4] != null ? row[4].toString() : null)
+						.isEditable(row[5] != null && (row[5].toString().equals("1") || row[5].toString().equalsIgnoreCase("true")))
+						.isVisible(row[6] != null && (row[6].toString().equals("1") || row[6].toString().equalsIgnoreCase("true")))
+						.displayOrder(row[7] != null ? Integer.parseInt(row[7].toString()) : null)
+						.april(row[8] != null ? row[8].toString() : null)
+						.may(row[9] != null ? row[9].toString() : null)
+						.june(row[10] != null ? row[10].toString() : null)
+						.july(row[11] != null ? row[11].toString() : null)
+						.august(row[12] != null ? row[12].toString() : null)
+						.september(row[13] != null ? row[13].toString() : null)
+						.october(row[14] != null ? row[14].toString() : null)
+						.november(row[15] != null ? row[15].toString() : null)
+						.december(row[16] != null ? row[16].toString() : null)
+						.january(row[17] != null ? row[17].toString() : null)
+						.february(row[18] != null ? row[18].toString() : null)
+						.march(row[19] != null ? row[19].toString() : null)
+						.build();
+				resultList.add(dto);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(resultList);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch optimizing variables dropdown data", ex);
 		}
 		return aopMessageVM;
 	}
