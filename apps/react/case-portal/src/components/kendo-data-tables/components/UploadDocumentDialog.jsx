@@ -53,21 +53,22 @@ const DropZone = styled(Box)(({ dragover }) => ({
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCEPTED_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'image/jpeg',
-  'image/png',
-  'image/jpg',
-  'text/plain',
-  'text/csv',
+  // 'application/pdf',
+  // 'application/msword',
+  // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+     'application/vnd.ms-excel',
+  // 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // 'application/vnd.ms-powerpoint',
+  // 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // 'image/jpeg',
+  // 'image/png',
+  // 'image/jpg',
+  //'text/plain',
+ // 'text/csv',
 ]
 
-const ACCEPTED_EXTENSIONS = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv'
+//const ACCEPTED_EXTENSIONS = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv'
+const ACCEPTED_EXTENSIONS = '.xls,.xlsx,.xlsm'
 const MAX_FILE_SIZE_MB = 10
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
@@ -106,7 +107,7 @@ const UploadDocumentDialog = ({
     const isTypeValid = ACCEPTED_TYPES.includes(file.type) ||
       ACCEPTED_EXTENSIONS.split(',').some(ext => file.name.toLowerCase().endsWith(ext))
     if (!isTypeValid) {
-      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, TXT, CSV.`
+      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: XLS, XLSX, XLSM.`
     }
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return `File size (${formatBytes(file.size)}) exceeds the ${MAX_FILE_SIZE_MB} MB limit.`
@@ -270,7 +271,7 @@ const UploadDocumentDialog = ({
             Browse File
           </Button>
           <Typography variant='caption' color='text.secondary' textAlign='center' sx={{ lineHeight: 1.4 }}>
-            Supported: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, TXT, CSV
+            Supported: XLS, XLSX, XLSM, 
             <br />
             Max size: {MAX_FILE_SIZE_MB} MB
           </Typography>
