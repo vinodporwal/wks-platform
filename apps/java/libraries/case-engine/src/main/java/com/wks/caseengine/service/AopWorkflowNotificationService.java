@@ -36,10 +36,15 @@ public class AopWorkflowNotificationService {
 
     public static final String TEMPLATE = "aop-workflow-template";
 
-    @Autowired
+    /**
+     * Optional: Spring only auto-configures a JavaMailSender when spring.mail.* is
+     * set. Mail being unconfigured (or Thymeleaf absent) must never stop the API
+     * from starting or block an approval — we degrade to logging instead.
+     */
+    @Autowired(required = false)
     private JavaMailSender mailSender;
 
-    @Autowired
+    @Autowired(required = false)
     private SpringTemplateEngine templateEngine;
 
     @Autowired
@@ -82,6 +87,12 @@ public class AopWorkflowNotificationService {
      */
     public void notifyRoles(String subject, List<String> toRoles, List<String> ccRoles,
             Map<String, Object> placeholders) {
+
+        if (mailSender == null || templateEngine == null) {
+            log.warn("AOP notify: mail not configured (spring.mail.*) - skipping '{}' for roles {}",
+                    subject, toRoles);
+            return;
+        }
 
         List<String> to = resolveEmailsForRoles(toRoles);
         if (to.isEmpty()) {

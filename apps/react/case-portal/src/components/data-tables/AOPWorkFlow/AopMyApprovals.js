@@ -37,7 +37,11 @@ const AopMyApprovals = () => {
   const [rejectRow, setRejectRow] = useState(null)
   const [remark, setRemark] = useState('')
   const [busyId, setBusyId] = useState(null)
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
+  const [snack, setSnack] = useState({
+    open: false,
+    message: '',
+    severity: 'info',
+  })
 
   const load = async () => {
     setLoading(true)
@@ -45,7 +49,11 @@ const AopMyApprovals = () => {
       const data = await AopApprovalService.getMyPending(keycloak)
       setItems(Array.isArray(data) ? data : [])
     } catch (e) {
-      setSnack({ open: true, message: e.message || 'Failed to load approvals', severity: 'error' })
+      setSnack({
+        open: true,
+        message: e.message || 'Failed to load approvals',
+        severity: 'error',
+      })
     } finally {
       setLoading(false)
     }
@@ -56,8 +64,16 @@ const AopMyApprovals = () => {
   }, [])
 
   const act = async (row, decision, remarkText) => {
-    if (decision === 'REVERTED' && row.actions?.remarkMandatory && !remarkText?.trim()) {
-      setSnack({ open: true, message: 'A remark is required to revert', severity: 'error' })
+    if (
+      decision === 'REVERTED' &&
+      row.actions?.remarkMandatory &&
+      !remarkText?.trim()
+    ) {
+      setSnack({
+        open: true,
+        message: 'A remark is required to revert',
+        severity: 'error',
+      })
       return
     }
     setBusyId(row.taskId)
@@ -88,7 +104,12 @@ const AopMyApprovals = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Stack direction='row' alignItems='center' justifyContent='space-between' sx={{ mb: 2 }}>
+      <Stack
+        direction='row'
+        alignItems='center'
+        justifyContent='space-between'
+        sx={{ mb: 2 }}
+      >
         <Typography variant='h5'>My Approvals</Typography>
         <Button variant='outlined' onClick={load} disabled={loading}>
           Refresh
@@ -125,15 +146,24 @@ const AopMyApprovals = () => {
                   <TableCell>{row.verticalName || '-'}</TableCell>
                   <TableCell>{row.year}</TableCell>
                   <TableCell>
-                    <Chip size='small' label={row.gateDisplayName || row.gateName} />
+                    <Chip
+                      size='small'
+                      label={row.gateDisplayName || row.gateName}
+                    />
                   </TableCell>
                   <TableCell>{row.assignedRole}</TableCell>
                   <TableCell align='right'>
-                    <Stack direction='row' spacing={1} justifyContent='flex-end'>
+                    <Stack
+                      direction='row'
+                      spacing={1}
+                      justifyContent='flex-end'
+                    >
                       <Button
                         size='small'
                         variant='contained'
-                        disabled={busyId === row.taskId || !row.actions?.canApprove}
+                        disabled={
+                          busyId === row.taskId || !row.actions?.canApprove
+                        }
                         onClick={() => act(row, 'APPROVED')}
                       >
                         Approve
@@ -142,7 +172,9 @@ const AopMyApprovals = () => {
                         size='small'
                         variant='outlined'
                         color='error'
-                        disabled={busyId === row.taskId || !row.actions?.canRevert}
+                        disabled={
+                          busyId === row.taskId || !row.actions?.canRevert
+                        }
                         onClick={() => {
                           setRemark('')
                           setRejectRow(row)
@@ -160,13 +192,22 @@ const AopMyApprovals = () => {
       )}
 
       {/* Revert remark dialog */}
-      <Dialog open={Boolean(rejectRow)} onClose={() => setRejectRow(null)} fullWidth maxWidth='sm'>
+      <Dialog
+        open={Boolean(rejectRow)}
+        onClose={() => setRejectRow(null)}
+        fullWidth
+        maxWidth='sm'
+      >
         <DialogTitle>Revert for Update / Improvement</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin='dense'
-            label={rejectRow?.actions?.remarkMandatory ? 'Remark (required)' : 'Remark (optional)'}
+            label={
+              rejectRow?.actions?.remarkMandatory
+                ? 'Remark (required)'
+                : 'Remark (optional)'
+            }
             fullWidth
             multiline
             minRows={3}
@@ -193,7 +234,10 @@ const AopMyApprovals = () => {
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snack.severity} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert
+          severity={snack.severity}
+          onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        >
           {snack.message}
         </Alert>
       </Snackbar>

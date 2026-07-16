@@ -29,10 +29,12 @@
       on each task completion (resolves role->emails via Keycloak, scope via the
       Plants master). Not modelled in the BPMN.
 
-  NOTE: BPMNDI (diagram layout) is intentionally omitted — the engine deploys
-  and executes from the semantic model; open in Camunda Modeler to auto-layout.
+  Layout (BPMNDI) is included so the process renders in Camunda Cockpit/Modeler.
 -->
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   id="Definitions_AOP_Approval_v2"
@@ -204,4 +206,131 @@
     </bpmn:endEvent>
 
   </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="AOP_Approval_v2">
+      <!-- nodes: main gate lane (y=278/293/300, centred on y=318); rework sits above -->
+      <bpmndi:BPMNShape id="StartEvent_aop_di" bpmnElement="StartEvent_aop">
+        <dc:Bounds x="152" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate1_di" bpmnElement="gate1">
+        <dc:Bounds x="240" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw1_di" bpmnElement="gw1" isMarkerVisible="true">
+        <dc:Bounds x="390" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate2_di" bpmnElement="gate2">
+        <dc:Bounds x="490" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw2_di" bpmnElement="gw2" isMarkerVisible="true">
+        <dc:Bounds x="640" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate3_di" bpmnElement="gate3">
+        <dc:Bounds x="740" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw3_di" bpmnElement="gw3" isMarkerVisible="true">
+        <dc:Bounds x="890" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate4_di" bpmnElement="gate4">
+        <dc:Bounds x="990" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw4_di" bpmnElement="gw4" isMarkerVisible="true">
+        <dc:Bounds x="1140" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate5_di" bpmnElement="gate5">
+        <dc:Bounds x="1240" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw5_di" bpmnElement="gw5" isMarkerVisible="true">
+        <dc:Bounds x="1390" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_aop_approved_di" bpmnElement="Event_aop_approved">
+        <dc:Bounds x="1502" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="prepareRework_di" bpmnElement="prepareRework">
+        <dc:Bounds x="640" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- forward path -->
+      <bpmndi:BPMNEdge id="Flow_start_gate1_di" bpmnElement="Flow_start_gate1">
+        <di:waypoint x="188" y="318" />
+        <di:waypoint x="240" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate1_gw1_di" bpmnElement="Flow_gate1_gw1">
+        <di:waypoint x="340" y="318" />
+        <di:waypoint x="390" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw1_approve_di" bpmnElement="Flow_gw1_approve">
+        <di:waypoint x="440" y="318" />
+        <di:waypoint x="490" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate2_gw2_di" bpmnElement="Flow_gate2_gw2">
+        <di:waypoint x="590" y="318" />
+        <di:waypoint x="640" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw2_approve_di" bpmnElement="Flow_gw2_approve">
+        <di:waypoint x="690" y="318" />
+        <di:waypoint x="740" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate3_gw3_di" bpmnElement="Flow_gate3_gw3">
+        <di:waypoint x="840" y="318" />
+        <di:waypoint x="890" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw3_approve_di" bpmnElement="Flow_gw3_approve">
+        <di:waypoint x="940" y="318" />
+        <di:waypoint x="990" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate4_gw4_di" bpmnElement="Flow_gate4_gw4">
+        <di:waypoint x="1090" y="318" />
+        <di:waypoint x="1140" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw4_approve_di" bpmnElement="Flow_gw4_approve">
+        <di:waypoint x="1190" y="318" />
+        <di:waypoint x="1240" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate5_gw5_di" bpmnElement="Flow_gate5_gw5">
+        <di:waypoint x="1340" y="318" />
+        <di:waypoint x="1390" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw5_approve_di" bpmnElement="Flow_gw5_approve">
+        <di:waypoint x="1440" y="318" />
+        <di:waypoint x="1502" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <!-- reverts: gates 1-4 -> prepareRework -->
+      <bpmndi:BPMNEdge id="Flow_gw1_revert_di" bpmnElement="Flow_gw1_revert">
+        <di:waypoint x="415" y="293" />
+        <di:waypoint x="415" y="160" />
+        <di:waypoint x="640" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw2_revert_di" bpmnElement="Flow_gw2_revert">
+        <di:waypoint x="665" y="293" />
+        <di:waypoint x="665" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw3_revert_di" bpmnElement="Flow_gw3_revert">
+        <di:waypoint x="915" y="293" />
+        <di:waypoint x="915" y="160" />
+        <di:waypoint x="740" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw4_revert_di" bpmnElement="Flow_gw4_revert">
+        <di:waypoint x="1165" y="293" />
+        <di:waypoint x="1165" y="90" />
+        <di:waypoint x="715" y="90" />
+        <di:waypoint x="715" y="120" />
+      </bpmndi:BPMNEdge>
+
+      <!-- rework -> gate1 (re-enter), and gate5 revert -> gate3 (Site Head) -->
+      <bpmndi:BPMNEdge id="Flow_rework_gate1_di" bpmnElement="Flow_rework_gate1">
+        <di:waypoint x="690" y="120" />
+        <di:waypoint x="690" y="60" />
+        <di:waypoint x="290" y="60" />
+        <di:waypoint x="290" y="278" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw5_revert_di" bpmnElement="Flow_gw5_revert">
+        <di:waypoint x="1415" y="343" />
+        <di:waypoint x="1415" y="430" />
+        <di:waypoint x="790" y="430" />
+        <di:waypoint x="790" y="358" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </bpmn:definitions>

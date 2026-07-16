@@ -1,0 +1,12 @@
+# Local-only override (not committed) to supply config the base platform expects
+# but the compose env doesn't provide in this dev environment.
+services:
+  case-engine-rest-api:
+    environment:
+      - SPRING_LDAP_URL=ldap://localhost:389
+      - SPRING_LDAP_BASE_DN=dc=example,dc=com
+      - SPRING_LDAP_USERNAME=cn=admin,dc=example,dc=com
+      - SPRING_LDAP_PASSWORD=admin
+      - SPRING_LDAP_USER_DN_PATTERN=uid={0},ou=people
+      - SPRING_LDAP_USER_SEARCH_BASE=ou=people
+      - SPRING_LDAP_USER_SEARCH_FILTER=(uid={0})
