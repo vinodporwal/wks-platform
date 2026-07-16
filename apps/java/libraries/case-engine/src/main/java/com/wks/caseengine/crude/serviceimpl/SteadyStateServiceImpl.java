@@ -113,9 +113,14 @@ public class SteadyStateServiceImpl implements SteadyStateService {
         String finYear) {
       
             try {
+                // Safeguard procedure name by wrapping it in square brackets if it isn't already
+                String sanitizedProcedureName = procedureName;
+                if (!sanitizedProcedureName.startsWith("[") && !sanitizedProcedureName.endsWith("]")) {
+                    sanitizedProcedureName = "[" + sanitizedProcedureName + "]";
+                }
 
                 StoredProcedureQuery query = entityManager
-                        .createStoredProcedureQuery(procedureName);
+                        .createStoredProcedureQuery(sanitizedProcedureName);
         
                 // Input parameters
                 query.registerStoredProcedureParameter("plantId", String.class, ParameterMode.IN);
@@ -123,12 +128,12 @@ public class SteadyStateServiceImpl implements SteadyStateService {
                 query.registerStoredProcedureParameter("verticalId", String.class, ParameterMode.IN);
                 query.registerStoredProcedureParameter("finYear", String.class, ParameterMode.IN);
 
-                  // OUTPUT parameter
+                // OUTPUT parameter
                 query.registerStoredProcedureParameter("ErrorMessage", String.class, ParameterMode.OUT);
         
-                query.setParameter("plantId", plantId.toString());
-                query.setParameter("siteid", siteId.toString());
-                query.setParameter("verticalId", verticalId.toString());
+                query.setParameter("plantId", plantId);
+                query.setParameter("siteid", siteId);
+                query.setParameter("verticalId", verticalId);
                 query.setParameter("finYear", finYear);
         
                 query.execute();
@@ -149,6 +154,5 @@ public class SteadyStateServiceImpl implements SteadyStateService {
                 throw new RuntimeException("Failed to execute procedure", ex);
             }
 }
-
 
 }

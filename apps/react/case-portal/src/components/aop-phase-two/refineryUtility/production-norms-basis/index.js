@@ -245,7 +245,7 @@ const ProductionNormsBasis = () => {
           isOldYear={isOldYear}
           isSummaryRequired={false}
           onDatesChange={handleDatesChange}
-          // onLoadNormCalculation={handleLoadNormCalculation}
+          onLoadNormCalculation={handleLoadNormCalculation}
           normCalculationLoading={normCalculationLoading}
         />
       </Stack>

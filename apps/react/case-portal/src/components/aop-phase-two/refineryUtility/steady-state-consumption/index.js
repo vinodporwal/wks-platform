@@ -321,7 +321,7 @@ const SteadyStateConsumption = () => {
 
     try {
       const response =
-        await SteadyStateConsumptionApiService.calculateCommonSteadyStateConsumption(
+        await SteadyStateConsumptionApiService.calculateSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
