@@ -41,14 +41,12 @@ const ShutdownAndOperational = () => {
       setPowerData(res?.data?.PowerOperationalHours || [])
       setSteamData(res?.data?.SteamOperationalHours || [])
       if (!res || res?.data?.PowerOperationalHours?.length === 0) {
-        setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         setLoading(false)
         return
       }
       if (!res || res?.data?.SteamOperationalHours?.length === 0) {
-        setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         setLoading(false)

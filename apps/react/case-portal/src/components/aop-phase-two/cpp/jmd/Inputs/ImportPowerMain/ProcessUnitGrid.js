@@ -17,6 +17,7 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import AddProcessUnitDialog from './components/AddProcessUnitDialog'
 import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 const MONTH_FIELDS = [
   'apr',
@@ -546,6 +547,19 @@ const ProcessUnitGrid = ({ importData }) => {
       setLoading(false)
       return
     }
+       // Validate remarks
+        const validationErrorRemark = validateRowDataWithRemarks(
+          modifiedData,
+          originalRows,
+          MONTH_FIELDS,
+          'processUnit',
+        )
+        if (validationErrorRemark) {
+          setSnackbarOpen(true)
+          setSnackbarData({ message: validationErrorRemark, severity: 'error' })
+          setLoading(false)
+          return
+        }
 
     const validationError = validateAllocations()
     if (validationError) {

@@ -329,7 +329,9 @@ const FixedNorms = () => {
           setSnackbarData({ message: 'No data found', severity: 'info' })
           return
         }
-        let tempRes = res?.data?.map((item, index) => {
+        let tempRes = res?.data
+        ?.filter(item=>item.issuingUom !=="MMBTU")
+        ?.map((item, index) => {
           const actualNormValue =
             item.actualNorm !== null && item.actualNorm !== undefined
               ? item.actualNorm

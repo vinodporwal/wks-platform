@@ -7,10 +7,12 @@ import { getRoleName } from 'services/role-service'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-import { ProductionNormsApiService } from '../../services/pcg/productionNormsApiService'
+import { PCGProductionRangeApiService } from 'components/aop-phase-two/services/pcg/pcgProductionRangeApiService'
+import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 
-const TargetGasifierOperation = () => {
+const ConfigurationLimit = () => {
   const [rows, setRows] = useState([])
+  const [originalRows, setOriginalRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -45,7 +47,7 @@ const TargetGasifierOperation = () => {
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_Production_Norms_Basis_Target_Gasifier_Operation_${AOP_YEAR}`
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_Production_Range_Limit`
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -54,41 +56,64 @@ const TargetGasifierOperation = () => {
     setRemarkDialogOpen(true)
   }
 
+  // Handle Status checkbox toggle — updates row locally and marks as modified
+  const handleStatusToggle = useCallback(
+    (rowId) => {
+      if (READ_ONLY) return
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== rowId) return r
+          const updated = { ...r, status: !r.status, inEdit: true }
+          setModifiedCells((prevCells) => ({
+            ...prevCells,
+            [rowId]: updated,
+          }))
+          return updated
+        }),
+      )
+    },
+    [READ_ONLY],
+  )
+
   const NormConfigurationColumns = [
     {
-      field: 'displayName', // matches API
+      field: 'displayName',
       title: 'Particulars',
+      editable: false,
       widthT: 250,
       autoAdjust: false,
-      type: 'text',
-      editable: false,
       minWidth: 250,
     },
     {
       field: 'uom',
       title: 'UOM',
-      type: 'text',
       editable: false,
       widthT: 80,
       minWidth: 100,
     },
     {
+      field: 'productionLimit',
+      title: 'Limit',
+      editable: false,
+      widthT: 100,
+      minWidth: 100,
+    },
+    {
       field: 'apr',
-      title: 'Min',
+      title: 'Value',
       editable: true,
       widthT: 100,
       type: 'number',
       minWidth: 100,
     },
     {
-      field: 'may',
-      title: 'Max',
+      field: 'status',
+      title: 'Status',
       editable: true,
       widthT: 100,
-      type: 'number',
       minWidth: 100,
+      type: 'checkbox'
     },
-
     {
       field: 'remarks',
       title: 'Remark',
@@ -121,13 +146,12 @@ const TargetGasifierOperation = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Production_Norms_Target_Gasifier_Operation_${AOP_YEAR}`,
+    ExcelName: `PCG_Production_Norms_Configuration_Range_Limit_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Target Gasifier Operation',
-    showCalculate: false,
-    calculateDisabled: true,
+    titleName: 'Configuration Range (Limit)',
+    showCalculateVisibility: true,
   }
 
   const handleUpdate = async (updatedRows) => {
@@ -135,11 +159,11 @@ const TargetGasifierOperation = () => {
     try {
       let payload = updatedRows?.map((row) => {
         const { id, inEdit, particulars, originalRemark, ...rest } = row
-
         return {
-          normParameterFKId: row.normParameterFkId,
+          normParameterFkId: row.normParameterFkId,
           apr: row.apr,
           may: row.may,
+          status: row.status ?? false,
           remarks: row.remarks,
           auditYear: row.auditYear,
           uom: row.uom,
@@ -150,14 +174,12 @@ const TargetGasifierOperation = () => {
         }
       })
 
-      // console.log('payload', payload)
-      const response =
-        await ProductionNormsApiService.saveTargetGasifierOperationData(
-          keycloak,
-          AOP_YEAR,
-          payload,
-          PLANT_ID,
-        )
+      const response = await PCGProductionRangeApiService.postData(
+        keycloak,
+        payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -194,6 +216,23 @@ const TargetGasifierOperation = () => {
         setLoading(false)
         return
       }
+      const fieldsToCheck = ['attributeValue']
+      const validationError = validateRowDataWithRemarks(
+        data.filter((item) => item.isEditable == true),
+        originalRows,
+        fieldsToCheck,
+        'displayName',
+      )
+
+      if (validationError) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationError,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
       const requiredFields = ['remarks']
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -220,35 +259,84 @@ const TargetGasifierOperation = () => {
     try {
       setLoading(true)
 
-      const response =
-        await ProductionNormsApiService.getTargetGasifierOperationData(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+      // const response = await PCGProductionRangeApiService.getDataForLimit(
+      //   keycloak,
+      //   PLANT_ID,
+      //   AOP_YEAR,
+      // )
+      const response = {
+        data: {
+          productionRangeLimitList: [
+            {
+              id: 1,
+              displayName: 'J1 Acid Gas Flow',
+              uom: 'Nm³/hr',
+              productionLimit: '±',
+              apr: '10000',
+              type: 'number',
+              normParameterType: 'Fuel (Syngas)',
+              status: true,
+              remarks: 'Applied as Yearly Avg ± this value (default ±10000)',
+              isEditable: true,
+              allowNegative: true,
+            },
+            {
+              id: 2,
+              displayName: 'Avg J3 Acid Gas H2S Concentration',
+              uom: '%',
+              productionLimit: '>',
+              apr: '30',
+              type: 'number',
+              normParameterType: 'Fuel (Syngas)',
+              status: true,
+              remarks: 'Threshold: > 30%',
+              isEditable: true,
+            },
+            {
+              id: 3,
+              displayName: 'Incinerator Temperature',
+              uom: '°C',
+              productionLimit: '>',
+              apr: '740',
+              type: 'number',
+              normParameterType: 'Fuel (Syngas)',
+              status: false,
+              remarks: 'Threshold: > 740 °C',
+              isEditable: true,
+            },
+          ],
+        },
+      }
 
-      const formattedData = response?.data?.productionRangeList?.map((row, index) => ({
-        ...row,
-        id: row.id || index,
-        particulars: row.displayName,
-
-        originalRemark: row.remarks || '',
-        normParameterFKId: row.normParameterFKId,
-        auditYear: row.auditYear,
-        normTypeName: row.normTypeName,
-        isEditable: row.isEditable,
-        displayName: row.displayName,
-        type: row.type,
-      }))
+      const formattedData = response?.data?.productionRangeLimitList?.map(
+        (row, index) => ({
+          ...row,
+          id: row.id || index,
+          particulars: row.displayName,
+          originalRemark: row.remarks || '',
+          normParameterFKId: row.normParameterFKId,
+          auditYear: row.auditYear,
+          normTypeName: row.normParameterType,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          // type: row.type,
+          productionLimit: row.productionLimit,
+          status: row.status ?? false,
+          allowNegative: row?.allowNegative ?? false,
+        }),
+      )
 
       setRows(formattedData || [])
+      setOriginalRows(formattedData || [])
     } catch (error) {
       setRows([])
-      console.error('Error fetching Cat Chem data:', error)
+      setOriginalRows([])
+      console.error('Error fetching Range Limit data:', error)
     } finally {
       setLoading(false)
     }
   }
+
   const downloadExcelForConfiguration = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
@@ -259,11 +347,11 @@ const TargetGasifierOperation = () => {
     })
 
     try {
-      await ProductionNormsApiService.exportTargetGasifierOperationExcel(
+      await PCGProductionRangeApiService.getProductionRangeLimitExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        `${EXCEL_EXPORT_TITLE}.xlsx`,
+        EXCEL_EXPORT_TITLE,
       )
 
       setSnackbarData({
@@ -279,21 +367,22 @@ const TargetGasifierOperation = () => {
       })
     }
   }
+
   const handleExcelUpload = (rawFile) => {
-    uploadProductionRange(rawFile)
+    uploadProductionRangeLimit(rawFile)
   }
-  const uploadProductionRange = async (rawFile) => {
+
+  const uploadProductionRangeLimit = async (rawFile) => {
     setLoading(true)
 
     try {
       let response =
-        await ProductionNormsApiService.importTargetGasifierOperationExcel(
+        await PCGProductionRangeApiService.productionRangeLimitImport(
           rawFile,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-      // console.log('Upload response:', response)
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -317,7 +406,10 @@ const TargetGasifierOperation = () => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Production Range.xlsx')
+        link.setAttribute(
+          'download',
+          'Error File - Production Range Limit.xlsx',
+        )
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -354,12 +446,17 @@ const TargetGasifierOperation = () => {
     <Box>
       <LoaderBackdrop open={!!loading} />
       <Box>
-        <AdvanceKendoTable
+        <RowBasedKendoTable
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
           setRows={setRows}
           columns={NormConfigurationColumns}
           rows={rows}
+          title={
+            adjustedPermissionsManual.showTitle
+              ? adjustedPermissionsManual.titleName
+              : ''
+          }
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           apiRef={apiRef}
@@ -375,16 +472,10 @@ const TargetGasifierOperation = () => {
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
           permissions={adjustedPermissionsManual}
+          groupBy={['normTypeName']}
           saveChanges={saveChanges}
-          handleExcelUpload={handleExcelUpload}
-          title={
-            adjustedPermissionsManual.showTitle
-              ? adjustedPermissionsManual.titleName
-              : ''
-          }
           handleExport={downloadExcelForConfiguration}
-          // customHeight={60}
-          // groupBy={['normTypeName']}
+          handleExcelUpload={handleExcelUpload}
           paginationConfig={{
             threshold: 100,
             buttonCount: 5,
@@ -397,4 +488,4 @@ const TargetGasifierOperation = () => {
   )
 }
 
-export default TargetGasifierOperation
+export default ConfigurationLimit

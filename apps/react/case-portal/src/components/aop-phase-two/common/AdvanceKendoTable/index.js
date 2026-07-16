@@ -17,7 +17,6 @@ import { handleTabKeyNavigation, applyDateCalculations } from './utility'
 import RemarkDialog from './components/RemarkDialog'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
-import ApproveDialog from '../../tcs/TcsInput/workflow/ApproveDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
 import { SelectCellEditor } from '../utilities/SelectCellEditor'
 import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
@@ -37,17 +36,9 @@ import {
   InlineRadioDisplayCell,
 } from '../utilities/RadioCellEditor'
 import {
-  Backdrop,
   Box,
-  Button,
-  CircularProgress,
-  Divider,
-  MenuItem,
-  TextField,
-  Typography,
+  Button, Typography
 } from '../../../../../node_modules/@mui/material/index'
-import { Tooltip as MuiTooltip } from '@mui/material'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { keyframes } from '@mui/material/styles'
 import {
   FileExportIcon,
@@ -55,9 +46,7 @@ import {
   SaveIcon as SaveImageIcon,
   CalculateIcon as CalculateImageIcon,
 } from 'assets/images/icons'
-import { DashboardColors } from 'themes/colors'
 import DateOnlyPicker from '../utilities/DatePicker'
-import { recalcDuration, recalcEndDate } from '../commonUtilityFunctions'
 import {
   DurationEditor,
   DurationDisplayWithTooltipCell,
@@ -70,15 +59,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
 import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Collapse from '@mui/material/Collapse'
 import { useSelector } from 'react-redux'
 import DeleteSelectedDialog from './components/DeleteSelectedDialog'
@@ -1426,7 +1407,6 @@ const AdvanceKendoTable = ({
       const isActive = isColumnActive(col.field, filter, sort)
 
       const headerColorClass = undefined
-
       if (col.children) {
         return (
           <GridColumn
@@ -2203,6 +2183,83 @@ const AdvanceKendoTable = ({
         )
       }
 
+      // Checkbox Type Handler — column-level checkbox (col.type === 'checkbox')
+      // Fires itemChange like any other editor so changes are tracked in modifiedCells
+      if (col.type === 'checkbox') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={!isEditable ? 'non-editable-cell' : undefined}
+            headerClassName={`${isActive ? 'active-column' : ''}`}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  const { dataItem, field, onChange } = cellProps
+                  const checked = !!dataItem[field]
+                  return (
+                    <td style={{ textAlign: 'center', padding: '6px 2px' }}>
+                      <Checkbox
+                        checked={checked}
+                        onChange={(e) => {
+                          const newVal =
+                            e.value ?? e.target?.checked ?? !checked
+                          onChange({ dataItem, field, value: newVal })
+                        }}
+                        size='medium'
+                      />
+                    </td>
+                  )
+                },
+              },
+              data: (cellProps) => {
+                const { dataItem, field, tdProps } = cellProps
+                const rowId = dataItem.id
+                const isEdited = Object.prototype.hasOwnProperty.call(
+                  customModifiedCells?.[rowId] || {},
+                  field,
+                )
+                const checked = !!dataItem[field]
+                return (
+                  <td
+                    {...tdProps}
+                    style={{
+                      textAlign: 'center',
+                      ...tdProps?.style,
+                      outline: isEdited ? '2px solid orange' : undefined,
+                    }}
+                    // Prevent the row-click from propagating so the grid
+                    // doesn't enter full row-edit mode on checkbox click
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onChange={(e) => {
+                        if (!isEditable) return
+                        const newVal =
+                          e.value ?? e.target?.checked ?? !checked
+                        // Call itemChange directly — it's in closure scope
+                        itemChange({ dataItem, field, value: newVal })
+                      }}
+                      size='medium'
+                    />
+                  </td>
+                )
+              },
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
       // Number with Inline Radio Type Handler
       if (col.type === 'numberWithRadio') {
         return (
@@ -2786,7 +2843,7 @@ const AdvanceKendoTable = ({
                   />
                 )}
 
-                {customActionCell && (
+                {!READ_ONLY && customActionCell && (
                   <GridColumn
                     key='customActions'
                     field='customActions'

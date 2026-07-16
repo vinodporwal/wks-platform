@@ -25,5 +25,7 @@ public interface NormalOperationNormsService {
     public AOPMessageVM importChemicalExcel(String year, UUID fromString, MultipartFile file);
     public AOPMessageVM getNormalOperationNormsGrades(String year,String plantId);
 	// public int getCalculatedNormalOpsNorms( String year, String plantId);
+	public AOPMessageVM saveNormalOperationNormsDataPolyester(List<MCUNormsValueDTO> mCUNormsValueDTOList,
+			UUID fromString, String year, String gradeId, boolean b);
 
 }
