@@ -1565,8 +1565,8 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     
     @Override
     public AOPMessageVM deleteRefinerySlowdownData(String id) {
-        try {
-            String sql = "DELETE FROM RefinerySlowdownTranscation WHERE id = ?";
+        try {  
+            String sql = "DELETE FROM RefinerySlowdownTransacation WHERE id = ?";
             jdbcTemplate.update(sql, id);
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);
