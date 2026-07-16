@@ -23,6 +23,7 @@ public class RefinerySlowdownTranscationDTO {
     private String throughputUom;
     private Integer tentativeMonth;
     private String remark;
+    private String plantId;
     private String aopYear;
     private String modifiedBy;
     private Date modifiedOn;

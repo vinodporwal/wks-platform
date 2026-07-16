@@ -1006,6 +1006,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .throughputUom(rs.getString("throughputUom"))
                     .tentativeMonth(rs.getInt("tentativeMonth"))
                     .remark(rs.getString("remark"))
+                    .plantId(rs.getString("plantId"))
                     .aopYear(rs.getString("aopYear"))
                     .isEditable(rs.getBoolean("isEditable"))
                     .isVisible(rs.getBoolean("isVisible"))
@@ -1103,6 +1104,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 .throughputUom(rs.getString("throughputUom"))
                 .tentativeMonth(rs.getInt("tentativeMonth"))
                 .remark(rs.getString("remark"))
+                .plantId(rs.getString("plantId"))
                 .aopYear(rs.getString("aopYear"))
                 .modifiedBy(rs.getString("modifiedBy"))
                 .modifiedOn(rs.getDate("modifiedOn"))
@@ -1436,6 +1438,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     }
 
                     dto.setAopYear(aopYear);
+                    dto.setPlantId(plantId);
 
                 } catch (Exception e) {
                     e.printStackTrace();
