@@ -103,7 +103,7 @@ const ConfigurationLimit = () => {
       title: 'Value',
       editable: true,
       widthT: 100,
-      type: 'number',
+      type: 'row-based',
       minWidth: 100,
     },
     {

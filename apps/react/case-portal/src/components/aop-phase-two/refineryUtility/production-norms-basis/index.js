@@ -10,6 +10,8 @@ import ExclusionDate from './ExclusionDate'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
+import Constants from './Constants'
+import PIMSThroughput from './PIMSThroughput'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -225,6 +227,10 @@ const ProductionNormsBasis = () => {
         return <Configuration />
       case 'Exclusion Date':
         return <ExclusionDate startDate={startDate} endDate={endDate} />
+      case 'Constants':
+        return <Constants startDate={startDate} endDate={endDate} />
+      case 'PIMS Throughput':
+        return <PIMSThroughput startDate={startDate} endDate={endDate} />
       default:
         return null
     }
@@ -239,7 +245,7 @@ const ProductionNormsBasis = () => {
           isOldYear={isOldYear}
           isSummaryRequired={false}
           onDatesChange={handleDatesChange}
-          onLoadNormCalculation={handleLoadNormCalculation}
+          // onLoadNormCalculation={handleLoadNormCalculation}
           normCalculationLoading={normCalculationLoading}
         />
       </Stack>

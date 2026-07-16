@@ -694,7 +694,7 @@ const Norms = () => {
         })
 
       setRows(tempRes)
-      setCalculateBtnEnabled(true)
+      setCalculateBtnEnabled(res?.data?.aopCalculation?.length > 0)
       setOriginalRows(tempRes)
       setAopCalaculation(res?.data?.aopCalculation || [])
     } catch (error) {
@@ -724,7 +724,7 @@ const Norms = () => {
       showExport: true,
       ExcelName: `Norms - ${AOP_YEAR}`,
       showReleaseBtn: true,
-      isReleaseDisabled: isReleaseDisabled,
+      isReleaseDisabled: isReleaseDisabled || calculateBtnEnabled,
       note:
         aopCalaculation?.length > 0
           ? ' Please calculate again there are some utilities updated.'
@@ -1086,7 +1086,7 @@ const Norms = () => {
             customHeight={80}
             groupBy={['generatingPlantName']}
             handleRelease={handleRelease}
-            isReleaseDisabled={isReleaseDisabled}
+            isReleaseDisabled={isReleaseDisabled || calculateBtnEnabled}
           />
         )
     }

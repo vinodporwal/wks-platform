@@ -262,7 +262,7 @@ async function saveImportConsumptionData(keycloak, PLANT_ID, payload) {
 async function getNormBasedUtilityBudget(keycloak, plantIds, financialYear) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
-  const url = `${Config.CaseEngineUrl}/task/jmd-norm-based-utility-budget?cppPlantIds=${queryParams}&financialYear=${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/jmd/norm-based-utility-budget?cppPlantIds=${queryParams}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -534,7 +534,7 @@ async function saveNormsExcel(file, keycloak, plantIds, AOP_YEAR) {
   return saveExcelData(
     file,
     keycloak,
-    `jmd-norm-based-utility-budget/import?cppPlantIds=${queryParams}&financialYear=${AOP_YEAR}`,
+    `jmd/norm-based-utility-budget/import?cppPlantIds=${queryParams}&financialYear=${AOP_YEAR}`,
     null,
     null,
   )
@@ -545,7 +545,7 @@ async function exportNormsExcel(keycloak, plantIds, AOP_YEAR, fileName) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
   return exportExcelData(keycloak, {
-    endpoint: `jmd-norm-based-utility-budget/export`,
+    endpoint: `jmd/norm-based-utility-budget/export`,
     queryParams: { cppPlantIds: queryParams, financialYear: AOP_YEAR },
     fileName: fileName || `Norms_${AOP_YEAR}.xlsx`,
     method: 'GET',
