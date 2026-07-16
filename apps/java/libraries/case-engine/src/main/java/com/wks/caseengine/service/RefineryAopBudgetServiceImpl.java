@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +32,15 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
+import com.wks.caseengine.dto.PlantsDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 
@@ -54,6 +58,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
     @Autowired
     private VerticalsRepository verticalsRepository;
+
+    @Autowired
+    private SiteRepository sitesRepository;
 
     @Override
     @Transactional
@@ -453,18 +460,42 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
 
     @Override
-	public VerticalsDTO getDropDownData(String plantId) {
+    public VerticalsDTO getDropDownData(String plantId) {
 
-        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
-
+        Plants plants = plantsRepository.findById(UUID.fromString(plantId))
+                .orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
         String verticalId = plants.getVerticalFKId().toString();
 
-		List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
-		return hierarchyData.stream()
-				.filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
-				.findFirst()
-				.orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
-	}
+        String sql = "EXEC Crude_GetRefineryMaintenanceDropdown @VerticalId = ?";
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, verticalId);
+
+        Map<String, SitesDTO> sitesMap = new LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            String siteFkId = row.get("Site_FK_Id").toString();
+            String siteName = (String) row.get("SiteName");
+            String plantFkId = row.get("Plant_FK_Id").toString();
+            String plantName = (String) row.get("PlantName");
+
+            SitesDTO site = sitesMap.computeIfAbsent(siteFkId, k ->
+                    SitesDTO.builder()
+                            .id(siteFkId)
+                            .name(siteName)
+                            .plants(new ArrayList<>())
+                            .build());
+
+            site.getPlants().add(PlantsDTO.builder()
+                    .id(plantFkId)
+                    .name(plantName)
+                    .siteFkId(siteFkId)
+                    .build());
+        }
+
+        return VerticalsDTO.builder()
+                .id(verticalId)
+                .sites(new ArrayList<>(sitesMap.values()))
+                .build();
+    }
 
     @Override
     @Transactional
@@ -797,13 +828,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         List<RefineryShutdownDTO> resultList = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 
-        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
-        String verticalId = plants.getVerticalFKId().toString();
-        List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
-        VerticalsDTO vertical = hierarchyData.stream()
-            .filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
+        VerticalsDTO verticalDto = getDropDownData(plantId);
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -924,7 +949,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 }
 
               
-                    validatePlantAndSiteName(dto, vertical);
+                    validatePlantAndSiteName(dto, verticalDto);
                 
 
                 resultList.add(dto);
@@ -1252,7 +1277,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
             // Protect the sheet so locked/unlocked cell styles are enforced (only for regular export)
             if (!isAfterSave) {
-                sheet.protectSheet("");
+              //  sheet.protectSheet("");
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -1271,13 +1296,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     private List<RefinerySlowdownTranscationDTO> readRefinerySlowdownExcel(InputStream inputStream, String plantId, String aopYear) {
         List<RefinerySlowdownTranscationDTO> resultList = new ArrayList<>();
 
-        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
-        String verticalId = plants.getVerticalFKId().toString();
-        List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
-        VerticalsDTO vertical = hierarchyData.stream()
-            .filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
+        VerticalsDTO verticalDto = getDropDownData(plantId);
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -1444,7 +1463,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     e.printStackTrace();
                 }
 
-                validatePlantAndSiteNameForSlowdown(dto, vertical);
+                validatePlantAndSiteNameForSlowdown(dto, verticalDto);
 
                 resultList.add(dto);
             }
