@@ -60,7 +60,7 @@ const Shutdown = ({ permissions }) => {
       editable: true, // "Note that provide days specific to days in that month."
       align: 'right',
       headerAlign: 'right',
-      type: 'number',
+      type: 'wholeNumber',
       minWidth: 220,
     },
     {
@@ -274,32 +274,32 @@ const Shutdown = ({ permissions }) => {
           setModifiedCells({})
           await fetchData()
         } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
 
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
 
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'Error File - Shutdown.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', 'Error File - Shutdown.xlsx')
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
 
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        fetchData()
-      } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          fetchData()
+        } else {
           setSnackbarOpen(true)
           setSnackbarData({
             message: response?.message || 'Upload Failed!',
@@ -319,6 +319,39 @@ const Shutdown = ({ permissions }) => {
     },
     [keycloak, PLANT_ID, AOP_YEAR, fetchData],
   )
+
+  const deleteRowData = async (paramsForDelete) => {
+      setLoading(true)
+  
+      try {
+        const { idFromApi, id } = paramsForDelete
+        const deleteId = id
+  
+        if (!idFromApi) {
+          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+          setModifiedCells((prev) => {
+            const newModifiedCells = { ...prev }
+            delete newModifiedCells[deleteId]
+            return newModifiedCells
+          })
+        }
+  
+        if (idFromApi) {
+          await ShutdownApiService.deleteShutdownData(idFromApi, keycloak, PLANT_ID)
+          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Record Deleted successfully!',
+            severity: 'success',
+          })
+          fetchData()
+        } else {
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error deleting Record', error)
+      }
+    }
 
   const adjustedPermissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
@@ -372,6 +405,7 @@ const Shutdown = ({ permissions }) => {
         disableRedHighlight={true}
         handleExport={handleExport}
         handleExcelUpload={handleExcelUpload}
+        deleteRowData={deleteRowData}
         screenType='pims-product-master'
         siteDropdown={siteDropdown}
         plantDropdown={plantDropdown}
