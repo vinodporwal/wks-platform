@@ -167,4 +167,9 @@ public class RefineryAopBudgetController {
             @RequestParam("file") MultipartFile file) {
         return refineryAopBudgetService.importRefinerySlowdownExcel(plantId, aopYear, file);
     }
+
+    @DeleteMapping("/refinery-slowdown-data")
+    public AOPMessageVM deleteRefinerySlowdownData(@RequestParam String id) {
+        return refineryAopBudgetService.deleteRefinerySlowdownData(id);
+    }
 }

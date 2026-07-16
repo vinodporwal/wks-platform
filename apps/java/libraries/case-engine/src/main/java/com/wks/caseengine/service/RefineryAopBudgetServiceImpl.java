@@ -2,6 +2,7 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -871,7 +872,17 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     if (dateCell != null) {
                         dateCell.setCellType(CellType.STRING);
                         String dateStr = dateCell.getStringCellValue().trim();
-                        dto.setDateOfCommencement(dateStr.isEmpty() ? null : sdf.parse(dateStr));
+                        if(dateStr.isEmpty()) {  
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Date of Commencement is required");
+                        } else {
+                            try {
+                                dto.setDateOfCommencement(sdf.parse(dateStr));
+                            } catch (ParseException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("Date of Commencement must be a valid date");
+                            }
+                        }
                     }
 
                     // Col 4 – Purpose of Shutdown (remark)
@@ -1326,6 +1337,10 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                                 dto.setErrorMessage("Tentative Duration in days must be a valid integer");
                             }
                         }
+                        else {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Tentative Duration in days is required");
+                        }
                     }
 
                     // Col 3 – Throughput during the Slowdown
@@ -1333,7 +1348,17 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     if (throughputCell != null) {
                         throughputCell.setCellType(CellType.STRING);
                         String throughputStr = throughputCell.getStringCellValue().trim();
-                        dto.setThroughputDuringTheSlowdown(throughputStr.isEmpty() ? null : Double.parseDouble(throughputStr));
+                        if(throughputStr.isEmpty()) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Throughput during the Slowdown is required");
+                        } else {
+                            try {
+                                dto.setThroughputDuringTheSlowdown(Double.parseDouble(throughputStr));
+                            } catch (NumberFormatException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("Throughput during the Slowdown must be a valid number");
+                            }
+                        }
                     }
 
                     // Col 4 – Throughput UOM
@@ -1346,21 +1371,35 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                     // Col 5 – Tentative Month
                     Cell monthCell = row.getCell(5);
-                    if (monthCell != null) {
+                    if (monthCell == null || monthCell.getCellType() == CellType.BLANK) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrorMessage("Tentative Month is required");
+                    } else {
                         monthCell.setCellType(CellType.STRING);
                         String monthStr = monthCell.getStringCellValue().trim();
-                        if (!monthStr.isEmpty()) {
-                            try {
-                                double monthDouble = Double.parseDouble(monthStr);
-                                if (monthDouble != Math.floor(monthDouble)) {
-                                    dto.setSaveStatus("Failed");
-                                    dto.setErrorMessage("Tentative Month must be a whole number");
-                                } else {
-                                    dto.setTentativeMonth((int) monthDouble);
-                                }
-                            } catch (NumberFormatException e) {
+                        if (monthStr.isEmpty()) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Tentative Month is required");
+                        } else {
+                            java.util.Map<String, Integer> monthMap = new java.util.LinkedHashMap<>();
+                            monthMap.put("january",   1);
+                            monthMap.put("february",  2);
+                            monthMap.put("march",     3);
+                            monthMap.put("april",     4);
+                            monthMap.put("may",       5);
+                            monthMap.put("june",      6);
+                            monthMap.put("july",      7);
+                            monthMap.put("august",    8);
+                            monthMap.put("september", 9);
+                            monthMap.put("october",  10);
+                            monthMap.put("november", 11);
+                            monthMap.put("december", 12);
+                            Integer monthInt = monthMap.get(monthStr.toLowerCase());
+                            if (monthInt == null) {
                                 dto.setSaveStatus("Failed");
-                                dto.setErrorMessage("Tentative Month must be a valid integer");
+                                dto.setErrorMessage("Tentative Month must be a valid month name (e.g. January)");
+                            } else {
+                                dto.setTentativeMonth(monthInt);
                             }
                         }
                     }
@@ -1496,6 +1535,21 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             throw e;
         } catch (Exception ex) {
             throw new RuntimeException("Failed to import Refinery Slowdown data", ex);
+        }
+    }
+
+    
+    @Override
+    public AOPMessageVM deleteRefinerySlowdownData(String id) {
+        try {
+            String sql = "DELETE FROM RefinerySlowdownTranscation WHERE id = ?";
+            jdbcTemplate.update(sql, id);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Data deleted successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete refinery slowdown data", e);
         }
     }
 

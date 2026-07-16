@@ -26,5 +26,5 @@ public interface RefineryAopBudgetService {
     public List<RefinerySlowdownTranscationDTO> saveRefinerySlowdownData(List<RefinerySlowdownTranscationDTO> refinerySlowdownDTOs);
     public byte[] createRefinerySlowdownExcel(String plantId, String aopYear, boolean isAfterSave, List<RefinerySlowdownTranscationDTO> dtoList);
     public AOPMessageVM importRefinerySlowdownExcel(String plantId, String aopYear, MultipartFile file);
-   
+    public AOPMessageVM deleteRefinerySlowdownData(String id);
 }
