@@ -5,10 +5,11 @@ export const ProductionConstarintsApiService = {
   postProductionConstraints,
   exportExcelProductionConstraints,
   importExcelProductionConstraints,
+  saveProductionConstraint,
 }
 
 async function getProductionConstraints(keycloak, PLANT_ID, AOP_YEAR, TYPE) {
-  const url = `${Config.CaseEngineUrl}/task/production-constraints?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&type=${TYPE}`
+  const url = `${Config.CaseEngineUrl}/task/production-configuration-basis?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&type=${TYPE}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -100,6 +101,30 @@ async function importExcelProductionConstraints(
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
     console.error('Error importing Optimizer Input Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+async function saveProductionConstraint(
+  PLANT_ID,
+  turnAroundDetails,
+  keycloak,
+  AOP_YEAR
+) {
+  var url = `${Config.CaseEngineUrl}/task/production-configuration-basis?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(turnAroundDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

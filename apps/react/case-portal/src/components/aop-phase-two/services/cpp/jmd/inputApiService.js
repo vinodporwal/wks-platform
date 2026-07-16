@@ -1459,7 +1459,12 @@ async function getProcessUnitAllocations(keycloak, plantIds, aopYear) {
 
 // POST /task/process-unit-allocation?plantIds=UUID,UUID&aopYear=2026-27
 // Body: direct array of allocation records
-async function saveProcessUnitAllocations(keycloak, plantIds, aopYear, payload) {
+async function saveProcessUnitAllocations(
+  keycloak,
+  plantIds,
+  aopYear,
+  payload,
+) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
   const url = `${Config.CaseEngineUrl}/task/process-unit-allocation?plantIds=${queryParams}&aopYear=${aopYear}`

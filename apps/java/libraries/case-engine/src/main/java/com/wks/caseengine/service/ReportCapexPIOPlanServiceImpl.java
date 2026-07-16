@@ -118,6 +118,27 @@ public class ReportCapexPIOPlanServiceImpl implements ReportCapexPIOPlanService 
 		}
 	}
 
+	@Transactional
+	@Override
+	public AOPMessageVM deleteReportCapexPIOPlanTransaction(String id) {
+		try {
+			ReportCapexPIOPlan reportCapexPIOPlan = reportCapexPIOPlanRepository.findById(UUID.fromString(id))
+					.orElseThrow(() -> new RestInvalidArgumentException("Record not found for id: " + id, null));
+
+			reportCapexPIOPlanRepository.delete(reportCapexPIOPlan);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data deleted successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for id", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to delete data", ex);
+		}
+	}
+
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	@Override
 	public AOPMessageVM saveReportCapexPIOPlanTransaction(String year, String plantFKId,

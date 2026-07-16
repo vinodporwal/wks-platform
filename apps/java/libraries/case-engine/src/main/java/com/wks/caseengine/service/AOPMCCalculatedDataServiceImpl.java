@@ -32,6 +32,8 @@ import javax.sql.DataSource;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -1933,12 +1935,13 @@ if (!isValidTable) {
     continue;
 }
 
-				AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
 
-				try {
+			AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
 
-				dto.setProductName(getStringCellValue(row.getCell(0), dto));
-				dto.setApril(getNumericCellValue(row.getCell(1), dto));
+			try {
+
+			dto.setProductName(getStringCellValue(row.getCell(0), dto));
+			dto.setApril(getNumericCellValue(row.getCell(1), dto));
 				dto.setMay(getNumericCellValue(row.getCell(2), dto));
 				dto.setJune(getNumericCellValue(row.getCell(3), dto));
 				dto.setJuly(getNumericCellValue(row.getCell(4), dto));
@@ -1959,6 +1962,17 @@ if (!isValidTable) {
 				e.printStackTrace();
 				dto.setErrDescription(e.getMessage());
 				dto.setSaveStatus("Failed");
+			}
+
+			// skip the import if isEditable is false
+			if(meg) {
+				Optional<NormParameters> normParameter = normParametersRepository.findById(UUID.fromString(dto.getMaterialFKId()));
+				if(!normParameter.isPresent()) throw new IllegalArgumentException("Invalid material ID");
+					boolean isEditable = normParameter.get().getIsEditable();
+					if(!isEditable) {
+						continue;
+					}
+				
 			}
 			map.putIfAbsent(dto.getTableId(), new ArrayList<>());
 

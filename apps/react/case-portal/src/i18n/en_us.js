@@ -84,7 +84,8 @@ const defs = {
     runlengthData: 'Furnace Run Length ',
     functionalAop: 'CES',
     manufacturingDivision: 'Manufacturing Division',
-    reliabilityPerformance: 'Reliability Performance',
+    reliabilityPerformance: 'Site Reliability Performance',
+    plantReliabilityPerformance: 'Plant Reliability Performance',
     monthlyAop: 'Maintenance',
     siteWiseAop: 'Consumption Summary (Sites)',
     allSiteSummaryAop: 'Summary',
@@ -124,8 +125,7 @@ const defs = {
     packagingConsumables: 'Packaging Consumables',
     dashboard: 'AOP Dashboard',
     proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
-    proposedAop: 'Proposed AOP',
-    proposedAOP: 'Proposed AOP',
+    proposedAOP: 'Proposed Steady State Consumption',
     qualitypackaging: 'Quality & Packaging Norms',
     qualityPackagingBasis: 'Quality & Packaging Basis',
     // New Data Sets
@@ -144,6 +144,8 @@ const defs = {
     materialGroupedSelection: 'Material Grouped Selection',
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
+    productionScheduling: 'Production Scheduling',
+    configurationOtherCost: 'Other Cost'
   },
   pages: {
     dashboard: {
@@ -313,7 +315,8 @@ const defs = {
         process: 'Process',
         functionalAop: 'CES',
         monthlyAop: 'Maintenance',
-        reliabilityPerformance: 'Reliability Performance',
+        reliabilityPerformance: 'Site Reliability Performance',
+        plantReliabilityPerformance: 'Plant Reliability Performance',
         siteWiseAop: 'Consumption Summary (Sites)',
         allSiteSummaryAop: 'Summary',
         manufacturingDivision: 'Manufacturing Division',
@@ -345,8 +348,7 @@ const defs = {
         packagingConsumables: 'Packaging Consumables',
         dashboard: 'AOP Dashboard',
         proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
-        proposedAop: 'Proposed AOP',
-        proposedAOP: 'Proposed AOP',
+        proposedAOP: 'Proposed Steady State Consumption',
         qualitypackaging: 'Quality & Packaging Norms',
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',

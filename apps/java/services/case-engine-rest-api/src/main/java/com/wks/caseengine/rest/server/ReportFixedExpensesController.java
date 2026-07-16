@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +30,11 @@ public class ReportFixedExpensesController {
 	@PostMapping(value="/report-fixed-expenses")
 	public AOPMessageVM saveReportFixedExpensesTransaction(@RequestParam String year,@RequestParam String siteId, @RequestBody List<ReportFixedExpensesDTO> ReportFixedExpensesDTOs) {
 		return 	reportFixedExpensesService.saveReportFixedExpensesTransaction(year,siteId,ReportFixedExpensesDTOs);
+	}
+
+	@DeleteMapping(value="/report-fixed-expenses")
+	public AOPMessageVM deleteReportFixedExpensesTransaction(@RequestParam String id) {
+		return reportFixedExpensesService.deleteReportFixedExpensesTransaction(id);
 	}
 
 }
