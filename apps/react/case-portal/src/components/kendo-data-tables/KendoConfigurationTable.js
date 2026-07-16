@@ -1,0 +1,1914 @@
+import { Box } from '@mui/material'
+import AopTabs from 'components/AopTabs'
+import Notification from 'components/Utilities/Notification'
+import { verticalEnums } from 'enums/verticalEnums'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
+import { PIOImpactApiService } from 'services/Pio-Impact-api-service'
+import { useSession } from 'SessionStoreContext'
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian'
+import {
+  Backdrop,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '../../../node_modules/@mui/material/index'
+import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
+import SelectivityData from './SelectivityData'
+import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
+import { getRoleName } from 'services/role-service'
+import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
+import QualityParameters from './QualityParameters'
+import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
+import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
+import ProductionRange from './tab-components/ProductionRange'
+import PtaConfiguration from './tab-components/PtaConfiguration'
+import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
+
+import { Zoom, IconButton } from '@mui/material'
+import ShutdownRateGrid from './tab-components/ShutdownRate/ShutdownRateGrid'
+import ShutdownRate from './tab-components/ShutdownRate'
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges'
+import CloseIcon from '@mui/icons-material/Close'
+import { styled } from '@mui/material/styles'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ExclusionDate from './ExclusionDate'
+import CatalystChangeOver from './CatalystChangeOver'
+import LineConfiguration from './LineConfiguration'
+import ConfigurationAccordian from './common/ConfigurationAccordian'
+import SeasonMonths from './tab-components/SeasonMonths/index'
+import MaterialBalance from './MaterialBalance'
+import TankNosConfigureTable from './TankNosConfigureTable'
+
+const ConfigurationTable = () => {
+  const hasExecutedRef = useRef(false)
+  const keycloak = useSession()
+
+  const fetchDataTokenRef = useRef(0)
+  const fetchConstantsTokenRef = useRef(0)
+  const fetchConstantsManualTokenRef = useRef(0)
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
+  const IS_CHEMICAL_DMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'dmd'
+  const IS_CHEMICAL_VMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'vmd'
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    plantObject?.name?.toUpperCase() === 'BUTADIENE'
+  const [tabIndex, setTabIndex] = useState(0)
+  const [loadBtnClicked, setLoadBtnClicked] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [loading1, setLoading1] = useState(false)
+  const [dateEdited, setDateEdited] = useState(false)
+  const [summaryEdited, setSummaryEdited] = useState(false)
+
+  const [configurationRows, setConfigurationRows] = useState([])
+  const [startUpRows, setStartUpRows] = useState([])
+  const [otherLossRows, setOtherLossRows] = useState([])
+  const [shutdownNormsRows, setShutdownRows] = useState([])
+  const [constantsRows, setConstantsRows] = useState([])
+  const [productionRows, setProductionRows] = useState([])
+  const [elastomerRows, setElastomerRows] = useState([])
+  const [productionRowsConstants, setProductionRowsConstants] = useState([])
+  const [pioImpactRows, setPioImpactRows] = useState([])
+  const [shutdownDataRows, setShutdownDataRows] = useState([])
+  const [
+    productionRowsConstantsMannualEntry,
+    setProductionRowsConstantsMannualEntry,
+  ] = useState([])
+  const [gradeData, setGradeData] = useState([])
+  const [continiousGradeData, setContiniousGradeData] = useState([])
+  const [discontiniousGradeData, setDiscontiniousGradeData] = useState([])
+
+  const [reportManualEntry, setReportManualEntry] = useState([])
+  const [PIO, setPIO] = useState([])
+
+  const [tabs, setTabs] = useState([])
+  const [availableTabs, setAvailableTabs] = useState([])
+  const [summary, setSummary] = useState('')
+  const [debouncedSummary, setDebouncedSummary] = useState('')
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSummary(summary)
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [summary])
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [startDate, setStartDate] = useState()
+  const [endDate, setEndDate] = useState()
+  const [startDateObj, setStartDateObj] = useState([])
+  const [endDateObj, setEndDateObj] = useState([])
+  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
+    useState([])
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
+  const [openConfirmDialogRev, setOpenConfirmDialogRev] = useState(false)
+  const [gradeId, setGradeId] = React.useState(null)
+  const [revision, setRevision] = useState('1')
+  const [revisionDetails, setRevisionDetails] = useState([])
+
+  const [selectedRevNum, setSelectedRevNum] = useState(null)
+
+  // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
+  //   usePermissions()
+
+  const handleOpenDialog = () => {
+    const isPEorPP = lowerVertName === 'pe' || lowerVertName === 'pp'
+
+    if (isPEorPP || IS_PVC_DMD || IS_PVC_HMD) {
+      if (!summaryEdited && !summary) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please add AOP Design Basis.',
+          severity: 'error',
+        })
+        return
+      }
+
+      if (!summaryEdited && summary) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please update AOP Design Basis.',
+          severity: 'error',
+        })
+        return
+      }
+    }
+
+    setOpenConfirmDialog(true)
+  }
+
+  const handleCloseDialog = () => {
+    setOpenConfirmDialog(false)
+  }
+
+  const handleConfirmLoad = () => {
+    setOpenConfirmDialog(false)
+    onLoad()
+  }
+
+  const handleOpenDialogRev = (num) => {
+    setSelectedRevNum(num)
+    setOpenConfirmDialogRev(true)
+  }
+
+  const handleCloseDialogRev = () => {
+    setOpenConfirmDialogRev(false)
+    setSelectedRevNum(null)
+  }
+
+  const handleConfirmLoadRev = () => {
+    setOpenConfirmDialogRev(false)
+    handleRevisionChange(selectedRevNum)
+  }
+
+  const fetchData = async (gradeId = null) => {
+    setLoading(true)
+    const token = ++fetchDataTokenRef.current
+
+    try {
+      setLoading(true)
+      var data = []
+
+      const res = await DataService.getCatalystSelectivityData(
+        keycloak,
+        gradeId,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (res?.code != 200) {
+        return
+      } else {
+        data = res?.data
+      }
+
+      if (token !== fetchDataTokenRef.current) {
+        return
+      }
+
+      if (!Array.isArray(data)) {
+        return
+      }
+
+      const distinctReportTypes = [
+        ...new Set(data.map((item) => item.normType).filter(Boolean)),
+      ]
+      setReportTypes(distinctReportTypes)
+
+      if (
+        lowerVertName == verticalEnums.MEG ||
+        lowerVertName == verticalEnums.CRACKER ||
+        IS_CHEMICAL_DMD ||
+        IS_CHEMICAL_VMD
+      ) {
+        data = data?.filter(
+          (item) =>
+            item.normType !== 'Report Manual Entry' &&
+            item.normType !== 'PIO Impact' &&
+            item.normType !== 'Shutdown',
+        )
+
+        const formattedData = data.map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remarks,
+          srNo: index + 1,
+          Particulars: item.normType,
+        }))
+
+        setProductionRows(formattedData)
+      } else {
+        const groups = new Map()
+
+        data.forEach((item) => {
+          const ConfigTypeName = item.ConfigTypeName
+          const TypeName = item.TypeDisplayName
+          if (!groups.has(ConfigTypeName)) {
+            groups.set(ConfigTypeName, new Map())
+          }
+          const normGroup = groups.get(ConfigTypeName)
+          if (!normGroup.has(TypeName)) {
+            normGroup.set(TypeName, [])
+          }
+          normGroup.get(TypeName).push(item)
+        })
+        let groupId = 0
+        let shutdownRows = []
+        let startUpRows = []
+        let otherLossRows = []
+        let continiousGradeRows = []
+        let discontiniousGradeRows = []
+        let constantsRows = []
+        let configurationRows = []
+        let PIORows = []
+        let reportManualEntryRows = []
+
+        groups.forEach((normGroup, ConfigTypeName) => {
+          let rowsForThisCategory = []
+          normGroup.forEach((items, TypeName) => {
+            items.forEach((item) => {
+              rowsForThisCategory.push({
+                ...item,
+                idFromApi: item.id,
+                originalRemark: item.remarks,
+                id: groupId++,
+              })
+            })
+          })
+          if (ConfigTypeName == 'Configuration') {
+            configurationRows = rowsForThisCategory
+          }
+          if (ConfigTypeName == 'ShutdownNorms') {
+            shutdownRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'StartupLosses') {
+            startUpRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Otherlosses') {
+            otherLossRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'ContineGradeChange') {
+            continiousGradeRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'DisContineGradeChange') {
+            discontiniousGradeRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Constant') {
+            constantsRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Report Manual Entry') {
+            reportManualEntryRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'PIO Impact') {
+            PIORows = rowsForThisCategory
+          }
+        })
+
+        setShutdownRows(shutdownRows)
+        setStartUpRows(startUpRows)
+        setOtherLossRows(otherLossRows)
+        setContiniousGradeData(continiousGradeRows)
+        setDiscontiniousGradeData(discontiniousGradeRows)
+        if (IS_AROMATICS_PMD) {
+          // Distribute values from Constant to Configuration for DeH-15 and DeH-201
+          const monthsForDist = [
+            'apr',
+            'may',
+            'jun',
+            'jul',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec',
+            'jan',
+            'feb',
+            'mar',
+          ]
+
+          const getDaysInMonth = (monthName, aopYear) => {
+            const [startYearStr, endYearStr] = (aopYear || '').split('-')
+            const startYear = parseInt(startYearStr, 10)
+            let endYear = startYear + 1
+            if (endYearStr) {
+              const fullEndYearStr = startYearStr.substring(0, 2) + endYearStr
+              const parsedEndYear = parseInt(fullEndYearStr, 10)
+              if (!isNaN(parsedEndYear)) {
+                endYear = parsedEndYear
+              }
+            }
+
+            const month = monthName.toLowerCase()
+            if (month === 'january' || month === 'jan') return 31
+            if (month === 'february' || month === 'feb') {
+              const isLeap =
+                (endYear % 4 === 0 && endYear % 100 !== 0) ||
+                endYear % 400 === 0
+              return isLeap ? 29 : 28
+            }
+            if (month === 'march' || month === 'mar') return 31
+            if (month === 'april' || month === 'apr') return 30
+            if (month === 'may') return 31
+            if (month === 'june' || month === 'jun') return 30
+            if (month === 'july' || month === 'jul') return 31
+            if (month === 'august' || month === 'aug') return 31
+            if (month === 'september' || month === 'sep') return 30
+            if (month === 'october' || month === 'oct') return 31
+            if (month === 'november' || month === 'nov') return 30
+            if (month === 'december' || month === 'dec') return 31
+            return 30
+          }
+
+          configurationRows.forEach((r) => {
+            const isDistributionProduct =
+              (r.ConfigTypeName === 'Configuration' ||
+                r.ConfigTypeDisplayName === 'Configuration') &&
+              r.TypeDisplayName === 'Configuration' &&
+              r.UOM === 'YES/NO' &&
+              ['deh-15', 'deh-201'].includes(
+                (r.productName || '').trim().toLowerCase(),
+              )
+
+            if (isDistributionProduct) {
+              const prodNameLower = (r.productName || '').trim().toLowerCase()
+              let constantProductName = ''
+              if (prodNameLower === 'deh-15') {
+                constantProductName = 'deh-15 batch length'
+              } else if (prodNameLower === 'deh-201') {
+                constantProductName = 'deh-201 batch length'
+              }
+
+              const constantRow = (constantsRows || []).find(
+                (cr) =>
+                  (cr.ConfigTypeName === 'Constant' ||
+                    cr.ConfigTypeDisplayName === 'Constant') &&
+                  cr.TypeDisplayName === 'Constant' &&
+                  cr.UOM === 'Day' &&
+                  (cr.productName || '').trim().toLowerCase() ===
+                    constantProductName,
+              )
+
+              const totalValue = constantRow ? Number(constantRow.apr) || 0 : 0
+
+              // Sequential fill: pour days into each month in order until totalValue is used up
+              // e.g. totalValue=110: apr=30, may=31, jun=30, jul=19 (remaining), aug...=0
+              let remaining = totalValue
+
+              monthsForDist.forEach((m) => {
+                const daysInThisMonth = getDaysInMonth(m, AOP_YEAR)
+                if (remaining >= daysInThisMonth) {
+                  r[m] = 1
+                  r[`${m}_isDisabled`] = true
+                  r[`${m}_editable`] = false
+                  remaining -= daysInThisMonth
+                } else if (remaining > 0) {
+                  if (r[m] === 1) {
+                    r[m] = 1
+                    r[`${m}_isDisabled`] = true
+                    r[`${m}_editable`] = false
+                  } else {
+                    r[m] = 0
+                    r[`${m}_isDisabled`] = false
+                    r[`${m}_editable`] = true
+                  }
+                  remaining = 0
+                } else {
+                  // No days left - assign 0, switch is NOT disabled
+                  if (r[m] === 1) {
+                    r[m] = 1
+                    r[`${m}_isDisabled`] = true
+                    r[`${m}_editable`] = false
+                  } else {
+                    r[m] = 0
+                    r[`${m}_isDisabled`] = false
+                    r[`${m}_editable`] = true
+                  }
+                }
+              })
+            }
+          })
+        }
+
+        setConstantsRows(constantsRows)
+        setConfigurationRows(configurationRows)
+        setReportManualEntry(reportManualEntryRows)
+        setPIO(PIORows)
+      }
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    } finally {
+      if (fetchDataTokenRef.current === token) {
+        setLoading(false)
+      } else {
+        // console.info(
+        //   'fetchData: not clearing loading because a newer fetch is active',
+        // )
+      }
+    }
+  }
+
+  const fetchDataConstants = async () => {
+    setLoading(true)
+    const token = ++fetchConstantsTokenRef.current
+    try {
+      var constantsRes = await DataService.getCatalystSelectivityDataConstants(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (token !== fetchConstantsTokenRef.current) {
+        return
+      }
+
+      if (constantsRes?.code != 200) {
+        setProductionRowsConstants([])
+        return
+      }
+
+      var data = constantsRes?.data
+
+      const formattedData = data.map((item, index) => {
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.Remarks,
+          srNo: index + 1,
+          Particulars: item.NormTypeName,
+          remarks: item.Remarks,
+        }
+      })
+
+      setProductionRowsConstants(formattedData)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      if (fetchConstantsTokenRef.current === token) {
+        setLoading(false)
+      } else {
+        // console.info('fetchDataConstants: newer fetch active, not clearing loading')
+      }
+    }
+  }
+
+  const [reportTypes, setReportTypes] = useState([])
+
+  const fetchDataConstantsMnnualEntry = async () => {
+    setLoading(true)
+
+    var constantsRes = []
+    const token = ++fetchConstantsManualTokenRef.current
+    try {
+      constantsRes = await DataService.getCatalystSelectivityData(
+        keycloak,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (constantsRes?.code != 200) {
+        return
+      }
+
+      if (token !== fetchConstantsManualTokenRef.current) {
+        return
+      }
+
+      const formattedData = constantsRes?.data?.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.remarks,
+        srNo: index + 1,
+        Particulars: item.normType,
+      }))
+
+      //Consition Missing For ELASTOMER VERTICAL #1
+      const distinctReportTypes = [
+        ...new Set(formattedData.map((item) => item.normType).filter(Boolean)),
+      ]
+      //Consition Missing For ELASTOMER VERTICAL #2
+      setReportTypes(distinctReportTypes)
+
+      var data = formattedData?.filter(
+        (item) => item?.Particulars == 'Report Manual Entry',
+      )
+
+      var dataPioImpact = formattedData?.filter(
+        (item) => item?.Particulars == 'PIO Impact',
+      )
+
+      var shutdownData = formattedData?.filter(
+        (item) => item?.Particulars == 'Shutdown',
+      )
+
+      setProductionRowsConstantsMannualEntry(data)
+      setPioImpactRows(dataPioImpact)
+      setShutdownDataRows(shutdownData)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      if (fetchConstantsManualTokenRef.current === token) {
+        setLoading(false)
+      } else {
+        // console.info('fetchDataConstantsMnnualEntry: newer fetch active, not clearing loading')
+      }
+    }
+  }
+  const fetchGradeData = async () => {
+    setLoading(true)
+    try {
+      var data = await DataService.getPeConfigData(keycloak, PLANT_ID, AOP_YEAR)
+
+      const formattedData = data?.map((item, index) => {
+        const converted = {}
+
+        Object.entries(item).forEach(([key, value]) => {
+          if (
+            key !== 'UOM' &&
+            typeof value === 'string' &&
+            value.trim() !== '' &&
+            !isNaN(value)
+          ) {
+            converted[key] = value.includes('.')
+              ? parseFloat(value)
+              : parseInt(value, 10)
+          } else {
+            converted[key] = value
+          }
+        })
+
+        return {
+          ...converted,
+          id: index,
+          TypeDisplayName: item?.TypeDisplayName
+            ? item?.TypeDisplayName
+            : 'Recipe',
+        }
+      })
+
+      setGradeData(formattedData)
+    } catch (error) {
+      console.error('Error fetching grade data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getConfigurationTabsMatrix = async () => {
+    setLoading(true)
+    try {
+      var response = await DataService.getConfigurationTabsMatrix(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        SITE_ID,
+        VERTICAL_ID,
+      )
+      if (response?.code == 200) {
+        const parsedData = JSON.parse(response?.data)
+
+        setTabs(parsedData)
+
+        setLoading(false)
+      } else {
+        setTabs([])
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setTabs([])
+      setLoading(false)
+    }
+  }
+
+  const getRevision = async () => {
+    try {
+      var response = await DataService.getRevision(keycloak, PLANT_ID, AOP_YEAR)
+      if (response?.code == 200) {
+        setRevision(response?.data[0]?.attributeValue)
+        setRevisionDetails(response?.data[0])
+      } else {
+        setRevision(1)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setRevision(1)
+    }
+  }
+
+  const updateRevision = async (Payload) => {
+    try {
+      var response = await DataService.updateRevision(
+        keycloak,
+        Payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      fetchData()
+    } catch (error) {
+      console.error('Error updating data:', error)
+    }
+  }
+
+  const getConfigurationAvailableTabs = async () => {
+    setLoading(true)
+    try {
+      var response = await DataService.getConfigurationAvailableTabs(keycloak)
+      if (response?.code == 200) {
+        const originalTabs = response?.data?.configurationTypeList || []
+
+        setAvailableTabs(originalTabs)
+
+        setLoading(false)
+      } else {
+        setAvailableTabs([])
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setAvailableTabs([])
+      setLoading(false)
+    }
+  }
+
+  const carryForwardRecords = async () => {
+    try {
+      const response = await DataService.carryForwardRecords(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response && response.code === 200) {
+        // console.log('Carry forward successful, status 200.')
+      } else {
+        console.warn(
+          `Carry forward request completed but status was not 200: ${response?.status}`,
+        )
+      }
+    } catch (error) {
+      console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // setLoading1(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setTabIndex(0)
+    carryForwardRecords()
+    getConfigurationExecutionDetails()
+    setSummaryEdited(false)
+    setDateEdited(false)
+    setSelectedRevNum(null)
+  }, [PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) {
+      return
+    }
+    getConfigurationExecutionDetails()
+    getAopSummary()
+
+    setTimeout(() => {
+      if (
+        lowerVertName != 'cracker' &&
+        lowerVertName != 'meg' &&
+        !IS_CHEMICAL_DMD &&
+        !IS_CHEMICAL_VMD
+      ) {
+        if (lowerVertName === 'aromatics') {
+          getRevision()
+        }
+
+        getConfigurationTabsMatrix()
+        getConfigurationAvailableTabs()
+        fetchGradeData()
+      }
+    }, 500)
+  }, [oldYear, yearChanged, keycloak, PLANT_ID])
+
+  const computeAndSetDates = useCallback(() => {
+    setStartDate('')
+    setEndDate('')
+    const hasModifiedOn = configurationExecutionDetails[0]?.ModifiedOn
+    if (hasModifiedOn) {
+      const getDateValue = (name) =>
+        new Date(
+          configurationExecutionDetails.find(
+            (item) => item.Name === name,
+          )?.AttributeValue,
+        )
+      setStartDate(getDateValue('StartDate'))
+      setEndDate(getDateValue('EndDate'))
+    } else {
+      const today = new Date()
+      const fallbackEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
+      const fallbackStartDate = new Date(
+        today.getFullYear() - 5,
+        today.getMonth(),
+        1,
+      )
+      setStartDate(fallbackStartDate)
+      setEndDate(fallbackEndDate)
+    }
+  }, [configurationExecutionDetails, PLANT_ID])
+
+  useEffect(() => {
+    computeAndSetDates()
+  }, [computeAndSetDates])
+
+  const getTheId = (name) => {
+    const tab = availableTabs.find((tab) => tab.name === name)
+    return tab ? tab.id : null
+  }
+
+  function formatDate(date) {
+    if (!date) return ''
+    const year = date?.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  function formatDateForText(date, time = false) {
+    if (!date) return ''
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate)) return 'Invalid Date'
+    const day = String(parsedDate.getDate()).padStart(2, '0')
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+    const year = parsedDate.getFullYear()
+    let formatted = `${day}-${month}-${year}`
+    if (time) {
+      let hours = parsedDate.getHours()
+      const minutes = String(parsedDate.getMinutes()).padStart(2, '0')
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+      hours = hours % 12
+      hours = hours ? hours : 12 // 0 becomes 12
+      const formattedTime = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`
+      formatted += ` ${formattedTime}`
+    }
+    return formatted
+  }
+
+  const getAopSummary = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      setSummary('')
+      var res = await DataService.getAopSummary(keycloak, PLANT_ID, AOP_YEAR)
+      if (res?.code == 200) {
+        setSummary(res?.data?.summary)
+      } else {
+        setSummary('')
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
+
+  const onLoadTest = async (startDateObj, endDateObj) => {
+    setLoading1(true)
+
+    const today = new Date()
+    const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
+    const startDate = new Date(today.getFullYear() - 5, today.getMonth(), 1)
+
+    const createPayloadItem = (obj, date) => ({
+      apr: date,
+      UOM: '',
+      auditYear: AOP_YEAR,
+      normParameterFKId: obj?.NormParameter_FK_Id,
+      remarks: 'Initiated',
+      id: obj?.Id || null,
+      plantId: PLANT_ID,
+    })
+
+    const payload = [
+      createPayloadItem(startDateObj, formatDate(startDate)),
+      createPayloadItem(endDateObj, formatDate(endDate)),
+    ]
+    try {
+      const response = await DataService.executeConfiguration(payload, keycloak)
+      if (response?.code === 200) {
+        await getConfigurationExecutionDetails()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Failed!',
+          severity: 'error',
+        })
+      }
+      getAopSummary()
+      return response
+    } catch (error) {
+      console.error('Execution Failed!', error)
+    } finally {
+      setLoading(false)
+      setLoading1(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) {
+      return
+    }
+    hasExecutedRef.current = false
+    getConfigurationExecutionDetails()
+  }, [PLANT_ID])
+
+  const getConfigurationExecutionDetails = async () => {
+    try {
+      const response = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      const details = response?.data || []
+      if (details.length === 0) {
+        console.warn(
+          'getConfigurationExecutionDetails returned an empty array:',
+          response,
+        )
+      }
+      const hasNoModifiedOn = details.length && !details[0]?.ModifiedOn
+      if (hasNoModifiedOn && !hasExecutedRef.current) {
+        const startDateObj = details.find((item) => item.Name === 'StartDate')
+        const endDateObj = details.find((item) => item.Name === 'EndDate')
+        hasExecutedRef.current = true
+        await onLoadTest(startDateObj, endDateObj)
+      } else {
+        setConfigurationExecutionDetails(details)
+        // setLoading1(false)
+      }
+    } catch (error) {
+      console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // setLoading1(false)
+    }
+  }
+  const onLoad = async () => {
+    if (startDate && endDate) {
+      const s = new Date(startDate)
+      const e = new Date(endDate)
+
+      s.setHours(0, 0, 0, 0)
+      e.setHours(0, 0, 0, 0)
+
+      if (s > e) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            'Please choose valid dates (start date must be before end date).',
+          severity: 'warning',
+        })
+        return
+      }
+
+      const minEnd = new Date(s)
+      minEnd.setFullYear(minEnd.getFullYear() + 1)
+
+      //CHECK THE DATES DIFFERENCE SHOULD BE MORE THAN 1 YEAR ONLY FOR PE OR PP
+      if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+        if (e < minEnd) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'End date must be at least 1 year after the start date',
+            severity: 'warning',
+          })
+          return
+        }
+      }
+    }
+
+    setLoading1(true)
+    const startDateObj = configurationExecutionDetails.find(
+      (item) => item.Name === 'StartDate',
+    )
+    const endDateObj = configurationExecutionDetails.find(
+      (item) => item.Name === 'EndDate',
+    )
+    if (!startDateObj?.Id || !endDateObj?.Id) {
+      console.warn(
+        'StartDate or EndDate object is missing Id. Aborting execution.',
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Start/End date configuration is incomplete.',
+        severity: 'error',
+      })
+      return
+    }
+    setLoading(true)
+    try {
+      setStartDateObj(startDateObj)
+      setEndDateObj(endDateObj)
+      //1st SAVE THE BASIS
+      if (lowerVertName == 'pe' || lowerVertName == 'pp') {
+        saveSummary(summary)
+        setSummaryEdited(false)
+        setDateEdited(false)
+      }
+
+      const payload = [
+        {
+          apr: formatDate(startDate),
+          UOM: '',
+          auditYear: AOP_YEAR,
+          normParameterFKId: startDateObj?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: startDateObj?.Id || null,
+          plantId: PLANT_ID,
+        },
+        {
+          apr: formatDate(endDate),
+          UOM: '',
+          auditYear: AOP_YEAR,
+          normParameterFKId: endDateObj?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: endDateObj?.Id || null,
+          plantId: PLANT_ID,
+        },
+      ]
+
+      //2ND CALL THE EXECUTION API
+      const response = await DataService.executeConfiguration(payload, keycloak)
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Started Successfully!',
+          severity: 'success',
+        })
+        // setIsLoadEnabled(false)
+
+        getConfigurationExecutionDetails()
+        setLoading(false)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Falied!',
+          severity: 'error',
+        })
+      }
+      getAopSummary()
+      setLoadBtnClicked(true)
+      return response
+    } catch (error) {
+      console.error('Execution Falied!', error)
+      setLoading(false)
+    } finally {
+      setLoading(false)
+      setLoading1(false)
+      setDateEdited(false)
+    }
+  }
+
+  useEffect(() => {
+    if (tabIndex >= tabs.length) {
+      setTabIndex(0)
+    }
+  }, [tabs])
+
+  const saveSummary = async (summary) => {
+    try {
+      const response = await DataService.saveSummaryAOPConsumptionNorm(
+        PLANT_ID,
+        AOP_YEAR,
+        summary,
+        keycloak,
+      )
+
+      return response
+    } catch (error) {
+      // console.error('Error saving Summary!', error)
+    } finally {
+      //
+      // setLoading(false)
+      getAopSummary()
+    }
+  }
+
+  const startDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'StartDate',
+  )
+
+  const endDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'EndDate',
+  )
+
+  const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
+  const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
+
+  const handleGradeChange = (gradeId) => {
+    setGradeId(gradeId)
+  }
+
+  const handleRevisionChange = async (num) => {
+    setRevision(num)
+    if (!revisionDetails || revisionDetails.length === 0) return
+    const payload = { ...revisionDetails }
+    payload.attributeValueVersion = num
+    payload.attributeValue = num
+    await updateRevision([payload])
+  }
+
+  // --- STYLING ---
+
+  const StyledConfirmDialog = styled(Dialog)(({ theme }) => ({
+    '& .MuiPaper-root': {
+      borderRadius: '24px',
+      padding: '12px',
+      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+      backdropFilter: 'blur(16px)',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
+      border: '1px solid #ffffff',
+    },
+  }))
+
+  const DateHighlight = styled(Box)(({ theme }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    backgroundColor: 'rgba(1, 0, 203, 0.05)',
+    color: '#0100cb',
+    padding: '4px 12px',
+    borderRadius: '8px',
+    fontWeight: 700,
+    fontSize: '0.85rem',
+    margin: '0 4px',
+  }))
+
+  // --- COMPONENT ---
+
+  const ConfigurationDialog = useMemo(() => {
+    return (
+      <StyledConfirmDialog
+        open={openConfirmDialog}
+        onClose={handleCloseDialog}
+        TransitionComponent={Zoom}
+        transitionDuration={300}
+        disableScrollLock
+      >
+        {/* Header with Icon */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
+          <IconButton onClick={handleCloseDialog} size='small'>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pt: 0,
+          }}
+        >
+          <Box
+            sx={{
+              p: 0.5, // ? compact
+              borderRadius: '50%',
+              bgcolor: 'rgba(1, 0, 203, 0.1)',
+              color: '#2563eb',
+              mb: 0.5,
+              animation: 'pulse 2s infinite',
+            }}
+          >
+            <CloudDownloadIcon sx={{ fontSize: 32 }} /> {/* ? */}
+          </Box>
+
+          <DialogTitle
+            sx={{
+              textAlign: 'center',
+              fontWeight: 800,
+              fontSize: '1.15rem', // ?
+              color: '#1e293b',
+              pb: 0,
+            }}
+          >
+            Confirm Data Refresh
+          </DialogTitle>
+        </Box>
+
+        <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+          <DialogContentText
+            sx={{
+              color: '#64748b',
+              fontSize: '0.85rem', // ?
+              lineHeight: 1.45,
+            }}
+          >
+            You are about to synchronize data for the selected period:
+          </DialogContentText>
+
+          <Box
+            sx={{
+              mt: 2, // ?
+              mb: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 0.75, // ?
+            }}
+          >
+            <DateHighlight>
+              <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
+              {formatDateForText(startDate)}
+            </DateHighlight>
+
+            <Typography
+              variant='caption'
+              fontWeight={900}
+              color='text.disabled'
+            >
+              TO
+            </Typography>
+
+            <DateHighlight>
+              <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
+              {formatDateForText(endDate)}
+            </DateHighlight>
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: 'center',
+            gap: 1.5, // ?
+            pb: 0,
+            px: 0,
+          }}
+        >
+          <Button onClick={handleCloseDialog} className='btn-save'>
+            No
+          </Button>
+
+          <Button
+            onClick={handleConfirmLoad}
+            variant='contained'
+            autoFocus
+            className='btn-save'
+          >
+            Yes, Refresh Data
+          </Button>
+        </DialogActions>
+      </StyledConfirmDialog>
+    )
+  }, [openConfirmDialog, startDate, endDate])
+
+  const ConfigurationDialogRev = useMemo(() => {
+    return (
+      <StyledConfirmDialog
+        open={openConfirmDialogRev}
+        onClose={handleCloseDialogRev}
+        TransitionComponent={Zoom}
+        transitionDuration={300}
+        disableScrollLock
+      >
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
+          <IconButton onClick={handleCloseDialogRev} size='small'>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pt: 0,
+          }}
+        >
+          <Box
+            sx={{
+              p: 0.5,
+              borderRadius: '50%',
+              bgcolor: 'rgba(1, 0, 203, 0.1)',
+              color: '#0100cb',
+              mb: 0.5,
+            }}
+          >
+            <PublishedWithChangesIcon sx={{ fontSize: 32 }} />
+          </Box>
+
+          <DialogTitle
+            sx={{
+              textAlign: 'center',
+              fontWeight: 800,
+              fontSize: '1.15rem',
+              color: '#1e293b',
+              pb: 0,
+            }}
+          >
+            Confirm Revision Change
+          </DialogTitle>
+        </Box>
+
+        <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+          <DialogContentText
+            sx={{
+              color: '#64748b',
+              fontSize: '0.85rem',
+              lineHeight: 1.45,
+            }}
+          >
+            Are you sure you want to change the revision?
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: 'center',
+            gap: 1.5,
+            pb: 0,
+            px: 0,
+          }}
+        >
+          <Button
+            onClick={handleCloseDialogRev}
+            sx={{
+              color: '#64748b',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              px: 0,
+            }}
+          >
+            No
+          </Button>
+
+          <Button
+            onClick={handleConfirmLoadRev}
+            variant='contained'
+            autoFocus
+            sx={{
+              bgcolor: '#0100cb',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              px: 3,
+              borderRadius: '10px',
+              boxShadow: '0 8px 12px -3px rgba(1, 0, 203, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                bgcolor: '#01008b',
+                transform: 'scale(1.03)',
+                boxShadow: '0 12px 16px -3px rgba(1, 0, 203, 0.4)',
+              },
+            }}
+          >
+            Yes, Change
+          </Button>
+        </DialogActions>
+      </StyledConfirmDialog>
+    )
+  }, [openConfirmDialogRev])
+
+  if (
+    (lowerVertName == 'meg' || IS_CHEMICAL_DMD || IS_CHEMICAL_VMD) &&
+    lowerVertName !== 'cracker'
+  ) {
+    // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
+    const megTabs = IS_CHEMICAL_VMD_BUTADIENE
+      ? ['Configuration', 'Constants', 'Report Manual Entry']
+      : IS_CHEMICAL_DMD ||
+          (IS_CHEMICAL_VMD &&
+            !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
+        ? ['Configuration', 'Constants', 'Report Manual Entry']
+        : [
+            'Configuration',
+            'Constants',
+            'Report Manual Entry',
+            'NSR & Material Prices',
+          ]
+    const auditYear = AOP_YEAR
+    let displayYear = ''
+    if (auditYear) {
+      const [start, end] = auditYear.split('-').map(Number)
+      displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
+    }
+    const megTabsDisplay = megTabs.map((tab) =>
+      tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
+    )
+
+    return (
+      <div>
+        <LoaderBackdrop open={!!loading1} />
+        <ConfigurationAccordian
+          startDate={startDate}
+          endDate={endDate}
+          summary={summary}
+          READ_ONLY={READ_ONLY}
+          isOldYear={isOldYear}
+          configurationExecutionDetails={configurationExecutionDetails}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
+          setDateEdited={setDateEdited}
+          setSummary={setSummary}
+          setSummaryEdited={setSummaryEdited}
+          handleOpenDialog={handleOpenDialog}
+          formatDateForText={formatDateForText}
+        />
+        <Box>
+          <AopTabs
+            tabIndex={tabIndex}
+            setTabIndex={setTabIndex}
+            tabs={megTabsDisplay}
+          />
+
+          {(() => {
+            const currentTab = megTabs[tabIndex]?.toLowerCase()
+            const currentTabDisplayName = megTabs[tabIndex]
+
+            switch (currentTab) {
+              case 'configuration':
+                return (
+                  <SelectivityData
+                    rows={productionRows}
+                    loading={loading}
+                    fetchData={fetchData}
+                    setRows={setProductionRows}
+                    configType='meg'
+                    groupBy='Particulars'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='0'
+                    reportTypes={reportTypes}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case 'constants':
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstants}
+                    loading={loading}
+                    fetchData={fetchDataConstants}
+                    setRows={setProductionRowsConstants}
+                    configType='megConstants'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='1'
+                    currentTabDisplayName={currentTabDisplayName}
+                    reportTypes={reportTypes}
+                  />
+                )
+              case 'report manual entry':
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstantsMannualEntry}
+                    loading={loading}
+                    fetchData={fetchDataConstantsMnnualEntry}
+                    setRows={setProductionRowsConstantsMannualEntry}
+                    configType='megConstantsMannualEntry'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='2'
+                    currentTabDisplayName={currentTabDisplayName}
+                    reportTypes={reportTypes}
+                  />
+                )
+              case 'nsr & material prices':
+                return <NSRAndMaterialPrices />
+              case 'pio impact':
+                return (
+                  <SelectivityData
+                    rows={pioImpactRows}
+                    loading={loading}
+                    fetchData={fetchDataConstantsMnnualEntry}
+                    setRows={setPioImpactRows}
+                    configType='pioImpact'
+                    groupBy='PIO Impact'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='3'
+                    reportTypes={reportTypes}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              case 'shutdown':
+                return (
+                  <SelectivityData
+                    rows={shutdownDataRows}
+                    loading={loading}
+                    fetchData={fetchDataConstantsMnnualEntry}
+                    setRows={setShutdownDataRows}
+                    configType='shutdownData'
+                    groupBy='Shutdown'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='4'
+                    reportTypes={reportTypes}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case 'materialbalance':
+                return <MaterialBalance />
+              default:
+                return null
+            }
+          })()}
+        </Box>
+        <Notification
+          open={snackbarOpen}
+          message={snackbarData?.message || ''}
+          severity={snackbarData?.severity || 'info'}
+          onClose={() => setSnackbarOpen(false)}
+        />
+        {ConfigurationDialog}
+        {ConfigurationDialogRev}
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <LoaderBackdrop open={!!loading1} />
+      <ConfigurationAccordian
+        startDate={startDate}
+        endDate={endDate}
+        summary={summary}
+        READ_ONLY={READ_ONLY}
+        isOldYear={isOldYear}
+        configurationExecutionDetails={configurationExecutionDetails}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+        setDateEdited={setDateEdited}
+        setSummary={setSummary}
+        setSummaryEdited={setSummaryEdited}
+        handleOpenDialog={handleOpenDialog}
+        formatDateForText={formatDateForText}
+      />
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
+      {ConfigurationDialog}
+      {ConfigurationDialogRev}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <AopTabs
+          tabIndex={tabIndex}
+          setTabIndex={setTabIndex}
+          tabs={tabs.map((tabId) => {
+            const tabInfo = availableTabs.find(
+              (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+            )
+
+            if (tabInfo) {
+              const originalName = tabInfo.displayName
+              if (
+                lowerVertName === 'aromatics' &&
+                ['constant', 'constants'].includes(originalName?.toLowerCase())
+              ) {
+                return 'User Input'
+              }
+              return originalName
+            }
+          })}
+        />
+
+        {lowerVertName === 'aromatics' &&
+          !IS_AROMATICS_HMD &&
+          !IS_AROMATICS_PMD &&
+          tabs?.length > 0 && (
+            <Box
+              mb={1}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                p: '3px',
+                bgcolor: 'rgba(0, 0, 0, 0.04)', // Light track background
+                borderRadius: '8px',
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              <Typography
+                variant='caption'
+                sx={{
+                  px: 1,
+                  fontWeight: 700,
+                  color: '#252525',
+                  fontSize: '14px',
+                  textTransform: 'uppercase',
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                }}
+              >
+                Revision
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: '8px' }}>
+                {['1', '2', '3'].map((num) => {
+                  const selected = revision === num
+
+                  return (
+                    <Button
+                      key={num}
+                      onClick={() => handleOpenDialogRev(num)}
+                      variant='text'
+                      size='small'
+                      sx={{
+                        textTransform: 'none',
+                        fontSize: '14px',
+                        minWidth: '45px',
+                        height: '24px',
+                        borderRadius: '6px',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                        fontWeight: 500,
+                        // Active State
+                        ...(selected && {
+                          bgcolor: '#fff',
+                          color: '#0100cb',
+                          boxShadow: '0 2px 6px rgba(1, 0, 203, 0.15)',
+                          fontWeight: 800,
+                          '&:hover': { bgcolor: '#fff' },
+                        }),
+
+                        // Inactive State
+                        ...(!selected && {
+                          color: '#606060',
+                          fontWeight: 500,
+                          '&:hover': {
+                            bgcolor: 'rgba(1, 0, 203, 0.04)',
+                            color: '#0100cb',
+                          },
+                        }),
+                      }}
+                    >
+                      R{num}
+                    </Button>
+                  )
+                })}
+              </Box>
+            </Box>
+          )}
+        <Box>
+          {(() => {
+            const currentTabId = tabs[tabIndex]?.toLowerCase()
+
+            const currentTabInfo = availableTabs.find(
+              (tab) => tab.id.toLowerCase() === currentTabId,
+            )
+            const currentTabDisplayName = currentTabInfo?.displayName
+
+            switch (currentTabId) {
+              case getTheId('Configuration'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={configurationRows}
+                    loading={loading}
+                    fetchData={fetchData}
+                    setRows={setConfigurationRows}
+                    configType='Configuration'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('StartupLosses'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={startUpRows}
+                    loading={loading}
+                    fetchData={fetchData}
+                    setRows={setStartUpRows}
+                    configType='StartupLosses'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('Otherlosses'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={otherLossRows}
+                    loading={loading}
+                    fetchData={fetchData}
+                    setRows={setOtherLossRows}
+                    configType='Otherlosses'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('ShutdownNorms'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={shutdownNormsRows}
+                    loading={loading}
+                    setRows={setShutdownRows}
+                    fetchData={fetchData}
+                    configType='ShutdownNorms'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('Constant'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={constantsRows}
+                    loading={loading}
+                    setRows={setConstantsRows}
+                    fetchData={fetchData}
+                    configType='Constant'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('Receipe'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={gradeData}
+                    loading={loading}
+                    fetchData={fetchGradeData}
+                    setRows={setGradeData}
+                    configType='grades'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('ContineGradeChange'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={continiousGradeData}
+                    loading={loading}
+                    setRows={setContiniousGradeData}
+                    fetchData={fetchData}
+                    configType='ContineGradeChange'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('DisContineGradeChange'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={discontiniousGradeData}
+                    loading={loading}
+                    setRows={setDiscontiniousGradeData}
+                    fetchData={fetchData}
+                    configType='DisContineGradeChange'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              case getTheId('Report Manual Entry'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={reportManualEntry}
+                    loading={loading}
+                    setRows={setReportManualEntry}
+                    fetchData={fetchData}
+                    configType='Report Manual Entry'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                    groupBy='TypeDisplayName'
+                  />
+                )
+
+              case getTheId('PIO Impact'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={PIO}
+                    loading={loading}
+                    setRows={setPIO}
+                    fetchData={fetchData}
+                    configType='PIO Impact'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('Constants'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={productionRowsConstants}
+                    loading={loading}
+                    fetchData={fetchDataConstants}
+                    setRows={setProductionRowsConstants}
+                    configType='megConstants'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='1'
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              // case getTheId('Quality'):
+              //   return <QualityParameters />
+
+              case getTheId('ExclusionDate'):
+                return (
+                  <ExclusionDate
+                    revision={revision}
+                    loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('CatalystChangeover'):
+                return (
+                  <CatalystChangeOver
+                    revision={revision}
+                    loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('LineConfiguration'):
+                return (
+                  <LineConfiguration
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('raw-material-norms-basis'):
+                return (
+                  <RawMaterialNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('cat-chem-norms-basis'):
+                return (
+                  <CatChemNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('ProductionRange'):
+                return (
+                  <ProductionRange
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('pta-configuration'):
+                return (
+                  <PtaConfiguration
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('ShutdownRate'):
+                return (
+                  <ShutdownRate
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('SeasonMonths'):
+                return (
+                  <SeasonMonths
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('MaterialBalance'):
+                return <MaterialBalance />
+              case getTheId('TankNos'):
+                return <TankNosConfigureTable />
+              default:
+                return null
+            }
+          })()}
+        </Box>
+      </div>
+    </div>
+  )
+}
+export default ConfigurationTable

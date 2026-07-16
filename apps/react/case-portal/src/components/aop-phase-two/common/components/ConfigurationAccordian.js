@@ -1,0 +1,644 @@
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import {
+  Box,
+  Button,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material'
+import { CalenderIcon } from 'assets/images/icons'
+import { DatePicker } from '@progress/kendo-react-dateinputs'
+import { TextArea } from '@progress/kendo-react-inputs'
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian'
+import { useSession } from 'SessionStoreContext'
+import Notification from 'components/aop-phase-two/common/utilities/Notification'
+import {
+  validateDateRange,
+  buildConfigurationPayload,
+} from '../../crude/production-norms-basis/utils/utility'
+import ConfigurationDialog from './ConfigurationDialog'
+import { HistoricPeriodBasisApiService } from 'components/aop-phase-two/services/common/historicPeriodBasisApiService'
+import dataGridStore from 'store/reducers/dataGridStore'
+import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { styled } from '@mui/material/styles'
+import SettingsIcon from '@mui/icons-material/Settings'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import InfoIcon from '@mui/icons-material/Info'
+import { useSelector } from 'react-redux'
+
+const CompactAccordion = styled(CustomAccordion)({
+  mb: 0,
+  padding: '10px',
+  '&:before': { display: 'none' },
+})
+
+const ConfigurationAccordian = ({
+  PLANT_ID,
+  AOP_YEAR,
+  isOldYear,
+  isSummaryRequired = false,
+  yearGap = 1,
+  onDatesChange,
+  onLoadNormCalculation = () => {},
+  normCalculationLoading = false,
+}) => {
+  const keycloak = useSession()
+  const hasExecutedRef = useRef(false)
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { isReleased, oldYear } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  // State management
+  const [startDate, setStartDate] = useState()
+  const [endDate, setEndDate] = useState()
+  const [startShow, setStartShow] = useState(false)
+  const [endShow, setEndShow] = useState(false)
+  const [summary, setSummary] = useState('')
+  const [lastModifiedBy, setLastModifiedBy] = useState('')
+  const [dateEdited, setDateEdited] = useState(false)
+  const [summaryEdited, setSummaryEdited] = useState(false)
+  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
+    useState([])
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  // Helper function to format dates for API
+  const formatDate = (date) => {
+    if (!date) return ''
+    const year = date?.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // Helper function to format dates for display
+  const formatDateForText = (date, time = false) => {
+    if (!date) return ''
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate)) return 'Invalid Date'
+    const day = String(parsedDate.getDate()).padStart(2, '0')
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+    const year = parsedDate.getFullYear()
+    let formatted = `${day}-${month}-${year}`
+    if (time) {
+      let hours = parsedDate.getHours()
+      const minutes = String(parsedDate.getMinutes()).padStart(2, '0')
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+      hours = hours % 12
+      hours = hours ? hours : 12
+      const formattedTime = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`
+      formatted += ` ${formattedTime}`
+    }
+    return formatted
+  }
+
+  // Fetch configuration execution details
+  const fetchConfigurationDetails = async () => {
+    try {
+      const response =
+        await HistoricPeriodBasisApiService.getConfigurationExecutionDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      const details = response?.data || []
+      if (details.length === 0) {
+        console.warn(
+          'getConfigurationExecutionDetails returned an empty array:',
+          response,
+        )
+      }
+      const hasNoModifiedOn = details.length && !details[0]?.ModifiedOn
+      if (hasNoModifiedOn && !hasExecutedRef.current) {
+        const startDateObj = details.find((item) => item.Name === 'StartDate')
+        const endDateObj = details.find((item) => item.Name === 'EndDate')
+        hasExecutedRef.current = true
+        await onLoadTest(startDateObj, endDateObj)
+      } else {
+        setConfigurationExecutionDetails(details)
+        // Capture who last modified the data
+        if (details[0]?.User) {
+          setLastModifiedBy(details[0].User)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching getConfigurationExecutionDetails:', error)
+    }
+  }
+
+  // Initial load with configurable year period
+  const onLoadTest = async (startDateObj, endDateObj) => {
+    const today = new Date()
+    const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
+    const startDate = new Date(
+      today.getFullYear() - yearGap,
+      today.getMonth(),
+      1,
+    )
+
+    const createPayloadItem = (obj, date) => ({
+      apr: date,
+      UOM: '',
+      auditYear: AOP_YEAR,
+      normParameterFKId: obj?.NormParameter_FK_Id,
+      remarks: 'Initiated',
+      id: obj?.Id || null,
+      plantId: PLANT_ID,
+    })
+
+    const payload = [
+      createPayloadItem(startDateObj, formatDate(startDate)),
+      createPayloadItem(endDateObj, formatDate(endDate)),
+    ]
+
+    try {
+      setLoading(true)
+      const response = await HistoricPeriodBasisApiService.executeConfiguration(
+        payload,
+        keycloak,
+      )
+      if (response?.code === 200) {
+        await fetchConfigurationDetails()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Failed!',
+          severity: 'error',
+        })
+      }
+      await fetchSummary()
+      return response
+    } catch (error) {
+      console.error('Execution Failed!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch AOP summary
+  const fetchSummary = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      const res = await HistoricPeriodBasisApiService.getAopSummary(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (res?.code === 200) {
+        setSummary(res?.data?.summary || '')
+      } else {
+        setSummary('')
+      }
+    } catch (error) {
+      console.error('Error fetching summary:', error)
+    }
+  }
+
+  // Compute and set dates based on configuration details
+  const computeAndSetDates = useCallback(() => {
+    setStartDate('')
+    setEndDate('')
+    const hasModifiedOn = configurationExecutionDetails[0]?.ModifiedOn
+    if (hasModifiedOn) {
+      const getDateValue = (name) =>
+        new Date(
+          configurationExecutionDetails.find(
+            (item) => item.Name === name,
+          )?.AttributeValue,
+        )
+      setStartDate(getDateValue('StartDate'))
+      setEndDate(getDateValue('EndDate'))
+    } else {
+      const today = new Date()
+      const fallbackEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
+      const fallbackStartDate = new Date(
+        today.getFullYear() - yearGap,
+        today.getMonth(),
+        1,
+      )
+      setStartDate(fallbackStartDate)
+      setEndDate(fallbackEndDate)
+    }
+  }, [configurationExecutionDetails])
+
+  // Dialog handlers
+  const handleOpenDialog = () => {
+    // Validate summary if required
+    if (isSummaryRequired) {
+      if (!summary || summary.trim() === '') {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please add AOP Design Basis.',
+          severity: 'error',
+        })
+        return
+      }
+
+      if (!summaryEdited) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please update AOP Design Basis.',
+          severity: 'error',
+        })
+        return
+      }
+    }
+
+    setOpenConfirmDialog(true)
+  }
+
+  const handleCloseDialog = () => {
+    setOpenConfirmDialog(false)
+  }
+
+  const handleConfirmLoad = async () => {
+    setOpenConfirmDialog(false)
+    await onLoad()
+  }
+
+  // Load data with user-selected dates
+  const onLoad = async () => {
+    // Validate dates
+    const validation = validateDateRange(startDate, endDate)
+    if (!validation.valid) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validation.message,
+        severity: 'warning',
+      })
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      // Save summary first if required
+      // if (isSummaryRequired) {
+      await saveSummary(summary)
+      setSummaryEdited(false)
+      // }
+
+      // Build payload
+      const payload = buildConfigurationPayload(
+        startDate,
+        endDate,
+        configurationExecutionDetails,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (!payload) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Start/End date configuration is incomplete.',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      // Execute configuration
+      const response = await HistoricPeriodBasisApiService.executeConfiguration(
+        payload,
+        keycloak,
+      )
+
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Started Successfully!',
+          severity: 'success',
+        })
+        await fetchConfigurationDetails()
+        await fetchSummary()
+
+        // Trigger norm calculation after successful configuration load
+        if (onLoadNormCalculation) {
+          onLoadNormCalculation()
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Execution Failed!', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Execution Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setDateEdited(false)
+    }
+  }
+
+  const saveSummary = async (summary) => {
+    try {
+      const response = await HistoricPeriodBasisApiService.saveAOPSummary(
+        PLANT_ID,
+        AOP_YEAR,
+        summary,
+        keycloak,
+      )
+
+      return response
+    } catch (error) {
+      // console.error('Error saving Summary!', error)
+    } finally {
+      //
+      // setLoading(false)
+      fetchSummary()
+    }
+  }
+
+  // Initialize on mount and when PLANT_ID/AOP_YEAR changes
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    hasExecutedRef.current = false
+    fetchConfigurationDetails()
+    fetchSummary()
+    setSummaryEdited(false)
+    setDateEdited(false)
+  }, [PLANT_ID, AOP_YEAR])
+
+  // Compute dates when configuration details change
+  useEffect(() => {
+    computeAndSetDates()
+  }, [computeAndSetDates])
+
+  // Notify parent component when dates change
+  useEffect(() => {
+    if (onDatesChange && startDate && endDate) {
+      onDatesChange(startDate, endDate)
+    }
+  }, [startDate, endDate, onDatesChange])
+
+  const startDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'StartDate',
+  )
+
+  const endDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'EndDate',
+  )
+
+  const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
+  const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
+
+  const accordian = useMemo(() => {
+    const expandCollapseIconStyle = {
+      minHeight: '36px !important',
+      px: 0.5,
+      bgcolor: '#ffffff',
+      flexDirection: 'row-reverse',
+      '& .MuiAccordionSummary-content': {
+        marginLeft: 1,
+        my: '4px !important',
+      },
+      '& .MuiAccordionSummary-expandIconWrapper': {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 32,
+        height: 32,
+        borderRadius: '6px',
+        backgroundColor: '#ECEEFF',
+        color: '#1e293b',
+        cursor: 'pointer',
+        padding: '8px',
+      },
+    }
+
+    return (
+      <Box sx={{ mb: 1 }}>
+        <CompactAccordion
+          defaultExpanded
+          disableGutters
+          className='k-table-box'
+        >
+          <CustomAccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
+            sx={expandCollapseIconStyle}
+          >
+            <Stack direction='row' spacing={1} alignItems='center'>
+              <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                  color: '#303030',
+                }}
+              >
+                AOP Historical Period Basis
+              </Typography>
+            </Stack>
+          </CustomAccordionSummary>
+
+          <CustomAccordionDetails sx={{ p: 0.5, pt: 1 }}>
+            <Stack direction='column' spacing={1.5}>
+              {/* ROW 1: Date pickers + Load button */}
+              <Stack
+                direction='row'
+                sx={{ columnGap: 1, rowGap: 0 }}
+                alignItems='flex-start'
+                flexWrap='wrap'
+              >
+                {/* START */}
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    Start Date:
+                  </Box>
+                  <DatePicker
+                    id='start-date'
+                    format='dd-MM-yyyy'
+                    value={startDate}
+                    show={startShow}
+                    onClose={() => setStartShow(false)}
+                    onChange={(e) => {
+                      setStartDate(e.value)
+                      setDateEdited(true)
+                    }}
+                    disabled={READ_ONLY}
+                  />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMoreIcon
+                      sx={{ fontSize: '1rem', color: '#606060' }}
+                    />
+                  </IconButton>
+                </Box>
+
+                {/* END */}
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    End Date:
+                  </Box>
+                  <DatePicker
+                    id='end-date'
+                    format='dd-MM-yyyy'
+                    value={endDate}
+                    show={endShow}
+                    onClose={() => setEndShow(false)}
+                    onChange={(e) => {
+                      setEndDate(e.value)
+                      setDateEdited(true)
+                    }}
+                    disabled={READ_ONLY}
+                  />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMoreIcon
+                      sx={{ fontSize: '1rem', color: '#606060' }}
+                    />
+                  </IconButton>
+                </Box>
+
+                {/* LOAD BUTTON */}
+                {!isOldYear && (
+                  <Tooltip title='Refresh Data'>
+                    <Button
+                      variant='outlined'
+                      className='btn-load'
+                      onClick={handleOpenDialog}
+                      disabled={READ_ONLY}
+                      sx={{
+                        height: 28,
+                        px: 1.5,
+                        mt: 'auto',
+                      }}
+                    >
+                      Load
+                    </Button>
+                  </Tooltip>
+                )}
+              </Stack>
+
+              {/* LAST REFRESHED */}
+              {configurationExecutionDetails[0]?.ModifiedOn && (
+                <Tooltip
+                  title={`Last loaded data : ${formatDateForText(
+                    configurationExecutionDetails[0]?.ModifiedOn,
+                    true,
+                  )}`}
+                >
+                  <Stack
+                    direction='row'
+                    spacing={0.5}
+                    alignItems='center'
+                    className='last-refreshed-container'
+                  >
+                    <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
+                    <Typography className='last-refreshed-text'>
+                      {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
+                    </Typography>
+                  </Stack>
+                </Tooltip>
+              )}
+
+              {/* ROW 2: AOP DESIGN BASIS */}
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant='caption'
+                  className='aop-design-basis-label'
+                >
+                  AOP DESIGN BASIS
+                </Typography>
+                <TextArea
+                  className='vertical-resize-textarea'
+                  disabled={READ_ONLY}
+                  value={summary}
+                  rows={2}
+                  onChange={(e) => {
+                    setSummary(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                />
+              </Box>
+            </Stack>
+          </CustomAccordionDetails>
+        </CompactAccordion>
+      </Box>
+    )
+  }, [
+    startDate,
+    endDate,
+    startShow,
+    endShow,
+    summary,
+    configurationExecutionDetails,
+    isOldYear,
+    READ_ONLY,
+  ])
+
+  return (
+    <>
+      <LoaderBackdrop open={!!loading} />
+      {accordian}
+
+      {/* Confirmation Dialog */}
+      <ConfigurationDialog
+        open={openConfirmDialog}
+        onClose={handleCloseDialog}
+        onConfirm={handleConfirmLoad}
+        startDate={startDate}
+        endDate={endDate}
+      />
+
+      {/* Notification */}
+      <Notification
+        open={snackbarOpen}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+      />
+    </>
+  )
+}
+
+export default ConfigurationAccordian

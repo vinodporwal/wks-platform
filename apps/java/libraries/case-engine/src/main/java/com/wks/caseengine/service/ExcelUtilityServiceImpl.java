@@ -1,0 +1,1410 @@
+package com.wks.caseengine.service;
+
+import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.utility.ExcelConstants;
+import com.wks.caseengine.utility.Utility;
+
+@Service
+public class ExcelUtilityServiceImpl implements ExcelUtilityService {
+	
+	public byte[] generateFlexibleExcelPP(Map<String, Object> structure, Map<String, List<List<Object>>> data, List<String> editableGrids) {
+
+        Set<String> editableGridSet = editableGrids.stream()
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
+
+	    try {
+	        Workbook workbook = new XSSFWorkbook();
+	        CellStyle boldBorderStyle = Utility.createBoldBorderedStyle(workbook);
+	        CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+	        CellStyle boldStyle = Utility.createBoldStyle(workbook);
+	        
+	       
+	        CellStyle lockedStyle = workbook.createCellStyle();
+	        lockedStyle.cloneStyleFrom(borderStyle);
+	        lockedStyle.setLocked(true); 
+	        lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	        lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        
+	       
+	        CellStyle unlockedBorderStyle = workbook.createCellStyle();
+	        unlockedBorderStyle.cloneStyleFrom(borderStyle);
+	        unlockedBorderStyle.setLocked(false); 
+
+	        for (String sheetName : structure.keySet()) {
+	            Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+	            List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
+	            int columnCount = (Integer) sheetData.get(ExcelConstants.COULMNCOUNT);
+
+	            Sheet sheet = workbook.createSheet(sheetName);
+	            int currentRow = 0;
+
+	            for (Map<String, Object> table : tables) {
+	                boolean hideTable = (boolean) (table.get(ExcelConstants.HIDE_TABLE) != null ? table.get(ExcelConstants.HIDE_TABLE) : false);
+	                if (hideTable) continue;
+
+	                String tableId = (String) table.get(ExcelConstants.TABLEID);
+	                String originalTemplateId = (String) table.get("originalTemplateId");
+	                Integer monthStartIndex = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
+	                
+	                
+	                List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
+
+	                boolean isEditableGrid =  editableGridSet.contains(tableId.toLowerCase());
+
+	                List<List<String>> headerTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+	                List<List<Object>> rows = data.get(tableId);
+	                
+	        
+	                String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
+	                if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
+	                    Row row = sheet.createRow(currentRow++);
+	                    Cell cell = row.createCell(0);
+	                    cell.setCellValue(textBeforeTitle);
+	                    cell.setCellStyle(boldStyle);
+	                }
+	                String title = (String) table.get(ExcelConstants.TITLE);
+	                if (title != null && !title.isEmpty()) {
+	                    Row row = sheet.createRow(currentRow++);
+	                    Cell cell = row.createCell(0);
+	                    cell.setCellValue(title);
+	                    cell.setCellStyle(boldStyle);
+	                }
+
+	               
+	                int headerStartRow = currentRow;
+	                for (List<String> headerRowData : headerTitles) {
+	                    Row headerRow = sheet.createRow(currentRow++);
+	                    for (int col = 0; col < headerRowData.size(); col++) {
+	                        Cell cell = headerRow.createCell(col);
+	                        cell.setCellValue(headerRowData.get(col));
+	                        cell.setCellStyle(boldBorderStyle);
+	                    }
+	                }
+	                mergeHeaderCells(sheet, headerTitles, headerStartRow);
+
+	                
+	                if (rows != null) {
+	                    for (List<Object> rowData : rows) {
+	                        Row row = sheet.createRow(currentRow++);
+
+	                        // Per-row editable flag is the last element appended by populateRowsFromDTOs.
+	                        // When isEditable == false the entire row must stay locked.
+	                        Object editableFlagObj = rowData.get(rowData.size() - 1);
+	                        boolean rowIsEditable = !Boolean.FALSE.equals(editableFlagObj);
+
+	                        for (int col = 0; col < rowData.size() - 1; col++) {
+	                            Cell cell = row.createCell(col);
+	                            Object value = rowData.get(col);
+
+	                            if (value instanceof Number) cell.setCellValue(((Number) value).doubleValue());
+	                            else if (value instanceof Boolean) cell.setCellValue((Boolean) value);
+	                            else cell.setCellValue(value != null ? value.toString() : "");
+
+	                            boolean canEdit = false;
+
+	                            if (rowIsEditable && isEditableGrid && monthStartIndex != null) {
+	                                if (col >= monthStartIndex && col <= (monthStartIndex + 12)) {
+	                                    canEdit = true;
+	                                }
+	                            }
+
+	                            if (canEdit) {
+	                                cell.setCellStyle(unlockedBorderStyle);
+	                            } else {
+	                                cell.setCellStyle(lockedStyle);
+	                            }
+	                        }
+	                    }
+	                }
+
+	                
+	                if (hiddenColumnsList != null) {
+	                    for (Integer column : hiddenColumnsList) {
+	                        sheet.setColumnHidden(column, true);
+	                    }
+	                }
+
+	                currentRow += 2; 
+	            }
+
+	            for (int i = 0; i < columnCount; i++) {
+	                sheet.autoSizeColumn(i);
+	            }
+	            
+	           
+	            sheet.protectSheet("password123");
+	        }
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+	
+    public byte[] generateFlexibleExcel(Map<String, Object> structure, Map<String, List<List<Object>>> data) {
+        try {
+        	
+            Workbook workbook = new XSSFWorkbook();
+            CellStyle boldBorderStyle = Utility.createBoldBorderedStyle(workbook);
+            CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+            CellStyle boldStyle = Utility.createBoldStyle(workbook);
+            CellStyle lockedStyle = workbook.createCellStyle();
+            lockedStyle.setLocked(true);
+            lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            CellStyle lockedBorderStyle = workbook.createCellStyle();
+            lockedBorderStyle.cloneStyleFrom(borderStyle);
+            lockedBorderStyle.setLocked(true);
+            lockedBorderStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            lockedBorderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            CellStyle unlockedStyle = workbook.createCellStyle();
+            unlockedStyle.setLocked(false);
+
+            CellStyle unlockedBorderStyle = workbook.createCellStyle();
+            unlockedBorderStyle.cloneStyleFrom(borderStyle);
+            unlockedBorderStyle.setLocked(false);
+
+            
+
+            for (String sheetName : structure.keySet()) {
+                Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+                List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
+                int columnCount = (Integer) sheetData.get(ExcelConstants.COULMNCOUNT);
+
+                Sheet sheet = workbook.createSheet(sheetName);
+                int currentRow = 0;
+                int tableCount = -1;
+                
+                for (Map<String, Object> table : tables) {
+                    String title = "";
+                    boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
+                    if(hideTable){
+                        continue;
+                    }
+                    tableCount++;
+                    Integer startRow = (table.get(ExcelConstants.STARTROW) == null) ? currentRow
+                            : (int) table.get(ExcelConstants.STARTROW);
+                    List<List<String>> headers = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+                    if (headers.size() > columnCount) {
+                        columnCount = headers.size();
+                    }
+                    List<List<Object>> rows = new ArrayList<>();
+
+                    title = (String) table.get(ExcelConstants.TITLE);
+                    String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
+                    String tableId = (String) table.get(ExcelConstants.TABLEID);
+                    rows = data.get(tableId);
+                    List<String> specialTableIds = Arrays.asList("DesignCapacity", "MaxAchievedCapacity", "SummaryProposedOperatingCapacity");
+                    boolean isSpecialTable = specialTableIds.contains(tableId);
+                    boolean isOptimizerInput = tableId != null && tableId.equalsIgnoreCase("Optimizer Input");
+                    boolean isOptimizerOutput = tableId != null && tableId.equalsIgnoreCase("Optimizer Output");
+                    System.out.println("rows " + rows);
+                    Boolean isColumnMergeRequired = (Boolean) table.get(ExcelConstants.IS_COLUMN_MERGE_REQUIRED);
+                    Boolean isRowMergeRequired = (Boolean) table.get(ExcelConstants.IS_ROW_MERGE_REQUIRED);
+                    List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
+
+                    Map<String, Object> styles = (Map<String, Object>) table.get(ExcelConstants.STYLES);
+                    Map<String, Object> autoMerge = (Map<String, Object>) table.get(ExcelConstants.AUTOMERGE);
+
+                    Set<Integer> boldCols = new HashSet<>();
+                    if (styles != null && styles.get(ExcelConstants.BOLDCOLUMNS) != null) {
+                        for (int col : (List<Integer>) styles.get(ExcelConstants.BOLDCOLUMNS)) {
+                            boldCols.add(col);
+                        }
+                    }
+
+                    boolean borders = styles != null && Boolean.TRUE.equals(styles.get(ExcelConstants.BORDERS));
+
+                    currentRow = Math.max(currentRow, startRow);
+                    // currentRow += 1;
+                    
+                    if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(textBeforeTitle);
+                        titleCell.setCellStyle(boldStyle);
+
+                        currentRow++;
+                        currentRow++;
+                    }
+                    if (title != null && !title.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(title);
+                        titleCell.setCellStyle(boldStyle);
+
+                        currentRow++;
+                    }
+
+                    int headerStartRow = currentRow;
+                    for (List<String> headerRowData : headers) {
+                        Row headerRow = sheet.createRow(currentRow++);
+                       
+                        for (int col = 0; col < headerRowData.size(); col++) {
+                            Cell cell = headerRow.createCell(col);
+                            cell.setCellValue(headerRowData.get(col));
+                            if (isSpecialTable) {
+                                if (col < headerRowData.size() - 3) {
+                                    cell.setCellStyle(boldBorderStyle);
+                                } else {
+                                    cell.setCellStyle(boldStyle); 
+                                }
+                            } else {
+                                cell.setCellStyle(boldBorderStyle);
+                            }
+                        }
+                    }
+                    mergeHeaderCells(sheet, headers, headerStartRow);
+
+                    int startDataRow = currentRow;
+
+                    // Write structure rows
+                    if(rows!=null) {
+                    	for (List<Object> rowData : rows) {
+                    		boolean greyOut = rowData.size() > 0 && rowData.get(rowData.size() - 1).toString().trim().equalsIgnoreCase("false");
+                            Row row = sheet.createRow(currentRow++);
+                            
+                            for (int col = 0; col < rowData.size()-1; col++) {
+                            	
+                                Cell cell = row.createCell(col);
+                                Object value = rowData.get(col);
+
+                                if (value instanceof Number) {
+                                    cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+                                } else if (value instanceof Boolean) {
+                                    cell.setCellValue((Boolean) value);
+                                } else if (value != null) {
+                                    cell.setCellValue(value.toString());
+                                } else {
+                                    cell.setCellValue("");
+                                }
+                                
+
+                                if (isOptimizerInput || isOptimizerOutput) {
+                                    cell.setCellStyle(lockedBorderStyle);
+                                } else {
+                                    if (boldCols.contains(col))
+                                        cell.setCellStyle(boldStyle);
+                                    if (borders) {
+                                        if (isSpecialTable) {
+                                            if (col < rowData.size() - 5) {
+                                                cell.setCellStyle(unlockedBorderStyle);
+                                            }
+                                        } else {
+                                            cell.setCellStyle(unlockedBorderStyle);
+                                        }
+                                    }
+                                    if (greyOut) {
+                                        cell.setCellStyle(lockedStyle);
+                                    }
+                                }
+
+                            }
+                        }
+
+                    }
+                    
+                    if (isColumnMergeRequired) {
+                        // Auto merge rows
+                        // Auto merge rows (vertical merge across rows in specific columns)
+                        if (autoMerge != null && autoMerge.get(ExcelConstants.COLUMNS) != null) {
+                            for (int colIndex : (List<Integer>) autoMerge.get(ExcelConstants.COLUMNS)) {
+                                int mergeStart = startDataRow;
+                                String lastVal = null;
+
+                                for (int r = startDataRow; r < currentRow; r++) {
+                                    Row row = sheet.getRow(r);
+                                    Cell cell = (row != null) ? row.getCell(colIndex) : null;
+                                    String val = getCellStringValue(cell);
+
+                                    if (lastVal == null) {
+                                        lastVal = val;
+                                        mergeStart = r;
+                                    } else if (!Objects.equals(lastVal, val)) {
+                                        if (r - 1 > mergeStart) {
+                                            sheet.addMergedRegion(
+                                                    new CellRangeAddress(mergeStart, r - 1, colIndex, colIndex));
+                                        }
+                                        lastVal = val;
+                                        mergeStart = r;
+                                    }
+                                }
+
+                                if (currentRow - 1 > mergeStart) {
+                                    sheet.addMergedRegion(
+                                            new CellRangeAddress(mergeStart, currentRow - 1, colIndex, colIndex));
+                                }
+                            }
+                        }
+                    }
+
+                    if (isRowMergeRequired) {
+                        // Auto merge columns
+                        // Auto merge columns (horizontal merge across columns in specific rows)
+                        if (autoMerge != null && autoMerge.get(ExcelConstants.ROWS) != null) {
+                            for (int rowIndex : (List<Integer>) autoMerge.get(ExcelConstants.ROWS)) {
+                                int mergeStart = 0;
+                                String lastVal = null;
+                                Row row = sheet.getRow(startDataRow + rowIndex);
+                                if (row == null) // continue;
+
+                                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                                        Cell cell = row.getCell(c);
+                                        String val = getCellStringValue(cell);
+
+                                        if (lastVal == null) {
+                                            lastVal = val;
+                                            mergeStart = c;
+                                        } else if (!Objects.equals(lastVal, val)) {
+                                            if (c - 1 > mergeStart) {
+                                                sheet.addMergedRegion(new CellRangeAddress(startDataRow + rowIndex,
+                                                        startDataRow + rowIndex, mergeStart, c - 1));
+                                            }
+                                            lastVal = val;
+                                            mergeStart = c;
+                                        }
+                                    }
+
+                                // Check the last segment for merging
+                                if (row.getLastCellNum() - 1 > mergeStart) {
+                                    sheet.addMergedRegion(new CellRangeAddress(startDataRow + rowIndex,
+                                            startDataRow + rowIndex, mergeStart, row.getLastCellNum() - 1));
+                                }
+                            }
+                        }
+                    }
+                    for (Integer column : hiddenColumnsList) {
+                        sheet.setColumnHidden(column, true);
+                    }
+                    currentRow += 2;
+
+                }
+                for (int i = 0; i < columnCount; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                sheet.protectSheet("");
+
+                //sheet.setDisplayGridlines(false);
+            }
+
+            // File outputDir = new File("output");
+            // if (!outputDir.exists()) outputDir.mkdirs();
+
+            try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                workbook.close();
+                return outputStream.toByteArray();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    public byte[] generateFlexibleExcelDTA(Map<String, Object> structure, Map<String, List<List<Object>>> data) {
+        try {
+            Workbook workbook = new XSSFWorkbook();
+            
+            // --- Style Definitions ---
+            CellStyle boldBorderStyle = Utility.createBoldBorderedStyle(workbook);
+            CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+            CellStyle boldStyle = Utility.createBoldStyle(workbook);
+            
+            // Locked Style with Borders and Grey Background
+            CellStyle lockedBorderStyle = workbook.createCellStyle();
+            lockedBorderStyle.cloneStyleFrom(borderStyle); 
+            lockedBorderStyle.setLocked(true);
+            lockedBorderStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            lockedBorderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            // Unlocked Style (Required for cells to be editable after sheet protection)
+            CellStyle unlockedStyle = workbook.createCellStyle();
+            unlockedStyle.setLocked(false);
+            // If you want borders on editable cells, you can clone borderStyle and setLocked(false)
+            CellStyle unlockedBorderStyle = workbook.createCellStyle();
+            unlockedBorderStyle.cloneStyleFrom(borderStyle);
+            unlockedBorderStyle.setLocked(false);
+
+            for (String sheetName : structure.keySet()) {
+                Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+                List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
+                int columnCount = (Integer) sheetData.get(ExcelConstants.COULMNCOUNT);
+
+                Sheet sheet = workbook.createSheet(sheetName);
+                int currentRow = 0;
+
+                for (Map<String, Object> table : tables) {
+                    boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
+                    if (hideTable) continue;
+
+                    Integer startRow = (table.get(ExcelConstants.STARTROW) == null) ? currentRow : (int) table.get(ExcelConstants.STARTROW);
+                    List<List<String>> headers = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+                    
+                    if (headers.size() > columnCount) {
+                        columnCount = headers.size();
+                    }
+
+                    String title = (String) table.get(ExcelConstants.TITLE);
+                    String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
+                    String tableId = (String) table.get(ExcelConstants.TABLEID);
+                    
+                    // Identify tables that are fully disabled
+                    List<String> fullyDisabledTables = Arrays.asList("DesignCapacity", "MaxAchievedCapacity", "SummaryProposedOperatingCapacity");
+                    boolean isFullyDisabled = fullyDisabledTables.stream().anyMatch(tableId::startsWith);
+                    
+                    // Identify the table with partial column locking
+                    boolean isProposedCapacityTable = tableId.startsWith("ProposedOperatingCapacity");
+
+                    List<List<Object>> rows = data.get(tableId);
+                    Boolean isColumnMergeRequired = (Boolean) table.get(ExcelConstants.IS_COLUMN_MERGE_REQUIRED);
+                    List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
+                    Map<String, Object> styles = (Map<String, Object>) table.get(ExcelConstants.STYLES);
+                    Map<String, Object> autoMerge = (Map<String, Object>) table.get(ExcelConstants.AUTOMERGE);
+
+                    Set<Integer> boldCols = new HashSet<>();
+                    if (styles != null && styles.get(ExcelConstants.BOLDCOLUMNS) != null) {
+                        for (int col : (List<Integer>) styles.get(ExcelConstants.BOLDCOLUMNS)) {
+                            boldCols.add(col);
+                        }
+                    }
+
+                    boolean borders = styles != null && Boolean.TRUE.equals(styles.get(ExcelConstants.BORDERS));
+                    currentRow = Math.max(currentRow, startRow);
+
+                    if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(textBeforeTitle);
+                        titleCell.setCellStyle(boldStyle);
+                        currentRow += 2;
+                    }
+                    if (title != null && !title.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(title);
+                        titleCell.setCellStyle(boldStyle);
+                        currentRow++;
+                    }
+
+                    // --- Header Rendering ---
+                    int headerStartRow = currentRow;
+                    for (List<String> headerRowData : headers) {
+                        Row headerRow = sheet.createRow(currentRow++);
+                        for (int col = 0; col < headerRowData.size(); col++) {
+                            Cell cell = headerRow.createCell(col);
+                            cell.setCellValue(headerRowData.get(col));
+                            cell.setCellStyle(boldBorderStyle);
+                        }
+                    }
+                    mergeHeaderCells(sheet, headers, headerStartRow);
+
+                    // --- Data Rendering ---
+                    int startDataRow = currentRow;
+                    if (rows != null) {
+                        for (List<Object> rowData : rows) {
+                            boolean greyOut = rowData.size() > 0 && rowData.get(rowData.size() - 1).toString().trim().equalsIgnoreCase("false");
+                            Row row = sheet.createRow(currentRow++);
+
+                            for (int col = 0; col < rowData.size() - 1; col++) {
+                                Cell cell = row.createCell(col);
+                                Object value = rowData.get(col);
+
+                                if (value instanceof Number) {
+                                    cell.setCellValue(((Number) value).doubleValue());
+                                } else if (value instanceof Boolean) {
+                                    cell.setCellValue((Boolean) value);
+                                } else if (value != null) {
+                                    cell.setCellValue(value.toString());
+                                }
+
+                                // --- LOGIC FOR DISABLING/ENABLING CELLS ---
+                                if (isFullyDisabled || greyOut) {
+                                    cell.setCellStyle(lockedBorderStyle);
+                                } 
+                                else if (isProposedCapacityTable) {
+                                    // Enable only index 1 (April) and index 13 (Remark)
+                                    if (col == 1 || col == 13) {
+                                        cell.setCellStyle(unlockedBorderStyle);
+                                    } else {
+                                        cell.setCellStyle(lockedBorderStyle);
+                                    }
+                                } 
+                                else {
+                                    // Default behavior for other tables
+                                    if (boldCols.contains(col)) {
+                                        cell.setCellStyle(boldStyle);
+                                    } else if (borders) {
+                                        cell.setCellStyle(unlockedBorderStyle);
+                                    } else {
+                                        cell.setCellStyle(unlockedStyle);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- Merging logic ---
+                    if (Boolean.TRUE.equals(isColumnMergeRequired) && autoMerge != null && autoMerge.get(ExcelConstants.COLUMNS) != null) {
+                        for (int colIndex : (List<Integer>) autoMerge.get(ExcelConstants.COLUMNS)) {
+                            int mergeStart = startDataRow;
+                            String lastVal = null;
+                            for (int r = startDataRow; r < currentRow; r++) {
+                                String val = getCellStringValue(sheet.getRow(r).getCell(colIndex));
+                                if (lastVal == null) { lastVal = val; mergeStart = r; }
+                                else if (!Objects.equals(lastVal, val)) {
+                                    if (r - 1 > mergeStart) sheet.addMergedRegion(new CellRangeAddress(mergeStart, r - 1, colIndex, colIndex));
+                                    lastVal = val; mergeStart = r;
+                                }
+                            }
+                            if (currentRow - 1 > mergeStart) sheet.addMergedRegion(new CellRangeAddress(mergeStart, currentRow - 1, colIndex, colIndex));
+                        }
+                    }
+
+                    if (hiddenColumnsList != null) {
+                        for (Integer column : hiddenColumnsList) {
+                            sheet.setColumnHidden(column, true);
+                        }
+                    }
+                    currentRow += 2;
+                }
+
+                for (int i = 0; i < columnCount; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                // CRITICAL: Protection must be enabled for Locking to work
+                sheet.protectSheet(""); 
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    public byte[] generateFlexibleExcelForBudgetMaintenance(Map<String, Object> structure, Map<String, List<List<Object>>> data,Map<String, Object> metadataValues,String basisSummary,String remarkSummary) {
+        try {
+            Workbook workbook = new XSSFWorkbook();
+            CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+            CellStyle boldStyle = Utility.createBoldStyle(workbook);
+            CellStyle lockedStyle = workbook.createCellStyle();
+            lockedStyle.setLocked(true);
+            lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            CellStyle unlockedStyle = workbook.createCellStyle();
+            unlockedStyle.setLocked(false);
+            
+            for (String sheetName : structure.keySet()) {
+                Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+                
+                List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
+                int columnCount = (Integer) sheetData.get(ExcelConstants.COULMNCOUNT);
+
+                Sheet sheet = workbook.createSheet(sheetName);
+                int currentRow = 0;
+                int tableCount = -1;
+                
+                List<Map<String, String>> metadataFields = (List<Map<String, String>>) sheetData.get("metadataFields");
+
+                if (metadataFields != null && metadataFields.size() > 0) {
+                	SimpleDateFormat dateFormatter = new SimpleDateFormat("dd-MM-yyyy");
+                	Object dateValue = metadataValues.get("date");
+                	String formattedDate = "";
+                	if (dateValue instanceof Date) {
+                	    formattedDate = dateFormatter.format((Date) dateValue);
+                	}
+                    String formattedSheetName = sheetName.replace("BudgetMaintenance", "Budget Maintenance");
+                    String date = metadataValues.containsKey("date") ? "Date: " + formattedDate : "";
+                    String year = metadataValues.containsKey("year") ? "AOP Year: " + metadataValues.get("year") : "";
+                    String site = metadataValues.containsKey("site") ? "Site: " + metadataValues.get("site") : "";
+                    String plant = metadataValues.containsKey("plant") ? "Plant: " + metadataValues.get("plant") : "";
+                    String combinedTitle = formattedSheetName + "\n" +
+                                           date + " | " + year + "\n" +
+                                           site + " | " + plant;
+                    
+                    
+                    final int titleStartRow = currentRow; 
+                    Row mainTitleRow = sheet.createRow(currentRow); 
+                    Cell mainTitleCell = mainTitleRow.createCell(0);
+                    mainTitleCell.setCellValue(combinedTitle); 
+                    
+                    CellStyle boldCenteredWrappedStyle = Utility.createBoldStyle(workbook);
+                    boldCenteredWrappedStyle.setAlignment(HorizontalAlignment.CENTER);
+                    boldCenteredWrappedStyle.setVerticalAlignment(VerticalAlignment.CENTER); 
+                    boldCenteredWrappedStyle.setWrapText(true); 
+                    boldCenteredWrappedStyle.setBorderTop(BorderStyle.THIN);
+                    boldCenteredWrappedStyle.setBorderBottom(BorderStyle.THIN);
+                    boldCenteredWrappedStyle.setBorderLeft(BorderStyle.THIN);
+                    boldCenteredWrappedStyle.setBorderRight(BorderStyle.THIN);
+                    int endRow = titleStartRow + 3;
+                    int endCol = 16;
+                    
+                    for (int r = titleStartRow; r <= endRow; r++) {
+                        Row row = sheet.getRow(r);
+                        if (row == null) {
+                            row = sheet.createRow(r);
+                        }
+                        for (int c = 0; c <= endCol; c++) {
+                            Cell cell = row.getCell(c);
+                            if (cell == null) {
+                                cell = row.createCell(c);
+                            }
+                            cell.setCellStyle(boldCenteredWrappedStyle);
+                        }
+                    }
+                    
+                    mainTitleCell.setCellStyle(boldCenteredWrappedStyle);
+                    
+                   
+                    sheet.addMergedRegion(new CellRangeAddress(
+                        titleStartRow, 
+                        titleStartRow + 3, 
+                        0, 
+                        16 
+                    ));
+                    
+                    currentRow += 4;
+                    currentRow++;   
+                } 
+                
+                CellStyle summaryStyle = workbook.createCellStyle();
+                summaryStyle.setWrapText(true); 
+                summaryStyle.setBorderTop(BorderStyle.THIN);
+                summaryStyle.setBorderBottom(BorderStyle.THIN);
+                summaryStyle.setBorderLeft(BorderStyle.THIN);
+                summaryStyle.setBorderRight(BorderStyle.THIN);
+                Row summaryLabelRow = sheet.createRow(currentRow++);
+                Cell basisSummaryLabelCell = summaryLabelRow.createCell(0);
+                basisSummaryLabelCell.setCellValue("Justification:");
+                basisSummaryLabelCell.setCellStyle(Utility.createBoldStyle(workbook)); 
+                Cell remarkSummaryLabelCell = summaryLabelRow.createCell(8); 
+                remarkSummaryLabelCell.setCellValue("Remarks:");
+                remarkSummaryLabelCell.setCellStyle(Utility.createBoldStyle(workbook)); 
+                int basisStartCol = 0;
+                int basisEndCol = basisStartCol + 6; 
+                
+                Row basisSummaryRow = sheet.createRow(currentRow); 
+                Cell basisSummaryCell = basisSummaryRow.createCell(basisStartCol);
+                basisSummaryCell.setCellValue(basisSummary != null ? basisSummary : "");
+                basisSummaryCell.setCellStyle(summaryStyle); 
+                sheet.addMergedRegion(new CellRangeAddress(currentRow, currentRow + 2, basisStartCol, basisEndCol));
+                for (int r = currentRow; r <= currentRow + 2; r++) {
+                    Row row = sheet.getRow(r) == null ? sheet.createRow(r) : sheet.getRow(r);
+                    for (int c = basisStartCol; c <= basisEndCol; c++) {
+                        Cell cell = row.getCell(c) == null ? row.createCell(c) : row.getCell(c);
+                        cell.setCellStyle(summaryStyle);
+                    }
+                }
+                int remarkStartCol = 8;
+                int remarkEndCol = remarkStartCol + 8; 
+                
+                Cell remarkSummaryCell = basisSummaryRow.createCell(remarkStartCol); 
+                remarkSummaryCell.setCellValue(remarkSummary != null ? remarkSummary : "");
+                remarkSummaryCell.setCellStyle(summaryStyle); 
+                sheet.addMergedRegion(new CellRangeAddress(currentRow, currentRow + 2, remarkStartCol, remarkEndCol));
+                for (int r = currentRow; r <= currentRow + 2; r++) {
+                    Row row = sheet.getRow(r) == null ? sheet.createRow(r) : sheet.getRow(r);
+                    for (int c = remarkStartCol; c <= remarkEndCol; c++) {
+                        Cell cell = row.getCell(c) == null ? row.createCell(c) : row.getCell(c);
+                        cell.setCellStyle(summaryStyle);
+                    }
+                }
+
+                currentRow += 3; 
+                currentRow++;    
+                for (Map<String, Object> table : tables) {
+                    String title = "";
+                    boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
+                    if(hideTable){
+                        continue;
+                    }
+                    tableCount++;
+                    Integer startRow = (table.get(ExcelConstants.STARTROW) == null) ? currentRow
+                            : (int) table.get(ExcelConstants.STARTROW);
+                    List<List<String>> headers = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+                    if (headers.size() > columnCount) {
+                        columnCount = headers.size();
+                    }
+                    List<List<Object>> rows = new ArrayList<>();
+
+                    title = (String) table.get(ExcelConstants.TITLE);
+                    String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
+                    String tableId = (String) table.get(ExcelConstants.TABLEID);
+                    rows = data.get(tableId);
+                    
+                    Boolean isColumnMergeRequired = (Boolean) table.get(ExcelConstants.IS_COLUMN_MERGE_REQUIRED);
+                    Boolean isRowMergeRequired = (Boolean) table.get(ExcelConstants.IS_ROW_MERGE_REQUIRED);
+                    List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
+
+                    Map<String, Object> styles = (Map<String, Object>) table.get(ExcelConstants.STYLES);
+                    Map<String, Object> autoMerge = (Map<String, Object>) table.get(ExcelConstants.AUTOMERGE);
+
+                    Set<Integer> boldCols = new HashSet<>();
+                    if (styles != null && styles.get(ExcelConstants.BOLDCOLUMNS) != null) {
+                        for (int col : (List<Integer>) styles.get(ExcelConstants.BOLDCOLUMNS)) {
+                            boldCols.add(col);
+                        }
+                    }
+
+                    boolean borders = styles != null && Boolean.TRUE.equals(styles.get(ExcelConstants.BORDERS));
+
+                    currentRow = Math.max(currentRow, startRow);
+                    if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(textBeforeTitle);
+                        titleCell.setCellStyle(boldStyle);
+
+                        currentRow++;
+                        currentRow++;
+                    }
+                    if (title != null && !title.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(title);
+                        titleCell.setCellStyle(boldStyle);
+
+                        currentRow++;
+                    }
+
+                    int headerStartRow = currentRow;
+                    for (List<String> headerRowData : headers) {
+                        Row headerRow = sheet.createRow(currentRow++);
+                        for (int col = 0; col < headerRowData.size(); col++) {
+                            Cell cell = headerRow.createCell(col);
+                            cell.setCellValue(headerRowData.get(col));
+                            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                        }
+                    }
+                    mergeHeaderCells(sheet, headers, headerStartRow);
+
+                    int startDataRow = currentRow;
+                    if(rows!=null) {
+                    	for (List<Object> rowData : rows) {
+                    		
+                    		boolean greyOut=false;
+                    		if(rowData.get(rowData.size() - 2)!=null) {
+                    			greyOut = rowData.size() > 0 && rowData.get(rowData.size() - 2).toString().trim().equalsIgnoreCase("false");
+                    		}
+                    		  Row row = sheet.createRow(currentRow++);
+                            
+                            for (int col = 0; col < rowData.size(); col++) {
+                            	
+                                Cell cell = row.createCell(col);
+                                Object value = rowData.get(col);
+
+                                if (value instanceof Number) {
+                                    cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+                                } else if (value instanceof Boolean) {
+                                    cell.setCellValue((Boolean) value);
+                                } else if (value != null) {
+                                    cell.setCellValue(value.toString());
+                                } else {
+                                    cell.setCellValue("");
+                                }
+                                
+
+                                if (boldCols.contains(col))
+                                    cell.setCellStyle(boldStyle);
+                                if (borders)
+                                    cell.setCellStyle(borderStyle);
+                                if(greyOut){
+                                	cell.setCellStyle(lockedStyle);
+                                }
+
+                            }
+                        }
+
+                    }
+                    
+                    if (isColumnMergeRequired) {
+                        if (autoMerge != null && autoMerge.get(ExcelConstants.COLUMNS) != null) {
+                            for (int colIndex : (List<Integer>) autoMerge.get(ExcelConstants.COLUMNS)) {
+                                int mergeStart = startDataRow;
+                                String lastVal = null;
+
+                                for (int r = startDataRow; r < currentRow; r++) {
+                                    Row row = sheet.getRow(r);
+                                    Cell cell = (row != null) ? row.getCell(colIndex) : null;
+                                    String val = getCellStringValue(cell);
+
+                                    if (lastVal == null) {
+                                        lastVal = val;
+                                        mergeStart = r;
+                                    } else if (!Objects.equals(lastVal, val)) {
+                                        if (r - 1 > mergeStart) {
+                                            sheet.addMergedRegion(
+                                                    new CellRangeAddress(mergeStart, r - 1, colIndex, colIndex));
+                                        }
+                                        lastVal = val;
+                                        mergeStart = r;
+                                    }
+                                }
+
+                                if (currentRow - 1 > mergeStart) {
+                                    sheet.addMergedRegion(
+                                            new CellRangeAddress(mergeStart, currentRow - 1, colIndex, colIndex));
+                                }
+                            }
+                        }
+                    }
+
+                    if (isRowMergeRequired) {
+                        if (autoMerge != null && autoMerge.get(ExcelConstants.ROWS) != null) {
+                            for (int rowIndex : (List<Integer>) autoMerge.get(ExcelConstants.ROWS)) {
+                                int mergeStart = 0;
+                                String lastVal = null;
+                                Row row = sheet.getRow(startDataRow + rowIndex);
+                                if (row == null) // continue;
+
+                                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                                        Cell cell = row.getCell(c);
+                                        String val = getCellStringValue(cell);
+
+                                        if (lastVal == null) {
+                                            lastVal = val;
+                                            mergeStart = c;
+                                        } else if (!Objects.equals(lastVal, val)) {
+                                            if (c - 1 > mergeStart) {
+                                                sheet.addMergedRegion(new CellRangeAddress(startDataRow + rowIndex,
+                                                        startDataRow + rowIndex, mergeStart, c - 1));
+                                            }
+                                            lastVal = val;
+                                            mergeStart = c;
+                                        }
+                                    }
+                                if (row.getLastCellNum() - 1 > mergeStart) {
+                                    sheet.addMergedRegion(new CellRangeAddress(startDataRow + rowIndex,
+                                            startDataRow + rowIndex, mergeStart, row.getLastCellNum() - 1));
+                                }
+                            }
+                        }
+                    }
+                    for (Integer column : hiddenColumnsList) {
+                        sheet.setColumnHidden(column, true);
+                    }
+                    currentRow += 2;
+
+                }
+                for (int i = 0; i < columnCount; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+            }
+
+            try {
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                workbook.close();
+                return outputStream.toByteArray();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+ // Helper function to handle cell value setting (Date/String/N/A)
+    private void setFormattedCellValue(Cell valueCell, Object value, CellStyle style) {
+        if (value != null) {
+            if (value instanceof Date) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+                valueCell.setCellValue(dateFormat.format((Date) value));
+            } else {
+                valueCell.setCellValue(value.toString());
+            }
+        } else {
+            valueCell.setCellValue("N/A");
+        }
+        valueCell.setCellStyle(style); // Apply the specific alignment style
+    }
+    public byte[] generateFlexibleExcelForReliability(Map<String, Object> structure, Map<String, List<List<Object>>> data) {
+        try {
+            Workbook workbook = new XSSFWorkbook();
+            CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+            CellStyle boldStyle = Utility.createBoldStyle(workbook);
+            CellStyle lockedStyle = workbook.createCellStyle();
+            lockedStyle.setLocked(true);
+            lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            CellStyle unlockedStyle = workbook.createCellStyle();
+            unlockedStyle.setLocked(false);
+
+            for (String sheetName : structure.keySet()) {
+                Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+                
+                List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
+                int columnCount = (Integer) sheetData.get(ExcelConstants.COULMNCOUNT);
+
+                Sheet sheet = workbook.createSheet(sheetName);
+                int currentRow = 0;
+                int tableCount = -1;
+                
+                for (Map<String, Object> table : tables) {
+                    String title = "";
+                    boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
+                    if(hideTable){
+                        continue;
+                    }
+                    tableCount++;
+                    Integer startRow = (table.get(ExcelConstants.STARTROW) == null) ? currentRow
+                            : (int) table.get(ExcelConstants.STARTROW);
+                    List<List<String>> headers = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+                    if (headers.size() > columnCount) {
+                        columnCount = headers.size();
+                    }
+                    List<List<Object>> rows = new ArrayList<>();
+
+                    title = (String) table.get(ExcelConstants.TITLE);
+                    String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
+                    String tableId = (String) table.get(ExcelConstants.TABLEID);
+                    rows = data.get(tableId);
+                    System.out.println("rows " + rows);
+                    Boolean isColumnMergeRequired = (Boolean) table.get(ExcelConstants.IS_COLUMN_MERGE_REQUIRED);
+                    Boolean isRowMergeRequired = (Boolean) table.get(ExcelConstants.IS_ROW_MERGE_REQUIRED);
+                    List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
+
+                    Map<String, Object> styles = (Map<String, Object>) table.get(ExcelConstants.STYLES);
+                    Map<String, Object> autoMerge = (Map<String, Object>) table.get(ExcelConstants.AUTOMERGE);
+
+                    Set<Integer> boldCols = new HashSet<>();
+                    if (styles != null && styles.get(ExcelConstants.BOLDCOLUMNS) != null) {
+                        for (int col : (List<Integer>) styles.get(ExcelConstants.BOLDCOLUMNS)) {
+                            boldCols.add(col);
+                        }
+                    }
+
+                    boolean borders = styles != null && Boolean.TRUE.equals(styles.get(ExcelConstants.BORDERS));
+
+                    currentRow = Math.max(currentRow, startRow);
+                    // currentRow += 1;
+                    
+                    if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(textBeforeTitle);
+                        titleCell.setCellStyle(boldStyle);
+
+                        currentRow++;
+                        currentRow++;
+                    }
+                    if (title != null && !title.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(title);
+                        titleCell.setCellStyle(boldStyle);
+
+                        currentRow++;
+                    }
+
+                    int headerStartRow = currentRow;
+                    for (List<String> headerRowData : headers) {
+                        Row headerRow = sheet.createRow(currentRow++);
+                        for (int col = 0; col < headerRowData.size(); col++) {
+                            Cell cell = headerRow.createCell(col);
+                            cell.setCellValue(headerRowData.get(col));
+                            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                        }
+                    }
+                    mergeHeaderCells(sheet, headers, headerStartRow);
+
+                    int startDataRow = currentRow;
+
+                    // Write structure rows
+                    if(rows!=null) {
+                    	for (List<Object> rowData : rows) {
+                    		System.out.println(rowData.get(rowData.size() - 2));
+                    		boolean greyOut=false;
+                    		if(rowData.get(rowData.size() - 2)!=null) {
+                    			greyOut = rowData.size() > 0 && rowData.get(rowData.size() - 2).toString().trim().equalsIgnoreCase("false");
+                    		}
+                    		  Row row = sheet.createRow(currentRow++);
+                            
+                            for (int col = 0; col < rowData.size(); col++) {
+                            	
+                                Cell cell = row.createCell(col);
+                                Object value = rowData.get(col);
+
+                                if (value instanceof Number) {
+                                    cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+                                } else if (value instanceof Boolean) {
+                                    cell.setCellValue((Boolean) value);
+                                } else if (value != null) {
+                                    cell.setCellValue(value.toString());
+                                } else {
+                                    cell.setCellValue("");
+                                }
+                                
+
+                                if (boldCols.contains(col))
+                                    cell.setCellStyle(boldStyle);
+                                if (borders)
+                                    cell.setCellStyle(borderStyle);
+                                if(greyOut){
+                                	cell.setCellStyle(lockedStyle);
+                                }
+
+                            }
+                        }
+
+                    }
+                    
+                    if (isColumnMergeRequired) {
+                        // Auto merge rows
+                        // Auto merge rows (vertical merge across rows in specific columns)
+                        if (autoMerge != null && autoMerge.get(ExcelConstants.COLUMNS) != null) {
+                            for (int colIndex : (List<Integer>) autoMerge.get(ExcelConstants.COLUMNS)) {
+                                int mergeStart = startDataRow;
+                                String lastVal = null;
+
+                                for (int r = startDataRow; r < currentRow; r++) {
+                                    Row row = sheet.getRow(r);
+                                    Cell cell = (row != null) ? row.getCell(colIndex) : null;
+                                    String val = getCellStringValue(cell);
+
+                                    if (lastVal == null) {
+                                        lastVal = val;
+                                        mergeStart = r;
+                                    } else if (!Objects.equals(lastVal, val)) {
+                                        if (r - 1 > mergeStart) {
+                                            sheet.addMergedRegion(
+                                                    new CellRangeAddress(mergeStart, r - 1, colIndex, colIndex));
+                                        }
+                                        lastVal = val;
+                                        mergeStart = r;
+                                    }
+                                }
+
+                                if (currentRow - 1 > mergeStart) {
+                                    sheet.addMergedRegion(
+                                            new CellRangeAddress(mergeStart, currentRow - 1, colIndex, colIndex));
+                                }
+                            }
+                        }
+                    }
+
+                    if (isRowMergeRequired) {
+                        // Auto merge columns
+                        // Auto merge columns (horizontal merge across columns in specific rows)
+                        if (autoMerge != null && autoMerge.get(ExcelConstants.ROWS) != null) {
+                            for (int rowIndex : (List<Integer>) autoMerge.get(ExcelConstants.ROWS)) {
+                                int mergeStart = 0;
+                                String lastVal = null;
+                                Row row = sheet.getRow(startDataRow + rowIndex);
+                                if (row == null) // continue;
+
+                                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                                        Cell cell = row.getCell(c);
+                                        String val = getCellStringValue(cell);
+
+                                        if (lastVal == null) {
+                                            lastVal = val;
+                                            mergeStart = c;
+                                        } else if (!Objects.equals(lastVal, val)) {
+                                            if (c - 1 > mergeStart) {
+                                                sheet.addMergedRegion(new CellRangeAddress(startDataRow + rowIndex,
+                                                        startDataRow + rowIndex, mergeStart, c - 1));
+                                            }
+                                            lastVal = val;
+                                            mergeStart = c;
+                                        }
+                                    }
+
+                                // Check the last segment for merging
+                                if (row.getLastCellNum() - 1 > mergeStart) {
+                                    sheet.addMergedRegion(new CellRangeAddress(startDataRow + rowIndex,
+                                            startDataRow + rowIndex, mergeStart, row.getLastCellNum() - 1));
+                                }
+                            }
+                        }
+                    }
+                    for (Integer column : hiddenColumnsList) {
+                        sheet.setColumnHidden(column, true);
+                    }
+                    currentRow += 2;
+
+                }
+                for (int i = 0; i < columnCount; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                //sheet.setDisplayGridlines(false);
+            }
+
+            // File outputDir = new File("output");
+            // if (!outputDir.exists()) outputDir.mkdirs();
+
+            try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                workbook.close();
+                return outputStream.toByteArray();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void mergeHeaderCells(Sheet sheet, List<List<String>> headers, int startRow) {
+        int rows = headers.size();
+        int cols = headers.get(0).size();
+
+        // Horizontal merge
+        for (int row = 0; row < rows; row++) {
+            int col = 0;
+            while (col < cols) {
+                String cellValue = headers.get(row).get(col);
+                int mergeStart = col;
+                while (col + 1 < cols && cellValue.equals(headers.get(row).get(col + 1))) {
+                    col++;
+                }
+                if (mergeStart != col) {
+                    sheet.addMergedRegion(new CellRangeAddress(startRow + row, startRow + row, mergeStart, col));
+                }
+                col++;
+            }
+        }
+
+        // Vertical merge
+        for (int col = 0; col < cols; col++) {
+            int row = 0;
+            while (row < rows - 1) {
+                String cellValue = headers.get(row).get(col);
+                int mergeStart = row;
+                while (row + 1 < rows && cellValue.equals(headers.get(row + 1).get(col))) {
+                    row++;
+                }
+                if (mergeStart != row) {
+                    sheet.addMergedRegion(new CellRangeAddress(startRow + mergeStart, startRow + row, col, col));
+                }
+                row++;
+            }
+        }
+    }
+
+    private String getCellStringValue(Cell cell) {
+        if (cell == null)
+            return null;
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> cell.getCellFormula();
+            case BLANK, ERROR -> null;
+            default -> null;
+        };
+    }
+
+    private void createTitleBlock(Sheet sheet, String title, String plant, String date, Workbook workbook,
+            String site) {
+        int totalColumns = 13;
+        int titleBlockHeight = 4;
+
+        // Create rows and merge 13 columns for each
+        for (int i = 0; i < titleBlockHeight; i++) {
+            Row row = sheet.createRow(i);
+            row.setHeightInPoints(25);
+            // sheet.addMergedRegion(new CellRangeAddress(i, i, 0, totalColumns - 1));
+        }
+
+        // Styles
+        Font boldFont = workbook.createFont();
+        boldFont.setBold(true);
+
+        // Base style with no borders
+        CellStyle baseStyle = workbook.createCellStyle();
+        baseStyle.setAlignment(HorizontalAlignment.LEFT);
+        baseStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        baseStyle.setFont(boldFont);
+
+        // Centered style for title
+        CellStyle titleStyle = workbook.createCellStyle();
+        titleStyle.setAlignment(HorizontalAlignment.CENTER);
+        titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        titleStyle.setFont(boldFont);
+
+        // Border style for outer border only
+        CellStyle outerBorderStyle = workbook.createCellStyle();
+        outerBorderStyle.setBorderTop(BorderStyle.THIN);
+        outerBorderStyle.setBorderBottom(BorderStyle.THIN);
+        outerBorderStyle.setBorderLeft(BorderStyle.THIN);
+        outerBorderStyle.setBorderRight(BorderStyle.THIN);
+
+        // Fill content
+        Cell cellProduct = sheet.getRow(1).createCell(0);
+        cellProduct.setCellValue("Site: " + site);
+        cellProduct.setCellStyle(baseStyle);
+
+        Cell cellDate = sheet.getRow(2).createCell(0);
+        cellDate.setCellValue("Date: " + date);
+        cellDate.setCellStyle(baseStyle);
+
+        Cell cellPlant = sheet.getRow(2).createCell(11);
+        cellPlant.setCellValue("Plant: " + plant);
+        cellPlant.setCellStyle(baseStyle);
+
+        Cell cellTitle = sheet.getRow(3).createCell(5);
+        cellTitle.setCellValue(title);
+        cellTitle.setCellStyle(titleStyle);
+        sheet.addMergedRegion(new CellRangeAddress(3, 3, 5, 6));
+
+        // Apply outer border only to corners
+        for (int r = 0; r < titleBlockHeight; r++) {
+            Row row = sheet.getRow(r);
+            for (int c = 0; c < totalColumns; c++) {
+                boolean isTop = r == 0;
+                boolean isBottom = r == titleBlockHeight - 1;
+                boolean isLeft = c == 0;
+                boolean isRight = c == totalColumns - 1;
+
+                if (isTop || isBottom || isLeft || isRight) {
+                    Cell cell = row.getCell(c);
+                    if (cell == null)
+                        cell = row.createCell(c);
+
+                    CellStyle edgeStyle = workbook.createCellStyle();
+                    edgeStyle.cloneStyleFrom(cell.getCellStyle());
+
+                    if (isTop)
+                        edgeStyle.setBorderTop(BorderStyle.THIN);
+                    if (isBottom)
+                        edgeStyle.setBorderBottom(BorderStyle.THIN);
+                    if (isLeft)
+                        edgeStyle.setBorderLeft(BorderStyle.THIN);
+                    if (isRight)
+                        edgeStyle.setBorderRight(BorderStyle.THIN);
+
+                    cell.setCellStyle(edgeStyle);
+                }
+            }
+        }
+    }
+
+    // Utility to clear all borders from a style
+    private void clearAllBorders(CellStyle style) {
+        style.setBorderTop(BorderStyle.NONE);
+        style.setBorderBottom(BorderStyle.NONE);
+        style.setBorderLeft(BorderStyle.NONE);
+        style.setBorderRight(BorderStyle.NONE);
+    }
+
+    public List<String> getAcademicYearMonths(String year) {
+        List<String> months = new ArrayList<>();
+        int startYear = Integer.parseInt(year.substring(0, 4));
+        int nextYear = startYear + 1;
+
+        // Apr to Dec of startYear
+        for (int month = 4; month <= 12; month++) {
+            String label = formatMonthYear(month, startYear);
+            months.add(label);
+        }
+
+        // Jan to Mar of nextYear
+        for (int month = 1; month <= 3; month++) {
+            String label = formatMonthYear(month, nextYear);
+            months.add(label);
+        }
+
+        return months;
+    }
+    
+    public List<String> getMonths(String year) {
+        List<String> months = new ArrayList<>();
+        int startYear = Integer.parseInt(year.substring(0, 4));
+        int nextYear = startYear + 1;
+
+        for (int month = 4; month <= 12; month++) {
+            months.add(formatMonthOnly(month, startYear));
+        }
+        for (int month = 1; month <= 3; month++) {
+            months.add(formatMonthOnly(month, nextYear));
+        }
+
+        return months;
+    }
+
+    private String formatMonthOnly(int month, int year) {
+        LocalDate date = LocalDate.of(year, month, 1);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH);
+        return date.format(formatter);
+    }
+    
+    public List<String> getFinancialYear(String year) {
+        List<String> months = new ArrayList<>();
+        int startYear = Integer.parseInt(year.substring(2, 4));
+        int nextYear = startYear + 1;
+
+        months.add("FY"+startYear+" AOP");
+        months.add("FY"+startYear+" Actual");
+        months.add("FY"+nextYear+" Plan");
+        
+        return months;
+    }
+
+
+    private String formatMonthYear(int month, int year) {
+        LocalDate date = LocalDate.of(year, month, 1);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", Locale.ENGLISH);
+        return date.format(formatter);
+    }
+
+}

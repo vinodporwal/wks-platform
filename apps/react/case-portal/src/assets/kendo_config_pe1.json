@@ -1,0 +1,186 @@
+[
+  {
+    "field": "TypeDisplayName",
+    "title": "Type",
+    "width": 100,
+    "groupable": true,
+    "renderCell": "renderStrongCell",
+    "editable": false,
+    "hidden": true,
+    "isVisible": false
+  },
+  {
+    "field": "normParameterFKId",
+    "title": "Particulars",
+    "editable": false,
+    "width": 160,
+    "valueGetter": "defaultValueGetter",
+    "valueFormatter": "productDisplayNameFormatter",
+    "renderEditCell": "renderNormParameterSelectCell",
+    "hidden": true,
+    "isVisible": false
+  },
+  {
+    "field": "productName",
+    "title": "Particulars",
+    "editable": false,
+    "locked": true,
+    "widthT": 130,
+    "valueGetter": "defaultValueGetter",
+    "valueFormatter": "productDisplayNameFormatter",
+    "renderEditCell": "renderNormParameterSelectCell",
+    "minWidth": 300
+  },
+
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "locked": true,
+    "align": "left",
+    "headerAlign": "left",
+    "widthT": 60,
+    "minWidth": 80
+  },
+  {
+    "field": "apr",
+    "title": 4,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 120,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "may",
+    "title": 5,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "jun",
+    "title": 6,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "jul",
+    "title": 7,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "aug",
+    "title": 8,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "sep",
+    "title": 9,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "oct",
+    "title": 10,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "nov",
+    "title": 11,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "dec",
+    "title": 12,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "jan",
+    "title": 1,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "feb",
+    "title": 2,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "mar",
+    "title": 3,
+    "editable": true,
+    "renderEditCell": "NumericInputOnly",
+    "align": "left",
+    "width": 100,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
+  },
+  {
+    "field": "remarks",
+    "title": "Remark",
+
+    "editable": true,
+    "renderCell": "renderRemarkCell",
+    "widthT": 80,
+    "minWidth": 200
+  }
+]

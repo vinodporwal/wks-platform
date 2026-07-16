@@ -1,0 +1,42 @@
+[
+  {
+    "field": "DisplayName",
+    "title": "Particular",
+    "editable": false,
+    "widthT": 125,
+    "minWidth": 250
+  },
+
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 80,
+    "minWidth": 80
+  },
+
+  {
+    "field": "MajorShutdown",
+    "title": "Major Shutdown",
+    "editable": true,
+    "type": "negativeNumber",
+    "widthT": 125,
+    "minWidth": 125
+  },
+  {
+    "field": "OneDayShutdown",
+    "title": "One Day Shutdown",
+    "type": "negativeNumber",
+    "editable": true,
+    "align": "left",
+    "widthT": 125,
+    "minWidth": 125
+  },
+
+  {
+    "field": "remarks",
+    "title": "Remarks",
+    "widthT": 125,
+    "minWidth": 200
+  }
+]

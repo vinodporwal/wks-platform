@@ -9,7 +9,7 @@ import {
   Popper,
   Toolbar,
 } from '@mui/material'
-import Search from './Search'
+// import Search from './Search'
 import Profile from './Profile'
 import Transitions from 'components/@extended/Transitions'
 import MoreOutlined from '@ant-design/icons/MoreOutlined'
@@ -86,7 +86,7 @@ const MobileSection = () => {
               <ClickAwayListener onClickAway={handleClose}>
                 <AppBar color='inherit'>
                   <Toolbar>
-                    <Search />
+                    {/* <Search /> */}
                     <Profile />
                   </Toolbar>
                 </AppBar>

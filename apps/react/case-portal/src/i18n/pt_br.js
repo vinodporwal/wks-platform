@@ -24,6 +24,47 @@ const defs = {
     processEngines: 'Motores de Processos',
     forms: 'Formulários',
     queues: 'Filas',
+    dataTable: 'Turnaround Table',
+    dataTable2: 'Product Mix Entry',
+    dataForm: 'WKS Form',
+    dataForm2: 'WKS Form2',
+    // Menu items for "Production / Norms Plan"
+    productionNormsPlan: 'Plano de Produção / Normas',
+    process: 'Process',
+
+    productMCUVal: 'Valor MCU Produto',
+    maintenanceDetails: 'Maintenance Details',
+    productDemand: 'Demanda de Produto',
+    shutdownPlan: 'Plano de Parada',
+    shutdownNorms: 'Shutdown Norms',
+    slowdownNorms: 'Slowdown Norms',
+
+    normalOpNorms: 'Normal Operation Norms',
+    slowdownPlan: 'Plano de Redução',
+    taPlan: 'Plano de TA',
+    feedStock: 'Plano de TA',
+    productionNormsOutput: 'Normas de Produção (Saída)',
+    consumptionNormsOutput: 'Normas de Consumo (Saída)',
+    shutdownNormsOutput: 'Normas de Parada (Saída)',
+    // New menu items for functions
+    safety: 'Segurança', // New addition
+    reliability: 'Confiabilidade', // New addition
+    reports: 'Relatórios', // New addition
+    annualAopCostReport: 'Relatório de Contribuição', // New addition
+    previousFYAOPResult: 'Resultado AOP do Ano Fiscal Anterior', // New addition
+    matBalSheet: 'Balanço de MAT', // New addition
+    workflow: 'Fluxo de Trabalho', // New addition
+    //FUNCTIONAL AOP
+    functionalAop: 'CES',
+
+    monthlyAop: 'Maintenance',
+    siteWiseAop: 'Consumption Summary (Sites)',
+    allSiteSummaryAop: 'Summary',
+    UtilityPlant: 'Utility Plant',
+    packagingConsumables: 'Consumíveis de Embalagem',
+    productionOptimizer: 'Production Optimizer',
+
+    causticSodaLyeBasis: 'Caustic Soda Lye Norms',
   },
   pages: {
     dashboard: {
@@ -154,6 +195,51 @@ const defs = {
         error: {
           couldNotUpload: 'Não foi possível fazer o upload do arquivo.',
         },
+      },
+    },
+    // Pages for Production / Norms Plan
+    productionNormsPlanPage: {
+      title: 'Plano de Produção / Normas',
+      subPages: {
+        productMCUVal: 'Valor MCU Produto',
+        maintenanceDetails: 'Maintenance Details',
+        productDemand: 'Demanda de Produto',
+        shutdownPlan: 'Plano de Parada',
+        shutdownNorms: 'Shutdown Norms',
+        slowdownNorms: 'Slowdown Norms',
+        normalOpNorms: 'Normal Operation Norms',
+        slowdownPlan: 'Plano de Redução',
+        taPlan: 'Plano de TA',
+        productionNormsOutput: 'Normas de Produção (Saída)',
+        consumptionNormsOutput: 'Normas de Consumo (Saída)',
+        shutdownNormsOutput: 'Normas de Parada (Saída)',
+        safety: 'Segurança', // New addition
+        reliability: 'Confiabilidade', // New addition
+        reports: 'Relatórios', // New addition
+        annualAopCostReport: 'Relatório de Contribuição', // New addition
+        previousFYAOPResult: 'Resultado AOP do Ano Fiscal Anterior', // New addition
+        matBalSheet: 'Balanço de MAT', // New addition
+        workflow: 'Fluxo de Trabalho', // New addition
+        utilityPlant: 'Planta de Utilidade', // New addition
+        fixedConsumption: 'Consumo Fixo',
+        norms: 'Normas',
+        importPower: 'Importação de Energia',
+
+        //FUNCTIONAL AOP
+        functionalAop: 'CES',
+        process: 'Process',
+
+        monthlyAop: 'Maintenance',
+        siteWiseAop: 'Consumption Summary (Sites)',
+        allSiteSummaryAop: 'Summary',
+
+        manufacturingDivision: 'Manufacturing Division',
+        plantSafetyPerformanceTarget: 'S&OR',
+        plantTeam: 'People',
+        packagingConsumables: 'Consumíveis de Embalagem',
+        productionOptimizer: 'Production Optimizer',
+
+        causticSodaLyeBasis: 'Caustic Soda Lye Norms',
       },
     },
   },

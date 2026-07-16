@@ -1,0 +1,1281 @@
+package com.wks.caseengine.service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.wks.caseengine.dto.AOPDTO;
+import com.wks.caseengine.entity.AOP;
+import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.NormParameters;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
+import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AOPRepository;
+import com.wks.caseengine.repository.AopCalculationRepository;
+import com.wks.caseengine.repository.NormParametersRepository;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
+
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
+import java.util.UUID;
+
+
+import javax.sql.DataSource;
+
+import java.io.ByteArrayOutputStream;
+import java.sql.CallableStatement;
+import java.sql.SQLException;
+import java.sql.Connection;
+import jakarta.persistence.Query;
+
+@Service
+public class AOPServiceImpl implements AOPService {
+
+	@Autowired
+	private AOPRepository aopRepository;
+	@Autowired
+	private PlantsRepository plantsRepository;
+	@Autowired
+	private SiteRepository siteRepository;
+	@Autowired
+	private VerticalsRepository verticalRepository;
+
+	@Autowired
+	private NormParametersService normParametersService;
+
+	@PersistenceContext
+	private EntityManager entityManager;
+
+	private DataSource dataSource;
+
+	@Autowired
+	private AopCalculationRepository aopCalculationRepository;
+
+	@Autowired
+	private ScreenMappingRepository screenMappingRepository;
+	
+	@Autowired
+	private NormParametersRepository normParametersRepository;
+
+	@Autowired
+	private ShutdownHistoryService shutdownHistoryService;
+
+	// Inject or set your DataSource (e.g., via constructor or setter)
+	public AOPServiceImpl(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
+
+	@Override
+	public List<AOPDTO> getAOP() {
+		try {
+			List<AOP> listAOP = aopRepository.findAll();
+			List<AOPDTO> aOPList = new ArrayList<>();
+
+			for (AOP aOP : listAOP) {
+				AOPDTO aOPDTO = new AOPDTO();
+				aOPDTO.setId(aOP.getId().toString());
+				aOPDTO.setAopCaseId(aOP.getAopCaseId());
+				aOPDTO.setAopRemarks(aOP.getAopRemarks());
+				aOPDTO.setAopStatus(aOP.getAopStatus());
+				aOPDTO.setAopType(aOP.getAopType());
+				aOPDTO.setAopYear(aOP.getAopYear());
+				aOPDTO.setApril(aOP.getApril());
+				aOPDTO.setAug(aOP.getAug());
+				aOPDTO.setAvgTPH(aOP.getAvgTPH());
+				aOPDTO.setDec(aOP.getDec());
+				aOPDTO.setFeb(aOP.getFeb());
+				aOPDTO.setJan(aOP.getJan());
+				aOPDTO.setJuly(aOP.getJuly());
+				aOPDTO.setJune(aOP.getJune());
+				aOPDTO.setMarch(aOP.getMarch());
+				aOPDTO.setMay(aOP.getMay());
+				// aOPDTO.setNormItem(aOP.getNormItem());
+				aOPDTO.setNov(aOP.getNov());
+				aOPDTO.setOct(aOP.getOct());
+				aOPDTO.setPlantFKId(aOP.getPlantFkId().toString());
+				aOPDTO.setSep(aOP.getSep());
+				aOPList.add(aOPDTO);
+			}
+
+			// TODO Auto-generated method stub
+			return aOPList;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getAOPData(String plantId, String year, String type) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<AOPDTO> aOPDTOList = new ArrayList<>();
+		try {
+			List<Object[]> obj=null;
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+			boolean staple= vertical.getName().equalsIgnoreCase("Staple");
+			boolean filament= vertical.getName().equalsIgnoreCase("Filament");
+			if(vertical.getName().equalsIgnoreCase("AROMATICS")) {
+				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOP";
+				obj = getData(year,plant.getId(),site.getId(),vertical.getId(),procedureName);
+			}else if(staple || filament || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
+				String view="vwScrn"+vertical.getName()+"AOP";
+				obj= findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type,view);
+			}else if(vertical.getName().equalsIgnoreCase("Chemical") || (vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD"))){
+				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetMonthWiseProductionPlan";
+				obj = getDataElastomer(year,plant.getId(),procedureName);
+			}else {
+				 obj = aopRepository.findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type);
+			}
+			
+			for (Object[] row : obj) {
+				AOPDTO aopDTO = new AOPDTO();
+
+				aopDTO.setId(row[0] != null ? row[0].toString() : null);
+				aopDTO.setNormParameterName(row[1] != null ? row[1].toString() : null);
+				aopDTO.setNormParameterDisplayName(row[2] != null ? row[2].toString() : null);
+				aopDTO.setNormParameterTypeId(row[3] != null ? row[3].toString() : null);
+				aopDTO.setMaterialFKId(row[4] != null ? row[4].toString() : null);
+				aopDTO.setDisplayName(row[5] != null ? row[5].toString() : null);
+
+				 aopDTO.setApril(safeParseDouble(row[6]));
+			        aopDTO.setMay(safeParseDouble(row[7]));
+			        aopDTO.setJune(safeParseDouble(row[8]));
+			        aopDTO.setJuly(safeParseDouble(row[9]));
+			        aopDTO.setAug(safeParseDouble(row[10]));
+			        aopDTO.setSep(safeParseDouble(row[11]));
+			        aopDTO.setOct(safeParseDouble(row[12]));
+			        aopDTO.setNov(safeParseDouble(row[13]));
+			        aopDTO.setDec(safeParseDouble(row[14]));
+			        aopDTO.setJan(safeParseDouble(row[15]));
+			        aopDTO.setFeb(safeParseDouble(row[16]));
+			        aopDTO.setMarch(safeParseDouble(row[17]));
+			        aopDTO.setAvgTPH(safeParseDouble(row[18]));
+			        aopDTO.setRemark(row[19] != null ? row[19].toString() : "");
+				aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
+				aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
+				aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
+
+				aOPDTOList.add(aopDTO);
+			}
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "production-aop");
+			map.put("aopDTOList", aOPDTOList);
+			map.put("aopCalculation", aopCalculation);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getMonthlyProduction(String plantId, String year, String type,String lineId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<AOPDTO> aOPDTOList = new ArrayList<>();
+		try {
+			List<Object[]> obj=null;
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOP";
+			obj = getLineData(year,plant.getId(),UUID.fromString(lineId),procedureName);
+			
+			for (Object[] row : obj) {
+				AOPDTO aopDTO = new AOPDTO();
+
+				aopDTO.setId(row[0] != null ? row[0].toString() : null);
+				aopDTO.setNormParameterName(row[1] != null ? row[1].toString() : null);
+				aopDTO.setNormParameterDisplayName(row[2] != null ? row[2].toString() : null);
+				aopDTO.setNormParameterTypeId(row[3] != null ? row[3].toString() : null);
+				aopDTO.setMaterialFKId(row[4] != null ? row[4].toString() : null);
+				aopDTO.setDisplayName(row[5] != null ? row[5].toString() : null);
+
+				 aopDTO.setApril(safeParseDouble(row[6]));
+			        aopDTO.setMay(safeParseDouble(row[7]));
+			        aopDTO.setJune(safeParseDouble(row[8]));
+			        aopDTO.setJuly(safeParseDouble(row[9]));
+			        aopDTO.setAug(safeParseDouble(row[10]));
+			        aopDTO.setSep(safeParseDouble(row[11]));
+			        aopDTO.setOct(safeParseDouble(row[12]));
+			        aopDTO.setNov(safeParseDouble(row[13]));
+			        aopDTO.setDec(safeParseDouble(row[14]));
+			        aopDTO.setJan(safeParseDouble(row[15]));
+			        aopDTO.setFeb(safeParseDouble(row[16]));
+			        aopDTO.setMarch(safeParseDouble(row[17]));
+			        aopDTO.setAvgTPH(safeParseDouble(row[18]));
+			        aopDTO.setRemark(row[19] != null ? row[19].toString() : null);
+				aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
+				aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
+				aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
+				aopDTO.setLineId(row[23] != null ? row[23].toString() : null);
+				aOPDTOList.add(aopDTO);
+			}
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "production-aop");
+			map.put("aopDTOList", aOPDTOList);
+			map.put("aopCalculation", aopCalculation);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+
+	@Override
+	public AOPMessageVM getMonthlyProductionCombined(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<AOPDTO> aOPDTOList = new ArrayList<>();
+		try {
+			List<Object[]> obj=null;
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOPCombined";
+			obj = getLineDataCombined(year,plant.getId(),procedureName);
+			
+			for (Object[] row : obj) {
+				AOPDTO aopDTO = new AOPDTO();
+
+				aopDTO.setId(row[0] != null ? row[0].toString() : null);
+				aopDTO.setNormParameterName(row[1] != null ? row[1].toString() : null);
+				aopDTO.setNormParameterDisplayName(row[2] != null ? row[2].toString() : null);
+				aopDTO.setNormParameterTypeId(row[3] != null ? row[3].toString() : null);
+				aopDTO.setMaterialFKId(row[4] != null ? row[4].toString() : null);
+				aopDTO.setDisplayName(row[5] != null ? row[5].toString() : null);
+
+				 aopDTO.setApril(safeParseDouble(row[6]));
+			        aopDTO.setMay(safeParseDouble(row[7]));
+			        aopDTO.setJune(safeParseDouble(row[8]));
+			        aopDTO.setJuly(safeParseDouble(row[9]));
+			        aopDTO.setAug(safeParseDouble(row[10]));
+			        aopDTO.setSep(safeParseDouble(row[11]));
+			        aopDTO.setOct(safeParseDouble(row[12]));
+			        aopDTO.setNov(safeParseDouble(row[13]));
+			        aopDTO.setDec(safeParseDouble(row[14]));
+			        aopDTO.setJan(safeParseDouble(row[15]));
+			        aopDTO.setFeb(safeParseDouble(row[16]));
+			        aopDTO.setMarch(safeParseDouble(row[17]));
+			        aopDTO.setAvgTPH(safeParseDouble(row[18]));
+			        aopDTO.setRemark(row[19] != null ? row[19].toString() : null);
+				aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
+				aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
+				aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
+				aOPDTOList.add(aopDTO);
+			}
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "production-aop");
+			map.put("aopDTOList", aOPDTOList);
+			map.put("aopCalculation", aopCalculation);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	
+    public List<Object[]> findByAOPYearAndPlantFkId(
+            String AOPYear, 
+            UUID Plant_FK_Id, 
+            String NormParameterName, 
+            String viewName) {
+
+        String sql = "SELECT Id, NormParameterName, NormParameterDisplayName, NormParameterType_FK_Id, "
+                   + "Material_FK_Id, DisplayName, April, May, June, "
+                   + "July, Aug, Sep, Oct, Nov, Dec, Jan, Feb, March, AvgTPH, AOPRemarks, DisplayOrder, "
+                   + "IsEditable, IsVisible "
+                   + "FROM " + viewName + " " 
+                   + "WHERE AOPYear = :AOPYear "
+                   + "AND Plant_FK_Id = :Plant_FK_Id "
+                   + "AND NormParameterName = :NormParameterName AND IsVisible = 1 "
+                   + "ORDER BY DisplayOrder";
+
+        Query query = entityManager.createNativeQuery(sql);
+        
+        // Bind the parameters securely
+        query.setParameter("AOPYear", AOPYear);
+        query.setParameter("Plant_FK_Id", Plant_FK_Id);
+        query.setParameter("NormParameterName", NormParameterName);
+
+        return query.getResultList();
+    }
+    
+	private Double safeParseDouble(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        String s = obj.toString().trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        try {
+            return Double.valueOf(s);
+        } catch (NumberFormatException ex) {
+            // Logging is optional but helpful to track bad data
+            System.err.println("Warning: could not parse to Double: '" + s + "'");
+            return null;
+        }
+    }
+
+	public List<Object[]> getData(String finYear, UUID plantId,UUID siteId,UUID verticalId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @finYear = :finYear, @siteId = :siteId, @verticalId = :verticalId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
+			query.setParameter("siteId", siteId);
+			query.setParameter("verticalId", verticalId);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<Object[]> getDataElastomer(String finYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :finYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<Object[]> getLineData(String finYear, UUID plantId,UUID lineId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @PlantId = :plantId, @AOPYear = :finYear, @lineId = :lineId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
+			query.setParameter("lineId", lineId);
+			
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+
+	public List<Object[]> getLineDataCombined(String finYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @PlantId = :plantId, @AOPYear = :finYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
+			
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+
+
+	@Override
+	public List<AOPDTO> updateAOP(List<AOPDTO> aOPDTOList) {
+		try {
+			for (AOPDTO aOPDTO : aOPDTOList) {
+
+				AOP aOP = null;
+				Plants plant = null;
+				Sites site = null;
+				Verticals vertical = null;
+				if (aOPDTO.getSiteFKId() == null || aOPDTO.getVerticalFKId() == null) {
+					plant = plantsRepository.findById(UUID.fromString(aOPDTO.getPlantFKId())).get();
+					site = siteRepository.findById(plant.getSiteFkId()).get();
+					vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+				}
+
+				if (aOPDTO.getId() == null) {
+					UUID Site = null;
+					UUID Vertical = null;
+					UUID Material = null;
+					UUID Plant = null;
+					if (aOPDTO.getSiteFKId() != null) {
+						Site = UUID.fromString(aOPDTO.getSiteFKId());
+					} else {
+						Site = site.getId();
+					}
+					if (aOPDTO.getVerticalFKId() != null) {
+						Vertical = UUID.fromString(aOPDTO.getVerticalFKId());
+					} else {
+						Vertical = vertical.getId();
+					}
+					if (aOPDTO.getMaterialFKId() != null) {
+						Material = UUID.fromString(aOPDTO.getMaterialFKId());
+					}
+					if (aOPDTO.getPlantFKId() != null) {
+						Plant = UUID.fromString(aOPDTO.getPlantFKId());
+					}
+					Optional<UUID> Id = aopRepository.findAopIdByFilters(Site, Vertical, Material, Plant,
+							aOPDTO.getAopYear());
+					aOP = new AOP();
+					if (Id != null && !Id.isEmpty()) {
+						aOP.setId(Id.get());
+					}
+
+					String caseId = aOPDTO.getAopYear() + "-AOP-" + "-V1";
+					aOP.setAopStatus("draft");
+					aOP.setAopType("production");
+					aOP.setAopCaseId(caseId);
+				} else if (aOPDTO.getId().contains("#")) {
+					aOP = new AOP();
+					aOP.setId(null);
+					String caseId = aOPDTO.getAopYear() + "-AOP-" + "-V1";
+					aOP.setAopStatus("draft");
+					aOP.setAopType("production");
+					aOP.setAopCaseId(caseId);
+				} else {
+					aOP = aopRepository.findById(UUID.fromString(aOPDTO.getId())).get();
+					aOP.setAopCaseId(aOPDTO.getAopCaseId());
+					aOP.setAopStatus(aOPDTO.getAopStatus());
+					aOP.setAopType(aOPDTO.getAopType());
+				}
+				aOP.setAopRemarks(aOPDTO.getRemark());
+				aOP.setAopType(aOPDTO.getAopType());
+				aOP.setAopYear(aOPDTO.getAopYear());
+				aOP.setApril(aOPDTO.getApril());
+				aOP.setAug(aOPDTO.getAug());
+				aOP.setAvgTPH(aOPDTO.getAvgTPH());
+				aOP.setDec(aOPDTO.getDec());
+				aOP.setFeb(aOPDTO.getFeb());
+				aOP.setJan(aOPDTO.getJan());
+				aOP.setJuly(aOPDTO.getJuly());
+				aOP.setJune(aOPDTO.getJune());
+				aOP.setMarch(aOPDTO.getMarch());
+				aOP.setMay(aOPDTO.getMay());
+				// aOP.setNormItem(aOPDTO.getNormItem());
+				aOP.setNov(aOPDTO.getNov());
+				aOP.setOct(aOPDTO.getOct());
+
+				if (aOPDTO.getSiteFKId() != null) {
+					aOP.setSiteFkId(UUID.fromString(aOPDTO.getSiteFKId()));
+				} else {
+					aOP.setSiteFkId(site.getId());
+				}
+				if (aOPDTO.getVerticalFKId() != null) {
+					aOP.setVerticalFkId(UUID.fromString(aOPDTO.getVerticalFKId()));
+				} else {
+					aOP.setVerticalFkId(vertical.getId());
+				}
+				if (aOPDTO.getMaterialFKId() != null) {
+					aOP.setMaterialFKId(UUID.fromString(aOPDTO.getMaterialFKId()));
+				}
+				if (aOPDTO.getPlantFKId() != null) {
+					aOP.setPlantFkId(UUID.fromString(aOPDTO.getPlantFKId()));
+				}
+
+				aOP.setSep(aOPDTO.getSep());
+				aOP.setAopYear(aOPDTO.getAopYear());
+				aopRepository.save(aOP);
+			}
+			return aOPDTOList;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM calculateData(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		String verticalName = plantsRepository.findVerticalNameByPlantId(plant.getId());
+		// if(verticalName.equalsIgnoreCase("MEG")) {
+		Integer result = executeDynamicMaintenanceCalculationMEG(verticalName, plant.getId().toString(),
+				site.getId().toString(), vertical.getId().toString(), year);
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(result);
+		
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year,
+				"production-aop");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("production-aop");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			AopCalculation aopCalculation = new AopCalculation();
+			aopCalculation.setAopYear(year);
+			aopCalculation.setIsChanged(true);
+			aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+			aopCalculation.setPlantId(UUID.fromString(plantId));
+			aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+			aopCalculationRepository.save(aopCalculation);
+		}
+		return aopMessageVM;
+	}
+
+	@Override
+	public List<AOPDTO> calculateDataForPE(String plantId, String year) {
+		List<AOPDTO> dtoList = new ArrayList<>();
+		try {
+			List<Object[]> maintainsData = aopRepository.CheckIfMaintainanceDataExists(plantId, year);
+
+			// if(maintainsData!=null && maintainsData.size()>0){
+			if (1 == 1) {
+				Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+				Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+				String verticalName = plantsRepository.findVerticalNameByPlantId(plant.getId());
+
+				List<Object[]> list = executeDynamicMaintenanceCalculationPE(
+						verticalName,
+						plant.getId().toString(),
+						site.getId().toString(),
+						vertical.getId().toString(),
+						year);
+
+								List<AOP> objList = aopRepository.findAllByAopYearAndPlantFkId(year, UUID.fromString(plantId));
+				
+				for (Object[] obj : list) {
+					
+					AOPDTO aopDto = new AOPDTO();
+					aopDto.setAopCaseId("");
+					aopDto.setAopRemarks("");
+					aopDto.setId("");
+					aopDto.setPlantFKId(plantId);
+					aopDto.setAopStatus("Draft");
+					aopDto.setAopYear(year);
+					aopDto.setMaterialFKId(obj[0] != null ? obj[0].toString() : null);
+					aopDto.setSiteFKId(site.getId().toString());
+
+					aopDto.setJan(obj[3] != null ? Double.parseDouble(obj[3].toString()) : null);
+					aopDto.setFeb(obj[4] != null ? Double.parseDouble(obj[4].toString()) : null);
+					aopDto.setMarch(obj[5] != null ? Double.parseDouble(obj[5].toString()) : null);
+					aopDto.setApril(obj[6] != null ? Double.parseDouble(obj[6].toString()) : null);
+					aopDto.setMay(obj[7] != null ? Double.parseDouble(obj[7].toString()) : null);
+					aopDto.setJune(obj[8] != null ? Double.parseDouble(obj[8].toString()) : null);
+					aopDto.setJuly(obj[9] != null ? Double.parseDouble(obj[9].toString()) : null);
+					aopDto.setAug(obj[10] != null ? Double.parseDouble(obj[10].toString()) : null);
+					aopDto.setSep(obj[11] != null ? Double.parseDouble(obj[11].toString()) : null);
+					aopDto.setOct(obj[12] != null ? Double.parseDouble(obj[12].toString()) : null);
+					aopDto.setNov(obj[13] != null ? Double.parseDouble(obj[13].toString()) : null);
+					aopDto.setDec(obj[14] != null ? Double.parseDouble(obj[14].toString()) : null);
+
+					dtoList.add(aopDto);
+				}
+			}
+
+			return dtoList;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public Integer executeDynamicMaintenanceCalculationMEG(String verticalName, String plantId, String siteId,
+			String verticalId, String aopYear) {
+		try {
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+			String procedureName = verticalName + "_" + site.getName() + "_MaintenanceCalculation";
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
+
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+
+				// Set parameters in the correct order
+				stmt.setString(1, plantId); // @finYear
+				stmt.setString(2, siteId.toString()); // @plantId
+				stmt.setString(3, verticalId.toString()); // @verticalId
+				stmt.setString(4, aopYear); // @siteId
+
+				// Execute the stored procedure
+				int rowsAffected = stmt.executeUpdate();
+
+				// Optional: commit if auto-commit is off
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
+
+				return rowsAffected;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return 0;
+			}
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<Object[]> executeDynamicMaintenanceCalculationPE(String verticalName, String plantId, String siteId,
+			String verticalId, String aopYear) {
+		try {
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+			String procedureName = verticalName + "_" + site.getName() + "_MaintenanceCalculation";
+
+			// Create a native query to execute the stored procedure
+			String sql = "EXEC " + "[" + procedureName + "]"
+					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			// Set parameters
+			query.setParameter("plantId", plantId);
+			query.setParameter("siteId", siteId);
+			query.setParameter("verticalId", verticalId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public List<Map<String, String>> getAOPYears() {
+		try {
+			List<Object[]> results = aopRepository.getAOPYears();
+			List<Map<String, String>> aopYears = new ArrayList<>();
+
+			for (Object[] row : results) {
+				Map<String, String> map = new HashMap<>();
+				map.put("AOPYear", row[0] != null ? row[0].toString() : null);
+				map.put("AOPDisplayYear", row[1] != null ? row[1].toString() : null);
+				map.put("currentYear", row[2] != null ? row[2].toString() : null);
+				aopYears.add(map);
+			}
+
+			return aopYears;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getAOPYearStatus() {
+		try {
+			List<Object[]> results = aopRepository.getAOPYearStatus();
+			List<Map<String, Object>> aopYearStatus = new ArrayList<>();
+
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("AOPYear", row[0] != null ? row[0].toString() : null);
+				map.put("IsOldYear", row[1] != null ? Integer.parseInt(row[1].toString()) : 0);
+				aopYearStatus.add(map);
+			}
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(aopYearStatus);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public byte[] exportAOPData(String plantId, String year,String type,boolean isAfterSave,List<AOPDTO> dtoList) {
+	    try {
+	    	AOPMessageVM aopMessageVM = getAOPData(plantId, year, type);
+
+	    	if (!isAfterSave) {
+	    	    
+	    	    Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+	    	     dtoList = (List<AOPDTO>) map.get("aopDTOList");
+	    	}
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+
+	        Font boldFont = workbook.createFont();
+	        boldFont.setBold(true);
+
+	        CellStyle headerStyle = workbook.createCellStyle();
+	        headerStyle.setFont(boldFont);
+	        headerStyle.setBorderTop(BorderStyle.THIN);
+	        headerStyle.setBorderBottom(BorderStyle.THIN);
+	        headerStyle.setBorderLeft(BorderStyle.THIN);
+	        headerStyle.setBorderRight(BorderStyle.THIN);
+
+	        CellStyle normalStyle = workbook.createCellStyle();
+	        normalStyle.setBorderTop(BorderStyle.THIN);
+	        normalStyle.setBorderBottom(BorderStyle.THIN);
+	        normalStyle.setBorderLeft(BorderStyle.THIN);
+	        normalStyle.setBorderRight(BorderStyle.THIN);
+
+	        CellStyle totalRowStyle = workbook.createCellStyle();
+	        totalRowStyle.cloneStyleFrom(normalStyle);
+	        totalRowStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	        totalRowStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+	        int currentRow = 0;
+
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Products");
+	        innerHeaders.add("UOM");
+	        innerHeaders.add(getMonth(year, 4));
+	        innerHeaders.add(getMonth(year, 5));
+	        innerHeaders.add(getMonth(year, 6));
+	        innerHeaders.add(getMonth(year, 7));
+	        innerHeaders.add(getMonth(year, 8));
+	        innerHeaders.add(getMonth(year, 9));
+	        innerHeaders.add(getMonth(year, 10));
+	        innerHeaders.add(getMonth(year, 11));
+	        innerHeaders.add(getMonth(year, 12));
+	        innerHeaders.add(getMonth(year, 1));
+	        innerHeaders.add(getMonth(year, 2));
+	        innerHeaders.add(getMonth(year, 3));
+	        innerHeaders.add("Total");
+
+	        if (isAfterSave) {
+	            innerHeaders.add("Status");
+	            innerHeaders.add("Error Description");
+	        }
+
+	        int numCols = innerHeaders.size();
+	        int[] maxColWidths = new int[numCols];
+
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(headerStyle);
+	            maxColWidths[col] = innerHeaders.get(col).length();
+	        }
+
+	        int dataRowCount = dtoList.size();
+	        for (int i = 0; i < dataRowCount; i++) {
+	            AOPDTO dto = dtoList.get(i);
+	            Row row = sheet.createRow(currentRow++);
+	            List<Object> rowData = new ArrayList<>();
+	            rowData.add(dto.getDisplayName());
+	            UUID materialId = UUID.fromString(dto.getMaterialFKId());
+	            Optional<NormParameters> opt = normParametersRepository.findById(materialId);
+
+	            String uom = opt
+	                .map(NormParameters::getUom)
+	                .orElse("DEFAULT_UOM");
+
+	            rowData.add(uom);
+	            rowData.add(dto.getApril());
+	            rowData.add(dto.getMay());
+	            rowData.add(dto.getJune());
+	            rowData.add(dto.getJuly());
+	            rowData.add(dto.getAug());
+	            rowData.add(dto.getSep());
+	            rowData.add(dto.getOct());
+	            rowData.add(dto.getNov());
+	            rowData.add(dto.getDec());
+	            rowData.add(dto.getJan());
+	            rowData.add(dto.getFeb());
+	            rowData.add(dto.getMarch());
+	            rowData.add(dto.getApril() + dto.getMay() + dto.getJune() + dto.getJuly() + dto.getAug()
+	                + dto.getSep() + dto.getOct() + dto.getNov() + dto.getDec()
+	                + dto.getJan() + dto.getFeb() + dto.getMarch());
+
+	            if (isAfterSave) {
+	                rowData.add(dto.getSaveStatus());
+	                rowData.add(dto.getErrDescription());
+	            }
+
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                String cellStr;
+	                if (value instanceof Number) {
+	                    cell.setCellValue(((Number) value).doubleValue());
+	                    cellStr = value.toString();
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                    cellStr = value.toString();
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                    cellStr = value.toString();
+	                } else {
+	                    cell.setCellValue("");
+	                    cellStr = "";
+	                }
+	                cell.setCellStyle(normalStyle);
+	                if (col < numCols) {
+	                    maxColWidths[col] = Math.max(maxColWidths[col], cellStr.length());
+	                }
+	            }
+	        }
+
+	        for (int col = 0; col < numCols; col++) {
+	            int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
+	            sheet.setColumnWidth(col, width);
+	        }
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	@SuppressWarnings("unchecked")
+	public byte[] exportAOPDataCombined(String plantId, String year, boolean isAfterSave,
+	        List<AOPDTO> productionDtoList, List<AOPDTO> byProductsDtoList) {
+	    try {
+	        if (!isAfterSave) {
+	            AOPMessageVM productionVM = getAOPData(plantId, year, "Production");
+	            Map<String, Object> productionMap = (Map<String, Object>) productionVM.getData();
+	            productionDtoList = (List<AOPDTO>) productionMap.get("aopDTOList");
+
+	            AOPMessageVM byProductsVM = getAOPData(plantId, year, "ByProducts");
+	            Map<String, Object> byProductsMap = (Map<String, Object>) byProductsVM.getData();
+	            byProductsDtoList = (List<AOPDTO>) byProductsMap.get("aopDTOList");
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+
+        Font boldFont = workbook.createFont();
+        boldFont.setBold(true);
+
+        CellStyle titleStyle = workbook.createCellStyle();
+        titleStyle.setFont(boldFont);
+        titleStyle.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+        titleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        titleStyle.setBorderTop(BorderStyle.THIN);
+        titleStyle.setBorderBottom(BorderStyle.THIN);
+        titleStyle.setBorderLeft(BorderStyle.THIN);
+        titleStyle.setBorderRight(BorderStyle.THIN);
+        titleStyle.setLocked(true);
+
+        CellStyle headerStyle = workbook.createCellStyle();
+        headerStyle.setFont(boldFont);
+        headerStyle.setFillForegroundColor(IndexedColors.GREY_40_PERCENT.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        headerStyle.setBorderTop(BorderStyle.THIN);
+        headerStyle.setBorderBottom(BorderStyle.THIN);
+        headerStyle.setBorderLeft(BorderStyle.THIN);
+        headerStyle.setBorderRight(BorderStyle.THIN);
+        headerStyle.setLocked(true);
+
+        CellStyle normalStyle = workbook.createCellStyle();
+        normalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        normalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        normalStyle.setBorderTop(BorderStyle.THIN);
+        normalStyle.setBorderBottom(BorderStyle.THIN);
+        normalStyle.setBorderLeft(BorderStyle.THIN);
+        normalStyle.setBorderRight(BorderStyle.THIN);
+        normalStyle.setLocked(true);
+
+	        List<String> columnHeaders = new ArrayList<>();
+	        columnHeaders.add("Products");
+	        columnHeaders.add(getMonth(year, 4));
+	        columnHeaders.add(getMonth(year, 5));
+	        columnHeaders.add(getMonth(year, 6));
+	        columnHeaders.add(getMonth(year, 7));
+	        columnHeaders.add(getMonth(year, 8));
+	        columnHeaders.add(getMonth(year, 9));
+	        columnHeaders.add(getMonth(year, 10));
+	        columnHeaders.add(getMonth(year, 11));
+	        columnHeaders.add(getMonth(year, 12));
+	        columnHeaders.add(getMonth(year, 1));
+	        columnHeaders.add(getMonth(year, 2));
+	        columnHeaders.add(getMonth(year, 3));
+	        columnHeaders.add("Total");
+
+	        if (isAfterSave) {
+	            columnHeaders.add("Status");
+	            columnHeaders.add("Error Description");
+	        }
+
+	        int numCols = columnHeaders.size();
+	        int[] maxColWidths = new int[numCols];
+	        for (int i = 0; i < numCols; i++) {
+	            maxColWidths[i] = columnHeaders.get(i).length();
+	        }
+
+	        int currentRow = 0;
+
+	        // Section 1 — Month Wise Production Plan
+	        Row titleRow1 = sheet.createRow(currentRow++);
+	        Cell titleCell1 = titleRow1.createCell(0);
+	        titleCell1.setCellValue("Month Wise Production Plan");
+	        titleCell1.setCellStyle(titleStyle);
+
+	        Row headerRow1 = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
+	            Cell cell = headerRow1.createCell(col);
+	            cell.setCellValue(columnHeaders.get(col));
+	            cell.setCellStyle(headerStyle);
+	        }
+
+	        currentRow = writeDataRows(sheet, productionDtoList, currentRow, normalStyle, isAfterSave, numCols, maxColWidths);
+
+	        // Two blank rows for readability
+	        currentRow += 2;
+
+	        // Section 2 — By Products
+	        Row titleRow2 = sheet.createRow(currentRow++);
+	        Cell titleCell2 = titleRow2.createCell(0);
+	        titleCell2.setCellValue("By Products");
+	        titleCell2.setCellStyle(titleStyle);
+
+	        Row headerRow2 = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
+	            Cell cell = headerRow2.createCell(col);
+	            cell.setCellValue(columnHeaders.get(col));
+	            cell.setCellStyle(headerStyle);
+	        }
+
+	        currentRow = writeDataRows(sheet, byProductsDtoList, currentRow, normalStyle, isAfterSave, numCols, maxColWidths);
+
+        for (int col = 0; col < numCols; col++) {
+            int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
+            sheet.setColumnWidth(col, width);
+        }
+
+        sheet.protectSheet("");
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+        return outputStream.toByteArray();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+
+	@SuppressWarnings("unchecked")
+	public byte[] exportAOPDataByLine(String plantId, String year, String type) {
+	    try {
+	        AOPMessageVM lineDetailsVM = shutdownHistoryService.getLineDetails(plantId, year);
+	        List<Map<String, Object>> lines = (List<Map<String, Object>>) lineDetailsVM.getData();
+
+	        AOPMessageVM combinedVM = getMonthlyProductionCombined(plantId, year);
+	        Map<String, Object> combinedMap = (Map<String, Object>) combinedVM.getData();
+	        List<AOPDTO> combinedDtoList = (List<AOPDTO>) combinedMap.get("aopDTOList");
+
+	        Workbook workbook = new XSSFWorkbook();
+
+	        Font boldFont = workbook.createFont();
+	        boldFont.setBold(true);
+
+	        CellStyle titleStyle = workbook.createCellStyle();
+	        titleStyle.setFont(boldFont);
+	        titleStyle.setBorderTop(BorderStyle.THIN);
+	        titleStyle.setBorderBottom(BorderStyle.THIN);
+	        titleStyle.setBorderLeft(BorderStyle.THIN);
+	        titleStyle.setBorderRight(BorderStyle.THIN);
+	        titleStyle.setLocked(true);
+
+	        CellStyle headerStyle = workbook.createCellStyle();
+	        headerStyle.setFont(boldFont);
+	        headerStyle.setFillForegroundColor(IndexedColors.GREY_40_PERCENT.getIndex());
+	        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        headerStyle.setBorderTop(BorderStyle.THIN);
+	        headerStyle.setBorderBottom(BorderStyle.THIN);
+	        headerStyle.setBorderLeft(BorderStyle.THIN);
+	        headerStyle.setBorderRight(BorderStyle.THIN);
+	        headerStyle.setLocked(true);
+
+	        CellStyle normalStyle = workbook.createCellStyle();
+	        normalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	        normalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        normalStyle.setBorderTop(BorderStyle.THIN);
+	        normalStyle.setBorderBottom(BorderStyle.THIN);
+	        normalStyle.setBorderLeft(BorderStyle.THIN);
+	        normalStyle.setBorderRight(BorderStyle.THIN);
+	        normalStyle.setLocked(true);
+
+	        List<String> columnHeaders = new ArrayList<>();
+	        columnHeaders.add("Products");
+	        columnHeaders.add(getMonth(year, 4));
+	        columnHeaders.add(getMonth(year, 5));
+	        columnHeaders.add(getMonth(year, 6));
+	        columnHeaders.add(getMonth(year, 7));
+	        columnHeaders.add(getMonth(year, 8));
+	        columnHeaders.add(getMonth(year, 9));
+	        columnHeaders.add(getMonth(year, 10));
+	        columnHeaders.add(getMonth(year, 11));
+	        columnHeaders.add(getMonth(year, 12));
+	        columnHeaders.add(getMonth(year, 1));
+	        columnHeaders.add(getMonth(year, 2));
+	        columnHeaders.add(getMonth(year, 3));
+	        columnHeaders.add("Total");
+
+	        int numCols = columnHeaders.size();
+
+	        for (Map<String, Object> line : lines) {
+	            String lineId = (String) line.get("id");
+	            String displayName = (String) line.get("displayName");
+
+	            String sheetName = displayName != null ? displayName : "Line";
+	            if (sheetName.length() > 31) {
+	                sheetName = sheetName.substring(0, 31);
+	            }
+
+	            Sheet sheet = workbook.createSheet(sheetName);
+	            int[] maxColWidths = new int[numCols];
+	            for (int i = 0; i < numCols; i++) {
+	                maxColWidths[i] = columnHeaders.get(i).length();
+	            }
+
+	            AOPMessageVM lineVM = getMonthlyProduction(plantId, year, type, lineId);
+	            Map<String, Object> lineMap = (Map<String, Object>) lineVM.getData();
+	            List<AOPDTO> lineDtoList = (List<AOPDTO>) lineMap.get("aopDTOList");
+
+	            int currentRow = 0;
+
+	            Row titleRow1 = sheet.createRow(currentRow++);
+	            Cell titleCell1 = titleRow1.createCell(0);
+	            titleCell1.setCellValue("Month Wise Production Plan");
+	            titleCell1.setCellStyle(titleStyle);
+
+	            Row headerRow1 = sheet.createRow(currentRow++);
+	            for (int col = 0; col < numCols; col++) {
+	                Cell cell = headerRow1.createCell(col);
+	                cell.setCellValue(columnHeaders.get(col));
+	                cell.setCellStyle(headerStyle);
+	            }
+
+	            currentRow = writeDataRows(sheet, lineDtoList, currentRow, normalStyle, false, numCols, maxColWidths, true);
+
+	            currentRow += 2;
+
+	            Row titleRow2 = sheet.createRow(currentRow++);
+	            Cell titleCell2 = titleRow2.createCell(0);
+	            titleCell2.setCellValue("Combined Month-Wise Production Plan");
+	            titleCell2.setCellStyle(titleStyle);
+
+	            Row headerRow2 = sheet.createRow(currentRow++);
+	            for (int col = 0; col < numCols; col++) {
+	                Cell cell = headerRow2.createCell(col);
+	                cell.setCellValue(columnHeaders.get(col));
+	                cell.setCellStyle(headerStyle);
+	            }
+
+	            currentRow = writeDataRows(sheet, combinedDtoList, currentRow, normalStyle, false, numCols, maxColWidths, true);
+
+	            for (int col = 0; col < numCols; col++) {
+	                int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
+	                sheet.setColumnWidth(col, width);
+	            }
+
+	            sheet.protectSheet("");
+	        }
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	private int writeDataRows(Sheet sheet, List<AOPDTO> dtoList, int startRow, CellStyle normalStyle,
+	        boolean isAfterSave, int numCols, int[] maxColWidths) {
+	    return writeDataRows(sheet, dtoList, startRow, normalStyle, isAfterSave, numCols, maxColWidths, false);
+	}
+
+	private int writeDataRows(Sheet sheet, List<AOPDTO> dtoList, int startRow, CellStyle normalStyle,
+	        boolean isAfterSave, int numCols, int[] maxColWidths, boolean addHorizontalTotal) {
+	    int currentRow = startRow;
+	    if (dtoList == null) {
+	        return currentRow;
+	    }
+
+	    // colSums[0] is unused (Products label); colSums[1..13] accumulate month and vertical-total sums
+	    double[] colSums = new double[numCols];
+
+	    for (AOPDTO dto : dtoList) {
+	        Row row = sheet.createRow(currentRow++);
+	        List<Object> rowData = new ArrayList<>();
+	        rowData.add(dto.getDisplayName());
+
+	        rowData.add(dto.getApril());
+	        rowData.add(dto.getMay());
+	        rowData.add(dto.getJune());
+	        rowData.add(dto.getJuly());
+	        rowData.add(dto.getAug());
+	        rowData.add(dto.getSep());
+	        rowData.add(dto.getOct());
+	        rowData.add(dto.getNov());
+	        rowData.add(dto.getDec());
+	        rowData.add(dto.getJan());
+	        rowData.add(dto.getFeb());
+	        rowData.add(dto.getMarch());
+
+	        double total = safeValue(dto.getApril()) + safeValue(dto.getMay()) + safeValue(dto.getJune())
+	            + safeValue(dto.getJuly()) + safeValue(dto.getAug()) + safeValue(dto.getSep())
+	            + safeValue(dto.getOct()) + safeValue(dto.getNov()) + safeValue(dto.getDec())
+	            + safeValue(dto.getJan()) + safeValue(dto.getFeb()) + safeValue(dto.getMarch());
+	        rowData.add(total);
+
+	        if (isAfterSave) {
+	            rowData.add(dto.getSaveStatus());
+	            rowData.add(dto.getErrDescription());
+	        }
+
+	        for (int col = 0; col < rowData.size(); col++) {
+	            Cell cell = row.createCell(col);
+	            Object value = rowData.get(col);
+	            String cellStr;
+	            if (value instanceof Number) {
+	                cell.setCellValue(((Number) value).doubleValue());
+	                cellStr = value.toString();
+	                if (addHorizontalTotal && col >= 1 && col < numCols) {
+	                    colSums[col] += ((Number) value).doubleValue();
+	                }
+	            } else if (value instanceof Boolean) {
+	                cell.setCellValue((Boolean) value);
+	                cellStr = value.toString();
+	            } else if (value != null) {
+	                cell.setCellValue(value.toString());
+	                cellStr = value.toString();
+	            } else {
+	                cell.setCellValue("");
+	                cellStr = "";
+	            }
+	            cell.setCellStyle(normalStyle);
+	            if (col < numCols) {
+	                maxColWidths[col] = Math.max(maxColWidths[col], cellStr.length());
+	            }
+	        }
+	    }
+
+	    if (addHorizontalTotal && !dtoList.isEmpty()) {
+	        Row totalRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
+	            Cell cell = totalRow.createCell(col);
+	            if (col == 0) {
+	                cell.setCellValue("Total");
+	                maxColWidths[col] = Math.max(maxColWidths[col], "Total".length());
+	            } else {
+	                cell.setCellValue(colSums[col]);
+	                String cellStr = String.valueOf(colSums[col]);
+	                maxColWidths[col] = Math.max(maxColWidths[col], cellStr.length());
+	            }
+	            cell.setCellStyle(normalStyle);
+	        }
+	    }
+
+	    return currentRow;
+	}
+
+	private double safeValue(Double val) {
+	    return val != null ? val : 0.0;
+	}
+
+	public String getMonth(String year, int month) {
+	    
+	    if (year == null || !year.matches("\\d{4}-\\d{2}")) {
+	        throw new IllegalArgumentException("Year must be in format YYYY-YY");
+	    }
+	    String[] parts = year.split("-");
+	    int startYear = Integer.parseInt(parts[0]);   
+	    int endYearSuffix = Integer.parseInt(parts[1]); 
+	    int endYear = (startYear / 100) * 100 + endYearSuffix;  
+
+	    
+	    String[] monthNames = {
+	        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+	    };
+	    if (month < 1 || month > 12) {
+	        throw new IllegalArgumentException("Month must be 1 to 12");
+	    }
+
+	    String mname = monthNames[month - 1];
+	    int displayYear;
+	    
+	    if (month >= 4 && month <= 12) {
+	        displayYear = startYear;
+	    } else {  
+	        displayYear = endYear;
+	    }
+
+	    
+	    int yy = displayYear % 100;  
+	    String yyStr = String.format("%02d", yy);
+
+	    return mname + "-" + yyStr;
+	}
+
+
+}

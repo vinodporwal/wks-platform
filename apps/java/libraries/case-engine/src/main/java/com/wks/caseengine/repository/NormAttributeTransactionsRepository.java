@@ -1,0 +1,237 @@
+package com.wks.caseengine.repository;
+
+import com.wks.caseengine.entity.NormAttributeTransactions;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+@Repository
+public interface NormAttributeTransactionsRepository extends JpaRepository<NormAttributeTransactions, UUID> {
+
+	@Modifying
+	@Query("UPDATE NormAttributeTransactions nat SET nat.attributeValue = :attributeValue " +
+			"WHERE nat.aopMonth = :month AND nat.normParameterFKId = :normParameterFKId AND nat.auditYear = :auditYear")
+	int updateNormAttributeTransactions(@Param("attributeValue") String attributeValue,
+			@Param("month") Integer month,
+			@Param("normParameterFKId") UUID normParameterFKId,
+			@Param("auditYear") String auditYear);
+
+	@Modifying
+	@Transactional
+	@Query("UPDATE NormAttributeTransactions nat " +
+			"SET nat.attributeValue = :attributeValue, " + // Updating attributeValue
+			"    nat.remarks = :remarks " + // Updating remarks
+			"WHERE nat.aopMonth = :month " +
+			"AND nat.auditYear = :auditYear " +
+			"AND nat.normParameterFKId = :normParameterFKId ")
+	void updateCatalystData(@Param("attributeValue") String attributeValue,
+			@Param("remarks") String remarks, // Added remarks parameter
+			@Param("month") Integer month,
+			@Param("auditYear") String auditYear,
+			@Param("normParameterFKId") UUID normParameterFKId);
+
+	@Modifying
+	@Transactional
+	@Query("DELETE FROM NormAttributeTransactions nat " +
+			"WHERE nat.attributeValue = :attributeValue " +
+			"AND nat.aopMonth = :month " + // Added missing AND
+			"AND nat.auditYear = :auditYear " +
+			"AND nat.normParameterFKId = :normParameterFKId ")
+	void deleteCatalystData(@Param("attributeValue") String attributeValue,
+			@Param("month") Integer month,
+			@Param("auditYear") String auditYear,
+			@Param("normParameterFKId") UUID normParameterFKId);
+
+	@Modifying
+	@Transactional
+	@Query("DELETE FROM NormAttributeTransactions nat " +
+			"WHERE nat.attributeValue = :attributeValue " +
+			"AND nat.aopMonth = :month " + // Added missing AND
+			"AND nat.auditYear = :auditYear " +
+			"AND nat.normParameterFKId = :normParameterFKId")
+	void deleteBusinessDemandData(@Param("attributeValue") String attributeValue,
+			@Param("month") Integer month,
+			@Param("auditYear") String auditYear,
+			@Param("normParameterFKId") UUID normParameterFKId);
+
+	@Query(value = """
+							         SELECT
+			    NP.NormParameter_FK_Id AS NormParameter_FK_Id,
+			    MAX(CASE WHEN NAT.AOPMonth = '1' THEN NAT.AttributeValue ELSE NULL END) AS Jan,
+			    MAX(CASE WHEN NAT.AOPMonth = '2' THEN NAT.AttributeValue ELSE NULL END) AS Feb,
+			    MAX(CASE WHEN NAT.AOPMonth = '3' THEN NAT.AttributeValue ELSE NULL END) AS Mar,
+			    MAX(CASE WHEN NAT.AOPMonth = '4' THEN NAT.AttributeValue ELSE NULL END) AS Apr,
+			    MAX(CASE WHEN NAT.AOPMonth = '5' THEN NAT.AttributeValue ELSE NULL END) AS May,
+			    MAX(CASE WHEN NAT.AOPMonth = '6' THEN NAT.AttributeValue ELSE NULL END) AS Jun,
+			    MAX(CASE WHEN NAT.AOPMonth = '7' THEN NAT.AttributeValue ELSE NULL END) AS Jul,
+			    MAX(CASE WHEN NAT.AOPMonth = '8' THEN NAT.AttributeValue ELSE NULL END) AS Aug,
+			    MAX(CASE WHEN NAT.AOPMonth = '9' THEN NAT.AttributeValue ELSE NULL END) AS Sep,
+			    MAX(CASE WHEN NAT.AOPMonth = '10' THEN NAT.AttributeValue ELSE NULL END) AS Oct,
+			    MAX(CASE WHEN NAT.AOPMonth = '11' THEN NAT.AttributeValue ELSE NULL END) AS Nov,
+			    MAX(CASE WHEN NAT.AOPMonth = '12' THEN NAT.AttributeValue ELSE NULL END) AS Dec,
+			    MAX(NAT.Remarks) AS Remarks,
+			    MAX(NAT.Id) AS NormAttributeTransaction_Id,
+			    MAX(NAT.AuditYear) AS AuditYear,
+			    MAX(NP.UOM) AS UOM,
+
+				NP.ConfigTypeDisplayName AS ConfigTypeDisplayName,
+			    NP.TypeDisplayName AS TypeDisplayName,
+			    NP.ConfigTypeName AS ConfigTypeName,
+			    NP.TypeName AS TypeName
+
+
+			FROM vwScrnPEGetConfigTypes NP
+			JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id
+			LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.NormParameter_FK_Id
+			    AND NAT.AuditYear = :year
+			WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant')
+			  AND NP.Plant_FK_Id = :plantFKId
+			GROUP BY
+			    NP.NormParameter_FK_Id,
+			    NP.TypeDisplayName,
+				NP.TypeDisplayOrder,
+				NP.ConfigTypeDisplayName,
+				NP.ConfigTypeName,
+				NP.TypeName
+			ORDER BY
+			    NP.TypeDisplayOrder;
+
+
+
+							 """, nativeQuery = true)
+	List<Object[]> findByYearAndPlantFkIdPE(@Param("year") String year, @Param("plantFKId") UUID plantFKId);
+
+	@Query(value = """
+				SELECT
+			    NP.Id AS NormParameter_FK_Id,
+			    MAX(CASE WHEN NAT.AOPMonth = '1' THEN NAT.AttributeValue ELSE NULL END) AS Jan,
+			    MAX(CASE WHEN NAT.AOPMonth = '2' THEN NAT.AttributeValue ELSE NULL END) AS Feb,
+			    MAX(CASE WHEN NAT.AOPMonth = '3' THEN NAT.AttributeValue ELSE NULL END) AS Mar,
+			    MAX(CASE WHEN NAT.AOPMonth = '4' THEN NAT.AttributeValue ELSE NULL END) AS Apr,
+			    MAX(CASE WHEN NAT.AOPMonth = '5' THEN NAT.AttributeValue ELSE NULL END) AS May,
+			    MAX(CASE WHEN NAT.AOPMonth = '6' THEN NAT.AttributeValue ELSE NULL END) AS Jun,
+			    MAX(CASE WHEN NAT.AOPMonth = '7' THEN NAT.AttributeValue ELSE NULL END) AS Jul,
+			    MAX(CASE WHEN NAT.AOPMonth = '8' THEN NAT.AttributeValue ELSE NULL END) AS Aug,
+			    MAX(CASE WHEN NAT.AOPMonth = '9' THEN NAT.AttributeValue ELSE NULL END) AS Sep,
+			    MAX(CASE WHEN NAT.AOPMonth = '10' THEN NAT.AttributeValue ELSE NULL END) AS Oct,
+			    MAX(CASE WHEN NAT.AOPMonth = '11' THEN NAT.AttributeValue ELSE NULL END) AS Nov,
+			    MAX(CASE WHEN NAT.AOPMonth = '12' THEN NAT.AttributeValue ELSE NULL END) AS Dec,
+			    MAX(NAT.Remarks) AS Remarks,
+			    MAX(NAT.Id) AS NormAttributeTransaction_Id,
+			    MAX(NAT.AuditYear) AS AuditYear,
+			    MAX(NP.UOM) AS UOM,
+			    MAX(NT.NormName) AS NormTypeName
+			FROM NormParameters NP
+			JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id
+			LEFT JOIN NormAttributeTransactions NAT
+			    ON NAT.NormParameter_FK_Id = NP.Id
+			    AND NAT.AuditYear = :year
+			LEFT JOIN NormTypes NT
+			    ON NP.NormType_FK_Id = NT.Id
+			WHERE NPT.Name = 'Configuration'
+			  AND NP.Plant_FK_Id = :plantFKId
+			GROUP BY NP.Id
+			ORDER BY NP.Id;
+						""", nativeQuery = true)
+	List<Object[]> findByYearAndPlantFkIdMEG(@Param("year") String year, @Param("plantFKId") UUID plantFKId);
+
+	@Query(value = """
+				SELECT * FROM NormAttributeTransactions d WHERE d.NormParameter_FK_Id = :normParameterFKId  AND d.AOPMonth = :month 
+				AND d.AuditYear = :auditYear AND PlantMaintenanceTransaction_FK_Id IS NULL
+			""", nativeQuery = true)
+	Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYear(
+			@Param("normParameterFKId") UUID normParameterFKId,
+			@Param("month") Integer month, @Param("auditYear") String auditYear);
+	
+	@Query(value = """
+			SELECT * FROM NormAttributeTransactions d WHERE d.NormParameter_FK_Id = :normParameterFKId  AND d.AOPMonth = :month 
+			AND d.AuditYear = :auditYear AND d.AttributeValueVersion= :version AND PlantMaintenanceTransaction_FK_Id IS NULL
+		""", nativeQuery = true)
+Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(
+		@Param("normParameterFKId") UUID normParameterFKId,
+		@Param("month") Integer month, @Param("auditYear") String auditYear, @Param("version") String version);
+
+	@Query(value = """
+				SELECT Params FROM [dbo].[vwConfigurationUpdate]
+			""", nativeQuery = true)
+
+	List<Object[]> getPythonScriptName();
+
+    @Query(value =
+            "SELECT * FROM [RIL.AOP].dbo.vwGetExecutionDetails " +
+            "WHERE PlantId = :plantId AND AuditYear = :year",
+            nativeQuery = true
+        )
+        List<Object[]> findByPlantIdAndYearForExecutionDetails(
+            @Param("plantId") UUID plantId,
+            @Param("year") String year
+        );
+		
+		@Query(value = "EXEC GetHistorianExecutionDetails @plantId = :plantId, @aopYear = :year", nativeQuery = true)
+	List<Object[]> findByPlantIdAndYear(
+			@Param("plantId") UUID plantId,
+			@Param("year") String year);
+	
+	@Query(value = "EXEC GetHistorianExecutionNormsDetails @plantId = :plantId, @aopYear = :year", nativeQuery = true)
+	List<Object[]> findByPlantIdAndYearForNorms(
+			@Param("plantId") UUID plantId,
+			@Param("year") String year);
+	
+	Optional<NormAttributeTransactions> findByNormParameterFKId(UUID normParameterFKId);
+	
+	@Query(value = "SELECT * FROM NormAttributeTransactions " +
+            "WHERE PlantMaintenanceTransaction_FK_Id = :maintenanceId " +
+            "AND NormParameter_FK_Id = :normParameterFKId " +
+            "AND AuditYear = :auditYear AND AOPMonth = :month", nativeQuery = true)
+	List<NormAttributeTransactions> findByMaintenanceIdAndNormParameterFKIdAndAuditYear(
+	     @Param("maintenanceId") UUID maintenanceId,
+	     @Param("normParameterFKId") UUID normParameterFKId,
+	     @Param("auditYear") String auditYear,
+	     @Param("month") int month
+);
+	
+	
+	
+	
+	@Query(value = "SELECT * FROM NormAttributeTransactions " +
+            "WHERE AOPMonth = 4 " +
+            "AND NormParameter_FK_Id = :normParameterFKId " +
+            "AND AuditYear = :auditYear", nativeQuery = true)
+	NormAttributeTransactions findByNormParameterFKIdAndAuditYear(
+	     @Param("normParameterFKId") UUID normParameterFKId,
+	     @Param("auditYear") String auditYear
+);
+	
+	@Query(value = "SELECT * FROM NormAttributeTransactions " +
+            "WHERE PlantMaintenanceTransaction_FK_Id = :maintenanceId" 
+            , nativeQuery = true)
+	List<NormAttributeTransactions> findByMaintenanceId(
+	     @Param("maintenanceId") UUID maintenanceId);
+
+	@Query(value = "SELECT * FROM NormAttributeTransactions WHERE  NormParameter_FK_Id = :normParameterFKId AND AuditYear = :auditYear" 
+           , nativeQuery = true)
+	List<NormAttributeTransactions> findByNormParameterIdAndAuditYear(
+	     @Param("normParameterFKId") UUID normParameterFKId,
+	     @Param("auditYear") String auditYear	    
+	);
+	
+	@Query(value = "SELECT * FROM [RIL.AOP].[dbo].[NormAttributeTransactions] " +
+            "WHERE [AuditYear] = :auditYear " +
+            "AND [NormParameter_FK_Id] = :normParamId " +
+            "AND [ShutdownType_FK_Id] = :shutdownTypeId", 
+    nativeQuery = true)
+	List<NormAttributeTransactions> findByAuditYearAndIds(
+	 @Param("auditYear") String auditYear, 
+	 @Param("normParamId") UUID normParamId, 
+	 @Param("shutdownTypeId") UUID shutdownTypeId
+	);
+	
+
+}

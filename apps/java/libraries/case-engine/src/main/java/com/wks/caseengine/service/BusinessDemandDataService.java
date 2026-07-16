@@ -1,0 +1,36 @@
+package com.wks.caseengine.service;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.wks.caseengine.dto.BusinessDemandDataDTO;
+import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+
+import com.wks.caseengine.message.vm.AOPMessageVM;
+
+public interface BusinessDemandDataService {
+	public	AOPMessageVM getBusinessDemandData(String year, String plantId);
+	public AOPMessageVM calculateBusinessDemand(String year, String plantId);
+	public AOPMessageVM getBusinessDemand(String year, UUID plantFKId);
+	public AOPMessageVM getBusinessDemandLineData(String year, String plantId, String lineId);
+	public List<BusinessDemandDataDTO> getBusinessDemandAllData(String year, String plantId);
+	public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId);
+	AOPMessageVM loadPlantContribution(String year, String plantId);
+	public AOPMessageVM saveBusinessDemand( String year, String plantFKId, List<BusinessDemandMonthlyDTO> businessDemandMonthlyDTOs);
+	public byte[] exportBusinessDemand(String year, String plantFKId,boolean isAfterSave,List<BusinessDemandDataDTO> dtoList);
+	public byte[] exportBusinessDemandLine(String year, String plantId, String lineId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
+	public byte[] exportBusinessDemandAllLine(String year, String plantId);
+	public 	List<BusinessDemandDataDTO>  saveBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
+	public 	List<BusinessDemandDataDTO>  saveBusinessDemandLineData(List<BusinessDemandDataDTO> businessDemandDataDTO);
+	public 	List<BusinessDemandDataDTO>  editBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
+	public 	BusinessDemandDataDTO  deleteBusinessDemandData(UUID id);
+	public AOPMessageVM importExcel(String year, UUID plantId, MultipartFile file);
+	public AOPMessageVM importExcelLineWise(String year, UUID plantId, MultipartFile file);
+
+	public byte[] exportBusinessDemandV2(String year, String plantFKId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
+
+	public AOPMessageVM importExcelV2(String year, UUID plantId, MultipartFile file);
+
+}

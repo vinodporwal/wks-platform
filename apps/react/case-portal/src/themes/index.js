@@ -33,7 +33,7 @@ export default function ThemeCustomization({ children }) {
       direction: 'ltr',
       mixins: {
         toolbar: {
-          minHeight: 60,
+          minHeight: 55,
           paddingTop: 8,
           paddingBottom: 8,
         },

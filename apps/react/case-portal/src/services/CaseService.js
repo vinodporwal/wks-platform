@@ -37,27 +37,51 @@ async function getAllByStatus(keycloak, status, limit) {
   }
 }
 
+// async function getCaseDefinitions(keycloak) {
+//   const url = `${Config.CaseEngineUrl}/case-definition?deployed=true`
+
+//   const headers = {
+//     Authorization: `Bearer ${keycloak.token}`,
+//   }
+
+//   try {
+//     const resp = await fetch(url, { headers })
+//     return json(keycloak, resp)
+//   } catch (e) {
+//     console.log(e)
+//     return await Promise.reject(e)
+//   }
+// }
 async function getCaseDefinitions(keycloak) {
   const url = `${Config.CaseEngineUrl}/case-definition?deployed=true`
 
-  const headers = {
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-
   try {
+    // Ensure the token is fresh
+    await keycloak.updateToken(60) // refresh if expiring in next 60 sec
+
+    const headers = {
+      Authorization: `Bearer ${keycloak.token}`,
+    }
+
     const resp = await fetch(url, { headers })
+
+    // Optional: check if response is not OK (e.g. 401)
+    if (!resp.ok) {
+      throw new Error(`API Error: ${resp.status} ${resp.statusText}`)
+    }
+
     return json(keycloak, resp)
   } catch (e) {
-    console.log(e)
+    console.error('Error fetching case definitions:', e)
     return await Promise.reject(e)
   }
 }
 
 async function getCaseDefinitionsById(keycloak, caseDefId) {
-  const url = `${Config.CaseEngineUrl}/case-definition/${caseDefId || ''}`
+  const url = `${Config?.CaseEngineUrl}/case-definition/${caseDefId || ''}`
 
   const headers = {
-    Authorization: `Bearer ${keycloak.token}`,
+    Authorization: `Bearer ${keycloak?.token}`,
   }
 
   try {
@@ -89,10 +113,10 @@ async function filterCase(keycloak, caseDefId, status, cursor) {
   let url = `${Config.CaseEngineUrl}/case?`
   url = url + (status ? `status=${status}` : '')
   url = url + (caseDefId ? `&caseDefinitionId=${caseDefId}` : '')
-  url = url + `&before=${cursor.before || ''}`
-  url = url + `&after=${cursor.after || ''}`
-  url = url + `&sort=${cursor.sort || 'asc'}`
-  url = url + `&limit=${cursor.limit || 10}`
+  url = url + `&before=${cursor?.before || ''}`
+  url = url + `&after=${cursor?.after || ''}`
+  url = url + `&sort=${cursor?.sort || 'asc'}`
+  url = url + `&limit=${cursor?.limit || 10}`
 
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
@@ -168,7 +192,8 @@ async function addDocuments(keycloak, businessKey, document) {
   }
 }
 
-async function addComment(keycloak, text, parentId, businessKey) {
+async function addComment(keycloak, text, parentId, businessKey, role, status) {
+  // console.log(businessKey)
   const url = `${Config.CaseEngineUrl}/case/${businessKey}/comment`
 
   const comment = {
@@ -177,6 +202,8 @@ async function addComment(keycloak, text, parentId, businessKey) {
     userId: keycloak.tokenParsed.preferred_username,
     userName: keycloak.tokenParsed.given_name,
     caseId: businessKey,
+    role: role,
+    status: status,
   }
 
   try {

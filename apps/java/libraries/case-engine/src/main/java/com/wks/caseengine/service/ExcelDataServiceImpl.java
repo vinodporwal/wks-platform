@@ -1,0 +1,985 @@
+package com.wks.caseengine.service;
+
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.wks.caseengine.dto.AOPDTO;
+import com.wks.caseengine.dto.ModeWiseNormsDTO;
+import com.wks.caseengine.dto.MonthwiseOperatingHoursDTO;
+import com.wks.caseengine.dto.PlantContributionSummaryT17DTO;
+import com.wks.caseengine.dto.PlantShutdownSlowdownNormsDurationDTO;
+import com.wks.caseengine.dto.ShutdownDetailsDTO;
+import com.wks.caseengine.dto.ShutdownNormsValueDTO;
+import com.wks.caseengine.dto.ShutdownSummaryLastFourYearDTO;
+import com.wks.caseengine.dto.WorkflowYearDTO;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+
+@Service
+public class ExcelDataServiceImpl implements ExcelDataService {
+
+    @Autowired
+    ProductionVolumeDataReportService productionVolumeDataReportService;
+
+    @Autowired
+    private AOPService aopService;
+
+    @Autowired
+    private AOPReportService aopReportService;
+
+    @Autowired
+    private TurnAroundDataReportService turnAroundDataReportService;
+
+    @Autowired
+    private WorkflowService workflowService;
+
+    @Autowired
+    private CrackerReportService crackerReportService;
+
+    @Autowired
+    private ModeWiseNormsService modeWiseNormsService;
+    @Autowired
+    private ShutdownNormsService shutdownNormsService;
+
+    @Autowired
+    private MonthwiseOperatingHoursService monthwiseOperatingHoursService;
+    
+    @Autowired
+    private ShutdownSummaryLastFourYearService shutdownSummaryLastFourYearService;
+
+    @Autowired
+    private ShutdownDetailsService shutdownDetailsService;
+
+    @Autowired
+    private PlantShutdownSlowdownNormsDurationService plantShutdownSlowdownNormsDurationService;
+
+    
+
+
+    
+    @Override
+    public List<List<Object>> getDataForProductionVolumeReport(String plantId, String year, List<String> headers) {
+
+    
+
+        AOPMessageVM aopMessageVM = productionVolumeDataReportService.getReportForProductionVolumnData(plantId, year);
+
+        List<Map<String, Object>> productionVolumeReportList = (List<Map<String, Object>>) aopMessageVM.getData();
+
+        // String[] headers = { "RowNo", "Particulates", "UOM", "BudgetPrevYear",
+        // "ActualPrevYear",
+        // "BudgetCurrentYear", "VarBudgetMT", "VarBudgetPer", "VarActualMT",
+        // "VarActualPer", "Remark" };
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (Map<String, Object> map : productionVolumeReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                list.add(map.get(header));
+            }
+            dataList.add(list);
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getReportForMonthWiseProductionData(String plantId, String year, List<String> headers) {
+
+        AOPMessageVM aopMessageVM = productionVolumeDataReportService.getReportForMonthWiseProductionData(plantId,
+                year);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> productionVolumeReportList = (List<Map<String, Object>>) responseMap.get("data");
+
+        // String[] headers = {
+        // "RowNo",
+        // "Month",
+        // "EOEProdBudget",
+        // "EOEProdActual",
+        // "OpHrsBudget",
+        // "OpHrsActual",
+        // "ThroughputBudget",
+        // "ThroughputActual",
+        // "OperatingHours",
+        // "MEGThroughput",
+        // "EOThroughput",
+        // "EOEThroughput",
+        // "TotalEOE",
+        // "Remark"
+        // };
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (Map<String, Object> map : productionVolumeReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                list.add(map.get(header));
+            }
+            dataList.add(list);
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getReportForMonthWiseConsumptionForSelectivityData(String plantId, String year,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = productionVolumeDataReportService
+                .getReportForMonthWiseConsumptionSummaryData(plantId, year, "Selectivity");
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> productionVolumeReportList = (List<Map<String, Object>>) responseMap
+                .get("consumptionSummary");
+
+        System.out.println("getReportForMonthWiseConsumptionForSelectivityData " + productionVolumeReportList);
+        // String[] headers = {
+        // "material",
+        // "april",
+        // "may",
+        // "june",
+        // "july",
+        // "aug",
+        // "sep",
+        // "oct",
+        // "nov",
+        // "dec",
+        // "jan",
+        // "feb",
+        // "march"
+        // };
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (Map<String, Object> map : productionVolumeReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                System.out.println("Selectivity data" + header + " " + map.get(header));
+                list.add(map.get(header));
+            }
+            dataList.add(list);
+        }
+        return dataList;
+
+    }
+
+    @Override
+    public Map<String, List<List<Object>>> getReportForMonthWiseConsumptionSummaryData(String plantId, String year,
+            List<String> headers) {
+        Map<String, List<List<Object>>> outerMap = new HashMap<>();
+        AOPMessageVM aopMessageVM = productionVolumeDataReportService
+                .getReportForMonthWiseConsumptionSummaryData(plantId, year, "NormQuantity");
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> annualAOPReportList = (List<Map<String, Object>>) responseMap
+                .get("consumptionSummary");
+        System.out.println("getReportForMonthWiseConsumptionSummaryData " + annualAOPReportList);
+        // String[] headers = {
+
+        // "material",
+        // "UOM",
+        // "spec",
+        // "april",
+        // "may",
+        // "june",
+        // "july",
+        // "aug",
+        // "sep",
+        // "oct",
+        // "nov",
+        // "dec",
+        // "jan",
+        // "feb",
+        // "march",
+        // "total"
+        // };
+
+        for (Map<String, Object> map : annualAOPReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                if (header.equals("")) {
+                    list.add("");
+                } else {
+                    list.add(map.get(header));
+                }
+
+            }
+
+            if (outerMap.containsKey(map.get("normType"))) {
+                List<List<Object>> dataList = outerMap.get(map.get("normType"));
+                dataList.add(list);
+            } else {
+                List<List<Object>> dataList = new ArrayList<>();
+                dataList.add(list);
+                outerMap.put(map.get("normType").toString(), dataList);
+            }
+        }
+
+        System.out.println("getReportForMonthWiseConsumptionSummaryData " + outerMap);
+        return outerMap;
+
+    }
+
+    @Override
+    public List<List<Object>> getShutdownNormsData(String plantId, String year, String dataInput,
+            List<String> headers) {
+
+        Map<String, List<List<Object>>> outerMap = new HashMap<>();
+        AOPMessageVM aopMessageVM = shutdownNormsService.getShutdownNormsData(year, plantId, null);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<ShutdownNormsValueDTO> shutDownList = (List<ShutdownNormsValueDTO>) responseMap
+                .get("mcuNormsValueDTOList");
+        System.out.println("ShutDownData in report" + shutDownList);
+
+        for (ShutdownNormsValueDTO dto : shutDownList) {
+            // List<List<Object>> dataList = new ArrayList<>();
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            // dataList.add(list);
+            if (outerMap.containsKey(dto.getNormParameterTypeDisplayName())) {
+                List<List<Object>> dataList = outerMap.get(dto.getNormParameterTypeDisplayName());
+                dataList.add(list);
+            } else {
+                List<List<Object>> dataList = new ArrayList<>();
+                dataList.add(list);
+                outerMap.put(dto.getNormParameterTypeDisplayName(), dataList);
+            }
+
+        }
+
+        System.out.println("getShutdownReportData" + outerMap);
+        if (outerMap.containsKey(dataInput)) {
+            return outerMap.get(dataInput);
+        } else {
+            List<List<Object>> dataList = new ArrayList<>();
+            return dataList;
+        }
+        // return outerMap;
+
+    }
+
+    @Override
+    public List<List<Object>> getMonthwiseProductionPlanReport(String plantId, String year,List<String> headers) {
+
+        AOPMessageVM aopMessageVM  = monthwiseOperatingHoursService.getMonthwiseProductionPlanReport(plantId, year);
+        
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> furnaceListList = (List<Map<String, Object>>) responseMap
+                .get("data");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        System.out.println("getMonthwiseProductionPlanReport" +furnaceListList);
+        if (furnaceListList != null) {
+            for (Map<String, Object> map : furnaceListList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+
+    }
+
+    Double calculateSum(Double value, Double sum) {
+        if (value != null) {
+            sum = sum + value;
+        }
+        return sum;
+    }
+
+    public static Map<String, List<Double>> getColumnSums(Map<String, List<List<Object>>> dataMap) {
+        Map<String, List<Double>> result = new HashMap<>();
+
+        for (Map.Entry<String, List<List<Object>>> entry : dataMap.entrySet()) {
+            String key = entry.getKey();
+            List<List<Object>> rows = entry.getValue();
+
+            if (rows.isEmpty()) {
+                result.put(key, new ArrayList<>());
+                continue;
+            }
+
+            int columnCount = rows.get(0).size();
+            List<Double> columnSums = new ArrayList<>(Collections.nCopies(columnCount, 0.0));
+
+            for (List<Object> row : rows) {
+                for (int i = 0; i < row.size(); i++) {
+                    Object value = row.get(i);
+                    if (value instanceof Number) {
+                        Double existing = columnSums.get(i);
+                        columnSums.set(i, existing + ((Number) value).doubleValue());
+                    }
+                }
+            }
+
+            result.put(key, columnSums);
+        }
+
+        return result;
+    }
+
+    @Override
+    public Map<String, List<List<Object>>> getAnnualAOPReport(String plantId, String year) {
+
+        Map<String, List<List<Object>>> outerMap = new HashMap<>();
+        AOPMessageVM aopMessageVM = aopReportService.getAnnualAOPReport(plantId, year, "quantity",
+                "FY " + year + " AOP");
+        ;
+
+        List<Map<String, Object>> annualAOPReportList = (List<Map<String, Object>>) aopMessageVM.getData();
+
+        String[] headers = {
+                "particulars",
+                "",
+                "",
+                "april",
+                "may",
+                "june",
+                "july",
+                "august",
+                "september",
+                "october",
+                "november",
+                "december",
+                "january",
+                "february",
+                "march",
+                "total",
+        };
+
+        //
+        // Data rows
+        for (Map<String, Object> map : annualAOPReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                if (header.equals("")) {
+                    list.add("");
+                } else {
+                    list.add(map.get(header));
+                }
+
+            }
+
+            if (outerMap.containsKey(map.get("norm"))) {
+                List<List<Object>> dataList = outerMap.get(map.get("norm"));
+                dataList.add(list);
+            } else {
+                List<List<Object>> dataList = new ArrayList<>();
+                dataList.add(list);
+                outerMap.put(map.get("norm").toString(), dataList);
+            }
+        }
+
+        return outerMap;
+
+    }
+
+    @Override
+    public List<List<Object>> getReportForTurnAroundPlanData(String plantId, String year, String reportType,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = turnAroundDataReportService.getReportForTurnAroundPlanData(plantId, year,
+                reportType);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> productionVolumeReportList = (List<Map<String, Object>>) responseMap
+                .get("plantTurnAroundReportData");
+
+        // String[] headers = {
+        // "sno",
+        // "activity",
+        // "fromDate",
+        // "toDate",
+        // "durationInHrs",
+        // "remarks"
+        // };
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (Map<String, Object> map : productionVolumeReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                list.add(map.get(header));
+            }
+            dataList.add(list);
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getReportForPlantProductionPlanData(String plantId, String year, String reportType,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = productionVolumeDataReportService.getReportForPlantProductionPlanData(plantId, year,
+                reportType);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> productionVolumeReportList = (List<Map<String, Object>>) responseMap
+                .get("plantProductionData");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (Map<String, Object> map : productionVolumeReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                list.add(map.get(header));
+            }
+            dataList.add(list);
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getReportForPlantContributionYearWise(String plantId, String year, String reportType,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = productionVolumeDataReportService.getReportForPlantContributionYearWise(plantId,
+                year,
+                reportType);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> productionVolumeReportList = (List<Map<String, Object>>) responseMap
+                .get("plantProductionData");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (Map<String, Object> map : productionVolumeReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                list.add(map.get(header));
+            }
+            dataList.add(list);
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public Map<String, Object> getProductionAOPWorkflowData(String plantId, String year, List<String> headers) {
+
+        AOPMessageVM response = workflowService.getProductionAOPWorkflowData(plantId, year);
+
+        Map<String, Object> finalMap = (Map<String, Object>) response.getData();
+        
+        if (finalMap == null) {
+            return new HashMap<>(); 
+        }
+        Map<String, Object> map = (Map<String, Object>) finalMap.get("data");
+
+        if (map == null) {
+            return new HashMap<>();
+        }
+        List<WorkflowYearDTO> dtoList;
+        try {
+            dtoList = (List<WorkflowYearDTO>) map.get("results");
+        } catch (ClassCastException e) {
+            return new HashMap<>(); 
+        }
+        
+        if (dtoList == null) {
+            return map; 
+        }
+
+        List<List<Object>> dataList = new ArrayList<>();
+        
+        for (WorkflowYearDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // Grant access to private fields
+                    
+                    Object value = field.get(dto); 
+                    list.add(value);
+                    
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    list.add(null);
+                }
+            }
+            dataList.add(list);
+        }
+        map.put("rows", dataList);
+        return map;
+    }
+    @Override
+    public Map<String, Object> getAnnualAOPWorkflowData(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+        Map<String, Object> map = workflowService.getWorkFlow(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        List<WorkflowYearDTO> dtoList = (List<WorkflowYearDTO>) map.get("results");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (WorkflowYearDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    String value = (String) field.get(dto);
+                    list.add(value);
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    // If field doesn't exist or not accessible, add null
+                    list.add(null);
+                }
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+    @Override
+    public List<List<Object>> getPlantContributionFiveYearSummaryReport(String plantId, String year, String reportType,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = aopReportService.getPlantContributionFiveYearSummaryReport(reportType,
+                plantId,
+                year);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> productionVolumeReportList = (List<Map<String, Object>>) responseMap
+                .get("plantProductionData");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (Map<String, Object> map : productionVolumeReportList) {
+            List<Object> list = new ArrayList<>();
+            for (String header : headers) {
+                list.add(map.get(header));
+            }
+            dataList.add(list);
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getSpyroInputReport(String plantId, String year, String reportType,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = crackerReportService.getSpyroInputReport(
+                plantId,
+                year, reportType);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) responseMap
+                .get("data");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (spyroInputDataList != null) {
+            for (Map<String, Object> map : spyroInputDataList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getSpyroOutputReport(String plantId, String year, String reportType,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = crackerReportService.getSpyroOutputReport(
+                plantId,
+                year, reportType);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> spyroOutputDataList = (List<Map<String, Object>>) responseMap
+                .get("data");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (spyroOutputDataList != null) {
+            for (Map<String, Object> map : spyroOutputDataList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getFinalNormsProductionReport(String plantId, String year, String dataInput,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = crackerReportService.getFinalNormsProductionReport(
+                plantId,
+                year, dataInput);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> finalNormsProduction = (List<Map<String, Object>>) responseMap
+                .get("data");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (finalNormsProduction != null) {
+            for (Map<String, Object> map : finalNormsProduction) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getMonthWiseRawDataByMethod(String plantId, String year, String mode, String method,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = crackerReportService.getMonthWiseRawDataByMethod(
+                plantId,
+                year, mode, method);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> finalNormsProduction = (List<Map<String, Object>>) responseMap
+                .get("data");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (finalNormsProduction != null) {
+            for (Map<String, Object> map : finalNormsProduction) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+
+    }
+
+    @Override
+    public List<List<Object>> getFinalNormsReport(String plantId, String year, String dataInput,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = crackerReportService.getFinalNormsReport(plantId, year, dataInput);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> modeWiseNormsList = (List<Map<String, Object>>) responseMap
+                .get("data");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (modeWiseNormsList != null) {
+            for (Map<String, Object> map : modeWiseNormsList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+    }
+
+    @Override
+    public List<List<Object>> getFurnaceReport(String plantId, String year, String dataInput,
+            List<String> headers) {
+
+        AOPMessageVM aopMessageVM = crackerReportService.getFurnaceReport(plantId, year, dataInput);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> furnaceListList = (List<Map<String, Object>>) responseMap
+                .get("data");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (furnaceListList != null) {
+            for (Map<String, Object> map : furnaceListList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+    }
+
+
+     @Override
+    public Map<String, Object> getMonthwiseOperatingHours(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = monthwiseOperatingHoursService.getMonthwiseOperatingHours(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<MonthwiseOperatingHoursDTO> dtoList = (List<MonthwiseOperatingHoursDTO>) map.get("monthwiseOperatingHoursList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (MonthwiseOperatingHoursDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+             for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+
+    @Override
+    public Map<String, Object> getShutdownSummaryLastFourYear(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = shutdownSummaryLastFourYearService.getShutdownSummaryLastFourYear(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<ShutdownSummaryLastFourYearDTO> dtoList = (List<ShutdownSummaryLastFourYearDTO>) map.get("shutdownSummaryLastFourYearList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (ShutdownSummaryLastFourYearDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+
+
+    @Override
+    public Map<String, Object> getShutdownDetails(String plantId, String year, String dataInput, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = shutdownDetailsService.getShutdownDetails(plantId, year, dataInput);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<ShutdownDetailsDTO> dtoList = (List<ShutdownDetailsDTO>) map.get("shutdownDetailsList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (ShutdownDetailsDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+    @Override
+    public Map<String, Object> getPlantShutdownSlowdownNormsDuration(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = plantShutdownSlowdownNormsDurationService.getPlantShutdownSlowdownNormsDuration(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<PlantShutdownSlowdownNormsDurationDTO> dtoList = (List<PlantShutdownSlowdownNormsDurationDTO>) map.get("plantShutdownSlowdownNormsDurationList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (PlantShutdownSlowdownNormsDurationDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+    
+
+    @Override
+    public Map<String, Object> getSpecificConsumptionNormsT17Report(String reportType,String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = aopReportService.getSpecificConsumptionNormsT17Report(reportType,plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<PlantContributionSummaryT17DTO> dtoList = (List<PlantContributionSummaryT17DTO>) map.get("plantProductionData");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (PlantContributionSummaryT17DTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+             for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+    @Override
+    public List<List<Object>> getSpecificConsumptionNormsReport(String reportType,String plantId, String year, List<String> headers) {
+        AOPMessageVM aopMessageVM  = aopReportService.getSpecificConsumptionNormsReport(reportType,plantId, year);
+        
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> furnaceListList = (List<Map<String, Object>>) responseMap
+                .get("plantProductionData");
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        System.out.println("furnaceList"+furnaceListList);
+        if (furnaceListList != null) {
+            for (Map<String, Object> map : furnaceListList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+    }
+    
+    
+
+    @Override
+    public Map<String, Object> getGradewiseConsumptionNorms(String reportType,String plantId, String year, List<String> headers) {
+          
+         
+     AOPMessageVM aopMessageVM =
+        aopReportService.getGradewiseConsumptionNorms(
+                plantId, year, reportType);
+
+Map<String, Object> responseMap =
+        (Map<String, Object>) aopMessageVM.getData();
+
+List<Map<String, Object>> furnaceListList =
+        (List<Map<String, Object>>) responseMap.get("data");
+List<String> titles = new ArrayList<>();
+Map<String, Object> outMap = new HashMap<>();        
+
+if(headers == null || headers.size() == 0){
+
+    List<Map<String, Object>> columnsListList =
+            (List<Map<String, Object>>) responseMap.get("columns");
+
+    headers = columnsListList.stream()
+            .map(m -> (String) m.get("field"))
+            .collect(Collectors.toList());
+
+titles  = columnsListList.stream()
+            .map(m -> (String) m.get("title"))
+            .collect(Collectors.toList());
+            List<List<String>> outertitleList = new ArrayList<>();
+            outertitleList.add(titles);
+            outMap.put("titles",outertitleList);
+        }
+
+System.out.println("gradewise headers " + headers);
+System.out.println("furnaceList2 " + furnaceListList);
+
+
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (furnaceListList != null) {
+            for (Map<String, Object> map : furnaceListList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        outMap.put("rows",dataList);
+    
+        return outMap;
+
+        
+    }
+}

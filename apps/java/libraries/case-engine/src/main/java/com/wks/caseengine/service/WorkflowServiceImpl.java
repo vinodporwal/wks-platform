@@ -1,0 +1,689 @@
+package com.wks.caseengine.service;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import com.wks.caseengine.entity.AopCalculation;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+
+import java.util.List;
+import java.util.UUID;
+
+import com.wks.caseengine.db2.entity.AnnualAOPCostDB2;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
+
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
+import com.wks.caseengine.entity.Workflow;
+import com.wks.caseengine.entity.WorkflowMaster;
+
+import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.process.instance.ProcessInstanceService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+
+import java.lang.reflect.Field;
+import javax.sql.DataSource;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.wks.bpm.engine.model.spi.Task;
+import com.wks.caseengine.cases.instance.CaseInstance;
+import com.wks.caseengine.cases.instance.service.CaseInstanceService;
+import com.wks.caseengine.dto.WorkflowDTO;
+import com.wks.caseengine.dto.WorkflowMasterDTO;
+import com.wks.caseengine.dto.WorkflowPageDTO;
+import com.wks.caseengine.dto.WorkflowStepsMasterDTO;
+import com.wks.caseengine.dto.WorkflowSubmitDTO;
+import com.wks.caseengine.dto.WorkflowYearDTO;
+import com.wks.caseengine.db2.repository.AnnualAOPCostDB2Repository;
+import com.wks.caseengine.repository.AopCalculationRepository;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.repository.WorkflowMasterRepository;
+import com.wks.caseengine.repository.WorkflowRepository;
+import com.wks.caseengine.repository.WorkflowStepsMasterRepository;
+import com.wks.caseengine.tasks.TaskService;
+
+@Service
+public class WorkflowServiceImpl implements WorkflowService {
+
+	@Autowired
+	private WorkflowRepository workflowRepository;
+
+	@Autowired
+	private CaseInstanceService caseInstanceService;
+
+	@Autowired
+	private WorkflowMasterRepository workflowMasterRepository;
+
+	@Autowired
+	private WorkflowStepsMasterRepository workflowStepsMasterRepository;
+
+	@PersistenceContext
+	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
+
+	@Autowired
+	private DataSource dataSource;
+	
+	@Autowired
+	@Qualifier("db2DataSource")
+	private DataSource db2DataSource;
+
+	@Autowired
+	private AnnualAOPCostDB2Repository annualAOPCostRepository;
+
+	@Autowired
+	private ProcessInstanceService processInstanceService;
+
+	@Autowired
+	private TaskService taskService;
+	@Autowired
+	private PlantsRepository plantsRepository;
+	@Autowired
+	private VerticalsRepository verticalRepository;
+
+	@Autowired
+	private SiteRepository siteRepository;
+	
+	@Autowired
+	private AopCalculationRepository aopCalculationRepository;
+
+	@Override
+	public WorkflowPageDTO getCaseId(String year, String plantId, String siteId, String verticalId) {
+		try {
+			WorkflowPageDTO workflowPageDTO = new WorkflowPageDTO();
+			List<Workflow> list = workflowRepository.findAllByYearAndPlantFKIdAndSiteFKIdAndVerticalFKId(year,
+					UUID.fromString(plantId), UUID.fromString(siteId), UUID.fromString(verticalId));
+
+			String taskDefinitionKey = "";
+			List<WorkflowDTO> dtoList = new ArrayList<>();
+			for (Workflow workflow : list) {
+				WorkflowDTO dto = new WorkflowDTO();
+				dto.setId(workflow.getId().toString());
+				dto.setCaseDefId(workflow.getCaseDefId());
+				List<Task> tasks = new ArrayList<>();
+				if (workflow.getCaseId() != null) {
+					// could not get tasks while submitting the aop report due to transactional
+					// policies. Hence writing here
+					List<String> rolesList = extractRoles();
+					System.out.println("processInsatance Id " + workflow.getProcessInstanceId());
+					if (workflow.getProcessInstanceId() == null) {
+						while (tasks.size() == 0) {
+							System.out.println("in while loop");
+							Thread.sleep(2000);
+							tasks = taskService.find(Optional.ofNullable(workflow.getCaseId()));
+
+						}
+						workflow.setProcessInstanceId(tasks.get(0).getProcessInstanceId());
+					} else {
+						tasks = taskService.find(Optional.ofNullable(workflow.getCaseId()));
+					}
+
+					for (Task task : tasks) {
+						for (String role : rolesList) {
+							// workflowPageDTO.setRole(role);
+							System.out.println("roles " + role + "assignee " + task.getAssignee());
+							if (task.getAssignee().equalsIgnoreCase(role)) {
+								workflowPageDTO.setTaskId(task.getId());
+								workflowPageDTO.setRole(role);
+
+								break;
+							}
+						}
+						taskDefinitionKey = task.getTaskDefinitionKey();
+						dto.setProcessDefinitionId(task.getProcessDefinitionId());
+					}
+
+					workflowRepository.save(workflow);
+				}
+				dto.setCaseId(workflow.getCaseId());
+				dto.setPlantFkId(workflow.getPlantFKId().toString());
+				dto.setVerticalFKId(workflow.getVerticalFKId().toString());
+				dto.setSiteFKId(workflow.getSiteFKId().toString());
+				dto.setYear(workflow.getYear());
+				dto.setIsDeleted(workflow.getIsDeleted());
+				dto.setProcessInstanceId(workflow.getProcessInstanceId());
+				dtoList.add(dto);
+			}
+
+			workflowPageDTO.setWorkflowList(dtoList);
+			List<WorkflowMaster> wmlist = workflowMasterRepository.findAllByVerticalFKId(UUID.fromString(verticalId));
+
+			if (wmlist.size() > 0) {
+				WorkflowMasterDTO wmDTO = new WorkflowMasterDTO();
+				wmDTO.setId(wmlist.get(0).getId().toString());
+				wmDTO.setCasedefId(wmlist.get(0).getCaseDefId());
+				wmDTO.setVerticalFKId(wmlist.get(0).getVerticalFKId().toString());
+				wmDTO.setWorkflowId(wmlist.get(0).getWorkflowId());
+
+				List<Object[]> wsmlist = workflowStepsMasterRepository
+						.findAllByWorkflowMasterFKId(wmlist.get(0).getId());
+
+				List<WorkflowStepsMasterDTO> steps = new ArrayList<>();
+				for (Object[] wsm : wsmlist) {
+					WorkflowStepsMasterDTO dto = new WorkflowStepsMasterDTO();
+					dto.setId(wsm[0] != null ? wsm[0].toString() : null);
+					dto.setName(wsm[1] != null ? wsm[1].toString() : null);
+					dto.setDisplayName(wsm[2] != null ? wsm[2].toString() : null);
+					dto.setSequence(wsm[3] != null ? Integer.parseInt(wsm[3].toString()) : null);
+					System.out.println("boolean");
+					System.out.println(wsm[4]);
+					dto.setIsRemarksDisabled(wsm[4] != null ? Boolean.parseBoolean(wsm[4].toString()) : false);
+					dto.setWorkflowMasterFKId(wsm[5] != null ? wsm[5].toString() : null);
+					steps.add(dto);
+				}
+				if ((dtoList == null || dtoList.isEmpty())) {
+					if (steps.size() > 0) {
+						steps.get(0).setStatus("inprogress");
+					}
+				} else {
+					// List<ActivityInstance> actiList = processInstanceService
+					// .getActivityInstances(dtoList.get(0).getProcessInstanceId());
+					// if (actiList != null && actiList.size() > 0) {
+
+					String status = taskDefinitionKey.split("-")[0];
+					workflowPageDTO.setStatus(status);
+					for (WorkflowStepsMasterDTO dto : steps) {
+						if (dto.getName().equalsIgnoreCase(status)) {
+							System.out.println("in in progress status" + status);
+							dto.setStatus("inprogress");
+						}
+					}
+					steps = updateStatuses(steps);
+					// }
+				}
+
+				wmDTO.setSteps(steps);
+				workflowPageDTO.setWorkflowMasterDTO(wmDTO);
+			}
+
+			return workflowPageDTO;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid data format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public WorkflowDTO saveWorkFlow(WorkflowDTO workflowDTO) {
+		try {
+			Workflow workFlow = new Workflow();
+			workFlow.setCaseDefId(workflowDTO.getCaseDefId());
+			workFlow.setCaseId(workflowDTO.getCaseId());
+			workFlow.setPlantFKId(UUID.fromString(workflowDTO.getPlantFkId()));
+			workFlow.setSiteFKId(UUID.fromString(workflowDTO.getSiteFKId()));
+			workFlow.setVerticalFKId(UUID.fromString(workflowDTO.getVerticalFKId()));
+			workFlow.setYear(workflowDTO.getYear());
+			workFlow.setProcessInstanceId(workflowDTO.getProcessInstanceId());
+			workflowRepository.save(workFlow);
+
+			if (workFlow.getId() != null) {
+				workflowDTO.setId(workFlow.getId().toString());
+			}
+			return workflowDTO;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save data", ex);
+		}
+
+	}
+
+	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public Map<String, Object> getWorkFlow(String plantId, String year) {
+		Map<String, Object> map = new HashMap<>();
+
+		try {
+			List<Object[]> results = getData(plantId, year);
+
+			List<WorkflowYearDTO> workflowList = new ArrayList<>();
+			for (Object[] row : results) {
+				WorkflowYearDTO dto = new WorkflowYearDTO();
+				dto.setParticulates(row[0] != null ? row[0].toString() : null);
+				dto.setUom(row[1] != null ? row[1].toString() : null);
+				dto.setFyAop(row[2] != null ? row[2].toString() : null);
+				dto.setFyActual(row[3] != null ? row[3].toString() : null);
+				dto.setSyAop(row[4] != null ? row[4].toString() : null);
+				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setAopYear(year);
+				workflowList.add(dto);
+			}
+			List<String> headers = getHeaders(plantId, year);
+			List<String> keys = new ArrayList<>();
+			for (Field field : WorkflowYearDTO.class.getDeclaredFields()) {
+				keys.add(field.getName());
+			}
+			map.put("headers", headers);
+			map.put("keys", keys);
+			map.put("results", workflowList);
+			return map;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public AOPMessageVM getProductionAOPWorkflowData(String plantId, String year) {
+		Map<String, Object> map = new HashMap<>();
+		Map<String, Object> finalMap = new HashMap<>();
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			 List<Object[]> results =getProductionWorkflowDataDB2(plantId, year);
+			
+			List<WorkflowYearDTO> workflowList = new ArrayList<>();
+			for (Object[] row : results) {
+				WorkflowYearDTO dto = new WorkflowYearDTO();
+				dto.setParticulates(row[0] != null ? row[0].toString() : null);
+				dto.setUom(row[1] != null ? row[1].toString() : null);
+				dto.setFyAop(row[2] != null ? row[2].toString() : null);
+				dto.setFyActual(row[3] != null ? row[3].toString() : null);
+				dto.setSyAop(row[4] != null ? row[4].toString() : null);
+				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setAopYear(year);
+				workflowList.add(dto);
+			}
+			List<String> headers = getProductionWorkflowHeaders(plantId, year);
+			List<String> keys = new ArrayList<>();
+			for (Field field : WorkflowYearDTO.class.getDeclaredFields()) {
+				keys.add(field.getName());
+			}
+			map.put("headers", headers);
+			map.put("keys", keys);
+			map.put("results", workflowList);
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "aop-approval-flow");
+			finalMap.put("aopCalculation", aopCalculation);
+			finalMap.put("data", map);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(finalMap);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public List<Object[]> getData(String plantId, String aopYear) {
+		try {
+			String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
+			// Prepare native SQL call with parameters
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManagerDB2.createNativeQuery(sql);
+
+			// Set parameters
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public List<Object[]> getProductionWorkflowDataDB2(String plantId, String aopYear) {
+		try {
+			String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualProductionCost");
+			// Prepare native SQL call with parameters
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManagerDB2.createNativeQuery(sql);
+
+			// Set parameters
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getProductionWorkflowData(String plantId, String aopYear) {
+		try {
+			// Stored procedure name
+			// Fetch plant and vertical to determine procedure name
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+					() -> new RuntimeException("Plant not found for ID: " + plantId));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+					() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			// Determine stored procedure name dynamically
+			String verticalName = vertical.getName();
+			String procedureName = "GetAnnualProductionCost";
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
+			}
+			// Prepare native SQL call with parameters
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			// Set parameters
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<String> getHeaders(String plantId, String aopYear) {
+		List<String> headers = new ArrayList<>();
+		String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
+
+		String callableSql = "{call " + procedureName + "(?, ?)}";
+
+		try (Connection conn = db2DataSource.getConnection();
+				CallableStatement stmt = conn.prepareCall(callableSql)) {
+
+			stmt.setString(1, plantId);
+			stmt.setString(2, aopYear);
+
+			boolean hasResultSet = stmt.execute();
+
+			// Move forward until we find a result set
+			while (!hasResultSet && stmt.getUpdateCount() != -1) {
+				hasResultSet = stmt.getMoreResults();
+			}
+
+			// If a result set is found, get metadata and headers
+			if (hasResultSet) {
+				try (ResultSet rs = stmt.getResultSet()) {
+					ResultSetMetaData metaData = rs.getMetaData();
+					int columnCount = metaData.getColumnCount();
+
+					for (int i = 1; i <= columnCount; i++) {
+						headers.add(metaData.getColumnLabel(i));
+					}
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to fetch headers", e);
+		}
+
+		return headers;
+	}
+
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public List<String> getProductionWorkflowHeaders(String plantId, String aopYear) {
+		List<String> headers = new ArrayList<>();
+
+		String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualProductionCost");
+		String callableSql = "{call " + procedureName + "(?, ?)}";
+
+		try (Connection conn = db2DataSource.getConnection();
+				CallableStatement stmt = conn.prepareCall(callableSql)) {
+
+			stmt.setString(1, plantId);
+			stmt.setString(2, aopYear);
+
+			boolean hasResultSet = stmt.execute();
+
+			// Move forward until we find a result set
+			while (!hasResultSet && stmt.getUpdateCount() != -1) {
+				hasResultSet = stmt.getMoreResults();
+			}
+
+			// If a result set is found, get metadata and headers
+			if (hasResultSet) {
+				try (ResultSet rs = stmt.getResultSet()) {
+					ResultSetMetaData metaData = rs.getMetaData();
+					int columnCount = metaData.getColumnCount();
+
+					for (int i = 1; i <= columnCount; i++) {
+						headers.add(metaData.getColumnLabel(i));
+					}
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to fetch headers", e);
+		}
+
+		return headers;
+	}
+
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	private String resolveDb2ProcedureName(String plantId, String defaultProcedureName) {
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+				.orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new RuntimeException("Site not found for ID: " + plant.getSiteFkId()));
+		String verticalName = vertical.getName();
+		String siteName = site.getName();
+
+		if ("MEG".equalsIgnoreCase(verticalName)) {
+			return defaultProcedureName;
+		}
+
+		return verticalName + "_" + siteName + "_" + defaultProcedureName;
+	}
+
+	public List<WorkflowStepsMasterDTO> updateStatuses(List<WorkflowStepsMasterDTO> items) {
+		AtomicBoolean inProgressFound = new AtomicBoolean(false);
+
+		// Looping with index-like logic via stream
+		IntStream.range(0, items.size())
+				.forEach(i -> {
+					WorkflowStepsMasterDTO item = items.get(i);
+					System.out.println("getstatus" + item.getStatus());
+					if ("inprogress".equalsIgnoreCase(item.getStatus())) {
+						inProgressFound.set(true);
+					}
+					if (!inProgressFound.get() && !"completed".equalsIgnoreCase(item.getStatus())) {
+						item.setStatus("completed");
+					}
+				});
+		return items;
+
+	}
+
+	@Transactional
+	@Override
+	public WorkflowDTO submitWorkflow(WorkflowSubmitDTO workflowSubmitDTO) {
+		// saveWorkflowData(workflowSubmitDTO.getWorkflowDTO().getPlantFkId(),workflowSubmitDTO.getWorkflowYearDTO());
+		CaseInstance caseInstance = caseInstanceService.startWithValues(workflowSubmitDTO.getCaseInstance());
+		System.out.println("case created " + caseInstance.getBusinessKey());
+
+		// System.out.println("tasks found2" + tasks2.size());
+		System.out.println("tasks completed");
+		workflowSubmitDTO.getWorkflowDTO().setCaseId(caseInstance.getBusinessKey());
+		return saveWorkFlow(workflowSubmitDTO.getWorkflowDTO());
+		// return workflowSubmitDTO.getWorkflowDTO();
+	}
+
+	@Override
+	public void completeTaskWithComment(WorkflowSubmitDTO workflowSubmitDTO) {
+
+		taskService.complete(workflowSubmitDTO.getTaskId(), workflowSubmitDTO.getVariables());
+		caseInstanceService.saveComment(workflowSubmitDTO.getWorkflowDTO().getCaseId(),
+				workflowSubmitDTO.getCaseComment());
+	}
+
+	public static List<String> extractRoles() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication instanceof JwtAuthenticationToken) {
+			JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+			Jwt jwt = jwtAuth.getToken();
+
+			String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
+			Map<String, Object> claims = jwt.getClaims();
+
+			System.out.println("userId: " + userId);
+			System.out.println("Claims: " + claims);
+
+			claims.entrySet().stream()
+					.forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
+
+			Object realmAccessObj = claims.get("realm_access");
+
+			if (realmAccessObj instanceof Map<?, ?>) {
+				Map<?, ?> realmAccessMap = (Map<?, ?>) realmAccessObj;
+				Object rolesObj = realmAccessMap.get("roles");
+
+				if (rolesObj instanceof List<?>) {
+					// Safe cast with filtering
+					List<?> rawList = (List<?>) rolesObj;
+					return rawList.stream()
+							.filter(item -> item instanceof String)
+							.map(String.class::cast)
+							.toList();
+				}
+			}
+
+		}
+
+		return Collections.emptyList(); // Return empty list if roles not found
+	}
+
+	@Override
+	public AOPMessageVM saveAnnualAOPData(String plantId, List<WorkflowYearDTO> workflowYearDTOList) {
+		try {
+			for (WorkflowYearDTO workflowYearDTO : workflowYearDTOList) {
+				System.out.println("workflowYearDTO.getParticulates()" + workflowYearDTO.getParticulates());
+				System.out.println("workflowYearDTO.getFyAop()" + workflowYearDTO.getFyAop());
+				List<AnnualAOPCostDB2> list = annualAOPCostRepository
+						.findAllByAopYearAndPlantFkIdAndParticulatesAndAopType(
+								workflowYearDTO.getAopYear(),
+								UUID.fromString(plantId),
+								workflowYearDTO.getParticulates(),
+								"Remark");
+				if (list.isEmpty()) {
+					if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
+						// annualAOPCost.setRemark(null);
+					} else {
+						AnnualAOPCostDB2 annualAOPCost = new AnnualAOPCostDB2();
+						annualAOPCost.setParticulates(workflowYearDTO.getParticulates());
+						annualAOPCost.setAopYear(workflowYearDTO.getAopYear());
+						annualAOPCost.setAopType("Remark");
+						annualAOPCost.setRemark(workflowYearDTO.getRemark());
+						annualAOPCost.setPlantFkId(UUID.fromString(plantId));
+
+						annualAOPCostRepository.save(annualAOPCost);
+					}
+				} else {
+					for (AnnualAOPCostDB2 annualAOPCost : list) {
+						// System.out.println("id:"+id);
+						// Optional<AnnualAOPCost> AnnualAOPCostOp =
+						// annualAOPCostRepository.findById(id);
+						// if (AnnualAOPCostOp != null) {
+						// AnnualAOPCost annualAOPCost = AnnualAOPCostOp.get();
+						if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
+							annualAOPCost.setRemark(null);
+						} else {
+							annualAOPCost.setRemark(workflowYearDTO.getRemark());
+						}
+
+						annualAOPCostRepository.save(annualAOPCost);
+					}
+				}
+			}
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setMessage("Remarks updated successfully.");
+			return response;
+
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save data", ex);
+		}
+
+	}
+
+	@Override
+	public AOPMessageVM calculateExpressionWorkFlow(String year, String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadAnnualAOPCost";
+			System.out.println(storedProcedure);
+			Integer result = executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(result);
+			aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year,
+					"aop-approval-flow");
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return aopMessageVM;
+	}
+
+	public int executeDynamicUpdateProcedure(String procedureName, String plantId,
+			String aopYear) {
+		try {
+			String callSql = "{call " + procedureName + "(?, ?)}";
+
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+
+				// Set parameters in the correct order
+				stmt.setString(1, plantId); // @finYear
+				stmt.setString(2, aopYear); // @plantId
+
+				// Execute the stored procedure
+				int rowsAffected = stmt.executeUpdate();
+
+				// Optional: commit if auto-commit is off
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
+
+				return rowsAffected;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return 0;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+}

@@ -1,0 +1,618 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
+import { Backdrop, Box, CircularProgress } from '@mui/material'
+import Notification from 'components/Utilities/Notification'
+import { useSession } from 'SessionStoreContext'
+import { DataService } from 'services/DataService'
+import { SiteReportDataService } from 'services/SiteReportDataService'
+import KendoDataTables from './index'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { useSelector } from 'react-redux'
+import { add } from 'lodash'
+import { validateFields } from 'utils/validationUtils'
+import { ProductionNormsApiService } from 'services/production-norms-api-service'
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian.js'
+import { Typography } from '../../../node_modules/@mui/material/index.js'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+export default function NaphthaHMDComponent() {
+  const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+
+  const SCREEN_NAME = screenTitle?.title
+  const AOP_YEAR = year?.selectedYear
+  const thisYear = AOP_YEAR
+  const [rows, setRows] = useState([])
+  const [rows1, setRows1] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [modifiedCells, setModifiedCells] = useState({})
+  const [modifiedCells1, setModifiedCells1] = useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name.toLowerCase()
+  const lowerPlantName = plantObject?.name.toLowerCase()
+
+  const headerMap = generateHeaderNames(AOP_YEAR)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [calculationObject, setCalculationObject] = useState([])
+  const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
+
+  const naphthaColumns = [
+    {
+      field: 'id',
+      title: 'ID',
+      widthT: 50,
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'section',
+      title: 'Section',
+      widthT: 150,
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'name',
+      title: 'Name',
+      editable: false,
+      widthT: 200,
+    },
+    {
+      field: 'min',
+      title: 'Min',
+      type: 'number',
+      editable: true,
+      widthT: 120,
+    },
+    {
+      field: 'max',
+      title: 'Max',
+      editable: true,
+      type: 'number',
+      widthT: 120,
+    },
+
+    {
+      field: 'months',
+      title: 'Month',
+      editable: true,
+      type: 'number',
+      widthT: 120,
+    },
+    {
+      field: 'monthsId',
+      title: 'monthsId',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'minId',
+      title: 'minId',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'maxId',
+      title: 'maxId',
+      editable: false,
+      hidden: true,
+    },
+  ]
+  const limpsColumns = [
+    {
+      field: 'id',
+      title: 'ID',
+      hidden: true,
+      widthT: 50,
+      editable: false,
+    },
+    {
+      field: 'name',
+      title: 'Name',
+      editable: false,
+      widthT: 200,
+      hidden: true,
+    },
+    {
+      field: 'displayName',
+      title: 'DisplayName',
+      editable: false,
+      widthT: 200,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      editable: false,
+      width: 120,
+    },
+    {
+      field: 'jmd',
+      title: 'JMD',
+      editable: true,
+      width: 120,
+      type: 'number',
+    },
+    {
+      field: 'hpn',
+      title: 'HPN',
+      editable: true,
+      width: 120,
+      type: 'number',
+    },
+    {
+      field: 'heavy',
+      title: 'Heavy',
+      editable: true,
+      width: 120,
+      type: 'number',
+    },
+    {
+      field: 'others',
+      title: 'Others',
+      editable: true,
+      width: 120,
+      type: 'number',
+    },
+    {
+      field: 'blend',
+      title: 'Blend',
+      editable: true,
+      width: 120,
+      type: 'number',
+    },
+    {
+      field: 'jmdId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'hpnId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'heavyId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'othersId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'blendId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'blendIp21Id',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'blendIp21',
+      title: 'Blend IP21',
+      editable: false,
+      width: 120,
+      type: 'number',
+    },
+  ]
+
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setLoading(true)
+    try {
+      const res = await ProductionNormsApiService.getNaphthaHMDData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (res?.code === 200) {
+        const mapped = res?.data?.Data?.map((item, index) => ({
+          id: item.id || index,
+          section: item.section,
+          name: item.name,
+          max: item.max,
+          min: item.min,
+          months: item.months,
+          maxId: item.maxId,
+          minId: item.minId,
+          monthsId: item.monthsId,
+          Particulars: item.section,
+        }))
+        setRows(mapped)
+      } else {
+        setRows([])
+      }
+    } catch (err) {
+      console.error('fetchData error', err)
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, yearChanged, plantID])
+
+  useEffect(() => {
+    fetchData()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  const fetchLimsData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setLoading(true)
+    try {
+      const res = await ProductionNormsApiService.getLimsData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      setCalculationObject(res?.data?.aopCalculation)
+      if (res?.code === 200) {
+        const mapped = res?.data?.Data?.map((item, index) => ({
+          id: item.id || index,
+          name: item.name,
+          displayName: item.displayName,
+          uom: item.uom,
+          jmd: item.jmd,
+          hpn: item.hpn,
+          heavy: item.heavy,
+          others: item.others,
+          blend: item.blend,
+          blendIp21: item.blendIp21,
+          jmdId: item.jmdId,
+          hpnId: item.hpnId,
+          heavyId: item.heavyId,
+          othersId: item.othersId,
+          blendId: item.blendId,
+          blendIp21Id: item.blendIp21Id,
+        }))
+        setRows1(mapped)
+      } else {
+        setRows1([])
+      }
+    } catch (err) {
+      console.error('fetchLims Data error', err)
+      setRows1([])
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, yearChanged, plantID])
+
+  useEffect(() => {
+    fetchLimsData()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  const saveChanges = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = Object.values(modifiedCells)
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+
+      const requiredFields = ['remarks']
+
+      //   const validationMessage = validateFields(data, requiredFields)
+      //   if (validationMessage) {
+      //     setSnackbarOpen(true)
+      //     setSnackbarData({
+      //       message: validationMessage,
+      //       severity: 'error',
+      //     })
+      //     setLoading(false)
+      //     return
+      //   }
+
+      const payload = data.map((item) => ({
+        //id: item.id || null,
+        section: item.section,
+        name: item.name,
+        max: item.max,
+        min: item.min,
+        months: item.months,
+        maxId: item.maxId,
+        minId: item.minId,
+        monthsId: item.monthsId,
+      }))
+
+      // 3. Save to API
+      const response = await ProductionNormsApiService.saveNaphthaHMDData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        payload,
+      )
+
+      // 4. Handle API response
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+        fetchLimsData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, fetchLimsData])
+  const saveChangesLimsData = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = Object.values(modifiedCells1)
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+
+      const payload = data.map((item) => ({
+        id: item.id || null,
+        name: item.name,
+        displayName: item.displayName,
+        uom: item.uom,
+        jmd: item.jmd,
+        hpn: item.hpn,
+        heavy: item.heavy,
+        others: item.others,
+        blend: item.blend,
+        blendIp21: item.blendIp21,
+        jmdId: item.jmdId,
+        hpnId: item.hpnId,
+        heavyId: item.heavyId,
+        othersId: item.othersId,
+        blendId: item.blendId,
+        blendIp21Id: item.blendIp21Id,
+      }))
+
+      // 3. Save to API
+      const response = await ProductionNormsApiService.saveLimsData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        payload,
+      )
+
+      // 4. Handle API response
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells1({})
+        fetchLimsData()
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells1, keycloak, PLANT_ID, AOP_YEAR, fetchLimsData, fetchData])
+
+  const handleCalculate = async () => {
+    try {
+      const data = await ProductionNormsApiService.calculateLIMSData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchLimsData()
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+    }
+  }
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      allAction: true,
+      saveBtn: true,
+      showTitleNameBusiness: false,
+      titleName: 'LIMS Data Extraction Settings',
+      adjustedPermissions: true,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${lowerVertName}_${lowerSiteName}_${lowerPlantName}_LIMS Data Extraction Settings`,
+      //addButton: true,
+      //deleteButton: true,
+    },
+    isOldYear,
+  )
+  const adjustedPermissions1 = getAdjustedPermissions(
+    {
+      allAction: true,
+      saveBtn: true,
+      showTitleNameBusiness: false,
+      titleName: 'LIMS Data',
+      adjustedPermissions: true,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${lowerVertName}_${lowerSiteName}_${lowerPlantName}_LIMS Data`,
+      showCalculate: true,
+      showCalculateVisibility:
+        Object.keys(calculationObject || {}).length > 0 ? true : false,
+    },
+    isOldYear,
+  )
+
+  return (
+    <Box>
+      <LoaderBackdrop open={!!loading} />
+      <CustomAccordion defaultExpanded disableGutters>
+        <CustomAccordionSummary
+          aria-controls='meg-grid-content'
+          id='meg-grid-header'
+        >
+          <Typography component='span' className='grid-title'>
+            LIMS Data Extraction Settings
+          </Typography>
+        </CustomAccordionSummary>
+        <CustomAccordionDetails>
+          <Box sx={{ width: '100%', margin: 0 }}>
+            <KendoDataTables
+              columns={naphthaColumns}
+              rows={rows}
+              setRows={setRows}
+              title='LIMS Data Extraction Settings'
+              modifiedCells={modifiedCells}
+              setModifiedCells={setModifiedCells}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={setCurrentRowId}
+              enableSaveAddBtn={enableSaveAddBtn}
+              saveChanges={saveChanges}
+              //handleRemarkCellClick={handleRemarkCellClick}
+              //deleteRowData={deleteRowData}
+              permissions={adjustedPermissions}
+              groupBy='Particulars'
+            />
+          </Box>
+        </CustomAccordionDetails>
+      </CustomAccordion>
+
+      <CustomAccordion defaultExpanded disableGutters>
+        <CustomAccordionSummary
+          aria-controls='meg-grid-content'
+          id='meg-grid-header'
+        >
+          <Typography component='span' className='grid-title'>
+            LIMS Data
+          </Typography>
+        </CustomAccordionSummary>
+        <CustomAccordionDetails>
+          <Box sx={{ width: '100%', margin: 0 }}>
+            <KendoDataTables
+              columns={limpsColumns}
+              rows={rows1}
+              setRows={setRows1}
+              title='LIMS Data'
+              modifiedCells={modifiedCells1}
+              setModifiedCells={setModifiedCells1}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={setCurrentRowId}
+              enableSaveAddBtn={enableSaveAddBtn}
+              saveChanges={saveChangesLimsData}
+              //handleRemarkCellClick={handleRemarkCellClick}
+              permissions={adjustedPermissions1}
+              handleCalculate={handleCalculate}
+            />
+          </Box>
+        </CustomAccordionDetails>
+      </CustomAccordion>
+
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+        onClose={() => setSnackbarOpen(false)}
+      />
+    </Box>
+  )
+}

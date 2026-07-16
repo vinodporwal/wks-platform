@@ -1,0 +1,1192 @@
+import { Box, Tab, Tabs, Backdrop, CircularProgress } from '@mui/material'
+import { useCallback, useEffect, useState, useMemo } from 'react'
+import { useSelector } from 'react-redux'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
+import KendoDataTables from './index'
+import { DataService } from 'services/DataService'
+import { validateFields } from 'utils/validationUtils'
+import { useSession } from 'SessionStoreContext'
+import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { getRoleName } from 'services/role-service'
+import AopTabs from 'components/AopTabs'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ModeSelection from './ModeSelection'
+
+const CrackerConfig = () => {
+  const keycloak = useSession()
+  // const READ_ONLY = getRoleName(keycloak)
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    verticalChange,
+    oldYear,
+    plantID,
+    yearChanged,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
+
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Optimizer_Output_${AOP_YEAR}`
+
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME === 'C2'
+
+  const [modifiedCells, setModifiedCells] = useState({})
+
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const headerMap = useMemo(
+    () => generateHeaderNames(AOP_YEAR),
+    [AOP_YEAR, PLANT_ID],
+  )
+
+  const rawTabsStatic = [
+    'Total Feed',
+    'Total Products',
+    'Miscellaneous Parameters',
+    'Constant',
+    'Yield',
+    'Spyro Matbal',
+    'Other Product',
+    'Spyro output Feed',
+    'Spyro output Product',
+    'Other Spyro output',
+  ]
+  const [tabs, setTabs] = useState(rawTabsStatic)
+  const [availableTabs, setAvailableTabs] = useState([])
+  const [tabIndex, setTabIndex] = useState(0)
+  const [modes, setModes] = useState([])
+
+  const [yieldRows, setYieldRows] = useState([])
+  const [constantsRows, setConstantsRows] = useState([])
+  const [feedTotalRows, setTotalFeedRows] = useState([])
+  const [compositionRows, setCompositionRows] = useState([])
+  const [hydrogenationRows, setHydrogenationRows] = useState([])
+  const [spyroMatbalRows, setSpyroMatbalRows] = useState([])
+  const [otherProductRows, setOtherProductRows] = useState([])
+  const [spyroOutputFeedRows, setSpyroOutputFeedRows] = useState([])
+  const [feedsRows, setFeedsRows] = useState([])
+  const [spyroOutputProductRows, setSpyroOutputProductRows] = useState([])
+  const [otherSpyroOutputRows, setOtherSpyroOutputRows] = useState([])
+  const [optimizing, setOptimizing] = useState([])
+
+  const FORMATE_VALUE = ValueFormatterProduction()
+
+  // const allModes = ['5F', '4F', '4F+D']
+  const [selectMode, setSelectMode] = useState('')
+
+  const currentTabDisplay = useMemo(() => {
+    const idLower = tabs[tabIndex]?.toLowerCase() || ''
+    const info = availableTabs.find((t) => t.id.toLowerCase() === idLower)
+    return info ? info.name : tabs[tabIndex] || 'Feed'
+  }, [tabs, tabIndex, availableTabs])
+
+  const productionColumns = useMemo(() => {
+    const configType =
+      currentTabDisplay === 'Composition'
+        ? SITE_NAME === 'C2'
+          ? 'cracker_composition_c2'
+          : 'cracker_composition'
+        : currentTabDisplay === 'Constant'
+          ? 'cracker_constants'
+          : currentTabDisplay === 'Yield'
+            ? SITE_NAME == 'NMD'
+              ? 'cracker_yield'
+              : SITE_NAME == 'VMD'
+                ? 'cracker_yield_vmd'
+                : 'cracker_yield_dmd'
+            : SITE_NAME === 'C2'
+              ? 'cracker_c2'
+              : 'cracker'
+
+    return getEnhancedAOPColDefs({
+      headerMap,
+      handleRemarkCellClick,
+      configType,
+      FORMATE_VALUE,
+    })
+  }, [headerMap, currentTabDisplay])
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      showModes: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      allAction: false,
+      uploadExcelBtn: false,
+      downloadExcelBtn: false,
+    }
+  }
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      showCalculate: IS_CRACKER_HMD || IS_CRACKER_C2,
+      showCalculateVisibility: true,
+      showModes:
+        lowerVertName === 'cracker' &&
+        !IS_CRACKER_HMD &&
+        !IS_CRACKER_C2 &&
+        (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
+      saveWithRemark: true,
+      saveBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+      allAction: lowerVertName === 'cracker',
+      modes: modes,
+      uploadExcelBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+      downloadExcelBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+      downloadExcelBtnFromUI:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? true : false,
+      ExcelName: `Production_Constarints_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`,
+    },
+    isOldYear,
+  )
+
+  const fetchTabsMatrix = useCallback(async () => {
+    try {
+      const resp = await DataService.getConfigurationTabsMatrix(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        SITE_ID,
+        VERTICAL_ID,
+        'output',
+      )
+      let tabsFromApi = []
+      if (typeof resp.data === 'string') {
+        try {
+          tabsFromApi = JSON.parse(resp.data)
+        } catch (e) {
+          console.error('Failed parsing tabs JSON', e)
+        }
+      } else if (Array.isArray(resp.data)) {
+        tabsFromApi = resp.data
+      }
+      if (Array.isArray(tabsFromApi) && tabsFromApi.length) {
+        setTabs(tabsFromApi)
+      } else {
+        setTabs(rawTabsStatic)
+      }
+    } catch (err) {
+      console.error('Error fetching cracker tabs matrix:', err)
+      setTabs(rawTabsStatic)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID])
+
+  const fetchAvailableTabs = useCallback(async () => {
+    try {
+      const resp = await DataService.getConfigurationAvailableTabs(keycloak)
+      if (
+        resp?.code === 200 &&
+        Array.isArray(resp.data?.configurationTypeList)
+      ) {
+        setAvailableTabs(resp.data.configurationTypeList)
+      } else {
+        setAvailableTabs(
+          rawTabsStatic.map((t) => ({
+            id: t,
+            displayName: t.charAt(0).toUpperCase() + t.slice(1),
+          })),
+        )
+      }
+    } catch (err) {
+      console.error('Error fetching available tabs:', err)
+      setAvailableTabs(
+        rawTabsStatic.map((t) => ({
+          id: t,
+          displayName: t.charAt(0).toUpperCase() + t.slice(1),
+        })),
+      )
+    }
+  }, [keycloak])
+
+  const fetchModes = useCallback(async () => {
+    try {
+      const resp = await OptimizerDataApiService.fetchModes(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        '1',
+      )
+
+      if (resp?.code === 200 && Array.isArray(resp.data)) {
+        setModes(resp.data) // keep full objects
+        setSelectMode(resp.data[0]?.name ?? '') // default select first mode by name
+      } else {
+        setModes([])
+        setSelectMode('')
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
+    fetchModes()
+    fetchTabsMatrix()
+    fetchAvailableTabs()
+    setTabIndex(0)
+  }, [
+    keycloak,
+    fetchTabsMatrix,
+    fetchAvailableTabs,
+    fetchModes,
+    PLANT_ID,
+    AOP_YEAR,
+  ])
+
+  const getRows = useCallback(
+    (tabId) => {
+      switch (tabId) {
+        case 'Total Feed':
+          return compositionRows
+        case 'Total Products':
+          return hydrogenationRows
+        case 'Miscellaneous Parameters':
+          return feedTotalRows
+        case 'Optimizing':
+          return optimizing
+        case 'Constant':
+          return constantsRows
+        case 'Yield':
+          return yieldRows
+        case 'Spyro Matbal':
+          return spyroMatbalRows
+        case 'Other Product':
+          return otherProductRows
+        case 'Spyro output Feed':
+          return spyroOutputFeedRows
+        case 'Spyro output Product':
+          return spyroOutputProductRows
+        case 'Feeds':
+          return feedsRows
+        case 'Other Spyro output':
+          return otherSpyroOutputRows
+        default:
+          return []
+      }
+    },
+    [
+      feedTotalRows,
+      compositionRows,
+      hydrogenationRows,
+      constantsRows,
+      yieldRows,
+      spyroMatbalRows,
+      otherProductRows,
+      spyroOutputFeedRows,
+      spyroOutputProductRows,
+      feedsRows,
+      otherSpyroOutputRows,
+      optimizing,
+    ],
+  )
+
+  const setRowsForTab = useCallback((tabId, data) => {
+    switch (tabId) {
+      case 'Miscellaneous Parameters':
+        setTotalFeedRows(data)
+        break
+      case 'Total Feed':
+        setCompositionRows(data)
+        break
+      case 'Total Products':
+        setHydrogenationRows(data)
+        break
+      case 'Optimizing':
+        setOptimizing(data)
+        break
+      case 'Constant':
+        setConstantsRows(data)
+        break
+      case 'Yield':
+        setYieldRows(data)
+        break
+      case 'Spyro Matbal':
+        setSpyroMatbalRows(data)
+        break
+      case 'Other Product':
+        setOtherProductRows(data)
+        break
+      case 'Spyro output Feed':
+        setSpyroOutputFeedRows(data)
+        break
+      case 'Spyro output Product':
+        setSpyroOutputProductRows(data)
+        break
+      case 'Feeds':
+        setFeedsRows(data)
+        break
+      case 'Other Spyro output':
+        setOtherSpyroOutputRows(data)
+        break
+      default:
+        console.warn('No state for tab:', tabId)
+    }
+  }, [])
+
+  const fetchCrackerRows = useCallback(
+    async (currentTabDisplay, mode) => {
+      if (!currentTabDisplay) return
+      if (!PLANT_ID || !AOP_YEAR) return
+      try {
+        setLoading(true)
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+          mode = currentTabDisplay
+        }
+        const spyroVM = await DataService.getSpyroOutputData(
+          keycloak,
+          mode,
+          currentTabDisplay,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        let transformedData = []
+        if (spyroVM?.data && Array.isArray(spyroVM.data)) {
+          transformedData = spyroVM.data.map((item, index) => ({
+            id: item.NormParameterFKID || `row_${index}`,
+            remarks: item.remarks ?? item.Remarks ?? '',
+            originalRemark: item.remarks ?? item.Remarks ?? '',
+            ParticularsType: item.Type || item.type,
+
+            ...item,
+          }))
+        }
+        setRowsForTab(currentTabDisplay, transformedData)
+      } catch (err) {
+        setSnackbarData({
+          message: `Failed to load ${currentTabDisplay} data. Please try again.`,
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+        setRowsForTab(currentTabDisplay, [])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, setRowsForTab, currentTabDisplay, AOP_YEAR, PLANT_ID],
+  )
+
+  const fetchCrackerRowsYield = useCallback(
+    async (currentTabDisplay, mode) => {
+      if (!currentTabDisplay) return
+      try {
+        setLoading(true)
+        var spyroVMYield1 = []
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+          mode = currentTabDisplay
+        }
+        if (currentTabDisplay == 'Yield') {
+          if (SITE_NAME == 'NMD') {
+            spyroVMYield1 = await DataService.getSpyroOutputDataYield(
+              keycloak,
+              mode,
+              currentTabDisplay,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          } else if (SITE_NAME == 'VMD') {
+            var data = await DataService.getSpyroOutputDataYieldVMD(
+              keycloak,
+              mode,
+              currentTabDisplay,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+
+            // Convert month strings to numbers so formatting can be applied
+            const months = [
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec',
+            ]
+
+            spyroVMYield1 = data?.data?.data?.map((item) => {
+              const newItem = { ...item }
+              months.forEach((month) => {
+                // Check if the property exists and convert it
+                if (newItem[month] !== undefined) {
+                  newItem[month] = parseFloat(newItem[month]) || 0
+                }
+              })
+              return newItem
+            })
+          } else {
+            spyroVMYield1 = await DataService.getSpyroOutputDataYieldNONNMD(
+              keycloak,
+              mode,
+              currentTabDisplay,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          }
+        }
+
+        let data1 = SITE_NAME == 'VMD' ? spyroVMYield1 : spyroVMYield1.data
+        let transformedData1 = (data1 || []).map((item, index) => ({
+          ...item,
+          id: index,
+          isEditable: SITE_NAME == 'VMD' ? false : index !== data1?.length - 1,
+        }))
+
+        if (transformedData1.length > 0 && currentTabDisplay === 'Yield') {
+          var numericColumns = []
+
+          if (SITE_NAME != 'NMD') {
+            numericColumns = [
+              'fiveFC2C',
+              'fiveFPropane',
+              'fiveFEthane',
+              'fiveFDSC2C',
+              'fiveFDSPropane',
+              'fiveFDSEthane',
+              'sixFSFDC2C',
+              'sixFSFDPropane',
+              'sixFSFDEthane',
+              'sixFBFDC2C',
+              'sixFBFDPropane',
+              'sixFBFDEthane',
+              'fourFC2C',
+              'fourFPropane',
+              'fourFEthane',
+              'sevenFC2C3',
+              'sevenFPropane',
+              'sevenFEthane',
+              'threeFC2C3',
+              'threeFEthane',
+              'threeFPropane',
+              'fourF2SPropane',
+              'fourF2SEthane',
+              'fourF2SC2C3',
+            ]
+          } else {
+            numericColumns = [
+              'fourFC2C3',
+              'fourFEthane',
+              'fourFPropane',
+              'fourFDC2C3',
+              'fourFDEthane',
+              'fourFDPropane',
+              'fiveFC2C3',
+              'fiveFEthane',
+              'fiveFPropane',
+            ]
+          }
+
+          const totalRow = {
+            id: 'total_row',
+            particulars: 'Total',
+            isTotal: true,
+            editable: false,
+          }
+
+          // Calculate totals for each numeric column
+          numericColumns.forEach((column) => {
+            totalRow[column] = transformedData1
+              .reduce((sum, row) => {
+                const value = parseFloat(row[column]) || 0
+                return sum + value
+              }, 0)
+              .toFixed(2) // Round to 2 decimal places
+          })
+
+          // Add total row at the end
+          // transformedData1.push(totalRow)
+        }
+        setRowsForTab(currentTabDisplay, transformedData1)
+      } catch (err) {
+        setSnackbarData({
+          message: `Failed to load ${currentTabDisplay} data. Please try again.`,
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+        setRowsForTab(currentTabDisplay, [])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, setRowsForTab, currentTabDisplay],
+  )
+
+  useEffect(() => {
+    if (keycloak && PLANT_ID && currentTabDisplay) {
+      if (currentTabDisplay === 'Yield') {
+        fetchCrackerRowsYield(currentTabDisplay, selectMode)
+      } else {
+        fetchCrackerRows(currentTabDisplay, selectMode)
+      }
+    } else {
+      console.warn('Missing data for fetchCrackerRows:', {
+        hasKeycloak: !!keycloak,
+        hasPlantId: !!PLANT_ID,
+        currentTabDisplay,
+      })
+    }
+  }, [
+    tabIndex,
+    selectMode,
+    plantID,
+    tabs,
+    fetchCrackerRows,
+    fetchCrackerRowsYield,
+    keycloak,
+    currentTabDisplay,
+    yearChanged,
+  ])
+
+  const saveChanges = useCallback(async () => {
+    if (currentTabDisplay === 'Yield') {
+      await saveSpyroDataYield(yieldRows)
+      return
+    }
+    try {
+      if (Object.keys(modifiedCells).length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+        setLoading(false)
+        return
+      }
+      const rawData = Object.values(modifiedCells)
+      const data = rawData.filter((row) => row.inEdit)
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+        setLoading(false)
+        return
+      }
+
+      const validationMessage = validateFields(data, ['particulars', 'remarks'])
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: validationMessage, severity: 'error' })
+        setLoading(false)
+        return
+      }
+      await saveSpyroData(data)
+    } catch (error) {
+      console.error('Error saving changes:', error)
+    }
+  }, [modifiedCells])
+
+  const saveSpyroData = async (newRows) => {
+    setLoading(true)
+
+    try {
+      const SpyroInputData = newRows.map((row) => ({
+        normParameterFKID: row.normParameterFKID,
+        remarks: row.remarks,
+        Remarks: row.remarks,
+        jan: row.jan || null,
+        feb: row.feb || null,
+        mar: row.mar || null,
+        apr: row.apr || null,
+        may: row.may || null,
+        jun: row.jun || null,
+        jul: row.jul || null,
+        aug: row.aug || null,
+        sep: row.sep || null,
+        oct: row.oct || null,
+        nov: row.nov || null,
+        dec: row.dec || null,
+      }))
+      const response = await DataService.saveSpyroOutput(
+        SpyroInputData,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        // Reload current tab
+        const tabId = tabs[tabIndex]
+        if (tabId) {
+          if (currentTabDisplay === 'Yield') {
+            fetchCrackerRowsYield(currentTabDisplay, selectMode)
+          } else {
+            fetchCrackerRows(currentTabDisplay, selectMode)
+          }
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Error saving data!',
+          severity: 'error',
+        })
+      }
+      return response
+    } catch (error) {
+      console.error('Error saving data!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveSpyroDataYield = async (newRows) => {
+    setLoading(true)
+
+    try {
+      const dataToSave = newRows.filter((row) => !row.isTotal)
+
+      var SpyroOutputYield = []
+      if (SITE_NAME === 'NMD') {
+        SpyroOutputYield = dataToSave.map((row) => ({
+          particulars: row.particulars,
+          fourFPropane: row.fourFPropane || 0,
+          fiveFC2C3: row.fiveFC2C3 || 0,
+          fiveFEthane: row.fiveFEthane || 0,
+          fiveFPropane: row.fiveFPropane || 0,
+          fourFC2C3: row.fourFC2C3 || 0,
+          fourFDC2C3: row.fourFDC2C3 || 0,
+          fourFDEthane: row.fourFDEthane || 0,
+          fourFDPropane: row.fourFDPropane || 0,
+          fourFEthane: row.fourFEthane || 0,
+        }))
+      } else if (SITE_NAME === 'VMD') {
+        SpyroOutputYield = dataToSave.map((row) => ({
+          apr: row.Apr || '0',
+          may: row.May || 0,
+          jun: row.Jun || 0,
+          jul: row.Jul || 0,
+          aug: row.Aug || 0,
+          sep: row.Sep || 0,
+          oct: row.Oct || 0,
+          nov: row.Nov || 0,
+          dec: row.Dec || 0,
+          jan: row.Jan || 0,
+          feb: row.Feb || 0,
+          mar: row.Mar || 0,
+          UOM: row.UOM || '',
+          auditYear: row.AuditYear,
+          normParameterFKId: row.NormParameter_FK_Id,
+          remarks: row.Remarks || '',
+          id: row.id || null,
+        }))
+      } else {
+        SpyroOutputYield = dataToSave.map((row) => ({
+          particulars: row.particulars,
+          fiveFC2C3: row.fiveFC2C3 || 0,
+          fiveFPropane: row.fiveFPropane || 0,
+          fiveFEthane: row.fiveFEthane || 0,
+
+          fiveFDSC2C3: row.fiveFDSC2C3 || 0,
+          fiveFDSPropane: row.fiveFDSPropane || 0,
+          fiveFDSEthane: row.fiveFDSEthane || 0,
+
+          sixFSFDC2C3: row.sixFSFDC2C3 || 0,
+          sixFSFDPropane: row.sixFSFDPropane || 0,
+          sixFSFDEthane: row.sixFSFDEthane || 0,
+
+          sixFBFDC2C3: row.sixFBFDC2C3 || 0,
+          sixFBFDPropane: row.sixFBFDPropane || 0,
+          sixFBFDEthane: row.sixFBFDEthane || 0,
+
+          fourFC2C3: row.fourFC2C3 || 0,
+          fourFPropane: row.fourFPropane || 0,
+          fourFEthane: row.fourFEthane || 0,
+
+          sevenFC2C3: row.sevenFC2C3 || 0,
+          sevenFPropane: row.sevenFPropane || 0,
+          sevenFEthane: row.sevenFEthane || 0,
+
+          threeFC2C3: row.threeFC2C3 || 0,
+          threeFPropane: row.threeFPropane || 0,
+          threeFEthane: row.threeFEthane || 0,
+
+          fourF2SC2C3: row.fourF2SC2C3 || 0,
+          fourF2SPropane: row.fourF2SPropane || 0,
+          fourF2SEthane: row.fourF2SEthane || 0,
+        }))
+      }
+
+      var response = []
+
+      if (SITE_NAME == 'NMD') {
+        response = await DataService.saveSpyroOutputYield(
+          SpyroOutputYield,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (SITE_NAME == 'VMD') {
+        response = await DataService.saveSpyroOutputYieldVMD(
+          SpyroOutputYield,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.saveSpyroOutputYieldNONNMD(
+          SpyroOutputYield,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        // Reload current tab
+        const tabId = tabs[tabIndex]
+        if (tabId) {
+          if (currentTabDisplay === 'Yield') {
+            fetchCrackerRowsYield(currentTabDisplay, selectMode)
+          } else {
+            fetchCrackerRows(currentTabDisplay, selectMode)
+          }
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Error saving data!',
+          severity: 'error',
+        })
+      }
+      return response
+    } catch (error) {
+      console.error('Error saving data!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveSpyroOutputExcelFile = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let mode = selectMode || '' // Optional
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+        mode = currentTabDisplay
+      }
+      let response
+
+      if (currentTabDisplay === 'Yield') {
+        if (SITE_NAME == 'NMD') {
+          response = await DataService.importSpyroOutputExcelYield(
+            rawFile,
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        } else if (SITE_NAME == 'VMD') {
+          response = await DataService.importSpyroOutputExcelYieldVMD(
+            rawFile,
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        } else {
+          response = await DataService.importSpyroOutputExcelYieldNONNMD(
+            rawFile,
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        }
+      } else {
+        response = await DataService.importSpyroOutputExcel(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        if (currentTabDisplay === 'Yield') {
+          fetchCrackerRowsYield(currentTabDisplay, selectMode)
+        } else {
+          fetchCrackerRows(currentTabDisplay, selectMode)
+        }
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Optimizer Output.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        if (currentTabDisplay === 'Yield') {
+          fetchCrackerRowsYield(currentTabDisplay, selectMode)
+        } else {
+          fetchCrackerRows(currentTabDisplay, selectMode)
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Optimizer Output Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    saveSpyroOutputExcelFile(rawFile)
+  }
+
+  const handleCalculate = useCallback(async () => {
+    setLoading(true)
+    try {
+      let mode = selectMode || currentTabDisplay || 'Spyro Matbal'
+      const type = currentTabDisplay || 'Spyro Matbal'
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+        mode = currentTabDisplay
+      }
+      const response = await DataService.calculateSpyroOutputData(
+        keycloak,
+        mode,
+        type,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarData({
+          message: 'Data calculated successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+        fetchCrackerRows(currentTabDisplay, selectMode)
+      } else {
+        setSnackbarData({
+          message: response?.message || 'Error calculating data!',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+      }
+    } catch (error) {
+      console.error('Error calculating spyro output data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate data!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [
+    keycloak,
+    selectMode,
+    currentTabDisplay,
+    PLANT_ID,
+    AOP_YEAR,
+    IS_CRACKER_HMD,
+    IS_CRACKER_C2,
+  ])
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    let mode = selectMode // Can be empty  that's fine
+    if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+      mode = currentTabDisplay
+    }
+    try {
+      let response
+      if (currentTabDisplay === 'Yield') {
+        if (SITE_NAME == 'NMD') {
+          const YieldExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_Yield_${AOP_YEAR}`
+          response = await DataService.exportSpyroOutputExcelYield(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            YieldExcelName,
+          )
+        } else if (SITE_NAME == 'VMD') {
+          const YieldExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_Yield_${AOP_YEAR}`
+          response = await DataService.exportSpyroOutputExcelYieldVMD(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            YieldExcelName,
+          )
+        } else {
+          const YieldExcelName1 = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_Yield_${AOP_YEAR}`
+          response = await DataService.exportSpyroOutputExcelYieldNONNMD(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            YieldExcelName1,
+          )
+        }
+      } else {
+        const ExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_${AOP_YEAR}`
+
+        response = await DataService.exportSpyroOutputExcel(
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+          ExcelName,
+        )
+      }
+
+      if (response?.code === 200) {
+        // setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: 'Excel download completed successfully!',
+        //   severity: 'success',
+        // })
+      } else {
+        // setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: 'Failed to download Excel1.',
+        //   severity: 'error',
+        // })
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const resolvedTabs = tabs.map((tabId) => {
+    const info = availableTabs.find(
+      (t) => t.id.toLowerCase() === tabId.toLowerCase(),
+    )
+    return info?.displayName || tabId
+  })
+  const adjustedPermissionsReadyOnly = getAdjustedPermissions(
+    {
+      hideRemarkForNonEditableRows: true,
+      NON_EDITABLE_GRID: true,
+    },
+    isOldYear,
+  )
+
+  return (
+    <Box>
+      <LoaderBackdrop open={!!loading} />
+      <Box sx={{ overflowX: 'auto', width: '100%' }}>
+        <AopTabs
+          tabIndex={tabIndex}
+          setTabIndex={(newIndex) => {
+            if (newIndex >= 0 && newIndex < resolvedTabs.length) {
+              setTabIndex(newIndex)
+            }
+          }}
+          tabs={resolvedTabs}
+        />
+      </Box>
+      {IS_CRACKER_HMD && currentTabDisplay !== 'Other Spyro output' && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
+
+      <Box>
+        {(() => {
+          const rows = getRows(currentTabDisplay)
+          const setRowsForCurrent = useCallback(
+            (newRows) => setRowsForTab(currentTabDisplay, newRows),
+            [currentTabDisplay],
+          )
+          switch (currentTabDisplay) {
+            case 'Total Feed':
+            case 'Total Products':
+            case 'Miscellaneous Parameters':
+            case 'Optimizing':
+            case 'Constant':
+            case 'Other Product':
+            case 'Yield':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      currentTabDisplay === 'Yield'
+                        ? fetchCrackerRowsYield(currentTabDisplay, selectMode)
+                        : fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
+                </Box>
+              )
+            case 'Spyro Matbal':
+            case 'Other Spyro output':
+            case 'Spyro output Feed':
+            case 'Spyro output Product':
+            case 'Feeds':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker_composition'
+                    groupBy='ParticularsType'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    handleCalculate={handleCalculate}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
+                </Box>
+              )
+            default:
+              return null
+          }
+        })()}
+      </Box>
+    </Box>
+  )
+}
+
+export default CrackerConfig

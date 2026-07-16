@@ -1,0 +1,291 @@
+[
+  {
+    "field": "particulars",
+    "title": "Particulars",
+    "editable": false,
+    "locked": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "fiveFC2C3",
+    "title": "5F-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "fiveFPropane",
+    "title": "5F-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "fiveFEthane",
+    "title": "5F-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "fiveFDSC2C3",
+    "title": "5F D/S-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "fiveFDSPropane",
+    "title": "5F D/S-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140
+  },
+  {
+    "field": "fiveFDSEthane",
+    "title": "5F D/S-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "fourFC2C3",
+    "title": "4F-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "fourFPropane",
+    "title": "4F-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "fourFEthane",
+    "title": "4F-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "sevenFC2C3",
+    "title": "7F-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "sevenFPropane",
+    "title": "7F-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "sevenFEthane",
+    "title": "7F-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "sixFSFDC2C3",
+    "title": "6F+SFD-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "sixFSFDPropane",
+    "title": "6F+SFD-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "sixFSFDEthane",
+    "title": "6F+SFD-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "sixFBFDC2C3",
+    "title": "6F+BFD-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "sixFBFDPropane",
+    "title": "6F+BFD-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "sixFBFDEthane",
+    "title": "6F+BFD-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "threeFC2C3",
+    "title": "3F-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "threeFPropane",
+    "title": "3F-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "threeFEthane",
+    "title": "3F-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "fourF2SC2C3",
+    "title": "4F+3SFD 1BFD-C2C3",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "fourF2SPropane",
+    "title": "4F+3SFD 1BFD-Propane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+  {
+    "field": "fourF2SEthane",
+    "title": "4F+3SFD 1BFD-Ethane",
+    "type": "number",
+    "format": "{0:#.##}",
+    "editable": true,
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
+  },
+
+  {
+    "field": "NormParameterFKID",
+    "title": "NormParameterFKID",
+    "hidden": true,
+    "minWidth": 140,
+    "isVisible": false
+  }
+]

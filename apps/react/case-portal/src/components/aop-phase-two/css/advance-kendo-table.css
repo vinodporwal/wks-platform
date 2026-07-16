@@ -1,0 +1,54 @@
+/* Keep specific cells white even in disabled rows (for alwaysEditable columns) */
+.custom-disabled-row td[data-always-editable='true'] {
+  background-color: #ffffff !important;
+}
+
+/* ==================== Button Styles ==================== */
+
+/* Green Submit Button */
+.btn-submit {
+  background-color: #28a745;
+  color: #ffffff;
+  border-radius: 4px;
+  padding: 6px 16px;
+  text-transform: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  min-width: 80px;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+
+.btn-submit:hover {
+  background-color: #218838;
+  box-shadow: none;
+}
+
+.btn-submit:disabled {
+  background-color: #94d3a2;
+  color: #ffffff;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   REMOVE KENDO DEFAULT INLINE-START BORDER
+   ON MULTI-ROW / NESTED HEADER CELLS
+   ========================================== */
+
+/* Kendo theme default adds border-inline-start-width: 1px
+   to header cells in rows with siblings (nested/spanned headers).
+   Override here to remove the unwanted left border line. */
+.k-grid-header-wrap .k-table-row:not(:only-child) .k-table-th,
+.k-grid-header-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n + 2),
+.k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-th,
+.k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n + 2) {
+  border-inline-start-width: 0 !important;
+}
+
+/* Kendo also adds border-inline-start-width: 1px on the first
+   header cell (.k-first) — remove it as well */
+.k-grid .k-grid-header .k-table-th.k-first {
+  border-inline-start-width: 0 !important;
+}

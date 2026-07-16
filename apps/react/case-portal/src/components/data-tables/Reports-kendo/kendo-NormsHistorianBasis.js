@@ -1,0 +1,282 @@
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { Box } from '@mui/material'
+import MuiAccordion from '@mui/material/Accordion'
+import MuiAccordionDetails from '@mui/material/AccordionDetails'
+import MuiAccordionSummary from '@mui/material/AccordionSummary'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { styled } from '@mui/material/styles'
+import Typography from '@mui/material/Typography'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { useEffect, useState, useRef } from 'react'
+import { useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
+import {
+  ExcelExport,
+  ExcelExportColumn,
+} from '@progress/kendo-react-excel-export'
+
+import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
+import { Button } from '../../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
+const CustomAccordion = styled((props) => (
+  <MuiAccordion disableGutters elevation={0} square {...props} />
+))(() => ({
+  position: 'unset',
+  border: 'none',
+  boxShadow: 'none',
+  margin: '0px',
+  '&:before': {
+    display: 'none',
+  },
+}))
+
+const CustomAccordionSummary = styled((props) => (
+  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
+))(() => ({
+  backgroundColor: '#fff',
+  padding: '0px 12px',
+  minHeight: '40px',
+  '& .MuiAccordionSummary-content': {
+    margin: '8px 0',
+  },
+}))
+
+const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
+  padding: '0px 0px 12px',
+  backgroundColor: '#F2F3F8',
+}))
+
+const NormsHistorianBasis = () => {
+  const keycloak = useSession()
+
+  const [rowsHistorianValues, setHistorianValues] = useState([])
+  const [rowsMcuAndNormGrid, setMcuAndNormGrid] = useState([])
+  const [rowsProductionVolumeData, setProductionVolumeData] = useState([])
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    sitePlantChange,
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+
+  const [loading, setLoading] = useState(false)
+  function parseDDMMYYYY(dateStr) {
+    if (!dateStr) return null
+    const [day, month, year] = dateStr.split('-')
+    return new Date(`${year}-${month}-${day}`) // YYYY-MM-DD (ISO format)
+  }
+
+  const fetchData = async (reportType, setState) => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      setLoading(true)
+      var data = []
+      data = await DataService.getNormsHistorianBasis(
+        keycloak,
+        reportType,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (data?.code === 200) {
+        const rowsWithId = data?.data?.normHistoricBasisData?.map(
+          (item, index) => ({
+            ...item,
+            id: index,
+            isEditable: false,
+            dateTime: item?.dateTime ? new Date(item.dateTime) : null,
+          }),
+        )
+        setLoading(false)
+        setState(rowsWithId)
+      } else {
+        console.error(`Error fetching ${reportType} data`)
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error(`Error fetching ${reportType} data:`, error)
+      setLoading(false)
+    }
+  }
+
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
+  const colsHistorianValues = getKendoNormsHistorianColumns({
+    headerMap,
+    type: 'HistorianValues',
+  })
+
+  const colsMcuAndNormGrid = getKendoNormsHistorianColumns({
+    headerMap,
+    type: 'McuAndNormGrid',
+  })
+
+  const colsProductionVolumeData = getKendoNormsHistorianColumns({
+    headerMap,
+    type: 'ProductionVolumeData',
+  })
+
+  useEffect(() => {
+    fetchData('HistorianValues', setHistorianValues)
+    fetchData('McuAndNormGrid', setMcuAndNormGrid)
+    fetchData('ProductionVolumeData', setProductionVolumeData)
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
+
+  const exportRef1 = useRef(null)
+  const exportRef2 = useRef(null)
+  const exportRef3 = useRef(null)
+
+  const exportAllGrids = () => {
+    const options1 = exportRef1.current.workbookOptions()
+    const options2 = exportRef2.current.workbookOptions()
+    const options3 = exportRef3.current.workbookOptions()
+
+    options1.sheets[1] = options2.sheets[0]
+    options1.sheets[2] = options3.sheets[0]
+
+    options1.sheets[0].title = 'Production Volume'
+    options1.sheets[1].title = 'MCU & Norm'
+    options1.sheets[2].title = 'Current Values'
+
+    exportRef1.current.save(options1)
+  }
+
+  const currentDateTime = new Date()
+    .toISOString()
+    .replace(/T/, ' ')
+    .replace(/:/g, '-')
+    .split('.')[0]
+  const fileName = `Norms Historian Basis ${currentDateTime}.xlsx`
+
+  return (
+    <div>
+      <LoaderBackdrop open={!!loading} />
+
+      {/* Export hidden ExcelExport instances */}
+      <div style={{ display: 'none' }}>
+        <ExcelExport
+          data={rowsProductionVolumeData}
+          ref={exportRef1}
+          fileName={fileName}
+        >
+          {colsProductionVolumeData.map((col) => (
+            <ExcelExportColumn
+              key={col.field}
+              field={col.field}
+              title={col.title}
+            />
+          ))}
+        </ExcelExport>
+
+        <ExcelExport data={rowsMcuAndNormGrid} ref={exportRef2}>
+          {colsMcuAndNormGrid.map((col) => (
+            <ExcelExportColumn
+              key={col.field}
+              field={col.field}
+              title={col.title}
+            />
+          ))}
+        </ExcelExport>
+
+        <ExcelExport data={rowsHistorianValues} ref={exportRef3}>
+          {colsHistorianValues.map((col) => (
+            <ExcelExportColumn
+              key={col.field}
+              field={col.field}
+              title={col.title}
+            />
+          ))}
+        </ExcelExport>
+      </div>
+
+      <Box display='flex' justifyContent='flex-end' mb='2px'>
+        <Button
+          variant='contained'
+          onClick={exportAllGrids}
+          className='btn-export'
+          startIcon={<DownloadIcon fontSize='small' />}
+        >
+          Export
+        </Button>
+      </Box>
+
+      <Box display='flex' flexDirection='column' gap={2}>
+        {/* Accordion 1 */}
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary>
+            <Typography className='grid-title'>Production Target</Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%' }}>
+              <KendoDataGrid
+                rows={rowsProductionVolumeData}
+                columns={colsProductionVolumeData}
+              />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+
+        {/* Accordion 2 */}
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary>
+            <Typography className='grid-title'>MCU & Norm</Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%' }}>
+              <KendoDataGrid
+                rows={rowsMcuAndNormGrid}
+                columns={colsMcuAndNormGrid}
+              />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+
+        {/* Accordion 3 */}
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary>
+            <Typography className='grid-title'>Current Values</Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%' }}>
+              <KendoDataGrid
+                rows={rowsHistorianValues}
+                columns={colsHistorianValues}
+              />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      </Box>
+    </div>
+  )
+}
+
+export default NormsHistorianBasis

@@ -16,6 +16,7 @@ const DashboardDefault = () => {
         <DashboardCard
           title={t('pages.dashboard.cards.wipcases.label')}
           icon={<IconArchive />}
+          // to='/'
           to='/case-list/wip-cases'
         />
       </Grid>
@@ -23,6 +24,7 @@ const DashboardDefault = () => {
         <DashboardCard
           title={t('pages.dashboard.cards.caselist.label')}
           icon={<IconSquareAsterisk />}
+          // to='/'
           to='/case-list/cases'
         />
       </Grid>
@@ -30,6 +32,7 @@ const DashboardDefault = () => {
         <DashboardCard
           title={t('pages.dashboard.cards.tasklist.label')}
           icon={<IconList />}
+          // to='/'
           to='/task-list'
         />
       </Grid>

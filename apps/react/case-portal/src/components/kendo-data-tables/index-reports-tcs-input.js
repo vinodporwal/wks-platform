@@ -1,0 +1,874 @@
+import '@progress/kendo-font-icons/dist/index.css'
+import {
+  Grid,
+  GridColumn,
+  isColumnMenuFilterActive,
+  isColumnMenuSortActive,
+} from '@progress/kendo-react-grid'
+import '@progress/kendo-theme-default/dist/all.css'
+import { ColumnMenu } from 'components/@extended/columnMenu'
+import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
+import Notification from 'components/Utilities/Notification'
+import { useCallback, useState } from 'react'
+import {
+  Backdrop,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField,
+  Typography,
+} from '../../../node_modules/@mui/material/index'
+import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
+
+import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
+import '../../kendo-data-grid.css'
+// import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
+// import FullValueEditor from './Utilities-Kendo/FullValueEditor'
+// import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
+import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
+import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
+import {
+  DurationDisplayWithTooltipCell,
+  DurationEditor,
+} from './Utilities-Kendo/numericViewCells'
+import {
+  recalcDuration,
+  recalcEndDate,
+} from './Utilities-Kendo/durationHelpers'
+import DateOnlyPicker from './Utilities-Kendo/DatePicker'
+import { RemarkCell } from './Utilities-Kendo/RemarkCell'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+export const particulars = [
+  'normParameterId',
+  'normParametersFKId',
+  'NormParameterFKId',
+  'materialFkId',
+  'normParameterFKId',
+]
+export const hiddenFields = [
+  'maintenanceId',
+  'id',
+  'plantFkId',
+  'aopCaseId',
+  'aopType',
+  'aopYear',
+  'avgTph',
+  'NormParameterMonthlyTransactionId',
+  'aopStatus',
+  'idFromApi',
+  'isEditable',
+  'period',
+]
+export const dateFields = [
+  'maintStartDateTime',
+  'maintEndDateTime',
+  'endDateTA',
+  'startDateTA',
+  'endDateSD',
+  'startDateSD',
+  'endDateIBR',
+  'startDateIBR',
+  'toDate',
+  'fromDate',
+  'tentativeMonth',
+  'ibrDueDate',
+  'shutdownDate',
+  'startupDate',
+]
+export const monthMap = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+}
+const KendoDataTablesReportsTcs = ({
+  allRedCell = [],
+  modifiedCells = [],
+  title = '',
+  rows = [],
+  setRows,
+  columns,
+  loading = false,
+  permissions = {},
+  setSnackbarOpen = () => {},
+  snackbarData = { message: '', severity: 'info' },
+  snackbarOpen = false,
+  setRemarkDialogOpen = () => {},
+  currentRemark = '',
+  setCurrentRemark = () => {},
+  currentRowId = null,
+  setModifiedCells = () => {},
+  remarkDialogOpen = false,
+  saveChanges = () => {},
+  fetchData = () => {},
+  deleteRowData = () => {},
+  handleCalculate = () => {},
+  handleUnitChange = () => {},
+  handleRemarkCellClick = () => {},
+  handleExport = () => {},
+  // groupBy = null,
+}) => {
+  const [filter, setFilter] = useState({ logic: 'and', filters: [] })
+  const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+  const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const [paramsForDelete, setParamsForDelete] = useState([])
+  const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  const [edit, setEdit] = useState({})
+  const [sort, setSort] = useState([])
+  const [issRowEdited, setIsRowEdited] = useState(false)
+
+  // const initialGroup = groupBy
+  //   ? [
+  //       {
+  //         field: groupBy,
+  //         dir: undefined,
+  //       },
+  //     ]
+  //   : []
+
+  const handleEditChange = useCallback((e) => {
+    setEdit(e.edit)
+    // }
+  }, [])
+
+  const handleRowClick = (e) => {
+    if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
+      setEdit({})
+      return
+    }
+
+    setRows(
+      rows.map((r) => ({
+        ...r,
+        inEdit: r.id === e.dataItem.id,
+      })),
+    )
+  }
+  const itemChange = useCallback(
+    (e) => {
+      setIsRowEdited(true)
+
+      const { dataItem, field, value } = e
+      const itemId = dataItem.id
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== itemId) return r
+          const updated = { ...r, [field]: value }
+
+          if (
+            'fromDate' in updated &&
+            'toDate' in updated &&
+            'durationInHrs' in updated
+          ) {
+            if (field === 'fromDate' || field === 'toDate') {
+              updated.durationInHrs = recalcDuration(
+                updated.fromDate,
+                updated.toDate,
+              )
+            } else if (field === 'durationInHrs') {
+              const newEnd = recalcEndDate(
+                updated.fromDate,
+                value, // string like “10.20”
+              )
+              if (newEnd) {
+                updated.toDate = newEnd
+              }
+            }
+          }
+          return updated
+        }),
+      )
+
+      setModifiedCells((prev) => {
+        const base = { ...dataItem, [field]: value }
+        if ('fromDate' in base && 'toDate' in base && 'durationInHrs' in base) {
+          if (field === 'fromDate' || field === 'toDate') {
+            base.durationInHrs = recalcDuration(base.fromDate, base.toDate)
+          } else if (field === 'durationInHrs') {
+            const newEnd = recalcEndDate(base.fromDate, value)
+            if (newEnd) base.toDate = newEnd.toISOString()
+          }
+        }
+        return { ...prev, [itemId]: base }
+      })
+    },
+    [setRows, setModifiedCells],
+  )
+
+  const handleRemarkSave = () => {
+    setRows((prevRows) => {
+      let updatedRow = null
+      let keyToUpdate = ''
+      const updatedRows = prevRows.map((row) => {
+        if (row.id === currentRowId) {
+          const keysToUpdate = [
+            'aopRemarks',
+            'remarks',
+            'remark',
+            'Remark',
+          ].filter((key) => key in row)
+          keyToUpdate = keysToUpdate[0] || 'remark'
+          updatedRow = { ...row, [keyToUpdate]: currentRemark, inEdit: true }
+          return updatedRow
+        }
+        return row
+      })
+      if (updatedRow) {
+        setModifiedCells((prev) => ({
+          ...prev,
+          [updatedRow.id]: updatedRow,
+        }))
+      }
+
+      return updatedRows
+    })
+
+    setRemarkDialogOpen(false)
+  }
+
+  const handleAddRow = () => {
+    if (permissions?.tabIndex) {
+      if (
+        permissions?.tabIndex == 1 ||
+        permissions?.tabIndex == 2 ||
+        permissions?.tabIndex == 3 ||
+        permissions?.tabIndex == 4
+      )
+        return
+    }
+    if (isButtonDisabled) return
+    setIsButtonDisabled(true)
+    const newRowId = rows.length
+      ? Math.max(...rows.map((row) => row.id)) + 1
+      : 1
+    const newRow = {
+      id: newRowId,
+      isNew: true,
+      ...Object.fromEntries(columns.map((col) => [col.field, ''])),
+    }
+
+    // console.log('newRow', newRow)
+
+    setRows((prevRows) => [newRow, ...prevRows])
+
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+
+  const saveConfirmation = async () => {
+    saveChanges()
+    setOpenSaveDialogeBox(false)
+    setEdit({})
+  }
+  const handleDeleteClick = async (params) => {
+    setParamsForDelete(params)
+    setOpenDeleteDialogeBox(true)
+  }
+  const deleteTheRecord = async () => {
+    deleteRowData(paramsForDelete)
+    setOpenDeleteDialogeBox(false)
+  }
+  const ActionsCell = ({ dataItem }) => {
+    return (
+      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+        <SvgIcon
+          onClick={() => handleDeleteClick(dataItem)}
+          icon={trashIcon}
+          themeColor='dark'
+        />
+      </td>
+    )
+  }
+  const saveModalOpen = async () => {
+    setIsButtonDisabled(true)
+    setOpenSaveDialogeBox(true)
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+  const handleCalculateBtn = async () => {
+    setIsButtonDisabled(true)
+    handleCalculate()
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+  const handleRefresh = async () => {
+    try {
+      fetchData()
+    } catch (error) {
+      console.error('Error saving refresh data:', error)
+    }
+  }
+
+  const RemarkCell = (props) => {
+    const { dataItem, field, onRemarkClick, ...tdProps } = props
+    const rawValue = dataItem[field]
+    const displayText = String(rawValue ?? '')
+    return (
+      <td
+        {...tdProps}
+        style={{
+          cursor: 'pointer',
+          color: rawValue ? 'inherit' : 'gray',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          onRemarkClick(dataItem)
+          setEdit?.({})
+        }}
+      >
+        {displayText || 'Add remark'}
+      </td>
+    )
+  }
+
+  const CustomRow = useCallback(
+    ({ dataItem, className, ...rest }) => {
+      const isDisabled =
+        !dataItem.isEditable && dataItem?.isEditable !== undefined
+      const rowClassName = [
+        className,
+        isDisabled ? 'custom-disabled-row' : '',
+        dataItem.isBold ? 'custom-bold-row' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+      return (
+        <tr {...rest?.trProps} className={rowClassName}>
+          {rest.children}
+        </tr>
+      )
+    },
+    [IS_OLD_YEAR],
+  )
+
+  const SimpleHeaderWithTooltip = (props) => {
+    const { ariaSort, ...restThProps } = props.thProps || {}
+
+    return (
+      <th
+        {...restThProps}
+        aria-sort={ariaSort}
+        title={props.title}
+        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+      >
+        <Tooltip
+          position='top'
+          anchorElement='target'
+          parentTitle={true}
+          className='test'
+        >
+          {props.children}
+        </Tooltip>
+      </th>
+    )
+  }
+
+  const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
+
+  const isColumnActive = (field, filter, sort) => {
+    return (
+      isColumnMenuFilterActive(field, filter) ||
+      isColumnMenuSortActive(field, sort)
+    )
+  }
+
+  const renderColumns = (cols, filter, sort) =>
+    cols.map((col, idx) => {
+      const isEditable = col.editable === true
+      const isActive = isColumnActive(col.field, filter, sort)
+
+      const headerColorClass = undefined
+
+      const budgetDividerClass =
+        col.parent === 'Procurment Budget' && idx === 0 ? 'budget-divider' : ''
+
+      if (col.children) {
+        return (
+          <GridColumn
+            key={col.title || idx}
+            title={col.title}
+            // headerClassName={`center-group-header ${isActive ? 'active-column' : ''} ${headerColorClass} ${budgetDividerClass}`}
+            headerClassName='center-group-header'
+          >
+            {renderColumns(col.children, filter, sort)}
+          </GridColumn>
+        )
+      }
+
+      if (['aopRemarks', 'remarks', 'remark', 'Remark'].includes(col.field)) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            width={220}
+            cells={{
+              data: (cellProps) => (
+                <RemarkCell
+                  {...cellProps}
+                  onRemarkClick={handleRemarkCellClick}
+                />
+              ),
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            headerClassName={isActive ? 'active-column' : ''}
+          />
+        )
+      }
+      if (dateFields.includes(col.field)) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            cells={{
+              edit: { date: DateOnlyPicker },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            format='{0:dd-MM-yyyy}'
+            editor='date'
+            editable={col.editable || false}
+            hidden={col.hidden}
+            className={!isEditable ? 'non-editable-cell' : ''}
+          />
+        )
+      }
+      if (col.field.includes('durationInHrs')) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            editable={col.editable || false}
+            columnMenu={ColumnMenuCheckboxFilter}
+            hidden={col.hidden}
+            format={'{0:n2}'}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            cells={{
+              edit: { text: DurationEditor },
+              data: DurationDisplayWithTooltipCell,
+            }}
+          />
+        )
+      }
+      if (col.type === 'numberNonGrey') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            className={'k-number-right'}
+            editable={col?.editable ? true : false}
+            headerClassName={isActive ? 'active-column' : ''}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={col?.widthT}
+          />
+        )
+      }
+
+      if (col.type === 'number') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            className={'k-number-right-disabled'}
+            editable={col?.editable ? true : false}
+            headerClassName={isActive ? 'active-column' : ''}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+          />
+        )
+      }
+
+      if (col.type === 'number1') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            editable={col?.editable ? true : false}
+            className={!col?.editable ? 'k-right-disabled' : undefined}
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+          />
+        )
+      }
+
+      return (
+        <GridColumn
+          key={col.field}
+          field={col.field}
+          title={col.title || col.headerName}
+          editable={col.editable || false}
+          format={col.format || '{0:0.000}'}
+          cells={{
+            edit: { text: NoSpinnerNumericEditor },
+            data: toolTipRenderer,
+            headerCell: SimpleHeaderWithTooltip,
+          }}
+          className={!isEditable ? 'non-editable-cell' : ''}
+          columnMenu={ColumnMenuCheckboxFilter}
+          headerClassName={isActive ? 'active-column' : ''}
+          width={col?.widthT}
+        />
+      )
+    })
+
+  const toolTipRenderer = (props) => {
+    const value = props.dataItem[props.field]
+    const month = monthMap[props.field?.toLowerCase()]
+    const normId = props.dataItem.materialFkId
+
+    const isRedFromAllRedCell = allRedCell.some(
+      (cell) =>
+        cell.month === month &&
+        cell.normParameterFKId?.toLowerCase() === normId?.toLowerCase(),
+    )
+
+    const isRed = isRedFromAllRedCell
+
+    return (
+      <td
+        {...props.tdProps}
+        title={value}
+        style={{
+          color: isRed ? 'orange' : undefined,
+        }}
+      >
+        {props.children}
+      </td>
+    )
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <LoaderBackdrop open={!!loading} />
+
+      {(permissions?.allAction ?? true) && (
+        <Box
+          className='action-box2'
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexGrow: 1, // ? key to take up all left space
+            }}
+          >
+            {permissions?.showTitle && (
+              <Typography
+                component='div'
+                className='grid-title'
+                style={{ whiteSpace: 'pre-line' }}
+              >
+                {title}
+              </Typography>
+            )}
+          </Box>
+
+          {/* RIGHT: Buttons */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {permissions?.addButton && (
+              <Button
+                variant='contained'
+                className='btn-add'
+                onClick={handleAddRow}
+                disabled={false}
+              >
+                Add Item
+              </Button>
+            )}
+            {permissions?.saveBtn && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={saveModalOpen}
+                disabled={isButtonDisabled}
+                // loading={loading}
+                // loadingposition='start'
+                {...(loading ? {} : {})}
+              >
+                Save
+              </Button>
+            )}
+
+            {permissions?.showCalculate && (
+              <Button
+                variant='contained'
+                onClick={handleCalculateBtn}
+                disabled={isButtonDisabled}
+                className='btn-calculate'
+              >
+                Calculate
+              </Button>
+            )}
+            {permissions?.showCalculate && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled}
+                className='btn-export'
+              >
+                Export
+              </Button>
+            )}
+
+            {permissions?.showExport && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled}
+                className='btn-export'
+              >
+                Export
+              </Button>
+            )}
+
+            {permissions?.showImport && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled}
+                className='btn-import'
+              >
+                Import
+              </Button>
+            )}
+
+            {permissions?.showFinalSubmit && (
+              <Button
+                variant='contained'
+                // onClick={handleExport}
+                // disabled={isButtonDisabled}
+                className='btn-save'
+              >
+                Submit
+              </Button>
+            )}
+
+            {/* {permissions?.showWorkFlowBtns && (
+                    <Stack direction='row' spacing={1} alignItems='center'>
+                      {taskId && (
+                        <Button
+                          variant='contained'
+                          onClick={handleRejectClick}
+                          disabled={isButtonDisabled}
+                        >
+                          Accept
+                        </Button>
+                      )}
+                      <Button variant='outlined' onClick={handleAuditOpen}>
+                        Audit Trail
+                      </Button>
+                    </Stack>
+                  )} */}
+          </Box>
+        </Box>
+      )}
+
+      <div className='kendo-data-grid'>
+        <Tooltip openDelay={50} position='auto' anchorElement='target'>
+          <Grid
+            modifiedCells={modifiedCells}
+            data={rows}
+            rows={{ data: CustomRow }}
+            sortable={{
+              mode: 'multiple',
+            }}
+            autoProcessData={true}
+            // {...(initialGroup.length > 0 ? { defaultGroup: initialGroup } : {})}
+            dataItemKey='id'
+            editField='inEdit'
+            editable={{ mode: 'incell' }}
+            onEditChange={handleEditChange}
+            edit={edit}
+            filter={filter}
+            onFilterChange={(e) => setFilter(e.filter)}
+            onItemChange={itemChange}
+            resizable={true}
+            defaultSkip={0}
+            defaultTake={100}
+            contextMenu={true}
+            filterable={columns.some((col) => dateFields.includes(col.field))}
+            size='small'
+            pageable={
+              rows?.length > 100
+                ? {
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
+                : false
+            }
+            onRowClick={handleRowClick}
+          >
+            {renderColumns(
+              columns.filter((col) => !hiddenFields.includes(col.field)),
+              filter,
+              sort,
+            )}
+
+            {permissions?.deleteButton && (
+              <GridColumn
+                key='actions'
+                field='actions'
+                title='Action'
+                width={80}
+                className='k-text-center'
+                filterable={false}
+                editable={false}
+                cells={{
+                  data: ActionsCell,
+                }}
+              />
+            )}
+          </Grid>
+        </Tooltip>
+      </div>
+
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
+
+      <Dialog
+        open={openDeleteDialogeBox}
+        onClose={() => setOpenDeleteDialogeBox(false)}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+      >
+        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+            Are you sure you want to delete this row?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
+          <Button onClick={deleteTheRecord} autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openSaveDialogeBox}
+        onClose={closeSaveDialogeBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+            Are you sure you want to save these changes?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeSaveDialogeBox}>Cancel</Button>
+          <Button onClick={saveConfirmation} autoFocus>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={!!remarkDialogOpen}
+        onClose={() => setRemarkDialogOpen(false)}
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle>Add Remark</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin='dense'
+            id='remark'
+            label='Remark'
+            type='text'
+            fullWidth
+            variant='outlined'
+            sx={{ width: '100%', minWidth: '600px' }}
+            value={currentRemark || ''}
+            // value={remark}
+            onChange={(e) => setCurrentRemark(e.target.value)}
+            multiline
+            rows={8}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
+          {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
+          <Button onClick={handleRemarkSave}>Add</Button>
+        </DialogActions>
+      </Dialog>
+    </div>
+  )
+}
+
+export default KendoDataTablesReportsTcs

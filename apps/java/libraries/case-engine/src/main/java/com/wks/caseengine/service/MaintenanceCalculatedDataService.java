@@ -1,0 +1,37 @@
+package com.wks.caseengine.service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.wks.caseengine.dto.BudgetMaintenanceDto;
+import com.wks.caseengine.dto.MaintenanceDetailsDTO;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+
+public interface MaintenanceCalculatedDataService {
+	
+	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedData(String plantId, String year);
+	public List<MaintenanceDetailsDTO> getMaintenanceDetails(String plantId, String year);
+	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedLineData(String plantId, String year,String lineId);
+	public AOPMessageVM getMaintenanceReportURLs(String plantId, String year,String type);
+	public AOPMessageVM getOtherPlants( String plantId,  String year);
+	public AOPMessageVM getPercentageDeviations( String plantId,  String aopYear);
+	public AOPMessageVM getMaintenanceDataForCracker( String plantId,  String year);
+	public AOPMessageVM getMaintenanceCatChem( String plantId,  String year, String gradeId);
+	public AOPMessageVM updateMaintenanceDataForCracker( String plantId,  String year, List<Map<String, Object>> payloadList);
+	public AOPMessageVM getBudgetMaintenance( String plantId,  String year,String budgetCategory);
+	public AOPMessageVM updateBudgetMaintenance( List<BudgetMaintenanceDto> budgetMaintenanceDtos);
+	public AOPMessageVM updateMaintenance( List<BudgetMaintenanceDto> budgetMaintenanceDtos, String plantId, String year);
+	public AOPMessageVM getMacroData( Double value,  String year,String plantId);
+	byte[] createExcel(String year, String plantId,  boolean isAfterSave,
+			Map<String, List<BudgetMaintenanceDto>> mapForExcel);
+	AOPMessageVM importExcel(String year, String plantFKId, String budgetCategory, MultipartFile file);
+	byte[] maintenanceExport(String year, String plantId, boolean isAfterSave,
+			 List<Map<String, Object>> dynamicData);
+	public byte[] exportMaintenanceDetails(String year, String plantFKId);
+	public AOPMessageVM maintenanceImport(String year,UUID plantId,MultipartFile file);
+	public AOPMessageVM catChemCalculation(UUID plantId, String aopYear);
+	public byte[] exportCatChemAllGrades(String plantId, String year);
+}

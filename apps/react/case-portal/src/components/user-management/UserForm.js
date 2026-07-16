@@ -1,0 +1,1624 @@
+import AddIcon from '@mui/icons-material/Add'
+import DeleteIcon from '@mui/icons-material/Delete'
+import {
+  Backdrop,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Container,
+  Divider,
+  FormControl,
+  Grid,
+  IconButton,
+  ListItemText,
+  MenuItem,
+  Select,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
+import Notification from 'components/Utilities/Notification'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { DataService } from 'services/DataService'
+import i18n from '../../i18n'
+import { Chip } from '../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import styled from '../../../node_modules/@mui/material/styles/styled'
+import CloseIcon from '@mui/icons-material/Close'
+
+const CompactDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '12px',
+    width: '600px',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+  },
+}))
+
+const UserForm = ({ keycloak }) => {
+  const location = useLocation()
+  const data = location?.state?.rows || {}
+  const tabIndex = location?.state?.tabIndex || 0
+  const type = localStorage.getItem('revokeData')
+    ? JSON.parse(localStorage.getItem('revokeData'))?.type
+    : null
+  const userId = localStorage.getItem('revokeData')
+    ? JSON.parse(localStorage.getItem('revokeData'))?.userId
+    : null
+
+  const navigate = useNavigate()
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const aopYear = dataGridStore?.year?.selectedYear || ''
+
+  // Loading & Snackbar state
+  const [loading, setLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  // User Details State
+  const [userDetails, setUserDetails] = useState({
+    username: data.username || '',
+    firstname: data.firstName || '',
+    lastname: data.lastName || '',
+    role: data.role || '',
+    email: data.email || '',
+    userId: data.userId || '',
+  })
+
+  // Plant Site Data and Roles from API
+  const [plantSiteData, setPlantSiteData] = useState([])
+  const [userRoles, setUserRoles] = useState([])
+
+  // Vertical selection state and verticalSites state
+  const [selectedVerticals, setSelectedVerticals] = useState([])
+  const [verticalSites, setVerticalSites] = useState({})
+
+  // Screens fetched per plant (plantId → [titles])
+  const [screensByPlant, setScreensByPlant] = useState({})
+  const [siteOpen, setSiteOpen] = useState({})
+  const [plantOpen, setPlantOpen] = useState({})
+
+  const fetchMenuScreens = async (vId, pId) => {
+    try {
+      const res = await DataService.getScreenbyPlant(keycloak, vId, pId, userId)
+      const permissions = res?.permission ? JSON.parse(res.permission) : []
+      if (!res?.data || !Array.isArray(res.data) || res.data.length === 0) {
+        return []
+      }
+
+      const dynamic = res.data
+
+      const result =
+        dynamic.length > 0 && dynamic[0]?.children?.length > 0 ? dynamic : []
+      const mergeResult = {
+        result,
+        permissions: permissions ? permissions : [],
+      }
+
+      return mergeResult
+    } catch (err) {
+      const mergeResult = {
+        result: [],
+        permissions: [],
+      }
+      return mergeResult
+    } finally {
+      // setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const fetchAllPlantScreens = async () => {
+      const uniquePlantIds = new Set()
+      Object.values(verticalSites).forEach((siteEntries) => {
+        if (Array.isArray(siteEntries)) {
+          siteEntries.forEach((entry) => {
+            if (entry.plants) {
+              entry.plants.forEach((plantEntry) => {
+                if (plantEntry.plantId && plantEntry.plantId.length > 0) {
+                  plantEntry.plantId.forEach((pid) => {
+                    if (pid) uniquePlantIds.add(pid)
+                  })
+                }
+              })
+            }
+          })
+        }
+      })
+
+      const missingPlantIds = Array.from(uniquePlantIds).filter(
+        (pid) => !screensByPlant[pid],
+      )
+      if (missingPlantIds.length === 0) return
+
+      try {
+        if (tabIndex === 1) {
+          setIsLoading(true)
+        }
+        const fetches = missingPlantIds.map(async (pid) => {
+          try {
+            const response = await DataService.getPlantScreenMapping(
+              keycloak,
+              pid,
+              aopYear,
+            )
+            const groups = response?.data || []
+            const screens = extractScreens(groups).map((s) => s.title)
+            return { pid, screens }
+          } catch (err) {
+            console.error('Error fetching screens for plant:', pid, err)
+            return { pid, screens: [] }
+          }
+        })
+
+        const results = await Promise.all(fetches)
+        setScreensByPlant((prev) => {
+          const updated = { ...prev }
+          results.forEach(({ pid, screens }) => {
+            updated[pid] = screens
+          })
+          return updated
+        })
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (keycloak && aopYear && Object.keys(verticalSites).length > 0) {
+      fetchAllPlantScreens()
+    }
+  }, [verticalSites, keycloak, aopYear])
+
+  const getAllScreens = (screens) => {
+    const result = []
+
+    const traverse = (nodes) => {
+      for (const node of nodes) {
+        if (node.type === 'item') {
+          result.push(node.title)
+        } else if (node.children) {
+          traverse(node.children)
+        }
+      }
+    }
+
+    if (Array.isArray(screens)) {
+      traverse(screens)
+    }
+
+    return result
+  }
+
+  const getScreensForVerticals = async () => {
+    setIsLoading(true)
+    try {
+      const plantData = localStorage.getItem('revokeData')
+        ? JSON.parse(localStorage.getItem('revokeData'))?.plantData
+        : null
+      const verticalIds = plantData ? JSON.parse(plantData) : null
+      const fVerticalIds = verticalIds?.map((v) => Object.keys(v)[0])
+      const selVerticals = plantSiteData.filter((pl) =>
+        fVerticalIds.some((vi) => vi === pl.id),
+      )
+
+      setSelectedVerticals(fVerticalIds)
+      let newVerticalSites = {}
+
+      for (const verticalId of fVerticalIds) {
+        const vertical = plantSiteData.find((v) => v.id === verticalId)
+        const vert = verticalIds.find((v) => v[verticalId])
+        const sites = Object.values(vert)[0]
+        const selSites = sites.map((s) => Object.keys(s)[0])
+        if (!vertical) continue
+
+        let siteEntries = []
+
+        for (const site of vertical.sites.filter((s) =>
+          selSites.includes(s.id),
+        )) {
+          let sitePlants = []
+          const plants = sites.find((v) => v[site.id])
+          const selPlants = Object.values(plants)[0]
+
+          for (const plant of site.plants.filter((p) =>
+            selPlants.includes(p.id),
+          )) {
+            const fetchScreen = await fetchMenuScreens(verticalId, plant.id)
+            const screens = fetchScreen.result
+
+            const allScreens = getAllScreens(screens)
+            // console.log('allScreens', allScreens)
+            const permissions = fetchScreen.permissions
+            // let plantScreens = []
+            // console.log('fetchScreen', screens)
+
+            // if (screens?.length > 0 && screens[0].children?.length > 0) {
+            //   plantScreens = screens[0].children[0].children.map((s) => s.title)
+            // }
+            sitePlants.push({
+              plantId: [plant.id],
+              screens: allScreens,
+              permissions,
+            })
+          }
+
+          siteEntries.push({
+            site: [site.id],
+            plants: sitePlants,
+          })
+        }
+
+        newVerticalSites[verticalId] =
+          siteEntries.length > 0
+            ? siteEntries
+            : [
+                {
+                  site: [],
+                  plants: [
+                    {
+                      plantId: [],
+                      screens: [],
+                      permissions: [],
+                    },
+                  ],
+                },
+              ]
+      }
+
+      setVerticalSites(newVerticalSites)
+    } catch (error) {
+      setIsLoading(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (type === 1) {
+      getScreensForVerticals()
+    }
+  }, [type, location.state, plantSiteData])
+
+  // Check if data from navigation is empty. Redirect if so.
+  useEffect(() => {
+    if (Object.keys(data).length === 0) {
+      setLoading(true)
+      setSnackbarData({
+        message: 'No data found. Redirecting to user management.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+      setTimeout(() => setSnackbarOpen(false), 1000)
+      setLoading(false)
+      navigate('/user-management')
+    }
+  }, [data, navigate])
+
+  // Fetch Plant Site Data and User Roles
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const plantResponse = await DataService.getAllSites(keycloak)
+        if (plantResponse) {
+          setPlantSiteData(plantResponse)
+        }
+        const rolesResponse = await DataService.getUserRoles(keycloak)
+        if (rolesResponse) {
+          setUserRoles(rolesResponse.data.map((roleObj) => roleObj.name))
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+    fetchData()
+  }, [keycloak])
+
+  // Helper to create the initial verticalSites structure
+  const getInitialVerticalSites = (plantData) => {
+    return plantData.reduce((acc, vertical) => {
+      acc[vertical.id] = [
+        {
+          site: [],
+          plants: [
+            {
+              plantId: [],
+              screens: [],
+              permissions: [],
+            },
+          ],
+        },
+      ]
+      return acc
+    }, {})
+  }
+
+  // Initialize verticalSites & default vertical selection when plantSiteData loads
+  useEffect(() => {
+    if (plantSiteData.length > 0 && type === 0) {
+      if (selectedVerticals.length === 0) {
+        setSelectedVerticals([plantSiteData[0].id])
+      }
+      setVerticalSites(getInitialVerticalSites(plantSiteData))
+    }
+  }, [plantSiteData, type])
+
+  // Prepopulate vertical selections from navigation data if available
+  // useEffect(() => {
+  //   if (plantSiteData.length > 0 && data && data.verticals) {
+  //     console.log('type', type)
+  //     alert('runnn')
+  //     const newSelectedVerticals = plantSiteData
+  //       .filter(
+  //         (vertical) =>
+  //           data.verticals.includes(vertical.displayName) ||
+  //           data.verticals.includes(vertical.name),
+  //       )
+  //       .map((vertical) => vertical.id)
+
+  //     const newVerticalSites = {}
+  //     newSelectedVerticals.forEach((verticalId) => {
+  //       const vertical = plantSiteData.find((v) => v.id === verticalId)
+  //       if (!vertical) return
+  //       const siteEntries = vertical.sites.reduce((acc, site) => {
+  //         if (
+  //           data.sites &&
+  //           (data.sites.includes(site.displayName) ||
+  //             data.sites.includes(site.name))
+  //         ) {
+  //           const matchedPlant = site.plants.find(
+  //             (plant) =>
+  //               data.plants &&
+  //               (data.plants.includes(plant.displayName) ||
+  //                 data.plants.includes(plant.name)),
+  //           )
+  //           acc.push({
+  //             site: site.id,
+  //             plants: [
+  //               {
+  //                 plantId: matchedPlant ? matchedPlant.id : '',
+  //                 screens: [],
+  //                 permissions: [],
+  //               },
+  //             ],
+  //           })
+  //         }
+  //         return acc
+  //       }, [])
+  //       newVerticalSites[verticalId] =
+  //         siteEntries.length > 0
+  //           ? siteEntries
+  //           : [
+  //               {
+  //                 site: '',
+  //                 plants: [
+  //                   {
+  //                     plantId: '',
+  //                     screens: [],
+  //                     permissions: [],
+  //                   },
+  //                 ],
+  //               },
+  //             ]
+  //     })
+  //     setSelectedVerticals(newSelectedVerticals)
+  //     setVerticalSites(newVerticalSites)
+  //   } else if (plantSiteData.length > 0 && !data.verticals && type === 0) {
+  //     setSelectedVerticals([plantSiteData[0].id])
+  //     setVerticalSites(getInitialVerticalSites(plantSiteData))
+  //   }
+  // }, [plantSiteData, data, type])
+
+  // Helper: Retrieve a vertical by ID
+  const getVerticalById = (id) =>
+    plantSiteData.find((vertical) => vertical.id === id)
+
+  // Extract screens from nested groups
+  function extractScreens(nodes) {
+    const result = []
+
+    function recurse(list) {
+      for (const node of list) {
+        if (node.type === 'item' && node.url) {
+          result.push({
+            id: node.id,
+            title: node.title,
+            url: node.url,
+            icon: node.icon || '',
+          })
+        }
+        if (Array.isArray(node.children)) {
+          recurse(node.children)
+        }
+      }
+    }
+
+    recurse(nodes)
+    return result
+  }
+
+  // Fetch screens for all selected verticals and remove stale ones
+
+  // Default screen options if API hasn’t returned for this vertical yet
+  const screenOptions = [
+    'business-demand',
+    'production-volume-data',
+    'shutdown-plan',
+    'slowdown-plan',
+    'maintenance-details',
+    'production-aop',
+    'configuration',
+    'normal-op-norms',
+    'shutdown-norms',
+    'consumption-aop',
+    'feed-stock',
+  ]
+
+  // Retrieve available screens for a given plant block (per plant)
+  const getAvailableScreens = (verticalId, siteIndex, plantIndex) => {
+    const verticalData = verticalSites[verticalId]
+    // if (!verticalData) return screenOptions
+
+    const siteEntry = verticalData[siteIndex]
+    // if (!siteEntry || !siteEntry.plants) return screenOptions
+
+    const currentPlantBlock = siteEntry.plants[plantIndex]
+    // if (
+    //   !currentPlantBlock ||
+    //   !currentPlantBlock.plantId ||
+    //   currentPlantBlock.plantId.length === 0
+    // )
+    //   return screenOptions
+
+    const plantId = currentPlantBlock.plantId[0]
+    const plantScreens = plantId ? screensByPlant[plantId] || [] : []
+
+    // Prevent duplicates within the same plant block
+    const duplicateScreens = siteEntry.plants
+      .filter(
+        (_, idx) =>
+          idx !== plantIndex &&
+          Array.isArray(_.plantId) &&
+          Array.isArray(currentPlantBlock.plantId) &&
+          _.plantId[0] === currentPlantBlock.plantId[0],
+      )
+      .reduce((acc, block) => acc.concat(block.screens || []), [])
+
+    const currentSelected = currentPlantBlock.screens || []
+
+    const availableBase =
+      plantScreens.length > 0 ? plantScreens : currentSelected
+
+    return availableBase.filter(
+      (screen) =>
+        currentSelected.includes(screen) || !duplicateScreens.includes(screen),
+    )
+  }
+
+  // Retrieve available sites for a vertical, excluding already chosen ones
+  const getAvailableSites = (verticalId, currentIndex) => {
+    const vertical = getVerticalById(verticalId)
+    if (!vertical) return []
+    const selectedSiteIds = verticalSites[verticalId]
+      .filter((_, idx) => idx !== currentIndex)
+      .flatMap((entry) => entry.site || [])
+    return vertical.sites.filter((site) => !selectedSiteIds.includes(site.id))
+  }
+
+  // Retrieve available plants for a given site entry, disallowing duplicates
+  const getAvailablePlants = (vertical, siteEntry, currentPlantIndex) => {
+    if (siteEntry.site && siteEntry.site.length > 0) {
+      const allPlants = vertical.sites
+        .filter((s) => siteEntry.site.includes(s.id))
+        .flatMap((s) => s.plants || [])
+
+      const selectedPlantIds = siteEntry.plants
+        .filter((_, index) => index !== currentPlantIndex)
+        .flatMap((plantEntry) => plantEntry.plantId || [])
+
+      return allPlants.filter((plant) => !selectedPlantIds.includes(plant.id))
+    }
+    return []
+  }
+
+  // Handler for user details
+  const handleUserDetailChange = (e) => {
+    setUserDetails({ ...userDetails, [e.target.name]: e.target.value })
+  }
+
+  // Handler for vertical multi‑select change
+  const handleVerticalChange = (e) => {
+    const { value } = e.target
+    const selected = typeof value === 'string' ? value.split(',') : value
+
+    let newValue
+    if (selected.includes(SELECT_ALL)) {
+      newValue =
+        selectedVerticals.length === plantSiteData.length
+          ? []
+          : plantSiteData.map((v) => v.id)
+    } else {
+      newValue = selected
+    }
+
+    setSelectedVerticals(newValue)
+    if (selected.includes(SELECT_ALL)) {
+      setIsLoading(true)
+    }
+    setVerticalSites((prev) => {
+      const updated = { ...prev }
+
+      // Delete any verticals that are no longer selected
+      Object.keys(updated).forEach((verticalId) => {
+        if (!newValue.includes(verticalId)) {
+          delete updated[verticalId]
+        }
+      })
+
+      newValue.forEach((verticalId) => {
+        if (!updated[verticalId]) {
+          updated[verticalId] = [
+            {
+              site: [],
+              plants: [
+                {
+                  plantId: [],
+                  screens: [],
+                  permissions: [],
+                },
+              ],
+            },
+          ]
+        }
+      })
+      return updated
+    })
+  }
+
+  // Handler for updating a site-level field
+  const handleSiteChange = (verticalId, siteIndex, field, newValue) => {
+    setVerticalSites((prev) => {
+      const updatedSites = [...prev[verticalId]]
+      updatedSites[siteIndex] = {
+        ...updatedSites[siteIndex],
+        [field]: newValue,
+      }
+      return { ...prev, [verticalId]: updatedSites }
+    })
+  }
+
+  // Handler for updating a plant-level field
+  const handlePlantChange = (
+    verticalId,
+    siteIndex,
+    plantIndex,
+    field,
+    newValue,
+  ) => {
+    setVerticalSites((prev) => {
+      const updatedSites = [...prev[verticalId]]
+      const plantEntry = { ...updatedSites[siteIndex].plants[plantIndex] }
+      if (['read', 'write', 'approve'].includes(field)) {
+        plantEntry.permissions = {
+          ...plantEntry.permissions,
+          [field]: newValue,
+        }
+      } else {
+        plantEntry[field] = newValue
+      }
+      updatedSites[siteIndex].plants[plantIndex] = plantEntry
+      return { ...prev, [verticalId]: updatedSites }
+    })
+  }
+
+  // Handlers to add or remove site and plant entries
+  const addSiteEntry = (verticalId, sourceEntry = null, newSiteId = []) => {
+    setVerticalSites((prev) => ({
+      ...prev,
+      [verticalId]: [
+        ...prev[verticalId],
+        sourceEntry
+          ? {
+              ...sourceEntry,
+              site: newSiteId,
+              plants: [
+                {
+                  plantId: [],
+                  screens: [],
+                  permissions: [],
+                },
+              ],
+            }
+          : {
+              site: [],
+              plants: [
+                {
+                  plantId: [],
+                  screens: [],
+                  permissions: [],
+                },
+              ],
+            },
+      ],
+    }))
+  }
+
+  const removeSiteEntry = (verticalId, siteIndex) => {
+    setVerticalSites((prev) => {
+      const updatedSites = [...prev[verticalId]]
+      updatedSites.splice(siteIndex, 1)
+      return { ...prev, [verticalId]: updatedSites }
+    })
+  }
+
+  const addPlantEntry = (
+    verticalId,
+    siteIndex,
+    sourcePlant = null,
+    newPlantId = [],
+  ) => {
+    setVerticalSites((prev) => {
+      const updatedSites = [...prev[verticalId]]
+      const newPlant = sourcePlant
+        ? {
+            ...JSON.parse(JSON.stringify(sourcePlant)),
+            plantId: newPlantId,
+            screens: [],
+            permissions: [],
+          }
+        : {
+            plantId: newPlantId,
+            screens: [],
+            permissions: [],
+          }
+
+      updatedSites[siteIndex] = {
+        ...updatedSites[siteIndex],
+        plants: [...updatedSites[siteIndex].plants, newPlant],
+      }
+      return { ...prev, [verticalId]: updatedSites }
+    })
+  }
+
+  const removePlantEntry = (verticalId, siteIndex, plantIndex) => {
+    setVerticalSites((prev) => {
+      const updatedSites = [...prev[verticalId]]
+      const newPlantList = [...updatedSites[siteIndex].plants]
+      newPlantList.splice(plantIndex, 1)
+      updatedSites[siteIndex] = {
+        ...updatedSites[siteIndex],
+        plants: newPlantList,
+      }
+      return { ...prev, [verticalId]: updatedSites }
+    })
+  }
+
+  // Helper: Transform permissions object into the required array
+  const transformPermissions = (permissions) => {
+    const perm = []
+    if (permissions.read && permissions.write) {
+      perm.push('read-write')
+    } else {
+      if (permissions.read) perm.push('read')
+      if (permissions.write) perm.push('write')
+    }
+    if (permissions.approve) perm.push('approve')
+    return perm
+  }
+
+  // Save handler building payload & calling API
+  const handleSave = async () => {
+    const userIds = Array.isArray(data)
+      ? data.map((user) => user.userId)
+      : [data.userId]
+    const result = {
+      role: 'cts_head',
+      userIds: userIds,
+      attributes: {
+        plants: selectedVerticals.map((verticalId) => {
+          const vertical = getVerticalById(verticalId)
+          const verticalData = verticalSites[verticalId] || []
+          return {
+            verticalId,
+            sites: verticalData
+              .filter((entry) => entry.site && entry.site.length > 0)
+              .flatMap((entry) => {
+                return entry.site.map((siteId) => {
+                  const siteObj = vertical?.sites?.find((s) => s.id === siteId)
+                  const sitePlantIds = siteObj
+                    ? siteObj.plants.map((p) => p.id)
+                    : []
+
+                  const plants = entry.plants
+                    .flatMap((plantEntry) => {
+                      const matchingPlantIds = (
+                        plantEntry.plantId || []
+                      ).filter((pid) => sitePlantIds.includes(pid))
+                      return matchingPlantIds.map((pid) => ({
+                        plantId: pid,
+                        screens: plantEntry.screens || [],
+                        permission: plantEntry.permissions,
+                      }))
+                    })
+                    .filter((p) => p.plantId)
+
+                  return {
+                    siteId,
+                    plants,
+                  }
+                })
+              })
+              .filter((s) => s.plants.length > 0),
+          }
+        }),
+      },
+    }
+
+    try {
+      setLoading(true)
+      let res = {}
+      if (type === 1) {
+        res = await DataService.updateUserPlantsForRevokeAccess(
+          keycloak,
+          result,
+          userId,
+        )
+      } else {
+        res = await DataService.updateUserPlants(keycloak, result)
+      }
+      if (res.status !== 200) {
+        throw new Error('Failed to update user')
+      }
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'User Data Updated successfully!',
+        severity: 'success',
+      })
+      closeSaveDialogeBox()
+      setTimeout(() => {
+        navigate('/user-management', {
+          state: 'success',
+        })
+      }, 1000)
+    } catch (error) {
+      console.error('Update failed:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to update user. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Reset handler to restore initial state
+  const handleReset = () => {
+    setUserDetails({
+      username: '',
+      firstname: '',
+      lastname: '',
+      role: '',
+      email: '',
+    })
+    if (plantSiteData.length > 0) {
+      if (tabIndex === 1) {
+        setScreensByPlant({})
+        getScreensForVerticals()
+      } else {
+        setSelectedVerticals([plantSiteData[0].id])
+        setVerticalSites(getInitialVerticalSites(plantSiteData))
+        setScreensByPlant({})
+      }
+    }
+  }
+
+  if (plantSiteData.length === 0) {
+    return <div>Loading...</div>
+  }
+  const SELECT_ALL = '__SELECT_ALL__'
+  // console.log('verticalSites[verticalId]', verticalSites)
+  // console.log('userDetails', data)
+
+  const data1 = Array.from({ length: 50 }, (_, i) => ({
+    username: `user${i + 1}`,
+  }))
+
+  return (
+    <Container
+      sx={{
+        backgroundColor: 'white',
+        color: 'black',
+        p: 2,
+        marginLeft: '10px',
+      }}
+    >
+      {loading ? (
+        <LoaderBackdrop open={!!loading} />
+      ) : (
+        <>
+          <Box py={3}>
+            <Box>
+              <Typography
+                variant='h6'
+                gutterBottom
+                sx={{ fontWeight: 600, marginBottom: 1 }}
+              >
+                {data?.length > 1 ? 'Selected Users' : 'Selected User'}
+              </Typography>
+
+              <Box
+                sx={{
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  padding: 1,
+                  marginBottom: 1,
+                }}
+              >
+                <Typography
+                  variant='body1'
+                  sx={{
+                    color: '#333',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  <Stack direction='row' flexWrap='wrap' gap={1}>
+                    {data?.length
+                      ? data.map((user, index) => (
+                          <Chip key={index} label={user.username} />
+                        ))
+                      : 'No user selected'}
+                  </Stack>
+                </Typography>
+              </Box>
+            </Box>
+
+            <Grid container spacing={2} alignItems='center'>
+              <Grid item xs={12} sm={4}>
+                <Typography
+                  variant='h6'
+                  gutterBottom
+                  style={{ marginLeft: '8px', fontWeight: 600 }}
+                >
+                  Vertical
+                </Typography>
+                <FormControl fullWidth size='small'>
+                  <Select
+                    multiple
+                    value={selectedVerticals}
+                    onChange={handleVerticalChange}
+                    MenuProps={{ disableScrollLock: true }}
+                    renderValue={(selected) =>
+                      selected
+                        .map((id) => getVerticalById(id)?.displayName || '')
+                        .join(', ')
+                    }
+                  >
+                    <MenuItem value={SELECT_ALL}>
+                      <Checkbox
+                        checked={
+                          selectedVerticals.length === plantSiteData.length
+                        }
+                      />
+                      <ListItemText primary='Select All' />
+                    </MenuItem>
+                    {plantSiteData?.map((vertical) => (
+                      <MenuItem key={vertical.id} value={vertical.id}>
+                        <Checkbox
+                          checked={selectedVerticals.includes(vertical.id)}
+                        />
+                        <ListItemText primary={vertical.displayName} />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
+          <Box my={2}>
+            <Divider sx={{ borderTop: '2px solid #ccc', mt: 2, pt: 2 }} />
+          </Box>
+
+          {selectedVerticals.map((verticalId) => {
+            // console.log('siteEntry', verticalId)
+            const vertical = getVerticalById(verticalId)
+            if (!vertical) return null
+
+            return (
+              <Box key={verticalId} mb={2}>
+                <Typography
+                  variant='h6'
+                  fontWeight='bold'
+                  sx={{ mb: 1, ml: 1 }}
+                >
+                  {vertical.displayName}
+                </Typography>
+                <Box
+                  p={2}
+                  sx={{
+                    border: '1px solid #eee',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    flexDirection: 'column-reverse',
+                    width: '100%',
+                  }}
+                >
+                  {isLoading
+                    ? Array.from({ length: 2 }).map((_, index) => (
+                        <Box key={index} mb={2}>
+                          <Grid container spacing={2}>
+                            <Grid item xs={3} sm={2}>
+                              <Typography variant='h6' gutterBottom>
+                                Site
+                              </Typography>
+                              <Skeleton variant='rectangular' height={40} />
+                            </Grid>
+                            <Grid item xs={1}>
+                              <Skeleton
+                                variant='circular'
+                                width={40}
+                                height={40}
+                                sx={{ mt: 3 }}
+                              />
+                            </Grid>
+                            <Grid item xs={4} sm={3}>
+                              <Typography variant='h6' gutterBottom>
+                                Plant
+                              </Typography>
+                              <Skeleton variant='rectangular' height={40} />
+                            </Grid>
+                            <Grid item xs={1}>
+                              <Skeleton
+                                variant='circular'
+                                width={40}
+                                height={40}
+                                sx={{ mt: 3 }}
+                              />
+                            </Grid>
+                            <Grid item xs={4} sm={3}>
+                              <Typography variant='h6' gutterBottom>
+                                Screens
+                              </Typography>
+                              <Skeleton variant='rectangular' height={40} />
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      ))
+                    : verticalSites[verticalId]?.map((siteEntry, siteIndex) => {
+                        // console.log('siteEntry', siteEntry)
+                        return (
+                          <Box key={siteIndex} mb={2}>
+                            <Grid container spacing={2} alignItems='center'>
+                              {/* Site Dropdown */}
+                              <Grid item xs={3} sm={2}>
+                                <Typography variant='h6' gutterBottom>
+                                  Site
+                                </Typography>
+                                <FormControl fullWidth size='small'>
+                                  <Select
+                                    multiple
+                                    open={
+                                      siteOpen[`${verticalId}-${siteIndex}`] ||
+                                      false
+                                    }
+                                    onOpen={() =>
+                                      setSiteOpen((prev) => ({
+                                        ...prev,
+                                        [`${verticalId}-${siteIndex}`]: true,
+                                      }))
+                                    }
+                                    onClose={() => {
+                                      setSiteOpen((prev) => ({
+                                        ...prev,
+                                        [`${verticalId}-${siteIndex}`]: false,
+                                      }))
+                                      if (
+                                        siteEntry.site &&
+                                        siteEntry.site.length > 1
+                                      ) {
+                                        const currentSites = siteEntry.site
+                                        handleSiteChange(
+                                          verticalId,
+                                          siteIndex,
+                                          'site',
+                                          [currentSites[0]],
+                                        )
+                                        currentSites.slice(1).forEach((id) => {
+                                          addSiteEntry(verticalId, siteEntry, [
+                                            id,
+                                          ])
+                                        })
+                                      }
+                                    }}
+                                    value={siteEntry.site || []}
+                                    sx={{ height: '40px' }}
+                                    MenuProps={{ disableScrollLock: true }}
+                                    onChange={(e) => {
+                                      const allAvailable = getAvailableSites(
+                                        verticalId,
+                                        siteIndex,
+                                      )
+                                      const selected = e.target.value
+                                      if (selected.includes(SELECT_ALL)) {
+                                        setSiteOpen((prev) => ({
+                                          ...prev,
+                                          [`${verticalId}-${siteIndex}`]: false,
+                                        }))
+                                        if (allAvailable.length > 0) {
+                                          handleSiteChange(
+                                            verticalId,
+                                            siteIndex,
+                                            'site',
+                                            [allAvailable[0].id],
+                                          )
+                                          allAvailable
+                                            .slice(1)
+                                            .forEach((site) => {
+                                              addSiteEntry(
+                                                verticalId,
+                                                siteEntry,
+                                                [site.id],
+                                              )
+                                            })
+                                        }
+                                      } else {
+                                        handleSiteChange(
+                                          verticalId,
+                                          siteIndex,
+                                          'site',
+                                          selected,
+                                        )
+                                      }
+                                    }}
+                                    renderValue={(selected) =>
+                                      selected
+                                        .map(
+                                          (id) =>
+                                            vertical.sites.find(
+                                              (s) => s.id === id,
+                                            )?.displayName || '',
+                                        )
+                                        .join(', ')
+                                    }
+                                  >
+                                    <MenuItem value={SELECT_ALL}>
+                                      <Checkbox
+                                        checked={
+                                          (siteEntry.site || []).length ===
+                                            getAvailableSites(
+                                              verticalId,
+                                              siteIndex,
+                                            ).length &&
+                                          getAvailableSites(
+                                            verticalId,
+                                            siteIndex,
+                                          ).length > 0
+                                        }
+                                      />
+                                      <ListItemText primary='Select All' />
+                                    </MenuItem>
+                                    {getAvailableSites(
+                                      verticalId,
+                                      siteIndex,
+                                    ).map((siteOption) => (
+                                      <MenuItem
+                                        key={siteOption.id}
+                                        value={siteOption.id}
+                                      >
+                                        <Checkbox
+                                          checked={(
+                                            siteEntry.site || []
+                                          ).includes(siteOption.id)}
+                                        />
+                                        <ListItemText
+                                          primary={siteOption.displayName}
+                                        />
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                              </Grid>
+                              {/* Add/Remove Site Entry */}
+                              <Grid item xs={1}>
+                                {siteIndex === 0 ? (
+                                  <IconButton
+                                    onClick={() =>
+                                      addSiteEntry(verticalId, null)
+                                    }
+                                    color='primary'
+                                    sx={{ marginTop: '25px' }}
+                                  >
+                                    <AddIcon sx={{ color: '#0100cb' }} />
+                                  </IconButton>
+                                ) : (
+                                  <IconButton
+                                    onClick={() =>
+                                      removeSiteEntry(verticalId, siteIndex)
+                                    }
+                                    color='secondary'
+                                    sx={{ marginTop: '25px' }}
+                                  >
+                                    <DeleteIcon sx={{ color: 'red' }} />
+                                  </IconButton>
+                                )}
+                              </Grid>
+                              {siteEntry.plants.map(
+                                (plantEntry, plantIndex) => {
+                                  // console.log('plantEntry', plantEntry)
+                                  return (
+                                    <Stack
+                                      direction='row'
+                                      gap={2}
+                                      key={plantIndex}
+                                      style={{
+                                        display: 'flex',
+                                        width: '60%',
+                                        marginTop: '15px',
+                                        marginLeft:
+                                          plantIndex === 0 ? '12px' : '26%',
+                                      }}
+                                    >
+                                      {/* Plant Dropdown */}
+                                      <Grid item xs={4} sm={3}>
+                                        <Typography variant='h6' gutterBottom>
+                                          Plant
+                                        </Typography>
+                                        <FormControl fullWidth size='small'>
+                                          <Select
+                                            multiple
+                                            open={
+                                              plantOpen[
+                                                `${verticalId}-${siteIndex}-${plantIndex}`
+                                              ] || false
+                                            }
+                                            onOpen={() =>
+                                              setPlantOpen((prev) => ({
+                                                ...prev,
+                                                [`${verticalId}-${siteIndex}-${plantIndex}`]: true,
+                                              }))
+                                            }
+                                            onClose={() => {
+                                              setPlantOpen((prev) => ({
+                                                ...prev,
+                                                [`${verticalId}-${siteIndex}-${plantIndex}`]: false,
+                                              }))
+                                              if (
+                                                plantEntry.plantId &&
+                                                plantEntry.plantId.length > 1
+                                              ) {
+                                                const currentPlants =
+                                                  plantEntry.plantId
+                                                handlePlantChange(
+                                                  verticalId,
+                                                  siteIndex,
+                                                  plantIndex,
+                                                  'plantId',
+                                                  [currentPlants[0]],
+                                                )
+                                                currentPlants
+                                                  .slice(1)
+                                                  .forEach((id) => {
+                                                    addPlantEntry(
+                                                      verticalId,
+                                                      siteIndex,
+                                                      plantEntry,
+                                                      [id],
+                                                    )
+                                                  })
+                                              }
+                                            }}
+                                            value={plantEntry.plantId || []}
+                                            MenuProps={{
+                                              disableScrollLock: true,
+                                            }}
+                                            sx={{ height: '40px' }}
+                                            onChange={(e) => {
+                                              const allAvailable =
+                                                getAvailablePlants(
+                                                  vertical,
+                                                  siteEntry,
+                                                  plantIndex,
+                                                )
+                                              const selected = e.target.value
+                                              if (
+                                                selected.includes(SELECT_ALL)
+                                              ) {
+                                                setPlantOpen((prev) => ({
+                                                  ...prev,
+                                                  [`${verticalId}-${siteIndex}-${plantIndex}`]: false,
+                                                }))
+                                                if (allAvailable.length > 0) {
+                                                  handlePlantChange(
+                                                    verticalId,
+                                                    siteIndex,
+                                                    plantIndex,
+                                                    'plantId',
+                                                    [allAvailable[0].id],
+                                                  )
+                                                  allAvailable
+                                                    .slice(1)
+                                                    .forEach((plant) => {
+                                                      addPlantEntry(
+                                                        verticalId,
+                                                        siteIndex,
+                                                        plantEntry,
+                                                        [plant.id],
+                                                      )
+                                                    })
+                                                }
+                                              } else {
+                                                handlePlantChange(
+                                                  verticalId,
+                                                  siteIndex,
+                                                  plantIndex,
+                                                  'plantId',
+                                                  selected,
+                                                )
+                                              }
+                                            }}
+                                            renderValue={(selected) => {
+                                              const allPlants =
+                                                vertical.sites.flatMap(
+                                                  (s) => s.plants || [],
+                                                )
+                                              return selected
+                                                .map(
+                                                  (id) =>
+                                                    allPlants.find(
+                                                      (p) => p.id === id,
+                                                    )?.displayName || '',
+                                                )
+                                                .join(', ')
+                                            }}
+                                          >
+                                            <MenuItem value={SELECT_ALL}>
+                                              <Checkbox
+                                                checked={
+                                                  (plantEntry.plantId || [])
+                                                    .length ===
+                                                    getAvailablePlants(
+                                                      vertical,
+                                                      siteEntry,
+                                                      plantIndex,
+                                                    ).length &&
+                                                  getAvailablePlants(
+                                                    vertical,
+                                                    siteEntry,
+                                                    plantIndex,
+                                                  ).length > 0
+                                                }
+                                              />
+                                              <ListItemText primary='Select All' />
+                                            </MenuItem>
+                                            {getAvailablePlants(
+                                              vertical,
+                                              siteEntry,
+                                              plantIndex,
+                                            ).map((plantOption) => (
+                                              <MenuItem
+                                                key={plantOption.id}
+                                                value={plantOption.id}
+                                              >
+                                                <Checkbox
+                                                  checked={(
+                                                    plantEntry.plantId || []
+                                                  ).includes(plantOption.id)}
+                                                />
+                                                <ListItemText
+                                                  primary={
+                                                    plantOption.displayName
+                                                  }
+                                                />
+                                              </MenuItem>
+                                            ))}
+                                          </Select>
+                                        </FormControl>
+                                      </Grid>
+                                      {/* Add or Remove Plant Entry */}
+                                      <Grid
+                                        item
+                                        xs={1}
+                                        style={{
+                                          // marginInline: '10px',
+                                          paddingTop: '12px',
+                                          // paddingLeft: '5px',
+                                        }}
+                                      >
+                                        {plantIndex === 0 ? (
+                                          <IconButton
+                                            onClick={() =>
+                                              addPlantEntry(
+                                                verticalId,
+                                                siteIndex,
+                                                null,
+                                              )
+                                            }
+                                            color='primary'
+                                            sx={{ marginTop: '22px' }}
+                                          >
+                                            <AddIcon
+                                              sx={{ color: '#0100cb' }}
+                                            />
+                                          </IconButton>
+                                        ) : (
+                                          <IconButton
+                                            onClick={() =>
+                                              removePlantEntry(
+                                                verticalId,
+                                                siteIndex,
+                                                plantIndex,
+                                              )
+                                            }
+                                            color='secondary'
+                                            sx={{ marginTop: '22px' }}
+                                          >
+                                            <DeleteIcon sx={{ color: 'red' }} />
+                                          </IconButton>
+                                        )}
+                                      </Grid>
+                                      {/* Screens Dropdown */}
+                                      <Grid item xs={4} sm={3}>
+                                        <Typography variant='h6' gutterBottom>
+                                          Screens
+                                        </Typography>
+
+                                        <FormControl fullWidth size='small'>
+                                          <Select
+                                            multiple
+                                            sx={{ height: '40px' }}
+                                            value={plantEntry.screens || []}
+                                            MenuProps={{
+                                              disableScrollLock: true,
+                                            }}
+                                            onChange={(e) => {
+                                              const allScreens =
+                                                getAvailableScreens(
+                                                  verticalId,
+                                                  siteIndex,
+                                                  plantIndex,
+                                                )
+                                              const selected = e.target.value
+
+                                              let newSelection
+                                              if (
+                                                selected.includes(SELECT_ALL)
+                                              ) {
+                                                newSelection =
+                                                  (plantEntry.screens || [])
+                                                    .length ===
+                                                  allScreens.length
+                                                    ? []
+                                                    : allScreens
+                                              } else {
+                                                newSelection = selected
+                                              }
+
+                                              handlePlantChange(
+                                                verticalId,
+                                                siteIndex,
+                                                plantIndex,
+                                                'screens',
+                                                newSelection,
+                                              )
+                                            }}
+                                            renderValue={(selected) =>
+                                              selected
+                                                .map((screen) => i18n.t(screen))
+                                                .join(', ')
+                                            }
+                                          >
+                                            <MenuItem value={SELECT_ALL}>
+                                              <Checkbox
+                                                checked={
+                                                  (plantEntry.screens || [])
+                                                    .length ===
+                                                  getAvailableScreens(
+                                                    verticalId,
+                                                    siteIndex,
+                                                    plantIndex,
+                                                  ).length
+                                                }
+                                              />
+                                              <ListItemText primary='Select All' />
+                                            </MenuItem>
+
+                                            {getAvailableScreens(
+                                              verticalId,
+                                              siteIndex,
+                                              plantIndex,
+                                            ).map((screen) => (
+                                              <MenuItem
+                                                key={screen}
+                                                value={screen}
+                                              >
+                                                <Checkbox
+                                                  checked={(
+                                                    plantEntry.screens || []
+                                                  ).includes(screen)}
+                                                />
+                                                <ListItemText
+                                                  primary={i18n.t(screen)}
+                                                />
+                                              </MenuItem>
+                                            ))}
+                                          </Select>
+                                        </FormControl>
+                                      </Grid>
+                                      {/* Permissions Dropdown */}
+                                      {/* <Grid item xs={4} sm={3}>
+                                  <Typography variant='h6' gutterBottom>
+                                    Permissions
+                                  </Typography>
+  
+                                  <FormControl fullWidth size='small'>
+                                    <Select
+                                      multiple
+                                      sx={{ height: '40px' }}
+                                      value={plantEntry.permissions || []}
+                                      onChange={(e) => {
+                                        const selected = e.target.value
+  
+                                        handlePlantChange(
+                                          verticalId,
+                                          siteIndex,
+                                          plantIndex,
+                                          'permissions',
+                                          selected,
+                                        )
+                                      }}
+                                    >
+                                      <MenuItem value='read'>Read</MenuItem>
+                                      <MenuItem value='write'>Write</MenuItem>
+                                      <MenuItem value='approve'>Approve</MenuItem>
+                                    </Select>
+                                  </FormControl>
+                                </Grid> */}
+                                    </Stack>
+                                  )
+                                },
+                              )}
+                            </Grid>
+                          </Box>
+                        )
+                      })}
+                </Box>
+              </Box>
+            )
+          })}
+
+          <Box
+            sx={{
+              position: 'sticky',
+              bottom: 0,
+              backgroundColor: 'white',
+              pt: 2,
+              pb: 1,
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <Box
+              sx={{
+                mt: 'auto',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 2,
+              }}
+            >
+              <Button
+                variant='contained'
+                color='primary'
+                className='btn-save'
+                onClick={setOpenSaveDialogeBox}
+              >
+                Save
+              </Button>
+              <Button
+                variant='outlined'
+                color='secondary'
+                onClick={handleReset}
+              >
+                Reset
+              </Button>
+            </Box>
+          </Box>
+
+          <CompactDialog
+            open={openSaveDialogeBox}
+            onClose={closeSaveDialogeBox}
+            disableScrollLock
+            slotProps={{ backdrop: { disableScrollLock: true } }}
+          >
+            {/* Header */}
+            <DialogTitle
+              sx={{
+                p: 1.5,
+                px: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                bgcolor: '#f8fafc',
+                borderBottom: '1px solid #e2e8f0',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '0.8rem',
+                  color: '#334155',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                CONFIRM SAVE
+              </Typography>
+
+              <IconButton
+                size='small'
+                onClick={closeSaveDialogeBox}
+                sx={{ color: '#64748b' }}
+              >
+                <CloseIcon fontSize='small' />
+              </IconButton>
+            </DialogTitle>
+
+            {/* Content */}
+            <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+              <Typography
+                sx={{
+                  fontSize: '0.75rem',
+                  color: '#475569',
+                  lineHeight: 1.5,
+                  fontWeight: 500,
+                }}
+              >
+                Are you sure you want to save these changes?
+              </Typography>
+            </DialogContent>
+
+            {/* Actions */}
+            <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+              <Button onClick={closeSaveDialogeBox} className='btn-no'>
+                Cancel
+              </Button>
+
+              <Button
+                onClick={handleSave}
+                variant='contained'
+                size='small'
+                autoFocus
+                className='btn-yes'
+              >
+                Save
+              </Button>
+            </DialogActions>
+          </CompactDialog>
+        </>
+      )}
+
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
+    </Container>
+  )
+}
+
+export default UserForm

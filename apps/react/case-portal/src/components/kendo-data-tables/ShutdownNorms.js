@@ -1,0 +1,1063 @@
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { useGridApiRef } from '@mui/x-data-grid'
+import { useSession } from 'SessionStoreContext'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import getShutdownConsumptionColDef from 'components/data-tables/CommonHeader/getShutdownConsumptionColDef'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
+
+import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
+import { DataService } from 'services/DataService'
+import { validateFields } from 'utils/validationUtils'
+import KendoDataTables from './index'
+import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+const ShutdownNorms = () => {
+  const [gradeId, setGradeId] = useState(null)
+  const [gradeName, setGradeName] = useState('')
+  const [modifiedCells, setModifiedCells] = React.useState({})
+  const [loading, setLoading] = useState(false)
+  const menu = useSelector((state) => state.dataGridStore)
+  const [shutdownMonths, setShutdownMonths] = useState([])
+  const { yearChanged, oldYear, plantID } = menu
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const [open1, setOpen1] = useState(false)
+  const apiRef = useGridApiRef()
+  const [rows, setRows] = useState([])
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [_plantID, set_PlantID] = useState('')
+  const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
+  const [rowModesModel, setRowModesModel] = useState({})
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    verticalChange,
+    screenTitle,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [selectedUnit, setSelectedUnit] = useState('TPH')
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [calculationObject, setCalculationObject] = useState([])
+  const [grades, setGrades] = useState([])
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YAER = year?.selectedYear
+
+  const PLANT_NAME = plantObject?.name
+  const SITE_NAME = siteObject?.name
+  const SITE_NAME_LOWERCASE = siteObject?.name?.toLowerCase()
+  const PLANT_NAME_LOWERCASE = plantObject?.name?.toLowerCase()
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${SCREEN_NAME}_${AOP_YEAR}`
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
+  const IS_PE_PP_VERTICAL = ['pe', 'pp'].includes(lowerVertName)
+  const IS_PET_VERTICAL = ['pet'].includes(lowerVertName)
+
+  const IS_ELASTOMER_JMD =
+    ['elastomer'].includes(lowerVertName) &&
+    ['jmd'].includes(SITE_NAME_LOWERCASE)
+
+  const IS_PVC_VMD =
+    ['pvc'].includes(lowerVertName) && ['vmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_PE_NMD_LDPE =
+    ['pe'].includes(lowerVertName) &&
+    ['nmd'].includes(SITE_NAME_LOWERCASE) &&
+    ['ldpe'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PE_VMD =
+    lowerVertName === 'pe' && ['vmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_PE_DMD =
+    lowerVertName === 'pe' && ['dmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_PE_HMD =
+    lowerVertName === 'pe' && ['hmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    PLANT_NAME_LOWERCASE === 'sbr'
+
+  const IS_ELASTOMER_HMD_PBR3 =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    PLANT_NAME_LOWERCASE === 'pbr3'
+
+  const IS_PE_C2 = lowerVertName === 'pe' && SITE_NAME_LOWERCASE === 'c2'
+
+  const IS_ELASTOMER_JMD_HIIR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'jmd' &&
+    PLANT_NAME_LOWERCASE === 'hiir'
+
+  const IS_AROMATICS_SEZ_PX4 =
+    lowerVertName === 'aromatics' &&
+    SITE_NAME_LOWERCASE === 'sez' &&
+    PLANT_NAME_LOWERCASE === 'px4'
+
+  const IS_AROMATICS_DTA =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'dta'
+
+  const IS_VCM_HMD = lowerVertName === 'vcm' && SITE_NAME_LOWERCASE === 'hmd'
+
+  const IS_PVC_DMD =
+    ['pvc'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
+  // const IS_PE_PP_VERTICAL_NMD_LLDPE =
+  //   ['pe'].includes(lowerVertName) &&
+  //   ['nmd'].includes(SITE_NAME_LOWERCASE) &&
+  //   ['lldpe1', 'lldpe2'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PVC_HMD =
+    ['pvc'].includes(lowerVertName) && ['hmd'].includes(SITE_NAME_LOWERCASE)
+
+  const IS_PE_PP_VERTICAL_NMD_LLDPE =
+    ['pe'].includes(lowerVertName) &&
+    ['nmd'].includes(SITE_NAME_LOWERCASE) &&
+    ['lldpe1', 'lldpe2'].includes(PLANT_NAME_LOWERCASE)
+
+  const IS_PTA_DMD =
+    ['pta'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_CHEMICAL = ['chemical'].includes(lowerVertName)
+  const IS_ELASTOMER_JMD_IIR =
+    ['elastomer'].includes(lowerVertName) &&
+    ['jmd'].includes(SITE_NAME_LOWERCASE) &&
+    ['iir'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PE_DMD_HDPE =
+    PLANT_NAME?.toLowerCase() == 'hdpe' &&
+    SITE_NAME?.toLowerCase() == 'dmd' &&
+    VERTICAL_NAME?.toLowerCase() == 'pe'
+
+  const IS_AROMATICS_HMD =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'hmd'
+
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'pmd'
+  const IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE =
+    lowerVertName === 'chemical' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    ['mtbe', 'butadiene', 'butene'].includes(PLANT_NAME_LOWERCASE)
+  const IS_CHEMICAL_HMD_PDEB =
+    lowerVertName === 'chemical' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    PLANT_NAME_LOWERCASE === 'pdeb'
+  const IS_CRACKER_C2_HMD_DMD =
+    lowerVertName === 'cracker' &&
+    (SITE_NAME_LOWERCASE === 'c2' ||
+      SITE_NAME_LOWERCASE === 'dmd' ||
+      SITE_NAME_LOWERCASE === 'hmd')
+  const textNote =
+    ((IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2) ||
+    IS_PVC_HMD
+      ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
+      : '*Quantities are per day basis'
+  const textNoteWhileSaving =
+    'Warning : Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
+
+  const keycloak = useSession()
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  const saveChanges = React.useCallback(async () => {
+    try {
+      var data = Object.values(modifiedCells)
+
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      saveShutDownNormsData(data)
+    } catch (error) {
+      setLoading(false)
+    }
+  }, [apiRef, selectedUnit, calculatebtnClicked, modifiedCells])
+
+  // 1) Load grades list if vertical requires it
+  useEffect(() => {
+    const loadGrades = async () => {
+      if (
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
+      ) {
+        try {
+          const response =
+            await NormalOperationNormsApiService.getGradesForShutdownNorms(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+
+          if (response?.code === 200) {
+            setGrades(response?.data)
+            if (Array.isArray(response?.data) && response?.data?.length === 0) {
+              setLoading(false)
+            }
+          }
+        } catch (error) {
+          setGrades([])
+          setGradeId(null)
+          console.error('Error fetching grades:', error)
+        }
+      }
+    }
+    loadGrades()
+  }, [PLANT_ID, yearChanged, keycloak])
+
+  // 2) Fetch main data when gradeId or other deps change
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
+      try {
+        if (
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
+        ) {
+          if (!gradeId) return
+          await fetchData(gradeId)
+        } else {
+          await fetchData()
+        }
+
+        // Fetch shutdown months
+        const shutdownMonthsRes =
+          await ShutdownNormsApiService.getShutdownMonths(
+            keycloak,
+            null,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+
+        // Fetch grades for slowdown months
+        let slowdownMonthsRes = []
+        if (
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
+        ) {
+          const gradesRes =
+            await NormalOperationNormsApiService.getGradesForShutdownNorms(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          if (gradesRes?.code === 200 && Array.isArray(gradesRes.data)) {
+            for (const grade of gradesRes.data) {
+              const res = await DataService.getSlowdownMonths(
+                keycloak,
+                grade.id || grade.gradeId || null,
+                PLANT_ID,
+                AOP_YEAR,
+              )
+              if (Array.isArray(res)) {
+                slowdownMonthsRes = slowdownMonthsRes.concat(res)
+              }
+            }
+          }
+        } else {
+          const res = await DataService.getSlowdownMonths(
+            keycloak,
+            null,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+          if (Array.isArray(res)) {
+            slowdownMonthsRes = res
+          }
+        }
+
+        const finalMonths =
+          IS_PE_PP_VERTICAL ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
+            ? [
+                ...new Set([
+                  ...(Array.isArray(shutdownMonthsRes)
+                    ? shutdownMonthsRes
+                    : []),
+                  ...(Array.isArray(slowdownMonthsRes)
+                    ? slowdownMonthsRes
+                    : []),
+                ]),
+              ]
+            : [
+                ...new Set(
+                  Array.isArray(shutdownMonthsRes) ? shutdownMonthsRes : [],
+                ),
+              ]
+
+        setShutdownMonths(finalMonths)
+      } catch (error) {
+        console.error('Error in loadData:', error)
+      }
+    }
+
+    loadData()
+  }, [
+    oldYear,
+    yearChanged,
+    keycloak,
+    selectedUnit,
+    plantID,
+    gradeId,
+    lowerVertName,
+    AOP_YEAR,
+  ])
+
+  const isCellEditable = (params) => {
+    return params.row.isEditable
+  }
+  const valueFormat = ValueFormatterConsumption()
+  const colDefs = getShutdownConsumptionColDef({
+    headerMap,
+    shutdownMonths,
+    valueFormat,
+  })
+
+  const handleRemarkCellClick = (row) => {
+    if (!row?.isEditable || READ_ONLY) return
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const saveShutDownNormsData = async (rows) => {
+    setLoading(true)
+    try {
+      const payload = rows.map((row) => ({
+        april: row.april || null,
+        may: row.may || null,
+        june: row.june || null,
+        july: row.july || null,
+        august: row.august || null,
+        september: row.september || null,
+        october: row.october || null,
+        november: row.november || null,
+        december: row.december || null,
+        january: row.january || null,
+        february: row.february || null,
+        march: row.march || null,
+        remark: row.remarks,
+        remarks: row.remarks,
+        financialYear: AOP_YEAR,
+        plantId: PLANT_ID,
+        normParameterId: row.normParameterId,
+        id: row.idFromApi || null,
+        materialFkId: row.materialFkId || null,
+        mcuVersion: row.mcuVersion || null,
+        plantFkId: PLANT_ID,
+        siteFkId: SITE_ID,
+        verticalFkId: VERTICAL_ID,
+        unit: row.unit || null,
+        normParameterTypeId: row.normParameterTypeId || null,
+        gradeFkId: gradeId || null,
+      }))
+      if (payload.length > 0) {
+        const response = await ShutdownNormsApiService.saveShutDownNormsData(
+          PLANT_ID,
+          payload,
+          keycloak,
+          AOP_YEAR,
+        )
+        // dispatch(setIsBlocked(true))
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Saved Successfully!`,
+          severity: 'success',
+        })
+        setModifiedCells({})
+        setLoading(false)
+        setCalculatebtnClicked(false)
+        return response
+      } else {
+        setSnackbarOpen(true)
+        setLoading(false)
+        setSnackbarData({
+          message: `Data not saved!`,
+          severity: 'error',
+        })
+        setCalculatebtnClicked(false)
+      }
+    } catch (error) {
+      console.error(`Error saving Data`, error)
+      setLoading(false)
+    } finally {
+      fetchData(gradeId)
+      setCalculatebtnClicked(false)
+      setLoading(false)
+    }
+  }
+
+  const fetchData = async (gradeId) => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      setLoading(true)
+      setRows([])
+
+      const verticalsRequiringGrade = ['pe', 'pp']
+      if (
+        (verticalsRequiringGrade.includes(lowerVertName) ||
+          IS_PVC_DMD ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_HMD) &&
+        !gradeId
+      ) {
+        setLoading(false)
+        return
+      }
+
+      let data = []
+
+      if (lowerVertName != 'cracker') {
+        data = await ShutdownNormsApiService.getShutdownNormsData(
+          keycloak,
+          gradeId,
+          PLANT_ID,
+          AOP_YAER,
+        )
+      } else {
+        data = await ShutdownNormsApiService.shutdownConsumptionHistoryData(
+          keycloak,
+          gradeId,
+          PLANT_ID,
+          AOP_YAER,
+        )
+      }
+
+      if (data?.code != 200) {
+        setRows([])
+        setLoading(false)
+        return
+      }
+
+      setCalculationObject(data?.data?.aopCalculation)
+
+      let formattedData = []
+
+      const isElastomer = ['elastomer'].includes(lowerVertName)
+
+      if (lowerVertName != 'cracker') {
+        formattedData = data?.data?.mcuNormsValueDTOList?.map((item, index) => {
+          const baseItem = {
+            ...item,
+            idFromApi: item.id,
+            id: index,
+            remarks: item?.remarks?.trim() || null,
+            originalRemark: item?.remarks?.trim(),
+            materialFkId: item?.materialFkId?.toLowerCase(),
+            Particulars: item.normParameterTypeDisplayName || 'Particulars',
+            isEditable: isElastomer
+              ? item?.isEditable
+              : IS_PE_PP_VERTICAL_NMD_LLDPE
+                ? false
+                : true,
+          }
+
+          return baseItem
+        })
+      } else {
+        // For cracker, use mcuNormsValueDTOList if present, else fallback to data.data
+        const crackerArray = Array.isArray(data?.data?.mcuNormsValueDTOList)
+          ? data.data.mcuNormsValueDTOList
+          : Array.isArray(data?.data)
+            ? data.data
+            : []
+        formattedData = crackerArray.map((item, index) => {
+          const baseItem = {
+            ...item,
+            idFromApi: item.id,
+            id: index,
+            materialFkId: item?.materialFkId?.toLowerCase(),
+            Particulars: item.normParameterTypeDisplayName || 'Type',
+            isEditable: item?.isEditable || true,
+            originalRemark: item.remarks,
+          }
+          return baseItem
+        })
+      }
+
+      setRows(formattedData)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  const handleUnitChange = (unit) => {
+    setSelectedUnit(unit)
+  }
+
+  // --- handleCalculateData (call loadGradesAfterCalculation after success) ---
+  const handleCalculateData = async () => {
+    setRows([])
+    setGrades([])
+    setGradeId(null)
+    setShutdownMonths([])
+
+    setCalculatebtnClicked(true)
+    setLoading(true)
+    try {
+      const response =
+        await ShutdownNormsApiService.handleCalculateShutdownNorms(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (response?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+
+        // load grades and pick the 0th index
+        await loadGradesAfterCalculation()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error saving refresh data:', error)
+    } finally {
+      setLoading(false)
+      setCalculatebtnClicked(false)
+    }
+  }
+
+  // --- loadGradesAfterCalculation (always pick the first returned grade) ---
+  const loadGradesAfterCalculation = async () => {
+    if (
+      ['pe', 'pp'].includes(lowerVertName) ||
+      IS_PET_VERTICAL ||
+      IS_PVC_VMD ||
+      IS_PVC_DMD ||
+      IS_PVC_HMD ||
+      IS_ELASTOMER_JMD_HIIR
+    ) {
+      try {
+        const response =
+          await NormalOperationNormsApiService.getGradesForShutdownNorms(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+
+        if (response?.code === 200) {
+          const fetchedGrades = response?.data || []
+          setGrades(fetchedGrades)
+
+          if (fetchedGrades.length === 0) {
+            // no grades   clear selection and fetch blank data
+            setGradeId(null)
+            await fetchData(null)
+            return
+          }
+
+          // pick the 0th index (use the correct id field from your grade object)
+          const firstGrade = fetchedGrades[0]
+          const firstId =
+            firstGrade?.id ??
+            firstGrade?.gradeId ??
+            firstGrade?.gradeFkId ??
+            null
+
+          setGradeId(firstId)
+          await fetchData(firstId)
+        } else {
+          setGrades([])
+          setGradeId(null)
+          await fetchData(null)
+        }
+      } catch (error) {
+        console.error('Error fetching grades:', error)
+        setGrades([])
+        setGradeId(null)
+        await fetchData(null)
+      }
+    } else {
+      // non PE/PP flow
+      await fetchData(null)
+      if (!PLANT_ID || !AOP_YEAR) return
+      try {
+        const months = await ShutdownNormsApiService.getShutdownMonths(
+          keycloak,
+          null,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        setShutdownMonths(months)
+      } catch (err) {
+        console.error('Error fetching shutdown months:', err)
+      }
+    }
+  }
+
+  const handleCalculate = () => {
+    handleCalculateData()
+  }
+
+  const onRowModesModelChange = (newRowModesModel) => {
+    setRowModesModel(newRowModesModel)
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    saveExcelFile(rawFile)
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+
+      if (
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD ||
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
+      ) {
+        // Use shutdownNormsExportNonGrade for VCM
+        response =
+          await NormalOperationNormsApiService.shutdownNormsExportNonGrade(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+            EXCEL_EXPORT_TITLE,
+          )
+      } else if (IS_PE_PP_VERTICAL) {
+        // Use shutdownNormsExport for PE/PP/Elastomer
+        response =
+          await NormalOperationNormsApiService.shutdownNormsExportAllGarde(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            PLANT_NAME,
+            SITE_NAME,
+            VERTICAL_NAME,
+            gradeName == 'All Grade',
+          )
+      } else if (
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
+      ) {
+        // Use shutdownNormsExport for PE/PP/Elastomer
+        response = await NormalOperationNormsApiService.shutdownNormsExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          PLANT_NAME,
+          SITE_NAME,
+          VERTICAL_NAME,
+          gradeName == 'All Grade',
+        )
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const saveExcelFile = async (rawFile) => {
+    setLoading(true)
+    try {
+      let response
+
+      if (
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD ||
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
+      ) {
+        // Use saveShutdownNormsExcelNonGrade for VCM
+        response =
+          await NormalOperationNormsApiService.saveShutdownNormsExcelNonGrade(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+      } else {
+        // Use saveShutdownNormsExcel for other verticals
+        response = await NormalOperationNormsApiService.saveShutdownNormsExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          gradeId,
+          gradeName == 'All Grade',
+        )
+      }
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData(gradeId)
+      } else if (response?.code === 400 && response?.data) {
+        // Partial save, error file download
+        const byteCharacters = atob(response.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File Shutdown_Consumption.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Save Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setLoading(false)
+    } finally {
+      fetchData(gradeId)
+      setLoading(false)
+    }
+  }
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      showCalculate: false,
+      allAction: true,
+    }
+  }
+
+  //REVERTED
+  const isVCMWithVMD =
+    lowerVertName === 'vcm' && SITE_NAME?.toLowerCase() === 'vmd'
+
+  const getShutdownTitleName = () => {
+    if (IS_PET_VERTICAL || IS_PVC_VMD) return `Shutdown Consumption (Norms)`
+
+    if (IS_ELASTOMER_HMD_PBR3) return `Shutdown Consumption (Yearly Norms)`
+    if (lowerVertName === 'elastomer' || lowerVertName === 'pta' || IS_CHEMICAL)
+      return `Shutdown Consumption (Norms/Quantity)`
+    if (lowerVertName === 'meg') return `${SCREEN_NAME}-UOM Per Day Basis`
+    return SCREEN_NAME
+  }
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      units: ['TPH', 'TPD'],
+      saveWithRemark: false,
+      showCalulcationPromt: IS_PE_C2 || lowerVertName === 'pta' ? true : false,
+
+      showNote:
+        lowerVertName === 'meg' ||
+        IS_PE_PP_VERTICAL ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_ELASTOMER_JMD_HIIR
+          ? gradeName == 'All Grade'
+            ? true
+            : false
+          : false,
+      showNoteWhileSaving:
+        IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_PVC_HMD || IS_ELASTOMER_JMD_HIIR
+          ? gradeName == 'All Grade'
+            ? true
+            : false
+          : false,
+
+      saveBtn: IS_PE_PP_VERTICAL_NMD_LLDPE ? false : true,
+
+      //VCM(VMD) && elastomer we required to show calculate btn
+      showCalculate:
+        (lowerVertName == 'elastomer' &&
+          SITE_NAME_LOWERCASE != 'jmd' &&
+          !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')) ||
+        IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE ||
+        IS_CHEMICAL_HMD_PDEB ||
+        IS_AROMATICS_HMD ||
+        IS_CRACKER_C2_HMD_DMD
+          ? true
+          : lowerVertName == 'meg' ||
+              lowerVertName == 'vcm' ||
+              lowerVertName == 'aromatics' ||
+              IS_PE_PP_VERTICAL ||
+              IS_ELASTOMER_JMD_HIIR ||
+              IS_PET_VERTICAL ||
+              IS_PVC_VMD ||
+              !IS_PTA_DMD ||
+              IS_PVC_DMD ||
+              IS_PVC_HMD ||
+              IS_ELASTOMER_JMD
+            ? IS_PE_C2 || IS_VCM_HMD
+              ? true
+              : false // ? only change
+            : true,
+
+      showCalculateVisibility:
+        lowerVertName != 'meg' &&
+        Object.keys(calculationObject || {}).length > 0
+          ? true
+          : false,
+
+      showG:
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
+          ? true
+          : false,
+
+      IS_PE_C2_HIDE: IS_PE_C2 ? false : true,
+      marginBottom:
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
+          ? true
+          : false,
+      dropdownLabel: 'Grade',
+      allAction: true,
+      downloadExcelBtnFromUI:
+        !IS_PE_HMD ||
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_HMD ||
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
+          ? false
+          : true,
+      downloadExcelBtn:
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_PE_HMD ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
+        IS_CHEMICAL ||
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD ||
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
+          ? true
+          : false,
+      uploadExcelBtn:
+        IS_PE_NMD_LDPE ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
+        IS_PE_VMD ||
+        IS_PE_DMD ||
+        IS_PE_HMD ||
+        IS_PET_VERTICAL ||
+        IS_PVC_VMD ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD ||
+        IS_AROMATICS_PMD ||
+        lowerVertName === 'meg'
+          ? true
+          : false,
+      showTitleNameBusiness: IS_PE_DMD_HDPE ? false : true,
+
+      titleName: getShutdownTitleName(),
+      ExcelName: EXCEL_EXPORT_TITLE,
+      showTitleAndInformation: IS_PE_DMD_HDPE ? true : false,
+      titleAndInformation:
+        'The Shutdown Consumption Quantity to be entered here represents the additional material consumption incurred over and above the steady-state (standard) consumption during all slowdown and shutdown events occurring within the selected month.',
+    },
+    isOldYear,
+  )
+
+  const handleGradeChange = (gradeId, gradeDisplayName, gradeName) => {
+    setGradeName(gradeName)
+    setGradeId(gradeId)
+  }
+
+  return (
+    <div>
+      <LoaderBackdrop open={!!loading} />
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        isCellEditable={isCellEditable}
+        title='Shutdown Norms'
+        columns={colDefs}
+        setRows={setRows}
+        rows={rows}
+        onAddRow={(newRow) => console.log('New Row Added:', newRow)}
+        onDeleteRow={(id) => console.log('Row Deleted:', id)}
+        onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+        paginationOptions={[100, 200, 300]}
+        handleUnitChange={handleUnitChange}
+        onRowModesModelChange={onRowModesModelChange}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        apiRef={apiRef}
+        rowModesModel={rowModesModel}
+        open1={open1}
+        setOpen1={setOpen1}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        handleRemarkCellClick={handleRemarkCellClick}
+        handleCalculate={handleCalculate}
+        groupBy='Particulars'
+        permissions={adjustedPermissions}
+        handleGradeChange={handleGradeChange}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
+        calculatebtnClicked={calculatebtnClicked}
+        plantID={plantID}
+        grades={grades}
+        note={textNote}
+        noteOnSaveDialogeBox={textNoteWhileSaving}
+      />
+    </div>
+  )
+}
+
+export default ShutdownNorms

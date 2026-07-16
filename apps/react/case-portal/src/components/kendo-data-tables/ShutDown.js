@@ -1,0 +1,1619 @@
+import { useGridApiRef } from '@mui/x-data-grid'
+import React, { useEffect, useState, useMemo } from 'react'
+import { Typography } from '@mui/material'
+import { useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
+import { DtaDataService } from 'services/DtaDataservice'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { validateFields } from 'utils/validationUtils'
+import { verticalEnums } from 'enums/verticalEnums'
+import KendoDataTables from './index'
+import {
+  ShutDownPeColumns,
+  ShutDownPeC2Columns,
+} from 'components/colums/ShutdownColumn'
+import { ShutDownPeColumnsldpe12 } from 'components/colums/ShutdownColumn'
+import {
+  ShutDownPpColumns,
+  ShutDownPpDtaColumns,
+  ShutDownPVCDMDColumns,
+} from 'components/colums/ShutdownColumn'
+import {
+  ShutDownAllColumns,
+  ShutDown_Elastomer_JMD_HIIR_Columns,
+  ShutDown_Elastomer_JMD_IIR_Columns,
+} from 'components/colums/ShutdownColumn'
+import {
+  ShutDownPTAColumns,
+  ShutDownPTADMDColumns,
+  ShutDownChemicalColumns,
+} from 'components/colums/ShutdownColumn'
+import { ShutDownChemicalDropdownColumns } from 'components/colums/Chemicalcolumn'
+import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
+import { getRoleName } from 'services/role-service'
+import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
+import ElastomerShutDown from './ElastomerShutDown'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import PtaShutDown from './PtaShutdown'
+import { ShutDownAROMATICSHMDColumns } from 'components/colums/AromaticsColumns'
+import { Box, Tab, Tabs } from '../../../node_modules/@mui/material/index'
+import AopTabs from 'components/AopTabs'
+import ShutdownHistoryConfig from './ShutdownHistoryConfig'
+const ShutDown = ({ permissions }) => {
+  const [_plantID, set_PlantID] = useState('')
+  const [modifiedCells, setModifiedCells] = React.useState({})
+  const [allProducts, setAllProducts] = useState([])
+  const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const PLANT_NAME = plantObject?.name
+
+  const SITE_ID = siteObject?.id
+  const SITE_NAME = siteObject?.name
+
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+
+  const AOP_YEAR = year?.selectedYear
+  const vertName = verticalChange?.selectedVertical
+  const SCREEN_NAME = screenTitle?.title
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
+  const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = SITE_NAME?.toLowerCase()
+  const lowerPlantName = PLANT_NAME?.toLowerCase()
+  const plantName = plantObject?.name
+  const siteName = siteObject?.name
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_ELASTOMER_JMD_IIR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'jmd' &&
+    lowerPlantName === 'iir'
+  const IS_ELASTOMER_JMD_HIIR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'jmd' &&
+    lowerPlantName === 'hiir'
+  const IS_NON_PRODUCT_VERTICAL =
+    lowerVertName === 'elastomer' ||
+    IS_PVC_VMD ||
+    lowerVertName === 'vcm' ||
+    lowerVertName === 'aromatics' ||
+    lowerVertName === 'pta' ||
+    lowerVertName === 'pet' ||
+    lowerVertName === 'meg' ||
+    lowerVertName === 'pe' ||
+    lowerVertName === 'pp' ||
+    IS_ELASTOMER_JMD_IIR ||
+    lowerVertName === 'chemical'
+  const IS_PTA = lowerVertName === 'pta'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
+  const IS_PP = lowerVertName === 'pp'
+  const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
+  const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
+  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+  const IS_PET = lowerVertName === 'pet'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
+  const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
+  const IS_ELASTOMER_JMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_AROMATICS = lowerVertName === 'aromatics'
+  const IS_PE_C2 = lowerVertName === 'pe' && lowerSiteName === 'c2'
+  const IS_CHEMICAL_HMD_DROPDOWNDESC =
+    IS_CHEMICAL &&
+    lowerSiteName === 'hmd' &&
+    (lowerPlantName === 'butadiene' ||
+      lowerPlantName === 'mtbe' ||
+      lowerPlantName === 'butene' ||
+      lowerPlantName === 'pdeb')
+  const IS_AROMATIC_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const DELETE_NOTE =
+    'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
+
+  const [open1, setOpen1] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const apiRef = useGridApiRef()
+  const [rows, setRows] = useState([])
+  const [rowsSlowdown, setRowsSlowdown] = useState([])
+
+  const [loading, setLoading] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const keycloak = useSession()
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_PET_VERTICAL = lowerVertName === 'pet'
+  const [allLines, setAllLines] = useState([])
+  const [selectedTab, setSelectedTab] = useState(0)
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const saveChanges = React.useCallback(async () => {
+    try {
+      var data = Object.values(modifiedCells)
+
+      //1 NO RECORDS
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+
+      const yearStr = AOP_YEAR
+      let startLimit, endLimit
+      if (yearStr) {
+        const [startYear, endYear] = yearStr
+          .split('-')
+          .map((y) => parseInt(y.trim(), 10))
+        if (!isNaN(startYear) && !isNaN(endYear)) {
+          // Use yyyy-mm-dd format for reliable parsing
+          startLimit = new Date(`${startYear}-04-01T00:00:00`)
+          endLimit = new Date(`20${endYear}-03-31T23:59:59`)
+        }
+      }
+      // Helper to format date as dd/mm/yyyy
+      // eslint-disable-next-line
+      function formatDateDDMMYYYY(date) {
+        if (!(date instanceof Date) || isNaN(date)) return ''
+        const d = date.getDate().toString().padStart(2, '0')
+        const m = (date.getMonth() + 1).toString().padStart(2, '0')
+        const y = date.getFullYear()
+        return `${d}/${m}/${y}`
+      }
+
+      for (const record of data) {
+        const startDate =
+          record.maintStartDateTime instanceof Date
+            ? record.maintStartDateTime
+            : new Date(record.maintStartDateTime)
+        const endDate =
+          record.maintEndDateTime instanceof Date
+            ? record.maintEndDateTime
+            : new Date(record.maintEndDateTime)
+
+        // Validate date format: dd/mm/yyyy (by parsing and checking)
+        if (
+          !IS_PTA &&
+          !IS_CHEMICAL &&
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_PP_DTA &&
+          !IS_PP_SEZ &&
+          !IS_PP_HMD
+        ) {
+          if (
+            startLimit &&
+            endLimit &&
+            (!startDate ||
+              !endDate ||
+              isNaN(startDate) ||
+              isNaN(endDate) ||
+              startDate < startLimit ||
+              startDate > endLimit ||
+              endDate < startLimit ||
+              endDate > endLimit)
+          ) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year. `,
+              severity: 'error',
+            })
+            return
+          }
+        }
+      }
+
+      if (IS_ELASTOMER_JMD_HIIR) {
+        // Helper: parse "HH.MM" string ? total minutes (numeric)
+        const parseDurationToMinutes = (val) => {
+          if (!val && val !== 0) return 0
+          const [hrsPart, minPart = '0'] = String(val).split('.')
+          const hrs = parseInt(hrsPart, 10) || 0
+          const mins =
+            parseInt(String(minPart).padEnd(2, '0').slice(0, 2), 10) || 0
+          return hrs * 60 + mins
+        }
+
+        // Helper: format total minutes back to "HH.MM" for display
+        const formatMinutesToDuration = (totalMins) => {
+          const hrs = Math.floor(totalMins / 60)
+          const mins = totalMins % 60
+          return `${hrs}.${mins.toString().padStart(2, '0')}`
+        }
+
+        // CHECK 1: Each individual modified record must not exceed month max
+        for (const record of data) {
+          const expectedDuration = calculateMonthDuration(
+            record.monthly,
+            AOP_YEAR,
+          )
+          if (!expectedDuration) continue // no valid month � skip
+          const recordMins = parseDurationToMinutes(record.durationInHrs)
+          const expectedMins = parseDurationToMinutes(expectedDuration)
+          if (recordMins > expectedMins) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Duration hrs for ${record.monthly} should not exceed ${expectedDuration}.`,
+              severity: 'error',
+            })
+            return
+          }
+        }
+
+        // CHECK 2: Sum of ALL rows for same month (modified + unmodified) must not exceed month max
+        const modifiedById = {}
+        for (const record of data) {
+          modifiedById[record.id] = record
+        }
+        const existingRowIds = new Set(rows.map((r) => r.id))
+        const mergedExisting = rows.map((row) => modifiedById[row.id] ?? row)
+        const newRows = data.filter((record) => !existingRowIds.has(record.id))
+        const allRowsMerged = [...mergedExisting, ...newRows]
+
+        // Group by month and sum total minutes
+        const monthTotals = {}
+        const monthDisplayName = {}
+        for (const row of allRowsMerged) {
+          const monthKey = (row.monthly || '').toLowerCase()
+          if (!monthKey) continue
+          monthTotals[monthKey] =
+            (monthTotals[monthKey] || 0) +
+            parseDurationToMinutes(row.durationInHrs)
+          if (!monthDisplayName[monthKey])
+            monthDisplayName[monthKey] = row.monthly
+        }
+
+        // Validate each month's total against its max
+        for (const [monthKey, totalMins] of Object.entries(monthTotals)) {
+          const displayMonth = monthDisplayName[monthKey] || monthKey
+          const expectedDuration = calculateMonthDuration(
+            displayMonth,
+            AOP_YEAR,
+          )
+          const expectedMins = parseDurationToMinutes(expectedDuration)
+          if (totalMins > expectedMins) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Total shutdown hours for ${displayMonth} (${formatMinutesToDuration(totalMins)} hrs) exceeds the month limit of ${expectedDuration} hrs. Please reduce the entries for ${displayMonth}.`,
+              severity: 'error',
+            })
+            return
+          }
+        }
+      }
+
+      //2 REMARKS VALIDATION
+      let requiredFields
+      if (lowerVertName === 'pe') {
+        if (siteName?.toLowerCase() === 'nmd') {
+          requiredFields = ['discription', 'remark']
+        } else {
+          requiredFields = ['discription', 'remark']
+        }
+      } else if (IS_PTA || IS_ELASTOMER_JMD_HIIR) {
+        requiredFields = ['discription', 'monthly', 'remark']
+      } else if (lowerVertName === 'pta') {
+        requiredFields = ['discription', 'remark']
+      } else if (lowerVertName === 'pp') {
+        requiredFields = ['discription', 'remark']
+      } else {
+        requiredFields = ['discription', 'remark']
+      }
+
+      const rowsWithErrors = new Set()
+
+      // Check each record for missing required fields
+      for (const record of data) {
+        for (const field of requiredFields) {
+          // if (
+          //   (!record[field] && record[field] !== 0) ||
+          //   (typeof record[field] === 'string' && record[field].trim() === '')
+          // ) {
+          if (!record[field] || record[field].trim() === '') {
+            record.isError = true
+            rowsWithErrors.add(record.id)
+            setRows((prevRows) =>
+              prevRows.map((row) => {
+                if (row.id === record.id) {
+                  return { ...row, isError: true }
+                }
+                return row
+              }),
+            )
+            break // Exit inner loop once we find one missing field
+          }
+        }
+      }
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        let message = validationMessage
+        if (IS_PE_PP_VERTICAL && validationMessage.includes('Remark')) {
+          message = 'Please update the field: Shutdown Basis'
+        }
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            data.some((d) => d.id === row.id) ? { ...row, isError: true } : row,
+          ),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: message,
+          severity: 'error',
+        })
+        return
+      }
+
+      //3 Track duplicate descriptions
+      const duplicateRows = new Set()
+      const allDescriptions = rows.map((r) =>
+        (r.discription || '').trim().toLowerCase(),
+      )
+      const duplicate = allDescriptions.find(
+        (d, i) => d && allDescriptions.indexOf(d) !== i,
+      )
+
+      if (
+        duplicate &&
+        lowerVertName !== 'pta' &&
+        !IS_AROMATIC_HMD &&
+        !IS_CHEMICAL_HMD_DROPDOWNDESC
+      ) {
+        rows.forEach((row) => {
+          if ((row.discription || '').trim().toLowerCase() === duplicate) {
+            row.isError = true
+          } else {
+            row.isError = false
+          }
+        })
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `The description "${duplicate}" already exists in the list. Please enter a unique description to avoid duplication.`,
+          severity: 'error',
+        })
+        return
+      }
+
+      //5 START DATE END DATE MANDATORY
+      const allRecords = [...rows]
+      const timeErrorRows = new Set() // Add this line
+      if (
+        !IS_PTA &&
+        !IS_CHEMICAL &&
+        !IS_ELASTOMER_JMD_HIIR &&
+        !IS_PP_DTA &&
+        !IS_PP_SEZ &&
+        !IS_PP_HMD
+      ) {
+        for (const record of data) {
+          // Date required validation (before checking time order)
+          const dateRequiredRows = new Set()
+          for (const record of data) {
+            const startMissing = !record.maintStartDateTime
+            const endMissing = !record.maintEndDateTime
+
+            if (startMissing || endMissing) {
+              record.isError = true
+              dateRequiredRows.add(record.id)
+            }
+          }
+
+          if (dateRequiredRows.size > 0) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: 'Start Date and End Date are required for all records.',
+              severity: 'error',
+            })
+            return
+          }
+
+          if (
+            record.maintStartDateTime &&
+            record.maintEndDateTime &&
+            record.maintStartDateTime.getTime() >=
+              record.maintEndDateTime.getTime()
+          ) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Start time must be before end time for "${record.discription || 'this record'}".`,
+              severity: 'error',
+            })
+            return
+          }
+        }
+      }
+
+      //6 SHUTDOWN SPANS MULTIPLE MONTHS
+      if (
+        lowerVertName == 'meg' ||
+        lowerVertName == 'elastomer' ||
+        lowerVertName == 'vcm' ||
+        lowerVertName == 'pta' ||
+        lowerVertName == 'pe' ||
+        lowerVertName == 'pp' ||
+        lowerVertName == 'pet' ||
+        IS_PVC_VMD ||
+        IS_CHEMICAL ||
+        lowerVertName === 'aromatics'
+      ) {
+        // Check for shutdown timeframe spanning multiple months
+        const monthSpanRows = new Set() // Add this line
+
+        if (
+          lowerVertName != 'vcm' &&
+          !IS_PTA &&
+          !IS_CHEMICAL &&
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_AROMATICS
+        ) {
+          for (const row of allRecords) {
+            const start = new Date(row.maintStartDateTime)
+            const end = new Date(row.maintEndDateTime)
+            //shutdown timeframe for Multiple months
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
+
+            const formatDate = (date) =>
+              date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })
+
+            const isSameMonth =
+              start.getMonth() === end.getMonth() &&
+              start.getFullYear() === end.getFullYear()
+
+            if (!isSameMonth) {
+              row.isError = true
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `The shutdown timeframe for '${row.discription}' spans multiple months (from ${formatDate(start, 'dd MMM yyyy')} to ${formatDate(end, 'dd MMM yyyy')}). Please split it into separate entries for each month.`,
+                severity: 'error',
+              })
+              return
+            }
+          }
+        }
+
+        //Shutdown timeframe overlapping of same time.
+        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR && !IS_PP) {
+          for (let i = 0; i < allRecords.length; i++) {
+            const a = allRecords[i]
+            const aStart = new Date(a.maintStartDateTime).getTime()
+            const aEnd = new Date(a.maintEndDateTime).getTime()
+
+            if (isNaN(aStart) || isNaN(aEnd)) continue
+
+            for (let j = 0; j < allRecords.length; j++) {
+              if (i === j) continue
+              const b = allRecords[j]
+              const bStart = new Date(b.maintStartDateTime).getTime()
+              const bEnd = new Date(b.maintEndDateTime).getTime()
+
+              if (isNaN(bStart) || isNaN(bEnd)) continue
+
+              if (aStart < bEnd && bStart < aEnd) {
+                a.isError = true
+                b.isError = true
+                setSnackbarOpen(true)
+                setSnackbarData({
+                  message: `The shutdown timeframe for "${a.discription || b.discription || 'this record'}" overlaps with "${b.discription}". Please ensure no overlapping timeframes.`,
+                  severity: 'error',
+                })
+                return
+              }
+            }
+          }
+        }
+
+        //7 Slowdown and shutdown timeframe overlapping
+        //THEN CHECK 1 SCREEN DATA WITH ANOTHER SCREEN
+
+        if (
+          lowerVertName != 'elastomer' &&
+          // lowerVertName != 'vcm' &&
+          !IS_PTA &&
+          !IS_PET &&
+          !IS_PVC_VMD &&
+          !IS_CHEMICAL &&
+          !IS_PP_SEZ &&
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_PP_DTA &&
+          !IS_PE_PP &&
+          !IS_AROMATICS
+        ) {
+          for (let i = 0; i < rows.length; i++) {
+            const a = rows[i]
+            const aStart = new Date(a.maintStartDateTime).getTime()
+            const aEnd = new Date(a.maintEndDateTime).getTime()
+
+            if (isNaN(aStart) || isNaN(aEnd)) continue
+
+            for (let j = 0; j < rowsSlowdown.length; j++) {
+              const b = rowsSlowdown[j]
+              const bStart = new Date(b.maintStartDateTime).getTime()
+              const bEnd = new Date(b.maintEndDateTime).getTime()
+
+              if (isNaN(bStart) || isNaN(bEnd)) continue
+              if (
+                (a.discription && a.discription === 'Seasonal Impact') ||
+                (b.discription && b.discription === 'Seasonal Impact')
+              ) {
+                continue
+              }
+
+              if (aStart < bEnd && bStart < aEnd) {
+                // Add this line
+                a.isError = true // Add this line
+                setSnackbarOpen(true)
+                setSnackbarData({
+                  message: `The timeframe for "${a.discription} (Shutdown)" overlaps with "${b.discription} (Slowdown)". Please ensure no overlapping timeframes.`,
+                  severity: 'error',
+                })
+                return
+              }
+            }
+          }
+        }
+      }
+
+      saveShutdownData(data)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    }
+  }, [modifiedCells, rows, rowsSlowdown, lowerVertName])
+
+  function addTimeOffset(dateTime) {
+    if (!dateTime) return null
+    const date = new Date(dateTime)
+    date.setUTCHours(date.getUTCHours() + 5)
+    date.setUTCMinutes(date.getUTCMinutes() + 30)
+    return date
+  }
+  function getMonthStartEndFromFiscal(monthName, fiscalYear) {
+    if (!monthName || !fiscalYear) return [null, null]
+
+    const monthIndexMap = {
+      january: 0,
+      february: 1,
+      march: 2,
+      april: 3,
+      may: 4,
+      june: 5,
+      july: 6,
+      august: 7,
+      september: 8,
+      october: 9,
+      november: 10,
+      december: 11,
+    }
+    const m = monthIndexMap[(monthName || '').toLowerCase()]
+    if (m === undefined) return [null, null]
+
+    // parse fiscalYear like "2026-27" -> startYear = 2026
+    let startYear = fiscalYear
+    if (typeof fiscalYear === 'string' && fiscalYear.includes('-')) {
+      startYear = parseInt(fiscalYear.split('-')[0], 10)
+    }
+    startYear = Number(startYear)
+    if (isNaN(startYear)) return [null, null]
+
+    // months Apr(3)..Dec(11) belong to startYear, Jan(0)..Mar(2) belong to startYear+1
+    const yearForMonth = m >= 3 ? startYear : startYear + 1
+
+    const start = new Date(yearForMonth, m, 1, 0, 0, 0, 0)
+    const end = new Date(yearForMonth, m + 1, 0, 23, 59, 59, 999) // last day of month
+
+    return [start, end]
+  }
+  const saveShutdownData = async (newRow) => {
+    setLoading(true)
+    try {
+      let shutdownDetails
+
+      if (IS_PTA || IS_ELASTOMER_JMD_HIIR) {
+        // PTA DMD: Use month instead of dates
+        shutdownDetails = newRow.map((row) => ({
+          discription: row.discription || row.discriptionDrpdwn,
+          rate: row.rate,
+          durationInHrs: (() => {
+            const v = findDuration('1', row)
+            if (!v) return null
+            const [h = '00', m = '00'] = String(v).split('.')
+            return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+          })(),
+          month: row.monthly || row.month, // Use month field
+          audityear: AOP_YEAR,
+          id: row.idFromApi || null,
+          remark: row.remark || 'null',
+        }))
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
+        // For PP DTA, match the GET payload structure
+        shutdownDetails = newRow.map((row) => ({
+          discription: row.discription || row.discriptionDrpdwn,
+          maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+          maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+          durationInHrs: (() => {
+            const v = findDuration('1', row)
+            if (!v) return null
+            const [h = '00', m = '00'] = String(v).split('.')
+            return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+          })(),
+          audityear: AOP_YEAR,
+          id: row.idFromApi || null,
+          remark: row.remark || 'null',
+          lineId: row.lineId,
+        }))
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD) {
+        // For PP DTA, match the GET payload structure
+        shutdownDetails = newRow.map((row) => ({
+          discription: row.discription || row.discriptionDrpdwn,
+          month: row.monthly,
+          durationInHrs: (() => {
+            const v = findDuration('1', row)
+            if (!v) return null
+            const [h = '00', m = '00'] = String(v).split('.')
+            return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+          })(),
+          audityear: AOP_YEAR,
+          id: row.idFromApi || null,
+          remark: row.remark || 'null',
+          lineId: row.lineId,
+        }))
+      } else if (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL) {
+        // For Elastomer JMD, set start date to previous day and end date to today
+        shutdownDetails = newRow.map((row) => {
+          return {
+            discription: row.discription || row.discriptionDrpdwn,
+            durationInHrs: (() => {
+              const v = findDuration('1', row)
+              if (!v) return null
+              const [h = '00', m = '00'] = String(v).split('.')
+              return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+            })(),
+            maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+            maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+            audityear: AOP_YEAR,
+            id: row.idFromApi || null,
+            remark: row.remark || 'null',
+          }
+        })
+      } else {
+        // Default: Use start/end date
+        shutdownDetails = newRow.map((row) => ({
+          productId: (() => {
+            if (
+              lowerVertName === verticalEnums.PE ||
+              lowerVertName === verticalEnums.PP
+            ) {
+              const matched = allProducts.find(
+                (p) => p.displayName === row.productName1,
+              )
+              return matched?.realId || null
+            }
+            return null
+          })(),
+          productName:
+            lowerVertName === verticalEnums.PE ||
+            lowerVertName === verticalEnums.PP
+              ? row.productName1
+              : null,
+          discription: row.discription || row.discriptionDrpdwn,
+          durationInHrs: (() => {
+            const v = findDuration('1', row)
+            if (!v) return null
+            const [h = '00', m = '00'] = String(v).split('.')
+            return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+          })(),
+          maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+          maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+          audityear: AOP_YEAR,
+          id: row.idFromApi || null,
+          remark: row.remark || 'null',
+          shutdownRate: row.shutdownRate || row.shutdownRateDrpdwn,
+        }))
+      }
+
+      const response = await DataService.saveShutdownData(
+        PLANT_ID,
+        shutdownDetails,
+        keycloak,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Saved Successfully!',
+        severity: 'success',
+      })
+
+      const maintenanceResponse =
+        await MaintenanceDetailsApiService.getMaintenanceData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      setModifiedCells({})
+
+      setLoading(false)
+      return response
+    } catch (error) {
+      setLoading(false)
+      console.error('Error saving shutdown data:', error)
+    } finally {
+      fetchData()
+
+      setLoading(false)
+    }
+  }
+
+  const updateShutdownData = async (newRow) => {
+    try {
+      var maintenanceId = newRow?.maintenanceId
+
+      const slowDownDetails = {
+        productId: newRow.product,
+        discription: newRow.discription,
+        durationInHrs: newRow.durationInHrs,
+        maintEndDateTime: newRow.maintEndDateTime,
+        maintStartDateTime: newRow.maintStartDateTime,
+      }
+
+      const response = await DataService.updateShutdownData(
+        maintenanceId,
+        slowDownDetails,
+        keycloak,
+      )
+
+      setSnackbarOpen(true)
+
+      setSnackbarData({
+        message: 'Updated successfully!',
+        severity: 'success',
+      })
+
+      return response
+    } catch (error) {
+      console.error('Error saving  data:', error)
+    } finally {
+      fetchData()
+    }
+  }
+  const fetchLineDetails = async () => {
+    try {
+      const response = await DtaDataService.getLineDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      const lines = Array.isArray(response?.data) ? response.data : []
+      setAllLines(lines)
+    } catch (error) {
+      console.error('Error fetching line details:', error)
+    }
+  }
+  useEffect(() => {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
+      fetchLineDetails()
+    }
+  }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
+
+  const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
+    try {
+      setLoading(true)
+      const data = await DataService.getShutDownPlantData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      const dataSlowDown = await DataService.getSlowDownPlantData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      const formattedDataSlowDown = dataSlowDown.map((item, index) => ({
+        ...item,
+        idFromApi: item?.id,
+        id: index,
+        originalRemark: item.remark,
+        inEdit: false,
+        maintStartDateTime: new Date(item?.maintStartDateTime),
+        maintEndDateTime: new Date(item?.maintEndDateTime),
+      }))
+
+      setRowsSlowdown(formattedDataSlowDown)
+      const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ]
+
+      const formattedData = data.map((item, index) => {
+        const productObj = allProducts.find((p) => p.realId === item.product)
+        const descriptionObj = allDescriptionDrpdwn.find(
+          (p) => p.name === item.discription,
+        )
+        const shutdownRateObj = allDescriptionDrpdwn.find(
+          (p) => p.name === item.shutdownRate,
+        )
+
+        if (lowerVertName == 'pta') {
+          return {
+            ...item,
+            idFromApi: item?.id,
+            id: index,
+            originalRemark: item.remark,
+            inEdit: false,
+            maintStartDateTime: new Date(item?.maintStartDateTime),
+            maintEndDateTime: new Date(item?.maintEndDateTime),
+            discription: descriptionObj ? descriptionObj.displayName : '',
+            monthly:
+              item?.monthly ||
+              item?.month ||
+              (item?.maintStartDateTime
+                ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+                : ''),
+          }
+        }
+        if (lowerVertName == 'chemical' || IS_ELASTOMER_JMD_HIIR) {
+          return {
+            ...item,
+            idFromApi: item?.id,
+            id: index,
+            originalRemark: item.remark,
+            inEdit: false,
+            maintStartDateTime: new Date(item?.maintStartDateTime),
+            maintEndDateTime: new Date(item?.maintEndDateTime),
+            discription: item.discription,
+            monthly:
+              item?.monthly ||
+              item?.month ||
+              (item?.maintStartDateTime
+                ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+                : ''),
+          }
+        }
+        return {
+          ...item,
+          idFromApi: item?.id,
+          id: index,
+          originalRemark: item.remark,
+          inEdit: false,
+          maintStartDateTime: new Date(item?.maintStartDateTime),
+          maintEndDateTime: new Date(item?.maintEndDateTime),
+          productName1: productObj ? productObj.displayName : '',
+          shutdowRate: shutdownRateObj ? shutdownRateObj.displayName : '',
+          monthly:
+            item?.monthly ||
+            item?.month ||
+            (item?.maintStartDateTime
+              ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+              : ''),
+        }
+      })
+
+      setRows(formattedData)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
+
+  const findDuration = (v, row) => {
+    if (row.durationInHrs) return row.durationInHrs
+
+    if (row.maintStartDateTime && row.maintEndDateTime) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
+
+      if (!isNaN(start?.getTime()) && !isNaN(end?.getTime())) {
+        const durationInMs = end - start
+        const durationInMinutes = durationInMs / (1000 * 60)
+        const hours = Math.floor(durationInMinutes / 60)
+        const minutes = durationInMinutes % 60
+        return `${hours}.${minutes.toString().padStart(2, '0')}`
+      }
+    }
+
+    return ''
+  }
+
+  useEffect(() => {
+    const getAllProducts = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
+
+      try {
+        let data = []
+        if (lowerVertName === 'meg') {
+          data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
+        } else if (
+          lowerVertName === 'pe' ||
+          lowerVertName === 'pp' ||
+          lowerVertName === 'pet' ||
+          IS_PVC_VMD
+        ) {
+          data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
+        } else {
+          data = await DataService.getAllProductsAll(
+            keycloak,
+            'Production',
+            PLANT_ID,
+          )
+        }
+        let productList = []
+        if (lowerVertName === 'meg') {
+          productList = data
+            .filter((product) => ['EO', 'EOE'].includes(product.displayName))
+            .map((product) => ({
+              id: product.displayName,
+              displayName: product.displayName,
+              realId: product.id,
+            }))
+        } else if (
+          lowerVertName === 'pe' ||
+          lowerVertName === 'pp' ||
+          lowerVertName === 'pet' ||
+          IS_PVC_VMD
+        ) {
+          productList = data?.data.map((product) => ({
+            id: product.displayName,
+            displayName: product.displayName,
+            realId: product.id,
+          }))
+        } else {
+          productList = data.map((product) => ({
+            id: product.displayName,
+            displayName: product.displayName,
+            realId: product.id,
+          }))
+        }
+        setAllProducts(productList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+    getAllProducts()
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, lowerVertName])
+
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    const getAllDescriptionDrpdwn = async () => {
+      try {
+        let data = []
+
+        if (IS_PTA || IS_CHEMICAL_HMD_DROPDOWNDESC || IS_AROMATIC_HMD) {
+          data = await DataService.dropdownValuesDMD(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        } else {
+          data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
+        }
+
+        // let data = {
+        //   code: 200,
+        //   message: 'Data fetched successfully',
+        //   data: [
+        //     {
+        //       DisplayName: 'Catalyst Full Topup',
+        //       Name: 'Catalyst Full Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Catalyst Partial Topup',
+        //       Name: 'Catalyst Partial Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Preheater Cleaning',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Other',
+        //     },
+        //   ],
+        // }
+
+        let descriptionObjList = []
+        {
+          descriptionObjList = data?.data.map((product) => ({
+            id: product.Name,
+            name: product.Name,
+            displayName: product.DisplayName,
+          }))
+        }
+        setAllDescriptionDrpdwn(descriptionObjList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+
+    if (
+      lowerVertName == 'pta' ||
+      IS_CHEMICAL_HMD_DROPDOWNDESC ||
+      IS_AROMATIC_HMD
+    )
+      getAllDescriptionDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+
+  useEffect(() => {
+    if (
+      (lowerVertName == 'pta' || lowerVertName == 'chemical') &&
+      allDescriptionDrpdwn?.length > 0
+    ) {
+      fetchData()
+    } else if (allProducts.length > 0) {
+      if (!PLANT_ID || !AOP_YEAR) return
+      fetchData()
+    }
+  }, [
+    allProducts,
+    allDescriptionDrpdwn,
+    oldYear,
+    yearChanged,
+    keycloak,
+    PLANT_ID,
+    lowerVertName,
+  ])
+
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    const getShutdownRateDrpdwn = async () => {
+      try {
+        let data = []
+
+        if (lowerVertName == 'pe' && siteName?.toLowerCase() === 'c2') {
+          data = await DataService.dropdownValuesPeC2(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        }
+
+        // let data = {
+        //   code: 200,
+        //   message: 'Data fetched successfully',
+        //   data: [
+        //     {
+        //       DisplayName: 'Catalyst Full Topup',
+        //       Name: 'Catalyst Full Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Catalyst Partial Topup',
+        //       Name: 'Catalyst Partial Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Preheater Cleaning',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Other',
+        //     },
+        //   ],
+        // }
+
+        let ShutdownRateObjList = []
+        {
+          ShutdownRateObjList = data?.map((product) => ({
+            id: product.name,
+            name: product.name,
+            displayName: product.displayName,
+            value: product.name,
+            text: product.displayName,
+          }))
+        }
+        setAllDescriptionDrpdwn(ShutdownRateObjList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+
+    if (lowerVertName == 'pe' && siteName?.toLowerCase() === 'c2')
+      getShutdownRateDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+
+  const colDefs = useMemo(() => {
+    switch (lowerVertName) {
+      case verticalEnums.PE:
+        if (
+          siteName?.toLowerCase() === 'nmd' &&
+          (plantName?.toLowerCase() === 'lldpe1' ||
+            plantName?.toLowerCase() === 'lldpe2')
+        ) {
+          return ShutDownPeColumnsldpe12
+        } else if (siteName?.toLowerCase() === 'c2') {
+          return ShutDownPeC2Columns
+        }
+        return ShutDownPeColumns
+
+      case verticalEnums.PP:
+        return IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD
+          ? ShutDownPpDtaColumns
+          : ShutDownPpColumns
+
+      case verticalEnums.PTA:
+        return IS_PTA ? ShutDownPTADMDColumns : ShutDownPTAColumns
+      case verticalEnums.CHEMICAL:
+        return IS_CHEMICAL_HMD_DROPDOWNDESC
+          ? ShutDownChemicalDropdownColumns
+          : ShutDownChemicalColumns
+      case verticalEnums.PVC:
+        return IS_PVC_DMD || IS_PVC_HMD
+          ? ShutDownPVCDMDColumns
+          : ShutDownPpColumns
+
+      case verticalEnums.ELASTOMER:
+        return IS_ELASTOMER_JMD_HIIR
+          ? ShutDown_Elastomer_JMD_HIIR_Columns
+          : IS_ELASTOMER_JMD_IIR
+            ? ShutDown_Elastomer_JMD_IIR_Columns
+            : []
+      case verticalEnums.AROMATICS:
+        return IS_AROMATIC_HMD
+          ? ShutDownAROMATICSHMDColumns
+          : ShutDownAllColumns
+
+      default:
+        return ShutDownAllColumns
+    }
+  }, [lowerVertName, lowerSiteName, plantName])
+
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
+      }
+
+      if (idFromApi) {
+        await DataService.deleteShutdownData(idFromApi, keycloak, PLANT_ID)
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+
+        const maintenanceResponse =
+          await MaintenanceDetailsApiService.getMaintenanceData(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
+  const handleDeleteSelected = async (deleteIds) => {
+    if (!deleteIds || deleteIds?.length === 0) return
+    setLoading(true)
+
+    try {
+      await DataService.deleteMultipleShutdown(deleteIds, keycloak, PLANT_ID)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Records Deleted successfully!',
+        severity: 'success',
+      })
+      fetchData()
+
+      await MaintenanceDetailsApiService.getMaintenanceData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+    } catch (error) {
+      console.error('Error deleting Records', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting records!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      if (IS_ELASTOMER_JMD_HIIR) {
+        response = await DtaDataService.exportShutdownElastomerjmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PE_C2) {
+        response = await DtaDataService.exportShutdownPEC2(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
+        response = await DtaDataService.exportShutdownLineWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD) {
+        response = await DtaDataService.exportShutdownMonthLineWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_NON_PRODUCT_VERTICAL) {
+        response = await DataService.exportShutdownNonProduct(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else {
+        response = await DataService.exportShutdownNonProductWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const importShutdown = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let response
+      if (IS_ELASTOMER_JMD_HIIR) {
+        response = await DtaDataService.ImportShutdownElastomerjmd(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PE_C2) {
+        response = await DtaDataService.ImportShutdownPEC2(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
+        response = await DtaDataService.ImportShutdownLineWise(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD) {
+        response = await DtaDataService.ImportShutdownLineWisePP(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_NON_PRODUCT_VERTICAL) {
+        response = await DataService.ImportShutdownNonProduct(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.ImportShutdownProductWise(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Shutdown.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    importShutdown(rawFile)
+  }
+  const handleTabChange = (event, newIndex) => {
+    setSelectedTab(newIndex)
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      allAction: false,
+    }
+  }
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? true,
+      addButton: permissions?.addButton ?? true,
+      deleteButton: permissions?.deleteButton ?? true,
+      editButton: permissions?.editButton ?? false,
+      showUnit: permissions?.showUnit ?? false,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      saveBtn: permissions?.saveBtn ?? true,
+      customHeight: permissions?.customHeight,
+      allAction: true,
+      downloadExcelBtn: true,
+      showNoteWhileDeleting:
+        IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD ? true : false,
+
+      showTitleNameBusiness: true,
+      titleName: `${SCREEN_NAME}`,
+
+      uploadExcelBtn:
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'elastomer' ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        lowerVertName === 'chemical' ||
+        lowerVertName === 'pet' ||
+        lowerVertName === 'aromatics' ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD
+          ? true
+          : false,
+      highlightDiscription:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightRate:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightDate:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightDuration:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightLine:
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+          ? true
+          : false,
+      deleteMultiple: true, // IS_PP_DTA ? true : false,
+    },
+    isOldYear,
+  )
+  if (lowerVertName == 'elastomer' && !IS_ELASTOMER_JMD) {
+    return <ElastomerShutDown permissions={permissions} />
+  }
+  if (lowerVertName == 'pta' && lowerSiteName == 'dmd') {
+    return <PtaShutDown permissions={permissions} />
+  }
+
+  return (
+    <div>
+      <LoaderBackdrop open={!!loading} />
+      {IS_AROMATIC_HMD && (
+        <Box style={{ margin: 0, padding: 0 }}>
+          <AopTabs
+            tabIndex={selectedTab}
+            setTabIndex={(index) => handleTabChange(null, index)}
+            tabs={[`${SCREEN_NAME}`, 'Shutdown History Config']}
+          >
+            {[`${SCREEN_NAME}`, 'Shutdown History Config'].map((label, idx) => (
+              <Tab
+                key={idx}
+                label={label}
+                sx={{
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
+                  fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '12px',
+                }}
+              />
+            ))}
+          </AopTabs>
+        </Box>
+      )}
+
+      {lowerVertName === 'meg' && (
+        <Typography component='div' className='text-note'>
+          * for the case of turnaround planning kindly specify turnaround text
+          in the shutdown desc column
+        </Typography>
+      )}
+      {selectedTab === 0 && (
+        <KendoDataTables
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          setRows={setRows}
+          columns={colDefs}
+          rows={rows}
+          paginationOptions={[100, 200, 300]}
+          updateShutdownData={updateShutdownData}
+          saveChanges={saveChanges}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          deleteId={deleteId}
+          open1={open1}
+          setDeleteId={setDeleteId}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          fetchData={fetchData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          deleteRowData={deleteRowData}
+          handleDeleteSelected={handleDeleteSelected}
+          permissions={adjustedPermissions}
+          disableRedHighlight={true}
+          allProducts={allProducts}
+          allDescriptionDrpdwn={allDescriptionDrpdwn}
+          handleExcelUpload={handleExcelUpload}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          deleteNoteOnDeleteDialogeBox={DELETE_NOTE}
+          screenType='shutdown'
+          allLines={allLines}
+        />
+      )}
+      {selectedTab === 1 && IS_AROMATIC_HMD && <ShutdownHistoryConfig />}
+    </div>
+  )
+}
+
+export default ShutDown

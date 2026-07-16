@@ -1,0 +1,1296 @@
+import { useGridApiRef } from '@mui/x-data-grid'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import React, { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { useSession } from 'SessionStoreContext'
+import getEnhancedProductionColDefs from '../data-tables/CommonHeader/Kendo_ProductionVolumeHeader'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { useDispatch } from 'react-redux'
+import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { DataService } from 'services/DataService'
+import { ProductionVolumeDataApiService } from 'services/production-volume-data-api-service'
+import { validateFields } from 'utils/validationUtils'
+import KendoDataTables from './index'
+import {
+  getColDefsDesignCapacity,
+  getColDefsDesignCapacityPEPP,
+  getColDefsMaxAchievedCapacity,
+  getColDefsNonEditable,
+  getColDefsPercentageSummary,
+  getColDefsDesignCapacityELASTOMERJMD,
+  getColDefsMaxAchievedCapacityELASTOMERJMD,
+  getColDefsPercentageSummaryElastomerJMD,
+} from './Utilities-Kendo/productionTargetColDefs'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+const ProductionTarget = ({ permissions }) => {
+  const [editResetKey, setEditResetKey] = useState(0)
+  const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
+  const [modifiedCellsDesignCapacity, setModifiedCellsDesignCapacity] =
+    React.useState({})
+  const [enableSaveAddBtnDesignCapacity, setEnableSaveAddBtnDesignCapacity] =
+    useState(false)
+  const [_plantID, set_PlantID] = useState('')
+  const keycloak = useSession()
+  const [calculationObject, setCalculationObject] = useState([])
+  const apiRef = useGridApiRef()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const PLANT_ID = plantObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const SITE_ID = siteObject?.id
+  const AOP_YEAR = year?.selectedYear
+  const PLANT_NAME = plantObject?.name?.toLowerCase()
+  const VERTICAL_NAME = verticalObject?.name?.toLowerCase()
+  const IS_PE_PP =
+    verticalObject?.name?.toLowerCase() == 'pe' ||
+    verticalObject?.name?.toLowerCase() == 'pp'
+  const SITE_NAME = siteObject?.name?.toLowerCase()
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+  const IS_ELASTOMER_JMD = VERTICAL_NAME === 'elastomer' && SITE_NAME === 'jmd'
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
+  const headerMap = generateHeaderNames(AOP_YEAR)
+  const [rows, setRows] = useState()
+  const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
+  const [rowsFormattedAndNonEditable, setRowsFormattedAndNonEditable] =
+    useState()
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+
+  const valueFormat = ValueFormatterProduction()
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [selectedUnit, setSelectedUnit] = useState('TPH')
+  const [loading, setLoading] = useState(false)
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [remarkDialogOpenDesignCapacity, setRemarkDialogOpenDesignCapacity] =
+    useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRemarkDesignCapacity, setCurrentRemarkDesignCapacity] =
+    useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [currentRowIdDesignCapacity, setCurrentRowIdDesignCapacity] =
+    useState(null)
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
+  const dispatch = useDispatch()
+  const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
+  const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+  const handleRemarkCellClickDesignCapacity = (row) => {
+    setCurrentRemarkDesignCapacity(row.remarks || '')
+    setCurrentRowIdDesignCapacity(row.id)
+    setRemarkDialogOpenDesignCapacity(true)
+  }
+
+  const findAvg = (value, row) => {
+    const months = [
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+      'january',
+      'february',
+      'march',
+    ]
+    const values = months.map((month) => row[month] || 0)
+    const sum = values.reduce((acc, val) => acc + val, 0)
+    const avg = (sum / values.length).toFixed(2)
+    return avg === '0.00' ? null : avg
+  }
+  const editAOPMCCalculatedData = async (newRows) => {
+    setLoading(true)
+    try {
+      const isTPH = selectedUnit == 'TPD'
+      const aopmccCalculatedData = newRows.map((row) => ({
+        april: isTPH && row.april ? row.april / 24 : row.april || null,
+        may: isTPH && row.may ? row.may / 24 : row.may || null,
+        june: isTPH && row.june ? row.june / 24 : row.june || null,
+        july: isTPH && row.july ? row.july / 24 : row.july || null,
+        august: isTPH && row.august ? row.august / 24 : row.august || null,
+        september:
+          isTPH && row.september ? row.september / 24 : row.september || null,
+        october: isTPH && row.october ? row.october / 24 : row.october || null,
+        november:
+          isTPH && row.november ? row.november / 24 : row.november || null,
+        december:
+          isTPH && row.december ? row.december / 24 : row.december || null,
+        january: isTPH && row.january ? row.january / 24 : row.january || null,
+        february:
+          isTPH && row.february ? row.february / 24 : row.february || null,
+        march: isTPH && row.march ? row.march / 24 : row.march || null,
+        financialYear: AOP_YEAR,
+        plantFKId: PLANT_ID,
+        siteFKId: SITE_ID,
+        materialFKId: row.normParametersFKId,
+        verticalFKId: VERTICAL_ID,
+        id: row.idFromApi || null,
+        avgTPH: findAvg('1', row) || null,
+        remark: row.remarks,
+        remarks: row.remarks,
+      }))
+
+      const response =
+        await ProductionVolumeDataApiService.editAOPMCCalculatedData(
+          aopmccCalculatedData,
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (response) {
+        dispatch(setIsBlocked(false))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+
+        // wait for this also before stopping loader
+        await DataService.calculateNormsHistorianValues(
+          PLANT_ID,
+          AOP_YEAR,
+          startDate,
+          endDate,
+          keycloak,
+        )
+
+        setLoading(false)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please fill all fields, try again!',
+          severity: 'error',
+        })
+        setLoading(false)
+      }
+      fetchData()
+      return response
+    } catch (error) {
+      console.error('Error saving Data:', error)
+    } finally {
+      // fetchData()
+      setLoading(false)
+    }
+  }
+
+  const editDesignCapacityData = async (newRows) => {
+    setLoading(true)
+    try {
+      const isTPH = selectedUnit === 'TPD'
+
+      const months = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
+      ]
+
+      const designCapacityData = newRows.map((row) => {
+        const mapped = { id: row.idFromApi || row.id || null }
+        months.forEach((month) => {
+          mapped[month] =
+            isTPH && row[month] ? row[month] / 24 : row[month] || null
+        })
+        mapped.remarks = row.remarks || row.remark || ''
+        mapped.materialFKId = row.normParametersFKId || row.materialFKId || null
+        mapped.productName = row.productName || row.materialDisplayName || null
+        return mapped
+      })
+
+      const response =
+        await ProductionVolumeDataApiService.editDesignCapacityData(
+          designCapacityData,
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (response && response.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCellsDesignCapacity({})
+        setEnableSaveAddBtnDesignCapacity(false)
+        fetchDesignCapacityData(selectedUnit)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please fill all fields, try again!',
+          severity: 'error',
+        })
+      }
+      setLoading(false)
+      return response
+    } catch (error) {
+      console.error('Error saving Design Capacity:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error saving Design Capacity!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
+  const saveChangesDesignCapacity = React.useCallback(async () => {
+    try {
+      const data = Object.values(modifiedCellsDesignCapacity)
+
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      editDesignCapacityData(data)
+      setEnableSaveAddBtnDesignCapacity(false)
+    } catch (error) {
+      console.log('Facing issue at saving data', error)
+    }
+  }, [modifiedCellsDesignCapacity, selectedUnit])
+
+  //
+  const saveChanges = React.useCallback(async () => {
+    try {
+      var data = Object.values(modifiedCells)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+
+      const months = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
+      ]
+
+      const invalidRows = data.filter((row) => {
+        if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
+          return true
+        }
+
+        // For ELASTOMER JMD, only validate april
+        if (IS_ELASTOMER_JMD) {
+          const value = row['april']
+          if (
+            value === 0 ||
+            value === null ||
+            (typeof value === 'string' && !value.trim())
+          ) {
+            return true
+          }
+        } else {
+          for (const month of months) {
+            const value = row[month]
+            if (
+              value === 0 ||
+              value === null ||
+              (typeof value === 'string' && !value.trim())
+            ) {
+              return true
+            }
+          }
+        }
+
+        const remarkValue = row.remark || row.remarks
+        const originalRemarkValue =
+          row.originalRemark || row.originalRemarks || ''
+
+        if (
+          !remarkValue ||
+          (typeof remarkValue === 'string' && !remarkValue.trim()) ||
+          remarkValue.trim() === originalRemarkValue.trim()
+        ) {
+          return true
+        }
+
+        return false
+      })
+
+      if (invalidRows.length > 0) {
+        setSnackbarData({
+          message: IS_ELASTOMER_JMD
+            ? 'Please fill value and update the Remark!'
+            : 'Please fill all fields in edited row and update the Remark!',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+        return
+      } else {
+        editAOPMCCalculatedData(data)
+      }
+      setEnableSaveAddBtn(false)
+    } catch (error) {
+      console.log('Facing issue at saving data', error)
+    }
+  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD])
+
+  const fetchData = async (unit = selectedUnit) => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    try {
+      setLoading(true)
+      const response =
+        await ProductionVolumeDataApiService.getAOPMCCalculatedData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      if (response?.code != 200) {
+        setRows([])
+        setLoading(false)
+        return
+      }
+      setCalculationObject(response?.data?.aopCalculation)
+      var formattedData = response?.data?.aopMCCalculatedDataDTOList.map(
+        (item, index) => {
+          const isTPH = selectedUnit == 'TPD'
+          return {
+            ...item,
+            idFromApi: item?.id || null,
+            normParametersFKId: item?.materialFKId.toLowerCase(),
+            remarks: item?.remarks?.trim() || null,
+            originalRemark: item?.remarks?.trim() || null,
+
+            id: index,
+
+            ...(isTPH && {
+              april: item.april
+                ? (item.april * 24).toFixed(2)
+                : item.april || null,
+              may: item.may ? (item.may * 24).toFixed(2) : item.may || null,
+              june: item.june ? (item.june * 24).toFixed(2) : item.june || null,
+              july: item.july ? (item.july * 24).toFixed(2) : item.july || null,
+              august: item.august
+                ? (item.august * 24).toFixed(2)
+                : item.august || null,
+              september: item.september
+                ? (item.september * 24).toFixed(2)
+                : item.september || null,
+              october: item.october
+                ? (item.october * 24).toFixed(2)
+                : item.october || null,
+              november: item.november
+                ? (item.november * 24).toFixed(2)
+                : item.november || null,
+              december: item.december
+                ? (item.december * 24).toFixed(2)
+                : item.december || null,
+              january: item.january
+                ? (item.january * 24).toFixed(2)
+                : item.january || null,
+              february: item.february
+                ? (item.february * 24).toFixed(2)
+                : item.february || null,
+              march: item.march
+                ? (item.march * 24).toFixed(2)
+                : item.march || null,
+            }),
+          }
+        },
+      )
+
+      // Fetch Max Achieved Capacity data for Percentage Summary
+      const maxCapacityResponse =
+        await ProductionVolumeDataApiService.getMaxAchievedCapacityData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      let maxCapacityData =
+        maxCapacityResponse?.data?.aopMCCalculatedDataDTOList
+      if (maxCapacityData && !Array.isArray(maxCapacityData)) {
+        maxCapacityData = [maxCapacityData]
+      }
+      const isTPD = selectedUnit === 'TPD'
+      const formattedMaxCapacity = (maxCapacityData || []).map((item) => ({
+        ...item,
+        idFromApi: item?.id || null,
+        productName: item?.materialDisplayName,
+        april:
+          isTPD && item.april
+            ? (item.april * 24).toFixed(2)
+            : item.april || null,
+        may: isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null,
+        june:
+          isTPD && item.june ? (item.june * 24).toFixed(2) : item.june || null,
+        july:
+          isTPD && item.july ? (item.july * 24).toFixed(2) : item.july || null,
+        august:
+          isTPD && item.august
+            ? (item.august * 24).toFixed(2)
+            : item.august || null,
+        september:
+          isTPD && item.september
+            ? (item.september * 24).toFixed(2)
+            : item.september || null,
+        october:
+          isTPD && item.october
+            ? (item.october * 24).toFixed(2)
+            : item.october || null,
+        november:
+          isTPD && item.november
+            ? (item.november * 24).toFixed(2)
+            : item.november || null,
+        december:
+          isTPD && item.december
+            ? (item.december * 24).toFixed(2)
+            : item.december || null,
+        january:
+          isTPD && item.january
+            ? (item.january * 24).toFixed(2)
+            : item.january || null,
+        february:
+          isTPD && item.february
+            ? (item.february * 24).toFixed(2)
+            : item.february || null,
+        march:
+          isTPD && item.march
+            ? (item.march * 24).toFixed(2)
+            : item.march || null,
+      }))
+
+      const formulatedData = normalizeAllRows(
+        formattedData,
+        formattedMaxCapacity,
+      )
+
+      const nonEditableRows = formulatedData.map((item) => ({
+        ...item,
+        isEditable: false,
+      }))
+      var formattedDataNONEDITABLE = formattedData.map((item) => ({
+        ...item,
+        isEditable: false,
+      }))
+
+      formattedData = formattedData.map((item) => ({
+        ...item,
+        remarks: item.remarks ? item.remarks.trim() : '',
+      }))
+      setRowsPercentageSummary(nonEditableRows)
+      setRows(formattedData)
+      setRowsFormattedAndNonEditable(formattedDataNONEDITABLE)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  function formatDate(date) {
+    if (!date) return ''
+    const year = date?.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const fetchConfiguration = async () => {
+    try {
+      setLoading(true)
+      const configData = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (configData?.code !== 200) return
+
+      const StartDate = configData.data.find(
+        (d) => d.Name === 'StartDate',
+      )?.AttributeValue
+      const EndDate = configData.data.find(
+        (d) => d.Name === 'EndDate',
+      )?.AttributeValue
+
+      if (!StartDate || !EndDate) {
+        const today = new Date()
+        const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
+        const startDate = new Date(today.getFullYear() - 5, today.getMonth(), 1)
+
+        setStartDate(formatDate(startDate))
+        setEndDate(formatDate(endDate))
+      } else {
+        setStartDate(StartDate)
+        setEndDate(EndDate)
+      }
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  function normalizeAllRows(grid, maxCapacityGrid) {
+    const monthKeys = [
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+      'january',
+      'february',
+      'march',
+    ]
+
+    return grid?.map((row, index) => {
+      // Find matching row in maxCapacityGrid
+      const matchedMaxRow =
+        maxCapacityGrid?.find(
+          (maxRow) =>
+            (maxRow.materialFKId &&
+              row.materialFKId &&
+              maxRow.materialFKId.toLowerCase() ===
+                row.materialFKId.toLowerCase()) ||
+            (maxRow.normParametersFKId &&
+              row.normParametersFKId &&
+              maxRow.normParametersFKId.toLowerCase() ===
+                row.normParametersFKId.toLowerCase()) ||
+            (maxRow.productName &&
+              row.productName &&
+              maxRow.productName === row.productName),
+        ) || maxCapacityGrid?.[index]
+
+      const newRow = { ...row }
+
+      monthKeys.forEach((key) => {
+        const orig = Number(row[key] || 0)
+        let pct = 0
+        if (matchedMaxRow) {
+          const maxVal = Number(matchedMaxRow[key] || 0)
+          pct = maxVal ? (orig / maxVal) * 100 : 0
+        } else {
+          // fallback to self-normalization if no match
+          const vals = monthKeys?.map((k) => Number(row[k]))
+          const selfMax = Math.max(...vals)
+          pct = selfMax ? (orig / selfMax) * 100 : 0
+        }
+        newRow[key] = Number(pct.toFixed(2))
+      })
+
+      return newRow
+    })
+  }
+
+  const colDefs_percentage_summary = IS_ELASTOMER_JMD
+    ? getColDefsPercentageSummaryElastomerJMD(headerMap, valueFormat)
+    : getColDefsPercentageSummary(headerMap, valueFormat)
+  const colDefs_design_capacity = IS_PE_PP
+    ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
+    : IS_ELASTOMER_JMD
+      ? getColDefsDesignCapacityELASTOMERJMD(headerMap, valueFormat)
+      : getColDefsDesignCapacity(headerMap, valueFormat)
+
+  const colDefs_max_achieved_capacity = IS_ELASTOMER_JMD
+    ? getColDefsMaxAchievedCapacityELASTOMERJMD(headerMap, valueFormat)
+    : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
+
+  const colDefs_non_editable = getColDefsNonEditable(headerMap, valueFormat)
+
+  useEffect(() => {
+    setModifiedCellsDesignCapacity({})
+    setEnableSaveAddBtnDesignCapacity({})
+    setModifiedCells({})
+
+    fetchData()
+
+    fetchConfiguration()
+  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
+
+  const colDefs_editable = getEnhancedProductionColDefs({
+    headerMap,
+    valueFormat,
+  })
+
+  const handleUnitChangeDesignCapacity = (unit) => {
+    setSelectedUnit(unit)
+  }
+
+  const handleUnitChangeMaxCapacity = (unit) => {
+    setSelectedUnit(unit)
+  }
+
+  const handleUnitChangeMain = (unit) => {
+    setSelectedUnit(unit)
+  }
+
+  const handleCalculate = () => {
+    if (VERTICAL_NAME == 'meg' || VERTICAL_NAME == 'elastomer') {
+      handleCalculateMeg()
+    } else {
+      // handleCalculatePe()
+    }
+  }
+
+  const fetchDesignCapacityData = async (unit = selectedUnit) => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setLoading(true)
+    try {
+      const response =
+        await ProductionVolumeDataApiService.getDesignCapacityData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      let data = response?.data?.aopMCCalculatedDataDTOList
+      if (data && !Array.isArray(data)) {
+        data = [data]
+      }
+      if (response?.code === 200 && data) {
+        const isTPD = unit === 'TPD'
+        const formatted = data.map((item, index) => ({
+          ...item,
+          id: item?.id || null,
+          productName: item?.materialDisplayName,
+          remarks: item?.remarks?.trim() || null,
+          originalRemark: item?.remarks?.trim() || null,
+          remark: item.remarks?.trim() || '',
+          isEditable: IS_PE_PP || IS_ELASTOMER_JMD ? false : true,
+
+          april:
+            isTPD && item.april
+              ? (item.april * 24).toFixed(2)
+              : item.april || null,
+          may:
+            isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null,
+          june:
+            isTPD && item.june
+              ? (item.june * 24).toFixed(2)
+              : item.june || null,
+          july:
+            isTPD && item.july
+              ? (item.july * 24).toFixed(2)
+              : item.july || null,
+          august:
+            isTPD && item.august
+              ? (item.august * 24).toFixed(2)
+              : item.august || null,
+          september:
+            isTPD && item.september
+              ? (item.september * 24).toFixed(2)
+              : item.september || null,
+          october:
+            isTPD && item.october
+              ? (item.october * 24).toFixed(2)
+              : item.october || null,
+          november:
+            isTPD && item.november
+              ? (item.november * 24).toFixed(2)
+              : item.november || null,
+          december:
+            isTPD && item.december
+              ? (item.december * 24).toFixed(2)
+              : item.december || null,
+          january:
+            isTPD && item.january
+              ? (item.january * 24).toFixed(2)
+              : item.january || null,
+          february:
+            isTPD && item.february
+              ? (item.february * 24).toFixed(2)
+              : item.february || null,
+          march:
+            isTPD && item.march
+              ? (item.march * 24).toFixed(2)
+              : item.march || null,
+        }))
+        setRowsDesignCapacity(formatted)
+      } else {
+        setRowsDesignCapacity([])
+      }
+    } catch (error) {
+      console.error('Error fetching Design Capacity:', error)
+      setRowsDesignCapacity([])
+    } finally {
+      setLoading(false)
+    }
+  }
+  const fetchMaxCapacityData = async (unit = selectedUnit) => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setLoading(true)
+    try {
+      const response =
+        await ProductionVolumeDataApiService.getMaxAchievedCapacityData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      let data = response?.data?.aopMCCalculatedDataDTOList
+      if (data && !Array.isArray(data)) {
+        data = [data]
+      }
+      if (response?.code === 200 && data) {
+        // Conversion logic
+        const isTPD = unit === 'TPD'
+        const formatted = data.map((item, index) => ({
+          ...item,
+          idFromApi: item?.id || null,
+          productName: item?.materialDisplayName,
+          april:
+            isTPD && item.april
+              ? (item.april * 24).toFixed(2)
+              : item.april || null,
+          may:
+            isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null,
+          june:
+            isTPD && item.june
+              ? (item.june * 24).toFixed(2)
+              : item.june || null,
+          july:
+            isTPD && item.july
+              ? (item.july * 24).toFixed(2)
+              : item.july || null,
+          august:
+            isTPD && item.august
+              ? (item.august * 24).toFixed(2)
+              : item.august || null,
+          september:
+            isTPD && item.september
+              ? (item.september * 24).toFixed(2)
+              : item.september || null,
+          october:
+            isTPD && item.october
+              ? (item.october * 24).toFixed(2)
+              : item.october || null,
+          november:
+            isTPD && item.november
+              ? (item.november * 24).toFixed(2)
+              : item.november || null,
+          december:
+            isTPD && item.december
+              ? (item.december * 24).toFixed(2)
+              : item.december || null,
+          january:
+            isTPD && item.january
+              ? (item.january * 24).toFixed(2)
+              : item.january || null,
+          february:
+            isTPD && item.february
+              ? (item.february * 24).toFixed(2)
+              : item.february || null,
+          march:
+            isTPD && item.march
+              ? (item.march * 24).toFixed(2)
+              : item.march || null,
+          isEditable: false,
+        }))
+        setRowsMaxCapacity(formatted)
+      } else {
+        setRowsMaxCapacity([])
+      }
+    } catch (error) {
+      console.error('Error fetching Max Achieved Capacity:', error)
+      setRowsMaxCapacity([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDesignCapacityData(selectedUnit)
+  }, [selectedUnit, PLANT_ID, yearChanged, keycloak])
+
+  useEffect(() => {
+    fetchMaxCapacityData(selectedUnit)
+  }, [selectedUnit, PLANT_ID, yearChanged, keycloak])
+
+  useEffect(() => {
+    fetchData()
+    fetchConfiguration()
+  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
+
+  const handleCalculateMeg = async () => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    try {
+      const data =
+        await ProductionVolumeDataApiService.handleCalculateProductionVolData(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      allAction: false,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      showCalculate: false,
+    }
+  }
+  const percentageTitle = IS_PE_PP
+    ? 'Current MCU'
+    : VERTICAL_NAME === 'cracker'
+      ? SITE_NAME === 'c2'
+        ? 'Max Achieved Capacity (Ethylene+Propylene)'
+        : 'Max Achieved Capacity (Ethylene)'
+      : 'Max Achieved Capacity'
+  const adjustedPermissionsGrid1 = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      allAction: permissions?.allAction ?? true,
+      addButton: permissions?.addButton ?? false,
+      deleteButton: permissions?.deleteButton ?? false,
+      editButton: permissions?.editButton ?? false,
+      showUnit: permissions?.showUnit ?? false,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      showRefreshBtn: permissions?.showRefreshBtn ?? true,
+      saveBtn: false,
+      units: ['TPH', 'TPD'],
+      // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
+      titleName: percentageTitle,
+
+      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      titleAndInformation:
+        'Maximum Ethylene Production achieved in the historical data for different furnace mode of operation.',
+
+      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+
+      downloadExcelBtnFromUI:
+        permissions?.hideDownloadExcel || IS_ELASTOMER_JMD ? false : true,
+      ExcelName: `${VERTICAL_NAME}_Max Achieved Capacity`,
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissionsGrid2 = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      allAction: permissions?.allAction ?? true,
+      addButton: permissions?.addButton ?? false,
+      deleteButton: permissions?.deleteButton ?? false,
+      editButton: permissions?.editButton ?? false,
+      showUnit: permissions?.showUnit ?? true,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      showRefreshBtn: permissions?.showRefreshBtn ?? true,
+      saveBtn: IS_PE_PP || IS_ELASTOMER_JMD ? false : true,
+      units: ['TPH', 'TPD'],
+
+      // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
+      downloadExcelBtnFromUI:
+        permissions?.hideDownloadExcel || IS_ELASTOMER_JMD ? false : true,
+      ExcelName: `${VERTICAL_NAME}_Design Capacity`,
+
+      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      titleAndInformation:
+        'Design plant capacity for different furnace mode of operation as per licensor provided data.',
+
+      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+
+      titleName:
+        VERTICAL_NAME === 'cracker' && SITE_NAME === 'c2'
+          ? 'Design Capacity (Ethylene+Propylene)'
+          : VERTICAL_NAME === 'cracker'
+            ? 'Design Capacity (Ethylene)'
+            : 'Design Capacity',
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      allAction: permissions?.allAction ?? true,
+      addButton: permissions?.addButton ?? false,
+      deleteButton: permissions?.deleteButton ?? false,
+      editButton: permissions?.editButton ?? false,
+      showUnit: permissions?.showUnit ?? false,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      showRefreshBtn: permissions?.showRefreshBtn ?? true,
+      saveBtn: permissions?.saveBtn ?? true,
+      units: ['TPH', 'TPD'],
+      showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
+      showCalculateVisibility:
+        VERTICAL_NAME === 'meg' &&
+        Object.keys(calculationObject || {}).length > 0
+          ? true
+          : false,
+      downloadExcelBtn:
+        permissions?.hideDownloadExcel || IS_ELASTOMER_JMD ? false : true,
+      uploadExcelBtn:
+        permissions?.hideUploadExcel || IS_ELASTOMER_JMD ? false : true,
+
+      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      titleAndInformation: 'Operating capacity derived from Optimizer model.',
+
+      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+      titleName:
+        VERTICAL_NAME === 'cracker'
+          ? 'Current Operating Capacity (Ethylene)'
+          : 'Current Operating Capacity',
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissionsLast = getAdjustedPermissions(
+    {
+      allAction: true,
+      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      titleAndInformation: 'Percentage Summary (Ethylene)',
+      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+      titleName:
+        VERTICAL_NAME === 'cracker'
+          ? 'Percentage Summary (Ethylene)'
+          : 'Percentage Summary',
+    },
+    isOldYear,
+  )
+
+  var colDefs_current_operating_capacity = permissions?.hideSummary
+    ? IS_ELASTOMER_JMD
+      ? getColDefsMaxAchievedCapacityELASTOMERJMD(headerMap, valueFormat) // only Value column
+      : colDefs_non_editable
+    : colDefs_editable
+
+  var rows1 = permissions?.hideSummary ? rowsFormattedAndNonEditable : rows
+
+  const handleExcelUpload = (rawFile) => {
+    saveExcelFile(rawFile)
+  }
+  const downloadExcelForConfiguration = async (gridType) => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      if (gridType === 'design') {
+        await ProductionVolumeDataApiService.getDesignCapacityExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (gridType === 'max') {
+        await ProductionVolumeDataApiService.getMaxAchievedCapacityExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else {
+        await ProductionVolumeDataApiService.getProductionVolExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      }
+
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error!', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    }
+  }
+  const saveExcelFile = async (rawFile) => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setLoading(true)
+    try {
+      const response =
+        await ProductionVolumeDataApiService.saveProductionVolDataExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      if (response?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Upload Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+
+        // wait for this also before stopping loader
+        await DataService.calculateNormsHistorianValues(
+          PLANT_ID,
+          AOP_YEAR,
+          startDate,
+          endDate,
+          keycloak,
+        )
+        setLoading(false)
+
+        // setLoading(false)
+
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File Production Vol Data.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Falied!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setLoading(false)
+    } finally {
+      // fetchData()
+      setLoading(false)
+    }
+  }
+
+  const conditionForFirst = !permissions?.hideSummary
+  let max_achieved_capacity = []
+
+  max_achieved_capacity = colDefs_max_achieved_capacity
+
+  return (
+    <div>
+      <LoaderBackdrop open={!!loading} />
+
+      {/* DESIGN_CAPACITY */}
+      {conditionForFirst && (
+        <KendoDataTables
+          modifiedCells={modifiedCellsDesignCapacity}
+          setModifiedCells={setModifiedCellsDesignCapacity}
+          enableSaveAddBtn={enableSaveAddBtnDesignCapacity}
+          setRows={setRowsDesignCapacity}
+          columns={colDefs_design_capacity}
+          rows={rowsDesignCapacity}
+          paginationOptions={[100, 200, 300]}
+          saveChanges={saveChangesDesignCapacity}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRef}
+          fetchData={fetchDesignCapacityData}
+          handleUnitChange={handleUnitChangeDesignCapacity}
+          handleRemarkCellClick={handleRemarkCellClickDesignCapacity}
+          experimentalFeatures={{ newEditingApi: true }}
+          remarkDialogOpen={remarkDialogOpenDesignCapacity}
+          setRemarkDialogOpen={setRemarkDialogOpenDesignCapacity}
+          currentRemark={currentRemarkDesignCapacity}
+          setCurrentRemark={setCurrentRemarkDesignCapacity}
+          currentRowId={currentRowIdDesignCapacity}
+          setEnableSaveAddBtn={setEnableSaveAddBtnDesignCapacity}
+          permissions={adjustedPermissionsGrid2}
+          selectedUnit={selectedUnit}
+          setSelectedUnit={setSelectedUnit}
+          downloadExcelForConfiguration={() =>
+            downloadExcelForConfiguration('design')
+          }
+          setEditResetKey={setEditResetKey}
+          resetEditSignal={editResetKey}
+        />
+      )}
+
+      {/* MAX_ACHIEVED_CAPACITY */}
+      {conditionForFirst && (
+        <KendoDataTables
+          setRows={setRowsMaxCapacity}
+          columns={max_achieved_capacity}
+          rows={rowsMaxCapacity}
+          fetchData={fetchMaxCapacityData}
+          permissions={adjustedPermissionsGrid1}
+          selectedUnit={selectedUnit}
+          setSelectedUnit={setSelectedUnit}
+          handleUnitChange={handleUnitChangeMaxCapacity}
+          downloadExcelForConfiguration={() =>
+            downloadExcelForConfiguration('max')
+          }
+          setEditResetKey={setEditResetKey}
+          resetEditSignal={editResetKey}
+        />
+      )}
+
+      {/* CURRENT_OPERATING_CAPACITY */}
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
+        setRows={setRows}
+        columns={colDefs_current_operating_capacity}
+        rows={rows1}
+        paginationOptions={[100, 200, 300]}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        apiRef={apiRef}
+        fetchData={fetchData}
+        handleUnitChange={handleUnitChangeMain}
+        handleRemarkCellClick={handleRemarkCellClick}
+        experimentalFeatures={{ newEditingApi: true }}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        handleCalculate={handleCalculate}
+        permissions={adjustedPermissions}
+        selectedUnit={selectedUnit}
+        setSelectedUnit={setSelectedUnit}
+        handleExcelUpload={handleExcelUpload}
+        downloadExcelForConfiguration={() =>
+          downloadExcelForConfiguration('main')
+        }
+        setEditResetKey={setEditResetKey}
+        resetEditSignal={editResetKey}
+      />
+
+      {/* PERCENTAGE_SUMMARY */}
+      {!permissions?.hideSummary && (
+        <>
+          <KendoDataTables
+            setRows={setRowsPercentageSummary}
+            columns={colDefs_percentage_summary}
+            rows={rowsPercentageSummary}
+            title='Production target Reference'
+            fetchData={fetchData}
+            permissions={adjustedPermissionsLast}
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
+export default ProductionTarget

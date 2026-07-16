@@ -1,0 +1,35 @@
+[
+  {
+    "field": "particulars",
+    "title": "Particulars",
+    "editable": false,
+    "locked": true,
+    "widthT": 220,
+    "hidden": false,
+    "minWidth": 120
+  },
+  {
+    "field": "uom",
+    "title": "UOM",
+    "editable": false,
+    "locked": true,
+    "widthT": 80,
+    "minWidth": 80
+  },
+  {
+    "field": "value",
+    "title": "Value",
+    "editable": true,
+    "type": "number",
+    "widthT": 120,
+    "minWidth": 120
+  },
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": false,
+    "type": "string",
+    "widthT": 250,
+    "minWidth": 120
+  }
+]

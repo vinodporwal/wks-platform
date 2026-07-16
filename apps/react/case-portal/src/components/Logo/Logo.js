@@ -1,12 +1,22 @@
 import { useTheme } from '@mui/material/styles'
-import logo from 'assets/images/logo.svg'
+import logo from 'assets/images/RILLogo.png'
 
 const Logo = () => {
   const theme = useTheme()
 
   return (
     <>
-      <img src={logo} alt='WKS Power' />
+      <img
+        src={logo}
+        alt='Digital AOP'
+        style={{
+          width: '50%',
+          marginLeft: '25%',
+          marginRight: '40%',
+          marginTop: '5%',
+          marginBottom: '5%',
+        }}
+      />
 
       <svg
         width='118'
@@ -27,7 +37,7 @@ const Logo = () => {
             <stop stopColor={theme.palette.primary.darker} />
             <stop
               offset='0.9637'
-              stopColor={theme.palette.primary.dark}
+              stopColor={theme.palette.primary?.dark}
               stopOpacity='0'
             />
           </linearGradient>
@@ -42,7 +52,7 @@ const Logo = () => {
             <stop stopColor={theme.palette.primary.darker} />
             <stop
               offset='1'
-              stopColor={theme.palette.primary.dark}
+              stopColor={theme.palette.primary?.dark}
               stopOpacity='0'
             />
           </linearGradient>

@@ -1,63 +1,174 @@
 import PropTypes from 'prop-types'
 import { useMemo } from 'react'
-import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
-import Drawer from '@mui/material/Drawer'
-import useMediaQuery from '@mui/material/useMediaQuery'
+import Avatar from '@mui/material/Avatar'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import Divider from '@mui/material/Divider'
 import DrawerHeader from './DrawerHeader'
 import DrawerContent from './DrawerContent'
 import MiniDrawerStyled from './MiniDrawerStyled'
-import { drawerWidth } from 'config'
 
-const MainDrawer = ({ open, handleDrawerToggle, window }) => {
-  const theme = useTheme()
-  const matchDownMD = useMediaQuery(theme.breakpoints.down('lg'))
-  const container =
-    window !== undefined ? () => window().document.body : undefined
+const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
   const drawerContent = useMemo(() => <DrawerContent />, [])
-  const drawerHeader = useMemo(() => <DrawerHeader open={open} />, [open])
+  const drawerHeader = useMemo(
+    () => <DrawerHeader open={open} handleDrawerToggle={handleDrawerToggle} />,
+    [open, handleDrawerToggle],
+  )
+
+  function stringToColor(str = 'User') {
+    let hash = 0
+
+    /* eslint-disable no-bitwise */
+    for (let i = 0; i < str.length; i += 1) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash)
+    }
+
+    let color = '#'
+
+    for (let i = 0; i < 3; i += 1) {
+      const value = (hash >> (i * 8)) & 0xff
+      color += `00${value.toString(16)}`.slice(-2)
+    }
+    /* eslint-enable no-bitwise */
+
+    return color
+  }
+
+  function stringAvatar(name = 'User') {
+    const safeName = name?.trim() || 'User'
+    const nameParts = safeName.split(' ').filter(Boolean)
+
+    const firstLetter = nameParts?.[0]?.[0] || 'U'
+    const secondLetter = nameParts?.[1]?.[0] || ''
+
+    return {
+      sx: {
+        bgcolor: stringToColor(safeName),
+      },
+      children: `${firstLetter}${secondLetter}`.toUpperCase(),
+    }
+  }
 
   return (
-    <Box
-      component='nav'
-      sx={{ flexShrink: { md: 0 }, zIndex: 1300 }}
-      aria-label='mailbox folders'
+    <MiniDrawerStyled
+      variant='permanent'
+      open={open}
+      hide={isDashboard && !open}
     >
-      {!matchDownMD ? (
-        <MiniDrawerStyled variant='permanent' open={open}>
-          {drawerHeader}
-          {drawerContent}
-        </MiniDrawerStyled>
-      ) : (
-        <Drawer
-          container={container}
-          variant='temporary'
-          open={open}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
+      <Box
+        role='presentation'
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* HEADER FIXED */}
+        {drawerHeader}
+
+        {/* MENU SCROLL AREA */}
+        <Box
           sx={{
-            display: { xs: 'block', lg: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              borderRight: `1px solid ${theme.palette.divider}`,
-              backgroundImage: 'none',
-              boxShadow: 'inherit',
+            flex: 1, // TAKE REMAINING HEIGHT
+            overflowY: 'auto',
+            overflowX: 'hidden',
+
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(100,116,139,0.35)',
+              borderRadius: '10px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: 'rgba(100,116,139,0.55)',
             },
           }}
         >
-          {open && drawerHeader}
-          {open && drawerContent}
-        </Drawer>
-      )}
-    </Box>
+          {drawerContent}
+        </Box>
+        {/* USER DETAILS AT BOTTOM */}
+        <Box
+          sx={{
+            p: open ? 2 : 1.25,
+            borderTop: '1px solid #F0F1F2',
+            background: open ? '#F0F1F2' : '#F0F1F2',
+            transition: 'all 0.3s ease',
+          }}
+        >
+          <Stack
+            direction='row'
+            alignItems='center'
+            spacing={open ? 1.5 : 0}
+            justifyContent={open ? 'flex-start' : 'center'}
+          >
+            <Avatar
+              alt={keycloak?.idTokenParsed?.name}
+              // src={keycloak?.idTokenParsed?.picture}
+              {...stringAvatar(keycloak?.idTokenParsed?.name)}
+              variant='square'
+              sx={{
+                width: 28,
+                height: 28,
+                bgcolor: '#AE4787',
+                fontSize: '11px',
+                fontWeight: 800,
+                color: '#F0F0F0',
+                boxShadow: '0 2px 8px rgba(174, 71, 135, 0.25)',
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                borderRadius: '4px',
+                textTransform: 'uppercase',
+              }}
+            >
+              {/* {keycloak?.idTokenParsed?.name?.charAt(0) || 'U'} */}
+            </Avatar>
+            {open && (
+              <Box sx={{ overflow: 'hidden', flex: 1 }}>
+                <Typography
+                  variant='subtitle2'
+                  noWrap
+                  sx={{
+                    fontWeight: 700,
+                    color: '#303030',
+                    fontSize: '14px',
+                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {keycloak?.idTokenParsed?.name || 'User'}
+                </Typography>
+                <Typography
+                  variant='caption'
+                  noWrap
+                  display='block'
+                  sx={{
+                    color: '#303030',
+                    fontSize: '12px',
+                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    mt: 0.2,
+                    fontWeight: 500,
+                  }}
+                >
+                  {keycloak?.idTokenParsed?.email || 'user@reliance.com'}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </Box>
+      </Box>
+    </MiniDrawerStyled>
   )
 }
 
 MainDrawer.propTypes = {
-  open: PropTypes.bool,
+  open: PropTypes.bool.isRequired,
   handleDrawerToggle: PropTypes.func,
-  window: PropTypes.object,
+  isDashboard: PropTypes.bool,
+  keycloak: PropTypes.object,
 }
 
 export default MainDrawer
