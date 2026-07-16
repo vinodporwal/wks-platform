@@ -6,6 +6,7 @@ export const ShutdownApiService = {
      saveShutdownData,
      exportShutdownData,
      importShutdownData,
+     deleteShutdownData,
      getSlowdownData,
      saveSlowdownData,
      exportSlowdownData,
@@ -119,7 +120,28 @@ async function getSitePlantDropdownData(keycloak, PLANT_ID) {
           return await Promise.reject(e)
      }
 }
-
+async function deleteShutdownData(maintenanceId, keycloak, PLANT_ID) {
+     const url = `${Config.CaseEngineUrl}/task/refinery-shutdown-data?id=${maintenanceId}`
+     const headers = {
+          Accept: 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, {
+               method: 'DELETE',
+               headers,
+          })
+          if (!resp.ok) {
+               throw new Error(
+                    `Failed to delete data: ${resp.status} ${resp.statusText}`,
+               )
+          }
+          return await resp.text() // Handle text response from the backend
+     } catch (e) {
+          console.error('Error deleting slowdown data:', e)
+          return Promise.reject(e)
+     }
+}
 async function getSlowdownData(keycloak, plantId, year) {
      let url = `${Config.CaseEngineUrl}/task/refinery-slowdown-data?plantId=${plantId}&aopYear=${year}`
      const headers = {
@@ -200,7 +222,7 @@ async function importSlowdownData(file, keycloak, plantId, year) {
                method: 'POST',
                headers,
                body: formData,
-           })
+          })
           return json(keycloak, resp)
      } catch (e) {
           console.log(e)
