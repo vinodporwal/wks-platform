@@ -34,6 +34,7 @@ import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.PlantsDTO;
 import com.wks.caseengine.dto.SitesDTO;
+import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
@@ -1074,6 +1075,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.getThroughputUom(),
                         dto.getTentativeMonth(),
                         dto.getRemark(),
+                        dto.getPlantId(),
                         dto.getAopYear(),
                         updatedBy,
                         new Date(),
@@ -1572,6 +1574,30 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete refinery slowdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getRefineryBudgetUomDropdown(String plantId) {
+        try {
+   Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found"));
+
+   Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found"));
+
+   String procedureName = vertical.getName();
+
+            String sql = "EXEC " + procedureName + "_GetUomDropdown";
+
+            List<UomDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                UomDropdownDTO.builder().id(rs.getString("id")).name(rs.getString("name")).displayName(rs.getString("displayName")).build());
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch UOM dropdown data", e);
         }
     }
 
