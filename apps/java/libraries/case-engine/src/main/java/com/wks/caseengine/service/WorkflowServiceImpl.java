@@ -22,6 +22,7 @@ import com.wks.caseengine.entity.Workflow;
 import com.wks.caseengine.entity.WorkflowMaster;
 
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.exception.WorkflowConflictException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.process.instance.ProcessInstanceService;
 
@@ -239,6 +240,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 			workFlow.setVerticalFKId(UUID.fromString(workflowDTO.getVerticalFKId()));
 			workFlow.setYear(workflowDTO.getYear());
 			workFlow.setProcessInstanceId(workflowDTO.getProcessInstanceId());
+			workFlow.setIsDeleted(workflowDTO.getIsDeleted() != null ? workflowDTO.getIsDeleted() : Boolean.FALSE);
 			workflowRepository.save(workFlow);
 
 			if (workFlow.getId() != null) {
@@ -523,6 +525,18 @@ public class WorkflowServiceImpl implements WorkflowService {
 	@Override
 	public WorkflowDTO submitWorkflow(WorkflowSubmitDTO workflowSubmitDTO) {
 		// saveWorkflowData(workflowSubmitDTO.getWorkflowDTO().getPlantFkId(),workflowSubmitDTO.getWorkflowYearDTO());
+		WorkflowDTO dto = workflowSubmitDTO.getWorkflowDTO();
+
+		// Invariant: at most one active workflow per (plant, year). Guard here so a
+		// duplicate submit fails fast with 409 instead of starting a second Camunda
+		// instance; the filtered unique index is the last-line defence against races.
+		List<Workflow> active = workflowRepository.findAllByYearAndPlantFKIdAndIsDeletedFalse(
+				dto.getYear(), UUID.fromString(dto.getPlantFkId()));
+		if (!active.isEmpty()) {
+			throw new WorkflowConflictException(
+					"An AOP workflow already exists for plant " + dto.getPlantFkId() + " and year " + dto.getYear());
+		}
+
 		CaseInstance caseInstance = caseInstanceService.startWithValues(workflowSubmitDTO.getCaseInstance());
 		System.out.println("case created " + caseInstance.getBusinessKey());
 

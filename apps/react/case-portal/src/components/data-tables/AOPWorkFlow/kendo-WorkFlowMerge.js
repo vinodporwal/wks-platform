@@ -20,6 +20,11 @@ import {
   Tab,
   Tabs,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '../../../../node_modules/@mui/material/index'
 // import '../data-tables/data-grid-css.css'
 // import { CaseService } from 'services/CaseService'
@@ -54,6 +59,7 @@ import ShutdownReport from '../Reports-kendo/kendo_DetailsPlannedShutdown'
 import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFourYear'
 import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionnormForMeg'
 import AopTabs from 'components/AopTabs'
+import { AopApprovalService } from 'services/AopApprovalService'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -89,6 +95,16 @@ const WorkFlowMerge = () => {
   const [actionDisabled, setActionDisabled] = useState(false)
   const [text, setText] = useState('')
   const [taskId, setTaskId] = useState('')
+
+  // New AOP approval flow (aop-approval/*) — kept separate from the legacy
+  // /task flow so existing child-grid behaviour is untouched. Buttons here are
+  // driven entirely by the server-computed `viewer` block.
+  const [viewer, setViewer] = useState(null)
+  const [aopGate, setAopGate] = useState('')
+  const [aopTaskId, setAopTaskId] = useState('')
+  const [aopRole, setAopRole] = useState('')
+  const [aopExists, setAopExists] = useState(false)
+  const [aopRejectOpen, setAopRejectOpen] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -588,8 +604,78 @@ const WorkFlowMerge = () => {
     }
   }
 
+  // --- New AOP approval flow (aop-approval/*) ---------------------------------
+
+  // Fetch status + server-computed button state; drives the buttons below.
+  const fetchAopStatus = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      const data = await AopApprovalService.getStatus(keycloak, PLANT_ID, AOP_YEAR)
+      setViewer(data?.viewer || null)
+      setAopGate(data?.currentGateName || '')
+      setAopTaskId(data?.taskId || '')
+      setAopRole(data?.assignedRole || '')
+      setAopExists(Boolean(data?.exists))
+    } catch (err) {
+      console.error('Error fetching AOP approval status', err)
+    }
+  }
+
+  // Start the AOP approval workflow (Prepare -> Gate 1).
+  const aopStart = async () => {
+    setIsCreatingCase(true)
+    try {
+      await AopApprovalService.start(keycloak, PLANT_ID, AOP_YEAR)
+      setSnackbarData({ message: 'AOP workflow started', severity: 'success' })
+      await fetchAopStatus()
+    } catch (error) {
+      setSnackbarData({
+        message: error.message || 'Failed to start workflow',
+        severity: 'error',
+      })
+    } finally {
+      setIsCreatingCase(false)
+      setSnackbarOpen(true)
+    }
+  }
+
+  // Apply a gate decision (APPROVED / REVERTED) with the remark from `text`.
+  const aopAct = async (decision) => {
+    if (!aopTaskId) return
+    if (decision === 'REVERTED' && viewer?.remarkMandatory && !text?.trim()) {
+      setSnackbarData({ message: 'A remark is required to revert', severity: 'error' })
+      setSnackbarOpen(true)
+      return
+    }
+    setActionDisabled(true)
+    try {
+      await AopApprovalService.act(keycloak, {
+        taskId: aopTaskId,
+        plantId: PLANT_ID,
+        year: AOP_YEAR,
+        gateName: aopGate,
+        decision,
+        remark: text,
+        actorRole: aopRole,
+      })
+      setSnackbarData({
+        message: decision === 'APPROVED' ? 'Approved' : 'Reverted for update',
+        severity: 'success',
+      })
+      setText('')
+      setAopRejectOpen(false)
+      await fetchAopStatus()
+    } catch (err) {
+      setSnackbarData({ message: err.message, severity: 'error' })
+    } finally {
+      setActionDisabled(false)
+      setSnackbarOpen(true)
+    }
+  }
+
   useEffect(() => {
     getCaseId()
+    fetchAopStatus()
   }, [PLANT_ID, AOP_YEAR])
 
   // handle reject click
@@ -914,34 +1000,83 @@ const WorkFlowMerge = () => {
             ))}
           </AopTabs>
 
-          {/* RIGHT: Buttons */}
+          {/* RIGHT: AOP approval buttons — visibility comes from the server `viewer` */}
           <Stack direction='row' spacing={1} alignItems='center'>
-            {taskId && (
+            {viewer?.canSubmit && !aopExists && (
               <Button
                 variant='contained'
                 className='btn-save'
-                onClick={handleRejectClick}
-                disabled={actionDisabled}
+                onClick={aopStart}
+                disabled={isCreatingCase}
                 sx={{ height: 'auto' }}
               >
-                Accept
+                Submit for Approval
               </Button>
             )}
-
-            {/* <Button
-              variant='outlined'
-              className='btn-save2'
-              sx={{
-                color: '#0100cb',
-                border: '1px solid',
-                height: 'auto',
-                width: 'fit-content',
-              }}
-              onClick={handleAuditOpen}
-            >
-              Audit Trail
-            </Button> */}
+            {viewer?.mode === 'ACTION' && aopTaskId && (
+              <>
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  onClick={() => aopAct('APPROVED')}
+                  disabled={actionDisabled}
+                  sx={{ height: 'auto' }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant='outlined'
+                  onClick={() => setAopRejectOpen(true)}
+                  disabled={actionDisabled}
+                  sx={{ color: '#c62828', border: '1px solid', height: 'auto' }}
+                >
+                  Revert
+                </Button>
+              </>
+            )}
           </Stack>
+
+          {/* Revert remark dialog (remark mandatory when viewer.remarkMandatory) */}
+          <Dialog
+            open={aopRejectOpen}
+            onClose={() => setAopRejectOpen(false)}
+            fullWidth
+            maxWidth='sm'
+          >
+            <DialogTitle>Revert for Update / Improvement</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin='dense'
+                label={
+                  viewer?.remarkMandatory ? 'Remark (required)' : 'Remark (optional)'
+                }
+                fullWidth
+                multiline
+                minRows={3}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setAopRejectOpen(false)
+                  setText('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant='contained'
+                color='error'
+                onClick={() => aopAct('REVERTED')}
+                disabled={actionDisabled}
+              >
+                Revert
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Stack>
 
         {/* For CRACKER */}

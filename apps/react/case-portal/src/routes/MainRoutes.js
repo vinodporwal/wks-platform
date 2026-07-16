@@ -1,5 +1,6 @@
 import { CaseStatus } from 'common/caseStatus'
 import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/kendo-WorkFlowMerge'
+import AopMyApprovals from 'components/data-tables/AOPWorkFlow/AopMyApprovals'
 import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
 
 import MonthwiseProduction from 'components/data-tables/Reports-kendo/kendo-MonthwiseProduction'
@@ -250,6 +251,16 @@ export const MainRoutes = (
         element: (
           <PrivateRoute routeId='task-list'>
             <TaskList />
+          </PrivateRoute>
+        ),
+      },
+      {
+        // AOP approval inbox. Reuses the 'task-list' routeId for access-gating;
+        // add a dedicated menu item + routeId for production if desired.
+        path: 'aop-approvals',
+        element: (
+          <PrivateRoute routeId='task-list'>
+            <AopMyApprovals />
           </PrivateRoute>
         ),
       },
