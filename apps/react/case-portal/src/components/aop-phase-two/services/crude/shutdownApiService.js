@@ -12,6 +12,8 @@ export const ShutdownApiService = {
      exportSlowdownData,
      importSlowdownData,
      getSitePlantDropdownData,
+     deleteSlowdownData,
+     getUomDropdownData,
 }
 
 async function getShutdownData(keycloak, plantId, year) {
@@ -223,6 +225,46 @@ async function importSlowdownData(file, keycloak, plantId, year) {
                headers,
                body: formData,
           })
+          return json(keycloak, resp)
+     } catch (e) {
+          console.log(e)
+          return await Promise.reject(e)
+     }
+}
+async function deleteSlowdownData(maintenanceId, keycloak, PLANT_ID) {
+     const url = `${Config.CaseEngineUrl}/task/refinery-slowdown-data?id=${maintenanceId}`
+     const headers = {
+          Accept: 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, {
+               method: 'DELETE',
+               headers,
+          })
+          if (!resp.ok) {
+               throw new Error(
+                    `Failed to delete data: ${resp.status} ${resp.statusText}`,
+               )
+          }
+          return await resp.text() // Handle text response from the backend
+     } catch (e) {
+          console.error('Error deleting slowdown data:', e)
+          return Promise.reject(e)
+     }
+}
+async function getUomDropdownData(keycloak, PLANT_ID) {
+     let url = `${Config.CaseEngineUrl}/task/refinery-budget-uom-dropdown?plantId=${PLANT_ID}`
+     const headers = {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+     }
+     try {
+          const resp = await fetch(url, { method: 'GET', headers })
+          if (!resp.ok) {
+               throw new Error(`HTTP error! Status: ${resp.status}`)
+          }
           return json(keycloak, resp)
      } catch (e) {
           console.log(e)

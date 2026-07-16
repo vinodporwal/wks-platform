@@ -238,7 +238,7 @@ const PlantCapacities = ({ permissions }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      const EXCEL_NAME = `Plant_Capacities.xlsx`
+      const EXCEL_NAME = `Refinery_Plant_Capacities.xlsx`
       await PlantsCapacitiesApiService.exportPlantsCapacities(
         keycloak,
         PLANT_ID,
