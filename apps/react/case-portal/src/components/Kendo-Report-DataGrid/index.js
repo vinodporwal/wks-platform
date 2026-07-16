@@ -37,11 +37,11 @@ const KendoDataGrid = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
@@ -208,17 +208,17 @@ const KendoDataGrid = ({
           onFilterChange={(e) => setFilter(e.filter)}
           onItemChange={handleItemChange}
           resizable={true}
-          defaultSkip={0}
-          defaultTake={100}
+          {...(!permissions?.disablePagination && {
+            defaultSkip: 0,
+            defaultTake: 100,
+          })}
           contextMenu={true}
-          pageable={
-            rows?.length > 100
-              ? {
-                  buttonCount: 4,
-                  pageSizes: [10, 50, 100],
-                }
-              : false
-          }
+          {...(!permissions?.disablePagination && rows?.length > 100 && {
+            pageable: {
+              buttonCount: 4,
+              pageSizes: [10, 50, 100],
+            },
+          })}
           defaultGroup={initialGroup}
         >
           {columns?.map((col) => {

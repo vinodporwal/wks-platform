@@ -82,7 +82,7 @@ const EtheleneStock = () => {
         (col) => col.field !== 'GRID_TYPE',
       )
       const applyFixedWidth = filteredCols.length < 7
-      const fixedWidth = applyFixedWidth ? 150 : 121
+      const fixedWidth = applyFixedWidth ? 225 : 182
       return backendCols
         .filter((col) => col.field !== 'GRID_TYPE')
         .map((col) => {
@@ -458,7 +458,7 @@ const EtheleneStock = () => {
                         <KendoDataGrid
                           rows={d.rows}
                           columns={d.columns}
-                          permissions={{ isHeight: d?.rows?.length > 15 }}
+                          permissions={{ isHeight: d?.rows?.length > 15, disablePagination: true }}
                           groupBy={d.groupBy || null}
                         />
                       </Box>

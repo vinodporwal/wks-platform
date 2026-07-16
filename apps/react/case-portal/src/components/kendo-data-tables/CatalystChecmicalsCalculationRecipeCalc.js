@@ -50,7 +50,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions, onSaveOrImport, 
      const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
      const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Catchem Calc`
+     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Recipe Concentration`
 
      const lowerVertName = vertName?.toLowerCase()
      const lowerSiteName = SITE_NAME?.toLowerCase()
@@ -541,7 +541,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions, onSaveOrImport, 
                     const url = window.URL.createObjectURL(blob)
                     const link = document.createElement('a')
                     link.href = url
-                    link.setAttribute('download', 'Error File CatChem Calc.xlsx')
+                    link.setAttribute('download', 'Error File Recipe Concentration.xlsx')
                     document.body.appendChild(link)
                     link.click()
                     link.remove()
@@ -593,7 +593,7 @@ const CatalystChecmicalsCalculationRecipeCalc = ({ permissions, onSaveOrImport, 
                ExcelName: `${EXCEL_EXPORT_TITLE}`,
                showNoteWhileDeleting: false,
                showTitleNameBusiness: true,
-               titleName: 'Catchem Calc',
+               titleName: 'Recipe Concentration',
                uploadExcelBtn: false,
                showCalculate: true,
                showCalculateVisibility: Object.keys(calculationObject || {}).length > 0,

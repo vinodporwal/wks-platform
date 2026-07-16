@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useGridApiRef } from '@mui/x-data-grid'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { validateFields } from 'utils/validationUtils'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { useSession } from 'SessionStoreContext'
 import { PlantsCapacitiesApiService } from 'components/aop-phase-two/services/crude/plantsCapacitiesApiService'
 import { useSelector } from 'react-redux'
@@ -161,6 +161,24 @@ const PlantCapacities = ({ permissions }) => {
       setLoading(false)
       return
     }
+    // Check if max is greater than min
+    const invalidMinMaxRows = modifiedData.filter((row) => {
+      const minVal = row.min !== undefined && row.min !== null && row.min !== '' ? Number(row.min) : null
+      const maxVal = row.max !== undefined && row.max !== null && row.max !== '' ? Number(row.max) : null
+      return minVal !== null && maxVal !== null && maxVal <= minVal
+    })
+
+    if (invalidMinMaxRows.length > 0) {
+      const displayNames = invalidMinMaxRows
+        .map((row) => row.Particulars || `Row ${row.id}`)
+        .join(', ')
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Max  must be greater than Min for: ${displayNames}`,
+        severity: 'error',
+      })
+      return
+    }
 
     setLoading(true)
     try {
@@ -216,6 +234,99 @@ const PlantCapacities = ({ permissions }) => {
     fetchData()
   }, [fetchData])
 
+  const handleExport = useCallback(async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({ message: 'Excel download started!', severity: 'info' })
+    try {
+      const EXCEL_NAME = `Plant_Capacities.xlsx`
+      await PlantsCapacitiesApiService.exportPlantsCapacities(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_NAME,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel downloaded successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error exporting Plant Capacities plan:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel download failed. Please try again.',
+        severity: 'error',
+      })
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  const handleExcelUpload = useCallback(
+    async (file) => {
+      if (!file) return
+      setLoading(true)
+      try {
+        const response = await PlantsCapacitiesApiService.importPlantsCapacities(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+        if (response?.code === 200) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Uploaded Successfully!',
+            severity: 'success',
+          })
+          setModifiedCells({})
+          await fetchData()
+        } else if (response?.code === 400 && response?.data) {
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
+
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', 'Error File - Plant Capacities.xlsx')
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          fetchData()
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Upload Failed!',
+            severity: 'error',
+          })
+        }
+      } catch (error) {
+        console.error('Error importing slowdown plan:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Unexpected error during import.',
+          severity: 'error',
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID, AOP_YEAR, fetchData],
+  )
+
   const adjustedPermissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
     textAlignment: 'center',
@@ -266,6 +377,8 @@ const PlantCapacities = ({ permissions }) => {
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
         disableRedHighlight={true}
+        handleExport={handleExport}
+        handleExcelUpload={handleExcelUpload}
         screenType='pims-product-master'
       />
     </div>

@@ -62,6 +62,23 @@ public class NormalOperationNormsController {
 		return normalOperationNormsService.getNormsTransactionFinalNorms(plantId, year);
 	}
 
+	@PostMapping(value = "/steady-state-norms/polyester")
+	public AOPMessageVM saveNormalOperationNormsDataPolyester(
+	        @RequestParam String plantId, @RequestParam String year,
+	        @RequestParam(required = false) String gradeId,
+	        @RequestBody List<MCUNormsValueDTO> mCUNormsValueDTOList) {
+	    try {
+	        return normalOperationNormsService.saveNormalOperationNormsDataPolyester(
+	                mCUNormsValueDTOList, UUID.fromString(plantId), year, gradeId, false);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return AOPMessageVM.builder()
+	                .code(500)
+	                .message("Failed to save data: " + e.getMessage())
+	                .data(null)
+	                .build();
+	    }
+	}
 	@PostMapping(value = "/steady-state-norms")
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData(
 		@RequestParam String plantId, @RequestParam String year,

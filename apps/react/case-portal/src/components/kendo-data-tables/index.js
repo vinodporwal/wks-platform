@@ -4796,6 +4796,29 @@ const KendoDataTables = ({
                     )
                   }
 
+                  // Support custom cell renderer passed via col.cell
+                  if (col?.cell) {
+                    const CustomCell = col.cell
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        editable={false}
+                        filterable={false}
+                        sortable={false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          data: CustomCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                      />
+                    )
+                  }
+
                   return (
                     <GridColumn
                       locked={col.locked || false}
