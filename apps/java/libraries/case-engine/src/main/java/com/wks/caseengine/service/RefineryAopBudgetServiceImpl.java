@@ -336,6 +336,31 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                 PlantCapacitiesTranscationDTO dto = new PlantCapacitiesTranscationDTO();
                 try {
+
+                    // col 0 - site name
+                    Cell siteNameCell = row.getCell(0);
+                    if (siteNameCell != null) {
+                        siteNameCell.setCellType(CellType.STRING);
+                        String siteName = siteNameCell.getStringCellValue().trim();
+                        dto.setSiteName(siteName.isEmpty() ? null : siteName);
+                    }
+
+                    // col 1 - plant name
+                    Cell plantNameCell = row.getCell(1);
+                    if (plantNameCell != null) {
+                        plantNameCell.setCellType(CellType.STRING);
+                        String plantName = plantNameCell.getStringCellValue().trim();
+                        dto.setPlantName(plantName.isEmpty() ? null : plantName);
+                    }
+
+                    // col 2 - uom
+                    Cell uomCell = row.getCell(2);
+                    if (uomCell != null) {
+                        uomCell.setCellType(CellType.STRING);
+                        String uom = uomCell.getStringCellValue().trim();
+                        dto.setUom(uom.isEmpty() ? null : uom);
+                    }
+
                     // Col 3 – Min
                     Cell minCell = row.getCell(3);
                     if (minCell != null) {
