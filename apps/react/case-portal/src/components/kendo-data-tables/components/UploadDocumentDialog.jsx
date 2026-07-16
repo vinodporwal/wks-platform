@@ -107,7 +107,7 @@ const UploadDocumentDialog = ({
     const isTypeValid = ACCEPTED_TYPES.includes(file.type) ||
       ACCEPTED_EXTENSIONS.split(',').some(ext => file.name.toLowerCase().endsWith(ext))
     if (!isTypeValid) {
-      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, TXT, CSV.`
+      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: XLS, XLSX, XLSM.`
     }
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return `File size (${formatBytes(file.size)}) exceeds the ${MAX_FILE_SIZE_MB} MB limit.`
