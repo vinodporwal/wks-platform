@@ -526,6 +526,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                allValid = false;
 
 	                double difference = Math.abs(expected - actual);
+	                for (UUID materialId1 : materialIds) {
+	                    Optional<NormParameters> normParamOpt = normParametersRepository.findById(materialId);
+	                    if (normParamOpt.isPresent()) {
+	                        String name = normParamOpt.get().getDisplayName(); 
+	                        materialNames.put(materialId1, name != null ? name : "Unknown");
+	                    } else {
+	                        materialNames.put(materialId1, "Unknown");
+	                    }
+	                }
 	                String materialName = materialNames.getOrDefault(materialId, "Unknown");
 
 	                List<ValidationErrorDTO> rows = monthRows != null ? monthRows.get(month) : null;
