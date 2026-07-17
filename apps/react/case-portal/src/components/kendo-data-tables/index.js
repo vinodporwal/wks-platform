@@ -274,6 +274,7 @@ const KendoDataTables = ({
   configType,
   isEditable = false,
   currentTabDisplayName,
+  cellHighlightStrategy = '',
 }) => {
   const _export = useRef(null)
 
@@ -1709,6 +1710,59 @@ const KendoDataTables = ({
     })
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
+
+    return (
+      <td
+        {...tdProps}
+        title={value}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+        style={{
+          fontWeight: !shouldHighlight && isBoldFromCells ? 'bold' : undefined,
+        }}
+      >
+        {children}
+      </td>
+    )
+  }
+
+  //SlowdownConfigHighlightCell
+  const SlowdownConfigHighlightCell = (props) => {
+    const {
+      dataItem,
+      field,
+      tdProps,
+      children,
+      customModifiedCells,
+      allRedCell,
+    } = props
+    const rowId = dataItem.id
+    const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
+
+    // isEdited: locally modified cell
+    const isEdited = Object.prototype.hasOwnProperty.call(
+      customModifiedCells?.[rowId] || {},
+      field,
+    )
+
+    // Row identifier — same field the API uses
+    const normId = dataItem.NormParameter_FK_Id
+
+    // isChangedFromApi: match NormParameter_FK_Id (row) + month as field name (column)
+    const isChangedFromApi = allRedCell?.some((cell) => {
+      const cellNormId = (
+        cell.NormParameter_FK_Id || cell.normParameterFKId
+      )?.toLowerCase()
+      if (!cellNormId || !normId) return false
+      if (cellNormId !== normId.toLowerCase()) return false
+
+      // month in changedData IS the dynamic column field name
+      // e.g. "slowdown during ganapati traffic restriction_September"
+      const cellField = cell.month || cell.ColumnName || cell.columnName
+      return cellField === field
+    })
+
+    const shouldHighlight = isEdited || isChangedFromApi
 
     return (
       <td
@@ -4609,7 +4663,13 @@ const KendoDataTables = ({
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) =>
-                            showThreeColors ? (
+                            cellHighlightStrategy === 'slowdownConfig' ? (
+                              <SlowdownConfigHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                              />
+                            ) : showThreeColors ? (
                               <RedHighlightCell2
                                 {...props}
                                 customModifiedCells={customModifiedCells}
