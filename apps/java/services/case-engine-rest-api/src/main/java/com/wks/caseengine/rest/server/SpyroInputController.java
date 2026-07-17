@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -85,6 +86,24 @@ public class SpyroInputController {
 	public AOPMessageVM calculateSpyroInputData(@RequestParam String year, @RequestParam String plantId,
 			@RequestParam String Mode, @RequestParam String type) {
 		return spyroInputService.calculateSpyroInputData(year, plantId, Mode, type);
+	}
+
+	@GetMapping(value = "/optimizing-variables-dropdown")
+	public AOPMessageVM getOptimizingVariablesDropdown(@RequestParam String plantId, @RequestParam String aopYear) {
+		return spyroInputService.getOptimizingVariablesDropdown(plantId, aopYear);
+	}
+
+	@PostMapping(value = "/optimizing-variables-dropdown")
+	public AOPMessageVM updateOptimizingVariablesDropdown(
+			@RequestBody List<OptimizingVariablesDropdownDTO> dtoList,
+			@RequestParam String plantId,
+			@RequestParam String aopYear) {
+		return spyroInputService.updateOptimizingVariablesDropdown(dtoList, plantId, aopYear);
+	}
+
+	@GetMapping(value = "/feed-type-flow-mappings")
+	public AOPMessageVM getFeedTypeFlowMappings(@RequestParam String plantId, @RequestParam String aopYear) {
+		return spyroInputService.getFeedTypeFlowMappings(plantId, aopYear);
 	}
 
 }

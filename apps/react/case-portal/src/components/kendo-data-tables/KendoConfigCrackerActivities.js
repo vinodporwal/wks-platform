@@ -73,6 +73,7 @@ const DecokingConfig = () => {
   const IS_C2 = siteObject?.name?.toLowerCase() == 'c2'
   const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && siteName === 'c2'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -98,6 +99,12 @@ const DecokingConfig = () => {
   const [ibrScreen2Rows, setIbrScreen2Rows] = useState([])
   const [globalTaStartDate, setGlobalTaStartDate] = useState(null)
   const [globalTaEndDate, setGlobalTaEndDate] = useState(null)
+  const [sadDurationRow, setSadDurationRow] = useState(null)
+  const [maxDutyPilotRow, setMaxDutyPilotRow] = useState(null)
+  const [maxDutyMainRow, setMaxDutyMainRow] = useState(null)
+  const [sadDuration, setSadDuration] = useState('')
+  const [maxDutyPilot, setMaxDutyPilot] = useState('')
+  const [maxDutyMain, setMaxDutyMain] = useState('')
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -198,6 +205,41 @@ const DecokingConfig = () => {
       (Number(actualRunLength) * Number(reduction)) / 100
     return isNaN(val) ? null : Math.ceil(val) // <-- round up to nearest integer
   }
+  useEffect(() => {
+    const fetchOtherCost = async () => {
+      if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
+      try {
+        const resp = await DataService.getOtherFurnanceDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        if (resp?.code === 200 && resp?.data) {
+          const rows = resp.data
+          const sadRow = rows.find((r) => r.displayName === 'SAD Duration')
+          const pilotRow = rows.find(
+            (r) => r.displayName === 'Max Duty For Pilot Furnace',
+          )
+          const mainRow = rows.find(
+            (r) => r.displayName === 'Max Duty For Main Furnaces',
+          )
+
+          setSadDurationRow(sadRow || null)
+          setMaxDutyPilotRow(pilotRow || null)
+          setMaxDutyMainRow(mainRow || null)
+
+          setSadDuration(sadRow ? sadRow.attributeValue ?? '' : '')
+          setMaxDutyPilot(pilotRow ? pilotRow.attributeValue ?? '' : '')
+          setMaxDutyMain(mainRow ? mainRow.attributeValue ?? '' : '')
+        }
+        console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
+      } catch (error) {
+        console.error('Error fetching other furnance details:', error)
+      }
+    }
+
+    fetchOtherCost()
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2])
 
   const fetchData = useCallback(
     async (screen = null) => {
@@ -497,7 +539,65 @@ const DecokingConfig = () => {
     return null
   }
 
+  const saveRunningDurationParams = async () => {
+    const sadVal = parseFloat(sadDuration)
+    if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'SAD Duration must be between 2.1 and 3.0 Only!',
+        severity: 'error',
+      })
+      return false
+    }
+
+    const payload = [
+      {
+        id: sadDurationRow?.id || null,
+        displayName: 'SAD Duration',
+        attributeValue: sadDuration,
+        remarks: sadDurationRow?.remarks || null,
+      },
+      {
+        id: maxDutyPilotRow?.id || null,
+        displayName: 'Max Duty For Pilot Furnace',
+        attributeValue: maxDutyPilot,
+        remarks: maxDutyPilotRow?.remarks || null,
+      },
+      {
+        id: maxDutyMainRow?.id || null,
+        displayName: 'Max Duty For Main Furnaces',
+        attributeValue: maxDutyMain,
+        remarks: maxDutyMainRow?.remarks || null,
+      },
+    ]
+
+    try {
+      const resp = await DataService.saveOtherFurnanceDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        payload,
+      )
+      if (resp?.code === 200) {
+        setSummaryEdited(false)
+        return true
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Failed to save Decoking Activities parameters!',
+          severity: 'error',
+        })
+        return false
+      }
+    } catch (err) {
+      console.error('Error saving decoking parameters:', err)
+      return false
+    }
+  }
+
   const saveChangesSdTa = async () => {
+    const success = await saveRunningDurationParams()
+    if (success === false) return
     if (globalTaStartDate && globalTaEndDate) {
       await saveChangesSdTa1()
     } else {
@@ -1543,45 +1643,203 @@ const DecokingConfig = () => {
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <Box
-          sx={{ display: 'flex', gap: 1, mb: 0, mt: 1, alignItems: 'center' }}
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            columnGap: 4,
+            rowGap: 1.5,
+            mb: 1.5,
+            mt: 1,
+            alignItems: 'center',
+          }}
         >
+          {/* Column 1, Row 1 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography
+              className='grid-title'
+              sx={{ whiteSpace: 'nowrap', width: '220px' }}
+            >
               TA Start Date
             </Typography>
-            <DatePicker
-              id='global-ta-start-date'
-              format='dd-MM-yyyy'
-              value={globalTaStartDate}
-              onChange={(e) => {
-                setGlobalTaStartDate(e.value)
-                setSummaryEdited(true)
-              }}
-              style={{ height: '80px' }}
-              size={'small'}
-              disabled={READ_ONLY}
-            />
+            <Box sx={{ width: '160px' }}>
+              <DatePicker
+                id='global-ta-start-date'
+                format='dd-MM-yyyy'
+                value={globalTaStartDate}
+                onChange={(e) => {
+                  setGlobalTaStartDate(e.value)
+                  setSummaryEdited(true)
+                }}
+                style={{ height: '80px', width: '100%' }}
+                size={'small'}
+                disabled={READ_ONLY}
+              />
+            </Box>
           </Box>
 
+          {/* Column 2, Row 1 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography
+              className='grid-title'
+              sx={{ whiteSpace: 'nowrap', width: '220px' }}
+            >
               TA End Date
             </Typography>
-            <DatePicker
-              id='global-ta-end-date'
-              format='dd-MM-yyyy'
-              value={globalTaEndDate}
-              onChange={(e) => {
-                setGlobalTaEndDate(e.value)
-                setSummaryEdited(true)
-              }}
-              style={{ height: '80px' }}
-              size={'small'}
-              disabled={READ_ONLY}
-            />
+            <Box sx={{ width: '160px' }}>
+              <DatePicker
+                id='global-ta-end-date'
+                format='dd-MM-yyyy'
+                value={globalTaEndDate}
+                onChange={(e) => {
+                  setGlobalTaEndDate(e.value)
+                  setSummaryEdited(true)
+                }}
+                style={{ height: '80px', width: '100%' }}
+                size={'small'}
+                disabled={READ_ONLY}
+              />
+            </Box>
           </Box>
         </Box>
       </LocalizationProvider>
+
+      {IS_CRACKER_C2 && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            columnGap: 4,
+            rowGap: 1.5,
+            mb: 1.5,
+            mt: 0.5,
+            alignItems: 'center',
+          }}
+        >
+          {/* Column 1, Row 2 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              className='grid-title'
+              sx={{
+                whiteSpace: 'nowrap',
+                width: '220px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#334155',
+              }}
+            >
+              SAD Duration
+            </Typography>
+            <TextField
+              id='sad-duration'
+              type='number'
+              size='small'
+              value={sadDuration}
+              onChange={(e) => {
+                setSadDuration(e.target.value)
+                setSummaryEdited(true)
+              }}
+              disabled={READ_ONLY}
+              sx={{
+                width: '90px',
+                '& input[type=number]': {
+                  '-moz-appearance': 'textfield',
+                },
+                '& input[type=number]::-webkit-outer-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+                '& input[type=number]::-webkit-inner-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+              }}
+            />
+          </Box>
+
+          {/* Column 2, Row 2 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              className='grid-title'
+              sx={{
+                whiteSpace: 'nowrap',
+                width: '220px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#334155',
+              }}
+            >
+              Max Duty For Pilot Furnace
+            </Typography>
+            <TextField
+              id='max-duty-pilot-furnace'
+              type='number'
+              size='small'
+              value={maxDutyPilot}
+              onChange={(e) => {
+                setMaxDutyPilot(e.target.value)
+                setSummaryEdited(true)
+              }}
+              disabled={READ_ONLY}
+              sx={{
+                width: '90px',
+                '& input[type=number]': {
+                  '-moz-appearance': 'textfield',
+                },
+                '& input[type=number]::-webkit-outer-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+                '& input[type=number]::-webkit-inner-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+              }}
+            />
+          </Box>
+
+          {/* Column 3, Row 2 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              className='grid-title'
+              sx={{
+                whiteSpace: 'nowrap',
+                width: '220px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#334155',
+              }}
+            >
+              Max Duty For Main Furnaces
+            </Typography>
+            <TextField
+              id='max-duty-main-furnaces'
+              type='number'
+              size='small'
+              value={maxDutyMain}
+              onChange={(e) => {
+                setMaxDutyMain(e.target.value)
+                setSummaryEdited(true)
+              }}
+              disabled={READ_ONLY}
+              sx={{
+                width: '90px',
+                '& input[type=number]': {
+                  '-moz-appearance': 'textfield',
+                  margin: 0,
+                },
+                '& input[type=number]::-webkit-outer-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+                '& input[type=number]::-webkit-inner-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+              }}
+            />
+          </Box>
+        </Box>
+      )}
 
       <SDTAActivitiesGrid
         columns={ibrPlanColumns.filter(

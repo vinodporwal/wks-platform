@@ -6274,4 +6274,19 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 			throw new RuntimeException("Failed to import Configuration Other Cost data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getCrackerC2OptimizingVariablesDropdown() {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			String sql = "SELECT Name AS name, Value AS value FROM vwDropDownCracker_C2_OptimizingVariables";
+			List<Map<String, Object>> result = jdbcTemplate.queryForList(sql);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(result);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch cracker C2 optimizing variables dropdown", ex);
+		}
+	}
 }

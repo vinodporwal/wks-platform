@@ -510,4 +510,9 @@ public class ConfigurationController {
 		return configurationService.calculateCombine(UUID.fromString(plantId), aopYear);
 	}
 
+	@GetMapping(value = "/cracker-c2-optimizing-variables-dropdown")
+	public AOPMessageVM getCrackerC2OptimizingVariablesDropdown() {
+		return configurationService.getCrackerC2OptimizingVariablesDropdown();
+	}
+
 }

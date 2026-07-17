@@ -222,9 +222,11 @@ const CrackerConfig = () => {
               ? 'Naphtha'
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
-                : lowerSiteName === 'c2'
-                  ? 'cracker_c2'
-                  : 'cracker'
+                : currentTabDisplay === 'Recovery' && lowerSiteName === 'c2'
+                  ? 'cracker_c2_recovery'
+                  : lowerSiteName === 'c2'
+                    ? 'cracker_c2'
+                    : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -1097,7 +1099,10 @@ const CrackerConfig = () => {
                     currentRemark={currentRemark}
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
-                    permissions={adjustedPermissions}
+                    permissions={{
+                      ...adjustedPermissions,
+                      makePagable: false,
+                    }}
                     handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}

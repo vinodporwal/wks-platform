@@ -5,7 +5,7 @@ import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -25,6 +25,64 @@ import UploadIcon from '@mui/icons-material/Upload'
 import CalculateIcon from '@mui/icons-material/Calculate'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
+const groupColumns = (flatCols) => {
+  // Standalone columns that shouldn't be grouped
+  const dateCol = flatCols.find((col) => col.field === 'Date')
+
+  // Columns to be grouped under "Production Columns"
+  const productionFields = ['Production Ethylene', 'Production Propylene']
+  const productionCols = flatCols.filter((col) =>
+    productionFields.includes(col.field),
+  )
+
+  // Columns to be grouped under "Rest other columns" (like Ethylene Stock in Cryo-Tank)
+  const restFields = ['MEG', 'LDPE', 'LLDPE', 'PP']
+  const restCols = flatCols.filter((col) => restFields.includes(col.field))
+
+  // If we didn't find any match, just return the flatCols as fallback
+  if (productionCols.length === 0 && restCols.length === 0) {
+    return flatCols
+  }
+
+  const grouped = []
+  if (dateCol) {
+    grouped.push(dateCol)
+  }
+
+  if (productionCols.length > 0) {
+    grouped.push({
+      title: 'Production, tph ',
+      children: productionCols,
+    })
+  }
+
+  if (restCols.length > 0) {
+    grouped.push({
+      title: 'Consumption, tph ',
+      children: restCols,
+    })
+  }
+
+  // Append any remaining columns that were not grouped
+  const groupedFields = ['Date', ...productionFields, ...restFields]
+  const otherCols = flatCols.filter((col) => !groupedFields.includes(col.field))
+  grouped.push(...otherCols)
+
+  return grouped
+}
+
+const flattenColumns = (cols) => {
+  const flat = []
+  cols.forEach((col) => {
+    if (col.children) {
+      flat.push(...flattenColumns(col.children))
+    } else {
+      flat.push(col)
+    }
+  })
+  return flat
+}
 
 const EtheleneStock = () => {
   const keycloak = useSession()
@@ -78,11 +136,6 @@ const EtheleneStock = () => {
 
   const enrichColumns = useCallback(
     (backendCols = []) => {
-      const filteredCols = backendCols.filter(
-        (col) => col.field !== 'GRID_TYPE',
-      )
-      const applyFixedWidth = filteredCols.length < 7
-      const fixedWidth = applyFixedWidth ? 225 : 182
       return backendCols
         .filter((col) => col.field !== 'GRID_TYPE')
         .map((col) => {
@@ -97,7 +150,8 @@ const EtheleneStock = () => {
             ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
-            ...(fixedWidth ? { widthT: fixedWidth } : {}),
+            widthT: col?.field === 'Ethylene Stock in Cryo-Tank' ? 200 : 110,
+            minWidth: col?.field === 'Ethylene Stock in Cryo-Tank' ? 200 : 110,
           }
         })
     },
@@ -189,7 +243,9 @@ const EtheleneStock = () => {
     try {
       setLoading(true)
 
-      const apiResponse = await DataService.getEtheleneStock(
+      let apiResponse
+
+      apiResponse = await DataService.getEtheleneStock(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -201,7 +257,6 @@ const EtheleneStock = () => {
         return
       }
 
-      // Support two possible shapes
       const gridsArray = Array.isArray(apiResponse.data)
         ? apiResponse.data
         : Array.isArray(apiResponse.data?.data)
@@ -272,11 +327,13 @@ const EtheleneStock = () => {
           }))
         }
 
+        const groupedCols = groupColumns(enrichedCols)
+
         // IMPORTANT:
         // Use displayName as key instead of g.gridName
         newMap[displayName] = {
           rows: rowsWithId,
-          columns: enrichedCols,
+          columns: groupedCols,
           groupBy: gridGroupBy,
         }
       })
@@ -345,17 +402,21 @@ const EtheleneStock = () => {
         const rows = d.rows || []
         if (!cols.length && !rows.length) return null
 
-        const sheetColumns = cols.map((c) => ({
+        const flatCols = flattenColumns(cols)
+
+        const sheetColumns = flatCols.map((c) => ({
           autoWidth: true,
           title: c.title || c.field || '',
         }))
 
         const headerRow = {
-          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+          cells: flatCols.map((c) => ({ value: c.title || c.field || '' })),
         }
 
         const dataRows = rows.map((r) => ({
-          cells: cols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
+          cells: flatCols.map((c) => ({
+            value: normalizeCellValue(r?.[c.field]),
+          })),
         }))
 
         const sheetRows = [headerRow, ...dataRows]
@@ -411,7 +472,7 @@ const EtheleneStock = () => {
               ref={setRef}
               fileName={fileName}
             >
-              {(data.columns || []).map((col) => (
+              {flattenColumns(data.columns || []).map((col) => (
                 <ExcelExportColumn
                   key={col.field}
                   field={col.field}
@@ -454,11 +515,18 @@ const EtheleneStock = () => {
                       </Typography>
                     </CustomAccordionSummary>
                     <CustomAccordionDetails>
-                      <Box sx={{ width: '100%', margin: 0 }}>
-                        <KendoDataGrid
+                      <Box sx={{ width: '100%', margin: 0, overflowX: 'auto' }}>
+                        <KendoDataTablesReports
                           rows={d.rows}
                           columns={d.columns}
-                          permissions={{ isHeight: d?.rows?.length > 15, disablePagination: true }}
+                          gridHeight='calc(100vh - 210px)'
+                          permissions={{
+                            isHeight: d?.rows?.length > 15,
+                            customHeight: 'calc(100vh - 210px)',
+                            disablePagination: true,
+                            allAction: false,
+                            filterable: false,
+                          }}
                           groupBy={d.groupBy || null}
                         />
                       </Box>

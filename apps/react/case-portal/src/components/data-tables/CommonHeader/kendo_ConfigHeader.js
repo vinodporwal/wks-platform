@@ -1,6 +1,7 @@
 import contineGradeChange from '../../../assets/kendo_config_contineGradeChange.json'
 import crackerColumns from '../../../assets/kendo_config_cracker_coldefs.json'
 import crackerColumns_c2 from '../../../assets/kendo_config_cracker_coldefs_c2.json'
+import cracker_c2_recovery from '../../../assets/kendo_config_cracker_c2_recovery.json'
 import cracker_composition from '../../../assets/kendo_config_cracker_composition.json'
 import cracker_composition_c2 from '../../../assets/kendo_config_cracker_composition_c2.json'
 import cracker_constants from '../../../assets/kendo_config_cracker_constants_coldefs.json'
@@ -69,6 +70,8 @@ const getConfigByType = (configType) => {
       return crackerColumns
     case 'cracker_c2':
       return crackerColumns_c2
+    case 'cracker_c2_recovery':
+      return cracker_c2_recovery
     case 'cracker_constants':
       return cracker_constants
     case 'cracker_yield':

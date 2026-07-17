@@ -195,7 +195,11 @@ const KendoDataGrid = ({
           style={{
             flex: 1,
             overflow: 'auto',
-            ...(permissions?.isHeight ? { height: 500 } : {}),
+            ...(permissions?.customHeight
+              ? { height: permissions.customHeight }
+              : permissions?.isHeight
+                ? { height: 500 }
+                : {}),
           }}
           data={rows}
           dataItemKey='id'
@@ -225,14 +229,11 @@ const KendoDataGrid = ({
             const {
               field,
               title,
-              width,
               cell,
               format,
-              filterType = 'text',
               isRightAlligned,
               hidden,
               widthT,
-              type,
             } = col
 
             if (['endDate', 'startDate', 'dateTime'].includes(field)) {
@@ -245,9 +246,7 @@ const KendoDataGrid = ({
                   width={widthT}
                   cells={{
                     edit: {
-                      date: ['dateTime', 'dateTime', 'mcuDate'].includes(
-                        col.field,
-                      )
+                      date: ['dateTime', 'dateTime', 'mcuDate'].includes(col.field)
                         ? DateOnlyPicker
                         : DateTimePickerEditor,
                     },

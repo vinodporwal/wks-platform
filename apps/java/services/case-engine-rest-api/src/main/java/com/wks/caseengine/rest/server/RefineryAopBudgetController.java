@@ -23,6 +23,7 @@ import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.service.RefineryAopBudgetService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.dto.UomDropdownDTO;
 
 @RestController
 @RequestMapping("task")
@@ -171,5 +172,10 @@ public class RefineryAopBudgetController {
     @DeleteMapping("/refinery-slowdown-data")
     public AOPMessageVM deleteRefinerySlowdownData(@RequestParam String id) {
         return refineryAopBudgetService.deleteRefinerySlowdownData(id);
+    }
+
+    @GetMapping("/refinery-budget-uom-dropdown")
+    public AOPMessageVM getRefineryBudgetUomDropdown(@RequestParam String plantId) {
+        return refineryAopBudgetService.getRefineryBudgetUomDropdown(plantId);
     }
 }

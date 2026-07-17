@@ -537,7 +537,11 @@ const ConsumptionNorms = () => {
   }
 
   const handleCalculate = () => {
-    handleCalculateMeg()
+    if (lowerVertName === 'pe' && lowerSiteName === 'c2') {
+      setOpenMaterialGroupedSelectionDialog(true)
+    } else {
+      handleCalculateMeg()
+    }
   }
 
   const handleCalculateMeg = async () => {

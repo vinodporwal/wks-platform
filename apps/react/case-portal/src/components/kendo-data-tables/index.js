@@ -99,6 +99,7 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import FeedTypeOrNumericEditor from './Utilities-Kendo/FeedTypeOrNumericEditor'
 import { ConstantValueEditCell, ConstantValueDataCell } from './ConstantValueCells'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
@@ -113,6 +114,26 @@ const OnOffSwitchEditCell = (props) => {
       editable={props.column?.editable}
       isDisabled={props.column?.isDisabled}
     />
+  )
+}
+
+const FeedTypeDisplayCell = (props) => {
+  const { dataItem, field, tdProps, column } = props
+  const value = dataItem[field]
+  const rowId = dataItem.id
+  const customModifiedCells = column?.customModifiedCells || {}
+  const isEdited = Object.prototype.hasOwnProperty.call(
+    customModifiedCells?.[rowId] || {},
+    field,
+  )
+  return (
+    <td
+      {...tdProps}
+      title={value}
+      className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
+    >
+      {value}
+    </td>
   )
 }
 
@@ -253,6 +274,7 @@ const KendoDataTables = ({
   configType,
   isEditable = false,
   currentTabDisplayName,
+  cellHighlightStrategy = '',
 }) => {
   const _export = useRef(null)
 
@@ -320,6 +342,18 @@ const KendoDataTables = ({
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IntegerDaysEditor = useIntegerDaysEditor(configType, AOP_YEAR)
+  const StableFeedTypeOrNumericEditor = useMemo(() => {
+    return (props) => (
+      <FeedTypeOrNumericEditor
+        {...props}
+        options={
+          props.column?.dropdownOptions ||
+          permissions?.feedTypeOptions ||
+          []
+        }
+      />
+    )
+  }, [permissions?.feedTypeOptions])
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
@@ -1311,7 +1345,9 @@ const KendoDataTables = ({
       openCalculateDialogBox()
     } else {
       // old code
-      setSelectedGrade('')
+      if (!permissions?.dontClearGradeOnCalculate) {
+        setSelectedGrade('')
+      }
       setIsButtonDisabled(true)
 
       handleCalculate()
@@ -1686,6 +1722,59 @@ const KendoDataTables = ({
     })
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
+
+    return (
+      <td
+        {...tdProps}
+        title={value}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+        style={{
+          fontWeight: !shouldHighlight && isBoldFromCells ? 'bold' : undefined,
+        }}
+      >
+        {children}
+      </td>
+    )
+  }
+
+  //SlowdownConfigHighlightCell
+  const SlowdownConfigHighlightCell = (props) => {
+    const {
+      dataItem,
+      field,
+      tdProps,
+      children,
+      customModifiedCells,
+      allRedCell,
+    } = props
+    const rowId = dataItem.id
+    const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
+
+    // isEdited: locally modified cell
+    const isEdited = Object.prototype.hasOwnProperty.call(
+      customModifiedCells?.[rowId] || {},
+      field,
+    )
+
+    // Row identifier — same field the API uses
+    const normId = dataItem.NormParameter_FK_Id
+
+    // isChangedFromApi: match NormParameter_FK_Id (row) + month as field name (column)
+    const isChangedFromApi = allRedCell?.some((cell) => {
+      const cellNormId = (
+        cell.NormParameter_FK_Id || cell.normParameterFKId
+      )?.toLowerCase()
+      if (!cellNormId || !normId) return false
+      if (cellNormId !== normId.toLowerCase()) return false
+
+      // month in changedData IS the dynamic column field name
+      // e.g. "slowdown during ganapati traffic restriction_September"
+      const cellField = cell.month || cell.ColumnName || cell.columnName
+      return cellField === field
+    })
+
+    const shouldHighlight = isEdited || isChangedFromApi
 
     return (
       <td
@@ -4039,6 +4128,34 @@ const KendoDataTables = ({
                       />
                     )
                   }
+                  if (col?.type === 'feedTypeOrNumeric') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 100)}
+                        hidden={col?.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        customModifiedCells={customModifiedCells}
+                        dropdownOptions={
+                          col?.dropdownOptions ||
+                          permissions?.feedTypeOptions ||
+                          []
+                        }
+                        cells={{
+                          edit: {
+                            text: StableFeedTypeOrNumericEditor,
+                          },
+                          data: FeedTypeDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
                   if (col?.type === 'percentChange') {
                     return (
                       <GridColumn
@@ -4558,7 +4675,13 @@ const KendoDataTables = ({
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) =>
-                            showThreeColors ? (
+                            cellHighlightStrategy === 'slowdownConfig' ? (
+                              <SlowdownConfigHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                              />
+                            ) : showThreeColors ? (
                               <RedHighlightCell2
                                 {...props}
                                 customModifiedCells={customModifiedCells}
