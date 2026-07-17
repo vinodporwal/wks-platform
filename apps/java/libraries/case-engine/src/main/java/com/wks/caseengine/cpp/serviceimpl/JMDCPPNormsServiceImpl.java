@@ -1079,6 +1079,7 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
         dto.setModifiedDate(row[idx++] != null ? row[idx - 1].toString() : null);
         dto.setActualNorm(row[idx++] != null ? new BigDecimal(row[idx - 1].toString()) : BigDecimal.ZERO);
         dto.setApplyActualNormToAll(row[idx++] != null ? (Boolean) row[idx - 1] : false);
+        dto.setCalculationFormula(row[idx++] != null ? row[idx - 1].toString() : null);
 
         return dto;
     }

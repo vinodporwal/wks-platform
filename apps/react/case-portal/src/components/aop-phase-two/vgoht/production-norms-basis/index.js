@@ -20,6 +20,7 @@ import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
+import HistoricalMonths from './HistoricalMonths'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -255,12 +256,13 @@ const ProductionNormsBasis = () => {
         return <ReportManualEntry startDate={startDate} endDate={endDate} />
       case 'Manual Entry':
         return <ManualEntry startDate={startDate} endDate={endDate} />
+      case 'Historical Months':
+        return <HistoricalMonths startDate={startDate} endDate={endDate} />
       default:
         return null
     }
   }
 
-  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
