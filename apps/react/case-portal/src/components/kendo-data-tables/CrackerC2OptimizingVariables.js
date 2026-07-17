@@ -73,6 +73,8 @@ const CrackerC2OptimizingVariables = () => {
     rowsBeforeChange: {},
   })
 
+  const dropdownOptionsRef = useRef([])
+
   const handleSetRows = useCallback((updateFn) => {
     setRows((prev) => {
       const nextRows = typeof updateFn === 'function' ? updateFn(prev) : updateFn
@@ -183,6 +185,7 @@ const CrackerC2OptimizingVariables = () => {
       editable: true,
       type: 'feedTypeOrNumeric',
       minWidth: 100,
+      format: valueFormat,
     }
   })
 
@@ -206,37 +209,55 @@ const CrackerC2OptimizingVariables = () => {
   ]
 
   // ── Format raw API data into grid rows ──
-  const formatApiData = (data) =>
-    data.map((item, index) => ({
-      ...item,
-      idFromApi: item.Id || item.id,
-      id: index,
-      DisplayName: item.DisplayName || item.displayName,
-      UOM: item.UOM || item.uom,
-      originalRemark: item.Remarks || item.remarks || '',
-      remarks: item.Remarks || item.remarks || '',
-      srNo: index + 1,
+  const formatApiData = (data, options = []) => {
+    const defValue = options[0]?.name || null
+    return data.map((item, index) => {
+      const isFirst = index === 0
+      const getVal = (val) => {
+        if (!isFirst) return val
+        if (
+          val === null ||
+          val === undefined ||
+          val === 0 ||
+          val === '0' ||
+          typeof val !== 'string' ||
+          val.trim() === ''
+        ) {
+          return defValue
+        }
+        return val
+      }
+      return {
+        ...item,
+        idFromApi: item.Id || item.id,
+        id: index,
+        DisplayName: item.DisplayName || item.displayName,
+        UOM: item.UOM || item.uom,
+        originalRemark: item.Remarks || item.remarks || '',
+        remarks: item.Remarks || item.remarks || '',
+        srNo: index + 1,
 
-      // Map month fields — API returns PascalCase month names
-      april: item.April ?? item.april ?? null,
-      may: item.May ?? item.may ?? null,
-      june: item.June ?? item.june ?? null,
-      july: item.July ?? item.july ?? null,
-      august: item.August ?? item.august ?? null,
-      september: item.September ?? item.september ?? null,
-      october: item.October ?? item.october ?? null,
-      november: item.November ?? item.november ?? null,
-      december: item.December ?? item.december ?? null,
-      january: item.January ?? item.january ?? null,
-      february: item.February ?? item.february ?? null,
-      march: item.March ?? item.march ?? null,
-      // Preserve FK id for save payload
-      normParameterTypeFKId:
-        item.NormParameterType_FK_Id || item.normParameterTypeFKId || null,
-    }))
+        april: getVal(item.April ?? item.april ?? null),
+        may: getVal(item.May ?? item.may ?? null),
+        june: getVal(item.June ?? item.june ?? null),
+        july: getVal(item.July ?? item.july ?? null),
+        august: getVal(item.August ?? item.august ?? null),
+        september: getVal(item.September ?? item.september ?? null),
+        october: getVal(item.October ?? item.october ?? null),
+        november: getVal(item.November ?? item.november ?? null),
+        december: getVal(item.December ?? item.december ?? null),
+        january: getVal(item.January ?? item.january ?? null),
+        february: getVal(item.February ?? item.february ?? null),
+        march: getVal(item.March ?? item.march ?? null),
+
+        normParameterTypeFKId:
+          item.NormParameterType_FK_Id || item.normParameterTypeFKId || null,
+      }
+    })
+  }
 
   // Fetch data
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (currentDropdownOptions = dropdownOptionsRef.current) => {
     if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
     setLoading(true)
@@ -252,7 +273,7 @@ const CrackerC2OptimizingVariables = () => {
         return
       }
 
-      setRows(formatApiData(res?.data || []))
+      setRows(formatApiData(res?.data || [], currentDropdownOptions))
     } catch (error) {
       console.error('Error fetching Cracker C2 Optimizing Variables:', error)
       setRows([])
@@ -272,12 +293,18 @@ const CrackerC2OptimizingVariables = () => {
           }))
           .sort((a, b) => a.value - b.value)
         setDropdownOptions(mapped)
+        dropdownOptionsRef.current = mapped
+        return mapped
       } else {
         setDropdownOptions([])
+        dropdownOptionsRef.current = []
+        return []
       }
     } catch (e) {
       console.error('Failed to fetch cracker C2 dropdown', e)
       setDropdownOptions([])
+      dropdownOptionsRef.current = []
+      return []
     }
   }, [keycloak])
 
@@ -302,10 +329,13 @@ const CrackerC2OptimizingVariables = () => {
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
-    fetchData()
-    fetchDropdownOptions()
-    fetchFeedTypeFlowMappings()
-  }, [fetchData, fetchDropdownOptions, fetchFeedTypeFlowMappings])
+    const init = async () => {
+      const opts = await fetchDropdownOptions()
+      await fetchData(opts)
+      await fetchFeedTypeFlowMappings()
+    }
+    init()
+  }, [fetchDropdownOptions, fetchData, fetchFeedTypeFlowMappings])
 
   // Save handler
   const saveData = async (editedRows) => {
@@ -414,7 +444,7 @@ const CrackerC2OptimizingVariables = () => {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Optimizing Variables',
+      titleName: 'Pilot furnace details',
       saveWithRemark: false,
       saveBtn: true,
       showCalculate: false,

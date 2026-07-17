@@ -342,6 +342,18 @@ const KendoDataTables = ({
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IntegerDaysEditor = useIntegerDaysEditor(configType, AOP_YEAR)
+  const StableFeedTypeOrNumericEditor = useMemo(() => {
+    return (props) => (
+      <FeedTypeOrNumericEditor
+        {...props}
+        options={
+          props.column?.dropdownOptions ||
+          permissions?.feedTypeOptions ||
+          []
+        }
+      />
+    )
+  }, [permissions?.feedTypeOptions])
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
@@ -4135,7 +4147,7 @@ const KendoDataTables = ({
                         }
                         cells={{
                           edit: {
-                            text: FeedTypeOrNumericEditor,
+                            text: StableFeedTypeOrNumericEditor,
                           },
                           data: FeedTypeDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
