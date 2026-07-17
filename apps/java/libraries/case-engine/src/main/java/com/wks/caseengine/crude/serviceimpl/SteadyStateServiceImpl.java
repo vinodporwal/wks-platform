@@ -131,9 +131,9 @@ public class SteadyStateServiceImpl implements SteadyStateService {
                 // OUTPUT parameter
                 query.registerStoredProcedureParameter("ErrorMessage", String.class, ParameterMode.OUT);
         
-                query.setParameter("plantId", plantId);
-                query.setParameter("siteid", siteId);
-                query.setParameter("verticalId", verticalId);
+                query.setParameter("plantId", plantId.toString());
+                query.setParameter("siteid", siteId.toString());
+                query.setParameter("verticalId", verticalId.toString());
                 query.setParameter("finYear", finYear);
         
                 query.execute();
