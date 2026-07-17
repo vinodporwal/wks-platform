@@ -579,6 +579,23 @@
 }
 
 /* ===============================
+   PARENT / GROUP COLUMN HEADER – CENTERED
+   =============================== */
+
+.k-grid th.center-group-header,
+.k-grid .k-header.center-group-header {
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+.k-grid th.center-group-header .k-cell-inner,
+.k-grid th.center-group-header .k-link {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+
+/* ===============================
    INPUT EDITOR (Base)
    =============================== */
 

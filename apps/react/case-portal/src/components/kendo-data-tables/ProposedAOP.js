@@ -59,6 +59,7 @@ const ProposedAOP = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [gradeId, setGradeId] = useState(null)
+  const [gradeName, SetGardeName] = useState(null)
   const [grades, setGrades] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -162,8 +163,10 @@ const ProposedAOP = () => {
           const firstGrade = response.data[0]
           const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
           setGradeId(firstId)
-          fetchData(firstId)
+          SetGardeName(firstGrade?.name ?? null)
+          fetchData(firstId, firstGrade?.name)
         } else {
+          SetGardeName(null)
           fetchData(null)
         }
       } else {
@@ -192,14 +195,17 @@ const ProposedAOP = () => {
           const firstGrade = response.data[0]
           const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
           setGradeId(firstId)
-          fetchData(firstId)
+          SetGardeName(firstGrade?.name ?? null)
+          fetchData(firstId, firstGrade?.name)
         } else {
           setGradeId(null)
+          SetGardeName(null)
           fetchData(null)
         }
       } else {
         setGrades([])
         setGradeId(null)
+        SetGardeName(null)
         fetchData(null)
       }
     } catch (error) {
@@ -208,7 +214,7 @@ const ProposedAOP = () => {
     }
   }
 
-  const fetchData = async (currentGradeId) => {
+  const fetchData = async (currentGradeId, passedGradeName = null) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if ((isPEPP || isPET) && !currentGradeId) return
     setLoading(true)
@@ -231,6 +237,15 @@ const ProposedAOP = () => {
         return
       }
 
+      let resolvedGradeName = passedGradeName
+      if (!resolvedGradeName && grades.length > 0) {
+        const matchedGrade = grades.find((g) => (g.gradeId ?? g.id) === currentGradeId)
+        resolvedGradeName = matchedGrade?.name ?? null
+      }
+      if (!resolvedGradeName) {
+        resolvedGradeName = gradeName
+      }
+
       setCalculationObject(response?.data?.aopCalculation || [])
 
       const formattedData = (response?.data?.proposedAOP || []).map(
@@ -242,7 +257,7 @@ const ProposedAOP = () => {
             id: index,
             Particulars: item.normParameterTypeDisplayName || 'Type',
             UOM: item.uom,
-            isEditable: true,
+            isEditable: resolvedGradeName === 'All Grade' ? false : true,
           }
         },
       )
@@ -451,7 +466,10 @@ const ProposedAOP = () => {
 
   const handleGradeChange = (selectedGradeId) => {
     setGradeId(selectedGradeId)
-    fetchData(selectedGradeId)
+    const selectedGrade = grades.find((g) => (g.gradeId ?? g.id) === selectedGradeId)
+    const selectedName = selectedGrade?.name ?? null
+    SetGardeName(selectedName)
+    fetchData(selectedGradeId, selectedName)
   }
 
   return (

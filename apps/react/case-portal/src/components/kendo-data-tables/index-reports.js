@@ -110,6 +110,8 @@ export const dateFields = [
   'ibrDueDate',
   'shutdownDate',
   'startupDate',
+  'Date',
+  'date',
 ]
 export const monthMap = {
   january: 1,
@@ -1129,11 +1131,13 @@ const KendoDataTablesReports = ({
                 flex: 1,
                 overflow: 'auto',
                 height:
-                  supressGridHeight == true
-                    ? undefined
-                    : rows?.length > 10
-                      ? `${calculatedVH}vh`
-                      : undefined,
+                  permissions?.customHeight
+                    ? permissions.customHeight
+                    : supressGridHeight == true
+                      ? undefined
+                      : rows?.length > 10
+                        ? `${calculatedVH}vh`
+                        : undefined,
               }}
               modifiedCells={modifiedCells}
               data={rows}
@@ -1160,12 +1164,14 @@ const KendoDataTablesReports = ({
               filterable={columns.some((col) => dateFields.includes(col.field))}
               size='small'
               pageable={
-                rows?.length > 100
-                  ? {
-                    buttonCount: 4,
-                    pageSizes: [10, 50, 100],
-                  }
-                  : false
+                permissions?.disablePagination
+                  ? false
+                  : rows?.length > 100
+                    ? {
+                      buttonCount: 4,
+                      pageSizes: [10, 50, 100],
+                    }
+                    : false
               }
 
               onRowClick={handleRowClick}
