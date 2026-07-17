@@ -1099,7 +1099,10 @@ const CrackerConfig = () => {
                     currentRemark={currentRemark}
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
-                    permissions={adjustedPermissions}
+                    permissions={{
+                      ...adjustedPermissions,
+                      makePagable: false,
+                    }}
                     handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}

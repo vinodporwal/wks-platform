@@ -1730,6 +1730,7 @@ const DecokingConfig = () => {
             />
           </Box>
 
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               Max Duty For Pilot Furnace

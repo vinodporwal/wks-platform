@@ -28,23 +28,17 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
 const groupColumns = (flatCols) => {
   // Standalone columns that shouldn't be grouped
-  const dateCol = flatCols.find(col => col.field === 'Date')
+  const dateCol = flatCols.find((col) => col.field === 'Date')
 
   // Columns to be grouped under "Production Columns"
-  const productionFields = [
-    'Production Ethylene',
-    'Production Propylene',
-  ]
-  const productionCols = flatCols.filter(col => productionFields.includes(col.field))
+  const productionFields = ['Production Ethylene', 'Production Propylene']
+  const productionCols = flatCols.filter((col) =>
+    productionFields.includes(col.field),
+  )
 
   // Columns to be grouped under "Rest other columns" (like Ethylene Stock in Cryo-Tank)
-  const restFields = [
-    'MEG',
-    'LDPE',
-    'LLDPE',
-    'PP'
-  ]
-  const restCols = flatCols.filter(col => restFields.includes(col.field))
+  const restFields = ['MEG', 'LDPE', 'LLDPE', 'PP']
+  const restCols = flatCols.filter((col) => restFields.includes(col.field))
 
   // If we didn't find any match, just return the flatCols as fallback
   if (productionCols.length === 0 && restCols.length === 0) {
@@ -59,20 +53,20 @@ const groupColumns = (flatCols) => {
   if (productionCols.length > 0) {
     grouped.push({
       title: 'Production, tph ',
-      children: productionCols
+      children: productionCols,
     })
   }
 
   if (restCols.length > 0) {
     grouped.push({
       title: 'Consumption, tph ',
-      children: restCols
+      children: restCols,
     })
   }
 
   // Append any remaining columns that were not grouped
   const groupedFields = ['Date', ...productionFields, ...restFields]
-  const otherCols = flatCols.filter(col => !groupedFields.includes(col.field))
+  const otherCols = flatCols.filter((col) => !groupedFields.includes(col.field))
   grouped.push(...otherCols)
 
   return grouped
@@ -251,6 +245,18 @@ const EtheleneStock = () => {
 
       let apiResponse
 
+      apiResponse = await DataService.getEtheleneStock(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (apiResponse?.code !== 200) {
+        setGridNames([])
+        setDataMap({})
+        return
+      }
+
       const gridsArray = Array.isArray(apiResponse.data)
         ? apiResponse.data
         : Array.isArray(apiResponse.data?.data)
@@ -408,7 +414,9 @@ const EtheleneStock = () => {
         }
 
         const dataRows = rows.map((r) => ({
-          cells: flatCols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
+          cells: flatCols.map((c) => ({
+            value: normalizeCellValue(r?.[c.field]),
+          })),
         }))
 
         const sheetRows = [headerRow, ...dataRows]
@@ -511,6 +519,7 @@ const EtheleneStock = () => {
                         <KendoDataTablesReports
                           rows={d.rows}
                           columns={d.columns}
+                          gridHeight='calc(100vh - 210px)'
                           permissions={{
                             isHeight: d?.rows?.length > 15,
                             customHeight: 'calc(100vh - 210px)',

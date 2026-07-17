@@ -59,7 +59,7 @@ const ProposedAOP = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [gradeId, setGradeId] = useState(null)
-  const [gradeName, SetGardeName] = useState(null)
+  const [gradeName, setGradeName] = useState(null)
   const [grades, setGrades] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -163,10 +163,10 @@ const ProposedAOP = () => {
           const firstGrade = response.data[0]
           const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
           setGradeId(firstId)
-          SetGardeName(firstGrade?.name ?? null)
+          setGradeName(firstGrade?.name ?? null)
           fetchData(firstId, firstGrade?.name)
         } else {
-          SetGardeName(null)
+          setGradeName(null)
           fetchData(null)
         }
       } else {
@@ -195,17 +195,17 @@ const ProposedAOP = () => {
           const firstGrade = response.data[0]
           const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
           setGradeId(firstId)
-          SetGardeName(firstGrade?.name ?? null)
+          setGradeName(firstGrade?.name ?? null)
           fetchData(firstId, firstGrade?.name)
         } else {
           setGradeId(null)
-          SetGardeName(null)
+          setGradeName(null)
           fetchData(null)
         }
       } else {
         setGrades([])
         setGradeId(null)
-        SetGardeName(null)
+        setGradeName(null)
         fetchData(null)
       }
     } catch (error) {
@@ -468,7 +468,7 @@ const ProposedAOP = () => {
     setGradeId(selectedGradeId)
     const selectedGrade = grades.find((g) => (g.gradeId ?? g.id) === selectedGradeId)
     const selectedName = selectedGrade?.name ?? null
-    SetGardeName(selectedName)
+    setGradeName(selectedName)
     fetchData(selectedGradeId, selectedName)
   }
 
