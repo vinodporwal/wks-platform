@@ -6,6 +6,7 @@ import { useSession } from 'SessionStoreContext'
 import { ShutdownApiService } from 'components/aop-phase-two/services/crude/shutdownApiService'
 import { useSelector } from 'react-redux'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const Slowdown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = useState({})
@@ -33,7 +34,7 @@ const Slowdown = ({ permissions }) => {
   const [siteDropdown, setSiteDropdown] = useState([])
   const [plantDropdown, setPlantDropdown] = useState([])
   const [uomDropdown, setUomDropdown] = useState([])
-
+  const ValueFormat=ValueFormatterProduction()
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -101,6 +102,7 @@ const Slowdown = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
+      format: ValueFormat,
       minWidth: 280,
     },
     {
@@ -225,12 +227,6 @@ const Slowdown = ({ permissions }) => {
       if (row.tentativeDurationDays === undefined || row.tentativeDurationDays === null || String(row.tentativeDurationDays).trim() === '') {
         missingFields.push('Tentative Duration in days')
       }
-      if (row.throughputDuringTheSlowdown === undefined || row.throughputDuringTheSlowdown === null || String(row.throughputDuringTheSlowdown).trim() === '') {
-        missingFields.push('Throughput')
-      }
-      if (!row.throughputUom || String(row.throughputUom).trim() === '') {
-        missingFields.push('Throughput UOM')
-      }
       if (row.tentativeMonths === undefined || row.tentativeMonths === null || String(row.tentativeMonths).trim() === '') {
         missingFields.push('Tentative Month')
       }
@@ -271,7 +267,7 @@ const Slowdown = ({ permissions }) => {
     const validationError = validateRowDataWithRemarks(
       modifiedDataForValidation,
       originalRows,
-      ['siteName', 'plantName', 'tentativeDurationDays', 'throughputDuringTheSlowdown', 'throughputUom', 'tentativeMonths'],
+      ['siteName', 'plantName', 'tentativeDurationDays', 'tentativeMonths'],
       'plantNameUnique',
       'remark',
     )

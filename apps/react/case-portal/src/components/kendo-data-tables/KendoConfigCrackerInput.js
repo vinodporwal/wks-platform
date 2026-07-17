@@ -173,12 +173,12 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       downloadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
@@ -222,9 +222,11 @@ const CrackerConfig = () => {
               ? 'Naphtha'
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
-                : lowerSiteName === 'c2'
-                  ? 'cracker_c2'
-                  : 'cracker'
+                : currentTabDisplay === 'Recovery' && lowerSiteName === 'c2'
+                  ? 'cracker_c2_recovery'
+                  : lowerSiteName === 'c2'
+                    ? 'cracker_c2'
+                    : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
