@@ -2488,6 +2488,30 @@ const AdvanceKendoTable = ({
         )
       }
 
+      // Custom Action Cell Handler — always render column, pass editable to cell
+      if (col.type === 'customAction' && col.cell) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={false}
+            filterable={false}
+            className={col.className || 'k-text-center'}
+            headerClassName={col.headerClassName || 'k-text-center'}
+            cells={{
+              data: col.cell,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            width={setWidth(col?.minWidth || col?.widthT || 80)}
+          />
+        )
+      }
+
       return (
         <GridColumn
           key={col.field}
@@ -2706,7 +2730,11 @@ const AdvanceKendoTable = ({
                   className='btn-add'
                   startIcon={<AddIcon />}
                   onClick={handleAddRow}
-                  disabled={isButtonDisabled || READ_ONLY}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    permissions?.disableActionButtons
+                  }
                 >
                   {permissions?.addBtnName || 'Add Item'}
                 </Button>
@@ -2793,6 +2821,7 @@ const AdvanceKendoTable = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
+                    permissions?.disableActionButtons ||
                     Object.keys(modifiedCells).length === 0
                   }
                 >

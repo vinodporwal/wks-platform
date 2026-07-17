@@ -71,6 +71,35 @@ const FixedConsumption = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [rowToDelete, setRowToDelete] = useState(null)
 
+  // Edit/Delete action cell
+  const ActionCell = ({ dataItem, tdProps }) => {
+    return (
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title='Delete Row'>
+            <IconButton
+              size='medium'
+              color='error'
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='medium' />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </td>
+    )
+  }
+
   // Column definitions
   const columns = [
     { field: 'id', title: 'ID', hidden: true },
@@ -273,6 +302,16 @@ const FixedConsumption = () => {
       editable: true,
       minWidth: 250,
     },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: ActionCell,
+      // locked: true,
+      // lockPosition: 'right',
+    },
   ]
 
   useEffect(() => {
@@ -330,47 +369,6 @@ const FixedConsumption = () => {
     } finally {
       setLoading(false)
     }
-  }
-
-  // Edit/Delete action cell
-  const EditActionCell = ({ dataItem, tdProps }) => {
-    return (
-      <td
-        {...tdProps}
-        style={{
-          ...tdProps?.style,
-          textAlign: 'center',
-          verticalAlign: 'middle',
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          {/* <Tooltip title='Edit Row'>
-            <IconButton
-              size='small'
-              onClick={() => {
-                setEditRowData(dataItem)
-                setAddRowDialogOpen(true)
-              }}
-            >
-              <EditIcon fontSize='small' />
-            </IconButton>
-          </Tooltip> */}
-
-          <Tooltip title='Delete Row'>
-            <IconButton
-              size='small'
-              color='error'
-              onClick={() => {
-                setRowToDelete(dataItem)
-                setDeleteDialogOpen(true)
-              }}
-            >
-              <DeleteOutlineIcon fontSize='small' />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </td>
-    )
   }
 
   // Delete handler
@@ -673,7 +671,6 @@ const FixedConsumption = () => {
                 setEditRowData(null)
                 setAddRowDialogOpen(true)
               }}
-              customActionCell={EditActionCell}
             />
 
             <AddFixedConsumptionDialog
