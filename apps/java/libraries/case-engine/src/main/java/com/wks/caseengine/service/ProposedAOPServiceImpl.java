@@ -240,6 +240,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 	private void writeProposedAOPSheet(Workbook workbook, String sheetName,
 			List<ProposedAOPDTO> dtoList, boolean isAfterSave) {
 
+		boolean isAllGrade = "All Grade".equals(sheetName);
 		Sheet sheet = workbook.createSheet(sheetName);
 		int currentRow = 0;
 
@@ -258,6 +259,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		CellStyle lockedStyle   = Utility.createBorderedLockedStyle(workbook);
 		CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
 		CellStyle wrapUnlocked  = Utility.createBorderedWrapUnlockedStyle(workbook);
+		CellStyle wrapLocked  = Utility.createBorderedWrapLockedStyle(workbook);
 
 		Row headerRow = sheet.createRow(currentRow++);
 		for (int col = 0; col < headerNames.size(); col++) {
@@ -287,11 +289,11 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 
 			Cell proposedCell = row.createCell(4);
 			if (dto.getProposed() != null) proposedCell.setCellValue(dto.getProposed());
-			proposedCell.setCellStyle(unlockedStyle);
+			proposedCell.setCellStyle(isAllGrade ? lockedStyle : unlockedStyle);
 
 			Cell remarksCell = row.createCell(5);
 			remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
-			remarksCell.setCellStyle(wrapUnlocked);
+			remarksCell.setCellStyle(isAllGrade ? wrapLocked : wrapUnlocked);
 
 			Cell normParamCell = row.createCell(6);
 			normParamCell.setCellValue(dto.getNormParameterId() != null ? dto.getNormParameterId().toString() : "");
