@@ -147,6 +147,14 @@ const FixedNorms = () => {
       minWidth: 150,
     },
     {
+      field: 'normTypeName',
+      title: 'Norm Type',
+      widthT: 150,
+      type: 'text',
+      editable: false,
+      minWidth: 150,
+    },
+    {
       field: 'actualNorm',
       title: 'Actual Norm',
       widthT: 150,
