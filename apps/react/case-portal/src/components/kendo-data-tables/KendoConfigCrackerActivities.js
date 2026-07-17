@@ -98,6 +98,13 @@ const DecokingConfig = () => {
   const [ibrScreen2Rows, setIbrScreen2Rows] = useState([])
   const [globalTaStartDate, setGlobalTaStartDate] = useState(null)
   const [globalTaEndDate, setGlobalTaEndDate] = useState(null)
+  const [sadDurationRow, setSadDurationRow] = useState(null)
+  const [maxDutyPilotRow, setMaxDutyPilotRow] = useState(null)
+  const [maxDutyMainRow, setMaxDutyMainRow] = useState(null)
+  const [sadDuration, setSadDuration] = useState('')
+  const [maxDutyPilot, setMaxDutyPilot] = useState('')
+  const [maxDutyMain, setMaxDutyMain] = useState('')
+
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -198,6 +205,42 @@ const DecokingConfig = () => {
       (Number(actualRunLength) * Number(reduction)) / 100
     return isNaN(val) ? null : Math.ceil(val) // <-- round up to nearest integer
   }
+  useEffect(() => {
+    const fetchOtherCost = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
+      try {
+        const resp = await DataService.getOtherFurnanceDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR
+        )
+        if (resp?.code === 200 && resp?.data) {
+          const rows = resp.data
+          const sadRow = rows.find((r) => r.displayName === 'SAD Duration')
+          const pilotRow = rows.find(
+            (r) => r.displayName === 'Max Duty For Pilot Furnace',
+          )
+          const mainRow = rows.find(
+            (r) => r.displayName === 'Max Duty For Main Furnaces',
+          )
+
+          setSadDurationRow(sadRow || null)
+          setMaxDutyPilotRow(pilotRow || null)
+          setMaxDutyMainRow(mainRow || null)
+
+          setSadDuration(sadRow ? (sadRow.attributeValue ?? '') : '')
+          setMaxDutyPilot(pilotRow ? (pilotRow.attributeValue ?? '') : '')
+          setMaxDutyMain(mainRow ? (mainRow.attributeValue ?? '') : '')
+        }
+        console.log("RESP FOR OTHER FURNANCE DETAILS:", resp);
+      } catch (error) {
+        console.error("Error fetching other furnance details:", error);
+      }
+    };
+
+    fetchOtherCost();
+  }, [keycloak, PLANT_ID, AOP_YEAR]);
+
 
   const fetchData = useCallback(
     async (screen = null) => {
@@ -497,7 +540,65 @@ const DecokingConfig = () => {
     return null
   }
 
+  const saveRunningDurationParams = async () => {
+    const sadVal = parseFloat(sadDuration)
+    if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'SAD Duration must be between 2.1 and 3.0 Only!',
+        severity: 'error',
+      })
+      return false
+    }
+
+    const payload = [
+      {
+        id: sadDurationRow?.id || null,
+        displayName: 'SAD Duration',
+        attributeValue: sadDuration,
+        remarks: sadDurationRow?.remarks || null,
+      },
+      {
+        id: maxDutyPilotRow?.id || null,
+        displayName: 'Max Duty For Pilot Furnace',
+        attributeValue: maxDutyPilot,
+        remarks: maxDutyPilotRow?.remarks || null,
+      },
+      {
+        id: maxDutyMainRow?.id || null,
+        displayName: 'Max Duty For Main Furnaces',
+        attributeValue: maxDutyMain,
+        remarks: maxDutyMainRow?.remarks || null,
+      },
+    ]
+
+    try {
+      const resp = await DataService.saveOtherFurnanceDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        payload,
+      )
+      if (resp?.code === 200) {
+        setSummaryEdited(false)
+        return true
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Failed to save Decoking Activities parameters!',
+          severity: 'error',
+        })
+        return false
+      }
+    } catch (err) {
+      console.error('Error saving decoking parameters:', err)
+      return false
+    }
+  }
+
   const saveChangesSdTa = async () => {
+    const success = await saveRunningDurationParams()
+    if (success === false) return
     if (globalTaStartDate && globalTaEndDate) {
       await saveChangesSdTa1()
     } else {
@@ -907,7 +1008,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1061,7 +1162,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1582,7 +1683,114 @@ const DecokingConfig = () => {
           </Box>
         </Box>
       </LocalizationProvider>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          mb: 1,
+          mt: 1,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          p: 2,
+          borderRadius: 2,
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            SAD Duration
+          </Typography>
+          <TextField
+            id='sad-duration'
+            type='number'
+            size='small'
+            value={sadDuration}
+            onChange={(e) => {
+              setSadDuration(e.target.value)
+              setSummaryEdited(true)
+            }}
+            disabled={READ_ONLY}
+            sx={{
+              width: '100px',
+              '& input[type=number]': {
+                '-moz-appearance': 'textfield',
+              },
+              '& input[type=number]::-webkit-outer-spin-button': {
+                '-webkit-appearance': 'none',
+                margin: 0,
+              },
+              '& input[type=number]::-webkit-inner-spin-button': {
+                '-webkit-appearance': 'none',
+                margin: 0,
+              },
+            }}
+          />
+        </Box>
 
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            Max Duty For Pilot Furnace
+          </Typography>
+          <TextField
+            id='max-duty-pilot-furnace'
+            type='number'
+            size='small'
+            value={maxDutyPilot}
+            onChange={(e) => {
+              setMaxDutyPilot(e.target.value)
+              setSummaryEdited(true)
+            }}
+            disabled={READ_ONLY}
+            sx={{
+              width: '100px',
+              '& input[type=number]': {
+                '-moz-appearance': 'textfield',
+              },
+              '& input[type=number]::-webkit-outer-spin-button': {
+                '-webkit-appearance': 'none',
+                margin: 0,
+              },
+              '& input[type=number]::-webkit-inner-spin-button': {
+                '-webkit-appearance': 'none',
+                margin: 0,
+              },
+            }}
+          />
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            Max Duty For Main Furnaces
+          </Typography>
+          <TextField
+            id='max-duty-main-furnaces'
+            type='number'
+            size='small'
+            value={maxDutyMain}
+            onChange={(e) => {
+              setMaxDutyMain(e.target.value)
+              setSummaryEdited(true)
+            }}
+            disabled={READ_ONLY}
+            sx={{
+              width: '100px',
+              '& input[type=number]': {
+                '-moz-appearance': 'textfield',
+              },
+              '& input[type=number]::-webkit-outer-spin-button': {
+                '-webkit-appearance': 'none',
+                margin: 0,
+              },
+              '& input[type=number]::-webkit-inner-spin-button': {
+                '-webkit-appearance': 'none',
+                margin: 0,
+              },
+            }}
+          />
+        </Box>
+
+      </Box>
       <SDTAActivitiesGrid
         columns={ibrPlanColumns.filter(
           (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
