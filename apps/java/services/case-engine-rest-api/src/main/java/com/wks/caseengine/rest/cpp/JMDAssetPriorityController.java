@@ -171,4 +171,57 @@ public class JMDAssetPriorityController {
 
         return ResponseEntity.ok(response);
     }
+
+    // ========================================
+    // UNIFIED EXPORT / IMPORT (Power, Steam, or All)
+    // ========================================
+
+    @GetMapping("/jmd/assets/priority/export")
+    public ResponseEntity<byte[]> exportAssetPriorityUnified(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear,
+            @RequestParam(defaultValue = "All") String assetCategory) {
+
+        logger.info("[GET /jmd/assets/priority/export] plantIds: {}, aopYear: {}, assetCategory: {}",
+                plantIds, aopYear, assetCategory);
+
+        byte[] excelData = jmdAssetPriorityService.exportAssetPriorityExcel(plantIds, aopYear, assetCategory);
+
+        if (excelData == null) {
+            logger.error("[GET /jmd/assets/priority/export] Failed to generate Excel file");
+            return ResponseEntity.status(500).body(null);
+        }
+
+        String fileLabel = "All".equalsIgnoreCase(assetCategory) ? "Combined"
+                : "Power".equalsIgnoreCase(assetCategory) ? "Power" : "Steam";
+        String fileName = fileLabel + "_Asset_Priority_" + aopYear + ".xlsx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", fileName);
+
+        logger.info("[GET /jmd/assets/priority/export] Successfully generated Excel: {}", fileName);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    @PostMapping("/jmd/assets/priority/import")
+    public ResponseEntity<AOPMessageVM> importAssetPriorityUnified(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear,
+            @RequestParam(defaultValue = "All") String assetCategory,
+            @RequestParam("file") MultipartFile file) {
+
+        logger.info("[POST /jmd/assets/priority/import] plantIds: {}, aopYear: {}, assetCategory: {}, fileName: {}",
+                plantIds, aopYear, assetCategory, file.getOriginalFilename());
+
+        AOPMessageVM response = jmdAssetPriorityService.importAssetPriorityExcel(plantIds, aopYear, assetCategory, file);
+
+        logger.info("[POST /jmd/assets/priority/import] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        return ResponseEntity.ok(response);
+    }
 }
