@@ -24,7 +24,6 @@ import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import ValidationErrorDialog from './ValidationErrorDialog'
 
-
 const GradeWiseSteadyStateConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -64,9 +63,9 @@ const GradeWiseSteadyStateConsumption = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   // Detailed validation error modal states
-  const [validationErrorDialogOpen, setValidationErrorDialogOpen] = useState(false)
+  const [validationErrorDialogOpen, setValidationErrorDialogOpen] =
+    useState(false)
   const [validationErrors, setValidationErrors] = useState([])
-
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -420,7 +419,10 @@ const GradeWiseSteadyStateConsumption = () => {
           setValidationErrorDialogOpen(true)
         } else {
           setSnackbarOpen(true)
-          setSnackbarData({ message: errorMsg  || 'Weighted average does not match.', severity: 'error' })
+          setSnackbarData({
+            message: errorMsg || 'Weighted average does not match.',
+            severity: 'error',
+          })
         }
       } else if (response && !(response instanceof Response)) {
         setSnackbarOpen(true)
@@ -448,7 +450,6 @@ const GradeWiseSteadyStateConsumption = () => {
     fetchData,
     fetchNormTransactions,
   ])
-
 
   // ===================== Calculate (PE uses site + vertical — same as NormalOpNorms handleCalculateNormalOperationNormsPe) =====================
 
@@ -542,7 +543,11 @@ const GradeWiseSteadyStateConsumption = () => {
       let errorMsg = ''
       let errorDataList = []
 
-      if (response && response.code === 400 && response.message === "Validation Failed") {
+      if (
+        response &&
+        response.code === 400 &&
+        response.message === 'Validation Failed'
+      ) {
         isWeightedAverageError = true
         errorMsg = response.message || 'Import validation failed.'
       }
@@ -598,7 +603,6 @@ const GradeWiseSteadyStateConsumption = () => {
       setLoading(false)
     }
   }
-
 
   const handleRemarkCellClick = (row) => {
     if (!row?.isEditable) return
@@ -657,7 +661,7 @@ const GradeWiseSteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}
