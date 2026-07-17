@@ -11,11 +11,8 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFDataValidation;
-import org.apache.poi.ss.usermodel.DataValidation;
-import org.apache.poi.ss.usermodel.DataValidationConstraint;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -826,8 +823,11 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         
         int totalColumns = col;
         
-        // Create sub-header row (Row 1) for month details
-        Row subHeaderRow = sheet.createRow(currentRow++);
+        // Use getRow instead of createRow to avoid destroying merged-cell styles
+        // that createMergedHeaderCell already placed on row 1 for static columns (A-G)
+        Row subHeaderRow = sheet.getRow(currentRow) != null
+                ? sheet.getRow(currentRow) : sheet.createRow(currentRow);
+        currentRow++;
         col = monthStartCol;
         
         // Sub-headers for each month (Shut Down Hrs, Operational Hrs)
@@ -914,8 +914,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             sheet.autoSizeColumn(i);
         }
         
-        // Protect sheet to enforce locked cells
-        sheet.protectSheet("");
+
+        XSSFSheet xssSheet = (XSSFSheet) sheet;
+        xssSheet.protectSheet("");
+        xssSheet.lockFormatColumns(false);  // allow column width changes + unhide
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
@@ -1010,8 +1012,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         
         int totalColumns = col;
         
-        // Create sub-header row (Row 1) for month details
-        Row subHeaderRow = sheet.createRow(currentRow++);
+        // Use getRow instead of createRow to preserve merged-cell styles on row 1
+        Row subHeaderRow = sheet.getRow(currentRow) != null
+                ? sheet.getRow(currentRow) : sheet.createRow(currentRow);
+        currentRow++;
         col = monthStartCol;
         
         for (int i = 0; i < 12; i++) {
@@ -1099,6 +1103,11 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             }
             sheet.autoSizeColumn(i);
         }
+
+        // Protect sheet – allow column resizing/unhiding but keep cell edits locked
+        XSSFSheet xssErrorSheet = (XSSFSheet) sheet;
+        xssErrorSheet.protectSheet("");
+        xssErrorSheet.lockFormatColumns(false);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
@@ -1965,4 +1974,208 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         target.setAssetType(source.getAssetType());
         return target;
     }
+
+    // ── UNIFIED export ─────────────────────────────────────────────────────────
+    @Override
+    public byte[] exportOperationalHoursExcel(List<UUID> plantIds, String financialYear, String assetCategory) {
+        logger.info("[Export Unified] assetCategory={}, plantIds={}, financialYear={}", assetCategory, plantIds, financialYear);
+
+        try {
+            AOPMessageVM response = getOperationalHoursForPlants(plantIds, financialYear);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) response.getData();
+
+            @SuppressWarnings("unchecked")
+            List<CPPAssetOperationalHoursResponseDto> powerData =
+                    (List<CPPAssetOperationalHoursResponseDto>) data.get("PowerOperationalHours");
+
+            @SuppressWarnings("unchecked")
+            List<CPPAssetOperationalHoursResponseDto> steamData =
+                    (List<CPPAssetOperationalHoursResponseDto>) data.get("SteamOperationalHours");
+
+            List<CPPAssetOperationalHoursResponseDto> combined = new ArrayList<>();
+
+            if ("Power".equalsIgnoreCase(assetCategory)) {
+                if (powerData != null) combined.addAll(powerData);
+                logger.info("[Export Unified] Exporting {} Power rows", combined.size());
+            } else if ("Steam".equalsIgnoreCase(assetCategory)) {
+                if (steamData != null) combined.addAll(steamData);
+                logger.info("[Export Unified] Exporting {} Steam rows", combined.size());
+            } else {
+                // All – merge Power first, then Steam in a single sheet
+                if (powerData != null) combined.addAll(powerData);
+                if (steamData != null) combined.addAll(steamData);
+                logger.info("[Export Unified] Exporting {} combined rows (Power + Steam)", combined.size());
+            }
+
+            String sheetLabel = "Power".equalsIgnoreCase(assetCategory)
+                    ? "Power Operational Hours"
+                    : "Steam".equalsIgnoreCase(assetCategory)
+                            ? "Steam Operational Hours"
+                            : "Operational Hours";
+
+            return generateExcel(combined, sheetLabel, financialYear);
+
+        } catch (Exception e) {
+            logger.error("[Export Unified] Error: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    // ── UNIFIED import ─────────────────────────────────────────────────────────
+
+    @Override
+    public AOPMessageVM importOperationalHoursExcel(List<UUID> plantIds, String financialYear,
+                                                    String assetCategory, MultipartFile file) {
+        logger.info("[Import Unified] assetCategory={}, plantIds={}, financialYear={}", assetCategory, plantIds, financialYear);
+
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            List<CPPAssetOperationalHoursResponseDto> excelData =
+                    readOperationalHoursExcelJMD(file.getInputStream(), financialYear);
+            logger.info("[Import Unified] Read {} records from Excel", excelData.size());
+
+            Map<String, Double> totalHoursByMonth = calculateTotalAvailableHours(financialYear);
+
+            List<CPPAssetOperationalHoursResponseDto> validPower   = new ArrayList<>();
+            List<CPPAssetOperationalHoursResponseDto> validSteam   = new ArrayList<>();
+            List<CPPAssetOperationalHoursResponseDto> failedRecords = new ArrayList<>();
+            List<String>                              failureReasons = new ArrayList<>();
+            int skippedCount = 0;
+
+            for (CPPAssetOperationalHoursResponseDto dto : excelData) {
+
+                // Filter by requested assetCategory (skip rows that don't belong)
+                String rowCategory = dto.getAssetCategory();
+                if ("Power".equalsIgnoreCase(assetCategory) && !"Power".equalsIgnoreCase(rowCategory)) {
+                    skippedCount++;
+                    continue;
+                }
+                if ("Steam".equalsIgnoreCase(assetCategory) && !"Steam".equalsIgnoreCase(rowCategory)) {
+                    skippedCount++;
+                    continue;
+                }
+
+                // Skip unchanged records
+                if (!isRecordModified(dto, totalHoursByMonth)) {
+                    skippedCount++;
+                    logger.debug("[Import Unified] Skipping unchanged record: {}", dto.getAssetName());
+                    continue;
+                }
+
+                // Validate
+                String validationError = validateShutdownHoursData(dto, totalHoursByMonth);
+                if (validationError != null) {
+                    failedRecords.add(dto);
+                    failureReasons.add(validationError);
+                    logger.warn("[Import Unified] Invalid record - {}: {}", dto.getAssetName(), validationError);
+                } else {
+                    CPPAssetOperationalHoursResponseDto recordToSave = cloneDto(dto);
+                    calculateOperationalHoursFromShutdown(recordToSave, totalHoursByMonth);
+
+                    if ("Steam".equalsIgnoreCase(rowCategory)) {
+                        validSteam.add(recordToSave);
+                    } else {
+                        // Power (or unknown – default to Power path)
+                        validPower.add(recordToSave);
+                    }
+                }
+            }
+
+            logger.info("[Import Unified] Skipped: {}, validPower: {}, validSteam: {}, failed: {}",
+                    skippedCount, validPower.size(), validSteam.size(), failedRecords.size());
+
+            // Save Power records
+            if (!validPower.isEmpty()) {
+                try {
+                    JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
+                    payload.setPowerResponse(validPower);
+                    saveOperationalHours(plantIds, financialYear, payload);
+                    logger.info("[Import Unified] Saved {} Power records", validPower.size());
+                } catch (Exception e) {
+                    logger.error("[Import Unified] Error saving Power records: {}", e.getMessage(), e);
+                    for (CPPAssetOperationalHoursResponseDto fd : validPower) {
+                        CPPAssetOperationalHoursResponseDto orig = cloneDto(fd);
+                        orig.setApr(convertShutdownToOperational(fd.getApr(), totalHoursByMonth.get("apr")));
+                        orig.setMay(convertShutdownToOperational(fd.getMay(), totalHoursByMonth.get("may")));
+                        orig.setJun(convertShutdownToOperational(fd.getJun(), totalHoursByMonth.get("jun")));
+                        orig.setJul(convertShutdownToOperational(fd.getJul(), totalHoursByMonth.get("jul")));
+                        orig.setAug(convertShutdownToOperational(fd.getAug(), totalHoursByMonth.get("aug")));
+                        orig.setSep(convertShutdownToOperational(fd.getSep(), totalHoursByMonth.get("sep")));
+                        orig.setOct(convertShutdownToOperational(fd.getOct(), totalHoursByMonth.get("oct")));
+                        orig.setNov(convertShutdownToOperational(fd.getNov(), totalHoursByMonth.get("nov")));
+                        orig.setDec(convertShutdownToOperational(fd.getDec(), totalHoursByMonth.get("dec")));
+                        orig.setJan(convertShutdownToOperational(fd.getJan(), totalHoursByMonth.get("jan")));
+                        orig.setFeb(convertShutdownToOperational(fd.getFeb(), totalHoursByMonth.get("feb")));
+                        orig.setMar(convertShutdownToOperational(fd.getMar(), totalHoursByMonth.get("mar")));
+                        failedRecords.add(orig);
+                        failureReasons.add("Save failed: " + e.getMessage());
+                    }
+                }
+            }
+
+            // Save Steam records
+            if (!validSteam.isEmpty()) {
+                try {
+                    JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
+                    payload.setSteamResponse(validSteam);
+                    saveOperationalHours(plantIds, financialYear, payload);
+                    logger.info("[Import Unified] Saved {} Steam records", validSteam.size());
+                } catch (Exception e) {
+                    logger.error("[Import Unified] Error saving Steam records: {}", e.getMessage(), e);
+                    for (CPPAssetOperationalHoursResponseDto fd : validSteam) {
+                        CPPAssetOperationalHoursResponseDto orig = cloneDto(fd);
+                        orig.setApr(convertShutdownToOperational(fd.getApr(), totalHoursByMonth.get("apr")));
+                        orig.setMay(convertShutdownToOperational(fd.getMay(), totalHoursByMonth.get("may")));
+                        orig.setJun(convertShutdownToOperational(fd.getJun(), totalHoursByMonth.get("jun")));
+                        orig.setJul(convertShutdownToOperational(fd.getJul(), totalHoursByMonth.get("jul")));
+                        orig.setAug(convertShutdownToOperational(fd.getAug(), totalHoursByMonth.get("aug")));
+                        orig.setSep(convertShutdownToOperational(fd.getSep(), totalHoursByMonth.get("sep")));
+                        orig.setOct(convertShutdownToOperational(fd.getOct(), totalHoursByMonth.get("oct")));
+                        orig.setNov(convertShutdownToOperational(fd.getNov(), totalHoursByMonth.get("nov")));
+                        orig.setDec(convertShutdownToOperational(fd.getDec(), totalHoursByMonth.get("dec")));
+                        orig.setJan(convertShutdownToOperational(fd.getJan(), totalHoursByMonth.get("jan")));
+                        orig.setFeb(convertShutdownToOperational(fd.getFeb(), totalHoursByMonth.get("feb")));
+                        orig.setMar(convertShutdownToOperational(fd.getMar(), totalHoursByMonth.get("mar")));
+                        failedRecords.add(orig);
+                        failureReasons.add("Save failed: " + e.getMessage());
+                    }
+                }
+            }
+
+            int totalSaved = validPower.size() + validSteam.size();
+
+            // Build response
+            if (failedRecords.isEmpty()) {
+                response.setCode(200);
+                if (totalSaved == 0 && skippedCount > 0) {
+                    response.setMessage("No changes detected. All " + skippedCount + " records unchanged.");
+                } else {
+                    response.setMessage("Import successful. " + totalSaved + " records updated, " + skippedCount + " unchanged.");
+                }
+            } else {
+                String sheetLabel = "Power".equalsIgnoreCase(assetCategory)
+                        ? "Power Operational Hours"
+                        : "Steam".equalsIgnoreCase(assetCategory)
+                                ? "Steam Operational Hours"
+                                : "Operational Hours";
+                byte[] failedFile = generateErrorExcel(failedRecords, failureReasons, sheetLabel, financialYear);
+                String base64File = java.util.Base64.getEncoder().encodeToString(failedFile);
+                response.setCode(400);
+                response.setMessage("Partial import: " + totalSaved + " saved, "
+                        + failedRecords.size() + " failed, " + skippedCount + " unchanged. Download file for details.");
+                response.setData(base64File);
+            }
+
+            logger.info("[Import Unified] Done – saved: {}, failed: {}, skipped: {}", totalSaved, failedRecords.size(), skippedCount);
+
+        } catch (Exception e) {
+            logger.error("[Import Unified] Error during import: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to import operational hours: " + e.getMessage());
+        }
+        return response;
+    }
 }
+

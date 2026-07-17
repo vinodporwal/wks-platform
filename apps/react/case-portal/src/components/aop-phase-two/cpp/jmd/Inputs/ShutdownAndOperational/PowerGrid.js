@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Box, Stack, Tooltip, IconButton } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,10 +8,8 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/input
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { useDebounce } from 'hooks/useDebounce'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import {
   transformApiResponseToGridFormat,
@@ -20,7 +18,7 @@ import {
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import AddAssetDialog from './components/AddAssetDialog'
 
-const PowerGrid = ({ hoursRows = [] }) => {
+const PowerGrid = ({ hoursRows = [], apiData = [], dataLoading = false, onRefresh }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -218,68 +216,34 @@ const PowerGrid = ({ hoursRows = [] }) => {
       editable: true,
       minWidth: 250,
     },
-    {
-      field: 'customActions',
-      title: 'Action',
-      type: 'customAction',
-      minWidth: 100,
-      className: 'k-text-center',
-      cell: AssetActionCell,
-      // locked: true,
-      // lockPosition: 'right',
-    },
+    // {
+    //   field: 'customActions',
+    //   title: 'Action',
+    //   type: 'customAction',
+    //   minWidth: 100,
+    //   className: 'k-text-center',
+    //   cell: AssetActionCell,
+    //   // locked: true,
+    //   // lockPosition: 'right',
+    // },
   ]
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getOperationHoursData(
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
-
-      if (!res || res?.data?.PowerOperationalHours?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const powerResponse = res?.data?.PowerOperationalHours
-      const filteredData = powerResponse?.filter(
-        (row) => row.assetType !== 'Power_Dis',
-      )
-      const transformedData = transformApiResponseToGridFormat(
-        filteredData,
-        hoursRows,
-      )
-      const rowsWithIds = transformedData?.map((row, index) => ({
-        ...row,
-        id: row.id || index + 1,
-      }))
-
-      setRows(rowsWithIds)
-      setOriginalRows(rowsWithIds)
-    } catch (error) {
-      console.error('Error fetching power grid data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
+  // Transform parent-provided apiData into grid rows whenever it changes
+  useEffect(() => {
+    if (!apiData || apiData.length === 0) {
+      setRows([])
+      setOriginalRows([])
+      return
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, hoursRows])
-
-  useDebounce(
-    () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
-        fetchData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchData],
-  )
+    const filteredData = apiData.filter((row) => row.assetType !== 'Power_Dis')
+    const transformedData = transformApiResponseToGridFormat(filteredData, hoursRows)
+    const rowsWithIds = transformedData?.map((row, index) => ({
+      ...row,
+      id: row.id || index + 1,
+    }))
+    setRows(rowsWithIds)
+    setOriginalRows(rowsWithIds)
+  }, [apiData, hoursRows])
 
   const permissions = {
     showAction: true,
@@ -359,7 +323,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
+      onRefresh()
     } catch (error) {
       console.error('Error saving power grid data:', error)
       setSnackbarOpen(true)
@@ -376,11 +340,12 @@ const PowerGrid = ({ hoursRows = [] }) => {
     if (!file) return
     setLoading(true)
     try {
-      const response = await InputApiService.savePowerResponseExcel(
+      const response = await InputApiService.saveOperationalHoursExcel(
         file,
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'All',
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -389,7 +354,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchData()
+        await onRefresh()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteArray = new Uint8Array(
@@ -414,7 +379,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchData()
+        await onRefresh()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
@@ -435,10 +400,11 @@ const PowerGrid = ({ hoursRows = [] }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      await InputApiService.exportPowerResponseExcel(
+      await InputApiService.exportOperationalHoursExcel(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'All',
         EXCEL_NAME,
       )
       setSnackbarData({
@@ -476,7 +442,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
         message: 'Asset deleted successfully!',
         severity: 'success',
       })
-      fetchData()
+      onRefresh()
     } catch (error) {
       console.error('Error deleting asset:', error)
       setSnackbarOpen(true)
@@ -501,7 +467,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
           setRows={setRows}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
-          title='Shutdown and Operational Input (Hours)'
+          title='Power Shutdown and Operational Input (Hours)'
           permissions={permissions}
           handleRemarkCellClick={handleRemarkCellClick}
           remarkDialogOpen={remarkDialogOpen}
@@ -532,7 +498,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
         onSuccess={() => {
           setAddAssetDialogOpen(false)
           setEditAssetRowData(null)
-          fetchData()
+          onRefresh()
         }}
         editRowData={editAssetRowData}
         assetCategory='Power'

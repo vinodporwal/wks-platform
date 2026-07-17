@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Box, Stack, Tooltip, IconButton } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,7 +8,6 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/input
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { useDebounce } from 'hooks/useDebounce'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
@@ -19,7 +18,7 @@ import {
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import AddAssetDialog from './components/AddAssetDialog'
 
-const STGGrid = ({ hoursRows = [] }) => {
+const STGGrid = ({ hoursRows = [], apiData = [], dataLoading = false, onRefresh }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
@@ -205,63 +204,31 @@ const STGGrid = ({ hoursRows = [] }) => {
       editable: true,
       minWidth: 250,
     },
-    {
-      field: 'customActions',
-      title: 'Action',
-      type: 'customAction',
-      minWidth: 100,
-      className: 'k-text-center',
-      cell: AssetActionCell,
-    },
+    // {
+    //   field: 'customActions',
+    //   title: 'Action',
+    //   type: 'customAction',
+    //   minWidth: 100,
+    //   className: 'k-text-center',
+    //   cell: AssetActionCell,
+    // },
   ]
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getOperationHoursData(
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
-
-      if (!res || res?.data?.SteamOperationalHours?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const steamResponse = res?.data?.SteamOperationalHours
-      const transformedData = transformApiResponseToGridFormat(
-        steamResponse,
-        hoursRows,
-      )
-      const rowsWithIds = transformedData?.map((row, index) => ({
-        ...row,
-        id: row.id || index + 1,
-      }))
-
-      setRows(rowsWithIds)
-      setOriginalRows(rowsWithIds)
-    } catch (error) {
-      console.error('Error fetching power grid data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
+  // Transform parent-provided apiData into grid rows whenever it changes
+  useEffect(() => {
+    if (!apiData || apiData.length === 0) {
+      setRows([])
+      setOriginalRows([])
+      return
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, hoursRows])
-
-  useDebounce(
-    () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
-        fetchData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchData],
-  )
+    const transformedData = transformApiResponseToGridFormat(apiData, hoursRows)
+    const rowsWithIds = transformedData?.map((row, index) => ({
+      ...row,
+      id: row.id || index + 1,
+    }))
+    setRows(rowsWithIds)
+    setOriginalRows(rowsWithIds)
+  }, [apiData, hoursRows])
 
   const permissions = {
     showAction: true,
@@ -271,8 +238,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showImport: true,
-    showExport: true,
+    showImport: false,
+    showExport: false,
     ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: false,
@@ -340,7 +307,7 @@ const STGGrid = ({ hoursRows = [] }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
+      onRefresh()
     } catch (error) {
       console.error('Error saving STG grid data:', error)
       setSnackbarOpen(true)
@@ -370,7 +337,7 @@ const STGGrid = ({ hoursRows = [] }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchData()
+        await onRefresh()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteArray = new Uint8Array(
@@ -395,7 +362,7 @@ const STGGrid = ({ hoursRows = [] }) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchData()
+        await onRefresh()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
@@ -457,7 +424,7 @@ const STGGrid = ({ hoursRows = [] }) => {
         message: 'Asset deleted successfully!',
         severity: 'success',
       })
-      fetchData()
+      onRefresh()
     } catch (error) {
       console.error('Error deleting asset:', error)
       setSnackbarOpen(true)
@@ -482,6 +449,7 @@ const STGGrid = ({ hoursRows = [] }) => {
           setRows={setRows}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
+          title='Steam Shutdown and Operational Input (Hours)'
           permissions={permissions}
           handleRemarkCellClick={handleRemarkCellClick}
           remarkDialogOpen={remarkDialogOpen}
@@ -512,7 +480,7 @@ const STGGrid = ({ hoursRows = [] }) => {
         onSuccess={() => {
           setAddAssetDialogOpen(false)
           setEditAssetRowData(null)
-          fetchData()
+          onRefresh()
         }}
         editRowData={editAssetRowData}
         assetCategory='Steam'
