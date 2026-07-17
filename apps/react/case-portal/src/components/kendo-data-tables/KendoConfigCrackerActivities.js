@@ -106,7 +106,6 @@ const DecokingConfig = () => {
   const [maxDutyPilot, setMaxDutyPilot] = useState('')
   const [maxDutyMain, setMaxDutyMain] = useState('')
 
-
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
 
@@ -213,7 +212,7 @@ const DecokingConfig = () => {
         const resp = await DataService.getOtherFurnanceDetails(
           keycloak,
           PLANT_ID,
-          AOP_YEAR
+          AOP_YEAR,
         )
         if (resp?.code === 200 && resp?.data) {
           const rows = resp.data
@@ -229,19 +228,18 @@ const DecokingConfig = () => {
           setMaxDutyPilotRow(pilotRow || null)
           setMaxDutyMainRow(mainRow || null)
 
-          setSadDuration(sadRow ? (sadRow.attributeValue ?? '') : '')
-          setMaxDutyPilot(pilotRow ? (pilotRow.attributeValue ?? '') : '')
-          setMaxDutyMain(mainRow ? (mainRow.attributeValue ?? '') : '')
+          setSadDuration(sadRow ? sadRow.attributeValue ?? '' : '')
+          setMaxDutyPilot(pilotRow ? pilotRow.attributeValue ?? '' : '')
+          setMaxDutyMain(mainRow ? mainRow.attributeValue ?? '' : '')
         }
-        console.log("RESP FOR OTHER FURNANCE DETAILS:", resp);
+        console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
       } catch (error) {
-        console.error("Error fetching other furnance details:", error);
+        console.error('Error fetching other furnance details:', error)
       }
-    };
+    }
 
-    fetchOtherCost();
-  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2]);
-
+    fetchOtherCost()
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2])
 
   const fetchData = useCallback(
     async (screen = null) => {
@@ -1009,7 +1007,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1163,7 +1161,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1645,62 +1643,90 @@ const DecokingConfig = () => {
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <Box
-          sx={{ display: 'flex', gap: 1, mb: 0, mt: 1, alignItems: 'center' }}
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            columnGap: 4,
+            rowGap: 1.5,
+            mb: 1.5,
+            mt: 1,
+            alignItems: 'center',
+          }}
         >
+          {/* Column 1, Row 1 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography
+              className='grid-title'
+              sx={{ whiteSpace: 'nowrap', width: '220px' }}
+            >
               TA Start Date
             </Typography>
-            <DatePicker
-              id='global-ta-start-date'
-              format='dd-MM-yyyy'
-              value={globalTaStartDate}
-              onChange={(e) => {
-                setGlobalTaStartDate(e.value)
-                setSummaryEdited(true)
-              }}
-              style={{ height: '80px' }}
-              size={'small'}
-              disabled={READ_ONLY}
-            />
+            <Box sx={{ width: '160px' }}>
+              <DatePicker
+                id='global-ta-start-date'
+                format='dd-MM-yyyy'
+                value={globalTaStartDate}
+                onChange={(e) => {
+                  setGlobalTaStartDate(e.value)
+                  setSummaryEdited(true)
+                }}
+                style={{ height: '80px', width: '100%' }}
+                size={'small'}
+                disabled={READ_ONLY}
+              />
+            </Box>
           </Box>
 
+          {/* Column 2, Row 1 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography
+              className='grid-title'
+              sx={{ whiteSpace: 'nowrap', width: '220px' }}
+            >
               TA End Date
             </Typography>
-            <DatePicker
-              id='global-ta-end-date'
-              format='dd-MM-yyyy'
-              value={globalTaEndDate}
-              onChange={(e) => {
-                setGlobalTaEndDate(e.value)
-                setSummaryEdited(true)
-              }}
-              style={{ height: '80px' }}
-              size={'small'}
-              disabled={READ_ONLY}
-            />
+            <Box sx={{ width: '160px' }}>
+              <DatePicker
+                id='global-ta-end-date'
+                format='dd-MM-yyyy'
+                value={globalTaEndDate}
+                onChange={(e) => {
+                  setGlobalTaEndDate(e.value)
+                  setSummaryEdited(true)
+                }}
+                style={{ height: '80px', width: '100%' }}
+                size={'small'}
+                disabled={READ_ONLY}
+              />
+            </Box>
           </Box>
         </Box>
       </LocalizationProvider>
+
       {IS_CRACKER_C2 && (
         <Box
           sx={{
             display: 'flex',
-            gap: 1,
-            mb: 1,
-            mt: 1,
-            alignItems: 'center',
             flexWrap: 'wrap',
-            p: 2,
-            borderRadius: 2,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            columnGap: 4,
+            rowGap: 1.5,
+            mb: 1.5,
+            mt: 0.5,
+            alignItems: 'center',
           }}
         >
+          {/* Column 1, Row 2 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography
+              className='grid-title'
+              sx={{
+                whiteSpace: 'nowrap',
+                width: '220px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#334155',
+              }}
+            >
               SAD Duration
             </Typography>
             <TextField
@@ -1714,7 +1740,7 @@ const DecokingConfig = () => {
               }}
               disabled={READ_ONLY}
               sx={{
-                width: '100px',
+                width: '90px',
                 '& input[type=number]': {
                   '-moz-appearance': 'textfield',
                 },
@@ -1730,9 +1756,18 @@ const DecokingConfig = () => {
             />
           </Box>
 
-
+          {/* Column 2, Row 2 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography
+              className='grid-title'
+              sx={{
+                whiteSpace: 'nowrap',
+                width: '220px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#334155',
+              }}
+            >
               Max Duty For Pilot Furnace
             </Typography>
             <TextField
@@ -1746,7 +1781,7 @@ const DecokingConfig = () => {
               }}
               disabled={READ_ONLY}
               sx={{
-                width: '100px',
+                width: '90px',
                 '& input[type=number]': {
                   '-moz-appearance': 'textfield',
                 },
@@ -1762,8 +1797,18 @@ const DecokingConfig = () => {
             />
           </Box>
 
+          {/* Column 3, Row 2 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography
+              className='grid-title'
+              sx={{
+                whiteSpace: 'nowrap',
+                width: '220px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#334155',
+              }}
+            >
               Max Duty For Main Furnaces
             </Typography>
             <TextField
@@ -1777,9 +1822,10 @@ const DecokingConfig = () => {
               }}
               disabled={READ_ONLY}
               sx={{
-                width: '100px',
+                width: '90px',
                 '& input[type=number]': {
                   '-moz-appearance': 'textfield',
+                  margin: 0,
                 },
                 '& input[type=number]::-webkit-outer-spin-button': {
                   '-webkit-appearance': 'none',
@@ -1792,9 +1838,9 @@ const DecokingConfig = () => {
               }}
             />
           </Box>
-
         </Box>
       )}
+
       <SDTAActivitiesGrid
         columns={ibrPlanColumns.filter(
           (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
