@@ -73,6 +73,7 @@ const DecokingConfig = () => {
   const IS_C2 = siteObject?.name?.toLowerCase() == 'c2'
   const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && siteName === 'c2'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -207,7 +208,7 @@ const DecokingConfig = () => {
   }
   useEffect(() => {
     const fetchOtherCost = async () => {
-      if (!PLANT_ID || !AOP_YEAR) return
+      if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
       try {
         const resp = await DataService.getOtherFurnanceDetails(
           keycloak,
@@ -239,7 +240,7 @@ const DecokingConfig = () => {
     };
 
     fetchOtherCost();
-  }, [keycloak, PLANT_ID, AOP_YEAR]);
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2]);
 
 
   const fetchData = useCallback(
@@ -1683,114 +1684,116 @@ const DecokingConfig = () => {
           </Box>
         </Box>
       </LocalizationProvider>
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1,
-          mb: 1,
-          mt: 1,
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          p: 2,
-          borderRadius: 2,
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
-            SAD Duration
-          </Typography>
-          <TextField
-            id='sad-duration'
-            type='number'
-            size='small'
-            value={sadDuration}
-            onChange={(e) => {
-              setSadDuration(e.target.value)
-              setSummaryEdited(true)
-            }}
-            disabled={READ_ONLY}
-            sx={{
-              width: '100px',
-              '& input[type=number]': {
-                '-moz-appearance': 'textfield',
-              },
-              '& input[type=number]::-webkit-outer-spin-button': {
-                '-webkit-appearance': 'none',
-                margin: 0,
-              },
-              '& input[type=number]::-webkit-inner-spin-button': {
-                '-webkit-appearance': 'none',
-                margin: 0,
-              },
-            }}
-          />
-        </Box>
+      {IS_CRACKER_C2 && (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            mb: 1,
+            mt: 1,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            p: 2,
+            borderRadius: 2,
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+              SAD Duration
+            </Typography>
+            <TextField
+              id='sad-duration'
+              type='number'
+              size='small'
+              value={sadDuration}
+              onChange={(e) => {
+                setSadDuration(e.target.value)
+                setSummaryEdited(true)
+              }}
+              disabled={READ_ONLY}
+              sx={{
+                width: '100px',
+                '& input[type=number]': {
+                  '-moz-appearance': 'textfield',
+                },
+                '& input[type=number]::-webkit-outer-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+                '& input[type=number]::-webkit-inner-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+              }}
+            />
+          </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
-            Max Duty For Pilot Furnace
-          </Typography>
-          <TextField
-            id='max-duty-pilot-furnace'
-            type='number'
-            size='small'
-            value={maxDutyPilot}
-            onChange={(e) => {
-              setMaxDutyPilot(e.target.value)
-              setSummaryEdited(true)
-            }}
-            disabled={READ_ONLY}
-            sx={{
-              width: '100px',
-              '& input[type=number]': {
-                '-moz-appearance': 'textfield',
-              },
-              '& input[type=number]::-webkit-outer-spin-button': {
-                '-webkit-appearance': 'none',
-                margin: 0,
-              },
-              '& input[type=number]::-webkit-inner-spin-button': {
-                '-webkit-appearance': 'none',
-                margin: 0,
-              },
-            }}
-          />
-        </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+              Max Duty For Pilot Furnace
+            </Typography>
+            <TextField
+              id='max-duty-pilot-furnace'
+              type='number'
+              size='small'
+              value={maxDutyPilot}
+              onChange={(e) => {
+                setMaxDutyPilot(e.target.value)
+                setSummaryEdited(true)
+              }}
+              disabled={READ_ONLY}
+              sx={{
+                width: '100px',
+                '& input[type=number]': {
+                  '-moz-appearance': 'textfield',
+                },
+                '& input[type=number]::-webkit-outer-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+                '& input[type=number]::-webkit-inner-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+              }}
+            />
+          </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
-            Max Duty For Main Furnaces
-          </Typography>
-          <TextField
-            id='max-duty-main-furnaces'
-            type='number'
-            size='small'
-            value={maxDutyMain}
-            onChange={(e) => {
-              setMaxDutyMain(e.target.value)
-              setSummaryEdited(true)
-            }}
-            disabled={READ_ONLY}
-            sx={{
-              width: '100px',
-              '& input[type=number]': {
-                '-moz-appearance': 'textfield',
-              },
-              '& input[type=number]::-webkit-outer-spin-button': {
-                '-webkit-appearance': 'none',
-                margin: 0,
-              },
-              '& input[type=number]::-webkit-inner-spin-button': {
-                '-webkit-appearance': 'none',
-                margin: 0,
-              },
-            }}
-          />
-        </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+              Max Duty For Main Furnaces
+            </Typography>
+            <TextField
+              id='max-duty-main-furnaces'
+              type='number'
+              size='small'
+              value={maxDutyMain}
+              onChange={(e) => {
+                setMaxDutyMain(e.target.value)
+                setSummaryEdited(true)
+              }}
+              disabled={READ_ONLY}
+              sx={{
+                width: '100px',
+                '& input[type=number]': {
+                  '-moz-appearance': 'textfield',
+                },
+                '& input[type=number]::-webkit-outer-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+                '& input[type=number]::-webkit-inner-spin-button': {
+                  '-webkit-appearance': 'none',
+                  margin: 0,
+                },
+              }}
+            />
+          </Box>
 
-      </Box>
+        </Box>
+      )}
       <SDTAActivitiesGrid
         columns={ibrPlanColumns.filter(
           (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
