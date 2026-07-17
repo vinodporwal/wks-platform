@@ -26,6 +26,70 @@ import CalculateIcon from '@mui/icons-material/Calculate'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
+const groupColumns = (flatCols) => {
+  // Standalone columns that shouldn't be grouped
+  const dateCol = flatCols.find(col => col.field === 'Date')
+
+  // Columns to be grouped under "Production Columns"
+  const productionFields = [
+    'Production Ethylene',
+    'Production Propylene',
+  ]
+  const productionCols = flatCols.filter(col => productionFields.includes(col.field))
+
+  // Columns to be grouped under "Rest other columns" (like Ethylene Stock in Cryo-Tank)
+  const restFields = [
+    'MEG',
+    'LDPE',
+    'LLDPE',
+    'PP'
+  ]
+  const restCols = flatCols.filter(col => restFields.includes(col.field))
+
+  // If we didn't find any match, just return the flatCols as fallback
+  if (productionCols.length === 0 && restCols.length === 0) {
+    return flatCols
+  }
+
+  const grouped = []
+  if (dateCol) {
+    grouped.push(dateCol)
+  }
+
+  if (productionCols.length > 0) {
+    grouped.push({
+      title: 'Production, tph ',
+      children: productionCols
+    })
+  }
+
+  if (restCols.length > 0) {
+    grouped.push({
+      title: 'Consumption, tph ',
+      children: restCols
+    })
+  }
+
+  // Append any remaining columns that were not grouped
+  const groupedFields = ['Date', ...productionFields, ...restFields]
+  const otherCols = flatCols.filter(col => !groupedFields.includes(col.field))
+  grouped.push(...otherCols)
+
+  return grouped
+}
+
+const flattenColumns = (cols) => {
+  const flat = []
+  cols.forEach((col) => {
+    if (col.children) {
+      flat.push(...flattenColumns(col.children))
+    } else {
+      flat.push(col)
+    }
+  })
+  return flat
+}
+
 const EtheleneStock = () => {
   const keycloak = useSession()
 
@@ -92,8 +156,8 @@ const EtheleneStock = () => {
             ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
-            widthT: 250,
-            minWidth: 250,
+            widthT: col?.field === 'Ethylene Stock in Cryo-Tank' ? 200 : 110,
+            minWidth: col?.field === 'Ethylene Stock in Cryo-Tank' ? 200 : 110,
           }
         })
     },
@@ -186,59 +250,6 @@ const EtheleneStock = () => {
       setLoading(true)
 
       let apiResponse
-      try {
-        apiResponse = await DataService.getEtheleneStock(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      } catch (err) {
-        console.error('API call failed, falling back to dummy data', err)
-      }
-
-      if (!apiResponse || apiResponse.code !== 200 || !apiResponse.data || (Array.isArray(apiResponse.data) && apiResponse.data.length === 0)) {
-        const dummyRows = []
-        const startDate = new Date('2026-04-01')
-        for (let i = 0; i < 80; i++) {
-          const currentDate = new Date(startDate)
-          currentDate.setDate(startDate.getDate() + i)
-          const yyyy = currentDate.getFullYear()
-          const mm = String(currentDate.getMonth() + 1).padStart(2, '0')
-          const dd = String(currentDate.getDate()).padStart(2, '0')
-          const dateString = `${dd}-${mm}-${yyyy}`
-
-          dummyRows.push({
-            Date: dateString,
-            'Production Ethylene': Number((4000 + Math.random() * 1000).toFixed(4)),
-            'Production Propylene': Number((2000 + Math.random() * 1000).toFixed(4)),
-            MEG: Number((1000 + Math.random() * 500).toFixed(4)),
-            LDPE: Number((800 + Math.random() * 400).toFixed(4)),
-            LLDPE: Number((900 + Math.random() * 400).toFixed(4)),
-            PP: Number((1800 + Math.random() * 400).toFixed(4)),
-            'Ethylene Stock in Cryo Tank': Number((15000 + Math.random() * 10000).toFixed(4)),
-          })
-        }
-
-        apiResponse = {
-          code: 200,
-          data: [
-            {
-              gridName: 'Ethylene Stock Report',
-              data: dummyRows,
-              columns: [
-                { field: 'Date', title: 'Date', type: 'date' },
-                { field: 'Production Ethylene', title: 'Production Ethylene', type: 'number' },
-                { field: 'Production Propylene', title: 'Production Propylene', type: 'number' },
-                { field: 'MEG', title: 'MEG', type: 'number' },
-                { field: 'LDPE', title: 'LDPE', type: 'number' },
-                { field: 'LLDPE', title: 'LLDPE', type: 'number' },
-                { field: 'PP', title: 'PP', type: 'number' },
-                { field: 'Ethylene Stock in Cryo Tank', title: 'Ethylene Stock in Cryo Tank', type: 'number' },
-              ],
-            },
-          ],
-        }
-      }
 
       const gridsArray = Array.isArray(apiResponse.data)
         ? apiResponse.data
@@ -310,11 +321,13 @@ const EtheleneStock = () => {
           }))
         }
 
+        const groupedCols = groupColumns(enrichedCols)
+
         // IMPORTANT:
         // Use displayName as key instead of g.gridName
         newMap[displayName] = {
           rows: rowsWithId,
-          columns: enrichedCols,
+          columns: groupedCols,
           groupBy: gridGroupBy,
         }
       })
@@ -383,17 +396,19 @@ const EtheleneStock = () => {
         const rows = d.rows || []
         if (!cols.length && !rows.length) return null
 
-        const sheetColumns = cols.map((c) => ({
+        const flatCols = flattenColumns(cols)
+
+        const sheetColumns = flatCols.map((c) => ({
           autoWidth: true,
           title: c.title || c.field || '',
         }))
 
         const headerRow = {
-          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+          cells: flatCols.map((c) => ({ value: c.title || c.field || '' })),
         }
 
         const dataRows = rows.map((r) => ({
-          cells: cols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
+          cells: flatCols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
         }))
 
         const sheetRows = [headerRow, ...dataRows]
@@ -449,7 +464,7 @@ const EtheleneStock = () => {
               ref={setRef}
               fileName={fileName}
             >
-              {(data.columns || []).map((col) => (
+              {flattenColumns(data.columns || []).map((col) => (
                 <ExcelExportColumn
                   key={col.field}
                   field={col.field}
