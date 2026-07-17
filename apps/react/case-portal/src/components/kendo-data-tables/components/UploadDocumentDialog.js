@@ -56,7 +56,7 @@ const ACCEPTED_TYPES = [
   // 'application/pdf',
   // 'application/msword',
   // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-     'application/vnd.ms-excel',
+  'application/vnd.ms-excel',
   // 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   // 'application/vnd.ms-powerpoint',
   // 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -64,7 +64,7 @@ const ACCEPTED_TYPES = [
   // 'image/png',
   // 'image/jpg',
   //'text/plain',
- // 'text/csv',
+  // 'text/csv',
 ]
 
 //const ACCEPTED_EXTENSIONS = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv'
@@ -88,11 +88,11 @@ const getFileExtension = (name = '') => name.split('.').pop().toLowerCase()
 const UploadDocumentDialog = ({
   open,
   onClose,
-  uploadDialogMode,      // 'add' | 'update'
+  uploadDialogMode, // 'add' | 'update'
   selectedRowForUpdate,
   isUploading,
   uploadProgress,
-  onUpload,              // (files: FileList|File[]) => void
+  onUpload, // (files: FileList|File[]) => void
   readOnly,
 }) => {
   const fileInputRef = useRef(null)
@@ -104,8 +104,11 @@ const UploadDocumentDialog = ({
 
   const validateFile = useCallback((file) => {
     if (!file) return 'Please select a file.'
-    const isTypeValid = ACCEPTED_TYPES.includes(file.type) ||
-      ACCEPTED_EXTENSIONS.split(',').some(ext => file.name.toLowerCase().endsWith(ext))
+    const isTypeValid =
+      ACCEPTED_TYPES.includes(file.type) ||
+      ACCEPTED_EXTENSIONS.split(',').some((ext) =>
+        file.name.toLowerCase().endsWith(ext),
+      )
     if (!isTypeValid) {
       return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: XLS, XLSX, XLSM.`
     }
@@ -115,11 +118,14 @@ const UploadDocumentDialog = ({
     return ''
   }, [])
 
-  const pickFile = useCallback((file) => {
-    const error = validateFile(file)
-    setValidationError(error)
-    setSelectedFile(error ? null : file)
-  }, [validateFile])
+  const pickFile = useCallback(
+    (file) => {
+      const error = validateFile(file)
+      setValidationError(error)
+      setSelectedFile(error ? null : file)
+    },
+    [validateFile],
+  )
 
   // ── Event Handlers ────────────────────────────────────────────────────────
 
@@ -168,7 +174,8 @@ const UploadDocumentDialog = ({
   }
 
   const isAddMode = uploadDialogMode === 'add'
-  const canUpload = !!selectedFile && !validationError && !isUploading && !readOnly
+  const canUpload =
+    !!selectedFile && !validationError && !isUploading && !readOnly
 
   return (
     <CompactDialog
@@ -190,7 +197,13 @@ const UploadDocumentDialog = ({
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <CloudUploadIcon sx={{ fontSize: '1.1rem' }} />
-          <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', letterSpacing: '0.5px' }}>
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              letterSpacing: '0.5px',
+            }}
+          >
             {isAddMode ? 'ADD DOCUMENT' : 'UPDATE DOCUMENT'}
           </Typography>
         </Box>
@@ -206,19 +219,22 @@ const UploadDocumentDialog = ({
       </DialogTitle>
 
       {/* ── Content ────────────────────────────────────────────────────── */}
-      <DialogContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-
+      <DialogContent
+        sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}
+      >
         {/* Update context label */}
         {!isAddMode && selectedRowForUpdate && (
-          <Box sx={{
-            p: 1.5,
-            borderRadius: 1.5,
-            bgcolor: '#fffde7',
-            border: '1px solid #f9a825',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-          }}>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 1.5,
+              bgcolor: '#fffde7',
+              border: '1px solid #f9a825',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
             <FileIcon sx={{ fontSize: '1rem', color: '#f57f17' }} />
             <Typography sx={{ fontSize: '0.78rem', color: '#5d4037' }}>
               Replacing: <strong>{selectedRowForUpdate?.name}</strong>
@@ -249,10 +265,20 @@ const UploadDocumentDialog = ({
             }}
           />
           <Box textAlign='center'>
-            <Typography variant='body1' fontWeight={600} color='#1a237e' fontSize='0.9rem'>
+            <Typography
+              variant='body1'
+              fontWeight={600}
+              color='#1a237e'
+              fontSize='0.9rem'
+            >
               Drag & Drop your file here
             </Typography>
-            <Typography variant='body2' color='text.secondary' fontSize='0.76rem' sx={{ mt: 0.5 }}>
+            <Typography
+              variant='body2'
+              color='text.secondary'
+              fontSize='0.76rem'
+              sx={{ mt: 0.5 }}
+            >
               or
             </Typography>
           </Box>
@@ -260,18 +286,29 @@ const UploadDocumentDialog = ({
             variant='outlined'
             size='small'
             disabled={readOnly || isUploading}
-            onClick={(e) => { e.stopPropagation(); handleBrowseClick() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleBrowseClick()
+            }}
             sx={{
               fontSize: '0.76rem',
               borderColor: '#3949ab',
               color: '#3949ab',
-              '&:hover': { borderColor: '#1a237e', bgcolor: 'rgba(26,35,126,0.05)' },
+              '&:hover': {
+                borderColor: '#1a237e',
+                bgcolor: 'rgba(26,35,126,0.05)',
+              },
             }}
           >
             Browse File
           </Button>
-          <Typography variant='caption' color='text.secondary' textAlign='center' sx={{ lineHeight: 1.4 }}>
-            Supported: XLS, XLSX, XLSM, 
+          <Typography
+            variant='caption'
+            color='text.secondary'
+            textAlign='center'
+            sx={{ lineHeight: 1.4 }}
+          >
+            Supported: XLS, XLSX, XLSM,
             <br />
             Max size: {MAX_FILE_SIZE_MB} MB
           </Typography>
@@ -279,24 +316,37 @@ const UploadDocumentDialog = ({
 
         {/* Validation error */}
         {validationError && (
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, color: '#c62828' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1,
+              color: '#c62828',
+            }}
+          >
             <ErrorIcon sx={{ fontSize: '1rem', mt: '2px', flexShrink: 0 }} />
-            <Typography fontSize='0.76rem' color='inherit'>{validationError}</Typography>
+            <Typography fontSize='0.76rem' color='inherit'>
+              {validationError}
+            </Typography>
           </Box>
         )}
 
         {/* Selected file preview */}
         {selectedFile && !validationError && (
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            p: 1.5,
-            borderRadius: 1.5,
-            border: '1px solid #c5cae9',
-            bgcolor: '#f8f9ff',
-          }}>
-            <CheckCircleIcon sx={{ color: '#388e3c', fontSize: '1.2rem', flexShrink: 0 }} />
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 1.5,
+              borderRadius: 1.5,
+              border: '1px solid #c5cae9',
+              bgcolor: '#f8f9ff',
+            }}
+          >
+            <CheckCircleIcon
+              sx={{ color: '#388e3c', fontSize: '1.2rem', flexShrink: 0 }}
+            />
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Typography
                 fontSize='0.8rem'
@@ -314,7 +364,12 @@ const UploadDocumentDialog = ({
             <Chip
               label={`.${getFileExtension(selectedFile.name)}`}
               size='small'
-              sx={{ fontSize: '0.68rem', height: 20, bgcolor: '#e8eaf6', color: '#283593' }}
+              sx={{
+                fontSize: '0.68rem',
+                height: 20,
+                bgcolor: '#e8eaf6',
+                color: '#283593',
+              }}
             />
             <IconButton
               size='small'
@@ -330,11 +385,26 @@ const UploadDocumentDialog = ({
         {/* Upload progress */}
         {isUploading && (
           <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
-              <Typography variant='body2' fontSize='0.76rem' color='text.secondary'>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                mb: 0.75,
+              }}
+            >
+              <Typography
+                variant='body2'
+                fontSize='0.76rem'
+                color='text.secondary'
+              >
                 Uploading...
               </Typography>
-              <Typography variant='body2' fontSize='0.76rem' fontWeight={700} color='primary'>
+              <Typography
+                variant='body2'
+                fontSize='0.76rem'
+                fontWeight={700}
+                color='primary'
+              >
                 {uploadProgress}%
               </Typography>
             </Box>
@@ -348,7 +418,9 @@ const UploadDocumentDialog = ({
       </DialogContent>
 
       {/* ── Actions ────────────────────────────────────────────────────── */}
-      <DialogActions sx={{ p: '12px 16px', gap: 1, borderTop: '1px solid #e0e0e0' }}>
+      <DialogActions
+        sx={{ p: '12px 16px', gap: 1, borderTop: '1px solid #e0e0e0' }}
+      >
         <Button
           onClick={handleClose}
           disabled={isUploading}
@@ -370,7 +442,9 @@ const UploadDocumentDialog = ({
           sx={{
             fontSize: '0.78rem',
             background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
-            '&:hover': { background: 'linear-gradient(135deg, #0d1b6e 0%, #1e2e85 100%)' },
+            '&:hover': {
+              background: 'linear-gradient(135deg, #0d1b6e 0%, #1e2e85 100%)',
+            },
             '&:disabled': { opacity: 0.5 },
           }}
         >
