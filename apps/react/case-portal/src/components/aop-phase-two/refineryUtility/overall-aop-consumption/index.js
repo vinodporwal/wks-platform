@@ -7,12 +7,13 @@ import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
-
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Overall_AOP_Consumption')
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
 
@@ -263,7 +264,7 @@ const OverallAopConsumption = () => {
     // showExport: true,
     downloadExcelBtnFromUI: true,
     showCalculate: true,
-    ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
