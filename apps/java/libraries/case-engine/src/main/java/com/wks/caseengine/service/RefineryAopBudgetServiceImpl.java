@@ -8,11 +8,13 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -1224,7 +1226,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                 // Col 5 – Tentative Month
                 Cell monthCell = row.createCell(5);
-                monthCell.setCellValue(dto.getTentativeMonth() != null ? String.valueOf(dto.getTentativeMonth()) : "");
+                String monthName = "";
+                if (dto.getTentativeMonth() != null) {
+                    monthName = new java.text.DateFormatSymbols().getMonths()[dto.getTentativeMonth() - 1];
+                }
+                monthCell.setCellValue(monthName);
                 monthCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
                 // Col 6 – Purpose of Slowdown (remark, wrapped)
@@ -1299,6 +1305,24 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         List<RefinerySlowdownTranscationDTO> resultList = new ArrayList<>();
 
         VerticalsDTO verticalDto = getDropDownData(plantId);
+
+        AOPMessageVM uomResponse = getRefineryBudgetUomDropdown(plantId);
+        @SuppressWarnings("unchecked")
+        List<UomDropdownDTO> validUomList = (List<UomDropdownDTO>) uomResponse.getData();
+        // Set<String> validUomNames = validUomList.stream()
+        //         .map(UomDropdownDTO::getName)
+        //         .collect(Collectors.toSet());
+
+        Set<String> validUomNames = new HashSet<>();
+
+        for (UomDropdownDTO uom : validUomList) {
+            if (uom.getName() != null) {
+                validUomNames.add(uom.getName());
+            }
+            if (uom.getDisplayName() != null) {
+                validUomNames.add(uom.getDisplayName());
+            }
+        }
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -1389,7 +1413,17 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     if (uomCell != null) {
                         uomCell.setCellType(CellType.STRING);
                         String uomStr = uomCell.getStringCellValue().trim();
-                        dto.setThroughputUom(uomStr.isEmpty() ? null : uomStr);
+                        if (uomStr.isEmpty()) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Throughput UOM is required");
+                        } 
+                       else if (!validUomNames.contains(uomStr)) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Throughput UOM '" + uomStr + "' is not a valid UOM value");
+                        } 
+                       
+                            dto.setThroughputUom(uomStr.isEmpty() ? null : uomStr);
+                        
                     }
 
                     // Col 5 – Tentative Month
