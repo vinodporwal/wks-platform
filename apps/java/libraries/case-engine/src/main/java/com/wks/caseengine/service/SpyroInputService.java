@@ -30,4 +30,6 @@ public interface SpyroInputService {
 
 	AOPMessageVM updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear);
 
+	AOPMessageVM getFeedTypeFlowMappings(String plantId, String aopYear);
+
 }

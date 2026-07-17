@@ -637,7 +637,11 @@ const KendoDataTablesReports = ({
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
-            className={!isEditable ? 'non-editable-cell' : ''}
+            className={
+              ['Particulars', 'particulars', 'particular', 'productName', 'normParameterDisplayName', 'normParameterTypeDisplayName', 'UOM', 'uom'].includes(col.field)
+                ? ''
+                : (!isEditable ? 'non-editable-cell' : '')
+            }
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
             width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
@@ -778,7 +782,11 @@ const KendoDataTablesReports = ({
             data: toolTipRenderer,
             headerCell: SimpleHeaderWithTooltip,
           }}
-          className={!isEditable ? 'non-editable-cell' : ''}
+          className={
+            ['Particulars', 'particulars', 'particular', 'productName', 'normParameterDisplayName', 'normParameterTypeDisplayName', 'UOM', 'uom'].includes(col.field)
+              ? ''
+              : (!isEditable ? 'non-editable-cell' : '')
+          }
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
           width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}

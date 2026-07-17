@@ -101,5 +101,10 @@ public class SpyroInputController {
 		return spyroInputService.updateOptimizingVariablesDropdown(dtoList, plantId, aopYear);
 	}
 
+	@GetMapping(value = "/feed-type-flow-mappings")
+	public AOPMessageVM getFeedTypeFlowMappings(@RequestParam String plantId, @RequestParam String aopYear) {
+		return spyroInputService.getFeedTypeFlowMappings(plantId, aopYear);
+	}
+
 }
 

@@ -489,7 +489,7 @@ const ProposedAOP = () => {
           title={SCREEN_NAME}
           handleExport={handleExport}
           handleExcelUpload={handleExcelUpload}
-          isProposedAOP={true}
+          isProposedAOP={false}
         />
       </Box>
     </div>

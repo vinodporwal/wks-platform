@@ -29,7 +29,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions, onSaveOrImp
      const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
      const AOP_YEAR = year?.selectedYear
      const SCREEN_NAME = screenTitle?.title
-     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Catchem Grade`
+     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Dry Weight & Others`
      const IS_OLD_YEAR = oldYear?.oldYear
      const IS_RELEASED = isReleased
      const isOldYear = false
@@ -282,7 +282,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions, onSaveOrImp
                     const url = window.URL.createObjectURL(blob)
                     const link = document.createElement('a')
                     link.href = url
-                    link.setAttribute('download', 'Error File CatChem ChemGrade.xlsx')
+                    link.setAttribute('download', 'Error File Dry Weight & Others.xlsx')
                     document.body.appendChild(link)
                     link.click()
                     link.remove()
@@ -334,7 +334,7 @@ const CatalystChecmicalsCalculationRecipeChemGrade = ({ permissions, onSaveOrImp
                ExcelName: `${EXCEL_EXPORT_TITLE}`,
                showNoteWhileDeleting: false,
                showTitleNameBusiness: true,
-               titleName: 'Catchem Grade',
+               titleName: 'Dry Weight & Others',
                uploadExcelBtn: true,
           },
           isOldYear,

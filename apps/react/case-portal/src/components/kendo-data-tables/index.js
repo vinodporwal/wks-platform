@@ -99,6 +99,7 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import FeedTypeOrNumericEditor from './Utilities-Kendo/FeedTypeOrNumericEditor'
 import { ConstantValueEditCell, ConstantValueDataCell } from './ConstantValueCells'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
@@ -113,6 +114,26 @@ const OnOffSwitchEditCell = (props) => {
       editable={props.column?.editable}
       isDisabled={props.column?.isDisabled}
     />
+  )
+}
+
+const FeedTypeDisplayCell = (props) => {
+  const { dataItem, field, tdProps, column } = props
+  const value = dataItem[field]
+  const rowId = dataItem.id
+  const customModifiedCells = column?.customModifiedCells || {}
+  const isEdited = Object.prototype.hasOwnProperty.call(
+    customModifiedCells?.[rowId] || {},
+    field,
+  )
+  return (
+    <td
+      {...tdProps}
+      title={value}
+      className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
+    >
+      {value}
+    </td>
   )
 }
 
@@ -4035,6 +4056,34 @@ const KendoDataTables = ({
                             ),
                           },
                           data: MonthDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  if (col?.type === 'feedTypeOrNumeric') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 100)}
+                        hidden={col?.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        customModifiedCells={customModifiedCells}
+                        dropdownOptions={
+                          col?.dropdownOptions ||
+                          permissions?.feedTypeOptions ||
+                          []
+                        }
+                        cells={{
+                          edit: {
+                            text: FeedTypeOrNumericEditor,
+                          },
+                          data: FeedTypeDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}

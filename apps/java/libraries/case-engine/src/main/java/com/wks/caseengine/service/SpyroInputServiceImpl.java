@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
+import com.wks.caseengine.dto.FeedTypeFlowMappingDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.ExcelConfigurations;
@@ -791,7 +792,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 					dto.setJan(getNumericCellValue(row.getCell(11), dto));
 					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					// col 14 = weightAverage — display/export only, not imported
+					// col 14 = weightAverage � display/export only, not imported
 					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
 					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
 					dto.setTableId(getStringCellValue(row.getCell(17), dto));
@@ -1723,4 +1724,44 @@ session.doWork(connection -> {
 		}
 	}
 
+
+	@Override
+	public com.wks.caseengine.message.vm.AOPMessageVM getFeedTypeFlowMappings(String plantId, String aopYear) {
+		com.wks.caseengine.message.vm.AOPMessageVM aopMessageVM = new com.wks.caseengine.message.vm.AOPMessageVM();
+		java.util.List<com.wks.caseengine.dto.FeedTypeFlowMappingDTO> resultList = new java.util.ArrayList<>();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetFeedTypeFlowMappings";
+
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			jakarta.persistence.Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			java.util.List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				com.wks.caseengine.dto.FeedTypeFlowMappingDTO dto = com.wks.caseengine.dto.FeedTypeFlowMappingDTO.builder()
+						.feedType(row[0] != null ? row[0].toString() : null)
+						.monthName(row[1] != null ? row[1].toString() : null)
+						.flowValue(row[2] != null ? Double.parseDouble(row[2].toString()) : null)
+						.build();
+				resultList.add(dto);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Success");
+			aopMessageVM.setData(resultList);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Error retrieving feed type flow mappings: " + ex.getMessage());
+			return aopMessageVM;
+		}
+	}
 }
