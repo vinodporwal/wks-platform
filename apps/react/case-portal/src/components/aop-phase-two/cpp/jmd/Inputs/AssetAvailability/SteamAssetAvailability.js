@@ -320,13 +320,14 @@ const SteamAssetAvailability = ({ apiData, dataLoading, onRefresh }) => {
 
     setLoading(true)
     try {
-      const response = await AssetPriorityApiService.importAssetPriorityExcelUnified(
-        file,
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-        'Steam',
-      )
+      const response =
+        await AssetPriorityApiService.importAssetPriorityExcelUnified(
+          file,
+          keycloak,
+          PLANT_ID_LIST,
+          AOP_YEAR,
+          'Steam',
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)

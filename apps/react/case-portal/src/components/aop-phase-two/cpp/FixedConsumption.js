@@ -1,5 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Box, Backdrop, CircularProgress, Tooltip, IconButton } from '@mui/material'
+import {
+  Box,
+  Backdrop,
+  CircularProgress,
+  Tooltip,
+  IconButton,
+} from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
@@ -45,10 +51,7 @@ const FixedConsumption = () => {
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Fixed_Consumption')
 
-  const PLANT_ID_LIST = useMemo(
-    () => (PLANT_ID ? [PLANT_ID] : []),
-    [PLANT_ID],
-  )
+  const PLANT_ID_LIST = useMemo(() => (PLANT_ID ? [PLANT_ID] : []), [PLANT_ID])
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
@@ -297,7 +300,22 @@ const FixedConsumption = () => {
       const formattedData = res.data.map((item, index) => ({
         ...item,
         total: Object.keys(item)
-          .filter(key => ['april', 'may', 'june', 'july', 'aug', 'sept', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'].includes(key))
+          .filter((key) =>
+            [
+              'april',
+              'may',
+              'june',
+              'july',
+              'aug',
+              'sept',
+              'oct',
+              'nov',
+              'dec',
+              'jan',
+              'feb',
+              'mar',
+            ].includes(key),
+          )
           .reduce((sum, key) => sum + (parseFloat(item[key]) || 0), 0),
         remarks: item.remarks || '',
         id: item.id || index + 1,
@@ -471,12 +489,13 @@ const FixedConsumption = () => {
       // Transform modifiedCells into the format expected by the API
 
       // Call the API to save changes
-      const response = await JMDUtilityPlantApiServiceV2.saveFixedConsumptionData(
-        keycloak,
-        PLANT_ID_LIST,
-        payload,
-        AOP_YEAR,
-      )
+      const response =
+        await JMDUtilityPlantApiServiceV2.saveFixedConsumptionData(
+          keycloak,
+          PLANT_ID_LIST,
+          payload,
+          AOP_YEAR,
+        )
       console.log('response', response)
       // Update the local state with the saved data
       // setRows(updatedRows)
@@ -505,12 +524,13 @@ const FixedConsumption = () => {
 
     setLoading(true)
     try {
-      const response = await JMDUtilityPlantApiServiceV2.saveFixedConsumptionExcel(
-        file,
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
+      const response =
+        await JMDUtilityPlantApiServiceV2.saveFixedConsumptionExcel(
+          file,
+          keycloak,
+          PLANT_ID_LIST,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)

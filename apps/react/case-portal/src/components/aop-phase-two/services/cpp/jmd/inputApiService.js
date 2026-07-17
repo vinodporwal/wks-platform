@@ -254,7 +254,9 @@ async function exportOperationalHoursExcel(
   assetCategory = 'All',
   EXCEL_NAME,
 ) {
-  const plantIdArray = Array.isArray(PLANT_ID_LIST) ? PLANT_ID_LIST : [PLANT_ID_LIST]
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
   return exportExcelData(keycloak, {
     endpoint: 'jmd/assets/operational-hours/export',
     queryParams: {
@@ -283,7 +285,9 @@ async function saveOperationalHoursExcel(
   AOP_YEAR,
   assetCategory = 'All',
 ) {
-  const plantIdArray = Array.isArray(PLANT_ID_LIST) ? PLANT_ID_LIST : [PLANT_ID_LIST]
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
   return saveExcelData(
     file,
     keycloak,
@@ -1621,7 +1625,12 @@ async function exportProcessUnitAllocationsExcel(
 }
 
 // POST /task/process-unit-allocation/import?plantIds=UUID,UUID&aopYear=2026-27
-async function saveProcessUnitAllocationsExcel(file, keycloak, plantIds, aopYear) {
+async function saveProcessUnitAllocationsExcel(
+  file,
+  keycloak,
+  plantIds,
+  aopYear,
+) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   return saveExcelData(
     file,

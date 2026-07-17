@@ -18,7 +18,12 @@ import {
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import AddAssetDialog from './components/AddAssetDialog'
 
-const STGGrid = ({ hoursRows = [], apiData = [], dataLoading = false, onRefresh }) => {
+const STGGrid = ({
+  hoursRows = [],
+  apiData = [],
+  dataLoading = false,
+  onRefresh,
+}) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore

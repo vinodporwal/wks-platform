@@ -18,7 +18,12 @@ import {
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import AddAssetDialog from './components/AddAssetDialog'
 
-const PowerGrid = ({ hoursRows = [], apiData = [], dataLoading = false, onRefresh }) => {
+const PowerGrid = ({
+  hoursRows = [],
+  apiData = [],
+  dataLoading = false,
+  onRefresh,
+}) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -236,7 +241,10 @@ const PowerGrid = ({ hoursRows = [], apiData = [], dataLoading = false, onRefres
       return
     }
     const filteredData = apiData.filter((row) => row.assetType !== 'Power_Dis')
-    const transformedData = transformApiResponseToGridFormat(filteredData, hoursRows)
+    const transformedData = transformApiResponseToGridFormat(
+      filteredData,
+      hoursRows,
+    )
     const rowsWithIds = transformedData?.map((row, index) => ({
       ...row,
       id: row.id || index + 1,
