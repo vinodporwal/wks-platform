@@ -5,8 +5,7 @@ import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
-// import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'  //use this 
+import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -79,11 +78,6 @@ const EtheleneStock = () => {
 
   const enrichColumns = useCallback(
     (backendCols = []) => {
-      const filteredCols = backendCols.filter(
-        (col) => col.field !== 'GRID_TYPE',
-      )
-      const applyFixedWidth = filteredCols.length < 7
-      const fixedWidth = applyFixedWidth ? 250 : 220
       return backendCols
         .filter((col) => col.field !== 'GRID_TYPE')
         .map((col) => {
@@ -98,7 +92,8 @@ const EtheleneStock = () => {
             ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
-            ...(fixedWidth ? { widthT: fixedWidth } : {}),
+            widthT: 250,
+            minWidth: 250,
           }
         })
     },
@@ -220,7 +215,7 @@ const EtheleneStock = () => {
             LDPE: Number((800 + Math.random() * 400).toFixed(4)),
             LLDPE: Number((900 + Math.random() * 400).toFixed(4)),
             PP: Number((1800 + Math.random() * 400).toFixed(4)),
-            'Ethylene Stock in Cyro-Tank': Number((15000 + Math.random() * 10000).toFixed(4)),
+            'Ethylene Stock in Cryo Tank': Number((15000 + Math.random() * 10000).toFixed(4)),
           })
         }
 
@@ -231,14 +226,14 @@ const EtheleneStock = () => {
               gridName: 'Ethylene Stock Report',
               data: dummyRows,
               columns: [
-                { field: 'Date', title: 'Date', type: 'string' },
+                { field: 'Date', title: 'Date', type: 'date' },
                 { field: 'Production Ethylene', title: 'Production Ethylene', type: 'number' },
                 { field: 'Production Propylene', title: 'Production Propylene', type: 'number' },
                 { field: 'MEG', title: 'MEG', type: 'number' },
                 { field: 'LDPE', title: 'LDPE', type: 'number' },
                 { field: 'LLDPE', title: 'LLDPE', type: 'number' },
                 { field: 'PP', title: 'PP', type: 'number' },
-                { field: 'Ethylene Stock in Cyro-Tank', title: 'Ethylene Stock in Cyro-Tank', type: 'number' },
+                { field: 'Ethylene Stock in Cryo Tank', title: 'Ethylene Stock in Cryo Tank', type: 'number' },
               ],
             },
           ],
@@ -497,14 +492,16 @@ const EtheleneStock = () => {
                       </Typography>
                     </CustomAccordionSummary>
                     <CustomAccordionDetails>
-                      <Box sx={{ width: '100%', margin: 0 }}>
-                        <KendoDataGrid
+                      <Box sx={{ width: '100%', margin: 0, overflowX: 'auto' }}>
+                        <KendoDataTablesReports
                           rows={d.rows}
                           columns={d.columns}
                           permissions={{
                             isHeight: d?.rows?.length > 15,
-                            customHeight: 'calc(100vh - 275px)',
+                            customHeight: 'calc(100vh - 210px)',
                             disablePagination: true,
+                            allAction: false,
+                            filterable: false,
                           }}
                           groupBy={d.groupBy || null}
                         />
