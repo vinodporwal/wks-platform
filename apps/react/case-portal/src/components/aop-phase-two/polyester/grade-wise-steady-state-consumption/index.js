@@ -22,16 +22,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-
-const PremiumErrorDialog = styled(Dialog)(() => ({
-  '& .MuiPaper-root': {
-    borderRadius: '16px',
-    width: '500px',
-    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-    borderTop: '5px solid #ef4444',
-    padding: '8px',
-  },
-}))
+import ValidationErrorDialog from './ValidationErrorDialog'
 
 
 const GradeWiseSteadyStateConsumption = () => {
@@ -72,16 +63,9 @@ const GradeWiseSteadyStateConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  // Error modal states
-  const [errorModalOpen, setErrorModalOpen] = useState(false)
-  const [errorModalTitle, setErrorModalTitle] = useState('')
-  const [errorModalMessage, setErrorModalMessage] = useState('')
-
-  const showErrorModal = (title, message) => {
-    setErrorModalTitle(title)
-    setErrorModalMessage(message)
-    setErrorModalOpen(true)
-  }
+  // Detailed validation error modal states
+  const [validationErrorDialogOpen, setValidationErrorDialogOpen] = useState(false)
+  const [validationErrors, setValidationErrors] = useState([])
 
 
   const valueFormat = customValueFormatterPhaseTwo(5)
@@ -410,7 +394,7 @@ const GradeWiseSteadyStateConsumption = () => {
       }))
 
       const response =
-        await SteadyStateConsumptionApiService.saveSteadyStateConsumptionByGrade(
+        await SteadyStateConsumptionApiService.saveGradeWiseSteadyStateConsumption(
           PLANT_ID,
           payload,
           keycloak,
@@ -420,34 +404,24 @@ const GradeWiseSteadyStateConsumption = () => {
 
       let isWeightedAverageError = false
       let errorMsg = ''
+      let errorDataList = []
 
-      if (response instanceof Response) {
-        // Specific error status codes check (e.g. response.status === 400 or other specific code provided later)
-        isWeightedAverageError = true
-        try {
-          const errData = await response.json()
-          errorMsg = errData.message || errData.error || errorMsg
-        } catch (e) {
-          errorMsg = `HTTP ${response.status}: ${response.statusText}`
-        }
-      } else if (response && (response.code === 400 || response.status === 400)) {
+      if (response && (response.code === 400 || response.status === 400)) {
         isWeightedAverageError = true
         errorMsg = response.message || 'Validation failed.'
-      } else if (Array.isArray(response) && response.length > 0) {
-        const failedRecs = response.filter((r) => r.saveStatus === 'Failed')
-        if (failedRecs.length > 0) {
-          isWeightedAverageError = true
-          errorMsg = failedRecs
-            .map((r) => `${r.productName || 'Record'}: ${r.errDescription}`)
-            .join('\n')
+        if (response && Array.isArray(response.data)) {
+          errorDataList = response.data
         }
       }
 
       if (isWeightedAverageError) {
-        showErrorModal(
-          'Weighted Average Error',
-          errorMsg || 'Weighted average does not match.',
-        )
+        if (errorDataList && errorDataList.length > 0) {
+          setValidationErrors(errorDataList)
+          setValidationErrorDialogOpen(true)
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({ message: errorMsg  || 'Weighted average does not match.', severity: 'error' })
+        }
       } else if (response && !(response instanceof Response)) {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
@@ -566,26 +540,24 @@ const GradeWiseSteadyStateConsumption = () => {
 
       let isWeightedAverageError = false
       let errorMsg = ''
+      let errorDataList = []
 
-      if (response instanceof Response) {
-        // Specific error status codes check
-        isWeightedAverageError = true
-        try {
-          const errData = await response.json()
-          errorMsg = errData.message || errData.error || errorMsg
-        } catch (e) {
-          errorMsg = `HTTP ${response.status}: ${response.statusText}`
-        }
-      } else if (response && response.code === 400 && !response.data) {
+      if (response && response.code === 400 && response.message === "Validation Failed") {
         isWeightedAverageError = true
         errorMsg = response.message || 'Import validation failed.'
       }
 
       if (isWeightedAverageError) {
-        showErrorModal(
-          'Weighted Average Error',
-          errorMsg || 'Weighted average does not match.',
-        )
+        if (errorDataList && errorDataList.length > 0) {
+          setValidationErrors(errorDataList)
+          setValidationErrorDialogOpen(true)
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: errorMsg || 'Weighted average does not match.',
+            severity: 'error',
+          })
+        }
       } else if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -644,7 +616,7 @@ const GradeWiseSteadyStateConsumption = () => {
     allAction: true,
     showExport: true,
     showImport: true,
-    showCalculate: false,
+    showCalculate: true,
     // Disable Calculate if no calculationObject from API (same as NormalOpNorms showCalculateVisibility)
     calculateDisabled:
       !calculationObject || Object.keys(calculationObject).length === 0,
@@ -708,111 +680,15 @@ const GradeWiseSteadyStateConsumption = () => {
         }}
       />
 
-      {/* Premium Centered Error Modal */}
-      <PremiumErrorDialog
-        open={errorModalOpen}
-        onClose={() => setErrorModalOpen(false)}
-        disableScrollLock
-      >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            pb: 1,
-            borderBottom: '1px solid #f3f4f6',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ErrorOutlineIcon sx={{ color: '#ef4444', fontSize: '1.8rem' }} />
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                color: '#1f2937',
-                fontSize: '1.1rem',
-              }}
-            >
-              {errorModalTitle}
-            </Typography>
-          </Box>
-          <IconButton
-            size="small"
-            onClick={() => setErrorModalOpen(false)}
-            sx={{ color: '#9ca3af' }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ mt: 2, pb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: '0.875rem',
-              color: '#4b5563',
-              lineHeight: 1.6,
-              mb: 2.5,
-            }}
-          >
-            The system encountered a validation issue with the steady-state consumption values. Please ensure your weighted average matches the required plant-wise targets.
-          </Typography>
-
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: '10px',
-              bgcolor: '#fef2f2',
-              border: '1px solid #fee2e2',
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: '0.75rem',
-                color: '#991b1b',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                mb: 0.5,
-              }}
-            >
-              Error Details
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '0.825rem',
-                color: '#7f1d1d',
-                fontFamily: 'monospace',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                fontWeight: 500,
-              }}
-            >
-              {errorModalMessage}
-            </Typography>
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2, pt: 1 }}>
-          <Button
-            onClick={() => setErrorModalOpen(false)}
-            variant="contained"
-            size="medium"
-            sx={{
-              bgcolor: '#ef4444',
-              color: '#ffffff',
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              '&:hover': {
-                bgcolor: '#dc2626',
-              },
-            }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </PremiumErrorDialog>
+      {/* Detailed Validation Error Modal */}
+      <ValidationErrorDialog
+        open={validationErrorDialogOpen}
+        onClose={() => {
+          setValidationErrorDialogOpen(false)
+          setValidationErrors([])
+        }}
+        errors={validationErrors}
+      />
     </Box>
   )
 }
