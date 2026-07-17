@@ -151,4 +151,53 @@ public class JMDAssetCapacityController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
+    // ── UNIFIED ENDPOINTS (Power, Steam, or All) ───────────────────────────────
+
+    @GetMapping("/jmd/asset/capacity/export")
+    public ResponseEntity<byte[]> exportAssetCapacityUnified(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear,
+            @RequestParam(defaultValue = "All") String assetCategory) {
+        logger.info("[GET /jmd/asset/capacity/export] plantIds: {}, aopYear: {}, assetCategory: {}", plantIds, aopYear, assetCategory);
+        try {
+            byte[] excelData = jmdAssetCapacityService.exportAssetCapacityExcel(plantIds, aopYear, assetCategory);
+            String fileName = assetCategory + "AssetCapacity_" + aopYear + ".xlsx";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", fileName);
+            return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("[GET /jmd/asset/capacity/export] Error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PostMapping(value = "/jmd/asset/capacity/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AOPMessageVM> importAssetCapacityUnified(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear,
+            @RequestParam(defaultValue = "All") String assetCategory,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[POST /jmd/asset/capacity/import] plantIds: {}, aopYear: {}, assetCategory: {}, fileName: {}",
+                plantIds, aopYear, assetCategory, file.getOriginalFilename());
+        if (file == null || file.isEmpty()) {
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(400);
+            errorResponse.setMessage("File is required");
+            errorResponse.setData(null);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+        try {
+            AOPMessageVM response = jmdAssetCapacityService.importAssetCapacityExcel(plantIds, aopYear, assetCategory, file);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[POST /jmd/asset/capacity/import] Error: {}", e.getMessage(), e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Failed to import data: " + e.getMessage());
+            errorResponse.setData(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 }

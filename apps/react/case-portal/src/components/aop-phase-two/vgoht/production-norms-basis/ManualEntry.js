@@ -26,9 +26,9 @@ const ManualEntry = ({ startDate, endDate }) => {
   const AOP_YEAR = year?.selectedYear
 
   const EXCEL_NAME = generateExcelName(
-      dataGridStore,
-      'Production_Norms_Manual_Entry',
-    )
+    dataGridStore,
+    'Production_Norms_Manual_Entry',
+  )
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)

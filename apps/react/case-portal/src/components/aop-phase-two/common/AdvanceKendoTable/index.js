@@ -37,7 +37,8 @@ import {
 } from '../utilities/RadioCellEditor'
 import {
   Box,
-  Button, Typography
+  Button,
+  Typography,
 } from '../../../../../node_modules/@mui/material/index'
 import { keyframes } from '@mui/material/styles'
 import {
@@ -184,7 +185,7 @@ export const dateFields = [
   'ibrDueDate',
   'exclusionStartDate',
   'exclusionEndDate',
-  'dateOfCommencement'
+  'dateOfCommencement',
 ]
 export const monthMap = {
   january: 1,
@@ -592,7 +593,7 @@ const AdvanceKendoTable = ({
       }
 
       const isDropdownSiteplant = columns?.some(
-        (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant'
+        (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant',
       )
 
       // First update modifiedCells to accumulate all changes
@@ -2095,7 +2096,9 @@ const AdvanceKendoTable = ({
                     }))
                   } else {
                     const selectedSiteName = cellProps.dataItem.siteName
-                    const site = siteDropdown.find((s) => s.name === selectedSiteName)
+                    const site = siteDropdown.find(
+                      (s) => s.name === selectedSiteName,
+                    )
                     const plants = site?.plants || []
                     options = plants.map((p) => ({
                       label: p.displayName || p.name,
@@ -2124,7 +2127,9 @@ const AdvanceKendoTable = ({
                   }))
                 } else {
                   const selectedSiteName = props.dataItem.siteName
-                  const site = siteDropdown.find((s) => s.name === selectedSiteName)
+                  const site = siteDropdown.find(
+                    (s) => s.name === selectedSiteName,
+                  )
                   const plants = site?.plants || []
                   options = plants.map((p) => ({
                     label: p.displayName || p.name,
@@ -2332,8 +2337,7 @@ const AdvanceKendoTable = ({
                       checked={checked}
                       onChange={(e) => {
                         if (!isEditable) return
-                        const newVal =
-                          e.value ?? e.target?.checked ?? !checked
+                        const newVal = e.value ?? e.target?.checked ?? !checked
                         // Call itemChange directly — it's in closure scope
                         itemChange({ dataItem, field, value: newVal })
                       }}
@@ -2480,6 +2484,30 @@ const AdvanceKendoTable = ({
             columnMenu={ColumnMenuCheckboxFilter}
             className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Custom Action Cell Handler — always render column, pass editable to cell
+      if (col.type === 'customAction' && col.cell) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={false}
+            filterable={false}
+            className={col.className || 'k-text-center'}
+            headerClassName={col.headerClassName || 'k-text-center'}
+            cells={{
+              data: col.cell,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            width={setWidth(col?.minWidth || col?.widthT || 80)}
           />
         )
       }
@@ -2702,7 +2730,11 @@ const AdvanceKendoTable = ({
                   className='btn-add'
                   startIcon={<AddIcon />}
                   onClick={handleAddRow}
-                  disabled={isButtonDisabled || READ_ONLY}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    permissions?.disableActionButtons
+                  }
                 >
                   {permissions?.addBtnName || 'Add Item'}
                 </Button>
@@ -2789,6 +2821,7 @@ const AdvanceKendoTable = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
+                    permissions?.disableActionButtons ||
                     Object.keys(modifiedCells).length === 0
                   }
                 >

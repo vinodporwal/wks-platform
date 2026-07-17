@@ -440,7 +440,6 @@ const OtherDocumentUpload = ({ permissions }) => {
     }
     Cell.displayName = 'ActionCell'
     return Cell
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [READ_ONLY, handleDownload])
 
   // ─── Columns ──────────────────────────────────────────────────────────────
@@ -462,7 +461,6 @@ const OtherDocumentUpload = ({ permissions }) => {
   useEffect(() => {
     setModifiedCells({})
     fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oldYear, yearChanged, PLANT_ID, AOP_YEAR])
 
   // ─── Misc ─────────────────────────────────────────────────────────────────

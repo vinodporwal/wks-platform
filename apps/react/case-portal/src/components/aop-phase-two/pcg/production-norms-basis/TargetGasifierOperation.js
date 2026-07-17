@@ -227,19 +227,21 @@ const TargetGasifierOperation = () => {
           AOP_YEAR,
         )
 
-      const formattedData = response?.data?.productionRangeList?.map((row, index) => ({
-        ...row,
-        id: row.id || index,
-        particulars: row.displayName,
+      const formattedData = response?.data?.productionRangeList?.map(
+        (row, index) => ({
+          ...row,
+          id: row.id || index,
+          particulars: row.displayName,
 
-        originalRemark: row.remarks || '',
-        normParameterFKId: row.normParameterFKId,
-        auditYear: row.auditYear,
-        normTypeName: row.normTypeName,
-        isEditable: row.isEditable,
-        displayName: row.displayName,
-        type: row.type,
-      }))
+          originalRemark: row.remarks || '',
+          normParameterFKId: row.normParameterFKId,
+          auditYear: row.auditYear,
+          normTypeName: row.normTypeName,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          type: row.type,
+        }),
+      )
 
       setRows(formattedData || [])
     } catch (error) {

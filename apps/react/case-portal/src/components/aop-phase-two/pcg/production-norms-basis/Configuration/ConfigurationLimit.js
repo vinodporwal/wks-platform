@@ -112,7 +112,7 @@ const ConfigurationLimit = () => {
       editable: true,
       widthT: 100,
       minWidth: 100,
-      type: 'checkbox'
+      type: 'checkbox',
     },
     {
       field: 'remarks',
