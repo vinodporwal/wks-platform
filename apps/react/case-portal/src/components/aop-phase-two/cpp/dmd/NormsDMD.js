@@ -3,7 +3,7 @@ import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo, { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import { setIsReleased } from 'store/reducers/dataGridStore'
@@ -45,8 +45,7 @@ const NormsDMD = () => {
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Norms')
 
-  const PLANT_ID_LIST = plantObject?.id;
-  // useMemo(
+  // const PLANT_ID_LIST = useMemo(
   //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
   //   [jmdSelectedPlants],
   // )
@@ -57,7 +56,7 @@ const NormsDMD = () => {
   const IS_CPP_NMD = lowerVertName === 'cpp' && lowerSiteName === 'nmd'
 
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = customValueFormatterPhaseTwo(6)
+  const valueFormat = ValueFormatterPhaseTwo()
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -217,7 +216,7 @@ const NormsDMD = () => {
     try {
       const res = await UtilityPlantApiServiceV2.getNormBasedUtilityBudget(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
 
@@ -229,8 +228,7 @@ const NormsDMD = () => {
         return
       }
       let tempRes = res?.data?.list
-        ?.filter((item) => item?.accountName !== 'Stores & Spares')
-        .map((item, index) => {
+        ?.map((item, index) => {
           // Transform month data from API response to match column structure
           const transformedItem = {
             ...item,
@@ -264,17 +262,17 @@ const NormsDMD = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   useDebounce(
     () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+      if (PLANT_ID?.length && AOP_YEAR) {
         fetchNormsData()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchNormsData],
+    [PLANT_ID, AOP_YEAR, fetchNormsData],
   )
 
   // Permissions (adjust as needed)
@@ -368,7 +366,7 @@ const NormsDMD = () => {
     try {
       await UtilityPlantApiServiceV2.calculateNormsData(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
 
@@ -489,7 +487,7 @@ const NormsDMD = () => {
       const response = await UtilityPlantApiServiceV2.saveNormsExcel(
         file,
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
 
@@ -568,7 +566,7 @@ const NormsDMD = () => {
     try {
       await UtilityPlantApiServiceV2.exportNormsExcel(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -623,7 +621,7 @@ const NormsDMD = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={80}
-        groupBy={['generatingPlantName', 'accountName']}
+        groupBy={['cppPlantName', 'generatingPlantName', 'accountName']}
         handleRelease={handleRelease}
         isReleaseDisabled={isReleaseDisabled}
       />
