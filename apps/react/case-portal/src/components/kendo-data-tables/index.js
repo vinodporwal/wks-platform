@@ -343,7 +343,7 @@ const KendoDataTables = ({
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IntegerDaysEditor = useIntegerDaysEditor(configType, AOP_YEAR)
   const StableFeedTypeOrNumericEditor = useMemo(() => {
-    return (props) => (
+    const Editor = (props) => (
       <FeedTypeOrNumericEditor
         {...props}
         options={
@@ -353,6 +353,8 @@ const KendoDataTables = ({
         }
       />
     )
+    Editor.displayName = 'StableFeedTypeOrNumericEditor'
+    return Editor
   }, [permissions?.feedTypeOptions])
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
