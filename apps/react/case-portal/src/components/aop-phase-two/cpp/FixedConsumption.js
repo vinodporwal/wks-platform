@@ -1,15 +1,26 @@
-import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useEffect, useState, useMemo } from 'react'
+import {
+  Box,
+  Backdrop,
+  CircularProgress,
+  Tooltip,
+  IconButton,
+} from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { UtilityPlantApiServiceV2 as JMDUtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import FixedConsumptionJMD from './jmd/FixedConsumptionJMD'
 import FixedConsumptionDMD from './dmd/FixedConsumptionDMD'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
+import AddFixedConsumptionDialog from 'components/aop-phase-two/cpp/common/AddFixedConsumptionDialog/index'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const FixedConsumption = () => {
   const keycloak = useSession()
@@ -38,6 +49,9 @@ const FixedConsumption = () => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Fixed_Consumption')
+
+  const PLANT_ID_LIST = useMemo(() => (PLANT_ID ? [PLANT_ID] : []), [PLANT_ID])
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
@@ -51,6 +65,41 @@ const FixedConsumption = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const [addRowDialogOpen, setAddRowDialogOpen] = useState(false)
+  const [editRowData, setEditRowData] = useState(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [rowToDelete, setRowToDelete] = useState(null)
+
+  // Edit/Delete action cell
+  const ActionCell = ({ dataItem, tdProps }) => {
+    return (
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title='Delete Row'>
+            <IconButton
+              size='medium'
+              color='error'
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='medium' />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </td>
+    )
+  }
+
   // Column definitions
   const columns = [
     { field: 'id', title: 'ID', hidden: true },
@@ -236,6 +285,16 @@ const FixedConsumption = () => {
       format: valueFormat,
     },
     {
+      field: 'total',
+      title: 'Total',
+      editable: false,
+      widthT: 130,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
       field: 'remarks',
       title: 'Remarks',
       widthT: 250,
@@ -243,37 +302,63 @@ const FixedConsumption = () => {
       editable: true,
       minWidth: 250,
     },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: ActionCell,
+      // locked: true,
+      // lockPosition: 'right',
+    },
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName == 'nmd') {
-      fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+    if (PLANT_ID_LIST?.length && AOP_YEAR && lowerSiteName == 'nmd') {
+      fetchFixedConsumptionData()
       setModifiedCells({})
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID_LIST, AOP_YEAR])
 
-  const fetchFixedConsumptionData = async (keycloak, PLANT_ID, AOP_YEAR) => {
+  const fetchFixedConsumptionData = async () => {
     setLoading(true)
     try {
-      const res = await UtilityPlantApiServiceV2.getFixedConsumptionData(
+      const res = await JMDUtilityPlantApiServiceV2.getFixedConsumptionData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
-      if (res?.length === 0) {
+      if (res?.data?.length === 0 || !res?.data) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 
-      const formattedData = res.map((item, index) => ({
+      const formattedData = res.data.map((item, index) => ({
         ...item,
+        total: Object.keys(item)
+          .filter((key) =>
+            [
+              'april',
+              'may',
+              'june',
+              'july',
+              'aug',
+              'sept',
+              'oct',
+              'nov',
+              'dec',
+              'jan',
+              'feb',
+              'mar',
+            ].includes(key),
+          )
+          .reduce((sum, key) => sum + (parseFloat(item[key]) || 0), 0),
         remarks: item.remarks || '',
         id: item.id || index + 1,
       }))
-      // Process and set the fetched data to rows
-      console.log('*** fixed consumption data', formattedData)
 
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -286,10 +371,44 @@ const FixedConsumption = () => {
     }
   }
 
+  // Delete handler
+  const handleConfirmDelete = async () => {
+    if (!rowToDelete) return
+
+    setDeleteDialogOpen(false)
+    setLoading(true)
+
+    try {
+      if (rowToDelete.id) {
+        await JMDUtilityPlantApiServiceV2.deleteFixedConsumptionRow(
+          keycloak,
+          rowToDelete.id,
+        )
+      }
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Row deleted successfully!',
+        severity: 'success',
+      })
+      fetchFixedConsumptionData()
+    } catch (error) {
+      console.error('Error deleting fixed consumption row:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete row. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setRowToDelete(null)
+    }
+  }
+
   // Permissions (adjust as needed)
   const permissions = {
     showAction: true,
-    addButton: false,
+    addButton: true,
+    addBtnName: 'Add Row',
     deleteButton: false,
     editButton: true,
     saveBtn: true,
@@ -368,12 +487,13 @@ const FixedConsumption = () => {
       // Transform modifiedCells into the format expected by the API
 
       // Call the API to save changes
-      const response = await UtilityPlantApiServiceV2.saveFixedConsumptionData(
-        keycloak,
-        PLANT_ID,
-        payload,
-        AOP_YEAR,
-      )
+      const response =
+        await JMDUtilityPlantApiServiceV2.saveFixedConsumptionData(
+          keycloak,
+          PLANT_ID_LIST,
+          payload,
+          AOP_YEAR,
+        )
       console.log('response', response)
       // Update the local state with the saved data
       // setRows(updatedRows)
@@ -383,6 +503,8 @@ const FixedConsumption = () => {
         message: `Successfully saved ${modifiedData.length} rows changes!`,
         severity: 'success',
       })
+      // Refresh data after import
+      await fetchFixedConsumptionData()
     } catch (error) {
       console.error('Error saving plant requirement data:', error)
       setSnackbarOpen(true)
@@ -400,12 +522,13 @@ const FixedConsumption = () => {
 
     setLoading(true)
     try {
-      const response = await UtilityPlantApiServiceV2.saveFixedConsumptionExcel(
-        file,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await JMDUtilityPlantApiServiceV2.saveFixedConsumptionExcel(
+          file,
+          keycloak,
+          PLANT_ID_LIST,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -414,7 +537,7 @@ const FixedConsumption = () => {
           severity: 'success',
         })
         // Refresh data after import
-        await fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+        await fetchFixedConsumptionData()
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -444,7 +567,7 @@ const FixedConsumption = () => {
             severity: 'error',
           })
           // Refresh data after import
-          await fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+          await fetchFixedConsumptionData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -480,10 +603,11 @@ const FixedConsumption = () => {
     })
 
     try {
-      await UtilityPlantApiServiceV2.exportFixedConsumptionExcel(
+      await JMDUtilityPlantApiServiceV2.exportFixedConsumptionExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -516,33 +640,57 @@ const FixedConsumption = () => {
       case 'nmd':
       default:
         return (
-          <AdvanceKendoTable
-            columns={columns}
-            rows={rows}
-            setRows={setRows}
-            modifiedCells={modifiedCells}
-            setModifiedCells={setModifiedCells}
-            // title='Fixed Consumption'
-            title={screenTitle?.title}
-            permissions={permissions}
-            handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
-            saveChanges={saveChanges}
-            handleExcelUpload={handleExcelUpload}
-            handleExport={handleExport}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            customHeight={80}
-            groupBy='plant'
-            // groupBy={['plant', 'plantId']}
-          />
+          <>
+            <AdvanceKendoTable
+              columns={columns}
+              rows={rows}
+              setRows={setRows}
+              modifiedCells={modifiedCells}
+              setModifiedCells={setModifiedCells}
+              // title='Fixed Consumption'
+              title={screenTitle?.title}
+              permissions={permissions}
+              handleRemarkCellClick={handleRemarkCellClick}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={() => {}}
+              saveChanges={saveChanges}
+              handleExcelUpload={handleExcelUpload}
+              handleExport={handleExport}
+              snackbarData={snackbarData}
+              snackbarOpen={snackbarOpen}
+              setSnackbarOpen={setSnackbarOpen}
+              setSnackbarData={setSnackbarData}
+              customHeight={80}
+              groupBy='plant'
+              // groupBy={['plant', 'plantId']}
+              customAddRow={() => {
+                setEditRowData(null)
+                setAddRowDialogOpen(true)
+              }}
+            />
+
+            <AddFixedConsumptionDialog
+              open={addRowDialogOpen}
+              onClose={() => {
+                setAddRowDialogOpen(false)
+                setEditRowData(null)
+              }}
+              onSuccess={() => fetchFixedConsumptionData()}
+              editRowData={editRowData}
+            />
+
+            <DeleteDialog
+              openDeleteDialogeBox={deleteDialogOpen}
+              setOpenDeleteDialogeBox={setDeleteDialogOpen}
+              deleteTheRecord={handleConfirmDelete}
+              message='Are you sure you want to delete this row?'
+              confirmButtonText='Delete'
+            />
+          </>
         )
     }
   }

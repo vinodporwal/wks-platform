@@ -77,12 +77,12 @@ const InputsJMD = () => {
         displayName: 'Heat Rate',
         displaySequence: 5,
       },
-      // {
-      //   id: 'sr-mapping',
-      //   name: 'srMapping',
-      //   displayName: 'SR Mapping',
-      //   displaySequence: 6,
-      // },
+      {
+        id: 'sr-mapping',
+        name: 'srMapping',
+        displayName: 'SR Mapping',
+        displaySequence: 6,
+      },
       {
         id: 'fixed-norms',
         name: 'Norms',

@@ -37,6 +37,13 @@ export const validateFields = (data, requiredFields) => {
     taSD: 'SD - From',
     taED: 'SD - To',
     criticalActivity: 'Critical Routine Activity',
+    batchPerDay: 'Batch Per Day',
+    productionPerBatch: 'Production Per Batch',
+    sdWashAfterBatch: 'SD Wash After Batch',
+    sdFlushAfterBatch: 'SD Flush After Batch',
+    sdWashHr: 'SD Wash Hr',
+    sdFlushHr: 'SD Flush Hr',
+    quarterlySDHr: 'Quarterly SD Hr',
   }
 
   const invalidRows = data.filter((row) => {

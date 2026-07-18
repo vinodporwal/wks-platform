@@ -1289,7 +1289,7 @@ const ProductionvolumeData = ({
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
       disabledUOM: unitDesignCapacity,
-      showDisabledUOM: IS_CRACKER_C2
+      showDisabledUOM: IS_CRACKER_C2,
     },
     isOldYear,
   )
@@ -1515,24 +1515,27 @@ const ProductionvolumeData = ({
               : 'Proposed Operating Capacity',
       showNoteWhileSaving: IS_PP_SEZ ? true : false,
       disabledUOM: unitDesignCapacity,
-      showDisabledUOM: IS_CRACKER_C2
+      showDisabledUOM: IS_CRACKER_C2,
     },
     isOldYear,
   )
+
+  const isAromaticsHmd = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
 
   const adjustedPermissionsLast = getAdjustedPermissions(
     {
       allAction: true,
       showTitleAndInformation:
-        VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
-      titleAndInformation:
-        VERTICAL_NAME == 'cracker'
+        VERTICAL_NAME === 'cracker' || VERTICAL_NAME === 'vcm' || isAromaticsHmd ? true : false,
+      titleAndInformation: isAromaticsHmd
+        ? 'Proposed Operating Capacity compared with Max Achieved Capacity'
+        : VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
-          : VERTICAL_NAME == 'vcm'
+          : VERTICAL_NAME === 'vcm'
             ? `Percentage summary represent a month-wise percentage summary, comparing each months value against the highest ${PLANT_NAME_NO_CASE} production rate over the past 12 months.`
             : '',
       showTitleNameBusiness:
-        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
+        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' && !isAromaticsHmd ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
@@ -1647,6 +1650,7 @@ const ProductionvolumeData = ({
         IS_PP_HMD ||
         IS_PVC_DMD ||
         IS_PVC_HMD
+        // ||
         // VERTICAL_NAME == 'meg'
       ) {
         response =
@@ -1712,7 +1716,7 @@ const ProductionvolumeData = ({
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File Production Vol Data.xlsx')
+        link.setAttribute('download', 'Error File Production Target.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -1722,6 +1726,9 @@ const ProductionvolumeData = ({
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+
+        fetchData()
+        fetchDesignCapacityData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

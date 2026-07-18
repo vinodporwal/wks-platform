@@ -180,7 +180,6 @@ export default function HeaderContent({ keycloak, navigation }) {
     '/user-form',
   ].includes(location.pathname)
 
-
   const Hide_Dropdown = [
     '/refinery-aop-budget/plant-capacities',
     '/refinery-aop-budget/shutdown',
@@ -872,7 +871,7 @@ export default function HeaderContent({ keycloak, navigation }) {
             overflow: 'hidden',
           }}
         >
-          {!(HIDE_DASHBOARD_DROPDOWN) && (
+          {!HIDE_DASHBOARD_DROPDOWN && (
             <React.Fragment>
               <Typography
                 variant='h6'
@@ -997,59 +996,59 @@ export default function HeaderContent({ keycloak, navigation }) {
             HIDE_DASHBOARD_DROPDOWN ||
             Hide_Dropdown
           ) && (
-              <Box sx={dropdownContainerStyle}>
-                {headerLoading ? (
-                  <DropdownSkeleton />
-                ) : (
-                  <FormControl size='small' variant='outlined'>
-                    {' '}
-                    <Select
-                      IconComponent={ArrowDropDownIcon}
-                      value={selectedVertical}
-                      onChange={handleVertChange}
-                      sx={selectStyle}
-                      MenuProps={menuPropsStyle}
-                      renderValue={(value) => {
-                        const vert = verticals.find((v) => v.id === value)
-                        return (
+            <Box sx={dropdownContainerStyle}>
+              {headerLoading ? (
+                <DropdownSkeleton />
+              ) : (
+                <FormControl size='small' variant='outlined'>
+                  {' '}
+                  <Select
+                    IconComponent={ArrowDropDownIcon}
+                    value={selectedVertical}
+                    onChange={handleVertChange}
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const vert = verticals.find((v) => v.id === value)
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
                           <Box
-                            sx={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 1,
-                            }}
+                            component='img'
+                            src={BusinessBlueIcon}
+                            className='w16-icon'
+                          />
+                          <Box
+                            component='span'
+                            className='header-dropdown-label'
                           >
-                            <Box
-                              component='img'
-                              src={BusinessBlueIcon}
-                              className='w16-icon'
-                            />
-                            <Box
-                              component='span'
-                              className='header-dropdown-label'
-                            >
-                              Vertical:
-                            </Box>
-                            <Box
-                              component='strong'
-                              className='header-dropdown-value'
-                            >
-                              {vert?.name}
-                            </Box>
+                            Vertical:
                           </Box>
-                        )
-                      }}
-                    >
-                      {verticals.map((v) => (
-                        <MenuItem key={v.id} value={v.id} sx={menuItemStyle}>
-                          {v.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-              </Box>
-            )}
+                          <Box
+                            component='strong'
+                            className='header-dropdown-value'
+                          >
+                            {vert?.name}
+                          </Box>
+                        </Box>
+                      )
+                    }}
+                  >
+                    {verticals.map((v) => (
+                      <MenuItem key={v.id} value={v.id} sx={menuItemStyle}>
+                        {v.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          )}
 
           {/* Site */}
           {!(HIDE_DASHBOARD_DROPDOWN || Hide_Dropdown) && (

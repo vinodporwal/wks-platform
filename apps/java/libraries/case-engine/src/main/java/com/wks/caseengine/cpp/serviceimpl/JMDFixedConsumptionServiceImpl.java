@@ -1,7 +1,9 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
+import com.wks.caseengine.cpp.dto.FixedConsumptionCreateRequestDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.dto.FixedConsumptionProjection;
+import com.wks.caseengine.cpp.entity.CPPFixedConsumption;
 import com.wks.caseengine.cpp.repository.JMDFixedConsumptionRepository;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -844,5 +847,119 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
         style.setFont(font);
         style.setWrapText(true);
         return style;
+    }
+
+    @Override
+    public AOPMessageVM createFixedConsumption(FixedConsumptionCreateRequestDto request) {
+        logger.info("[CREATE] Creating fixed consumption: parentPlantId={}, recieverPlantId={}, costCenterId={}, senderPlantId={}, cppUtilityId={}, aopYear={}",
+                request.getParentPlantId(), request.getRecieverPlantId(), request.getCostCenterId(), request.getSenderPlantId(), request.getCppUtilityId(), request.getAopYear());
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+        try {
+            CPPFixedConsumption entity = new CPPFixedConsumption();
+            entity.setId(UUID.randomUUID());
+            entity.setPlantFkId(request.getRecieverPlantId());
+            entity.setCppCostCenterFkId(request.getCostCenterId());
+            entity.setNormParameterFkId(request.getCppUtilityId());
+            entity.setRemarks(request.getRemarks());
+            entity.setAopYear(request.getAopYear());
+            entity.setApr(0.0);
+            entity.setMay(0.0);
+            entity.setJun(0.0);
+            entity.setJul(0.0);
+            entity.setAug(0.0);
+            entity.setSep(0.0);
+            entity.setOct(0.0);
+            entity.setNov(0.0);
+            entity.setDec(0.0);
+            entity.setJan(0.0);
+            entity.setFeb(0.0);
+            entity.setMar(0.0);
+            entity.setCreatedDate(LocalDateTime.now());
+            entity.setUpdatedDate(LocalDateTime.now());
+
+            repository.save(entity);
+
+            logger.info("[CREATE] Fixed consumption created with id={}", entity.getId());
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Fixed consumption row created successfully");
+            aopMessageVM.setData(entity.getId());
+            return aopMessageVM;
+        } catch (Exception e) {
+            logger.error("[CREATE] Error creating fixed consumption: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to create fixed consumption: " + e.getMessage());
+            aopMessageVM.setData(null);
+            return aopMessageVM;
+        }
+    }
+
+    @Override
+    public AOPMessageVM updateFixedConsumption(FixedConsumptionCreateRequestDto request) {
+        logger.info("[UPDATE] Updating fixed consumption: id={}", request.getId());
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+        try {
+            Optional<CPPFixedConsumption> optionalEntity = repository.findById(request.getId());
+            if (optionalEntity.isEmpty()) {
+                logger.warn("[UPDATE] Fixed consumption not found for id={}", request.getId());
+                aopMessageVM.setCode(404);
+                aopMessageVM.setMessage("Fixed consumption row not found");
+                aopMessageVM.setData(null);
+                return aopMessageVM;
+            }
+
+            CPPFixedConsumption entity = optionalEntity.get();
+            entity.setPlantFkId(request.getRecieverPlantId());
+            entity.setCppCostCenterFkId(request.getCostCenterId());
+            entity.setNormParameterFkId(request.getCppUtilityId());
+            entity.setRemarks(request.getRemarks());
+            entity.setUpdatedDate(LocalDateTime.now());
+
+            repository.save(entity);
+
+            logger.info("[UPDATE] Fixed consumption updated for id={}", request.getId());
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Fixed consumption row updated successfully");
+            aopMessageVM.setData(request.getId());
+            return aopMessageVM;
+        } catch (Exception e) {
+            logger.error("[UPDATE] Error updating fixed consumption: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to update fixed consumption: " + e.getMessage());
+            aopMessageVM.setData(null);
+            return aopMessageVM;
+        }
+    }
+
+    @Override
+    public AOPMessageVM deleteFixedConsumption(UUID id) {
+        logger.info("[DELETE] Deleting fixed consumption with id={}", id);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+        try {
+            Optional<CPPFixedConsumption> optionalEntity = repository.findById(id);
+            if (optionalEntity.isEmpty()) {
+                logger.warn("[DELETE] Fixed consumption not found for id={}", id);
+                aopMessageVM.setCode(404);
+                aopMessageVM.setMessage("Fixed consumption row not found");
+                aopMessageVM.setData(null);
+                return aopMessageVM;
+            }
+
+            repository.deleteById(id);
+
+            logger.info("[DELETE] Fixed consumption deleted for id={}", id);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Fixed consumption row deleted successfully");
+            aopMessageVM.setData(id);
+            return aopMessageVM;
+        } catch (Exception e) {
+            logger.error("[DELETE] Error deleting fixed consumption: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to delete fixed consumption: " + e.getMessage());
+            aopMessageVM.setData(null);
+            return aopMessageVM;
+        }
     }
 }

@@ -11,5 +11,6 @@ public interface ReportCapexPIOPlanService {
 	
 	public AOPMessageVM getReportCapexPIOPlanTransaction(String siteId,String year);
 	public AOPMessageVM saveReportCapexPIOPlanTransaction( String year, String plantFKId, List<ReportCapexPIOPlanDTO> energyPerformanceDTOs);
+	public AOPMessageVM deleteReportCapexPIOPlanTransaction(String id);
 	
 }

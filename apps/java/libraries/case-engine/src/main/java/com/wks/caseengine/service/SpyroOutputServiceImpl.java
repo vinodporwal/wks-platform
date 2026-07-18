@@ -112,6 +112,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
         Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+		boolean CrackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 
         String siteId = site.getId().toString();
         String verticalId = vertical.getId().toString();
@@ -147,7 +148,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 				map.put("isEditable", row[22]);
-				map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+				if(CrackerC2) {
+				map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString())); 
+			}
 				spyroOutputDataList.add(map); // Add the map to the list here
 			}else {
 					
@@ -172,7 +175,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 						map.put("isEditable", row[22]);
-						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						if(CrackerC2) {
+						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString())); 
+						}
 						spyroOutputDataList.add(map);
 					}}
 				
@@ -197,7 +202,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 						map.put("isEditable", row[22]);
-						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						if(CrackerC2) {
+						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString())); 
+						}
 						spyroOutputDataList.add(map);
 					}
 				}
@@ -2040,9 +2047,20 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		}
 
 		try {
-
+  
+			 Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean CrackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 		
-			Map<String, List<SpyroOutputDTO>> map = readSpyroOutputExcel(file.getInputStream(), year);
+			Map<String, List<SpyroOutputDTO>> map = new HashMap<>();
+			if(CrackerC2) {
+				map = readSpyroOutputExcelWithWeightedAverage(file.getInputStream(), year);
+			}
+			else {
+				map = readSpyroOutputExcel(file.getInputStream(), year);
+			}
+		
 			
 			Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
 			List<SpyroOutputDTO> failedRecords = new ArrayList<>();
@@ -2076,6 +2094,83 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	}
 	
 	public Map<String, List<SpyroOutputDTO>> readSpyroOutputExcel(InputStream inputStream, String year) {
+
+		Map<String, List<SpyroOutputDTO>> map = new HashMap<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+			
+				Sheet sheet = workbook.getSheetAt(0);
+				Iterator<Row> rowIterator = sheet.iterator();
+				List<SpyroOutputDTO> spyroOutputDTOs = new ArrayList<>();
+				if (rowIterator.hasNext())
+					rowIterator.next(); // Skip header
+
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+			
+				Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
+                    	continue;
+                	}
+
+
+				Cell tableId = row.getCell(16);
+String tableIdValue = null;
+if (tableId != null) {
+	try {
+	tableId.setCellType(CellType.STRING);
+	 tableIdValue = tableId.getStringCellValue().trim(); }
+	 catch (Exception e) {
+		e.printStackTrace();
+	 }
+}
+
+if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Output")) {
+	continue;
+}
+
+				SpyroOutputDTO dto = new SpyroOutputDTO();
+
+				try {
+					
+					dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+					dto.setUom(getStringCellValue(row.getCell(1), dto));
+					dto.setAuditYear(year);
+					dto.setApr(getNumericCellValue(row.getCell(2), dto));
+					dto.setMay(getNumericCellValue(row.getCell(3), dto));
+					dto.setJun(getNumericCellValue(row.getCell(4), dto));
+					dto.setJul(getNumericCellValue(row.getCell(5), dto));
+					dto.setAug(getNumericCellValue(row.getCell(6), dto));
+					dto.setSep(getNumericCellValue(row.getCell(7), dto));
+					dto.setOct(getNumericCellValue(row.getCell(8), dto));
+					dto.setNov(getNumericCellValue(row.getCell(9), dto));
+					dto.setDec(getNumericCellValue(row.getCell(10), dto));
+					dto.setJan(getNumericCellValue(row.getCell(11), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+					dto.setMar(getNumericCellValue(row.getCell(13), dto));
+					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
+					
+					dto.setTableId(getStringCellValue(row.getCell(16), dto));
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+					map.putIfAbsent(dto.getTableId(), new ArrayList<>());
+
+					map.get(dto.getTableId()).add(dto);
+				}
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Data", e);
+		}
+
+		return map;
+	}
+
+	public Map<String, List<SpyroOutputDTO>> readSpyroOutputExcelWithWeightedAverage(InputStream inputStream, String year) {
 
 		Map<String, List<SpyroOutputDTO>> map = new HashMap<>();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {

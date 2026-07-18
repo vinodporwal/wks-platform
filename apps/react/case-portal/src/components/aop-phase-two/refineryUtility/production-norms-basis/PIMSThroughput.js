@@ -2,14 +2,24 @@ import { useEffect, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/refineryUtility/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const Configuration = () => {
+const formatDateForAPI = (date) => {
+  if (!date) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const PIMSThroughput = () => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -20,6 +30,7 @@ const Configuration = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_PIMS_Throughput')
   const { plantObject, year } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -30,6 +41,7 @@ const Configuration = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [revisionUpdated, setRevisionUpdated] = useState(false)
 
   const columns = [
     {
@@ -44,138 +56,17 @@ const Configuration = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 120,
-      minWidth: 120,
+      widthT: 80,
+      minWidth: 60,
       type: 'text',
       editable: false,
     },
     {
-      field: 'apr',
-      title: headerMap[4],
+      field: 'value',
+      title: 'Value',
       editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -195,33 +86,24 @@ const Configuration = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConfigurationData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, revisionUpdated])
 
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.getConfigurationData(
+      const res = await ProductionNormsApiService.getPIMSThroughputData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
-      if (response?.code !== 200) {
+      if (res?.length === 0) {
         setRows([])
-        setLoading(false)
-        return
-      }
-
-      const res = response?.data || []
-
-      if (res.length === 0) {
-        setRows([])
-        setLoading(false)
         return
       }
 
       console.log('Configuration data:', res)
-      const formattedData = res.map((item, index) => ({
+      const formattedData = res?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
@@ -233,6 +115,7 @@ const Configuration = () => {
       setRows([])
     } finally {
       setLoading(false)
+      setRevisionUpdated(false)
     }
   }
 
@@ -244,11 +127,11 @@ const Configuration = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
+    ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Configuration',
+    titleName: 'PIMS Throughput',
   }
 
   const saveChanges = async () => {
@@ -311,11 +194,16 @@ const Configuration = () => {
     try {
       console.log('Saving configuration data:', payload)
 
-      const response = await ProductionNormsApiService.saveConfigurationData(
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+      const response = await ProductionNormsApiService.savePIMSThroughputData(
         keycloak,
         AOP_YEAR,
         payload,
         PLANT_ID,
+        SITE_ID,
+        periodFrom,
+        periodTo,
       )
 
       setModifiedCells({})
@@ -324,7 +212,6 @@ const Configuration = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      await fetchConfigurationData()
     } catch (error) {
       console.error('Error saving configuration data:', error)
       setSnackbarOpen(true)
@@ -342,12 +229,13 @@ const Configuration = () => {
 
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.importConfigurationExcel(
-        file,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ProductionNormsApiService.importPIMSThroughputExcel(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -370,7 +258,7 @@ const Configuration = () => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Configuration_Errors_${new Date().getTime()}.xlsx`
+          link.download = `PIMS_Throughput_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -419,10 +307,11 @@ const Configuration = () => {
     })
 
     try {
-      await ProductionNormsApiService.exportConfigurationExcel(
+      await ProductionNormsApiService.exportPIMSThroughputExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -446,6 +335,14 @@ const Configuration = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
+      <RevButtonSection
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        snackbarData={snackbarData}
+        setSnackbarData={setSnackbarData}
+        revisionUpdated={revisionUpdated}
+        setRevisionUpdated={setRevisionUpdated}
+      />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
@@ -468,8 +365,7 @@ const Configuration = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['TypeDisplayName']}
-        // customHeight={60}
+        groupBy={['normType']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
@@ -481,4 +377,4 @@ const Configuration = () => {
   )
 }
 
-export default Configuration
+export default PIMSThroughput

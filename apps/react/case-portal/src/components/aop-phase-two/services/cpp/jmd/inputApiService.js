@@ -14,6 +14,10 @@ export const InputApiService = {
   exportSteamResponseExcel,
   saveSteamResponseExcel,
 
+  // Unified APIs (Power + Steam combined)
+  exportOperationalHoursExcel,
+  saveOperationalHoursExcel,
+
   // Used in: Inputs/ImportPower.js
   getImportPowerCapacity,
   saveImportPowerCapacity,
@@ -35,6 +39,9 @@ export const InputApiService = {
   // Steam-specific export/import
   exportSteamAssetCapacityExcel,
   importSteamAssetCapacityExcel,
+  // Unified export/import (Power, Steam, or All)
+  exportAssetCapacityExcelUnified,
+  importAssetCapacityExcelUnified,
 
   // Used in: Inputs/HeatRate/GTHeatRate.js
   getPlantList,
@@ -92,6 +99,8 @@ export const InputApiService = {
   getProcessUnitAllocations,
   saveProcessUnitAllocations,
   deleteProcessUnitAllocation,
+  exportProcessUnitAllocationsExcel,
+  saveProcessUnitAllocationsExcel,
 }
 
 // ===================== ||Shutdown and Operational hrs APIs || ===================== //
@@ -223,6 +232,74 @@ async function exportSteamResponseExcel(
     fileName: EXCEL_NAME,
     method: 'GET',
   })
+}
+
+// ===================== || UNIFIED OPERATIONAL HOURS APIs || ===================== //
+// These APIs handle both Power and Steam assets in a single call
+// assetCategory: 'Power', 'Steam', or 'All' (for both)
+
+/**
+ * Unified Excel Export for Operational Hours (Power, Steam, or All)
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Array|string} PLANT_ID_LIST - Single or multiple plant IDs
+ * @param {string} AOP_YEAR - Financial year
+ * @param {string} assetCategory - 'Power', 'Steam', or 'All' (default: 'All')
+ * @param {string} EXCEL_NAME - Downloaded file name
+ * @returns {Promise} Excel file download
+ */
+async function exportOperationalHoursExcel(
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  assetCategory = 'All',
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/assets/operational-hours/export',
+    queryParams: {
+      plantIds: plantIdArray.join(','),
+      financialYear: AOP_YEAR,
+      assetCategory: assetCategory,
+    },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+/**
+ * Unified Excel Import for Operational Hours (Power, Steam, or All)
+ * @param {File} file - Excel file to import
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Array|string} PLANT_ID_LIST - Single or multiple plant IDs
+ * @param {string} AOP_YEAR - Financial year
+ * @param {string} assetCategory - 'Power', 'Steam', or 'All' (default: 'All')
+ * @returns {Promise} API response with import status
+ */
+async function saveOperationalHoursExcel(
+  file,
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  assetCategory = 'All',
+) {
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
+  return saveExcelData(
+    file,
+    keycloak,
+    'jmd/assets/operational-hours/import',
+    PLANT_ID_LIST,
+    AOP_YEAR,
+    {
+      plantIds: plantIdArray.join(','),
+      financialYear: AOP_YEAR,
+      assetCategory: assetCategory,
+    },
+  )
 }
 
 // ========================|| Import Power APIs ||=====================================//
@@ -923,6 +1000,52 @@ async function importSteamAssetCapacityExcel(
   )
 }
 
+// ── UNIFIED Asset Capacity export/import (Power, Steam, or All) ─────────────
+
+// GET /task/jmd/asset/capacity/export?plantIds=...&aopYear=...&assetCategory=All
+async function exportAssetCapacityExcelUnified(
+  keycloak,
+  plantIds,
+  aopYear,
+  assetCategory = 'All',
+  fileName,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/asset/capacity/export',
+    queryParams: {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+      assetCategory,
+    },
+    fileName,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/asset/capacity/import?plantIds=...&aopYear=...&assetCategory=All (multipart)
+async function importAssetCapacityExcelUnified(
+  file,
+  keycloak,
+  plantIds,
+  aopYear,
+  assetCategory = 'All',
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(
+    file,
+    keycloak,
+    'jmd/asset/capacity/import',
+    null,
+    null,
+    {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+      assetCategory,
+    },
+  )
+}
+
 // Heat Rate Excel Import (GT Heat Rate)
 async function saveHeatRateExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/heat-rate/import`
@@ -1457,7 +1580,12 @@ async function getProcessUnitAllocations(keycloak, plantIds, aopYear) {
 
 // POST /task/process-unit-allocation?plantIds=UUID,UUID&aopYear=2026-27
 // Body: direct array of allocation records
-async function saveProcessUnitAllocations(keycloak, plantIds, aopYear, payload) {
+async function saveProcessUnitAllocations(
+  keycloak,
+  plantIds,
+  aopYear,
+  payload,
+) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
   const url = `${Config.CaseEngineUrl}/task/process-unit-allocation?plantIds=${queryParams}&aopYear=${aopYear}`
@@ -1478,6 +1606,43 @@ async function saveProcessUnitAllocations(keycloak, plantIds, aopYear, payload) 
     console.error('Error saving process unit allocations:', e)
     return await Promise.reject(e)
   }
+}
+
+// GET /task/process-unit-allocation/export?plantIds=UUID,UUID&aopYear=2026-27
+async function exportProcessUnitAllocationsExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'process-unit-allocation/export',
+    queryParams: { plantIds: plantIdArray.join(','), aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/process-unit-allocation/import?plantIds=UUID,UUID&aopYear=2026-27
+async function saveProcessUnitAllocationsExcel(
+  file,
+  keycloak,
+  plantIds,
+  aopYear,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(
+    file,
+    keycloak,
+    'process-unit-allocation/import',
+    null,
+    null,
+    {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+    },
+  )
 }
 
 // DELETE /task/process-unit-allocation/{id}

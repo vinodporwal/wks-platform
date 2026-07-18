@@ -1,11 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import {
-  Box,
-  Backdrop,
-  CircularProgress,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -13,9 +7,12 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import { setIsReleased } from 'store/reducers/dataGridStore'
-import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import ReleaseAPIService from 'components/aop-phase-two/services/common/releaseAPIService'
 import ReleaseDialog from 'components/aop-phase-two/common/components/ReleaseDialog'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const NormsJMD = () => {
   const keycloak = useSession()
@@ -39,12 +36,19 @@ const NormsJMD = () => {
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Norms')
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
@@ -61,6 +65,80 @@ const NormsJMD = () => {
   const [calculateBtnEnabled, setCalculateBtnEnabled] = useState(false)
   const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
   const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+  // Month field names in fiscal year order
+  const MONTH_FIELDS = [
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
+  ]
+
+  const MONTH_TO_INDEX = {
+    apr: 4,
+    may: 5,
+    jun: 6,
+    jul: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12,
+    jan: 1,
+    feb: 2,
+    mar: 3,
+  }
+
+  // Generate nested month columns with children (norms, quantity, amount, price)
+  const NESTED_MONTH_COLUMNS = MONTH_FIELDS.map((mon) => ({
+    title: headerMap[MONTH_TO_INDEX[mon]],
+    children: [
+      {
+        field: `${mon}.norms`,
+        title: 'Norms',
+        widthT: 120,
+        minWidth: 120,
+        editable: false,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: `${mon}.quantity`,
+        title: 'Quantity',
+        widthT: 120,
+        minWidth: 120,
+        type: 'number',
+        format: valueFormat,
+      },
+      {
+        field: `${mon}.amount`,
+        title: 'Amount',
+        widthT: 120,
+        minWidth: 120,
+        type: 'number',
+        format: valueFormat,
+        hidden: true,
+      },
+      {
+        field: `${mon}.price`,
+        title: 'Price',
+        widthT: 120,
+        minWidth: 120,
+        editable: true,
+        type: 'number1',
+        format: valueFormat,
+        hidden: true,
+      },
+    ],
+  }))
+
   // Column definitions
   const nestedColumns = [
     //Generating Plant
@@ -146,567 +224,75 @@ const NormsJMD = () => {
       editable: false,
       minWidth: 150,
     },
-    // Apr
-    {
-      title: headerMap[4],
-      children: [
-        {
-          field: 'apr.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'apr.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'apr.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'apr.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // May
-    {
-      title: headerMap[5],
-      children: [
-        {
-          field: 'may.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'may.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'may.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'may.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // Jun
-    {
-      title: headerMap[6],
-      children: [
-        {
-          field: 'jun.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'jun.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'jun.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'jun.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // Jul
-    {
-      title: headerMap[7],
-      children: [
-        {
-          field: 'jul.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'jul.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'jul.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'jul.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // Aug
-    {
-      title: headerMap[8],
-      children: [
-        {
-          field: 'aug.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'aug.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'aug.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'aug.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // Sep
-    {
-      title: headerMap[9],
-      children: [
-        {
-          field: 'sep.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'sep.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'sep.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'sep.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // Oct
-    {
-      title: headerMap[10],
-      children: [
-        {
-          field: 'oct.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'oct.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'oct.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'oct.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // Nov
-    {
-      title: headerMap[11],
-      children: [
-        {
-          field: 'nov.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'nov.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'nov.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'nov.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // Dec
-    {
-      title: headerMap[12],
-      children: [
-        {
-          field: 'dec.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'dec.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'dec.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'dec.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    //Jan
-    {
-      title: headerMap[1],
-      children: [
-        {
-          field: 'jan.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'jan.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'jan.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'jan.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    //Feb
-    {
-      title: headerMap[2],
-      children: [
-        {
-          field: 'feb.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'feb.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'feb.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'feb.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    //Mar
-    {
-      title: headerMap[3],
-      children: [
-        {
-          field: 'mar.norms',
-          title: 'Norms',
-          widthT: 120,
-          minWidth: 120,
-          editable: false,
-          type: 'number1',
-          format: valueFormat,
-        },
-        {
-          field: 'mar.quantity',
-          title: 'Quantity',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-        },
-        {
-          field: 'mar.amount',
-          title: 'Amount',
-          widthT: 120,
-          minWidth: 120,
-          type: 'number',
-          format: valueFormat,
-          hidden: true,
-        },
-        {
-          field: 'mar.price',
-          title: 'Price',
-          widthT: 120,
-          minWidth: 120,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          hidden: true,
-        },
-      ],
-    },
-    // {
-    //   field: 'remarks',
-    //   title: 'Remarks',
-    //   widthT: 250,
-    //   type: 'textarea',
-    //   editable: false,
-    //   minWidth: 250,
-    // },
+    ...NESTED_MONTH_COLUMNS,
   ]
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [calculationLoading, setCaculationLoading] = useState(false)
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchNormsData()
-      setModifiedCells({})
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchNormsData = async () => {
+  const fetchNormsData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await UtilityPlantApiServiceV2.getNormBasedUtilityBudget(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
-      if (res?.data?.length === 0) {
+      if (res?.data?.list?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
-      let tempRes = res?.data
-        ?.filter((item) => item?.accountName !== 'Stores & Spares')
-        .map((item, index) => {
-          return {
-            ...item,
-            id: item.id || index + 1,
-            remarks: item.remarks || '',
+      let tempRes = res?.data?.list?.map((item, index) => {
+        // Transform month data from API response to match column structure
+        const transformedItem = {
+          ...item,
+          id: item.id || index + 1,
+          remarks: item.remarks || '',
+        }
+
+        // Map each month's data to the expected nested structure
+        MONTH_FIELDS.forEach((month) => {
+          const monthData = item[month]
+          if (monthData) {
+            transformedItem[month] = {
+              norms: monthData.norms || monthData.Norms,
+              quantity: monthData.quantity || monthData.Quantity,
+              amount: monthData.amount || monthData.Amount,
+              price: monthData.price || monthData.Price,
+            }
           }
         })
+
+        return transformedItem
+      })
 
       setRows(tempRes)
       setCalculateBtnEnabled(true)
       setOriginalRows(tempRes)
     } catch (error) {
-      console.error('Error fetching fixed consumption data:', error)
+      console.error('Error fetching norms data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchNormsData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchNormsData],
+  )
 
   // Permissions (adjust as needed)
   const permissions = useMemo(() => {
@@ -797,21 +383,19 @@ const NormsJMD = () => {
   const handleCalculate = async () => {
     setCaculationLoading(true)
     try {
-      const res = await UtilityPlantApiServiceV2.calculateNormsData(
+      await UtilityPlantApiServiceV2.calculateNormsData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
-      if (res) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Calculation completed successfully!',
-          severity: 'success',
-        })
-        // Refresh the data after calculation
-        await fetchNormsData()
-      }
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Calculation completed successfully!',
+        severity: 'success',
+      })
+      // Refresh the data after calculation
+      await fetchNormsData()
     } catch (error) {
       console.error('Error calculating norms data:', error)
       setSnackbarOpen(true)
@@ -851,32 +435,10 @@ const NormsJMD = () => {
     }
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = [
-      'apr.norms',
-      'apr.price',
-      'may.norms',
-      'may.price',
-      'jun.norms',
-      'jun.price',
-      'jul.norms',
-      'jul.price',
-      'aug.norms',
-      'aug.price',
-      'sep.norms',
-      'sep.price',
-      'oct.norms',
-      'oct.price',
-      'nov.norms',
-      'nov.price',
-      'dec.norms',
-      'dec.price',
-      'jan.norms',
-      'jan.price',
-      'feb.norms',
-      'feb.price',
-      'mar.norms',
-      'mar.price',
-    ]
+    const fieldsToCheck = MONTH_FIELDS.flatMap((mon) => [
+      `${mon}.norms`,
+      `${mon}.price`,
+    ])
     const validationError = validateNestedRowDataWithRemarks(
       data,
       originalRows,
@@ -944,7 +506,7 @@ const NormsJMD = () => {
       const response = await UtilityPlantApiServiceV2.saveNormsExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -1023,8 +585,9 @@ const NormsJMD = () => {
     try {
       await UtilityPlantApiServiceV2.exportNormsExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -1048,33 +611,19 @@ const NormsJMD = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      <LoaderBackdrop
         open={!!loading || calculationLoading}
-      >
-        <Stack
-          display='flex'
-          flexDirection='column'
-          alignItems='center'
-          justifyContent='center'
-        >
-          <CircularProgress color='inherit' />
-          {calculationLoading && (
-            <Typography variant='h5' sx={{ mt: 2 }}>
-              Your data is being processed. This may take a few moments—thank
-              you for your patience.
-            </Typography>
-          )}
-        </Stack>
-      </Backdrop>
-      <NestedKendoTable
+        showMessage={calculationLoading}
+        message='Your data is being processed. This may take a few moments—thank you for your patience.'
+      />
+      <AdvanceKendoTable
         columns={nestedColumns}
         rows={rows}
         setRows={setRows}
         handleCalculate={handleCalculate}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='Norms'
+        title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -1091,7 +640,7 @@ const NormsJMD = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={80}
-        groupBy={['generatingPlantName', 'accountName']}
+        groupBy={['cppPlantName', 'generatingPlantName', 'accountName']}
         handleRelease={handleRelease}
         isReleaseDisabled={isReleaseDisabled}
       />

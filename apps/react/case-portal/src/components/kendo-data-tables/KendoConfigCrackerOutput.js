@@ -105,6 +105,7 @@ const CrackerConfig = () => {
   const [feedsRows, setFeedsRows] = useState([])
   const [spyroOutputProductRows, setSpyroOutputProductRows] = useState([])
   const [otherSpyroOutputRows, setOtherSpyroOutputRows] = useState([])
+  const [optimizing, setOptimizing] = useState([])
 
   const FORMATE_VALUE = ValueFormatterProduction()
 
@@ -120,7 +121,9 @@ const CrackerConfig = () => {
   const productionColumns = useMemo(() => {
     const configType =
       currentTabDisplay === 'Composition'
-        ? 'cracker_composition'
+        ? SITE_NAME === 'C2'
+          ? 'cracker_composition_c2'
+          : 'cracker_composition'
         : currentTabDisplay === 'Constant'
           ? 'cracker_constants'
           : currentTabDisplay === 'Yield'
@@ -129,7 +132,9 @@ const CrackerConfig = () => {
               : SITE_NAME == 'VMD'
                 ? 'cracker_yield_vmd'
                 : 'cracker_yield_dmd'
-            : 'cracker'
+            : SITE_NAME === 'C2'
+              ? 'cracker_c2'
+              : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -216,7 +221,7 @@ const CrackerConfig = () => {
       console.error('Error fetching cracker tabs matrix:', err)
       setTabs(rawTabsStatic)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID])
 
   const fetchAvailableTabs = useCallback(async () => {
     try {
@@ -268,7 +273,6 @@ const CrackerConfig = () => {
 
   useEffect(() => {
     fetchModes()
-
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
@@ -290,6 +294,8 @@ const CrackerConfig = () => {
           return hydrogenationRows
         case 'Miscellaneous Parameters':
           return feedTotalRows
+        case 'Optimizing':
+          return optimizing
         case 'Constant':
           return constantsRows
         case 'Yield':
@@ -322,6 +328,7 @@ const CrackerConfig = () => {
       spyroOutputProductRows,
       feedsRows,
       otherSpyroOutputRows,
+      optimizing,
     ],
   )
 
@@ -335,6 +342,9 @@ const CrackerConfig = () => {
         break
       case 'Total Products':
         setHydrogenationRows(data)
+        break
+      case 'Optimizing':
+        setOptimizing(data)
         break
       case 'Constant':
         setConstantsRows(data)
@@ -1091,6 +1101,7 @@ const CrackerConfig = () => {
             case 'Total Feed':
             case 'Total Products':
             case 'Miscellaneous Parameters':
+            case 'Optimizing':
             case 'Constant':
             case 'Other Product':
             case 'Yield':

@@ -451,7 +451,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
         CellStyle readOnlyStyle = Utility.createBorderedLockedStyle(workbook);
 
         List<String> headers = new ArrayList<>();
-        headers.add("DisplayName");
+        headers.add("Particulars");
         headers.addAll(dynamicMonthHeaders);
         headers.add("Remarks");
         headers.add("Id");

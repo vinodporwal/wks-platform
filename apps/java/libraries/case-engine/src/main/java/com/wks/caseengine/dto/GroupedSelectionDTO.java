@@ -23,4 +23,5 @@ public class GroupedSelectionDTO {
     private boolean isEditable;
     private String sapMaterialCode;
     private String normParameterType;
+    private String aopYear;
 }
