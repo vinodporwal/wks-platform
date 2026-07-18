@@ -52,9 +52,11 @@ import com.wks.caseengine.cases.definition.command.DeleteCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.FindCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.GetCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.UpdateCaseDefinitionCmd;
+import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.CaseInstance.EventUrlItem;
 import com.wks.caseengine.cases.instance.email.CaseEmailServiceImpl;
 import com.wks.caseengine.command.CommandExecutor;
+import com.wks.caseengine.command.CommandContext;
 import com.wks.caseengine.rest.db1.repository.EventEnrichmentRepository;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.EquipmentModel;
@@ -72,6 +74,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
+import com.wks.caseengine.cases.instance.CaseInstance;
+
 @Component
 public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
@@ -84,6 +88,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
     @Autowired
     private CommandExecutor commandExecutor;
+
+    @Autowired
+    private CommandContext commandContext;
 
     @Autowired
     private FaultCategoryRepository faultCategoryRepository;
@@ -166,6 +173,104 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     private String geCreateCaseAPI;
     @Value("${ge.case_status.api}")
     private String geCaseStatusAPI;
+
+    @Override
+    public void sendCaseLinkedEmail(String businessKey) {
+        try {
+            CaseInstance caseInstance = commandContext.getCaseInstanceRepository().get(businessKey);
+            if (caseInstance == null)
+                return;
+
+            for (com.wks.caseengine.cases.instance.CaseAttribute attr : caseInstance.getAttributes()) {
+                if (!"container".equals(attr.getName()))
+                    continue;
+
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode node = mapper.readTree(attr.getValue());
+
+                String caseTitle = node.has("caseTitle") ? node.get("caseTitle").asText() : "";
+                String caseAssignedToValue = node.has("caseAssignedTo") ? node.get("caseAssignedTo").asText() : "";
+
+                // Fallback: if no assignee on record, notify the case owner instead of dropping
+                // the email
+                String ownerEmail = (caseInstance.getOwner() != null) ? caseInstance.getOwner().getEmail() : null;
+                if ((caseAssignedToValue == null || caseAssignedToValue.isBlank())) {
+                    if (ownerEmail == null || ownerEmail.isBlank())
+                        continue; // truly nobody to notify
+                    caseAssignedToValue = ownerEmail;
+                }
+
+                var resolvedUser = usersRepository.findByEmailId(caseAssignedToValue);
+                String assignedToLabel = (resolvedUser != null) ? resolvedUser.getUserId() : caseAssignedToValue;
+
+                List<Map<String, String>> subAssetList = new ArrayList<>();
+                if (node.path("dataGrid2").isArray()) {
+                    for (JsonNode item : node.path("dataGrid2")) {
+                        Map<String, String> row = new HashMap<>();
+                        String subAsset = item.has("subAsset") ? item.path("subAsset").asText() : item.path("textField1").asText();
+                        String events = item.has("events") ? item.path("events").asText() : item.path("textField3").asText();
+                        String eventCategory = item.has("eventCategory") ? item.path("eventCategory").asText() : item.path("textField4").asText();
+                        String faultStart = item.path("TextFaultStartTimeDate").asText();
+                        String faultEnd = item.path("TextFaultEndTimeDate").asText();
+                        String eventPkId = item.path("eventPkId").asText();
+
+                        row.put("subAsset", subAsset);
+                        row.put("events", events);
+                        row.put("eventCategory", eventCategory);
+                        row.put("faultStart", faultStart);
+                        row.put("faultEnd", faultEnd);
+                        row.put("eventPkId", eventPkId);
+
+                        subAssetList.add(row);
+                    }
+                }
+
+                Map<String, String> eventTrendUrlsMap = new HashMap<>();
+                if (caseInstance.getEventTrendUrls() != null) {
+                    eventTrendUrlsMap = caseInstance.getEventTrendUrls()
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    com.wks.caseengine.cases.instance.CaseInstance.EventUrlItem::getUrlId,
+                                    com.wks.caseengine.cases.instance.CaseInstance.EventUrlItem::getUrl));
+                }
+
+                Map<String, String> eventReportUrlsMap = new HashMap<>();
+                if (caseInstance.getEventReportUrls() != null) {
+                    eventReportUrlsMap = caseInstance.getEventReportUrls()
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    com.wks.caseengine.cases.instance.CaseInstance.EventUrlItem::getUrlId,
+                                    com.wks.caseengine.cases.instance.CaseInstance.EventUrlItem::getUrl));
+                }
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("caseTitle", "This is to inform you, new events have been linked to your case");
+                data.put("headerText", "Events linked to case");
+                data.put("headerColor", "#2F8B8B");
+                data.put("caseNumber", businessKey);
+                data.put("status", "Assigned");
+                data.put("caseName", caseTitle);
+                data.put("caseUrl", "");
+                data.put("assignedToLabel", assignedToLabel);
+                data.put("assignedBy", caseInstance.getOwner() != null ? caseInstance.getOwner().getName() : "");
+                data.put("subAssets", subAssetList);
+                data.put("eventTrendUrlsMap", eventTrendUrlsMap);
+                data.put("eventReportUrlsMap", eventReportUrlsMap);
+
+                caseEmailService.send(
+                        new String[] { caseAssignedToValue },
+                        caseTitle,
+                        null,
+                        null,
+                        null,
+                        "email-template",
+                        data);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public List<CaseDefinition> find(final Optional<Boolean> deployed) {
         return commandExecutor.execute(

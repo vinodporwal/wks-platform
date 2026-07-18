@@ -78,6 +78,7 @@ public interface CaseDefinitionService {
 	Case saveAnalysis(Case caseData);
 	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
 	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset);
-
-	long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
+	long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search,String caseStatus);
+	
+	void sendCaseLinkedEmail(String businessKey);
 }

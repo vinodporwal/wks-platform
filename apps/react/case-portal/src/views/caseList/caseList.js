@@ -779,12 +779,43 @@ export const CaseList = ({ status, caseDefId }) => {
 
 const urlParams = new URLSearchParams(window.location.search);
 const eventIds = urlParams.get('eventIds');
+
+if (!eventIds) {
+  console.error('handleLinkCaseAction: eventIds missing from URL');
+  setLinkSnackMessage('No events found to link. Please try again from the events page.');
+  setLinkSnackOpen(true);
+  return;
+}
+
 const eventIdsArray = eventIds.split(',')
 const businessKeys = selectedRows;
 console.log("eventIds: ", eventIds);
 console.log("businessKeys: ", businessKeys);
 console.log("typeof businessKeys: ", typeof businessKeys);
 console.log('single businessKey: ', businessKeys[0]);
+
+const selectedCases = cases.filter(c => 
+  businessKeys.includes(c.businessKey) || 
+  businessKeys.includes(c.caseNo) || 
+  businessKeys.includes(c.id) || 
+  businessKeys.includes(c._id)
+);
+
+const alreadyLinkedEvents = [];
+selectedCases.forEach(c => {
+  if (c.eventIds) {
+    c.eventIds.forEach(id => {
+      if (eventIdsArray.includes(String(id))) {
+        alreadyLinkedEvents.push(id);
+      }
+    });
+  }
+});
+
+if (alreadyLinkedEvents.length > 0) {
+  alert(`The selected case is already linked to the event ID(s): ${alreadyLinkedEvents.join(', ')}. Linking duplicate events is not allowed.`);
+  return;
+}
 
 
 const encodedEventIds = encodeURIComponent(eventIds);
@@ -843,7 +874,7 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
     CaseService.getSingleCaseByBusinessKey(keycloak, caseDefId, businessKeys[0]).then((data) => {
       console.log("In handleLinkCaseAction getCaseByBusinessKey data: ", data)
       setACase(data.data[0]);
-      setLinkSnackMessage(`Successfully linked the case ${data.data[0]?.businessKey} to the events: ${eventIds}`);
+      setLinkSnackMessage(`Successfully linked the case ${data.data[0]?.caseTitle} to the events: ${eventIds}`);
     })
    
     
@@ -1209,6 +1240,7 @@ else {
               
                 <Suspense fallback={<div>Loading...</div>}>
                   <DataGrid
+                  key={isLinkCaseUrl ? 'link-case-grid' : 'normal-grid'}
                   checkboxSelection={isLinkCaseUrl}
                   rowSelectionModel={selectedRows}
                   onRowSelectionModelChange={(newSelection) => {
@@ -1382,8 +1414,10 @@ else {
 else 
   response =  CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((resp) => {
-        resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
-        setStages(resp.stages)
+        if (resp && resp.stages) {
+          resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
+          setStages(resp.stages)
+        }
       
         // if(isLinkCaseUrl) {
         //   const urlParams = new URLSearchParams(window.location.search);
