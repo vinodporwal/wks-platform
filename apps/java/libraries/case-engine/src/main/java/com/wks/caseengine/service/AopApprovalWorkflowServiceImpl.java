@@ -102,8 +102,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         vars.add(strVar("year", year));
 
         String businessKey = businessKey(plantId, year);
-        ProcessInstance pi = processInstanceService.start(PROCESS_KEY, Optional.of(businessKey), vars);
-        String processInstanceId = pi != null ? pi.getId() : null;
+        String processInstanceId = startEngineProcess(businessKey, vars);
 
         Workflow wf = Workflow.builder()
                 .caseDefId(CASE_DEF_ID)
@@ -135,6 +134,66 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 .processInstanceId(processInstanceId)
                 .isDeleted(Boolean.FALSE)
                 .build();
+    }
+
+    /**
+     * Start the engine process and return its instance id, never null.
+     *
+     * <p>The shared C7 client swallows engine errors and returns {@code null}
+     * (see C7EngineClient#startProcess). Persisting a Workflow row off the back
+     * of that would leave an orphan: no process in Camunda, no tasks, no gates —
+     * yet the row blocks re-submission via the one-active-workflow guard. So we
+     * fail loudly here, before anything is written.</p>
+     *
+     * <p>If the start returned an instance without an id, the process may still
+     * exist (only the response mapping failed), so we look it up by business key
+     * before giving up.</p>
+     */
+    private String startEngineProcess(String businessKey, List<ProcessVariable> vars) {
+        ProcessInstance pi = processInstanceService.start(PROCESS_KEY, Optional.of(businessKey), vars);
+        String id = pi != null ? pi.getId() : null;
+
+        if (id == null || id.isBlank()) {
+            id = findProcessInstanceId(businessKey);
+        }
+        if (id == null || id.isBlank()) {
+            throw new IllegalStateException("Failed to start Camunda process '" + PROCESS_KEY
+                    + "' for businessKey " + businessKey
+                    + ". Check that the process is deployed under the configured tenant and that the"
+                    + " c7-plugins jar (AopGateDecisionListener) is on the engine classpath;"
+                    + " the engine error is logged by C7EngineClient as 'Error starting process'.");
+        }
+        return id;
+    }
+
+    /**
+     * Fill in a missing processInstanceId on an existing row from the live engine.
+     * No-op when already set or when no instance can be resolved.
+     */
+    private void backfillProcessInstanceId(Workflow wf, String businessKey) {
+        if (wf == null || (wf.getProcessInstanceId() != null && !wf.getProcessInstanceId().isBlank())) {
+            return;
+        }
+        String id = findProcessInstanceId(businessKey);
+        if (id != null) {
+            wf.setProcessInstanceId(id);
+            workflowRepository.save(wf);
+            log.info("AOP: backfilled processInstanceId {} for businessKey {}", id, businessKey);
+        }
+    }
+
+    /** Resolve a running instance id by business key, or null if there is none. */
+    private String findProcessInstanceId(String businessKey) {
+        try {
+            List<ProcessInstance> found = processInstanceService.find(
+                    Optional.of(PROCESS_KEY), Optional.of(businessKey), Optional.empty());
+            if (found != null && !found.isEmpty() && found.get(0) != null) {
+                return found.get(0).getId();
+            }
+        } catch (Exception ex) {
+            log.warn("AOP: process instance lookup failed for businessKey {}: {}", businessKey, ex.getMessage());
+        }
+        return null;
     }
 
     @Override
@@ -331,6 +390,10 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .currentSequence(meta.containsKey(PREPARE) ? meta.get(PREPARE).sequence : 1)
                     .viewer(viewer).build();
         }
+
+        // Self-heal rows written before the start-failure guard existed (or by the
+        // legacy submit path, which never carried a process instance id).
+        backfillProcessInstanceId(active.get(0), businessKey);
 
         List<Task> tasks = safeFind(businessKey);
         String currentStep = currentStepOf(tasks, meta);
