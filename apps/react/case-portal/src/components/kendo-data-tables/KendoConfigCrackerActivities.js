@@ -4,6 +4,7 @@ import {
   CircularProgress,
   TextField,
   Button,
+  Grid,
 } from '@mui/material'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -1007,7 +1008,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1161,7 +1162,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1642,204 +1643,240 @@ const DecokingConfig = () => {
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box
+        <Grid
+          container
+          spacing={1}
           sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            columnGap: 4,
-            rowGap: 1.5,
-            mb: 1.5,
-            mt: 1,
-            alignItems: 'center',
+            alignItems: 'flex-start',
           }}
         >
-          {/* Column 1, Row 1 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{ whiteSpace: 'nowrap', width: '220px' }}
-            >
-              TA Start Date
-            </Typography>
-            <Box sx={{ width: '160px' }}>
-              <DatePicker
-                id='global-ta-start-date'
-                format='dd-MM-yyyy'
-                value={globalTaStartDate}
-                onChange={(e) => {
-                  setGlobalTaStartDate(e.value)
-                  setSummaryEdited(true)
+          {/* TA Start Date */}
+          <Grid item xs={12} sm='4'>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Typography
+                sx={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: '#252525',
+                  fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
                 }}
-                style={{ height: '80px', width: '100%' }}
-                size={'small'}
-                disabled={READ_ONLY}
-              />
+              >
+                TA Start Date
+              </Typography>
+              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px' } }}>
+                <DatePicker
+                  id='global-ta-start-date'
+                  format='dd-MM-yyyy'
+                  value={globalTaStartDate}
+                  onChange={(e) => {
+                    setGlobalTaStartDate(e.value)
+                    setSummaryEdited(true)
+                  }}
+                  style={{ width: '100%', height: '36px' }}
+                  disabled={READ_ONLY}
+                />
+              </Box>
             </Box>
-          </Box>
+          </Grid>
 
-          {/* Column 2, Row 1 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{ whiteSpace: 'nowrap', width: '220px' }}
-            >
-              TA End Date
-            </Typography>
-            <Box sx={{ width: '160px' }}>
-              <DatePicker
-                id='global-ta-end-date'
-                format='dd-MM-yyyy'
-                value={globalTaEndDate}
-                onChange={(e) => {
-                  setGlobalTaEndDate(e.value)
-                  setSummaryEdited(true)
+          {/* TA End Date */}
+          <Grid item xs={12} sm='4'>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Typography
+                sx={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: '#252525',
+                  fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
                 }}
-                style={{ height: '80px', width: '100%' }}
-                size={'small'}
-                disabled={READ_ONLY}
-              />
+              >
+                TA End Date
+              </Typography>
+              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px' } }}>
+                <DatePicker
+                  id='global-ta-end-date'
+                  format='dd-MM-yyyy'
+                  value={globalTaEndDate}
+                  onChange={(e) => {
+                    setGlobalTaEndDate(e.value)
+                    setSummaryEdited(true)
+                  }}
+                  style={{ width: '100%', height: '36px' }}
+                  disabled={READ_ONLY}
+                />
+              </Box>
             </Box>
-          </Box>
-        </Box>
+          </Grid>
+
+          {/* C2 Specific Controls */}
+          {IS_CRACKER_C2 && (
+            <>
+              {/*  */}
+              <Grid item xs={12} sm='4'>
+
+              </Grid>
+
+              {/* Max Duty For Pilot Furnace */}
+              <Grid item xs={12} sm='4'>
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: '#252525',
+                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    }}
+                  >
+                    Max Duty For Pilot Furnace
+                  </Typography>
+                  <TextField
+                    id='max-duty-pilot-furnace'
+                    type='number'
+                    size='small'
+                    value={maxDutyPilot}
+                    onChange={(e) => {
+                      setMaxDutyPilot(e.target.value)
+                      setSummaryEdited(true)
+                    }}
+                    disabled={READ_ONLY}
+                    sx={{
+                      backgroundColor: '#ffffff',
+                      '& .MuiInputBase-root': {
+                        height: '36px',
+                        backgroundColor: '#ffffff',
+                      },
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                      },
+                      '& input[type=number]': {
+                        '-moz-appearance': 'textfield',
+                      },
+                      '& input[type=number]::-webkit-outer-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                      '& input[type=number]::-webkit-inner-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                    }}
+                  />
+                </Box>
+              </Grid>
+
+              {/* Max Duty For Main Furnaces */}
+              <Grid item xs={12} sm='4'>
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+                >
+                  <Typography
+                    // className='grid-title'
+                    // sx={{
+                    //   whiteSpace: 'nowrap',
+                    //   fontSize: '12px',
+                    //   fontWeight: 600,
+                    //   color: '#334155',
+                    // }}
+                    sx={{
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: '#252525',
+                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    }}
+                  >
+                    Max Duty For Main Furnaces
+                  </Typography>
+                  <TextField
+                    id='max-duty-main-furnaces'
+                    type='number'
+                    size='small'
+                    value={maxDutyMain}
+                    onChange={(e) => {
+                      setMaxDutyMain(e.target.value)
+                      setSummaryEdited(true)
+                    }}
+                    disabled={READ_ONLY}
+                    sx={{
+                      backgroundColor: '#ffffff',
+                      '& .MuiInputBase-root': {
+                        height: '36px',
+                        backgroundColor: '#ffffff',
+                      },
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                      },
+                      '& input[type=number]': {
+                        '-moz-appearance': 'textfield',
+                        margin: 0,
+                      },
+                      '& input[type=number]::-webkit-outer-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                      '& input[type=number]::-webkit-inner-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                    }}
+                  />
+                </Box>
+              </Grid>
+
+              {/* SAD Duration */}
+              <Grid item xs={12} sm='4'>
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: '#252525',
+                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    }}
+                  >
+                    SAD Duration
+                  </Typography>
+                  <TextField
+                    id='sad-duration'
+                    type='number'
+                    size='small'
+                    value={sadDuration}
+                    onChange={(e) => {
+                      setSadDuration(e.target.value)
+                      setSummaryEdited(true)
+                    }}
+                    disabled={READ_ONLY}
+                    sx={{
+                      backgroundColor: '#ffffff',
+                      '& .MuiInputBase-root': {
+                        height: '36px',
+                        backgroundColor: '#ffffff',
+                      },
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#ffffff',
+                      },
+                      '& input[type=number]': {
+                        '-moz-appearance': 'textfield',
+                      },
+                      '& input[type=number]::-webkit-outer-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                      '& input[type=number]::-webkit-inner-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                    }}
+                  />
+                </Box>
+              </Grid>
+            </>
+          )}
+        </Grid>
       </LocalizationProvider>
-
-      {IS_CRACKER_C2 && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            columnGap: 4,
-            rowGap: 1.5,
-            mb: 1.5,
-            mt: 0.5,
-            alignItems: 'center',
-          }}
-        >
-          {/* Column 1, Row 2 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{
-                whiteSpace: 'nowrap',
-                width: '220px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#334155',
-              }}
-            >
-              SAD Duration
-            </Typography>
-            <TextField
-              id='sad-duration'
-              type='number'
-              size='small'
-              value={sadDuration}
-              onChange={(e) => {
-                setSadDuration(e.target.value)
-                setSummaryEdited(true)
-              }}
-              disabled={READ_ONLY}
-              sx={{
-                width: '90px',
-                '& input[type=number]': {
-                  '-moz-appearance': 'textfield',
-                },
-                '& input[type=number]::-webkit-outer-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-inner-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-              }}
-            />
-          </Box>
-
-          {/* Column 2, Row 2 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{
-                whiteSpace: 'nowrap',
-                width: '220px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#334155',
-              }}
-            >
-              Max Duty For Pilot Furnace
-            </Typography>
-            <TextField
-              id='max-duty-pilot-furnace'
-              type='number'
-              size='small'
-              value={maxDutyPilot}
-              onChange={(e) => {
-                setMaxDutyPilot(e.target.value)
-                setSummaryEdited(true)
-              }}
-              disabled={READ_ONLY}
-              sx={{
-                width: '90px',
-                '& input[type=number]': {
-                  '-moz-appearance': 'textfield',
-                },
-                '& input[type=number]::-webkit-outer-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-inner-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-              }}
-            />
-          </Box>
-
-          {/* Column 3, Row 2 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{
-                whiteSpace: 'nowrap',
-                width: '220px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#334155',
-              }}
-            >
-              Max Duty For Main Furnaces
-            </Typography>
-            <TextField
-              id='max-duty-main-furnaces'
-              type='number'
-              size='small'
-              value={maxDutyMain}
-              onChange={(e) => {
-                setMaxDutyMain(e.target.value)
-                setSummaryEdited(true)
-              }}
-              disabled={READ_ONLY}
-              sx={{
-                width: '90px',
-                '& input[type=number]': {
-                  '-moz-appearance': 'textfield',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-outer-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-inner-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-              }}
-            />
-          </Box>
-        </Box>
-      )}
 
       <SDTAActivitiesGrid
         columns={ibrPlanColumns.filter(
