@@ -35,4 +35,16 @@ public interface JMDAssetCapacityService {
             List<UUID> plantIds,
             String aopYear,
             MultipartFile file);
+
+    // Unified export/import with assetCategory (Power, Steam, or All)
+    byte[] exportAssetCapacityExcel(
+            List<UUID> plantIds,
+            String aopYear,
+            String assetCategory);
+
+    AOPMessageVM importAssetCapacityExcel(
+            List<UUID> plantIds,
+            String aopYear,
+            String assetCategory,
+            MultipartFile file);
 }

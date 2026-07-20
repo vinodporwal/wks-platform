@@ -83,12 +83,38 @@ export default function PlantContributionLastFourYears() {
   const IS_CRACKER = lowerVertName === 'cracker'
 
   const formats = IS_CRACKER
-    ? { dec3: '{0:0.0000}', dec2: '{0:0.0000}', cost: '{0:0.0000}', norms: '{0:0.0000}' }
+    ? {
+        dec3: '{0:0.0000}',
+        dec2: '{0:0.0000}',
+        cost: '{0:0.0000}',
+        norms: '{0:0.0000}',
+      }
     : {
-        dec3: lowerVertName === 'elastomer' ? '{0:0.000}' : lowerVertName === 'pta' ? '{0:0.00000}' : '{0:0.00}',
-        dec2: lowerVertName === 'vcm' ? '{0:0.000}' : lowerVertName === 'pta' ? '{0:0.00000}' : '{0:0.00}',
-        cost: lowerVertName === 'elastomer' ? '{0:0}' : lowerVertName === 'vcm' ? '{0:0.000}' : lowerVertName === 'pta' ? '{0:0.00000}' : '{0:0.00}',
-        norms: ['meg', 'elastomer', 'pta'].includes(lowerVertName) ? '{0:0.00000}' : lowerVertName === 'vcm' ? '{0:0.000}' : '{0:0.00}',
+        dec3:
+          lowerVertName === 'elastomer'
+            ? '{0:0.000}'
+            : lowerVertName === 'pta'
+              ? '{0:0.00000}'
+              : '{0:0.00}',
+        dec2:
+          lowerVertName === 'vcm'
+            ? '{0:0.000}'
+            : lowerVertName === 'pta'
+              ? '{0:0.00000}'
+              : '{0:0.00}',
+        cost:
+          lowerVertName === 'elastomer'
+            ? '{0:0}'
+            : lowerVertName === 'vcm'
+              ? '{0:0.000}'
+              : lowerVertName === 'pta'
+                ? '{0:0.00000}'
+                : '{0:0.00}',
+        norms: ['meg', 'elastomer', 'pta'].includes(lowerVertName)
+          ? '{0:0.00000}'
+          : lowerVertName === 'vcm'
+            ? '{0:0.000}'
+            : '{0:0.00}',
       }
 
   const FORMAT_VALUES_3_DECIMAL = formats.dec3
@@ -135,7 +161,8 @@ export default function PlantContributionLastFourYears() {
           const suffixCount = suffixCountMap[key] || 0
 
           rows = apiResp?.data?.plantProductionData.map((item, index, arr) => {
-            const isBold = lowerVertName !== 'meg' && index >= arr.length - suffixCount
+            const isBold =
+              lowerVertName !== 'meg' && index >= arr.length - suffixCount
             return {
               ...item,
               id: index,

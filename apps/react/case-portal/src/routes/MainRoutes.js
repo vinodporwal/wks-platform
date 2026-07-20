@@ -18,6 +18,7 @@ import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCracker
 import MaintenanceTable from 'components/kendo-data-tables/MaintenanceTable'
 import NormalOpNormsScreen from 'components/kendo-data-tables/NormalOpNorms'
 import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
+import ConfigurationOtherCost from 'components/kendo-data-tables/ConfigurationOtherCost'
 import ProductionvolumeData from 'components/kendo-data-tables/ProductionVoluemData'
 import ShutDown from 'components/kendo-data-tables/ShutDown'
 import ShutdownNorms from 'components/kendo-data-tables/ShutdownNorms'
@@ -45,6 +46,7 @@ import AopBudget from 'components/kendo-data-tables/AopBudget'
 
 import PlantTeam from 'components/kendo-data-tables/PlantTeam'
 import RelPerf from 'components/kendo-data-tables/RelPerf'
+import RelPerfPlantWise from 'components/kendo-data-tables/RelPerfPlantWise'
 import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
 import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
 import RawDataSet from 'components/data-tables/Reports/RawDataSet'
@@ -178,6 +180,7 @@ import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUploa
 import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
 import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
 import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
+import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
 
 // Naphthasplitter Ended
 
@@ -408,7 +411,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
+          {
+            path: 'production-scheduling',
+            element: (
+              <PrivateRoute routeId='production-scheduling'>
+                <ProductionScheduling />
+              </PrivateRoute>
+            ),
+          },
           {
             path: 'aop-design-basis',
             element: (
@@ -435,6 +445,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
             // element: <SelectivityData />,
+          },
+          {
+            path: 'configuration-other-cost',
+            element: (
+              <PrivateRoute routeId='configuration-other-cost'>
+                <ConfigurationOtherCost />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'spyro-menu',
@@ -1395,6 +1413,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='reliability-performance'>
                 <RelPerf />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'plant-reliability-performance',
+            element: (
+              <PrivateRoute routeId='plant-reliability-performance'>
+                <RelPerfPlantWise />
               </PrivateRoute>
             ),
           },

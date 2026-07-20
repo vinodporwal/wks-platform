@@ -4,6 +4,7 @@ import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import { DatePicker as KendoDatePicker } from '@progress/kendo-react-dateinputs'
 import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
@@ -88,6 +89,7 @@ import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
+import { GroupedColumnCell } from './Utilities-Kendo/GroupedColumnCell'
 import {
   FileExportIcon,
   FileImportIcon,
@@ -97,7 +99,9 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
+import { ConstantValueEditCell, ConstantValueDataCell } from './ConstantValueCells'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
+import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
 
 // A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
@@ -285,57 +289,7 @@ const KendoDataTables = ({
     }
   }, [rows, filter, sort])
 
-  const GroupedColumnCell = (props) => {
-    const { dataItem, field, tdProps } = props
-    const value = dataItem[field]
 
-    const gName = dataItem.groupName
-    if (!gName) {
-      return (
-        <td
-          {...tdProps}
-          style={{
-            ...tdProps?.style,
-            textAlign: 'right',
-          }}
-        >
-          {value !== null && value !== undefined ? value : ''}
-        </td>
-      )
-    }
-
-    const groupRows = processedRows.filter((r) => r.groupName === gName)
-    const indexInGroup = groupRows.findIndex((r) => r.id === dataItem.id)
-
-    if (indexInGroup > 0) {
-      return (
-        <td
-          {...tdProps}
-          style={{
-            ...tdProps?.style,
-            display: 'none',
-          }}
-        />
-      )
-    }
-
-    const rowSpan = groupRows.length
-
-    return (
-      <td
-        {...tdProps}
-        rowSpan={rowSpan}
-        style={{
-          ...tdProps?.style,
-          verticalAlign: 'middle',
-          textAlign: 'right',
-          backgroundColor: '#FFFFFF',
-        }}
-      >
-        {value !== null && value !== undefined ? value : ''}
-      </td>
-    )
-  }
 
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
@@ -1357,7 +1311,9 @@ const KendoDataTables = ({
       openCalculateDialogBox()
     } else {
       // old code
-      setSelectedGrade('')
+      if (!permissions?.dontClearGradeOnCalculate) {
+        setSelectedGrade('')
+      }
       setIsButtonDisabled(true)
 
       handleCalculate()
@@ -1388,6 +1344,34 @@ const KendoDataTables = ({
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
+  }
+
+  // Auto-popup for Calculate prompt on screen render
+  const [openAutoCalculatePopup, setOpenAutoCalculatePopup] = useState(false)
+  const autoCalculateDismissedRef = useRef(false)
+
+  const isCalculateEnabled =
+    permissions?.showCalculate &&
+    !READ_ONLY &&
+    rows?.length > 0 &&
+    !isButtonDisabled &&
+    permissions?.showCalculateVisibility
+
+  useEffect(() => {
+    if (isCalculateEnabled && !autoCalculateDismissedRef.current) {
+      // setOpenAutoCalculatePopup(true) // Uncomment this line to enable the auto-calculate popup on screen render
+    }
+  }, [isCalculateEnabled])
+
+  const handleAutoCalculateYes = () => {
+    autoCalculateDismissedRef.current = true
+    setOpenAutoCalculatePopup(false)
+    handleCalculateBtn()
+  }
+
+  const handleAutoCalculateNo = () => {
+    autoCalculateDismissedRef.current = true
+    setOpenAutoCalculatePopup(false)
   }
 
   const handleRefresh = async () => {
@@ -1594,7 +1578,7 @@ const KendoDataTables = ({
         {...props.tdProps}
         title={value}
         style={{
-          backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+          backgroundColor: isDisabled ? '#e3e3e3' : undefined,
         }}
       >
         {props.children}
@@ -1625,8 +1609,6 @@ const KendoDataTables = ({
     const isDisabled =
       (isEnd && type === 'ramp-down') || (isStart && type === 'ramp-up')
 
-
-
     return (
       <td
         {...tdProps}
@@ -1635,7 +1617,7 @@ const KendoDataTables = ({
         style={{
           fontWeight:
             !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
-          backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+          backgroundColor: isDisabled ? '#e3e3e3' : undefined,
           color: isDisabled ? '#6e6e6e' : undefined,
           cursor: isDisabled ? 'not-allowed' : undefined,
         }}
@@ -2576,7 +2558,6 @@ const KendoDataTables = ({
                 </React.Fragment>
               )}
 
-
               {permissions?.showDisabledUOM && (
                 <DisabledUOM disabledUOM={permissions?.disabledUOM} />
               )}
@@ -2724,7 +2705,7 @@ const KendoDataTables = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                    (!permissions?.alwaysEnableSave && !summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
                   {...(loading ? {} : {})}
                 >
@@ -3131,7 +3112,7 @@ const KendoDataTables = ({
                                 <td
                                   onClick={(e) => e.stopPropagation()}
                                   style={{
-                                    backgroundColor: '#f0f0f0',
+                                    backgroundColor: '#e3e3e3',
                                     color: '#888',
                                     cursor: 'not-allowed',
                                   }}
@@ -3810,7 +3791,9 @@ const KendoDataTables = ({
                               allRedCell={allRedCell}
                               onRemarkClick={handleRemarkCellClick}
                               customModifiedCells={customModifiedCells}
-                              suppressRemarksPlaceholder={permissions?.suppressRemarksPlaceholder}
+                              suppressRemarksPlaceholder={
+                                permissions?.suppressRemarksPlaceholder
+                              }
                             />
                           ),
                           headerCell: SimpleHeaderWithTooltip,
@@ -4445,6 +4428,47 @@ const KendoDataTables = ({
                       />
                     )
                   }
+                  if (col?.type === 'crackerC2DatePicker') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+                          ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                          ${col?.isBold ? 'bold-text' : ''}
+                        `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: {
+                            numeric: ConstantValueEditCell,
+                            text: ConstantValueEditCell,
+                            date: ConstantValueEditCell,
+                          },
+                          data: (props) => (
+                            <ConstantValueDataCell
+                              {...props}
+                              showThreeColors={showThreeColors}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              allRedCell2={allRedCell2}
+                              disableRedHighlight={disableRedHighlight}
+                              RedHighlightCell={RedHighlightCell}
+                              RedHighlightCell2={RedHighlightCell2}
+                            />
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
                   if (col?.type === 'integerNumberOnly') {
                     return (
                       <GridColumn
@@ -4503,7 +4527,13 @@ const KendoDataTables = ({
                         editable={col?.editable ? true : false}
                         headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
-                          data: GroupedColumnCell,
+                          data: (props) => (
+                            <GroupedColumnCell
+                              {...props}
+                              processedRows={processedRows}
+                              columns={columns}
+                            />
+                          ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
@@ -4764,6 +4794,29 @@ const KendoDataTables = ({
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
+                  // Support custom cell renderer passed via col.cell
+                  if (col?.cell) {
+                    const CustomCell = col.cell
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        editable={false}
+                        filterable={false}
+                        sortable={false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          data: CustomCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
                       />
                     )
                   }
@@ -5116,6 +5169,13 @@ const KendoDataTables = ({
           </Button>
         </DialogActions>
       </CompactDialog>
+
+      {/* Auto Calculate Popup - shown on render when Calculate is enabled */}
+      <AutoCalculatePopup
+        open={openAutoCalculatePopup}
+        onYes={handleAutoCalculateYes}
+        onNo={handleAutoCalculateNo}
+      />
 
       <CompactDialog
         open={openSaveDialogeBox}

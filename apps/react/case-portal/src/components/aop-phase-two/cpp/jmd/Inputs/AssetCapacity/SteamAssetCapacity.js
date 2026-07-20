@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
@@ -9,9 +9,12 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
-import { useDebounce } from 'hooks/useDebounce'
 
-const SteamAssetCapacity = () => {
+const SteamAssetCapacity = ({
+  initialRows = [],
+  onRefresh,
+  externalLoading = false,
+}) => {
   const keycloak = useSession()
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -42,6 +45,14 @@ const SteamAssetCapacity = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const valueFormat = ValueFormatterPhaseTwo()
+
+  useEffect(() => {
+    setRows(initialRows)
+    setOriginalRows(initialRows)
+    setModifiedCells({})
+  }, [initialRows])
+
+  const combinedLoading = loading || externalLoading
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -198,51 +209,6 @@ const SteamAssetCapacity = () => {
     },
   ]
 
-  const fetchAssetCapacityData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getAssetCapacities(
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
-      // Response: res.data.SteamAssetCapacities (flat array)
-      const rawList = res?.data?.SteamAssetCapacities ?? res?.data ?? res
-      if (!rawList || (Array.isArray(rawList) && rawList.length === 0)) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        return
-      }
-      const tempRes = (Array.isArray(rawList) ? rawList : []).map(
-        (item, index) => ({
-          ...item,
-          id: item.id || index + 1,
-          remarks: item.remarks || '',
-        }),
-      )
-      setRows(tempRes)
-      setOriginalRows(tempRes)
-    } catch (error) {
-      console.error('Error fetching steam asset capacity data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
-
-  useDebounce(
-    () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
-        fetchAssetCapacityData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchAssetCapacityData],
-  )
-
   const debounceTimerRef = useRef(null)
 
   const customItemChange = (e, setRows) => {
@@ -309,8 +275,8 @@ const SteamAssetCapacity = () => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showImport: true,
-    showExport: true,
+    showImport: false,
+    showExport: false,
     ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: true,
@@ -408,6 +374,7 @@ const SteamAssetCapacity = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await onRefresh?.()
     } catch (error) {
       console.error('Error saving steam asset capacity data:', error)
       setSnackbarOpen(true)
@@ -425,11 +392,12 @@ const SteamAssetCapacity = () => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.importSteamAssetCapacityExcel(
+      const response = await InputApiService.importAssetCapacityExcelUnified(
         file,
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'Steam',
       )
 
       if (response?.code === 200) {
@@ -439,7 +407,7 @@ const SteamAssetCapacity = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchAssetCapacityData()
+        await onRefresh?.()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -465,7 +433,7 @@ const SteamAssetCapacity = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchAssetCapacityData()
+        await onRefresh?.()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -493,10 +461,11 @@ const SteamAssetCapacity = () => {
     })
 
     try {
-      await InputApiService.exportSteamAssetCapacityExcel(
+      await InputApiService.exportAssetCapacityExcelUnified(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'Steam',
         EXCEL_NAME,
       )
       setSnackbarData({
@@ -521,7 +490,7 @@ const SteamAssetCapacity = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!combinedLoading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

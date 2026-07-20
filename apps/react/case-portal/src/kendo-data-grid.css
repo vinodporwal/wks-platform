@@ -628,6 +628,15 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+.dropdown-editor-disabled,
+.dropdown-editor.k-disabled {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border-color: #cbd5e1 !important;
+  opacity: 0.75 !important;
+  cursor: not-allowed !important;
+}
+
 .dropdown-editor:hover {
   background-color: #f9fafb !important;
   border-color: #b0b8c4 !important;

@@ -22,4 +22,10 @@ public interface ReliabilityService {
 	public AOPMessageVM getReliabilityRecords(String plantId, String year,String type);
 	public AOPMessageVM updateReliabilityPerformance(List<ReliabilityPerformanceDto> reliabilityPerformanceDtos, String plantId);
 	public AOPMessageVM updateReliabilityRecords(List<ReliabilityRecordDto> reliabilityRecordDtos);
+
+	public AOPMessageVM getReliabilityPerformancePlantWise(String plantId, String year, String type);
+	byte[] createExcelPlantWise(String year, String plantId, boolean isAfterSave,
+			Map<String, List<ReliabilityPerformanceDto>> mapForExcel);
+	AOPMessageVM importExcelPlantWise(String year, String plantFKId, MultipartFile file);
+	public AOPMessageVM updateReliabilityPerformancePlantWise(List<ReliabilityPerformanceDto> reliabilityPerformanceDtos, String plantId);
 }

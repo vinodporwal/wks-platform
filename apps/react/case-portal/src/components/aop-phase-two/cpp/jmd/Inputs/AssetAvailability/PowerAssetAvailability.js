@@ -11,7 +11,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const PowerAssetAvailability = () => {
+const PowerAssetAvailability = ({ apiData, dataLoading, onRefresh }) => {
   const keycloak = useSession()
   // State management
 
@@ -187,49 +187,25 @@ const PowerAssetAvailability = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
-  const fetchAssetPriorityData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await AssetPriorityApiService.getAssetPriority(
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
-
-      const powerAssetPriorities = res?.data?.PowerAssetPriorities
-      if (powerAssetPriorities?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const rowsWithEditableFlag = powerAssetPriorities?.map((row, index) => ({
+  // Sync data from parent when apiData changes
+  useEffect(() => {
+    if (apiData) {
+      const rowsWithEditableFlag = apiData.map((row, index) => ({
         ...row,
         id: row.id || index + 1,
         remarks: row.remarks || '',
       }))
       setRows(rowsWithEditableFlag)
       setOriginalRows(rowsWithEditableFlag)
-    } catch (error) {
-      console.error('Error fetching asset priority data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+    setModifiedCells({})
+  }, [apiData])
 
-  useDebounce(
-    () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
-        fetchAssetPriorityData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchAssetPriorityData],
-  )
+  const fetchAssetPriorityData = useCallback(async () => {
+    if (onRefresh) {
+      onRefresh()
+    }
+  }, [onRefresh])
 
   // Permissions (adjust as needed)
   const permissions = {
@@ -344,12 +320,14 @@ const PowerAssetAvailability = () => {
 
     setLoading(true)
     try {
-      const response = await AssetPriorityApiService.importPowerAssetPriority(
-        file,
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
+      const response =
+        await AssetPriorityApiService.importAssetPriorityExcelUnified(
+          file,
+          keycloak,
+          PLANT_ID_LIST,
+          AOP_YEAR,
+          'All',
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -411,10 +389,11 @@ const PowerAssetAvailability = () => {
     })
 
     try {
-      await AssetPriorityApiService.exportPowerAssetPriority(
+      await AssetPriorityApiService.exportAssetPriorityExcelUnified(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'All',
         EXCEL_NAME,
       )
       setSnackbarData({
@@ -439,7 +418,7 @@ const PowerAssetAvailability = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!loading || !!dataLoading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

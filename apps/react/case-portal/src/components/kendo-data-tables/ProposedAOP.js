@@ -308,6 +308,99 @@ const ProposedAOP = () => {
     }
   }
 
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
+  const handleExport = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await ProposedAopApiService.exportProposedAOP(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+        SCREEN_NAME,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    if (!rawFile) return
+    setLoading(true)
+    try {
+      const response = await ProposedAopApiService.importProposedAOP(
+        rawFile,
+        keycloak,
+      )
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Upload Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData(gradeId)
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Proposed AOP.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData(gradeId)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -321,6 +414,7 @@ const ProposedAOP = () => {
       saveBtn: false,
       isOldYear: isOldYear,
       showCalculate: false,
+      uploadExcelBtn: false,
     }
   }
 
@@ -343,9 +437,9 @@ const ProposedAOP = () => {
       showG: true,
       marginBottom: true,
       dropdownLabel: 'Grade',
-      uploadExcelBtn: false,
+      uploadExcelBtn: true,
       showImport: false,
-      showExport: false,
+      showExport: true,
       isHeight: rows?.length > 10,
       showTitleNameBusiness: true,
       showTitle: true,
@@ -393,6 +487,9 @@ const ProposedAOP = () => {
           handleGradeChange={handleGradeChange}
           plantID={PLANT_ID}
           title={SCREEN_NAME}
+          handleExport={handleExport}
+          handleExcelUpload={handleExcelUpload}
+          isProposedAOP={true}
         />
       </Box>
     </div>

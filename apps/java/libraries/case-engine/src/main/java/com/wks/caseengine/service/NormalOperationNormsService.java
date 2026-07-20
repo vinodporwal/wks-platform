@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -27,5 +28,7 @@ public interface NormalOperationNormsService {
 	// public int getCalculatedNormalOpsNorms( String year, String plantId);
 	public AOPMessageVM saveNormalOperationNormsDataPolyester(List<MCUNormsValueDTO> mCUNormsValueDTOList,
 			UUID fromString, String year, String gradeId, boolean b);
+	public AOPMessageVM getCatChemCalculationData(String plantId, String year);
+	public AOPMessageVM saveCatChemCalculationData(String plantId, String year, List<Map<String, Object>> payload);
 
 }

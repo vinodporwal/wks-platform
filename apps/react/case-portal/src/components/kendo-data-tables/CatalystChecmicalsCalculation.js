@@ -11,6 +11,7 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import Notification from 'components/Utilities/Notification'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import CatChemReceipe from './CatChemReceipe'
 
 const STATIC_CONSUMPTION = [
   {
@@ -121,6 +122,9 @@ const CatalystChecmicalsCalculation = () => {
   })
   const IS_PVC_HMD =
     VERTICAL_NAME_NO_CASE === 'PVC' && SITE_NAME_NO_CASE === 'HMD'
+  const IS_PVC_DMD =
+    VERTICAL_NAME_NO_CASE === 'PVC' && SITE_NAME_NO_CASE === 'DMD'
+
   const FORMATE_VALUE = '{0:0.000}'
 
   // Grid 1: Constant Columns
@@ -710,6 +714,7 @@ const CatalystChecmicalsCalculation = () => {
     getCatChemCalculationData(gradeId)
   }
 
+  if(IS_PVC_DMD) return <CatChemReceipe/>
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <LoaderBackdrop open={!!loading} />
