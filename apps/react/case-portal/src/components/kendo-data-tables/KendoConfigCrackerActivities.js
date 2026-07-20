@@ -5,11 +5,16 @@ import {
   TextField,
   Button,
   Grid,
+  Dialog,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
 import React, { useCallback, useEffect, useState } from 'react'
+import DecokingPlanningNotification from './DecokingPlanningNotification.js'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import { PlantAopReportApiService } from 'services/plant-aop-report-api-service.js'
 import moment from '../../../node_modules/moment/moment.js'
 // import { ibrGridThree, ibrPlanColumns } from './columnDefs'
 import { ibrGridThree } from './columnDefs'
@@ -94,6 +99,28 @@ const DecokingConfig = () => {
   const [currentRemarkRunLength, setCurrentRemarkRunLength] = useState('')
   const [currentRowIdRunLength, setCurrentRowId3] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
+  const [openDecokingPlanningDialog, setOpenDecokingPlanningDialog] = useState(false)
+  const [decokingPlanningRecordsCount, setDecokingPlanningRecordsCount] = useState(0)
+
+  useEffect(() => {
+    const fetchDecokingNotificationCount = async () => {
+      if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
+      try {
+        const res = await PlantAopReportApiService.GetPlanningNotification(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        if (res?.code === 200) {
+          const apiRows = res?.data?.data || []
+          setDecokingPlanningRecordsCount(apiRows.length)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchDecokingNotificationCount()
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2, openDecokingPlanningDialog])
   const [dateError, setDateError] = useState(false)
   //my chnage
   const [modifiedCellsSdTa, setModifiedCellsSdTa] = React.useState({})
@@ -106,6 +133,7 @@ const DecokingConfig = () => {
   const [sadDuration, setSadDuration] = useState('')
   const [maxDutyPilot, setMaxDutyPilot] = useState('')
   const [maxDutyMain, setMaxDutyMain] = useState('')
+
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -1905,6 +1933,7 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculateSdTa}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        titleName={IS_CRACKER_C2 ? 'Furnace un-availability and M&I activity' : 'IBR/SD/HSS Activities'}
       />
 
       {(IS_DMD || IS_C2) && (
@@ -1934,6 +1963,8 @@ const DecokingConfig = () => {
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleCalculate={handleCalculate}
+        onInfoClick={IS_CRACKER_C2 ? () => setOpenDecokingPlanningDialog(true) : null}
+        infoIconColor={decokingPlanningRecordsCount > 0 ? '#ff0000' : '#008000'}
       />
 
       <MaintenanceProcessTable permissions={MaintenanceProcessPermission} />
@@ -1954,6 +1985,40 @@ const DecokingConfig = () => {
           </CustomAccordionDetails>
         </CustomAccordion>
       )} */}
+      <Dialog
+        open={openDecokingPlanningDialog}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setOpenDecokingPlanningDialog(false)
+          }
+        }}
+        maxWidth="md"
+        fullWidth
+        disableScrollLock
+        disableEnforceFocus={true}
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 1,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 1 }}>
+          <DecokingPlanningNotification />
+        </DialogContent>
+        <DialogActions sx={{ px: 1.5, pb: 1 }}>
+          <Button
+            onClick={() => setOpenDecokingPlanningDialog(false)}
+            variant="contained"
+            className="btn-no"
+            sx={{ textTransform: 'none' }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

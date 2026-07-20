@@ -14,6 +14,7 @@ export const PlantAopReportApiService = {
   deleteReliabilityImprovementInitiative,
   getGroupedSelection,
   saveGroupedSelection,
+  GetPlanningNotification,
 }
 async function getPlantsafetyPerformance(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/plant-report?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -259,6 +260,21 @@ async function saveGroupedSelection(keycloak, payload) {
       headers,
       body: JSON.stringify(payload),
     })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+async function GetPlanningNotification(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/decoking-planning-notification?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
