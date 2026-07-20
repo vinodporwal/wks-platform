@@ -114,6 +114,35 @@ const FixedConsumptionDMD = () => {
     title: headerMap[MONTH_TO_INDEX[mon]],
   }))
 
+  // Edit/Delete action cell
+  const ActionCell = ({ dataItem, tdProps }) => {
+    return (
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title='Delete Row'>
+            <IconButton
+              size='medium'
+              color='error'
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='medium' />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </td>
+    )
+  }
+
   // Column definitions
   const columns = [
     {
@@ -214,6 +243,16 @@ const FixedConsumptionDMD = () => {
       editable: true,
       minWidth: 250,
     },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: ActionCell,
+      // locked: true,
+      // lockPosition: 'right',
+    },
   ]
 
   const fetchFixedConsumptionData = useCallback(async () => {
@@ -260,47 +299,6 @@ const FixedConsumptionDMD = () => {
     1000,
     [PLANT_ID_LIST, AOP_YEAR, fetchFixedConsumptionData],
   )
-
-  // Edit/Delete action cell
-  const EditActionCell = ({ dataItem, tdProps }) => {
-    return (
-      <td
-        {...tdProps}
-        style={{
-          ...tdProps?.style,
-          textAlign: 'center',
-          verticalAlign: 'middle',
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          {/* <Tooltip title='Edit Row'>
-            <IconButton
-              size='small'
-              onClick={() => {
-                setEditRowData(dataItem)
-                setAddRowDialogOpen(true)
-              }}
-            >
-              <EditIcon fontSize='small' />
-            </IconButton>
-          </Tooltip> */}
-
-          <Tooltip title='Delete Row'>
-            <IconButton
-              size='small'
-              color='error'
-              onClick={() => {
-                setRowToDelete(dataItem)
-                setDeleteDialogOpen(true)
-              }}
-            >
-              <DeleteOutlineIcon fontSize='small' />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </td>
-    )
-  }
 
   // Delete handler
   const handleConfirmDelete = async () => {
@@ -575,7 +573,6 @@ const FixedConsumptionDMD = () => {
           setEditRowData(null)
           setAddRowDialogOpen(true)
         }}
-        customActionCell={EditActionCell}
       />
 
       <AddFixedConsumptionDialog
