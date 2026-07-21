@@ -316,13 +316,20 @@ const PowerGrid = ({
 
     const gridFormatData = modifiedData.map(({ inEdit, ...rest }) => rest)
     const apiFormatData = transformGridFormatToApiFormat(gridFormatData)
+    const powerRecords = apiFormatData.filter(
+      (row) => row.assetCategory !== 'Import',
+    )
+    const importRecords = apiFormatData.filter(
+      (row) => row.assetCategory === 'Import',
+    )
     try {
       await InputApiService.saveOperationHours(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
         {
-          powerResponse: apiFormatData,
+          powerResponse: powerRecords,
+          importResponse: importRecords,
         },
       )
       setModifiedCells({})
