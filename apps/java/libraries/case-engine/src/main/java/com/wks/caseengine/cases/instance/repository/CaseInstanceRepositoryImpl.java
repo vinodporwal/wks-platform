@@ -342,8 +342,11 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 							Map<String, Object> row = new HashMap<>();
 							row.put("textField1", fe.getAssetDisplayName());
 							row.put("textField2", fe.getAssetName());
-							row.put("textField3", fe.getEvents().getEventName());
-							row.put("textField4", fe.getEventCategory().getName());
+							row.put("textField3", fe.getEvents() != null ? fe.getEvents().getEventName() : "");
+							row.put("textField4", fe.getEventCategory() != null ? fe.getEventCategory().getName() : "");
+							row.put("subAsset", fe.getAssetDisplayName() != null ? fe.getAssetDisplayName() : "");
+							row.put("events", fe.getEvents() != null ? fe.getEvents().getEventName() : "");
+							row.put("eventCategory", fe.getEventCategory() != null ? fe.getEventCategory().getName() : "");
 							row.put("TextFaultStartTimeDate", formattedDate);
 							row.put("TextFaultEndTimeDate", "");
 							row.put("eventPkId", eventPkId);

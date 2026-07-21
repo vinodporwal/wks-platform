@@ -164,40 +164,40 @@ const createApmUrlBasedOnSelectedEvent = () => {
  
   const encodedEventIds = encodeURIComponent(eventIds);
 
-  // CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {  
-  //     console.log('falut event data : ', data)
+  CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {  
+      console.log('falut event data : ', data)
 
-  //     const mappedData = data.map((item) => {  
-  //       return { 
-  //         assetDisplayName: encodeURIComponent(item.AssetDisplayName) || '',
-  //         eventName: encodeURIComponent(item.events.eventName) || '',
-  //         selectedEventId: encodeURIComponent(item.events.eventPkId) || '',
-  //         assetId: encodeURIComponent(item.assetId) || '',
-  //         assetName: encodeURIComponent(item.assetName) || '',
-  //         startTimeStamp:  item.startTime ?  new Date(item.startTime.replace(" ", "T") + "Z").toISOString() : null,
-  //         endTimeStamp:  item.endTime ?  new Date(item.endTime.replace(" ", "T") + "Z").toISOString() : null
-  //       }
-  //     })
+      const mappedData = data.map((item) => {  
+        return { 
+          assetDisplayName: encodeURIComponent(item.AssetDisplayName) || '',
+          eventName: encodeURIComponent(item.events.eventName) || '',
+          selectedEventId: encodeURIComponent(item.events.eventPkId) || '',
+          assetId: encodeURIComponent(item.assetId) || '',
+          assetName: encodeURIComponent(item.assetName) || '',
+          startTimeStamp:  item.startTime ?  new Date(item.startTime.replace(" ", "T") + "Z").toISOString() : null,
+          endTimeStamp:  item.endTime ?  new Date(item.endTime.replace(" ", "T") + "Z").toISOString() : null
+        }
+      })
 
-  //     console.log('mapped data : ', mappedData)
+      console.log('mapped data : ', mappedData)
 
-  //     const eventTrendUrlArray = mappedData.map((item) => ({
+      const eventTrendUrlArray = mappedData.map((item) => ({
 
-  //        urlId : item.selectedEventId,
-  //        url: `${Config.ApmBaseUrl}/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+         urlId : item.selectedEventId,
+         url: `${Config.ApmBaseUrl}/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
 
-  //     }))
+      }))
 
-  //     const eventReportUrlArray = mappedData.map((item) => ({
-  //       urlId : item.selectedEventId,
-  //       url: `${Config.ApmBaseUrl}/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
-  //     }))
+      const eventReportUrlArray = mappedData.map((item) => ({
+        urlId : item.selectedEventId,
+        url: `${Config.ApmBaseUrl}/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
+      }))
 
 
-  //     eventTrendUrlArrayRef.current = eventTrendUrlArray
-  //     eventReportUrlArrayRef.current = eventReportUrlArray
+      eventTrendUrlArrayRef.current = eventTrendUrlArray
+      eventReportUrlArrayRef.current = eventReportUrlArray
 
-  // })
+  })
 
 
 
