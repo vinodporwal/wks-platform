@@ -73,16 +73,16 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
         editable: false,
         minWidth: 100,
       },
-      {
-        field: 'value',
-        title: 'Value',
-        editable: false,
-        minWidth: 100,
-        isEditable: false,
-        isDisabled: false,
-        type: 'groupedColumn',
-        format: FORMATE_DECIMAL,
-      },
+      // {
+      //   field: 'value',
+      //   title: 'Value',
+      //   editable: false,
+      //   minWidth: 100,
+      //   isEditable: false,
+      //   isDisabled: false,
+      //   type: 'groupedColumn',
+      //   format: FORMATE_DECIMAL,
+      // },
       {
         field: 'status',
         title: 'Status',
@@ -123,14 +123,14 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
           idFromApi: item.id,
           particular: item.displayName || item.name,
           sapCode: item.sapMaterialCode,
-          value:
-            item.value !== null && item.value !== undefined && item.value !== ''
-              ? parseFloat(item.value)
-              : null,
+          // value:
+          //   item.value !== null && item.value !== undefined && item.value !== ''
+          //     ? parseFloat(item.value)
+          //     : null,
           status: item.status,
           groupName: item.normParameterType,
           isEditable: item.isEditable,
-          originalValueStr: item.value,
+          //originalValueStr: item.value,
         }))
         setRows(mapped)
       } else {
@@ -199,10 +199,10 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
         name: item.name,
         displayName: item.displayName,
         uom: item.uom,
-        value:
-          item.value !== null && item.value !== undefined
-            ? parseFloat(item.value)
-            : null,
+        // value:
+        //   item.value !== null && item.value !== undefined
+        //     ? parseFloat(item.value)
+        //     : null,
         status: !!item.status,
         dependantAttributeId: item.dependantAttributeId || null,
         normParameterTypeFkId: item.normParameterTypeFkId || null,
