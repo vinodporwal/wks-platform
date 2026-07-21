@@ -17,9 +17,11 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.OtherDocumentsDTO;
+import com.wks.caseengine.dto.OtherDocumnetInformationDTO;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -201,4 +203,87 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
         }
         return response;
     }
+
+    @Override
+    public AOPMessageVM getOtherDocumentInformation(String verticalId, String aopYear) {
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            String sql = "SELECT * FROM OtherDocumnetInformation WHERE VerticalId = ? AND AOPYear = ?";
+            List<OtherDocumnetInformationDTO> otherDocumentInformation = new ArrayList<>();
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, verticalId);
+                stmt.setString(2, aopYear);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    OtherDocumnetInformationDTO dto = OtherDocumnetInformationDTO.builder()
+                            .id(rs.getString("Id"))
+                            .otherInformation(rs.getString("OtherInformation"))
+                            .verticalId(rs.getString("VerticalId"))
+                            .aopYear(rs.getString("AOPYear"))
+                            .modifiedBy(rs.getString("ModifiedBy"))
+                            .modifiedOn(rs.getTimestamp("ModifiedOn") != null
+                                    ? new Date(rs.getTimestamp("ModifiedOn").getTime()) : null)
+                            .build();
+                    otherDocumentInformation.add(dto);
+                }
+
+                response.setCode(200);
+                response.setMessage("Other document information fetched successfully");
+                response.setData(otherDocumentInformation);
+                return response;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setCode(500);
+            response.setMessage("Error fetching other document information: " + e.getMessage());
+            return response;
+        }
+
+       
+    }
+
+     @Override
+     @Transactional
+    public AOPMessageVM saveOrUpdateOtherDocumentInformation  (String verticalId, String aopYear, List<OtherDocumnetInformationDTO> otherDocumentInformation) {
+        AOPMessageVM response = new AOPMessageVM();
+        String currentUser = Utility.getUserName();
+        Timestamp now = Timestamp.from(Instant.now());
+       
+        String insertSql = "INSERT INTO OtherDocumnetInformation (Id, OtherInformation, VerticalId, AOPYear, ModifiedBy, ModifiedOn) VALUES (?, ?, ?, ?, ?, ?)";
+        String updateSql = "UPDATE OtherDocumnetInformation set OtherInformation = ?, ModifiedBy = ?, ModifiedOn = ? WHERE Id = ?";
+            for (OtherDocumnetInformationDTO dto : otherDocumentInformation) {
+
+                if(dto.getId() == null) {
+                    try (Connection conn = dataSource.getConnection();
+                         PreparedStatement stmt = conn.prepareStatement(insertSql)) {
+                        stmt.setString(1, UUID.randomUUID().toString());
+                        stmt.setString(2, dto.getOtherInformation());
+                        stmt.setString(3, verticalId);
+                        stmt.setString(4, aopYear);
+                        stmt.setString(5, currentUser);
+                        stmt.setTimestamp(6, now);
+                        stmt.executeUpdate();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    try (Connection conn = dataSource.getConnection();
+                         PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+                        stmt.setString(1, dto.getOtherInformation());
+                        stmt.setString(2, currentUser);
+                        stmt.setTimestamp(3, now);
+                        stmt.setString(4, dto.getId());
+                        stmt.executeUpdate();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            response.setCode(200);
+            response.setMessage("Other document information saved successfully");
+            return response;
+        }
+
 }
