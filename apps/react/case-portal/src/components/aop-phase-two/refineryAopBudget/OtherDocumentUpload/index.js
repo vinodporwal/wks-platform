@@ -31,18 +31,6 @@ import UploadDocumentDialog from 'components/kendo-data-tables/components/Upload
 import DeleteConfirmationDialog from 'components/kendo-data-tables/components/DeleteConfirmationDialog'
 import { TextArea } from '@progress/kendo-react-inputs'
 
-// ─── Styled Components (matching project reference in index.js) ─────────────────
-
-const CompactTextField = styled(TextField)({
-    '& .MuiOutlinedInput-root': {
-        fontSize: '0.85rem',
-        backgroundColor: '#fff',
-        '& fieldset': { borderColor: '#e2e8f0' },
-        '&:hover fieldset': { borderColor: '#cbd5e1' },
-        '&.Mui-focused fieldset': { borderColor: '#0100cb' },
-    },
-})
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDateTime = (dateVal) => {
@@ -220,7 +208,6 @@ const OtherDocumentUpload = ({ permissions }) => {
                     const file = filesList[i]
                     const response =
                         await DocumentUploadApiService.uploadOrUpdateDocument(keycloak, {
-                            transactionId: targetTransactionId || null,
                             masterId: targetMasterId,
                             verticalId: VERTICAL_ID,
                             aopYear: AOP_YEAR,
@@ -275,6 +262,10 @@ const OtherDocumentUpload = ({ permissions }) => {
                 const targetTransactionId =
                     targetRow?.transactionId || targetRow?.TransactionId || targetRow?.id
 
+                if (!targetTransactionId) {
+                    throw new Error('Transaction ID not found for document update.')
+                }
+
                 const file = filesList[0]
                 const response = await DocumentUploadApiService.uploadOrUpdateDocument(
                     keycloak,
@@ -319,37 +310,63 @@ const OtherDocumentUpload = ({ permissions }) => {
 
     const handleDownload = useCallback(
         async (file) => {
-            if (file?.isDummy || String(file?.id || '').startsWith('dummy')) {
-                try {
-                    const blob = new Blob([`Mock content for ${file.name}`], {
-                        type: 'application/octet-stream',
-                    })
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = file.name
-                    document.body.appendChild(a)
-                    a.click()
-                    a.remove()
-                    URL.revokeObjectURL(url)
-                    showMessage('Download started.', 'success')
-                } catch {
-                    showMessage('Download failed.', 'error')
-                }
+            if (!file?.content) {
+                showMessage('No document content available to download.', 'warning')
                 return
             }
-            setLoading(true)
             try {
-                await FileService.download(file, keycloak)
-                showMessage('Download started.', 'success')
+                setLoading(true)
+                const base64Content = file.content
+                const contentType = file.contentType || 'application/octet-stream'
+
+                const getFileNameWithExtension = (name, mimeType) => {
+                    if (!name) return 'download'
+                    if (name.includes('.')) return name
+
+                    const mimeMap = {
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsm',
+                        'application/vnd.ms-excel': '.xls',
+
+                    }
+
+                    const ext = mimeMap[mimeType] || ''
+                    return `${name}${ext}`
+                }
+
+                const fileName = getFileNameWithExtension(
+                    file.documentName || file.name,
+                    contentType,
+                )
+
+                // Decode base64 to binary blob
+                const byteCharacters = atob(base64Content)
+                const byteNumbers = new Array(byteCharacters.length)
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i)
+                }
+                const byteArray = new Uint8Array(byteNumbers)
+                const blob = new Blob([byteArray], { type: contentType })
+
+                // Create download link and trigger click
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement('a')
+                link.href = url
+                link.download = fileName
+                document.body.appendChild(link)
+                link.click()
+                link.remove()
+                URL.revokeObjectURL(url)
+
+                showMessage('Download started successfully.', 'success')
             } catch (err) {
                 console.error('Download error:', err)
-                showMessage('The file is unavailable or download failed.', 'error')
+                showMessage('Failed to download document content.', 'error')
             } finally {
                 setLoading(false)
             }
         },
-        [keycloak, showMessage],
+        [showMessage],
     )
 
     // ─── Delete ───────────────────────────────────────────────────────────────
@@ -635,7 +652,7 @@ const OtherDocumentUpload = ({ permissions }) => {
     // ─────────────────────────────────────────────────────────────────────────
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             {loading && <LoaderBackdrop />}
 
             {/* Document Grid */}

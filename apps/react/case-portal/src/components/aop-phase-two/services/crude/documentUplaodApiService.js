@@ -29,7 +29,10 @@ async function getOtherDocuments(keycloak, verticalId, aopYear) {
 }
 
 async function uploadOrUpdateDocument(keycloak, { transactionId, masterId, verticalId, aopYear, file }) {
-    let url = `${Config.CaseEngineUrl}/task/other-documents?masterId=${encodeURIComponent(masterId)}&verticalId=${encodeURIComponent(verticalId)}&aopYear=${encodeURIComponent(aopYear)}`
+    let url = `${Config.CaseEngineUrl}/task/other-documents?verticalId=${encodeURIComponent(verticalId)}&aopYear=${encodeURIComponent(aopYear)}`
+    if (masterId) {
+        url += `&masterId=${encodeURIComponent(masterId)}`
+    }
     if (transactionId) {
         url += `&transactionId=${encodeURIComponent(transactionId)}`
     }

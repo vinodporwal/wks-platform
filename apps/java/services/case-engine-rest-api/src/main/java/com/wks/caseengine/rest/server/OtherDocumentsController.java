@@ -33,7 +33,7 @@ public class OtherDocumentsController {
     @PostMapping(value = "/other-documents", consumes = "multipart/form-data")
     public AOPMessageVM uploadOrUpdateDocument(
             @RequestParam(required = false) String transactionId,
-            @RequestParam String masterId,
+            @RequestParam(required = false) String masterId,
             @RequestParam String verticalId,
             @RequestParam String aopYear,
             @RequestParam("file") MultipartFile file) {
