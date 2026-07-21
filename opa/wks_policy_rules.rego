@@ -19,6 +19,11 @@ has_client_role = {
     "business_head",
     "site_head",
     "gms_head",
+    # AOP approval workflow gate roles not already listed above
+    "cts_lead",
+    "production_manager",
+    "fca_head",
+    "gms_business_head",
     "client_case", 
     "client_task", 
     "client_record"
@@ -170,6 +175,17 @@ allow {
 allow {
     input.path = "storage"
     input.method in ["GET", "POST", "OPTION", "HEAD"]
+}
+
+# AOP approval workflow (AOP_Approval_v2). Any holder of an AOP gate role may
+# reach these endpoints; which buttons they actually get, and whether a given
+# gate action is theirs to take, is decided server-side from WorkflowStepRoles
+# and returned in the status "viewer" block.
+allow {
+    input.path = "aop-approval"
+    input.method in ["GET", "POST", "OPTION", "HEAD"]
+    check_origin_request
+    is_user_profile
 }
 
 check_origin_request if {

@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wks.bpm.engine.client.facade.BpmEngineClientFacade;
 import com.wks.bpm.engine.model.spi.ProcessInstance;
 import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.ProcessVariableType;
@@ -57,6 +58,9 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private ProcessInstanceService processInstanceService;
     @Autowired
     private TaskService taskService;
+    /** Direct engine access for task completion — bypasses the case-instance hooks. */
+    @Autowired
+    private BpmEngineClientFacade processEngineClientFacade;
     @Autowired
     private WorkflowRepository workflowRepository;
     @Autowired
@@ -217,10 +221,16 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 normalized, actorUserId, actorRole, remark, gateName, null);
 
         // 2) Complete the Camunda task with the decision (drives the gateway routing).
+        //    Deliberately NOT case-engine's TaskService: its TaskCompleteListener
+        //    resolves a CaseInstance by businessKey and throws
+        //    CaseInstanceNotFoundException for an AOP plan, which has no case
+        //    document. That fires after the engine call, so the task completes but
+        //    the request 500s and steps 3+ below never run. AOP is a plain Camunda
+        //    process, so go straight to the engine client.
         List<ProcessVariable> vars = new ArrayList<>();
         vars.add(strVar("decision", normalized));
         vars.add(strVar("remark", remark != null ? remark : ""));
-        taskService.complete(taskId, vars);
+        processEngineClientFacade.complete(taskId, vars);
 
         // 3) Notify the approvers of whatever gate is now active (skip the gate just
         //    acted on, so parallel completions within a gate don't re-email it).
