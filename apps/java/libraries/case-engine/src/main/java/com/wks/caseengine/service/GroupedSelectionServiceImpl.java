@@ -88,16 +88,16 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
                     
                     if (count != null && count > 0) {
                         String updateSql = "UPDATE MaterialGroupedSelection " +
-                            "SET ModifiedOn = GETDATE(), ModifiedBy = ? " +
+                            "SET Value = ?, ModifiedOn = GETDATE(), ModifiedBy = ? " +
                             "WHERE NormparamterFkId = ? AND AopYear = ? AND PlantFkId = ?";
                         jdbcTemplate.update(updateSql,
-                            userName, dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
+                            dto.isStatus(), userName, dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
                     } else {
                         String insertSql = "INSERT INTO MaterialGroupedSelection " +
-                            "(Id, NormparamterFkId, AopYear, PlantFkId, ModifiedOn, ModifiedBy) " +
-                            "VALUES (?, ?, ?, ?, GETDATE(), ?)";
+                            "(Id, Value, NormparamterFkId, AopYear, PlantFkId, ModifiedOn, ModifiedBy) " +
+                            "VALUES (?, ?, ?, ?, ?, GETDATE(), ?)";
                         jdbcTemplate.update(insertSql,
-                            UUID.randomUUID().toString(), dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString(), userName);
+                            UUID.randomUUID().toString(), dto.isStatus(), dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString(), userName);
                     }
                 }
             }
