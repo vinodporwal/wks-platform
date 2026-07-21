@@ -205,14 +205,22 @@ const ProposedConsumptionNorms = () => {
   const fetchGradeDropdowns = async () => {
     try {
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
 
       if (response?.code == 200) {
-        setGrades(response?.data)
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          displayName: grade.displayName || grade.DisplayName || grade.name || grade.Name || '',
+          name: grade.name || grade.Name || '',
+        }))
+        setGrades(normalized)
+        if (response?.data?.length > 0) {
+          setGradeId(response?.data[0]?.gradeId)
+        }
       }
 
       fetchData(response?.data[0]?.gradeId)
@@ -226,14 +234,19 @@ const ProposedConsumptionNorms = () => {
     try {
       setGrades([])
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
 
       if (response?.code == 200) {
-        setGrades(response?.data)
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          displayName: grade.displayName || grade.DisplayName || grade.name || grade.Name || '',
+          name: grade.name || grade.Name || '',
+        }))
+        setGrades(normalized)
       }
 
       if (response?.data?.length === 0) {
