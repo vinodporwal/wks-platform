@@ -2,6 +2,13 @@ const MGMT_ROLES = ['mgmt_case_def', 'mgmt_record_type', 'mgmt_form']
 
 // const CLT_ROLES = ['client_case', 'client_task', 'client_record']
 const AOP_ROLES = [
+  // AOP approval workflow gate roles. A user holding none of these is logged
+  // straight back out by forceLogoutIfUserNoMinimalRoleForSystem (App.js), which
+  // presents as a login loop -- so every gate role must be listed here.
+  'cts_lead',
+  'production_manager',
+  'fca_head',
+  'gms_business_head',
   'plant_manager',
   'operation_head',
   'maintenance_head',
