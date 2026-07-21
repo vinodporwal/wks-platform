@@ -40,14 +40,21 @@ public class CPPModelCalculationLogService {
     /**
      * Get all parent executions (full year runs)
      */
-    public List<CPPModelCalculationLogListDTO> getAllParentExecutions() {
-        log.info("[CPPModelCalculationLogService] Fetching all parent executions from repository");
+    public List<CPPModelCalculationLogListDTO> getAllParentExecutions(Integer financialYear) {
+        log.info("[CPPModelCalculationLogService] Fetching all parent executions from repository - financialYear: {}", financialYear);
         try {
-            List<CPPModelCalculationLog> parents = repository.findAllParentExecutions();
+            List<CPPModelCalculationLog> parents;
+            if (financialYear != null) {
+                parents = repository.findParentExecutionsByFinancialYear(financialYear);
+            } else {
+                parents = repository.findAllParentExecutions();
+            }
             log.info("[CPPModelCalculationLogService] Found {} parent execution records", parents.size());
             
+            Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
+            
             List<CPPModelCalculationLogListDTO> result = parents.stream()
-                    .map(this::convertToListDTO)
+                    .map(parent -> convertToListDTO(parent, statsMap))
                     .collect(Collectors.toList());
             
             log.info("[CPPModelCalculationLogService] Successfully converted {} parent executions to DTOs", result.size());
@@ -69,8 +76,10 @@ public class CPPModelCalculationLogService {
                     financialYear, status);
             log.info("[CPPModelCalculationLogService] Found {} parent execution records matching filters", parents.size());
             
+            Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
+            
             List<CPPModelCalculationLogListDTO> result = parents.stream()
-                    .map(this::convertToListDTO)
+                    .map(parent -> convertToListDTO(parent, statsMap))
                     .collect(Collectors.toList());
             
             log.info("[CPPModelCalculationLogService] Successfully converted {} filtered parent executions to DTOs", result.size());
@@ -92,7 +101,8 @@ public class CPPModelCalculationLogService {
             
             if (parent.isPresent()) {
                 log.info("[CPPModelCalculationLogService] Found parent execution with ID: {}", id);
-                CPPModelCalculationLogListDTO dto = convertToListDTO(parent.get());
+                Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
+                CPPModelCalculationLogListDTO dto = convertToListDTO(parent.get(), statsMap);
                 log.info("[CPPModelCalculationLogService] Successfully converted parent execution to DTO");
                 return Optional.of(dto);
             } else {
@@ -207,7 +217,8 @@ public class CPPModelCalculationLogService {
                 CPPModelCalculationLog latest = latestOptional.get();
                 log.info("[CPPModelCalculationLogService] Found latest parent execution - ID: {}, Financial Year: {}, Execution Date: {}", 
                         latest.getId(), latest.getFinancialYear(), latest.getExecutionDateTime());
-                CPPModelCalculationLogListDTO dto = convertToListDTO(latest);
+                Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
+                CPPModelCalculationLogListDTO dto = convertToListDTO(latest, statsMap);
                 log.info("[CPPModelCalculationLogService] Successfully converted latest parent execution to DTO");
                 return Optional.of(dto);
             } else {
@@ -223,25 +234,33 @@ public class CPPModelCalculationLogService {
     // ==================== Conversion Methods ====================
 
     /**
-     * Convert entity to list DTO with monthly summary statistics
+     * Build a map of parentId -> (status -> count) from a single aggregation query.
      */
-    private CPPModelCalculationLogListDTO convertToListDTO(CPPModelCalculationLog parent) {
+    private Map<UUID, Map<String, Long>> buildMonthlyLogStatsMap() {
+        List<Object[]> rows = repository.findMonthlyLogStatusCounts();
+        Map<UUID, Map<String, Long>> statsMap = new HashMap<>();
+        for (Object[] row : rows) {
+            UUID parentId = row[0] != null ? UUID.fromString(row[0].toString()) : null;
+            String status = row[1] != null ? row[1].toString() : "Unknown";
+            Long count = ((Number) row[2]).longValue();
+            statsMap.computeIfAbsent(parentId, k -> new HashMap<>()).put(status, count);
+        }
+        log.debug("[CPPModelCalculationLogService] Built stats map for {} parent executions", statsMap.size());
+        return statsMap;
+    }
+
+    /**
+     * Convert entity to list DTO with monthly summary statistics (using pre-fetched stats)
+     */
+    private CPPModelCalculationLogListDTO convertToListDTO(CPPModelCalculationLog parent, Map<UUID, Map<String, Long>> statsMap) {
         log.debug("[CPPModelCalculationLogService] Converting parent execution {} to DTO", parent.getId());
-        // Get monthly logs to calculate statistics
-        List<CPPModelCalculationLog> monthlyLogs = repository.findMonthlyLogsByParentId(parent.getId());
-        log.debug("[CPPModelCalculationLogService] Found {} monthly logs for parent {}", monthlyLogs.size(), parent.getId());
         
-        long monthsSucceeded = monthlyLogs.stream()
-                .filter(log -> "Success".equalsIgnoreCase(log.getStatus()))
-                .count();
+        Map<String, Long> stats = statsMap.getOrDefault(parent.getId(), Collections.emptyMap());
         
-        long monthsFailed = monthlyLogs.stream()
-                .filter(log -> "Failed".equalsIgnoreCase(log.getStatus()))
-                .count();
-        
-        long monthsWithWarnings = monthlyLogs.stream()
-                .filter(log -> "Warning".equalsIgnoreCase(log.getStatus()))
-                .count();
+        long monthsSucceeded = stats.getOrDefault("Success", 0L);
+        long monthsFailed = stats.getOrDefault("Failed", 0L);
+        long monthsWithWarnings = stats.getOrDefault("Warning", 0L);
+        long totalMonthsProcessed = stats.values().stream().mapToLong(Long::longValue).sum();
 
         // Format financial year as "2025-26"
         String financialYearDisplay = null;
@@ -265,7 +284,7 @@ public class CPPModelCalculationLogService {
                 .executionDateTimeFormatted(executionDateTimeFormatted)
                 .status(parent.getStatus())
                 .totalIterations(parent.getIterationCount())
-                .totalMonthsProcessed((int) monthlyLogs.size())
+                .totalMonthsProcessed((int) totalMonthsProcessed)
                 .totalExecutionTime(parent.getExecutionTimeSeconds() != null ? 
                     parent.getExecutionTimeSeconds().toString() + "s" : null)
                 .monthsSucceeded(monthsSucceeded)

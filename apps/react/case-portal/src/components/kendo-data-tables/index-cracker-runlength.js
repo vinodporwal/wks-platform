@@ -1540,19 +1540,19 @@ const KendoDataTablesCrackerRunLength = ({
                   {/* TITLE */}
                   {permissions?.titleName || titleName}
                   {onInfoClick && (
-                    <MuiTooltip title='Decoking Planning Notification'>
+                    <MuiTooltip title='SAD Overlapping notification'>
                       <IconButton
                         size='small'
                         sx={{
                           p: '1px',
-                          width: 18,
-                          height: 18,
+                          width: 24,
+                          height: 24,
                           ml: 1,
                         }}
                         onClick={onInfoClick}
                       >
-                        <Info sx={{ fontSize: 14, color: infoIconColor }} />
-                      </IconButton>
+                        <Info sx={{ fontSize: 20, color: infoIconColor }} />
+                        </IconButton>
                     </MuiTooltip>
                   )}
                 </Typography>

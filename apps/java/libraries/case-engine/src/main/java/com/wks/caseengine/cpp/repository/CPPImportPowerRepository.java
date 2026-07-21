@@ -117,4 +117,6 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
         """, nativeQuery = true)
     List<ImportProcurementPlantProjection> getProcurementPlantsWithSources(
             @Param("cppPlantId") UUID cppPlantId);
+
+    CPPImportPower findByNormParameterFkId(UUID normParameterFkId);
 }

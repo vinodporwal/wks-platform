@@ -49,6 +49,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
     private com.wks.caseengine.cpp.repository.CPPSteamAssetsOperationalHoursRepository steamRepository;
 
     @Autowired
+    private com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository importRepository;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Override
@@ -60,13 +63,15 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         
         try {
-            logger.debug("[GET Service] Executing repository query...");
+            logger.debug("[GET Service] Executing repository queries...");
             List<CPPAssetOperationalHoursProjection> projections =
                     repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
-            logger.info("[GET Service] Query returned {} records", projections.size());
+            List<CPPAssetOperationalHoursProjection> importProjections =
+                    importRepository.findImportOperationalHoursByPlantsAndYear(plantIds, financialYear);
+            logger.info("[GET Service] Query returned {} power/steam records, {} import records", projections.size(), importProjections.size());
 
             // ── TIER 2: CARRY-FORWARD – clone from previous FY if requested FY is empty ──
-            if (projections.isEmpty()) {
+            if (projections.isEmpty() && importProjections.isEmpty()) {
                 logger.info("[GET Service] No records found for {}. Attempting carry-forward from previous financial year.", financialYear);
                 String previousYear = derivePreviousFinancialYear(financialYear);
 
@@ -141,22 +146,59 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                             steamRepository.saveAll(steamClones);
                             logger.info("[GET Service] Saved {} carry-forward steam records for plantId: {}", steamClones.size(), plantId);
                         }
+
+                        // Carry-forward Import power source operational hours
+                        List<com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours> prevImportRecords =
+                                importRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
+                        if (!prevImportRecords.isEmpty()) {
+                            logger.info("[GET Service] Carrying forward {} import records for plantId: {} from {}", prevImportRecords.size(), plantId, previousYear);
+                            List<com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours> importClones = new ArrayList<>();
+                            for (com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours src : prevImportRecords) {
+                                com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours clone = new com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours();
+                                clone.setId(UUID.randomUUID());
+                                clone.setAssetFkId(src.getAssetFkId());
+                                clone.setApr(src.getApr());
+                                clone.setMay(src.getMay());
+                                clone.setJun(src.getJun());
+                                clone.setJul(src.getJul());
+                                clone.setAug(src.getAug());
+                                clone.setSep(src.getSep());
+                                clone.setOct(src.getOct());
+                                clone.setNov(src.getNov());
+                                clone.setDec(src.getDec());
+                                clone.setJan(src.getJan());
+                                clone.setFeb(src.getFeb());
+                                clone.setMar(src.getMar());
+                                clone.setAopYear(financialYear);
+                                clone.setRemarks(src.getRemarks());
+                                clone.setSiteFkId(src.getSiteFkId());
+                                clone.setVerticalFkId(src.getVerticalFkId());
+                                clone.setPlantFkId(src.getPlantFkId());
+                                clone.setCreatedDate(LocalDateTime.now());
+                                clone.setModifiedDate(LocalDateTime.now());
+                                importClones.add(clone);
+                            }
+                            importRepository.saveAll(importClones);
+                            logger.info("[GET Service] Saved {} carry-forward import records for plantId: {}", importClones.size(), plantId);
+                        }
                     }
 
                     // Re-query after carry-forward attempt
                     projections = repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
-                    logger.info("[GET Service] After carry-forward, re-query returned {} records for {}", projections.size(), financialYear);
+                    importProjections = importRepository.findImportOperationalHoursByPlantsAndYear(plantIds, financialYear);
+                    logger.info("[GET Service] After carry-forward, re-query returned {} power/steam records, {} import records for {}", projections.size(), importProjections.size(), financialYear);
                 } else {
                     logger.warn("[GET Service] Could not derive previous financial year from '{}'. Skipping carry-forward.", financialYear);
                 }
             }
 
             // ── TIER 3: ZERO-SEED – both FY and previous FY have no data → seed from asset tables ──
-            if (projections.isEmpty()) {
+            if (projections.isEmpty() && importProjections.isEmpty()) {
                 logger.info("[GET Service] No carry-forward data found. Seeding zero operational hours from asset tables for {}.", financialYear);
 
                 List<CPPAssetOperationalHoursProjection> assetProjections = repository.findAllAssetsForPlants(plantIds);
-                logger.info("[GET Service] Found {} assets in asset tables to zero-seed.", assetProjections.size());
+                List<CPPAssetOperationalHoursProjection> importAssetProjections = importRepository.findAllImportAssetsForPlants(plantIds);
+                logger.info("[GET Service] Found {} power/steam assets, {} import assets to zero-seed.", assetProjections.size(), importAssetProjections.size());
 
                 if (!assetProjections.isEmpty()) {
                     List<CPPAssetOperationalHours>          powerSeeds = new ArrayList<>();
@@ -207,16 +249,45 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                         logger.info("[GET Service] Inserted {} zero-seeded steam records for {}.", steamSeeds.size(), financialYear);
                     }
 
+                    // Zero-seed Import power source operational hours
+                    List<com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours> importSeeds = new ArrayList<>();
+                    for (CPPAssetOperationalHoursProjection asset : importAssetProjections) {
+                        com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours seed = new com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours();
+                        seed.setId(UUID.randomUUID());
+                        seed.setAssetFkId(asset.getAssetFkId());
+                        seed.setApr(0.0);  seed.setMay(0.0);  seed.setJun(0.0);
+                        seed.setJul(0.0);  seed.setAug(0.0);  seed.setSep(0.0);
+                        seed.setOct(0.0);  seed.setNov(0.0);  seed.setDec(0.0);
+                        seed.setJan(0.0);  seed.setFeb(0.0);  seed.setMar(0.0);
+                        seed.setAopYear(financialYear);
+                        seed.setRemarks(null);
+                        seed.setSiteFkId(asset.getSiteFkId());
+                        seed.setVerticalFkId(asset.getVerticalFkId());
+                        seed.setPlantFkId(asset.getPlantFkId());
+                        seed.setCreatedDate(LocalDateTime.now());
+                        seed.setModifiedDate(LocalDateTime.now());
+                        importSeeds.add(seed);
+                    }
+                    if (!importSeeds.isEmpty()) {
+                        importRepository.saveAll(importSeeds);
+                        logger.info("[GET Service] Inserted {} zero-seeded import records for {}.", importSeeds.size(), financialYear);
+                    }
+
                     // Final re-query to return the seeded data with real IDs
                     projections = repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
-                    logger.info("[GET Service] After zero-seed, re-query returned {} records for {}.", projections.size(), financialYear);
+                    importProjections = importRepository.findImportOperationalHoursByPlantsAndYear(plantIds, financialYear);
+                    logger.info("[GET Service] After zero-seed, re-query returned {} power/steam records, {} import records for {}.", projections.size(), importProjections.size(), financialYear);
                 } else {
                     logger.warn("[GET Service] No assets found in asset tables for plantIds: {}. Returning empty response.", plantIds);
                 }
             }
 
+            // Merge power/steam and import projections
+            List<CPPAssetOperationalHoursProjection> allProjections = new ArrayList<>();
+            allProjections.addAll(projections);
+            allProjections.addAll(importProjections);
 
-            List<CPPAssetOperationalHoursResponseDto> allResults = projections.stream()
+            List<CPPAssetOperationalHoursResponseDto> allResults = allProjections.stream()
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
 
@@ -231,9 +302,15 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     .collect(Collectors.toList());
             logger.info("[GET Service] Filtered {} steam assets", steamOperationalHours.size());
 
+            List<CPPAssetOperationalHoursResponseDto> importOperationalHours = allResults.stream()
+                    .filter(dto -> "Import".equals(dto.getAssetCategory()))
+                    .collect(Collectors.toList());
+            logger.info("[GET Service] Filtered {} import assets", importOperationalHours.size());
+
             Map<String, Object> data = new HashMap<>();
             data.put("PowerOperationalHours", powerOperationalHours);
             data.put("SteamOperationalHours", steamOperationalHours);
+            data.put("ImportOperationalHours", importOperationalHours);
 
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
@@ -370,6 +447,42 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 logger.info("[POST Service] No power operational hours to process");
             }
 
+            // Process Import Operational Hours
+            int importSaved = 0;
+            int importSkipped = 0;
+            if (payload.getImportResponse() != null) {
+                logger.info("[POST Service] Processing {} import operational hours records", payload.getImportResponse().size());
+                for (CPPAssetOperationalHoursResponseDto dto : payload.getImportResponse()) {
+                    if (dto.getId() == null) {
+                        importSkipped++;
+                        Map<String, String> missingRecord = new HashMap<>();
+                        missingRecord.put("assetName", dto.getAssetName() != null ? dto.getAssetName() : "Unknown");
+                        missingRecord.put("assetFkId", dto.getAssetFkId() != null ? dto.getAssetFkId().toString() : "null");
+                        missingRecord.put("category", "Import");
+                        missingRecord.put("reason", "ID is null - cannot update non-existent record");
+                        missingIdRecords.add(missingRecord);
+                        continue;
+                    }
+                    
+                    boolean saved = saveImportOperationalHours(dto, financialYear);
+                    if (saved) {
+                        importSaved++;
+                    } else {
+                        importSkipped++;
+                        Map<String, String> missingRecord = new HashMap<>();
+                        missingRecord.put("id", dto.getId().toString());
+                        missingRecord.put("assetName", dto.getAssetName() != null ? dto.getAssetName() : "Unknown");
+                        missingRecord.put("assetFkId", dto.getAssetFkId() != null ? dto.getAssetFkId().toString() : "null");
+                        missingRecord.put("category", "Import");
+                        missingRecord.put("reason", "Record with this ID does not exist in database");
+                        missingIdRecords.add(missingRecord);
+                    }
+                }
+                logger.info("[POST Service] Import assets - Saved: {}, Skipped: {}", importSaved, importSkipped);
+            } else {
+                logger.info("[POST Service] No import operational hours to process");
+            }
+
             // Process Steam Operational Hours
             if (payload.getSteamResponse() != null) {
                 logger.info("[POST Service] Processing {} steam operational hours records", payload.getSteamResponse().size());
@@ -419,10 +532,12 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             Map<String, Object> data = new HashMap<>();
             data.put("powerAssetsSaved", powerSaved);
             data.put("steamAssetsSaved", steamSaved);
-            data.put("totalSaved", powerSaved + steamSaved);
+            data.put("importAssetsSaved", importSaved);
+            data.put("totalSaved", powerSaved + steamSaved + importSaved);
             data.put("powerAssetsSkipped", powerSkipped);
             data.put("steamAssetsSkipped", steamSkipped);
-            data.put("totalSkipped", powerSkipped + steamSkipped);
+            data.put("importAssetsSkipped", importSkipped);
+            data.put("totalSkipped", powerSkipped + steamSkipped + importSkipped);
             data.put("cascadeSynced", cascadeSynced);
             
             if (!missingIdRecords.isEmpty()) {
@@ -435,12 +550,12 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             } else {
                 aopMessageVM.setCode(207); // 207 Multi-Status - partial success
                 aopMessageVM.setMessage(String.format("Partial success: %d saved, %d skipped (missing or invalid IDs)", 
-                    powerSaved + steamSaved, powerSkipped + steamSkipped));
+                    powerSaved + steamSaved + importSaved, powerSkipped + steamSkipped + importSkipped));
             }
             
             aopMessageVM.setData(data);
-            logger.info("[POST Service] Save operation completed - Saved: {} (Power: {}, Steam: {}), Skipped: {} (Power: {}, Steam: {})", 
-                powerSaved + steamSaved, powerSaved, steamSaved, powerSkipped + steamSkipped, powerSkipped, steamSkipped);
+            logger.info("[POST Service] Save operation completed - Saved: {} (Power: {}, Steam: {}, Import: {}), Skipped: {} (Power: {}, Steam: {}, Import: {})", 
+                powerSaved + steamSaved + importSaved, powerSaved, steamSaved, importSaved, powerSkipped + steamSkipped + importSkipped, powerSkipped, steamSkipped, importSkipped);
 
         } catch (Exception e) {
             logger.error("[POST Service] Error saving operational hours: {}", e.getMessage(), e);
@@ -484,6 +599,39 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
         CPPAssetOperationalHours saved = repository.save(entity);
         logger.debug("[POST Service - Power] Successfully updated entity with ID: {} - Monthly hours and remarks updated", saved.getId());
+        return true;
+    }
+
+    private boolean saveImportOperationalHours(CPPAssetOperationalHoursResponseDto dto, String financialYear) {
+        logger.debug("[POST Service - Import] Updating existing record with ID: {}", dto.getId());
+        
+        var optionalEntity = importRepository.findById(dto.getId());
+        
+        if (optionalEntity.isEmpty()) {
+            logger.error("[POST Service - Import] Record with ID {} not found in database. Asset: {}", 
+                dto.getId(), dto.getAssetName());
+            return false;
+        }
+        
+        com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours entity = optionalEntity.get();
+        entity.setModifiedDate(LocalDateTime.now());
+
+        entity.setApr(dto.getApr());
+        entity.setMay(dto.getMay());
+        entity.setJun(dto.getJun());
+        entity.setJul(dto.getJul());
+        entity.setAug(dto.getAug());
+        entity.setSep(dto.getSep());
+        entity.setOct(dto.getOct());
+        entity.setNov(dto.getNov());
+        entity.setDec(dto.getDec());
+        entity.setJan(dto.getJan());
+        entity.setFeb(dto.getFeb());
+        entity.setMar(dto.getMar());
+        entity.setRemarks(dto.getRemarks());
+
+        importRepository.save(entity);
+        logger.debug("[POST Service - Import] Successfully updated entity with ID: {}", entity.getId());
         return true;
     }
 
@@ -673,7 +821,18 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             List<CPPAssetOperationalHoursResponseDto> powerData = 
                 (List<CPPAssetOperationalHoursResponseDto>) data.get("PowerOperationalHours");
             
-            logger.info("[Export Power] Received {} power assets from GET service", powerData != null ? powerData.size() : 0);
+            @SuppressWarnings("unchecked")
+            List<CPPAssetOperationalHoursResponseDto> importData = 
+                (List<CPPAssetOperationalHoursResponseDto>) data.get("ImportOperationalHours");
+            
+            // Merge Import data into Power export (frontend merges them too)
+            List<CPPAssetOperationalHoursResponseDto> combinedData = new ArrayList<>();
+            if (powerData != null) combinedData.addAll(powerData);
+            if (importData != null) combinedData.addAll(importData);
+            powerData = combinedData;
+            
+            logger.info("[Export Power] Received {} power assets, {} import assets from GET service", 
+                powerData != null ? powerData.size() : 0, importData != null ? importData.size() : 0);
             
             // Log all asset names for debugging
             if (powerData != null && !powerData.isEmpty()) {
@@ -1357,6 +1516,25 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 dbFeb = dbEntity.getFeb();
                 dbMar = dbEntity.getMar();
                 dbRemarks = dbEntity.getRemarks();
+            } else if ("Import".equals(dto.getAssetCategory())) {
+                var optionalEntity = importRepository.findById(dto.getId());
+                if (optionalEntity.isEmpty()) {
+                    return true;
+                }
+                com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours dbEntity = optionalEntity.get();
+                dbApr = dbEntity.getApr();
+                dbMay = dbEntity.getMay();
+                dbJun = dbEntity.getJun();
+                dbJul = dbEntity.getJul();
+                dbAug = dbEntity.getAug();
+                dbSep = dbEntity.getSep();
+                dbOct = dbEntity.getOct();
+                dbNov = dbEntity.getNov();
+                dbDec = dbEntity.getDec();
+                dbJan = dbEntity.getJan();
+                dbFeb = dbEntity.getFeb();
+                dbMar = dbEntity.getMar();
+                dbRemarks = dbEntity.getRemarks();
             } else {
                 var optionalEntity = repository.findById(dto.getId());
                 if (optionalEntity.isEmpty()) {
@@ -1480,8 +1658,20 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             // Try to save valid records and track any that fail during save
             if (!validRecords.isEmpty()) {
                 try {
+                    // Separate Power and Import records
+                    List<CPPAssetOperationalHoursResponseDto> powerRecords = new ArrayList<>();
+                    List<CPPAssetOperationalHoursResponseDto> importRecords = new ArrayList<>();
+                    for (CPPAssetOperationalHoursResponseDto dto : validRecords) {
+                        if ("Import".equals(dto.getAssetCategory())) {
+                            importRecords.add(dto);
+                        } else {
+                            powerRecords.add(dto);
+                        }
+                    }
+                    
                     JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
-                    payload.setPowerResponse(validRecords);
+                    payload.setPowerResponse(powerRecords);
+                    payload.setImportResponse(importRecords);
                     AOPMessageVM saveResult = saveOperationalHours(plantIds, financialYear, payload);
                     
                     // Check if any records were skipped during save (missing IDs)
@@ -1792,6 +1982,11 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 if (optionalEntity.isPresent()) {
                     dbRemarks = optionalEntity.get().getRemarks() != null ? optionalEntity.get().getRemarks().trim() : "";
                 }
+            } else if ("Import".equals(dto.getAssetCategory())) {
+                var optionalEntity = importRepository.findById(dto.getId());
+                if (optionalEntity.isPresent()) {
+                    dbRemarks = optionalEntity.get().getRemarks() != null ? optionalEntity.get().getRemarks().trim() : "";
+                }
             } else {
                 var optionalEntity = repository.findById(dto.getId());
                 if (optionalEntity.isPresent()) {
@@ -1994,26 +2189,37 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             List<CPPAssetOperationalHoursResponseDto> steamData =
                     (List<CPPAssetOperationalHoursResponseDto>) data.get("SteamOperationalHours");
 
+            @SuppressWarnings("unchecked")
+            List<CPPAssetOperationalHoursResponseDto> importData =
+                    (List<CPPAssetOperationalHoursResponseDto>) data.get("ImportOperationalHours");
+
             List<CPPAssetOperationalHoursResponseDto> combined = new ArrayList<>();
 
             if ("Power".equalsIgnoreCase(assetCategory)) {
                 if (powerData != null) combined.addAll(powerData);
-                logger.info("[Export Unified] Exporting {} Power rows", combined.size());
+                if (importData != null) combined.addAll(importData);
+                logger.info("[Export Unified] Exporting {} Power+Import rows", combined.size());
             } else if ("Steam".equalsIgnoreCase(assetCategory)) {
                 if (steamData != null) combined.addAll(steamData);
                 logger.info("[Export Unified] Exporting {} Steam rows", combined.size());
+            } else if ("Import".equalsIgnoreCase(assetCategory)) {
+                if (importData != null) combined.addAll(importData);
+                logger.info("[Export Unified] Exporting {} Import rows", combined.size());
             } else {
-                // All – merge Power first, then Steam in a single sheet
+                // All – merge Power, Import, then Steam in a single sheet
                 if (powerData != null) combined.addAll(powerData);
+                if (importData != null) combined.addAll(importData);
                 if (steamData != null) combined.addAll(steamData);
-                logger.info("[Export Unified] Exporting {} combined rows (Power + Steam)", combined.size());
+                logger.info("[Export Unified] Exporting {} combined rows (Power + Import + Steam)", combined.size());
             }
 
             String sheetLabel = "Power".equalsIgnoreCase(assetCategory)
                     ? "Power Operational Hours"
                     : "Steam".equalsIgnoreCase(assetCategory)
                             ? "Steam Operational Hours"
-                            : "Operational Hours";
+                            : "Import".equalsIgnoreCase(assetCategory)
+                                    ? "Import Operational Hours"
+                                    : "Operational Hours";
 
             return generateExcel(combined, sheetLabel, financialYear);
 
@@ -2040,6 +2246,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
             List<CPPAssetOperationalHoursResponseDto> validPower   = new ArrayList<>();
             List<CPPAssetOperationalHoursResponseDto> validSteam   = new ArrayList<>();
+            List<CPPAssetOperationalHoursResponseDto> validImport   = new ArrayList<>();
             List<CPPAssetOperationalHoursResponseDto> failedRecords = new ArrayList<>();
             List<String>                              failureReasons = new ArrayList<>();
             int skippedCount = 0;
@@ -2048,11 +2255,15 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
                 // Filter by requested assetCategory (skip rows that don't belong)
                 String rowCategory = dto.getAssetCategory();
-                if ("Power".equalsIgnoreCase(assetCategory) && !"Power".equalsIgnoreCase(rowCategory)) {
+                if ("Power".equalsIgnoreCase(assetCategory) && !"Power".equalsIgnoreCase(rowCategory) && !"Import".equalsIgnoreCase(rowCategory)) {
                     skippedCount++;
                     continue;
                 }
                 if ("Steam".equalsIgnoreCase(assetCategory) && !"Steam".equalsIgnoreCase(rowCategory)) {
+                    skippedCount++;
+                    continue;
+                }
+                if ("Import".equalsIgnoreCase(assetCategory) && !"Import".equalsIgnoreCase(rowCategory)) {
                     skippedCount++;
                     continue;
                 }
@@ -2076,6 +2287,8 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
                     if ("Steam".equalsIgnoreCase(rowCategory)) {
                         validSteam.add(recordToSave);
+                    } else if ("Import".equalsIgnoreCase(rowCategory)) {
+                        validImport.add(recordToSave);
                     } else {
                         // Power (or unknown – default to Power path)
                         validPower.add(recordToSave);
@@ -2083,19 +2296,37 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 }
             }
 
-            logger.info("[Import Unified] Skipped: {}, validPower: {}, validSteam: {}, failed: {}",
-                    skippedCount, validPower.size(), validSteam.size(), failedRecords.size());
+            logger.info("[Import Unified] Skipped: {}, validPower: {}, validSteam: {}, validImport: {}, failed: {}",
+                    skippedCount, validPower.size(), validSteam.size(), validImport.size(), failedRecords.size());
 
-            // Save Power records
-            if (!validPower.isEmpty()) {
+            // Save Power + Import records together (Power path includes Import)
+            if (!validPower.isEmpty() || !validImport.isEmpty()) {
                 try {
                     JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
                     payload.setPowerResponse(validPower);
+                    payload.setImportResponse(validImport);
                     saveOperationalHours(plantIds, financialYear, payload);
-                    logger.info("[Import Unified] Saved {} Power records", validPower.size());
+                    logger.info("[Import Unified] Saved {} Power records, {} Import records", validPower.size(), validImport.size());
                 } catch (Exception e) {
                     logger.error("[Import Unified] Error saving Power records: {}", e.getMessage(), e);
                     for (CPPAssetOperationalHoursResponseDto fd : validPower) {
+                        CPPAssetOperationalHoursResponseDto orig = cloneDto(fd);
+                        orig.setApr(convertShutdownToOperational(fd.getApr(), totalHoursByMonth.get("apr")));
+                        orig.setMay(convertShutdownToOperational(fd.getMay(), totalHoursByMonth.get("may")));
+                        orig.setJun(convertShutdownToOperational(fd.getJun(), totalHoursByMonth.get("jun")));
+                        orig.setJul(convertShutdownToOperational(fd.getJul(), totalHoursByMonth.get("jul")));
+                        orig.setAug(convertShutdownToOperational(fd.getAug(), totalHoursByMonth.get("aug")));
+                        orig.setSep(convertShutdownToOperational(fd.getSep(), totalHoursByMonth.get("sep")));
+                        orig.setOct(convertShutdownToOperational(fd.getOct(), totalHoursByMonth.get("oct")));
+                        orig.setNov(convertShutdownToOperational(fd.getNov(), totalHoursByMonth.get("nov")));
+                        orig.setDec(convertShutdownToOperational(fd.getDec(), totalHoursByMonth.get("dec")));
+                        orig.setJan(convertShutdownToOperational(fd.getJan(), totalHoursByMonth.get("jan")));
+                        orig.setFeb(convertShutdownToOperational(fd.getFeb(), totalHoursByMonth.get("feb")));
+                        orig.setMar(convertShutdownToOperational(fd.getMar(), totalHoursByMonth.get("mar")));
+                        failedRecords.add(orig);
+                        failureReasons.add("Save failed: " + e.getMessage());
+                    }
+                    for (CPPAssetOperationalHoursResponseDto fd : validImport) {
                         CPPAssetOperationalHoursResponseDto orig = cloneDto(fd);
                         orig.setApr(convertShutdownToOperational(fd.getApr(), totalHoursByMonth.get("apr")));
                         orig.setMay(convertShutdownToOperational(fd.getMay(), totalHoursByMonth.get("may")));
@@ -2144,7 +2375,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 }
             }
 
-            int totalSaved = validPower.size() + validSteam.size();
+            int totalSaved = validPower.size() + validSteam.size() + validImport.size();
 
             // Build response
             if (failedRecords.isEmpty()) {
@@ -2159,7 +2390,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                         ? "Power Operational Hours"
                         : "Steam".equalsIgnoreCase(assetCategory)
                                 ? "Steam Operational Hours"
-                                : "Operational Hours";
+                                : "Import".equalsIgnoreCase(assetCategory)
+                                        ? "Import Operational Hours"
+                                        : "Operational Hours";
                 byte[] failedFile = generateErrorExcel(failedRecords, failureReasons, sheetLabel, financialYear);
                 String base64File = java.util.Base64.getEncoder().encodeToString(failedFile);
                 response.setCode(400);
