@@ -1,5 +1,8 @@
 package com.wks.caseengine.service;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,6 +56,9 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private static final String APPROVED = "APPROVED";
     private static final String REVERTED = "REVERTED";
     private static final String SUBMITTED = "SUBMITTED";
+    /** Camunda REST emits offsets without a colon, e.g. 2026-07-21T15:30:00.000+0000. */
+    private static final DateTimeFormatter ENGINE_TIMESTAMP =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     @Autowired
     private ProcessInstanceService processInstanceService;
@@ -203,7 +209,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     @Override
     @Transactional
     public void act(String taskId, String plantId, String year, String gateName, String decision,
-            String remark, String actorUserId, String actorRole) {
+            String remark, String actorUserId, String actorRole, List<String> callerRoles) {
 
         UUID plantUuid = UUID.fromString(plantId);
         Plants plant = plantsRepository.findById(plantUuid)
@@ -213,28 +219,76 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         String businessKey = businessKey(plantId, year);
 
         String normalized = REVERTED.equalsIgnoreCase(decision) ? REVERTED : APPROVED;
-
-        // 1) Audit the action (immutable trail: who / role / gate / decision / remark).
         StepMeta gateMeta = steps.get(gateName);
-        auditService.record(businessKey, year, plantUuid, gateName,
-                gateMeta != null ? gateMeta.displayName : null, gateMeta != null ? gateMeta.sequence : null,
-                normalized, actorUserId, actorRole, remark, gateName, null);
 
-        // 2) Complete the Camunda task with the decision (drives the gateway routing).
-        //    Deliberately NOT case-engine's TaskService: its TaskCompleteListener
-        //    resolves a CaseInstance by businessKey and throws
-        //    CaseInstanceNotFoundException for an AOP plan, which has no case
-        //    document. That fires after the engine call, so the task completes but
-        //    the request 500s and steps 3+ below never run. AOP is a plain Camunda
-        //    process, so go straight to the engine client.
+        // One decision covers every role the caller holds at this gate. A gate fans
+        // out one task per approver role; when one person wears several of those
+        // hats, asking them to click Approve once per hat is noise, and hiding the
+        // button after the first click would strand the rest of their tasks with
+        // nobody able to complete them. So apply the decision to all of them at
+        // once, and audit each role separately so the trail still shows that every
+        // required role was accounted for.
+        List<Task> toComplete = tasksForCallerAtGate(businessKey, gateName, taskId, callerRoles);
+
         List<ProcessVariable> vars = new ArrayList<>();
         vars.add(strVar("decision", normalized));
         vars.add(strVar("remark", remark != null ? remark : ""));
-        processEngineClientFacade.complete(taskId, vars);
 
-        // 3) Notify the approvers of whatever gate is now active (skip the gate just
-        //    acted on, so parallel completions within a gate don't re-email it).
+        for (Task task : toComplete) {
+            // Audit first: the trail must not claim an approval the engine rejected.
+            auditService.record(businessKey, year, plantUuid, gateName,
+                    gateMeta != null ? gateMeta.displayName : null,
+                    gateMeta != null ? gateMeta.sequence : null,
+                    normalized, actorUserId,
+                    task.getAssignee() != null ? task.getAssignee() : actorRole,
+                    remark, gateName, null);
+
+            // Deliberately NOT case-engine's TaskService: its TaskCompleteListener
+            // resolves a CaseInstance by businessKey and throws
+            // CaseInstanceNotFoundException for an AOP plan, which has no case
+            // document. That fires after the engine call, so the task completes but
+            // the request 500s. AOP is a plain Camunda process — go straight to the
+            // engine client.
+            processEngineClientFacade.complete(task.getId(), vars);
+        }
+
+        // Notify the approvers of whatever gate is now active (skip the gate just
+        // acted on, so parallel completions within a gate don't re-email it).
         notifyNextGates(masterId, gateName, steps, plant, year, businessKey);
+    }
+
+    /**
+     * Every open task at {@code gateName} assigned to a role the caller holds,
+     * with the explicitly-selected task first.
+     *
+     * <p>Falls back to a synthetic single-task list if the engine lookup returns
+     * nothing for the given id — the caller's explicit taskId always wins, so a
+     * lookup hiccup can never turn one approval into zero.</p>
+     */
+    private List<Task> tasksForCallerAtGate(String businessKey, String gateName, String taskId,
+            List<String> callerRoles) {
+
+        List<Task> matched = new ArrayList<>();
+        Task selected = null;
+        for (Task task : safeFind(businessKey)) {
+            if (!gateName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
+                continue;
+            }
+            if (task.getId() != null && task.getId().equals(taskId)) {
+                selected = task;
+            } else if (callerRoles != null && task.getAssignee() != null
+                    && callerRoles.contains(task.getAssignee())) {
+                matched.add(task);
+            }
+        }
+        if (selected != null) {
+            matched.add(0, selected);
+        } else if (matched.isEmpty()) {
+            Task fallback = new Task();
+            fallback.setId(taskId);
+            matched.add(fallback);
+        }
+        return matched;
     }
 
     /* ------------------------------------------------------------------ helpers */
@@ -410,8 +464,15 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         Integer currentSeq = currentStep != null && meta.containsKey(currentStep) ? meta.get(currentStep).sequence : null;
         markStatuses(steps, currentSeq);
 
+        // One decision per person per gate visit: having already approved or
+        // reverted at this gate, the caller gets no further buttons here - even if
+        // they hold several of the gate's roles. A revert re-entering the gate
+        // starts a new visit and they can act again.
+        boolean alreadyActed = auditService.hasActedInCurrentCycle(
+                businessKey, currentStep, callerUserId, visitStartOf(tasks, currentStep));
+
         // Actionable task = one whose assignee role is held by the caller.
-        Task mine = tasks.stream()
+        Task mine = alreadyActed ? null : tasks.stream()
                 .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
                 .findFirst().orElse(null);
 
@@ -458,6 +519,13 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
             Map<String, StepMeta> meta = loadStepMeta(masterId);
             String stepName = stepNameForTask(mine.getTaskDefinitionKey());
+
+            // Same one-decision-per-visit rule as getStatus, so the inbox never
+            // offers an item the caller has already decided at this gate.
+            if (auditService.hasActedInCurrentCycle(wf.getCaseId(), stepName, callerUserId,
+                    visitStartOf(tasks, stepName))) {
+                continue;
+            }
             StepMeta sm = stepName != null ? meta.get(stepName) : null;
 
             AopViewerDTO actions = AopViewerDTO.builder()
@@ -482,6 +550,52 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .build());
         }
         return items;
+    }
+
+    /**
+     * When the plan entered {@code stepName} — the earliest creation time among the
+     * gate's currently open tasks. A gate's instances are all created together on
+     * entry, so this marks the start of the current visit; re-entering after a
+     * revert creates fresh tasks and moves the boundary forward.
+     *
+     * @return null if no open task at that step carries a parsable timestamp
+     */
+    private OffsetDateTime visitStartOf(List<Task> tasks, String stepName) {
+        if (tasks == null || stepName == null) {
+            return null;
+        }
+        OffsetDateTime earliest = null;
+        for (Task task : tasks) {
+            if (!stepName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
+                continue;
+            }
+            OffsetDateTime created = parseEngineTimestamp(task.getCreated());
+            if (created != null && (earliest == null || created.isBefore(earliest))) {
+                earliest = created;
+            }
+        }
+        return earliest;
+    }
+
+    /**
+     * Parse a Camunda REST timestamp. The engine emits an offset without a colon
+     * ("2026-07-21T15:30:00.000+0000"), which ISO_OFFSET_DATE_TIME rejects, so try
+     * the engine's own format first and fall back to strict ISO.
+     */
+    private OffsetDateTime parseEngineTimestamp(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value, ENGINE_TIMESTAMP);
+        } catch (DateTimeParseException ignored) {
+            try {
+                return OffsetDateTime.parse(value);
+            } catch (DateTimeParseException ex) {
+                log.warn("AOP: could not parse task timestamp '{}'", value);
+                return null;
+            }
+        }
     }
 
     private List<Task> safeFind(String businessKey) {

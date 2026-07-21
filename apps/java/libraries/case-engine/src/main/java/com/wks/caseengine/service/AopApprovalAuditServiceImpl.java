@@ -92,6 +92,21 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasActedInCurrentCycle(String caseId, String gateName, String actorUserId,
+            OffsetDateTime visitStart) {
+        if (caseId == null || gateName == null || actorUserId == null) {
+            return false;
+        }
+        if (visitStart == null) {
+            return auditRepository
+                    .existsByCaseIdAndGateNameAndActorUserId(caseId, gateName, actorUserId);
+        }
+        return auditRepository
+                .existsByCaseIdAndGateNameAndActorUserIdAndActionAtAfter(caseId, gateName, actorUserId, visitStart);
+    }
+
     private AopApprovalHistoryDTO toDTO(AopApprovalHistory h) {
         return AopApprovalHistoryDTO.builder()
                 .id(h.getId() != null ? h.getId().toString() : null)

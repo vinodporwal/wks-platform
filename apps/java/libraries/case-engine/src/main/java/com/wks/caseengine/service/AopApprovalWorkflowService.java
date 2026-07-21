@@ -27,13 +27,19 @@ public interface AopApprovalWorkflowService {
     WorkflowDTO start(String plantId, String year, String actorUserId);
 
     /**
-     * Apply a gate decision: record the audit row, complete the Camunda task with
-     * the decision, and notify the next gate's approvers.
+     * Apply a gate decision: record the audit rows, complete the Camunda task(s)
+     * with the decision, and notify the next gate's approvers.
+     *
+     * <p>The decision covers every role the caller holds at this gate, not just the
+     * selected task — one person wearing several hats decides once. Each role still
+     * gets its own audit row.</p>
      *
      * @param decision APPROVED or REVERTED
+     * @param callerRoles the caller's realm roles, used to find their other tasks
+     *        at this gate
      */
     void act(String taskId, String plantId, String year, String gateName, String decision,
-            String remark, String actorUserId, String actorRole);
+            String remark, String actorUserId, String actorRole, List<String> callerRoles);
 
     /**
      * Status + server-computed button state for a single (plant, year). The

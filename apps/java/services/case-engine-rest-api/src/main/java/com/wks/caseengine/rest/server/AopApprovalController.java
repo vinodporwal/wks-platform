@@ -50,7 +50,8 @@ public class AopApprovalController {
     @PostMapping(value = "/act")
     public ResponseEntity<Void> act(@RequestBody AopActRequestDTO req) {
         aopApprovalWorkflowService.act(req.getTaskId(), req.getPlantId(), req.getYear(), req.getGateName(),
-                req.getDecision(), req.getRemark(), currentUserId(), req.getActorRole());
+                req.getDecision(), req.getRemark(), currentUserId(), req.getActorRole(),
+                WorkflowServiceImpl.extractRoles());
         return ResponseEntity.noContent().build();
     }
 

@@ -1,5 +1,6 @@
 package com.wks.caseengine.service;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,4 +26,23 @@ public interface AopApprovalAuditService {
     List<AopApprovalHistoryDTO> getAuditTrail(UUID plantFkId, String year);
 
     List<AopApprovalHistoryDTO> getMyActions(String actorUserId);
+
+    /**
+     * Has this user already acted at this gate during the gate's current visit?
+     *
+     * <p>One decision per person per gate visit: once someone approves or reverts
+     * at a gate, that gate offers them nothing further, even if they hold several
+     * of its approver roles. The plan re-entering the gate (after a revert) starts
+     * a fresh visit and they may act again.</p>
+     *
+     * @param visitStart when the gate's current tasks were created, i.e. when the
+     *        plan entered this gate. Actions recorded after it belong to this
+     *        visit; anything earlier is a previous pass. A revert *within* a
+     *        multi-instance gate does not start a new visit — the gate only routes
+     *        once every instance has completed — so the task creation time is the
+     *        correct boundary, not the last revert. Null falls back to "has this
+     *        user ever acted at this gate".
+     */
+    boolean hasActedInCurrentCycle(String caseId, String gateName, String actorUserId,
+            OffsetDateTime visitStart);
 }
