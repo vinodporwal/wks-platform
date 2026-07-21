@@ -1545,14 +1545,14 @@ const KendoDataTablesCrackerRunLength = ({
                         size='small'
                         sx={{
                           p: '1px',
-                          width: 24,
-                          height: 24,
+                          width: 37,
+                          height: 37,
                           ml: 1,
                         }}
                         onClick={onInfoClick}
                       >
-                        <Info sx={{ fontSize: 20, color: infoIconColor }} />
-                        </IconButton>
+                        <Info sx={{ fontSize: 30, color: infoIconColor }} />
+                      </IconButton>
                     </MuiTooltip>
                   )}
                 </Typography>

@@ -256,10 +256,15 @@ const DecokingConfig = () => {
           setSadDurationRow(sadRow || null)
           setMaxDutyPilotRow(pilotRow || null)
           setMaxDutyMainRow(mainRow || null)
+          const formatTwoDecimals = (val) => {
+            if (val === null || val === undefined || val === '') return ''
+            const num = parseFloat(val)
+            return !isNaN(num) ? num.toFixed(2) : String(val)
+          }
 
-          setSadDuration(sadRow ? sadRow.attributeValue ?? '' : '')
-          setMaxDutyPilot(pilotRow ? pilotRow.attributeValue ?? '' : '')
-          setMaxDutyMain(mainRow ? mainRow.attributeValue ?? '' : '')
+          setSadDuration(sadRow && sadRow.attributeValue != null ? formatTwoDecimals(sadRow.attributeValue) : '')
+          setMaxDutyPilot(pilotRow && pilotRow.attributeValue != null ? formatTwoDecimals(pilotRow.attributeValue) : '')
+          setMaxDutyMain(mainRow && mainRow.attributeValue != null ? formatTwoDecimals(mainRow.attributeValue) : '')
         }
         console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
       } catch (error) {
@@ -568,8 +573,12 @@ const DecokingConfig = () => {
     return null
   }
 
-  const saveRunningDurationParams = async () => {
-    const sadVal = parseFloat(sadDuration)
+  const saveRunningDurationParams = async (
+    currentSad = sadDuration,
+    currentPilot = maxDutyPilot,
+    currentMain = maxDutyMain
+  ) => {
+    const sadVal = parseFloat(currentSad)
     if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
       setSnackbarOpen(true)
       setSnackbarData({
@@ -583,19 +592,19 @@ const DecokingConfig = () => {
       {
         id: sadDurationRow?.id || null,
         displayName: 'SAD Duration',
-        attributeValue: sadDuration,
+        attributeValue: currentSad,
         remarks: sadDurationRow?.remarks || null,
       },
       {
         id: maxDutyPilotRow?.id || null,
         displayName: 'Max Duty For Pilot Furnace',
-        attributeValue: maxDutyPilot,
+        attributeValue: currentPilot,
         remarks: maxDutyPilotRow?.remarks || null,
       },
       {
         id: maxDutyMainRow?.id || null,
         displayName: 'Max Duty For Main Furnaces',
-        attributeValue: maxDutyMain,
+        attributeValue: currentMain,
         remarks: maxDutyMainRow?.remarks || null,
       },
     ]
@@ -608,6 +617,9 @@ const DecokingConfig = () => {
         payload,
       )
       if (resp?.code === 200) {
+        if (sadDurationRow) sadDurationRow.attributeValue = currentSad;
+        if (maxDutyPilotRow) maxDutyPilotRow.attributeValue = currentPilot;
+        if (maxDutyMainRow) maxDutyMainRow.attributeValue = currentMain;
         setSummaryEdited(false)
         return true
       } else {
@@ -625,8 +637,6 @@ const DecokingConfig = () => {
   }
 
   const saveChangesSdTa = async () => {
-    const success = await saveRunningDurationParams()
-    if (success === false) return
     if (globalTaStartDate && globalTaEndDate) {
       await saveChangesSdTa1()
     } else {
@@ -1000,6 +1010,18 @@ const DecokingConfig = () => {
   const postIbr = async (newRow) => {
     setLoading(true)
     try {
+      if (IS_CRACKER_C2) {
+        const success = await saveRunningDurationParams(
+          sadDuration,
+          maxDutyPilot,
+          maxDutyMain,
+        )
+        if (!success) {
+          setLoading(false)
+          return
+        }
+      }
+
       if (!ibrPlanColumns || ibrPlanColumns.length === 0) {
         throw new Error('ibrPlanColumns not loaded')
       }
@@ -1128,6 +1150,18 @@ const DecokingConfig = () => {
   const postIbr2 = async (newRow) => {
     setLoading(true)
     try {
+      if (IS_CRACKER_C2) {
+        const success = await saveRunningDurationParams(
+          sadDuration,
+          maxDutyPilot,
+          maxDutyMain,
+        )
+        if (!success) {
+          setLoading(false)
+          return
+        }
+      }
+
       if (!ibrPlanColumns || ibrPlanColumns.length === 0) {
         throw new Error('ibrPlanColumns not loaded')
       }
@@ -1671,15 +1705,10 @@ const DecokingConfig = () => {
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Grid
-          container
-          spacing={1}
-          sx={{
-            alignItems: 'flex-start',
-          }}
-        >
-          {/* TA Start Date */}
-          <Grid item xs={12} sm='4'>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Row 1: TA Start Date & TA End Date */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
+            {/* TA Start Date */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               <Typography
                 sx={{
@@ -1691,7 +1720,7 @@ const DecokingConfig = () => {
               >
                 TA Start Date
               </Typography>
-              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px' } }}>
+              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '185px' } }}>
                 <DatePicker
                   id='global-ta-start-date'
                   format='dd-MM-yyyy'
@@ -1705,10 +1734,8 @@ const DecokingConfig = () => {
                 />
               </Box>
             </Box>
-          </Grid>
 
-          {/* TA End Date */}
-          <Grid item xs={12} sm='4'>
+            {/* TA End Date */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               <Typography
                 sx={{
@@ -1720,7 +1747,7 @@ const DecokingConfig = () => {
               >
                 TA End Date
               </Typography>
-              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px' } }}>
+              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '190px' } }}>
                 <DatePicker
                   id='global-ta-end-date'
                   format='dd-MM-yyyy'
@@ -1734,176 +1761,179 @@ const DecokingConfig = () => {
                 />
               </Box>
             </Box>
-          </Grid>
+          </Box>
 
-          {/* C2 Specific Controls */}
+          {/* Row 2: Remaining C2 Specific Controls */}
           {IS_CRACKER_C2 && (
-            <>
-              {/*  */}
-              <Grid item xs={12} sm='4'>
-
-              </Grid>
-
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
               {/* Max Duty For Pilot Furnace */}
-              <Grid item xs={12} sm='4'>
-                <Box
-                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
                 >
-                  <Typography
-                    sx={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#252525',
-                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
-                    }}
-                  >
-                    Max Duty For Pilot Furnace
-                  </Typography>
-                  <TextField
-                    id='max-duty-pilot-furnace'
-                    type='number'
-                    size='small'
-                    value={maxDutyPilot}
-                    onChange={(e) => {
-                      setMaxDutyPilot(e.target.value)
-                      setSummaryEdited(true)
-                    }}
-                    disabled={READ_ONLY}
-                    sx={{
+                  Max Duty For Pilot Furnace
+                </Typography>
+                <TextField
+                  id='max-duty-pilot-furnace'
+                  type='number'
+                  size='small'
+                  value={maxDutyPilot}
+                  onChange={(e) => {
+                    setMaxDutyPilot(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  onBlur={async (e) => {
+                    const val = e.target.value
+                    const num = parseFloat(val)
+                    let formattedVal = val
+                    if (!isNaN(num)) {
+                      formattedVal = num.toFixed(2)
+                      setMaxDutyPilot(formattedVal)
+                    }
+                    if (val !== (maxDutyPilotRow?.attributeValue ?? '')) {
+                      await saveRunningDurationParams(sadDuration, formattedVal, maxDutyMain)
+                    }
+                  }}
+                  disabled={READ_ONLY}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: '36px',
+                      width: '185px',
                       backgroundColor: '#ffffff',
-                      '& .MuiInputBase-root': {
-                        height: '36px',
-                        backgroundColor: '#ffffff',
-                      },
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#ffffff',
-                      },
-                      '& input[type=number]': {
-                        '-moz-appearance': 'textfield',
-                      },
-                      '& input[type=number]::-webkit-outer-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                      '& input[type=number]::-webkit-inner-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                    }}
-                  />
-                </Box>
-              </Grid>
+                    },
+                    '& input[type=number]': {
+                      '-moz-appearance': 'textfield',
+                    },
+                    '& input[type=number]::-webkit-outer-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-inner-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                  }}
+                />
+              </Box>
 
               {/* Max Duty For Main Furnaces */}
-              <Grid item xs={12} sm='4'>
-                <Box
-                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
                 >
-                  <Typography
-                    // className='grid-title'
-                    // sx={{
-                    //   whiteSpace: 'nowrap',
-                    //   fontSize: '12px',
-                    //   fontWeight: 600,
-                    //   color: '#334155',
-                    // }}
-                    sx={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#252525',
-                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
-                    }}
-                  >
-                    Max Duty For Main Furnaces
-                  </Typography>
-                  <TextField
-                    id='max-duty-main-furnaces'
-                    type='number'
-                    size='small'
-                    value={maxDutyMain}
-                    onChange={(e) => {
-                      setMaxDutyMain(e.target.value)
-                      setSummaryEdited(true)
-                    }}
-                    disabled={READ_ONLY}
-                    sx={{
+                  Max Duty For Main Furnaces
+                </Typography>
+                <TextField
+                  id='max-duty-main-furnaces'
+                  type='number'
+                  size='small'
+                  value={maxDutyMain}
+                  onChange={(e) => {
+                    setMaxDutyMain(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  onBlur={async (e) => {
+                    const val = e.target.value
+                    const num = parseFloat(val)
+                    let formattedVal = val
+                    if (!isNaN(num)) {
+                      formattedVal = num.toFixed(2)
+                      setMaxDutyMain(formattedVal)
+                    }
+                    if (val !== (maxDutyMainRow?.attributeValue ?? '')) {
+                      await saveRunningDurationParams(sadDuration, maxDutyPilot, formattedVal)
+                    }
+                  }}
+                  disabled={READ_ONLY}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: '36px',
+                      width: '190px',
                       backgroundColor: '#ffffff',
-                      '& .MuiInputBase-root': {
-                        height: '36px',
-                        backgroundColor: '#ffffff',
-                      },
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#ffffff',
-                      },
-                      '& input[type=number]': {
-                        '-moz-appearance': 'textfield',
-                        margin: 0,
-                      },
-                      '& input[type=number]::-webkit-outer-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                      '& input[type=number]::-webkit-inner-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                    }}
-                  />
-                </Box>
-              </Grid>
+                    },
+                    '& input[type=number]': {
+                      '-moz-appearance': 'textfield',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-outer-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-inner-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                  }}
+                />
+              </Box>
 
               {/* SAD Duration */}
-              <Grid item xs={12} sm='4'>
-                <Box
-                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
                 >
-                  <Typography
-                    sx={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#252525',
-                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
-                    }}
-                  >
-                    SAD Duration
-                  </Typography>
-                  <TextField
-                    id='sad-duration'
-                    type='number'
-                    size='small'
-                    value={sadDuration}
-                    onChange={(e) => {
-                      setSadDuration(e.target.value)
-                      setSummaryEdited(true)
-                    }}
-                    disabled={READ_ONLY}
-                    sx={{
+                  SAD Duration
+                </Typography>
+                <TextField
+                  id='sad-duration'
+                  type='number'
+                  size='small'
+                  value={sadDuration}
+                  onChange={(e) => {
+                    setSadDuration(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  onBlur={async (e) => {
+                    const val = e.target.value
+                    const num = parseFloat(val)
+                    let formattedVal = val
+                    if (!isNaN(num)) {
+                      formattedVal = num.toFixed(2)
+                      setSadDuration(formattedVal)
+                    }
+                    if (val !== (sadDurationRow?.attributeValue ?? '')) {
+                      await saveRunningDurationParams(formattedVal, maxDutyPilot, maxDutyMain)
+                    }
+                  }}
+                  disabled={READ_ONLY}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: '36px',
+                      width: '185px',
                       backgroundColor: '#ffffff',
-                      '& .MuiInputBase-root': {
-                        height: '36px',
-                        backgroundColor: '#ffffff',
-                      },
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#ffffff',
-                      },
-                      '& input[type=number]': {
-                        '-moz-appearance': 'textfield',
-                      },
-                      '& input[type=number]::-webkit-outer-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                      '& input[type=number]::-webkit-inner-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                    }}
-                  />
-                </Box>
-              </Grid>
-            </>
+                    },
+                    '& input[type=number]': {
+                      '-moz-appearance': 'textfield',
+                    },
+                    '& input[type=number]::-webkit-outer-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-inner-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
           )}
-        </Grid>
+        </Box>
       </LocalizationProvider>
 
       <SDTAActivitiesGrid
@@ -2023,3 +2053,4 @@ const DecokingConfig = () => {
   )
 }
 export default DecokingConfig
+
