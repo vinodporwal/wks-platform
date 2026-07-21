@@ -171,7 +171,9 @@ public class JMDAssetsController {
         }
 
         String fileLabel = "All".equalsIgnoreCase(assetCategory) ? "Combined"
-                : "Power".equalsIgnoreCase(assetCategory) ? "Power" : "Steam";
+                : "Power".equalsIgnoreCase(assetCategory) ? "Power"
+                : "Steam".equalsIgnoreCase(assetCategory) ? "Steam"
+                : "Import".equalsIgnoreCase(assetCategory) ? "Import" : "Combined";
         String fileName = "JMD_" + fileLabel + "_Operational_Hours_" + financialYear + ".xlsx";
 
         HttpHeaders headers = new HttpHeaders();
