@@ -5,6 +5,8 @@ export const DocumentUploadApiService = {
     getOtherDocuments,
     uploadOrUpdateDocument,
     deleteDocument,
+    getOtherDocumentInformation,
+    saveOrUpdateOtherDocumentInformation,
 }
 
 async function getOtherDocuments(keycloak, verticalId, aopYear) {
@@ -70,6 +72,48 @@ async function deleteDocument(keycloak, transactionId) {
         return json(keycloak, resp)
     } catch (e) {
         console.error('Error deleting document:', e)
+        return await Promise.reject(e)
+    }
+}
+
+async function getOtherDocumentInformation(keycloak, verticalId, aopYear) {
+    let url = `${Config.CaseEngineUrl}/task/other-document-information?verticalId=${encodeURIComponent(verticalId)}&aopYear=${encodeURIComponent(aopYear)}`
+    const headers = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak?.token}`,
+    }
+    try {
+        const resp = await fetch(url, { method: 'GET', headers })
+        if (!resp.ok) {
+            throw new Error(`HTTP error! Status: ${resp.status}`)
+        }
+        return json(keycloak, resp)
+    } catch (e) {
+        console.error('Error fetching other document information:', e)
+        return await Promise.reject(e)
+    }
+}
+
+async function saveOrUpdateOtherDocumentInformation(keycloak, verticalId, aopYear, informationList) {
+    let url = `${Config.CaseEngineUrl}/task/other-document-information?verticalId=${encodeURIComponent(verticalId)}&aopYear=${encodeURIComponent(aopYear)}`
+    const headers = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak?.token}`,
+    }
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(informationList),
+        })
+        if (!resp.ok) {
+            throw new Error(`HTTP error! Status: ${resp.status}`)
+        }
+        return json(keycloak, resp)
+    } catch (e) {
+        console.error('Error saving other document information:', e)
         return await Promise.reject(e)
     }
 }

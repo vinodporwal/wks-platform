@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '@mui/x-data-grid'
+import moment from 'moment'
 import { FileService, DataService } from 'services'
 import { DocumentUploadApiService } from 'components/aop-phase-two/services/crude/documentUplaodApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -44,6 +45,15 @@ const CompactTextField = styled(TextField)({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const formatDateTime = (dateVal) => {
+    if (!dateVal) return ''
+    const m = moment(dateVal)
+    if (m.isValid()) {
+        return m.format('DD-MM-YYYY HH:mm')
+    }
+    return dateVal
+}
+
 const formatBytes = (bytes) => {
     if (typeof bytes === 'string') return bytes
     if (!bytes || bytes === 0) return '0 Bytes'
@@ -52,36 +62,6 @@ const formatBytes = (bytes) => {
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
 }
-
-const DUMMY_DOCS = [
-    {
-        id: 'dummy_1',
-        name: 'MMMonthly_Production_Overview.xlsx',
-        uploadedAt: new Date().toLocaleString(),
-        uploadedBy: 'Demo User',
-        size: formatBytes(524288),
-        type: 'xlsm',
-        isDummy: true,
-    },
-    {
-        id: 'dummy_2',
-        name: 'Site_Configuration_Details.xlsx',
-        uploadedAt: new Date().toLocaleString(),
-        uploadedBy: 'System Admin',
-        size: formatBytes(204800),
-        type: 'xlsx',
-        isDummy: true,
-    },
-    {
-        id: 'dummy_3',
-        name: 'Annual_Report_2025.xlsx',
-        uploadedAt: new Date().toLocaleString(),
-        uploadedBy: 'System Admin',
-        size: formatBytes(358400),
-        type: 'xlsx',
-        isDummy: true,
-    },
-]
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -121,6 +101,7 @@ const OtherDocumentUpload = ({ permissions }) => {
     })
 
     const [summary, setSummary] = useState('')
+    const [infoRecord, setInfoRecord] = useState(null)
 
     // ── Store / session ──────────────────────────────────────────────────────
     const apiRef = useGridApiRef()
@@ -155,18 +136,9 @@ const OtherDocumentUpload = ({ permissions }) => {
         setSnackbarData({ message, severity })
         setSnackbarOpen(true)
     }, [])
-
-    // ─── Storage key ──────────────────────────────────────────────────────────
-
-    const getStorageKey = useCallback(
-        () =>
-            `other_docs_${PLANT_ID || 'default'}_${AOP_YEAR || 'default'}_${VERTICAL_ID || 'default'}`,
-        [PLANT_ID, AOP_YEAR, VERTICAL_ID],
-    )
-
     // ─── Fetch data ───────────────────────────────────────────────────────────
 
-    const fetchData = useCallback(async () => {
+    const fetchDocuments = useCallback(async () => {
         if (!VERTICAL_ID || !AOP_YEAR) return
         setModifiedCells({})
         try {
@@ -179,14 +151,14 @@ const OtherDocumentUpload = ({ permissions }) => {
             if (response?.code === 200 && Array.isArray(response?.data)) {
                 const cleaned = response.data.map((row) => ({
                     ...row,
+                    uploadedDateTime: formatDateTime(
+                        row.uploadedDateTime || row.uploadedAt || row.UploadedDateTime,
+                    ),
                     size: typeof row.size === 'number' ? formatBytes(row.size) : row.size,
                 }))
                 setRows(cleaned)
-            } else {
-                showMessage(
-                    response?.message || 'Failed to load document list.',
-                    'error',
-                )
+            } else if (response?.message) {
+                showMessage(response.message, 'error')
             }
         } catch (err) {
             console.error('Error loading documents:', err)
@@ -195,6 +167,30 @@ const OtherDocumentUpload = ({ permissions }) => {
             setLoading(false)
         }
     }, [VERTICAL_ID, AOP_YEAR, keycloak, showMessage])
+
+    const fetchAdditionalInfo = useCallback(async () => {
+        if (!VERTICAL_ID || !AOP_YEAR) return
+        try {
+            const infoResp = await DocumentUploadApiService.getOtherDocumentInformation(
+                keycloak,
+                VERTICAL_ID,
+                AOP_YEAR,
+            ).catch((err) => {
+                console.warn('Could not fetch additional document information:', err)
+                return null
+            })
+
+            if (infoResp?.code === 200 && Array.isArray(infoResp?.data) && infoResp.data.length > 0) {
+                const rec = infoResp.data[0]
+                setInfoRecord(rec)
+                setSummary(rec?.otherInformation || '')
+            } else {
+                setInfoRecord(null)
+            }
+        } catch (err) {
+            console.error('Error loading additional information:', err)
+        }
+    }, [VERTICAL_ID, AOP_YEAR, keycloak])
 
     // ─── Upload (Add) ─────────────────────────────────────────────────────────
 
@@ -238,7 +234,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                 showMessage('Document uploaded successfully!', 'success')
                 setOpenUploadDialog(false)
                 setSelectedRowForUpdate(null)
-                await fetchData()
+                await fetchDocuments()
             } catch (err) {
                 console.error('Upload error:', err)
                 showMessage(err?.message || 'Upload failed. Please try again.', 'error')
@@ -255,7 +251,7 @@ const OtherDocumentUpload = ({ permissions }) => {
             AOP_YEAR,
             keycloak,
             showMessage,
-            fetchData,
+            fetchDocuments,
         ],
     )
 
@@ -298,7 +294,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                 showMessage('Document updated successfully!', 'success')
                 setOpenUploadDialog(false)
                 setSelectedRowForUpdate(null)
-                await fetchData()
+                await fetchDocuments()
             } catch (err) {
                 console.error('Update error:', err)
                 showMessage(err?.message || 'Update failed. Please try again.', 'error')
@@ -315,7 +311,7 @@ const OtherDocumentUpload = ({ permissions }) => {
             AOP_YEAR,
             keycloak,
             showMessage,
-            fetchData,
+            fetchDocuments,
         ],
     )
 
@@ -370,7 +366,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                 const transactionId = targetRow?.transactionId || id
                 await DocumentUploadApiService.deleteDocument(keycloak, transactionId)
                 showMessage('Document deleted successfully.', 'success')
-                await fetchData()
+                await fetchDocuments()
             } catch (err) {
                 console.error('Delete error:', err)
                 showMessage('Delete failed. Please try again.', 'error')
@@ -380,7 +376,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                 setSelectedRowForDelete(null)
             }
         },
-        [READ_ONLY, rows, keycloak, showMessage, fetchData],
+        [READ_ONLY, rows, keycloak, showMessage, fetchDocuments],
     )
 
     // ─── ActionCell ───────────────────────────────────────────────────────────
@@ -520,8 +516,9 @@ const OtherDocumentUpload = ({ permissions }) => {
 
     useEffect(() => {
         setModifiedCells({})
-        fetchData()
-    }, [oldYear, yearChanged, PLANT_ID, AOP_YEAR])
+        fetchDocuments()
+        fetchAdditionalInfo()
+    }, [oldYear, yearChanged, PLANT_ID, AOP_YEAR, fetchDocuments, fetchAdditionalInfo])
 
     // ─── Misc ─────────────────────────────────────────────────────────────────
 
@@ -587,26 +584,53 @@ const OtherDocumentUpload = ({ permissions }) => {
         if (!summary.trim() || READ_ONLY) return
         setIsSubmittingNotes(true)
         try {
-            await DocumentUploadApiService.saveRemarks(
-                { plantId: PLANT_ID, year: AOP_YEAR, remarks: summary },
-                keycloak,
-            )
-            setSnackbarOpen(true)
-            setSnackbarData({
-                message: 'Remarks saved successfully!',
-                severity: 'success',
-            })
-            setSummary('')
+            const payload = [
+                {
+                    id: infoRecord?.id || null,
+                    otherInformation: summary,
+                    verticalId: VERTICAL_ID,
+                    aopYear: AOP_YEAR,
+                },
+            ]
+            const response =
+                await DocumentUploadApiService.saveOrUpdateOtherDocumentInformation(
+                    keycloak,
+                    VERTICAL_ID,
+                    AOP_YEAR,
+                    payload,
+                )
+            if (response?.code === 200) {
+                setSnackbarOpen(true)
+                setSnackbarData({
+                    message: 'Additional Information saved successfully!',
+                    severity: 'success',
+                })
+                await fetchAdditionalInfo()
+            } else {
+                throw new Error(
+                    response?.message || 'Failed to save additional information.',
+                )
+            }
         } catch (err) {
-            console.error('Remarks save error:', err)
+            console.error('Additional Information save error:', err)
             showMessage(
-                err?.message || 'Failed to save remarks. Please try again.',
+                err?.message ||
+                'Failed to save additional information. Please try again.',
                 'error',
             )
         } finally {
             setIsSubmittingNotes(false)
         }
-    }, [summary, READ_ONLY, PLANT_ID, AOP_YEAR, keycloak, showMessage])
+    }, [
+        summary,
+        READ_ONLY,
+        infoRecord,
+        VERTICAL_ID,
+        AOP_YEAR,
+        keycloak,
+        showMessage,
+        fetchAdditionalInfo,
+    ])
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -631,7 +655,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                     setSnackbarOpen={setSnackbarOpen}
                     setSnackbarData={setSnackbarData}
                     handleRemarkCellClick={handleRemarkCellClick}
-                    fetchData={fetchData}
+                    fetchData={fetchDocuments}
                     remarkDialogOpen={remarkDialogOpen}
                     setRemarkDialogOpen={setRemarkDialogOpen}
                     currentRemark={currentRemark}
@@ -655,7 +679,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                     }}
                 >
                     <Typography variant='caption' className='aop-design-basis-label'>
-                        Remarks
+                        Additional Information
                     </Typography>
 
                     <Button
