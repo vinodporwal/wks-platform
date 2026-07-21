@@ -13,6 +13,7 @@ package com.wks.caseengine.cases.instance.email;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -37,6 +40,8 @@ import jakarta.mail.util.ByteArrayDataSource;
 
 @Component
 public class CaseEmailServiceImpl implements CaseEmailService {
+
+	private static final Logger log = LoggerFactory.getLogger(CaseEmailServiceImpl.class);
 
 	@Autowired
 	private CommandExecutor commandExecutor;
@@ -92,7 +97,8 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 	            helper.setTo(to);
 	            helper.setSubject(subject);
 
-	            if (cc != null ) {
+	            if (cc != null && cc.length > 0) {
+	                log.info("MimeMessageHelper CC input: {}", Arrays.toString(cc));
 	                helper.setCc(cc);
 	            }
 

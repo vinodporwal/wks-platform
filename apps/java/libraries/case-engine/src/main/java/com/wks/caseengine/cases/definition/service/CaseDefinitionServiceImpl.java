@@ -524,12 +524,28 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
 					.filter(status -> status.getId().equals(caseStatusNo)).findFirst();
 			String caseStatusValue = caseStatus.get().getName();
+			JsonNode analysisTeam = rootNode.path("analysisTeam");
 			List<String> reviewersList = new ArrayList<>();
+			if (analysisTeam.isArray()) {
+				analysisTeam.forEach(node -> {
+					String email = node.asText(null);
+					if (email != null && !email.trim().isEmpty()) {
+						reviewersList.add(email.trim());
+					}
+				});
+			}
+			log.info("Create-case analysisTeam node: {}", analysisTeam);
+			log.info("Create-case analysisTeam isArray: {}", analysisTeam.isArray());
+			log.info("Create-case reviewersList before conversion: {}", reviewersList);
 			OwnerDetails ownerDetails = caseDetails.getOwner();
 			String convertedEmail = convertEmail(ownerDetails.getEmail());
 			reviewersList.add(convertedEmail);
 
-			String[] reviewers = reviewersList.stream().filter(s -> !s.isEmpty()).collect(Collectors.toSet())
+			String[] reviewers = reviewersList.stream()
+					.filter(Objects::nonNull)
+					.map(String::trim)
+					.filter(email -> !email.isEmpty())
+					.distinct()
 					.toArray(String[]::new);
 
 			System.out.println("Calling mail send method...");
@@ -543,6 +559,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			data.put("caseUrl", caseDetails.getCaseUrl());
 			data.put("environment", "");
 			caseTitle = "CASE MANAGEMENT :" + caseTitle;
+			log.info("Create-case mail To: {}", assignedTo);
+			log.info("Create-case final CC array: {}", Arrays.toString(reviewers));
 			caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
 
 			caseData.setAttributes(attributes);
