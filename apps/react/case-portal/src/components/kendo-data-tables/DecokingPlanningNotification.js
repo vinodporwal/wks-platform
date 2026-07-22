@@ -85,7 +85,7 @@ export default function DecokingPlanningNotification() {
                               title: col.title,
                               type: col.type,
                               editable: false,
-                              minWidth: 150,
+                              minWidth: 100,
                          };
                     });
 
@@ -158,10 +158,12 @@ export default function DecokingPlanningNotification() {
                saveBtn: false,
                alwaysEnableSave: true,
                showTitleNameBusiness: true,
-               titleName: 'SAD Overlapping notification',
+               titleName: 'SAD Overlapping',
                adjustedPermissions: true,
                downloadExcelBtn: false,
                uploadExcelBtn: false,
+               makePagable: false,
+               disablePagination: true,
                ExcelName: `${lowerVertName}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Group_Selection`,
           },
           isOldYear,
