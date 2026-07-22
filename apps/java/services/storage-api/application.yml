@@ -18,6 +18,7 @@ management.endpoint.health.show-details: never
 
 opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
 keycloak.url: ${KEYCLOAK_URL:http://localhost:8082/cm}
+keycloak.realm: ${KEYCLOAK_REALM:localhost}
 
 # minio
 driver.storage.factoryclass: minio

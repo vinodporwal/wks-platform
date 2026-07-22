@@ -34,6 +34,9 @@ public class ApiSecurityConfig {
 	@Value("${keycloak.url}")
 	private String keycloakUrl;
 
+	@Value("${keycloak.realm:localhost}")
+	private String keycloakRealm;
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http.cors().and().csrf().disable()
@@ -42,7 +45,7 @@ public class ApiSecurityConfig {
 	                    .anyRequest().authenticated()
 	                    .accessDecisionManager(accessDecisionManager()))  // OPA policy applies to other requests
 				.oauth2ResourceServer(oauth2 -> oauth2
-						.authenticationManagerResolver(new JwksIssuerAuthenticationManagerResolver(keycloakUrl)));
+						.authenticationManagerResolver(new JwksIssuerAuthenticationManagerResolver(keycloakUrl, keycloakRealm)));
 		return http.build();
 	}
 
