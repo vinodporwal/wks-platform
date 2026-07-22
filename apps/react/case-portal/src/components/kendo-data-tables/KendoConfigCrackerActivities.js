@@ -9,7 +9,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import DecokingPlanningNotification from './DecokingPlanningNotification.js'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -334,9 +334,29 @@ const DecokingConfig = () => {
                   converted[field] = toDateObject(item[field])
                 })
 
+                let durationVal = item.Duration
+                if (
+                  IS_CRACKER_C2 &&
+                  (durationVal === undefined ||
+                    durationVal === null ||
+                    durationVal === '')
+                ) {
+                  const sd = converted.IBR_SD || item.IBR_SD
+                  const ed = converted.IBR_ED || item.IBR_ED
+                  if (sd && ed) {
+                    const mSd = moment(sd)
+                    const mEd = moment(ed)
+                    if (mSd.isValid() && mEd.isValid()) {
+                      const diffDays = mEd.diff(mSd, 'days')
+                      if (diffDays >= 0) durationVal = diffDays
+                    }
+                  }
+                }
+
                 return {
                   ...item,
                   ...converted,
+                  ...(IS_CRACKER_C2 ? { Duration: durationVal } : {}),
                   Id: item.Id,
                   id: index,
                   DisplayName:
@@ -1688,6 +1708,118 @@ const DecokingConfig = () => {
     return () => clearTimeout(timer)
   }, [loading])
 
+  const sdtaColumns = useMemo(() => {
+    let cols = ibrPlanColumns.filter(
+      (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
+    )
+
+    if (IS_CRACKER_C2) {
+      cols = cols.map((col) => {
+        if (col.field === 'IBR_ED') {
+          return {
+            ...col,
+            editable: false,
+          }
+        }
+        return col
+      })
+
+      const hasDuration = cols.some((c) => c.field === 'Duration')
+      if (!hasDuration) {
+        const ibrSdIdx = cols.findIndex((c) => c.field === 'IBR_SD')
+        const durationCol = {
+          field: 'Duration',
+          title: 'Duration',
+          type: 'integer',
+          editable: true,
+          filter: false,
+          widthT: 120,
+          minWidth: 100,
+        }
+        if (ibrSdIdx !== -1) {
+          cols.splice(ibrSdIdx + 1, 0, durationCol)
+        } else {
+          cols.push(durationCol)
+        }
+      }
+    }
+
+    return cols
+  }, [ibrPlanColumns, IS_CRACKER_C2])
+
+  const calculateIbrEdDate = (sdVal, durationVal) => {
+    if (
+      !sdVal ||
+      durationVal === undefined ||
+      durationVal === null ||
+      durationVal === ''
+    ) {
+      return null
+    }
+    const durationNum = parseInt(durationVal, 10)
+    if (isNaN(durationNum)) return null
+
+    let m = moment(sdVal)
+    if (!m.isValid()) {
+      m = moment(sdVal, ['DD-MM-YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY'], true)
+    }
+    if (!m.isValid()) return null
+
+    const calculatedEd = m.clone().add(durationNum, 'days')
+
+    if (sdVal instanceof Date) {
+      return calculatedEd.toDate()
+    }
+    if (typeof sdVal === 'string' && sdVal.includes('-')) {
+      const parts = sdVal.split('-')
+      if (parts[0].length === 4) {
+        return calculatedEd.format('YYYY-MM-DD')
+      } else {
+        return calculatedEd.format('DD-MM-YYYY')
+      }
+    }
+    return calculatedEd.toDate()
+  }
+
+  const handleSdTaRowsChange = useCallback(
+    (data) => {
+      if (!IS_CRACKER_C2) {
+        setRowsForTab('IBR Plan', data, 2)
+        return
+      }
+
+      // Helper: apply IBR_ED auto-calculation to a resolved rows array
+      const applyCalc = (rows) => {
+        if (!Array.isArray(rows)) return rows
+        return rows.map((row) => {
+          const sdVal = row.IBR_SD
+          const durVal = row.Duration
+          if (
+            sdVal &&
+            durVal !== undefined &&
+            durVal !== null &&
+            durVal !== ''
+          ) {
+            const newEd = calculateIbrEdDate(sdVal, durVal)
+            if (newEd) return { ...row, IBR_ED: newEd }
+          }
+          return row
+        })
+      }
+
+      // itemChange in index-cracker calls setRows as a functional updater:
+      // setRows((prev) => prev.map(...))
+      // So `data` may be a function — handle both forms.
+      if (typeof data === 'function') {
+        setIbrScreen2Rows((prev) => applyCalc(data(prev)))
+      } else {
+        setRowsForTab('IBR Plan', applyCalc(data), 2)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [IS_CRACKER_C2, setRowsForTab, setIbrScreen2Rows, calculateIbrEdDate],
+  )
+
   if (siteName === 'nmd') {
     return <DecokingConfigNMD pid={PLANT_ID} />
   }
@@ -1937,12 +2069,10 @@ const DecokingConfig = () => {
       </LocalizationProvider>
 
       <SDTAActivitiesGrid
-        columns={ibrPlanColumns.filter(
-          (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
-        )}
+        columns={sdtaColumns}
         gridKey={sdtaGridKey}
         rows={getRows('IBR Plan')[2]}
-        setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
+        setRows={handleSdTaRowsChange}
         fetchData={fetchData}
         handleRemarkCellClick={handleRemarkCellClick2}
         remarkDialogOpen={remarkDialogOpenSdTa}
