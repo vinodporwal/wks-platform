@@ -201,25 +201,24 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
                 var resolvedUser = usersRepository.findByEmailId(caseAssignedToValue);
                 String assignedToLabel = (resolvedUser != null) ? resolvedUser.getUserId() : caseAssignedToValue;
-
                 List<String> ccList = new ArrayList<>();
-                JsonNode analysisTeamNode = node.path("analysisTeam");
-                if (analysisTeamNode.isArray()) {
-                    for (JsonNode member : analysisTeamNode) {
-                        String email = member.asText().trim();
-                        if (!email.isEmpty() && !ccList.contains(email)) {
-                            ccList.add(email);
-                        }
-                    }
-                } else if (analysisTeamNode.isTextual() && !analysisTeamNode.asText().trim().isEmpty()) {
-                    String email = analysisTeamNode.asText().trim();
-                    if (!ccList.contains(email)) {
-                        ccList.add(email);
-                    }
-                }
-                if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail)) {
-                    ccList.add(ownerEmail);
-                }
+JsonNode analysisTeamNode = node.path("analysisTeam");
+if (analysisTeamNode.isArray()) {
+    for (JsonNode member : analysisTeamNode) {
+        String email = member.asText().trim();
+        if (!email.isEmpty() && !ccList.contains(email)) {
+            ccList.add(email);
+        }
+    }
+} else if (analysisTeamNode.isTextual() && !analysisTeamNode.asText().trim().isEmpty()) {
+    String email = analysisTeamNode.asText().trim();
+    if (!ccList.contains(email)) {
+        ccList.add(email);
+    }
+}
+if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail)) {
+    ccList.add(ownerEmail);
+}
 
                 List<Map<String, String>> subAssetList = new ArrayList<>();
                 if (node.path("dataGrid2").isArray()) {
@@ -276,6 +275,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                 data.put("eventReportUrlsMap", eventReportUrlsMap);
 
                 caseEmailService.send(
+                        from,
                         new String[] { caseAssignedToValue },
                         caseTitle,
                         ccList.toArray(new String[0]),
@@ -750,54 +750,36 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                 // Extract main asset
                 String mainAsset = rootNode.path("mainAsset").asText();
 
-                 // Prepare a list for sub-assets (if multiple in dataGrid2)
-                 List<Map<String, String>> subAssetList = new ArrayList<>();
-                 for (JsonNode item : rootNode.path("dataGrid2")) {
-                     Map<String, String> row = new HashMap<>();
-                     String subAsset = item.has("subAsset") && !item.path("subAsset").asText().isEmpty() 
-                                       ? item.path("subAsset").asText() 
-                                       : item.path("textField1").asText();
-                     String events = item.has("events") && !item.path("events").asText().isEmpty() 
-                                     ? item.path("events").asText() 
-                                     : item.path("textField3").asText();
-                     String eventCategory = item.has("eventCategory") && !item.path("eventCategory").asText().isEmpty() 
-                                            ? item.path("eventCategory").asText() 
-                                            : item.path("textField4").asText();
-                     row.put("subAsset", subAsset);
-                     row.put("events", events);
-                     row.put("eventCategory", eventCategory);
-                     row.put("faultStart", item.path("TextFaultStartTimeDate").asText());
-                     row.put("faultEnd", item.path("TextFaultEndTimeDate").asText());
-                     row.put("eventPkId", item.path("eventPkId").asText());
-               
-                     subAssetList.add(row);
-                     System.out.println("eventPkIds: from attributes : "  + item.path("eventPkId").asText());
-                 }
+                // Prepare a list for sub-assets (if multiple in dataGrid2)
+                List<Map<String, String>> subAssetList = new ArrayList<>();
+                for (JsonNode item : rootNode.path("dataGrid2")) {
+                    Map<String, String> row = new HashMap<>();
+                    row.put("subAsset", item.path("subAsset").asText());
+                    row.put("events", item.path("events").asText());
+                    row.put("eventCategory", item.path("eventCategory").asText());
+                    row.put("faultStart", item.path("TextFaultStartTimeDate").asText());
+                    row.put("faultEnd", item.path("TextFaultEndTimeDate").asText());
+                    row.put("eventPkId", item.path("eventPkId").asText());
+              
+                    subAssetList.add(row);
+                    System.out.println("eventPkIds: from attributes : "  + item.path("eventPkId").asText());
+                }
 
-                 List<String> ccList = new ArrayList<>();
-                 if (analysisTeam.isArray()) {
-                     for (JsonNode dataGridEntry : analysisTeam) {
-                         String email = dataGridEntry.asText().trim();
-                         if (!email.isEmpty() && !ccList.contains(email)) {
-                             ccList.add(email);
-                         }
-                     }
-                 } else if (analysisTeam.isTextual() && !analysisTeam.asText().trim().isEmpty()) {
-                     String email = analysisTeam.asText().trim();
-                     if (!email.isEmpty() && !ccList.contains(email)) {
-                         ccList.add(email);
-                     }
-                 }
+             //   String[] reviewers = new String[analysisTeam.size()];
+             // adding 1 to the size of the reviewers array to add the case owner in the reviewers array 
+             String[] reviewers = new String[analysisTeam.size() + 1];
+                if (analysisTeam.isArray()) {
+                    int counter = 0;
+                    for (JsonNode dataGridEntry : analysisTeam) {
+                        reviewers[counter] = dataGridEntry.asText();
+                        counter++;
+                    }
 
-                 // adding the case owner in reviewers so that the owner receives an email when a new case is created
-                 if (caseData.getOwner() != null && caseData.getOwner().getEmail() != null) {
-                     String ownerEmailStr = caseData.getOwner().getEmail().trim();
-                     if (!ownerEmailStr.isEmpty() && !ccList.contains(ownerEmailStr)) {
-                         ccList.add(ownerEmailStr);
-                     }
-                 }
-                 String[] reviewers = ccList.toArray(new String[0]);
-                 System.out.println("reviewers: " + Arrays.toString(reviewers));;
+                }
+
+                // adding the case owner in reviewers so that the owner receives an email when a new case is created
+                reviewers[reviewers.length -1] = caseData.getOwner().getEmail();
+                System.out.println("reviewers: " + reviewers);
 
 
              Map<String, String>  eventTrendUrlsMap = new HashMap<>();
@@ -1504,12 +1486,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             String mainAsset = rootNode.path("mainAsset").asText();
             JsonNode analysisTeamNode = rootNode.path("analysisTeam");
             List<String> analysisTeamEmails = new ArrayList<>();
+            List<String> reviewers = new ArrayList<>();
             if (analysisTeamNode.isArray()) {
                 for (JsonNode member : analysisTeamNode) {
-                    analysisTeamEmails.add(member.asText().trim());
+                    analysisTeamEmails.add(member.asText());
                 }
-            } else if (analysisTeamNode.isTextual() && !analysisTeamNode.asText().trim().isEmpty()) {
-                analysisTeamEmails.add(analysisTeamNode.asText().trim());
             }
 
             if (!analysisTeamEmails.isEmpty()) {
@@ -1528,63 +1509,42 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                 data.put("assignedBy", caseData.getOwner() != null ? caseData.getOwner().getName() : "");
                 
                 String ownerEmail = caseData.getOwner() != null ? caseData.getOwner().getEmail() : "";
-                
-                // CC list: analysis team emails + case owner email
-                List<String> ccList = new ArrayList<>();
-                for (String email : analysisTeamEmails) {
-                    if (!ccList.contains(email)) {
-                        ccList.add(email);
-                    }
-                }
-                if (ownerEmail != null && !ownerEmail.trim().isEmpty() && !ccList.contains(ownerEmail.trim())) {
-                    ccList.add(ownerEmail.trim());
-                }
-
-                // TO list: Assigned To emails. If empty, fall back to analysis team or owner
-                List<String> toList = new ArrayList<>();
-                if (caseData.getAssignedTo() != null) {
-                    for (com.wks.caseengine.rest.db2.entity.Users user : caseData.getAssignedTo()) {
-                        if (user.getEmailId() != null && !user.getEmailId().trim().isEmpty()) {
-                            toList.add(user.getEmailId().trim());
-                        }
-                    }
-                }
-                if (toList.isEmpty()) {
-                    toList.addAll(analysisTeamEmails);
-                }
-
+                 reviewers.add(ownerEmail);
                 String assignedToLabel = "";
-                if (caseData.getAssignedTo() != null && !caseData.getAssignedTo().isEmpty()) {
-                    assignedToLabel = caseData.getAssignedTo().get(0).getUserId();
-                } else if (caseData.getAssignedToLabel() != null && !caseData.getAssignedToLabel().isBlank()) {
-                    assignedToLabel = caseData.getAssignedToLabel();
-                } else {
-                    String caseAssignedToValue = rootNode.path("caseAssignedTo").asText();
-                    if (caseAssignedToValue != null && !caseAssignedToValue.isBlank()) {
-                        com.wks.caseengine.rest.db2.entity.Users resolvedUser = usersRepository.findByEmailId(caseAssignedToValue);
-                        if (resolvedUser != null) {
-                            assignedToLabel = resolvedUser.getUserId();
-                        } else {
-                            com.wks.caseengine.rest.db2.entity.Groups resolvedGroup = groupsRepository.findByGroupId(caseAssignedToValue);
-                            if (resolvedGroup != null) {
-                                assignedToLabel = resolvedGroup.getGroupId();
-                            }
-                        }
-                    }
-                }
-                data.put("assignedToLabel", assignedToLabel);
+if (caseData.getAssignedTo() != null && !caseData.getAssignedTo().isEmpty()) {
+    assignedToLabel = caseData.getAssignedTo().get(0).getUserId();
+    reviewers.add(caseData.getAssignedTo().get(0).getEmailId());
+
+} else if (caseData.getAssignedToLabel() != null && !caseData.getAssignedToLabel().isBlank()) {
+    assignedToLabel = caseData.getAssignedToLabel();
+} else {
+    String caseAssignedToValue = rootNode.path("caseAssignedTo").asText();
+    if (caseAssignedToValue != null && !caseAssignedToValue.isBlank()) {
+        com.wks.caseengine.rest.db2.entity.Users resolvedUser = usersRepository.findByEmailId(caseAssignedToValue);
+        if (resolvedUser != null) {
+            assignedToLabel = resolvedUser.getUserId();
+            reviewers.add(resolvedUser.getEmailId());
+        } else {
+            com.wks.caseengine.rest.db2.entity.Groups resolvedGroup = groupsRepository.findByGroupId(caseAssignedToValue);
+            if (resolvedGroup != null) {
+                assignedToLabel = resolvedGroup.getGroupId();
+            }
+        }
+    }
+}
+data.put("assignedToLabel", assignedToLabel);
 
                 caseEmailService.send(
                     from,
-                    toList.toArray(new String[0]),
+                    analysisTeamEmails.toArray(new String[0]),
                     "CASE MANAGEMENT : " + caseTitle,
-                    ccList.toArray(new String[0]),
+                    reviewers.toArray(new String[0]),
                     null,
                     null,
                     "email-template",
                     data
                 );
-                System.out.println("Analysis Team notification sent (TO: " + toList + ", CC: " + ccList + ")");
+                System.out.println("Analysis Team notification sent to: " + analysisTeamEmails);
             }
         } catch (Exception e) {
             e.printStackTrace();
