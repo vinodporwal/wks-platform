@@ -213,7 +213,10 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 						.orElseThrow(() -> new RuntimeException("Site not found")).getName();
 				String procedureName = verticalName + "_" + siteName + "_GetProposedAOP";
 
-				AOPMessageVM gradesVM = aopConsumptionNormService.getConsumptionAOPGrades(aopYear, plantId.toString());
+			//	AOPMessageVM gradesVM = aopConsumptionNormService.getConsumptionAOPGrades(aopYear, plantId.toString());
+
+			AOPMessageVM gradesVM = aopConsumptionNormService.getConsumptionAOPGrades(aopYear, plantId.toString());
+
 				@SuppressWarnings("unchecked")
 				List<Map<String, Object>> gradeList = (List<Map<String, Object>>) gradesVM.getData();
 
