@@ -112,12 +112,6 @@ public class SpyroInputController {
 		return spyroInputService.getSpyroInputMinMax(plantId, siteId, verticalId, aopYear, mode);
 	}
 
-	@PostMapping(value = "/spyro-input-min-max")
-	public AOPMessageVM saveSpyroInputMinMax(
-			@RequestBody List<SpyroInputMinMaxDTO> dtoList,
-			@RequestParam String aopYear) {
-		return spyroInputService.saveSpyroInputMinMax(dtoList, aopYear);
-	}
 
 }
 

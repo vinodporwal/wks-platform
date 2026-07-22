@@ -28,6 +28,7 @@ import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ConfigurationService;
 
@@ -519,6 +520,11 @@ public class ConfigurationController {
 	@GetMapping(value = "/cracker-c2-optimizing-variables-dropdown")
 	public AOPMessageVM getCrackerC2OptimizingVariablesDropdown() {
 		return configurationService.getCrackerC2OptimizingVariablesDropdown();
+	}
+
+	@PostMapping(value = "/spyro-input-min-max")
+	public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(@RequestParam String year,@RequestParam String plantFKId, @RequestBody List<SpyroInputMinMaxDTO> configurationDTOList) {
+		return configurationService.saveSpyroInputMinMax(year, plantFKId, configurationDTOList);
 	}
 
 }

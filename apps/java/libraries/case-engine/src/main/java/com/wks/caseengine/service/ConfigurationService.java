@@ -15,6 +15,7 @@ import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.entity.NormAttributeTransactionReceipe;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -101,4 +102,5 @@ public interface ConfigurationService {
         public AOPMessageVM getAopBasis(String year, String plantFKId, String type);
         public AOPMessageVM getAopBasiswithStartDate(String year, String plantFKId, String type);
         public AOPMessageVM getCrackerC2OptimizingVariablesDropdown();
+        public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(String year, String plantFKId, List<SpyroInputMinMaxDTO> configurationDTOList);
 }

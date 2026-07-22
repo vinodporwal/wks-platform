@@ -41,4 +41,7 @@ public class SpyroInputMinMaxDTO {
     private String marMax;
     private String minWeightAverage;
     private String maxWeightAverage;
+
+    private String saveStatus;
+    private String errDescription;
 }
