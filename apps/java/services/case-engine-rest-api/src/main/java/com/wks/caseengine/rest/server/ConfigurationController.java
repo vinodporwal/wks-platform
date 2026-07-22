@@ -113,6 +113,12 @@ public class ConfigurationController {
 		return configurationService.getAopBasis(year, plantFKId, type);
 	}
 
+	// ref : /production-configuration-basis  | added new column. april value as startdate and may value as ConstantValue
+	@GetMapping(value="/data-config")
+	public AOPMessageVM getAopBasiswithStartDate(@RequestParam String year,@RequestParam String plantFKId, @RequestParam(required = false) String type) {
+		return configurationService.getAopBasiswithStartDate(year, plantFKId, type);
+	}
+
 
 	@GetMapping(value="/configuration-constants-norms")
 	public AOPMessageVM getConfigurationConstantsNorms(@RequestParam String year,@RequestParam String plantFKId) {

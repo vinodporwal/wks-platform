@@ -99,5 +99,6 @@ public interface ConfigurationService {
 
         public List<AopBasisDTO> saveAopBasis(String year, String plantFKId, List<AopBasisDTO> configurationDTOList);
         public AOPMessageVM getAopBasis(String year, String plantFKId, String type);
+        public AOPMessageVM getAopBasiswithStartDate(String year, String plantFKId, String type);
         public AOPMessageVM getCrackerC2OptimizingVariablesDropdown();
 }

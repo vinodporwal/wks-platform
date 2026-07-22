@@ -2099,6 +2099,63 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 		}
 	}
 
+
+	@Override
+	public AOPMessageVM getAopBasiswithStartDate(String year, String plantFKId, String type) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Map<String, Object>> productionConstraintsList = new ArrayList<>();
+
+			Plants plants = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow(() -> new RuntimeException("Plant not found"));
+
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			List<Object[]> obj = new ArrayList<>();
+
+			String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+				String procedureName = verticalName +"_" + siteName + "_GetProduction_Constraints";
+				if (type != null && !type.trim().isEmpty()) {
+					obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId, procedureName, type);
+				} else {
+					obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+				}
+			
+
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("NormTypeName", row[0]);
+				map.put("NormParameter_FK_Id", row[1]);
+				map.put("Name", row[2]);
+				map.put("DisplayName", row[3]);
+				map.put("UOM", row[4]);
+				map.put("StartDate", row[5]);
+				map.put("ConstantValue", row[6]);
+				map.put("AuditYear", row[7]);
+				map.put("Remarks", row[8]);
+				boolean isEditable;
+				Object flagObj = row[9];
+				if (flagObj instanceof Boolean) {
+					isEditable = (Boolean) flagObj;
+				} else if (flagObj instanceof Number) {
+					isEditable = ((Number) flagObj).intValue() == 1;
+				} else {
+					isEditable = false;
+				}
+				map.put("isEditable", isEditable);
+				productionConstraintsList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(productionConstraintsList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
