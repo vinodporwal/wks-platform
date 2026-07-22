@@ -504,15 +504,15 @@ const OtherDocumentUpload = ({ permissions }) => {
                         </span>
                     </Tooltip>}
 
-                    <Tooltip title='Download Document' arrow>
+                    {hasDocument && <Tooltip title='Download Document' arrow>
                         <span>
                             <IconButton size='small' onClick={handleDownloadClick}>
                                 <CloudDownloadIcon fontSize='small' />
                             </IconButton>
                         </span>
-                    </Tooltip>
+                    </Tooltip>}
 
-                    <Tooltip title='Delete Document' arrow>
+                    {hasDocument && <Tooltip title='Delete Document' arrow>
                         <span>
                             <IconButton
                                 size='small'
@@ -522,7 +522,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                                 <DeleteOutlineIcon fontSize='small' />
                             </IconButton>
                         </span>
-                    </Tooltip>
+                    </Tooltip>}
                 </td>
             )
         }
