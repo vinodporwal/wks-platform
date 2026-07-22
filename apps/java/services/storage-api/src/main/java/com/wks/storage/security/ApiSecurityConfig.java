@@ -20,6 +20,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.wks.api.security.JwksIssuerAuthenticationManagerResolver;
@@ -40,6 +41,7 @@ public class ApiSecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http.cors().and().csrf().disable()
+				.addFilterBefore(new SsoSessionCookieAuthFilter(), BearerTokenAuthenticationFilter.class)
 	            .authorizeRequests(authz -> authz
 	                    .requestMatchers(HttpMethod.GET, "/files1/**").permitAll()  // Allow GET without authentication
 	                    .anyRequest().authenticated()

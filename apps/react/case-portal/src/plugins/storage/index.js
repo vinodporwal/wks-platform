@@ -66,6 +66,7 @@ export function minio() {
       headers: {
         Authorization: `Bearer ${MemoryTokenManager.getToken()}`,
       },
+      credentials: 'include',
     }
   }
 
