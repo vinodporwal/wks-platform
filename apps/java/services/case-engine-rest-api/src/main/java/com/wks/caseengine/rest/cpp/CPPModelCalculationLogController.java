@@ -55,10 +55,11 @@ public class CPPModelCalculationLogController {
      * Get all parent executions (full year runs)
      */
     @GetMapping("/cpp-model-logs")
-    public ResponseEntity<List<CPPModelCalculationLogListDTO>> getAllParentExecutions() {
-        log.info("[CPPModelCalculationLogController] Received request to get all parent executions");
+    public ResponseEntity<List<CPPModelCalculationLogListDTO>> getAllParentExecutions(
+            @RequestParam(required = false) Integer financialYear) {
+        log.info("[CPPModelCalculationLogController] Received request to get all parent executions - financialYear: {}", financialYear);
         try {
-            List<CPPModelCalculationLogListDTO> executions = service.getAllParentExecutions();
+            List<CPPModelCalculationLogListDTO> executions = service.getAllParentExecutions(financialYear);
             log.info("[CPPModelCalculationLogController] Successfully retrieved {} parent executions", executions.size());
             return ResponseEntity.ok(executions);
         } catch (Exception e) {

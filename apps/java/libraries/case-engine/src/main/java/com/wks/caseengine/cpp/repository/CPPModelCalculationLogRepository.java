@@ -31,13 +31,13 @@ public interface CPPModelCalculationLogRepository extends JpaRepository<CPPModel
      * Find all parent execution records (full year runs)
      * Parent records have parentExecutionFkId = NULL
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL ORDER BY ExecutionDateTime DESC", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND (Status IS NULL OR Status != 'InProgress') ORDER BY ExecutionDateTime DESC", nativeQuery = true)
     List<CPPModelCalculationLog> findAllParentExecutions();
 
     /**
      * Find parent executions by financial year
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND FinancialYear = :financialYear ORDER BY ExecutionDateTime DESC", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND FinancialYear = :financialYear AND (Status IS NULL OR Status != 'InProgress') ORDER BY ExecutionDateTime DESC", nativeQuery = true)
     List<CPPModelCalculationLog> findParentExecutionsByFinancialYear(@Param("financialYear") Integer financialYear);
 
     /**
@@ -84,6 +84,14 @@ public interface CPPModelCalculationLogRepository extends JpaRepository<CPPModel
      */
     @Query(value = "SELECT TOP 1 * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL ORDER BY ExecutionDateTime DESC", nativeQuery = true)
     Optional<CPPModelCalculationLog> findLatestParentExecution();
+
+    /**
+     * Get monthly log status counts grouped by parent execution and status.
+     * Returns [ParentExecution_FK_Id (UUID), Status (String), Count (Long)] per row.
+     */
+    @Query(value = "SELECT ParentExecution_FK_Id, Status, COUNT(*) as cnt FROM CPPModelCalculationLogs WITH(NOLOCK) " +
+           "WHERE ParentExecution_FK_Id IS NOT NULL GROUP BY ParentExecution_FK_Id, Status", nativeQuery = true)
+    List<Object[]> findMonthlyLogStatusCounts();
 
     /**
      * Find parent executions with filters (financial year, status)
