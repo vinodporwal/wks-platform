@@ -60,6 +60,7 @@ import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFo
 import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionnormForMeg'
 import AopTabs from 'components/AopTabs'
 import { AopApprovalService } from 'services/AopApprovalService'
+import AopMyApprovals from 'components/data-tables/AOPWorkFlow/AopMyApprovals'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -96,7 +97,7 @@ const WorkFlowMerge = () => {
   const [text, setText] = useState('')
   const [taskId, setTaskId] = useState('')
 
-  // New AOP approval flow (aop-approval/*) — kept separate from the legacy
+  // New AOP approval flow (task/aop-approval/*) — kept separate from the legacy
   // /task flow so existing child-grid behaviour is untouched. Buttons here are
   // driven entirely by the server-computed `viewer` block.
   const [viewer, setViewer] = useState(null)
@@ -604,7 +605,7 @@ const WorkFlowMerge = () => {
     }
   }
 
-  // --- New AOP approval flow (aop-approval/*) ---------------------------------
+  // --- New AOP approval flow (task/aop-approval/*) ---------------------------------
 
   // Fetch status + server-computed button state; drives the buttons below.
   const fetchAopStatus = async () => {
@@ -1138,6 +1139,7 @@ const WorkFlowMerge = () => {
                     setText={setText}
                   />
                 )}
+                {/* <AopMyApprovals /> */}
               </>
             )}
             {activeTabs[tabIndex] === 'Optimizer Input / Output' && (
@@ -1219,6 +1221,7 @@ const WorkFlowMerge = () => {
                 setText={setText}
               />
             )}
+            {/* {tabIndex === 0 && <AopMyApprovals />} */}
             {tabIndex === 1 && <PlantsProductionSummary />}
             {tabIndex === 2 && <MonthwiseProduction />}
             {tabIndex === 3 && <MonthwiseRawMaterial />}
@@ -1292,6 +1295,7 @@ const WorkFlowMerge = () => {
                     setText={setText}
                   />
                 )}
+                {/* <AopMyApprovals /> */}
               </>
             )}
             {/* Sorted T-Series Components */}
