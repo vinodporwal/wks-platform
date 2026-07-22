@@ -4,11 +4,17 @@ import {
   CircularProgress,
   TextField,
   Button,
+  Grid,
+  Dialog,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
+import DecokingPlanningNotification from './DecokingPlanningNotification.js'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import { PlantAopReportApiService } from 'services/plant-aop-report-api-service.js'
 import moment from '../../../node_modules/moment/moment.js'
 // import { ibrGridThree, ibrPlanColumns } from './columnDefs'
 import { ibrGridThree } from './columnDefs'
@@ -93,6 +99,28 @@ const DecokingConfig = () => {
   const [currentRemarkRunLength, setCurrentRemarkRunLength] = useState('')
   const [currentRowIdRunLength, setCurrentRowId3] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
+  const [openDecokingPlanningDialog, setOpenDecokingPlanningDialog] = useState(false)
+  const [decokingPlanningRecordsCount, setDecokingPlanningRecordsCount] = useState(0)
+
+  useEffect(() => {
+    const fetchDecokingNotificationCount = async () => {
+      if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
+      try {
+        const res = await PlantAopReportApiService.GetPlanningNotification(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        if (res?.code === 200) {
+          const apiRows = res?.data?.data || []
+          setDecokingPlanningRecordsCount(apiRows.length)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchDecokingNotificationCount()
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2, openDecokingPlanningDialog])
   const [dateError, setDateError] = useState(false)
   //my chnage
   const [modifiedCellsSdTa, setModifiedCellsSdTa] = React.useState({})
@@ -105,6 +133,7 @@ const DecokingConfig = () => {
   const [sadDuration, setSadDuration] = useState('')
   const [maxDutyPilot, setMaxDutyPilot] = useState('')
   const [maxDutyMain, setMaxDutyMain] = useState('')
+
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -227,10 +256,15 @@ const DecokingConfig = () => {
           setSadDurationRow(sadRow || null)
           setMaxDutyPilotRow(pilotRow || null)
           setMaxDutyMainRow(mainRow || null)
+          const formatTwoDecimals = (val) => {
+            if (val === null || val === undefined || val === '') return ''
+            const num = parseFloat(val)
+            return !isNaN(num) ? num.toFixed(2) : String(val)
+          }
 
-          setSadDuration(sadRow ? sadRow.attributeValue ?? '' : '')
-          setMaxDutyPilot(pilotRow ? pilotRow.attributeValue ?? '' : '')
-          setMaxDutyMain(mainRow ? mainRow.attributeValue ?? '' : '')
+          setSadDuration(sadRow && sadRow.attributeValue != null ? formatTwoDecimals(sadRow.attributeValue) : '')
+          setMaxDutyPilot(pilotRow && pilotRow.attributeValue != null ? formatTwoDecimals(pilotRow.attributeValue) : '')
+          setMaxDutyMain(mainRow && mainRow.attributeValue != null ? formatTwoDecimals(mainRow.attributeValue) : '')
         }
         console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
       } catch (error) {
@@ -300,9 +334,29 @@ const DecokingConfig = () => {
                   converted[field] = toDateObject(item[field])
                 })
 
+                let durationVal = item.Duration
+                if (
+                  IS_CRACKER_C2 &&
+                  (durationVal === undefined ||
+                    durationVal === null ||
+                    durationVal === '')
+                ) {
+                  const sd = converted.IBR_SD || item.IBR_SD
+                  const ed = converted.IBR_ED || item.IBR_ED
+                  if (sd && ed) {
+                    const mSd = moment(sd)
+                    const mEd = moment(ed)
+                    if (mSd.isValid() && mEd.isValid()) {
+                      const diffDays = mEd.diff(mSd, 'days')
+                      if (diffDays >= 0) durationVal = diffDays
+                    }
+                  }
+                }
+
                 return {
                   ...item,
                   ...converted,
+                  ...(IS_CRACKER_C2 ? { Duration: durationVal } : {}),
                   Id: item.Id,
                   id: index,
                   DisplayName:
@@ -539,8 +593,12 @@ const DecokingConfig = () => {
     return null
   }
 
-  const saveRunningDurationParams = async () => {
-    const sadVal = parseFloat(sadDuration)
+  const saveRunningDurationParams = async (
+    currentSad = sadDuration,
+    currentPilot = maxDutyPilot,
+    currentMain = maxDutyMain
+  ) => {
+    const sadVal = parseFloat(currentSad)
     if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
       setSnackbarOpen(true)
       setSnackbarData({
@@ -554,19 +612,19 @@ const DecokingConfig = () => {
       {
         id: sadDurationRow?.id || null,
         displayName: 'SAD Duration',
-        attributeValue: sadDuration,
+        attributeValue: currentSad,
         remarks: sadDurationRow?.remarks || null,
       },
       {
         id: maxDutyPilotRow?.id || null,
         displayName: 'Max Duty For Pilot Furnace',
-        attributeValue: maxDutyPilot,
+        attributeValue: currentPilot,
         remarks: maxDutyPilotRow?.remarks || null,
       },
       {
         id: maxDutyMainRow?.id || null,
         displayName: 'Max Duty For Main Furnaces',
-        attributeValue: maxDutyMain,
+        attributeValue: currentMain,
         remarks: maxDutyMainRow?.remarks || null,
       },
     ]
@@ -579,6 +637,9 @@ const DecokingConfig = () => {
         payload,
       )
       if (resp?.code === 200) {
+        if (sadDurationRow) sadDurationRow.attributeValue = currentSad;
+        if (maxDutyPilotRow) maxDutyPilotRow.attributeValue = currentPilot;
+        if (maxDutyMainRow) maxDutyMainRow.attributeValue = currentMain;
         setSummaryEdited(false)
         return true
       } else {
@@ -596,8 +657,6 @@ const DecokingConfig = () => {
   }
 
   const saveChangesSdTa = async () => {
-    const success = await saveRunningDurationParams()
-    if (success === false) return
     if (globalTaStartDate && globalTaEndDate) {
       await saveChangesSdTa1()
     } else {
@@ -971,6 +1030,18 @@ const DecokingConfig = () => {
   const postIbr = async (newRow) => {
     setLoading(true)
     try {
+      if (IS_CRACKER_C2) {
+        const success = await saveRunningDurationParams(
+          sadDuration,
+          maxDutyPilot,
+          maxDutyMain,
+        )
+        if (!success) {
+          setLoading(false)
+          return
+        }
+      }
+
       if (!ibrPlanColumns || ibrPlanColumns.length === 0) {
         throw new Error('ibrPlanColumns not loaded')
       }
@@ -1007,7 +1078,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1099,6 +1170,18 @@ const DecokingConfig = () => {
   const postIbr2 = async (newRow) => {
     setLoading(true)
     try {
+      if (IS_CRACKER_C2) {
+        const success = await saveRunningDurationParams(
+          sadDuration,
+          maxDutyPilot,
+          maxDutyMain,
+        )
+        if (!success) {
+          setLoading(false)
+          return
+        }
+      }
+
       if (!ibrPlanColumns || ibrPlanColumns.length === 0) {
         throw new Error('ibrPlanColumns not loaded')
       }
@@ -1161,7 +1244,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1625,6 +1708,118 @@ const DecokingConfig = () => {
     return () => clearTimeout(timer)
   }, [loading])
 
+  const sdtaColumns = useMemo(() => {
+    let cols = ibrPlanColumns.filter(
+      (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
+    )
+
+    if (IS_CRACKER_C2) {
+      cols = cols.map((col) => {
+        if (col.field === 'IBR_ED') {
+          return {
+            ...col,
+            editable: false,
+          }
+        }
+        return col
+      })
+
+      const hasDuration = cols.some((c) => c.field === 'Duration')
+      if (!hasDuration) {
+        const ibrSdIdx = cols.findIndex((c) => c.field === 'IBR_SD')
+        const durationCol = {
+          field: 'Duration',
+          title: 'Duration',
+          type: 'integer',
+          editable: true,
+          filter: false,
+          widthT: 120,
+          minWidth: 100,
+        }
+        if (ibrSdIdx !== -1) {
+          cols.splice(ibrSdIdx + 1, 0, durationCol)
+        } else {
+          cols.push(durationCol)
+        }
+      }
+    }
+
+    return cols
+  }, [ibrPlanColumns, IS_CRACKER_C2])
+
+  const calculateIbrEdDate = (sdVal, durationVal) => {
+    if (
+      !sdVal ||
+      durationVal === undefined ||
+      durationVal === null ||
+      durationVal === ''
+    ) {
+      return null
+    }
+    const durationNum = parseInt(durationVal, 10)
+    if (isNaN(durationNum)) return null
+
+    let m = moment(sdVal)
+    if (!m.isValid()) {
+      m = moment(sdVal, ['DD-MM-YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY'], true)
+    }
+    if (!m.isValid()) return null
+
+    const calculatedEd = m.clone().add(durationNum, 'days')
+
+    if (sdVal instanceof Date) {
+      return calculatedEd.toDate()
+    }
+    if (typeof sdVal === 'string' && sdVal.includes('-')) {
+      const parts = sdVal.split('-')
+      if (parts[0].length === 4) {
+        return calculatedEd.format('YYYY-MM-DD')
+      } else {
+        return calculatedEd.format('DD-MM-YYYY')
+      }
+    }
+    return calculatedEd.toDate()
+  }
+
+  const handleSdTaRowsChange = useCallback(
+    (data) => {
+      if (!IS_CRACKER_C2) {
+        setRowsForTab('IBR Plan', data, 2)
+        return
+      }
+
+      // Helper: apply IBR_ED auto-calculation to a resolved rows array
+      const applyCalc = (rows) => {
+        if (!Array.isArray(rows)) return rows
+        return rows.map((row) => {
+          const sdVal = row.IBR_SD
+          const durVal = row.Duration
+          if (
+            sdVal &&
+            durVal !== undefined &&
+            durVal !== null &&
+            durVal !== ''
+          ) {
+            const newEd = calculateIbrEdDate(sdVal, durVal)
+            if (newEd) return { ...row, IBR_ED: newEd }
+          }
+          return row
+        })
+      }
+
+      // itemChange in index-cracker calls setRows as a functional updater:
+      // setRows((prev) => prev.map(...))
+      // So `data` may be a function — handle both forms.
+      if (typeof data === 'function') {
+        setIbrScreen2Rows((prev) => applyCalc(data(prev)))
+      } else {
+        setRowsForTab('IBR Plan', applyCalc(data), 2)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [IS_CRACKER_C2, setRowsForTab, setIbrScreen2Rows, calculateIbrEdDate],
+  )
+
   if (siteName === 'nmd') {
     return <DecokingConfigNMD pid={PLANT_ID} />
   }
@@ -1642,212 +1837,242 @@ const DecokingConfig = () => {
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            columnGap: 4,
-            rowGap: 1.5,
-            mb: 1.5,
-            mt: 1,
-            alignItems: 'center',
-          }}
-        >
-          {/* Column 1, Row 1 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{ whiteSpace: 'nowrap', width: '220px' }}
-            >
-              TA Start Date
-            </Typography>
-            <Box sx={{ width: '160px' }}>
-              <DatePicker
-                id='global-ta-start-date'
-                format='dd-MM-yyyy'
-                value={globalTaStartDate}
-                onChange={(e) => {
-                  setGlobalTaStartDate(e.value)
-                  setSummaryEdited(true)
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Row 1: TA Start Date & TA End Date */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
+            {/* TA Start Date */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Typography
+                sx={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: '#252525',
+                  fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
                 }}
-                style={{ height: '80px', width: '100%' }}
-                size={'small'}
-                disabled={READ_ONLY}
-              />
+              >
+                TA Start Date
+              </Typography>
+              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '185px' } }}>
+                <DatePicker
+                  id='global-ta-start-date'
+                  format='dd-MM-yyyy'
+                  value={globalTaStartDate}
+                  onChange={(e) => {
+                    setGlobalTaStartDate(e.value)
+                    setSummaryEdited(true)
+                  }}
+                  style={{ width: '100%', height: '36px' }}
+                  disabled={READ_ONLY}
+                />
+              </Box>
+            </Box>
+
+            {/* TA End Date */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Typography
+                sx={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: '#252525',
+                  fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                }}
+              >
+                TA End Date
+              </Typography>
+              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '190px' } }}>
+                <DatePicker
+                  id='global-ta-end-date'
+                  format='dd-MM-yyyy'
+                  value={globalTaEndDate}
+                  onChange={(e) => {
+                    setGlobalTaEndDate(e.value)
+                    setSummaryEdited(true)
+                  }}
+                  style={{ width: '100%', height: '36px' }}
+                  disabled={READ_ONLY}
+                />
+              </Box>
             </Box>
           </Box>
 
-          {/* Column 2, Row 1 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{ whiteSpace: 'nowrap', width: '220px' }}
-            >
-              TA End Date
-            </Typography>
-            <Box sx={{ width: '160px' }}>
-              <DatePicker
-                id='global-ta-end-date'
-                format='dd-MM-yyyy'
-                value={globalTaEndDate}
-                onChange={(e) => {
-                  setGlobalTaEndDate(e.value)
-                  setSummaryEdited(true)
-                }}
-                style={{ height: '80px', width: '100%' }}
-                size={'small'}
-                disabled={READ_ONLY}
-              />
+          {/* Row 2: Remaining C2 Specific Controls */}
+          {IS_CRACKER_C2 && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
+              {/* Max Duty For Pilot Furnace */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
+                >
+                  Max Duty For Pilot Furnace
+                </Typography>
+                <TextField
+                  id='max-duty-pilot-furnace'
+                  type='number'
+                  size='small'
+                  value={maxDutyPilot}
+                  onChange={(e) => {
+                    setMaxDutyPilot(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  onBlur={async (e) => {
+                    const val = e.target.value
+                    const num = parseFloat(val)
+                    let formattedVal = val
+                    if (!isNaN(num)) {
+                      formattedVal = num.toFixed(2)
+                      setMaxDutyPilot(formattedVal)
+                    }
+                    if (val !== (maxDutyPilotRow?.attributeValue ?? '')) {
+                      await saveRunningDurationParams(sadDuration, formattedVal, maxDutyMain)
+                    }
+                  }}
+                  disabled={READ_ONLY}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: '36px',
+                      width: '185px',
+                      backgroundColor: '#ffffff',
+                    },
+                    '& input[type=number]': {
+                      '-moz-appearance': 'textfield',
+                    },
+                    '& input[type=number]::-webkit-outer-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-inner-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                  }}
+                />
+              </Box>
+
+              {/* Max Duty For Main Furnaces */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
+                >
+                  Max Duty For Main Furnaces
+                </Typography>
+                <TextField
+                  id='max-duty-main-furnaces'
+                  type='number'
+                  size='small'
+                  value={maxDutyMain}
+                  onChange={(e) => {
+                    setMaxDutyMain(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  onBlur={async (e) => {
+                    const val = e.target.value
+                    const num = parseFloat(val)
+                    let formattedVal = val
+                    if (!isNaN(num)) {
+                      formattedVal = num.toFixed(2)
+                      setMaxDutyMain(formattedVal)
+                    }
+                    if (val !== (maxDutyMainRow?.attributeValue ?? '')) {
+                      await saveRunningDurationParams(sadDuration, maxDutyPilot, formattedVal)
+                    }
+                  }}
+                  disabled={READ_ONLY}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: '36px',
+                      width: '190px',
+                      backgroundColor: '#ffffff',
+                    },
+                    '& input[type=number]': {
+                      '-moz-appearance': 'textfield',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-outer-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-inner-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                  }}
+                />
+              </Box>
+
+              {/* SAD Duration */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
+                >
+                  SAD Duration
+                </Typography>
+                <TextField
+                  id='sad-duration'
+                  type='number'
+                  size='small'
+                  value={sadDuration}
+                  onChange={(e) => {
+                    setSadDuration(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  onBlur={async (e) => {
+                    const val = e.target.value
+                    const num = parseFloat(val)
+                    let formattedVal = val
+                    if (!isNaN(num)) {
+                      formattedVal = num.toFixed(2)
+                      setSadDuration(formattedVal)
+                    }
+                    if (val !== (sadDurationRow?.attributeValue ?? '')) {
+                      await saveRunningDurationParams(formattedVal, maxDutyPilot, maxDutyMain)
+                    }
+                  }}
+                  disabled={READ_ONLY}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: '36px',
+                      width: '185px',
+                      backgroundColor: '#ffffff',
+                    },
+                    '& input[type=number]': {
+                      '-moz-appearance': 'textfield',
+                    },
+                    '& input[type=number]::-webkit-outer-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-inner-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                  }}
+                />
+              </Box>
             </Box>
-          </Box>
+          )}
         </Box>
       </LocalizationProvider>
 
-      {IS_CRACKER_C2 && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            columnGap: 4,
-            rowGap: 1.5,
-            mb: 1.5,
-            mt: 0.5,
-            alignItems: 'center',
-          }}
-        >
-          {/* Column 1, Row 2 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{
-                whiteSpace: 'nowrap',
-                width: '220px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#334155',
-              }}
-            >
-              SAD Duration
-            </Typography>
-            <TextField
-              id='sad-duration'
-              type='number'
-              size='small'
-              value={sadDuration}
-              onChange={(e) => {
-                setSadDuration(e.target.value)
-                setSummaryEdited(true)
-              }}
-              disabled={READ_ONLY}
-              sx={{
-                width: '90px',
-                '& input[type=number]': {
-                  '-moz-appearance': 'textfield',
-                },
-                '& input[type=number]::-webkit-outer-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-inner-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-              }}
-            />
-          </Box>
-
-          {/* Column 2, Row 2 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{
-                whiteSpace: 'nowrap',
-                width: '220px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#334155',
-              }}
-            >
-              Max Duty For Pilot Furnace
-            </Typography>
-            <TextField
-              id='max-duty-pilot-furnace'
-              type='number'
-              size='small'
-              value={maxDutyPilot}
-              onChange={(e) => {
-                setMaxDutyPilot(e.target.value)
-                setSummaryEdited(true)
-              }}
-              disabled={READ_ONLY}
-              sx={{
-                width: '90px',
-                '& input[type=number]': {
-                  '-moz-appearance': 'textfield',
-                },
-                '& input[type=number]::-webkit-outer-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-inner-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-              }}
-            />
-          </Box>
-
-          {/* Column 3, Row 2 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              className='grid-title'
-              sx={{
-                whiteSpace: 'nowrap',
-                width: '220px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#334155',
-              }}
-            >
-              Max Duty For Main Furnaces
-            </Typography>
-            <TextField
-              id='max-duty-main-furnaces'
-              type='number'
-              size='small'
-              value={maxDutyMain}
-              onChange={(e) => {
-                setMaxDutyMain(e.target.value)
-                setSummaryEdited(true)
-              }}
-              disabled={READ_ONLY}
-              sx={{
-                width: '90px',
-                '& input[type=number]': {
-                  '-moz-appearance': 'textfield',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-outer-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-                '& input[type=number]::-webkit-inner-spin-button': {
-                  '-webkit-appearance': 'none',
-                  margin: 0,
-                },
-              }}
-            />
-          </Box>
-        </Box>
-      )}
-
       <SDTAActivitiesGrid
-        columns={ibrPlanColumns.filter(
-          (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
-        )}
+        columns={sdtaColumns}
         gridKey={sdtaGridKey}
         rows={getRows('IBR Plan')[2]}
-        setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
+        setRows={handleSdTaRowsChange}
         fetchData={fetchData}
         handleRemarkCellClick={handleRemarkCellClick2}
         remarkDialogOpen={remarkDialogOpenSdTa}
@@ -1868,6 +2093,7 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculateSdTa}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        titleName={IS_CRACKER_C2 ? 'Furnace un-availability and M&I activity' : 'IBR/SD/HSS Activities'}
       />
 
       {(IS_DMD || IS_C2) && (
@@ -1897,6 +2123,8 @@ const DecokingConfig = () => {
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleCalculate={handleCalculate}
+        onInfoClick={IS_CRACKER_C2 ? () => setOpenDecokingPlanningDialog(true) : null}
+        infoIconColor={decokingPlanningRecordsCount > 0 ? '#ff0000' : '#008000'}
       />
 
       <MaintenanceProcessTable permissions={MaintenanceProcessPermission} />
@@ -1917,7 +2145,42 @@ const DecokingConfig = () => {
           </CustomAccordionDetails>
         </CustomAccordion>
       )} */}
+      <Dialog
+        open={openDecokingPlanningDialog}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setOpenDecokingPlanningDialog(false)
+          }
+        }}
+        maxWidth="md"
+        fullWidth
+        disableScrollLock
+        disableEnforceFocus={true}
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 1,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 1 }}>
+          <DecokingPlanningNotification />
+        </DialogContent>
+        <DialogActions sx={{ px: 1.5, pb: 1 }}>
+          <Button
+            onClick={() => setOpenDecokingPlanningDialog(false)}
+            variant="contained"
+            className="btn-no"
+            sx={{ textTransform: 'none' }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
 export default DecokingConfig
+

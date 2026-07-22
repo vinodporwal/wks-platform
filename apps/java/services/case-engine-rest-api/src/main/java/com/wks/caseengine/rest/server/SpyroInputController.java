@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -105,6 +106,12 @@ public class SpyroInputController {
 	public AOPMessageVM getFeedTypeFlowMappings(@RequestParam String plantId, @RequestParam String aopYear) {
 		return spyroInputService.getFeedTypeFlowMappings(plantId, aopYear);
 	}
+
+	@GetMapping(value = "/spyro-input-min-max")
+	public AOPMessageVM getSpyroInputMinMax(@RequestParam String plantId, @RequestParam String siteId, @RequestParam String verticalId, @RequestParam String aopYear, @RequestParam String mode) {
+		return spyroInputService.getSpyroInputMinMax(plantId, siteId, verticalId, aopYear, mode);
+	}
+
 
 }
 

@@ -74,14 +74,36 @@ public class OtherFurnanceDetailsServiceImpl implements OtherFurnanceDetailsServ
       
         List<OtherFurnanceDetailsDTO> failedRecords = new ArrayList<>();
 
+        String updateSql = """
+    UPDATE [RIL.AOP].[dbo].[NormAttributeTransactions]
+    SET AttributeValue = ?, Remarks = ?
+    WHERE NormParameter_FK_Id = ? AND AuditYear = ?
+    """;
+
+String insertSql = """
+    INSERT INTO [RIL.AOP].[dbo].[NormAttributeTransactions]
+        (DisplayName, NormParameter_FK_Id, AuditYear, AttributeValue, Remarks)
+    VALUES (?, ?, ?, ?, ?)
+    """;
+
         for (OtherFurnanceDetailsDTO dto : otherFurnanceDetailsDTOs) { 
 
-            String updateSql = "UPDATE [RIL.AOP].[dbo].[NormAttributeTransactions] " +
-                "SET AttributeValue = ?, Remarks = ? " +
-                "WHERE NormParameter_FK_Id = ? AND auditYear = ?";
-            jdbcTemplate.update(updateSql,
+             int rowsUpdated = jdbcTemplate.update(
+            updateSql,
+            dto.getAttributeValue(),
+            dto.getRemarks(),
+            dto.getId(),
+            aopYear);
+
+    if (rowsUpdated == 0) {
+        jdbcTemplate.update(
+                insertSql,
+                dto.getDisplayName(),
+                dto.getId(),
+                aopYear,
                 dto.getAttributeValue(),
-                dto.getRemarks(), dto.getId(), aopYear);
+                dto.getRemarks());
+    }
         }
 
         return failedRecords;

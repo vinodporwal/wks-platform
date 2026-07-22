@@ -45,6 +45,10 @@ keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
 management.health.mongo.enabled: false
 management.health.reds.enabled: false
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   datasource:
     # Configuration for Database 1
     db1:

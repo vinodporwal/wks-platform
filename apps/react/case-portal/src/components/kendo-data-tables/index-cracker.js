@@ -23,6 +23,7 @@ import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/
 import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
 import MonthCell from './Utilities-Kendo/MonthCell'
 import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
+import { NoSpinnerIntegerEditor } from './Utilities-Kendo/integerColumns'
 import ProductCell from './Utilities-Kendo/ProductCell'
 import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
 
@@ -532,23 +533,49 @@ const KendoDataTablesCracker = ({
           )
         }
         if (dateFieldsCracker.includes(col.field)) {
+          const isColEditable = col.editable !== false
           return (
             <GridColumn
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
+              editable={isColEditable}
               cells={{
-                edit: {
-                  date: DateOnlyPicker,
-                },
+                edit: isColEditable ? { date: DateOnlyPicker } : undefined,
                 data: toolTipRenderer,
                 headerCell: SimpleHeaderWithTooltip,
               }}
               format='{0:dd-MM-yyyy}'
-              editor='date'
+              editor={isColEditable ? 'date' : undefined}
               hidden={col.hidden}
               sortable={false}
               width={setWidth(col.minWidth || col.widthT || 130)}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+            />
+          )
+        }
+        if (col.type === 'integer' || col.field === 'Duration') {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              width={setWidth(col.minWidth || col.widthT || 130)}
+              hidden={col.hidden}
+              className={
+                col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
+              }
+              editable={col?.editable !== false}
+              headerClassName={isActive ? 'active-column' : ''}
+              cells={{
+                edit: { text: NoSpinnerIntegerEditor },
+                data: toolTipRenderer,
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+              filter='numeric'
+              format={col.format}
+              sortable={false}
             />
           )
         }
