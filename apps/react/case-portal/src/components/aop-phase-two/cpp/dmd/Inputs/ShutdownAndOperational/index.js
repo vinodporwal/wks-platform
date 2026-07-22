@@ -36,7 +36,10 @@ const ShutdownAndOperational = () => {
         PLANT_ID_LIST,
         AOP_YEAR,
       )
-      setPowerData(res?.data?.PowerOperationalHours || [])
+      setPowerData([
+        ...(res?.data?.PowerOperationalHours || []),
+        ...(res?.data?.ImportOperationalHours || []),
+      ])
       setSteamData(res?.data?.SteamOperationalHours || [])
     } catch (error) {
       console.error('Error fetching operational hours data:', error)
