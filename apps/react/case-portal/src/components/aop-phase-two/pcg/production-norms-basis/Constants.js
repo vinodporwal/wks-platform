@@ -23,12 +23,15 @@ const Constants = ({ startDate, endDate }) => {
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
+  const IS_GASIFIER = plantObject?.name?.toLowerCase() === 'gasifier'
+
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const valueFormat = customValueFormatterPhaseTwo(5)
+  const DECIMALS = IS_GASIFIER ? 10 : 5
+  const valueFormat = customValueFormatterPhaseTwo(DECIMALS)
   const columns = [
     {
       field: 'productName',

@@ -15,6 +15,7 @@ const OverallAopConsumptionPCG = () => {
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+  const IS_GASIFIER = plantObject?.name?.toLowerCase() === 'gasifier'
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -24,7 +25,9 @@ const OverallAopConsumptionPCG = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = customValueFormatterPhaseTwo(5)
+  const DECIMALS = IS_GASIFIER ? 10 : 5
+  const valueFormat = customValueFormatterPhaseTwo(DECIMALS)
+  const monthMinWidth = IS_GASIFIER ? 180 : 120
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
@@ -59,7 +62,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'april',
       title: headerMap[4],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -68,7 +71,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'may',
       title: headerMap[5],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -77,7 +80,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'june',
       title: headerMap[6],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -86,7 +89,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'july',
       title: headerMap[7],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -95,7 +98,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'aug',
       title: headerMap[8],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -104,7 +107,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'sep',
       title: headerMap[9],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -113,7 +116,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'oct',
       title: headerMap[10],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -122,7 +125,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'nov',
       title: headerMap[11],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -131,7 +134,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'dec',
       title: headerMap[12],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -140,7 +143,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'jan',
       title: headerMap[1],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -149,7 +152,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'feb',
       title: headerMap[2],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -158,7 +161,7 @@ const OverallAopConsumptionPCG = () => {
       field: 'march',
       title: headerMap[3],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -268,7 +271,7 @@ const OverallAopConsumptionPCG = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
-    dropdownCell: true,
+    //dropdownCell: true,
   }
 
   return (
