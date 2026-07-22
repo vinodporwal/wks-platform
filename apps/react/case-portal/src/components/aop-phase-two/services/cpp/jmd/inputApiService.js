@@ -78,6 +78,9 @@ export const InputApiService = {
   getFuelMaster,
   getFuelPriorityData,
   saveFuelPriorityData,
+  getPlantFuelAvailabilityMonthly,
+  savePlantFuelAvailabilityMonthly,
+  deletePlantFuelAvailabilityMonthly,
   importFuelPriorityExcel,
   exportFuelPriorityExcel,
 
@@ -1430,6 +1433,79 @@ async function saveFuelPriorityData(
     return result || { success: true }
   } catch (e) {
     console.error('Error saving fuel priority data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getPlantFuelAvailabilityMonthly(
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  const queryParams = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+  const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability-monthly/${queryParams}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result
+  } catch (e) {
+    console.error('Error fetching plant fuel availability monthly data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function savePlantFuelAvailabilityMonthly(keycloak, payload) {
+  const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability-monthly`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving plant fuel availability monthly data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function deletePlantFuelAvailabilityMonthly(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability-monthly/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error deleting plant fuel availability monthly record:', e)
     return await Promise.reject(e)
   }
 }
