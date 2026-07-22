@@ -325,9 +325,6 @@ const OtherDocumentUpload = ({ permissions }) => {
 
                     const mimeMap = {
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
-                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsm',
-                        'application/vnd.ms-excel': '.xls',
-
                     }
 
                     const ext = mimeMap[mimeType] || ''
@@ -372,28 +369,65 @@ const OtherDocumentUpload = ({ permissions }) => {
     // ─── Delete ───────────────────────────────────────────────────────────────
 
     const handleDelete = useCallback(
-        async (id) => {
+        async (rowOrId) => {
             if (READ_ONLY) {
                 showMessage('You do not have permission to delete files.', 'error')
                 return
             }
+
+            const targetRow =
+                typeof rowOrId === 'object' && rowOrId !== null
+                    ? rowOrId
+                    : rows.find(
+                        (r) =>
+                            r.id === rowOrId ||
+                            r.transactionId === rowOrId ||
+                            r.TransactionId === rowOrId,
+                    ) || selectedRowForDelete
+
+            const transactionId =
+                targetRow?.transactionId ||
+                targetRow?.TransactionId ||
+                targetRow?.id ||
+                (typeof rowOrId === 'string' || typeof rowOrId === 'number'
+                    ? rowOrId
+                    : null)
+
+            if (!transactionId) {
+                showMessage('Transaction ID not found for document deletion.', 'error')
+                return
+            }
+
             setIsDeleting(true)
             try {
-                const targetRow = rows.find((r) => r.id === id)
-                const transactionId = targetRow?.transactionId || id
-                await DocumentUploadApiService.deleteDocument(keycloak, transactionId)
-                showMessage('Document deleted successfully.', 'success')
+                const response = await DocumentUploadApiService.deleteDocument(
+                    keycloak,
+                    transactionId,
+                )
+
+                if (
+                    response?.code &&
+                    response.code !== 200 &&
+                    response?.status !== 'SUCCESS'
+                ) {
+                    throw new Error(response?.message || 'Delete failed.')
+                }
+
+                showMessage(
+                    response?.message || 'Document deleted successfully.',
+                    'success',
+                )
                 await fetchDocuments()
             } catch (err) {
                 console.error('Delete error:', err)
-                showMessage('Delete failed. Please try again.', 'error')
+                showMessage(err?.message || 'Delete failed. Please try again.', 'error')
             } finally {
                 setIsDeleting(false)
                 setOpenDeleteConfirm(false)
                 setSelectedRowForDelete(null)
             }
         },
-        [READ_ONLY, rows, keycloak, showMessage, fetchDocuments],
+        [READ_ONLY, rows, keycloak, showMessage, fetchDocuments, selectedRowForDelete],
     )
 
     // ─── ActionCell ───────────────────────────────────────────────────────────
@@ -470,15 +504,15 @@ const OtherDocumentUpload = ({ permissions }) => {
                         </span>
                     </Tooltip>}
 
-                    <Tooltip title='Download Document' arrow>
+                    {hasDocument && <Tooltip title='Download Document' arrow>
                         <span>
                             <IconButton size='small' onClick={handleDownloadClick}>
                                 <CloudDownloadIcon fontSize='small' />
                             </IconButton>
                         </span>
-                    </Tooltip>
+                    </Tooltip>}
 
-                    <Tooltip title='Delete Document' arrow>
+                    {hasDocument && <Tooltip title='Delete Document' arrow>
                         <span>
                             <IconButton
                                 size='small'
@@ -488,7 +522,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                                 <DeleteOutlineIcon fontSize='small' />
                             </IconButton>
                         </span>
-                    </Tooltip>
+                    </Tooltip>}
                 </td>
             )
         }
@@ -592,7 +626,9 @@ const OtherDocumentUpload = ({ permissions }) => {
     // ─── Delete confirm handler ───────────────────────────────────────────────
 
     const handleDeleteConfirm = useCallback(() => {
-        if (selectedRowForDelete) handleDelete(selectedRowForDelete.id)
+        if (selectedRowForDelete) {
+            handleDelete(selectedRowForDelete)
+        }
     }, [selectedRowForDelete, handleDelete])
 
     // ─── Notes submit ─────────────────────────────────────────────────────────

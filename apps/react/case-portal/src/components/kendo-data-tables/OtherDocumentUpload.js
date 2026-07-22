@@ -114,14 +114,24 @@ const OtherDocumentUpload = ({ permissions }) => {
 
   // ── Toast ────────────────────────────────────────────────────────────────
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({ message: '', severity: 'info' })
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
 
   const [summary, setSummary] = useState('')
 
   // ── Store / session ──────────────────────────────────────────────────────
   const apiRef = useGridApiRef()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, oldYear, yearChanged, verticalObject, siteObject } = dataGridStore
+  const {
+    plantObject,
+    year,
+    oldYear,
+    yearChanged,
+    verticalObject,
+    siteObject,
+  } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -148,7 +158,8 @@ const OtherDocumentUpload = ({ permissions }) => {
   // ─── Storage key ──────────────────────────────────────────────────────────
 
   const getStorageKey = useCallback(
-    () => `other_docs_${PLANT_ID || 'default'}_${AOP_YEAR || 'default'}_${VERTICAL_ID || 'default'}`,
+    () =>
+      `other_docs_${PLANT_ID || 'default'}_${AOP_YEAR || 'default'}_${VERTICAL_ID || 'default'}`,
     [PLANT_ID, AOP_YEAR, VERTICAL_ID],
   )
 
@@ -187,7 +198,10 @@ const OtherDocumentUpload = ({ permissions }) => {
 
   const uploadFiles = useCallback(
     async (filesList) => {
-      if (READ_ONLY) { showMessage('You do not have permission to upload files.', 'error'); return }
+      if (READ_ONLY) {
+        showMessage('You do not have permission to upload files.', 'error')
+        return
+      }
       if (!filesList?.length) return
 
       setIsUploading(true)
@@ -200,14 +214,18 @@ const OtherDocumentUpload = ({ permissions }) => {
           const file = filesList[i]
           const dirPath = `other-docs/${PLANT_ID}/${AOP_YEAR}`
           const uploadResult = await FileService.upload({
-            dir: dirPath, file, keycloak,
+            dir: dirPath,
+            file,
+            keycloak,
             progress: (_e, pct) => setUploadProgress(Math.round(pct)),
           })
           newUploads.push({
             id: `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
             name: uploadResult?.name || file.name,
             size: formatBytes(uploadResult?.size || file.size),
-            type: (uploadResult?.type || file.name.split('.').pop()).toLowerCase(),
+            type: (
+              uploadResult?.type || file.name.split('.').pop()
+            ).toLowerCase(),
             dir: uploadResult?.dir || dirPath,
             url: uploadResult?.url || file.name,
             uploadedAt: new Date().toLocaleString(),
@@ -238,7 +256,10 @@ const OtherDocumentUpload = ({ permissions }) => {
 
   const updateFile = useCallback(
     async (filesList, rowToUpdate) => {
-      if (READ_ONLY) { showMessage('You do not have permission to update files.', 'error'); return }
+      if (READ_ONLY) {
+        showMessage('You do not have permission to update files.', 'error')
+        return
+      }
       if (!filesList?.length || !rowToUpdate) return
 
       setIsUploading(true)
@@ -249,7 +270,9 @@ const OtherDocumentUpload = ({ permissions }) => {
         const file = filesList[0]
         const dirPath = `other-docs/${PLANT_ID}/${AOP_YEAR}`
         const uploadResult = await FileService.upload({
-          dir: dirPath, file, keycloak,
+          dir: dirPath,
+          file,
+          keycloak,
           progress: (_e, pct) => setUploadProgress(Math.round(pct)),
         })
         const key = getStorageKey()
@@ -257,16 +280,19 @@ const OtherDocumentUpload = ({ permissions }) => {
         const updated = existing.map((item) =>
           item.id === rowToUpdate.id
             ? {
-              ...item,
-              name: uploadResult?.name || file.name,
-              size: formatBytes(uploadResult?.size || file.size),
-              type: (uploadResult?.type || file.name.split('.').pop()).toLowerCase(),
-              dir: uploadResult?.dir || dirPath,
-              url: uploadResult?.url || file.name,
-              uploadedAt: new Date().toLocaleString(),
-              uploadedBy: keycloak?.tokenParsed?.preferred_username || 'Unknown',
-              isDummy: false,
-            }
+                ...item,
+                name: uploadResult?.name || file.name,
+                size: formatBytes(uploadResult?.size || file.size),
+                type: (
+                  uploadResult?.type || file.name.split('.').pop()
+                ).toLowerCase(),
+                dir: uploadResult?.dir || dirPath,
+                url: uploadResult?.url || file.name,
+                uploadedAt: new Date().toLocaleString(),
+                uploadedBy:
+                  keycloak?.tokenParsed?.preferred_username || 'Unknown',
+                isDummy: false,
+              }
             : item,
         )
         localStorage.setItem(key, JSON.stringify(updated))
@@ -292,7 +318,9 @@ const OtherDocumentUpload = ({ permissions }) => {
     async (file) => {
       if (file?.isDummy || String(file?.id || '').startsWith('dummy')) {
         try {
-          const blob = new Blob([`Mock content for ${file.name}`], { type: 'application/octet-stream' })
+          const blob = new Blob([`Mock content for ${file.name}`], {
+            type: 'application/octet-stream',
+          })
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
@@ -325,7 +353,10 @@ const OtherDocumentUpload = ({ permissions }) => {
 
   const handleDelete = useCallback(
     async (id) => {
-      if (READ_ONLY) { showMessage('You do not have permission to delete files.', 'error'); return }
+      if (READ_ONLY) {
+        showMessage('You do not have permission to delete files.', 'error')
+        return
+      }
       setIsDeleting(true)
       try {
         const key = getStorageKey()
@@ -384,54 +415,60 @@ const OtherDocumentUpload = ({ permissions }) => {
       }
 
       return (
-        <td style={{ textAlign: 'center', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-          <Tooltip title="Add Document" arrow>
+        <td
+          style={{
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Tooltip title='Add Document' arrow>
             <span>
               <IconButton
-                size="small"
+                size='small'
                 disabled={READ_ONLY}
                 onClick={handleAddClick}
-              //sx={{ color: READ_ONLY ? 'action.disabled' : '#1565c0' }}
+                //sx={{ color: READ_ONLY ? 'action.disabled' : '#1565c0' }}
               >
-                <AddIcon fontSize="small" />
+                <AddIcon fontSize='small' />
               </IconButton>
             </span>
           </Tooltip>
 
-          <Tooltip title="Update Document" arrow>
+          <Tooltip title='Update Document' arrow>
             <span>
               <IconButton
-                size="small"
+                size='small'
                 disabled={READ_ONLY}
                 onClick={handleUpdateClick}
-              //sx={{ color: READ_ONLY ? 'action.disabled' : '#2e7d32' }}
+                //sx={{ color: READ_ONLY ? 'action.disabled' : '#2e7d32' }}
               >
-                <UploadIcon fontSize="small" />
+                <UploadIcon fontSize='small' />
               </IconButton>
             </span>
           </Tooltip>
 
-          <Tooltip title="Download Document" arrow>
+          <Tooltip title='Download Document' arrow>
             <span>
               <IconButton
-                size="small"
+                size='small'
                 onClick={handleDownloadClick}
-              // sx={{ color: '#0277bd' }}
+                // sx={{ color: '#0277bd' }}
               >
-                <CloudDownloadIcon fontSize="small" />
+                <CloudDownloadIcon fontSize='small' />
               </IconButton>
             </span>
           </Tooltip>
 
-          <Tooltip title="Delete Document" arrow>
+          <Tooltip title='Delete Document' arrow>
             <span>
               <IconButton
-                size="small"
+                size='small'
                 disabled={READ_ONLY}
                 onClick={handleDeleteClick}
-              // sx={{ color: READ_ONLY ? 'action.disabled' : '#c62828' }}
+                // sx={{ color: READ_ONLY ? 'action.disabled' : '#c62828' }}
               >
-                <DeleteOutlineIcon fontSize="small" />
+                <DeleteOutlineIcon fontSize='small' />
               </IconButton>
             </span>
           </Tooltip>
@@ -447,11 +484,27 @@ const OtherDocumentUpload = ({ permissions }) => {
   const columns = useMemo(
     () => [
       { field: 'name', title: 'Document Name', editable: false, minWidth: 220 },
-      { field: 'uploadedAt', title: 'Date & Time', editable: false, minWidth: 180 },
-      { field: 'uploadedBy', title: 'Uploaded By', editable: false, minWidth: 160 },
+      {
+        field: 'uploadedAt',
+        title: 'Date & Time',
+        editable: false,
+        minWidth: 180,
+      },
+      {
+        field: 'uploadedBy',
+        title: 'Uploaded By',
+        editable: false,
+        minWidth: 160,
+      },
       { field: 'size', title: 'Size', editable: false, minWidth: 120 },
       { field: 'type', title: 'Type', editable: false, minWidth: 100 },
-      { field: 'action', title: 'Action', editable: false, minWidth: 200, cell: ActionCell },
+      {
+        field: 'action',
+        title: 'Action',
+        editable: false,
+        minWidth: 200,
+        cell: ActionCell,
+      },
     ],
     [ActionCell],
   )
@@ -476,10 +529,17 @@ const OtherDocumentUpload = ({ permissions }) => {
     if (isOldYear !== 1) return perms
     return {
       ...perms,
-      showAction: false, addButton: false, deleteButton: false,
-      downloadExcelBtn: false, uploadExcelBtn: false, editButton: false,
-      showUnit: false, saveWithRemark: false, saveBtn: true,
-      isOldYear, allAction: false,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: true,
+      isOldYear,
+      allAction: false,
     }
   }
 
@@ -531,7 +591,10 @@ const OtherDocumentUpload = ({ permissions }) => {
       setSummary('')
     } catch (err) {
       console.error('Remarks save error:', err)
-      showMessage(err?.message || 'Failed to save remarks. Please try again.', 'error')
+      showMessage(
+        err?.message || 'Failed to save remarks. Please try again.',
+        'error',
+      )
     } finally {
       setIsSubmittingNotes(false)
     }
@@ -573,7 +636,6 @@ const OtherDocumentUpload = ({ permissions }) => {
 
       {/* ── Notes / Remarks Textarea ─────────────────────────────────── */}
 
-
       <Box sx={{ width: '100%' }}>
         {/* Label + Save button on same horizontal row */}
         <Box
@@ -584,10 +646,7 @@ const OtherDocumentUpload = ({ permissions }) => {
             mb: 0.5,
           }}
         >
-          <Typography
-            variant='caption'
-            className='aop-design-basis-label'
-          >
+          <Typography variant='caption' className='aop-design-basis-label'>
             Remarks
           </Typography>
 
@@ -597,7 +656,9 @@ const OtherDocumentUpload = ({ permissions }) => {
             startIcon={
               <Box component='img' src={SaveIcon} className='w16-icon' />
             }
-            disabled={!summary.trim() || Boolean(READ_ONLY) || isSubmittingNotes}
+            disabled={
+              !summary.trim() || Boolean(READ_ONLY) || isSubmittingNotes
+            }
             onClick={handleNotesSubmit}
           >
             Save
