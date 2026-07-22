@@ -49,7 +49,17 @@ async function uploadOrUpdateDocument(keycloak, { transactionId, masterId, verti
             body: formData,
         })
         if (!resp.ok) {
-            throw new Error(`HTTP error! Status: ${resp.status}`)
+            let errorMsg = `HTTP error! Status: ${resp.status}`
+            try {
+                const errJson = await resp.json()
+                if (errJson?.message) {
+                    errorMsg = errJson.message
+                }
+            } catch (_) {}
+            if (resp.status === 500 && errorMsg.startsWith('HTTP error')) {
+                errorMsg = 'Server Error (500): The uploaded file exceeds the maximum allowed server limit (5 MB).'
+            }
+            throw new Error(errorMsg)
         }
         return json(keycloak, resp)
     } catch (e) {

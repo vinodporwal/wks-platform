@@ -325,6 +325,8 @@ const OtherDocumentUpload = ({ permissions }) => {
 
                     const mimeMap = {
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                        'application/vnd.ms-excel': '.xls',
+                        'application/pdf': '.pdf',
                     }
 
                     const ext = mimeMap[mimeType] || ''

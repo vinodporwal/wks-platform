@@ -49,6 +49,7 @@ const CrakcerProductionConst = () => {
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME_NO_CASE === 'C2'
 
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
@@ -123,7 +124,53 @@ const CrakcerProductionConst = () => {
   const FORMATE_VALUE = ValueFormatterProduction()
 
   const colDefsConstants = useMemo(() => {
-    const cols = [
+    if (IS_CRACKER_C2) {
+      return [
+        {
+          field: 'DisplayName',
+          title: 'Particulars',
+          editable: false,
+          widthT: 150,
+          hidden: false,
+          minWidth: 120,
+        },
+        {
+          field: 'UOM',
+          title: 'UOM',
+          editable: false,
+          widthT: 80,
+          minWidth: 60,
+        },
+        {
+          field: 'startDate',
+          title: 'Start Date',
+          editable: true,
+          type: 'crackerC2DatePicker',
+          widthT: 120,
+          minWidth: 100,
+        },
+        {
+          field: 'ConstantValue',
+          title: 'Value',
+          editable: true,
+          type: 'number',
+          widthT: 120,
+          format: FORMATE_VALUE,
+          minWidth: 100,
+        },
+        {
+          field: 'remarks',
+          title: 'Remark',
+          editable: false,
+          widthT: 140,
+          minWidth: 80,
+          autoAdjust: false,
+          type: 'string',
+        },
+      ]
+    }
+
+    return [
       {
         field: 'DisplayName',
         title: 'Particulars',
@@ -143,15 +190,11 @@ const CrakcerProductionConst = () => {
         field: 'ConstantValue',
         title: 'Value',
         editable: true,
-        type:
-          lowerVertName === 'cracker' && SITE_NAME_NO_CASE === 'C2'
-            ? 'crackerC2DatePicker'
-            : 'number',
+        type: 'number',
         widthT: 120,
         format: FORMATE_VALUE,
         minWidth: 100,
       },
-
       {
         field: 'remarks',
         title: 'Remark',
@@ -162,33 +205,49 @@ const CrakcerProductionConst = () => {
         type: 'string',
       },
     ]
-    return cols
-  }, [FORMATE_VALUE, SITE_NAME_NO_CASE, lowerVertName])
+  }, [FORMATE_VALUE, IS_CRACKER_C2])
 
   const saveProductionConstrant = async (newRow) => {
     setLoading1(true)
     try {
       var payload = []
 
-      payload = newRow.map((row) => ({
-        apr: row.apr || row.ConstantValue || null,
-        may: row.apr || row.ConstantValue || null,
-        jun: row.apr || row.ConstantValue || null,
-        jul: row.apr || row.ConstantValue || null,
-        aug: row.apr || row.ConstantValue || null,
-        sep: row.apr || row.ConstantValue || null,
-        oct: row.apr || row.ConstantValue || null,
-        nov: row.apr || row.ConstantValue || null,
-        dec: row.apr || row.ConstantValue || null,
-        jan: row.apr || row.ConstantValue || null,
-        feb: row.apr || row.ConstantValue || null,
-        mar: row.apr || row.ConstantValue || null,
-        UOM: '',
-        auditYear: AOP_YEAR,
-        normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
-        remarks: row.remarks,
-        id: row.idFromApi || null,
-      }))
+      payload = newRow.map((row) => {
+        let startDateVal = null
+        if ('startDate' in row) {
+          startDateVal = row.startDate
+        } else if ('StartDate' in row) {
+          startDateVal = row.StartDate
+        } else if ('apr' in row) {
+          startDateVal = row.apr
+        }
+
+        const constantVal = row.ConstantValue ?? row.may ?? row.apr ?? null
+        const aprVal = IS_CRACKER_C2 ? startDateVal : constantVal
+
+        return {
+          apr: aprVal,
+          may: constantVal,
+          jun: constantVal,
+          jul: constantVal,
+          aug: constantVal,
+          sep: constantVal,
+          oct: constantVal,
+          nov: constantVal,
+          dec: constantVal,
+          jan: constantVal,
+          feb: constantVal,
+          mar: constantVal,
+          startDate: startDateVal,
+          StartDate: startDateVal,
+          ConstantValue: constantVal,
+          UOM: '',
+          auditYear: AOP_YEAR,
+          normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
+          remarks: row.remarks,
+          id: row.idFromApi || null,
+        }
+      })
 
       const response = await ProductionConstarintsApiService.saveProductionConstraint(
         PLANT_ID,
@@ -225,8 +284,14 @@ const CrakcerProductionConst = () => {
   const fetchConstantsData = useCallback(async () => {
     setProductionRowsConstants([])
     try {
-      const constantsRes =
-        await ProductionConstarintsApiService.getProductionConstraints(
+      const constantsRes = IS_CRACKER_C2
+        ? await ProductionConstarintsApiService.getAopBasiswithStartDate(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'constant',
+        )
+        : await ProductionConstarintsApiService.getProductionConstraints(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -237,22 +302,25 @@ const CrakcerProductionConst = () => {
         return
       }
 
-      const data = constantsRes?.data
+      const data = constantsRes?.data || []
       const formattedData = data.map((item, index) => ({
         ...item,
         idFromApi: item.id,
         id: index,
         originalRemark: item.Remarks,
         srNo: index + 1,
-        Particulars: item.NormTypeName,
+        Particulars: item.NormTypeName || item.DisplayName,
         remarks: item.Remarks,
+        startDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
+        StartDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
+        ConstantValue: item.ConstantValue ?? item.constantValue ?? item.may ?? '',
       }))
 
       setProductionRowsConstants(formattedData)
     } catch (error) {
       console.error('Error fetching constants data:', error)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2])
 
   const handleRemarkCellClickConstants = (row) => {
     if (READ_ONLY) return

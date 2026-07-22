@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -53,23 +53,14 @@ const DropZone = styled(Box)(({ dragover }) => ({
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCEPTED_TYPES = [
-  // 'application/pdf',
-  // 'application/msword',
-  // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/pdf',
   'application/vnd.ms-excel',
-  // 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  // 'application/vnd.ms-powerpoint',
-  // 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  // 'image/jpeg',
-  // 'image/png',
-  // 'image/jpg',
-  //'text/plain',
-  // 'text/csv',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel.sheet.macroenabled.12',
 ]
 
-//const ACCEPTED_EXTENSIONS = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv'
-const ACCEPTED_EXTENSIONS = '.xls,.xlsx,.xlsm'
-const MAX_FILE_SIZE_MB = 10
+const ACCEPTED_EXTENSIONS = '.xls,.xlsx,.xlsm,.pdf'
+const MAX_FILE_SIZE_MB = 5
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 const formatBytes = (bytes) => {
@@ -100,6 +91,17 @@ const UploadDocumentDialog = ({
   const [dragOver, setDragOver] = useState(false)
   const [validationError, setValidationError] = useState('')
 
+  useEffect(() => {
+    if (!open) {
+      setSelectedFile(null)
+      setValidationError('')
+      setDragOver(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }, [open])
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   const validateFile = useCallback((file) => {
@@ -110,7 +112,7 @@ const UploadDocumentDialog = ({
         file.name.toLowerCase().endsWith(ext),
       )
     if (!isTypeValid) {
-      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: XLS, XLSX, XLSM.`
+      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: XLS, XLSX, XLSM, PDF.`
     }
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return `File size (${formatBytes(file.size)}) exceeds the ${MAX_FILE_SIZE_MB} MB limit.`
@@ -302,13 +304,8 @@ const UploadDocumentDialog = ({
           >
             Browse File
           </Button>
-          <Typography
-            variant='caption'
-            color='text.secondary'
-            textAlign='center'
-            sx={{ lineHeight: 1.4 }}
-          >
-            Supported: XLS, XLSX, XLSM,
+          <Typography variant='caption' color='text.secondary' textAlign='center' sx={{ lineHeight: 1.4 }}>
+            Supported: XLS, XLSX, XLSM, PDF
             <br />
             Max size: {MAX_FILE_SIZE_MB} MB
           </Typography>

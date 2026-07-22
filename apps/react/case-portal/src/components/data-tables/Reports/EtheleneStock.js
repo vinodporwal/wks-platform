@@ -31,7 +31,7 @@ const groupColumns = (flatCols) => {
   const dateCol = flatCols.find((col) => col.field === 'Date')
 
   // Columns to be grouped under "Production Columns"
-  const productionFields = ['Production Ethylene', 'Production Propylene']
+  const productionFields = ['Ethylene', 'Propylene']
   const productionCols = flatCols.filter((col) =>
     productionFields.includes(col.field),
   )
