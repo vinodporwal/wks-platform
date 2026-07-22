@@ -56,6 +56,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private static final String APPROVED = "APPROVED";
     private static final String REVERTED = "REVERTED";
     private static final String SUBMITTED = "SUBMITTED";
+    /** Recorded as the destination when a decision ends the process. */
+    private static final String COMPLETED = "COMPLETED";
     /** Camunda REST emits offsets without a colon, e.g. 2026-07-21T15:30:00.000+0000. */
     private static final DateTimeFormatter ENGINE_TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
@@ -230,18 +232,32 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         // required role was accounted for.
         List<Task> toComplete = tasksForCallerAtGate(businessKey, gateName, taskId, callerRoles);
 
+        // Replayed request: the caller has no open task left at this gate, so this
+        // decision has already been applied (a double-clicked button, a retried
+        // request, a stale taskId from a page that has not refreshed). Recording it
+        // again would add a duplicate audit row for an engine action that never
+        // happened. Treat it as a no-op rather than an error - the caller's intent
+        // was satisfied by the first request.
+        if (toComplete.isEmpty()) {
+            log.info("AOP act: no open task for {} at {} (user {}, roles {}) - already decided, ignoring replay",
+                    businessKey, gateName, actorUserId, callerRoles);
+            return;
+        }
+
         List<ProcessVariable> vars = new ArrayList<>();
         vars.add(strVar("decision", normalized));
         vars.add(strVar("remark", remark != null ? remark : ""));
 
+        List<UUID> auditIds = new ArrayList<>();
         for (Task task : toComplete) {
             // Audit first: the trail must not claim an approval the engine rejected.
-            auditService.record(businessKey, year, plantUuid, gateName,
+            // toGate is unknown until the engine has routed — back-filled below.
+            auditIds.add(auditService.record(businessKey, year, plantUuid, gateName,
                     gateMeta != null ? gateMeta.displayName : null,
                     gateMeta != null ? gateMeta.sequence : null,
                     normalized, actorUserId,
                     task.getAssignee() != null ? task.getAssignee() : actorRole,
-                    remark, gateName, null);
+                    remark, gateName, null));
 
             // Deliberately NOT case-engine's TaskService: its TaskCompleteListener
             // resolves a CaseInstance by businessKey and throws
@@ -252,6 +268,15 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             processEngineClientFacade.complete(task.getId(), vars);
         }
 
+        // Where did the plan actually land? Asking the engine after the fact is the
+        // only honest answer: an APPROVED at a multi-instance gate does not by
+        // itself advance anything (a peer may still revert it), so anything derived
+        // from the decision alone would be a guess. Same gate back = still waiting
+        // on that gate's other approvers.
+        List<Task> remaining = safeFind(businessKey);
+        String destination = remaining.isEmpty() ? COMPLETED : currentStepOf(remaining, steps);
+        auditService.completeToGate(auditIds, destination);
+
         // Notify the approvers of whatever gate is now active (skip the gate just
         // acted on, so parallel completions within a gate don't re-email it).
         notifyNextGates(masterId, gateName, steps, plant, year, businessKey);
@@ -259,18 +284,23 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
 
     /**
      * Every open task at {@code gateName} assigned to a role the caller holds,
-     * with the explicitly-selected task first.
+     * with the explicitly-selected task first. Empty when the caller has nothing
+     * left to act on there.
      *
-     * <p>Falls back to a synthetic single-task list if the engine lookup returns
-     * nothing for the given id — the caller's explicit taskId always wins, so a
-     * lookup hiccup can never turn one approval into zero.</p>
+     * <p>An empty result must mean "already decided", never "the lookup failed",
+     * or a replayed request would be indistinguishable from a first one. So this
+     * uses {@link #tasksForActing} rather than {@link #safeFind}: a genuine engine
+     * outage throws instead of silently yielding an empty list. An earlier version
+     * fabricated a synthetic task from the supplied id whenever the lookup came
+     * back empty, which turned every duplicate submission into an extra audit row
+     * for an engine action that had already happened.</p>
      */
     private List<Task> tasksForCallerAtGate(String businessKey, String gateName, String taskId,
             List<String> callerRoles) {
 
         List<Task> matched = new ArrayList<>();
         Task selected = null;
-        for (Task task : safeFind(businessKey)) {
+        for (Task task : tasksForActing(businessKey)) {
             if (!gateName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
                 continue;
             }
@@ -283,10 +313,6 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         }
         if (selected != null) {
             matched.add(0, selected);
-        } else if (matched.isEmpty()) {
-            Task fallback = new Task();
-            fallback.setId(taskId);
-            matched.add(fallback);
         }
         return matched;
     }
@@ -595,6 +621,24 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 log.warn("AOP: could not parse task timestamp '{}'", value);
                 return null;
             }
+        }
+    }
+
+    /**
+     * Task lookup for the decision path, where an empty list is load-bearing: it
+     * is read as "this decision was already applied" and suppresses the audit row.
+     * A failed lookup must therefore never come back empty — it throws, so the
+     * caller gets a 500 and can retry, rather than having their approval silently
+     * swallowed. Read paths use {@link #safeFind}, where degrading to an empty
+     * list only costs a button.
+     */
+    private List<Task> tasksForActing(String businessKey) {
+        try {
+            List<Task> tasks = taskService.find(Optional.of(businessKey));
+            return tasks != null ? tasks : new ArrayList<>();
+        } catch (Exception ex) {
+            throw new IllegalStateException("AOP act: could not list tasks for " + businessKey
+                    + " - refusing to record a decision without confirming it reached the engine", ex);
         }
     }
 

@@ -37,7 +37,7 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
 
     @Override
     @Transactional
-    public void record(String caseId, String year, UUID plantFkId, String gateName, String gateDisplayName,
+    public UUID record(String caseId, String year, UUID plantFkId, String gateName, String gateDisplayName,
             Integer sequence, String action, String actorUserId, String actorRole, String remark,
             String fromGate, String toGate) {
 
@@ -75,7 +75,22 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
             }
         }
 
-        auditRepository.save(builder.build());
+        return auditRepository.save(builder.build()).getId();
+    }
+
+    @Override
+    @Transactional
+    public void completeToGate(List<UUID> ids, String toGate) {
+        if (ids == null || ids.isEmpty() || toGate == null) {
+            return;
+        }
+        for (AopApprovalHistory row : auditRepository.findAllById(ids)) {
+            if (row.getToGate() == null) {
+                row.setToGate(toGate);
+            }
+        }
+        // Dirty-checked on flush; ids come from rows written earlier in this
+        // transaction, so they are already managed.
     }
 
     @Override

@@ -15,13 +15,30 @@ public interface AopApprovalAuditService {
 
     /**
      * Record one gate action. Site and vertical are resolved from the Plants
-     * master by {@code plantFkId}; the row is immutable once written.
+     * master by {@code plantFkId}.
      *
      * @param action one of SUBMITTED, APPROVED, REVERTED
+     * @param toGate where the plan lands as a result. Pass null when the decision
+     *        is being recorded before the engine has routed, then fill it in with
+     *        {@link #completeToGate}.
+     * @return the id of the row just written
      */
-    void record(String caseId, String year, UUID plantFkId, String gateName, String gateDisplayName,
+    UUID record(String caseId, String year, UUID plantFkId, String gateName, String gateDisplayName,
             Integer sequence, String action, String actorUserId, String actorRole, String remark,
             String fromGate, String toGate);
+
+    /**
+     * Fill in {@code toGate} on rows written earlier in the same request.
+     *
+     * <p>A decision has to be audited <em>before</em> the engine call — the trail
+     * must never claim an approval the engine rejected — but at that point where
+     * the plan will land is not yet known, least of all at a multi-instance gate
+     * where routing waits on every approver. So the destination is resolved from
+     * the engine once the tasks are complete and back-filled here. This is the
+     * only mutation an audit row ever undergoes, and it only ever moves the field
+     * from null to a value.</p>
+     */
+    void completeToGate(List<UUID> ids, String toGate);
 
     List<AopApprovalHistoryDTO> getAuditTrail(UUID plantFkId, String year);
 
