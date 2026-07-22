@@ -67,7 +67,12 @@ export const parseDateRobust = (value) => {
 export const ConstantValueEditCell = (props) => {
   const { dataItem, field, onChange } = props
   const uom = (dataItem?.UOM || '').toLowerCase()
-  const isDateOrDay = uom === 'date' || uom === 'day'
+  const isDateOrDay =
+    uom === 'date' ||
+    uom === 'day' ||
+    field === 'startDate' ||
+    field === 'StartDate' ||
+    props.column?.type === 'crackerC2DatePicker'
 
   const currentRaw = dataItem?.[field]
   const initialDate = isDateOrDay ? parseDateRobust(currentRaw) : null
@@ -146,7 +151,12 @@ export const ConstantValueDataCell = (props) => {
   } = props
   const value = dataItem[field]
   const uom = (dataItem?.UOM || '').toLowerCase()
-  const isDateOrDay = uom === 'date' || uom === 'day'
+  const isDateOrDay =
+    uom === 'date' ||
+    uom === 'day' ||
+    field === 'startDate' ||
+    field === 'StartDate' ||
+    props.column?.type === 'crackerC2DatePicker'
 
   if (isDateOrDay) {
     let displayValue = value
