@@ -1822,6 +1822,75 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		}
 	}
 
+	@Override
+	@Transactional
+	public AOPMessageVM getDecokingPlanningNotification(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID: " + plantId));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new RuntimeException("Site not found for plant: " + plantId));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new RuntimeException("Vertical not found for plant: " + plantId));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_DecokingPlanningNotification";
+			String callSql = "{call " + "[RIL.AOP].[dbo]." + storedProcedure + "(?, ?)}";
+
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+
+				stmt.setString(1, plantId);
+				stmt.setString(2, aopYear);
+
+				boolean hasResultSet = stmt.execute();
+				if (hasResultSet) {
+					ResultSet rs = stmt.getResultSet();
+					ResultSetMetaData rsmd = rs.getMetaData();
+					int columnCount = rsmd.getColumnCount();
+
+					List<Map<String, Object>> columns = new ArrayList<>();
+					for (int i = 1; i <= columnCount; i++) {
+						String columnName = rsmd.getColumnLabel(i);
+						Map<String, Object> meta = new HashMap<>();
+						meta.put("field", columnName);
+						meta.put("title", columnName);
+						meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+						columns.add(meta);
+					}
+
+					List<Map<String, Object>> data = new ArrayList<>();
+					while (rs.next()) {
+						Map<String, Object> row = new LinkedHashMap<>();
+						for (int i = 1; i <= columnCount; i++) {
+							String colName = rsmd.getColumnLabel(i);
+							Object value = rs.getObject(i);
+							row.put(colName, value != null ? value : "");
+						}
+						data.add(row);
+					}
+
+					Map<String, Object> finalData = new HashMap<>();
+					finalData.put("data", data);
+					finalData.put("columns", columns);
+					aopMessageVM.setData(finalData);
+				}
+
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("Data fetched successfully");
+				return aopMessageVM;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				throw new RuntimeException("Error executing stored procedure: " + storedProcedure, e);
+			}
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch decoking planning notification data", ex);
+		}
+	}
 
 
 

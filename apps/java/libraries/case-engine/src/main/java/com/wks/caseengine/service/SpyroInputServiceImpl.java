@@ -33,6 +33,7 @@ import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.FeedTypeFlowMappingDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.ExcelConfigurations;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -1762,6 +1763,158 @@ session.doWork(connection -> {
 			aopMessageVM.setCode(500);
 			aopMessageVM.setMessage("Error retrieving feed type flow mappings: " + ex.getMessage());
 			return aopMessageVM;
+		}
+	}
+
+	@Override
+	public AOPMessageVM getSpyroInputMinMax(String plantId, String siteId, String verticalId, String aopYear, String  mode) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+	List<SpyroInputMinMaxDTO> resultList = new ArrayList<>();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetSpyroInputMinMax";
+
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear, @mode = :mode";
+			jakarta.persistence.Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("siteId", siteId);
+			query.setParameter("verticalId", verticalId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("mode", mode);
+
+			List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				SpyroInputMinMaxDTO dto = SpyroInputMinMaxDTO.builder()
+						.displayName(row[0] != null ? row[0].toString() : null)
+						.uom(row[1] != null ? row[1].toString() : null)
+						.idMin(row[2] != null ? row[2].toString() : null)
+						.idMax(row[3] != null ? row[3].toString() : null)
+						.aprMin(row[4] != null ? row[4].toString() : null)
+						.aprMax(row[5] != null ? row[5].toString() : null)
+						.mayMin(row[6] != null ? row[6].toString() : null)
+						.mayMax(row[7] != null ? row[7].toString() : null)
+						.junMin(row[8] != null ? row[8].toString() : null)
+						.junMax(row[9] != null ? row[9].toString() : null)
+						.julMin(row[10] != null ? row[10].toString() : null)
+						.julMax(row[11] != null ? row[11].toString() : null)
+						.augMin(row[12] != null ? row[12].toString() : null)
+						.augMax(row[13] != null ? row[13].toString() : null)
+						.sepMin(row[14] != null ? row[14].toString() : null)
+						.sepMax(row[15] != null ? row[15].toString() : null)
+						.octMin(row[16] != null ? row[16].toString() : null)
+						.octMax(row[17] != null ? row[17].toString() : null)
+						.novMin(row[18] != null ? row[18].toString() : null)
+						.novMax(row[19] != null ? row[19].toString() : null)
+						.decMin(row[20] != null ? row[20].toString() : null)
+						.decMax(row[21] != null ? row[21].toString() : null)
+						.janMin(row[22] != null ? row[22].toString() : null)
+						.janMax(row[23] != null ? row[23].toString() : null)
+						.febMin(row[24] != null ? row[24].toString() : null)
+						.febMax(row[25] != null ? row[25].toString() : null)
+						.marMin(row[26] != null ? row[26].toString() : null)
+						.marMax(row[27] != null ? row[27].toString() : null)
+						.minWeightAverage(row[28] != null ? row[28].toString() : null)
+						.maxWeightAverage(row[29] != null ? row[29].toString() : null)
+						.build();
+				resultList.add(dto);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Success");
+			aopMessageVM.setData(resultList);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Error retrieving feed type flow mappings: " + ex.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			// month number -> [minValue, maxValue] field accessor pairs
+			// Months in financial year order: Apr=4 .. Mar=3
+			int[][] monthIndices = {
+				{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {1}, {2}, {3}
+			};
+
+			for (SpyroInputMinMaxDTO dto : dtoList) {
+				String idMinStr = dto.getIdMin();
+				String idMaxStr = dto.getIdMax();
+
+				if (idMinStr == null || idMaxStr == null) {
+					continue;
+				}
+
+				UUID normParamIdMin = UUID.fromString(idMinStr);
+				UUID normParamIdMax = UUID.fromString(idMaxStr);
+
+				String[][] monthValues = {
+					{dto.getAprMin(), dto.getAprMax()},
+					{dto.getMayMin(), dto.getMayMax()},
+					{dto.getJunMin(), dto.getJunMax()},
+					{dto.getJulMin(), dto.getJulMax()},
+					{dto.getAugMin(), dto.getAugMax()},
+					{dto.getSepMin(), dto.getSepMax()},
+					{dto.getOctMin(), dto.getOctMax()},
+					{dto.getNovMin(), dto.getNovMax()},
+					{dto.getDecMin(), dto.getDecMax()},
+					{dto.getJanMin(), dto.getJanMax()},
+					{dto.getFebMin(), dto.getFebMax()},
+					{dto.getMarMin(), dto.getMarMax()}
+				};
+
+				for (int i = 0; i < monthIndices.length; i++) {
+					int month = monthIndices[i][0];
+					String minVal = monthValues[i][0];
+					String maxVal = monthValues[i][1];
+
+					upsertNormAttributeTransaction(normParamIdMin, month, aopYear, minVal);
+					upsertNormAttributeTransaction(normParamIdMax, month, aopYear, maxVal);
+				}
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SpyroInput Min/Max saved successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Error saving SpyroInput Min/Max: " + ex.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	private void upsertNormAttributeTransaction(UUID normParameterFKId, int month, String aopYear, String value) {
+		Optional<NormAttributeTransactions> existingOpt =
+				normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(
+						normParameterFKId, month, aopYear);
+
+		if (existingOpt.isPresent()) {
+			NormAttributeTransactions existing = existingOpt.get();
+			existing.setAttributeValue(value);
+			existing.setModifiedOn(new Date());
+			existing.setUserName(Utility.getUserName());
+			normAttributeTransactionsRepository.save(existing);
+		} else {
+			NormAttributeTransactions newRecord = NormAttributeTransactions.builder()
+					.normParameterFKId(normParameterFKId)
+					.aopMonth(month)
+					.auditYear(aopYear)
+					.attributeValue(value)
+					.attributeValueVersion("V1")
+					.createdOn(new Date())
+					.userName(Utility.getUserName())
+					.build();
+			normAttributeTransactionsRepository.save(newRecord);
 		}
 	}
 }

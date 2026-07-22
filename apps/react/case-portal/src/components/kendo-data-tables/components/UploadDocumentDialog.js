@@ -237,7 +237,7 @@ const UploadDocumentDialog = ({
           >
             <FileIcon sx={{ fontSize: '1rem', color: '#f57f17' }} />
             <Typography sx={{ fontSize: '0.78rem', color: '#5d4037' }}>
-              Replacing: <strong>{selectedRowForUpdate?.name}</strong>
+              Replacing: <strong>{selectedRowForUpdate?.documentName || selectedRowForUpdate?.name}</strong>
             </Typography>
           </Box>
         )}

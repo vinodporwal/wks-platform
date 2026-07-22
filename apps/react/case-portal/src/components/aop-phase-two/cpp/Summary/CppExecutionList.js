@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useSelector } from 'react-redux'
+import { Box } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { SummaryApiService } from '../../services/cpp/summaryApiService'
@@ -20,6 +21,10 @@ const CppExecutionList = ({ onViewClick }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const { year, yearChanged } = dataGridStore
+  const AOP_YEAR = year?.selectedYear
   // Column definitions
   const columns = [
     {
@@ -77,7 +82,7 @@ const CppExecutionList = ({ onViewClick }) => {
 
   useEffect(() => {
     fetchCppModelLogs()
-  }, [])
+  }, [yearChanged])
 
   const data = [
     {
@@ -97,7 +102,11 @@ const CppExecutionList = ({ onViewClick }) => {
   const fetchCppModelLogs = async () => {
     setLoading(true)
     try {
-      const res = await SummaryApiService.getCppModelLogs(keycloak)
+      const financialYear = AOP_YEAR ? parseInt(AOP_YEAR.split('-')[0]) : null
+      const res = await SummaryApiService.getCppModelLogs(
+        keycloak,
+        financialYear,
+      )
       //   const res = data
       if (res?.length === 0) {
         setRows([])

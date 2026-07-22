@@ -205,7 +205,7 @@ const ProposedConsumptionNorms = () => {
   const fetchGradeDropdowns = async () => {
     try {
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -226,7 +226,7 @@ const ProposedConsumptionNorms = () => {
     try {
       setGrades([])
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
