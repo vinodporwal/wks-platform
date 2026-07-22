@@ -122,6 +122,7 @@ class ODSNormsReader:
         self.filepath = _resolve_excel_path(plant_id)
         self._df: Optional[pd.DataFrame] = None
         self._month_col_idx: Optional[int] = None
+        self._cols_per_month: int = _COLS_PER_MONTH
         self._loaded = False
 
     # ------------------------------------------------------------------
@@ -179,16 +180,37 @@ class ODSNormsReader:
             self._loaded = True
 
     def _find_month_column(self) -> Optional[int]:
-        """Find the column index for the target month/year."""
+        """Find the column index for the target month/year.
+
+        Supports two ODS formats:
+          - C2: Row 1 has numeric month-year values (e.g. 2026.04), 6 cols/month
+          - DTA: Row 1 has quarter labels (Q1-Q4), Row 2 has month names, 4 cols/month
+        """
         if self._df is None:
             return None
 
+        # --- Try C2 format: numeric month-year in row 1 ---
         target_val = float(self.year) + float(self.month) / 100.0
         row_1 = self._df.iloc[1].tolist()
 
         for col_idx, val in enumerate(row_1):
             try:
                 if pd.notna(val) and abs(float(val) - target_val) < 1e-5:
+                    self._cols_per_month = 6
+                    return col_idx
+            except (ValueError, TypeError):
+                continue
+
+        # --- Try DTA format: month names in row 2 ---
+        _MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june',
+                        'july', 'august', 'september', 'october', 'november', 'december']
+        target_month_name = _MONTH_NAMES[self.month - 1]
+        row_2 = self._df.iloc[2].tolist()
+
+        for col_idx, val in enumerate(row_2):
+            try:
+                if pd.notna(val) and str(val).strip().lower() == target_month_name:
+                    self._cols_per_month = 4
                     return col_idx
             except (ValueError, TypeError):
                 continue
@@ -411,8 +433,10 @@ class ODSNormsReader:
             utility = str(row[_COL_UTILITY]).strip()
             material = str(row[_COL_MATERIAL]).strip()
 
-            if "HRSG" in utility.upper() and "LP STEAM" in material.upper():
-                byproducts[utility.upper()] = self._get_norm_val(row)
+            if "LP STEAM" in material.upper():
+                norm_val = self._get_norm_val(row)
+                if norm_val is not None and norm_val < 0:
+                    byproducts[utility.upper()] = norm_val
 
         return byproducts
 
@@ -799,8 +823,6 @@ class ODSNormsReader:
             account = str(row[_COL_ACCOUNT]).strip()
             material = str(row[_COL_MATERIAL]).strip()
 
-            if account not in ("Utilities", "Raw Material"):
-                continue
             if not utility or utility == "nan" or not material or material == "nan":
                 continue
             if utility == "Total" or material == "Total":

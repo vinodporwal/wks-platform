@@ -17,12 +17,11 @@ No hardcoded norm values.
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, Optional, Set
-
-if TYPE_CHECKING:
-    from engine.ods_norms_reader import ODSNormsReader
+import os
+from typing import Dict, Optional, Set
 
 from engine.norms_reader_factory import get_norms_reader
+from engine.ods_norms_reader import ODSNormsReader
 from engine.dispatch_engine import dispatch_power, dispatch_steam
 from database.queries import fetch_process_demands_raw, fetch_fixed_consumption_raw
 
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 CONVERGENCE_TOLERANCE = 0.0001  # 0.01% as a fraction
 MAX_ITERATIONS = 50
 
-DEFAULT_ALLOWED_ACCOUNTS: Set[str] = {"Utilities", "Raw Material"}
+DEFAULT_ALLOWED_ACCOUNTS: Optional[Set[str]] = None
 
 _EXCLUDED_NON_DISPATCHABLE = {"Power_Dis"}
 
@@ -164,7 +163,7 @@ class U4UIterationLoop:
         self.hrsg_heat_rate_df = hrsg_heat_rate_df
         # Use factory to get norms reader (ODS or DB based on feature flag)
         self.ods_reader = ods_reader or get_norms_reader(plant_id, month, year)
-        self.allowed_accounts = allowed_accounts or DEFAULT_ALLOWED_ACCOUNTS
+        self.allowed_accounts = allowed_accounts
         self.convergence_tolerance = convergence_tolerance
         self.max_iterations = max_iterations
         self.external_import_mwh = max(0.0, float(external_import_mwh))
@@ -191,14 +190,27 @@ class U4UIterationLoop:
 
     def run(self) -> dict:
         """Run the U4U iteration loop until convergence or max iterations."""
-        self.consumption_norms = self.ods_reader.get_consumption_norms()
+        self.consumption_norms = self.ods_reader.get_consumption_norms(include_all_accounts=True)
         self.all_consumption_norms = self.ods_reader.get_all_consumption_norms()
         if not self.consumption_norms:
             logger.warning("  [U4U LOOP] No ODS consumption norms available")
             return self._empty_result()
 
-        self._bpc_gen_quantities = self.ods_reader.get_bpc_generation_quantities()
-        self._bpc_quantities = self.ods_reader.get_bpc_quantities()
+        # BPC comparison data always comes from the original ODS file,
+        # not from the database (which may contain model-generated values).
+        self._bpc_reader = ODSNormsReader.get_reader(plant_id=self.plant_id, month=self.month, year=self.year)
+        self._bpc_gen_quantities = self._bpc_reader.get_bpc_generation_quantities()
+        self._bpc_quantities = self._bpc_reader.get_bpc_quantities()
+        if not self._bpc_gen_quantities:
+            # Fallback to main reader if ODS file not available
+            logger.warning("  [U4U LOOP] ODS file not available for BPC comparison, falling back to norms reader")
+            self._bpc_gen_quantities = self.ods_reader.get_bpc_generation_quantities()
+            self._bpc_quantities = self.ods_reader.get_bpc_quantities()
+        else:
+            logger.info("  [U4U LOOP] BPC comparison data loaded from ODS file (%s, %d producers, %d material quantities)",
+                        os.path.basename(self._bpc_reader.filepath),
+                        len(self._bpc_gen_quantities),
+                        sum(len(v) for v in self._bpc_quantities.values()))
 
         self._all_producers = set(self.consumption_norms.keys())
         initial_utility_demands = self._build_initial_demands()  # sets _raw_process/_raw_fixed
@@ -210,7 +222,10 @@ class U4UIterationLoop:
         logger.info("  %s", "=" * 78)
         logger.info("  Tolerance: %.4f%%  |  Max iterations: %d",
                      self.convergence_tolerance * 100, self.max_iterations)
-        logger.info("  Allowed accounts: %s", ", ".join(sorted(self.allowed_accounts)))
+        if self.allowed_accounts is None:
+            logger.info("  Allowed accounts: ALL")
+        else:
+            logger.info("  Allowed accounts: %s", ", ".join(sorted(self.allowed_accounts)))
         logger.info("  ODS producers: %d", len(self._all_producers))
         logger.info("")
 
@@ -482,7 +497,7 @@ class U4UIterationLoop:
             for c in consumptions:
                 if c.get("source_plant", "") != asset_name:
                     continue
-                if c["account"] not in self.allowed_accounts:
+                if self.allowed_accounts is not None and c["account"] not in self.allowed_accounts:
                     continue
 
                 norm = c["norm"]
@@ -495,6 +510,25 @@ class U4UIterationLoop:
 
                 quantity = gen_kwh * norm
                 u4u_amount = quantity
+
+                # Negative norms are byproduct credits (supply, not consumption).
+                # Include in detail_records for display but do NOT add to u4u[].
+                if norm < 0:
+                    details.append({
+                        "producer": asset_name,
+                        "producer_utility": power_producer_name,
+                        "producer_uom": producer_uom,
+                        "generation": gen_kwh,
+                        "account": account,
+                        "material": material,
+                        "material_uom": material_uom,
+                        "norm": norm,
+                        "quantity": quantity,
+                        "norms_header_id": c.get("norms_header_id"),
+                        "norms_month_detail_id": c.get("norms_month_detail_id"),
+                    })
+                    continue
+
                 if material == "Power_Dis":
                     u4u_amount = u4u_amount / 1000.0  # KWH → MWh
 
@@ -551,7 +585,7 @@ class U4UIterationLoop:
                 hrsg_hr_btu_lb = _interpolate_hrsg_heat_rate(asset_name, steam_flow_tph, self.hrsg_heat_rate_df)
 
             for c in producer_norms.get("consumptions", []):
-                if c["account"] not in self.allowed_accounts:
+                if self.allowed_accounts is not None and c["account"] not in self.allowed_accounts:
                     continue
 
                 norm = c["norm"]
@@ -637,7 +671,7 @@ class U4UIterationLoop:
             producer_uom = producer_info.get("producer_uom", "")
 
             for c in producer_info.get("consumptions", []):
-                if c["account"] not in self.allowed_accounts:
+                if self.allowed_accounts is not None and c["account"] not in self.allowed_accounts:
                     continue
 
                 norm = c["norm"]
@@ -650,6 +684,25 @@ class U4UIterationLoop:
 
                 quantity = generation * norm
                 u4u_amount = quantity
+
+                # Negative norms are byproduct credits (supply, not consumption).
+                # Include in detail_records for display but do NOT add to u4u[].
+                if norm < 0:
+                    details.append({
+                        "producer": producer_name,
+                        "producer_utility": producer_name,
+                        "producer_uom": producer_uom,
+                        "generation": generation,
+                        "account": account,
+                        "material": material,
+                        "material_uom": material_uom,
+                        "norm": norm,
+                        "quantity": quantity,
+                        "norms_header_id": c.get("norms_header_id"),
+                        "norms_month_detail_id": c.get("norms_month_detail_id"),
+                    })
+                    continue
+
                 if material == "Power_Dis":
                     u4u_amount = u4u_amount / 1000.0  # KWH → MWh
 
@@ -701,21 +754,21 @@ class U4UIterationLoop:
 
         byproduct_norms = self.ods_reader.get_hrsg_byproduct_norms()
 
-        # LP byproduct from HRSGs based on this iteration's total HRSG output
+        # LP byproduct from all steam generation assets (HRSGs, AUXBOILs, etc.)
+        # based on this iteration's total output
         lp_byproduct_mt = 0.0
         for asset in steam_result.get("assets", []):
-            if asset.get("asset_type", "") == "HRSG":
-                total_out = asset.get("total_output_mt", 0.0)
-                aname_upper = asset.get("asset_name", "").upper()
-                norm_val = byproduct_norms.get(aname_upper)
-                if norm_val is None:
-                    norm_val = next(
-                        (v for k, v in byproduct_norms.items()
-                         if k in aname_upper or aname_upper in k),
-                        0.0,
-                    )
-                # Byproduct norms are stored as negative credits; take abs value
-                lp_byproduct_mt += total_out * abs(norm_val or 0.0)
+            total_out = asset.get("total_output_mt", 0.0)
+            aname_upper = asset.get("asset_name", "").upper()
+            norm_val = byproduct_norms.get(aname_upper)
+            if norm_val is None:
+                norm_val = next(
+                    (v for k, v in byproduct_norms.items()
+                     if k in aname_upper or aname_upper in k),
+                    0.0,
+                )
+            # Byproduct norms are stored as negative credits; take abs value
+            lp_byproduct_mt += total_out * abs(norm_val or 0.0)
 
         # Build ODS-name → total demand map so cascade steps for intermediate
         # grades (HP Steam_Dis) that are not in _all_producers can still be
@@ -1429,7 +1482,6 @@ class U4UIterationLoop:
                         "material_uom": material_uom,
                         "norm": norm,
                         "quantity": quantity,
-                        "bpc_quantity": c.get("quantity", 0.0),
                     })
 
         return records
@@ -1468,12 +1520,12 @@ class U4UIterationLoop:
 
         # Part 2: Detailed U4U consumption table
         logger.info("  U4U CONSUMPTION TABLE (final iteration)")
-        logger.info("  %-25s  %-25s  %-6s  %14s  %14s  %10s  %-12s  %-25s  %-6s  %12s  %14s  %14s  %10s",
+        logger.info("  %-25s  %-25s  %-6s  %14s  %14s  %10s  %-20s  %-25s  %-6s  %12s  %14s  %14s  %10s",
                      "Utility Plant", "Utility", "UOM", "Gen Qty", "BPC Gen Qty", "Gen Diff %",
                      "Account", "Material", "UOM", "Norm", "Quantity", "BPC Quantity", "Qty Diff %")
         logger.info("  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s",
                      "-" * 25, "-" * 25, "-" * 6, "-" * 14, "-" * 14, "-" * 10,
-                     "-" * 12, "-" * 25, "-" * 6, "-" * 12, "-" * 14, "-" * 14, "-" * 10)
+                     "-" * 20, "-" * 25, "-" * 6, "-" * 12, "-" * 14, "-" * 14, "-" * 10)
 
         for rec in dynamic_table:
             bpc_gen = self._lookup_bpc_gen_qty(rec["producer"])
@@ -1482,14 +1534,14 @@ class U4UIterationLoop:
             if bpc_qty is None:
                 bpc_qty = self._lookup_bpc_qty(rec["producer"], rec["material"])
             qty_diff_pct = self._pct_diff(rec["quantity"], bpc_qty)
-            logger.info("  %-25s  %-25s  %-6s  %14.2f  %14.2f  %9.2f%%  %-12s  %-25s  %-6s  %12.6f  %14.2f  %14.2f  %9.2f%%",
+            logger.info("  %-25s  %-25s  %-6s  %14.2f  %14.2f  %9.2f%%  %-20s  %-25s  %-6s  %12.6f  %14.2f  %14.2f  %9.2f%%",
                          rec["producer"][:25],
                          rec["producer_utility"][:25],
                          rec["producer_uom"][:6],
                          rec["generation"],
                          bpc_gen,
                          gen_diff_pct,
-                         rec["account"][:12],
+                         rec["account"][:20],
                          rec["material"][:25],
                          rec["material_uom"][:6],
                          rec["norm"],

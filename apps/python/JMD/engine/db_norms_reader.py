@@ -224,12 +224,12 @@ class DBNormsReader:
         self._steam_letdown_norms = norms
 
     def _build_hrsg_byproduct_norms(self):
-        """Build HRSG byproduct norms (LP steam credits)."""
+        """Build byproduct norms (LP steam credits) for all steam generation assets."""
         for row in self._rows:
             utility = row["utility_name"]
             material = row["material_name"]
             
-            if "HRSG" in utility.upper() and "LP STEAM" in material.upper():
+            if "LP STEAM" in material.upper() and row["norm"] is not None and row["norm"] < 0:
                 self._hrsg_byproduct_norms[utility.upper()] = row["norm"]
 
     def _build_u4u_norms_matrix(self):
@@ -452,8 +452,6 @@ class DBNormsReader:
             material = row["material_name"]
             source_plant = row["plant_name"]
 
-            if account not in ("Utilities", "Raw Material"):
-                continue
             if not utility or not material:
                 continue
             if utility == "Total" or material == "Total":
