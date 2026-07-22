@@ -35,7 +35,7 @@ const SteadyStateConsumptionPCG = () => {
 
   const DECIMALS = IS_GASIFIER ? 10 : 5
   const valueFormat = customValueFormatterPhaseTwo(DECIMALS)
-  const monthMinWidth = IS_GASIFIER ? 180 : 120
+  const monthMinWidth = IS_GASIFIER ? 160 : 120
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
