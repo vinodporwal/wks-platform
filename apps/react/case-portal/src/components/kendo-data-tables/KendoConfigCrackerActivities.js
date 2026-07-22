@@ -1816,7 +1816,6 @@ const DecokingConfig = () => {
         setRowsForTab('IBR Plan', applyCalc(data), 2)
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [IS_CRACKER_C2, setRowsForTab, setIbrScreen2Rows, calculateIbrEdDate],
   )
 
