@@ -30,6 +30,7 @@ import { SaveIcon } from 'assets/images/icons'
 import UploadDocumentDialog from 'components/kendo-data-tables/components/UploadDocumentDialog'
 import DeleteConfirmationDialog from 'components/kendo-data-tables/components/DeleteConfirmationDialog'
 import { TextArea } from '@progress/kendo-react-inputs'
+import { formatToIST } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,7 +159,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                             typeof rawSize === 'number'
                                 ? formatBytes(rawSize)
                                 : rawSize || '',
-                        uploadedDateTime: formatDateTime(
+                        uploadedDateTime: formatToIST(
                             row.uploadedDateTime || row.uploadedAt || row.UploadedDateTime,
                         ),
                         size: typeof row.size === 'number' ? formatBytes(row.size) : row.size,
@@ -568,7 +569,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                 field: 'uploadedDateTime',
                 title: 'Date & Time',
                 editable: false,
-                minWidth: 180,
+                minWidth: 200,
             },
             {
                 field: 'uploadedBy',
