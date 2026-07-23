@@ -38,6 +38,10 @@ public class CPPModelCalculationLogListDTO {
     private Integer totalIterations;
     private Integer totalMonthsProcessed;
     private String totalExecutionTime;
+
+    // Plant information
+    private UUID plantId;
+    private String plantName;
     
     // Additional summary fields
     private Long monthsSucceeded;
