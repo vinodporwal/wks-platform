@@ -82,8 +82,8 @@ public class OtherFurnanceDetailsServiceImpl implements OtherFurnanceDetailsServ
 
 String insertSql = """
     INSERT INTO [RIL.AOP].[dbo].[NormAttributeTransactions]
-        (DisplayName, NormParameter_FK_Id, AuditYear, AttributeValue, Remarks)
-    VALUES (?, ?, ?, ?, ?)
+        (Id, NormParameter_FK_Id, AuditYear, AttributeValue, Remarks)
+    VALUES (NEWID(), ?, ?, ?, ?)
     """;
 
         for (OtherFurnanceDetailsDTO dto : otherFurnanceDetailsDTOs) { 
@@ -98,7 +98,6 @@ String insertSql = """
     if (rowsUpdated == 0) {
         jdbcTemplate.update(
                 insertSql,
-                dto.getDisplayName(),
                 dto.getId(),
                 aopYear,
                 dto.getAttributeValue(),
