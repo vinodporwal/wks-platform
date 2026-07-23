@@ -182,7 +182,7 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
             throws SQLException {
         String sql = "INSERT INTO RefineryOtherDocumentTransaction "
                 + "(Id, MasterId, VerticalId, AOPYear, Content, ContentType, FileName, FileSize, UploadedBy, UploadedDateTime) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())";
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -196,7 +196,7 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
             stmt.setString(7, fileName);
             stmt.setString(8, fileSize);
             stmt.setString(9, uploadedBy);
-            stmt.setTimestamp(10, uploadedDateTime);
+         //   stmt.setTimestamp(10, uploadedDateTime);
             stmt.executeUpdate();
         }
     }
@@ -206,7 +206,7 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
             throws SQLException {
         String sql = "UPDATE RefineryOtherDocumentTransaction "
                 + "SET Content = ?, ContentType = ?, FileName = ?, FileSize = ?, "
-                + "ModifiedBy = ?, ModifiedOn = ?, UploadedBy = ?, UploadedDateTime = ? "
+                + "ModifiedBy = ?, ModifiedOn = GETDATE(), UploadedBy = ?, UploadedDateTime = GETDATE() "
                 + "WHERE Id = ?";
 
         try (Connection conn = dataSource.getConnection();
@@ -217,10 +217,8 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
             stmt.setString(3, fileName);
             stmt.setString(4, fileSize);
             stmt.setString(5, modifiedBy);
-            stmt.setTimestamp(6, modifiedOn);
-            stmt.setString(7, modifiedBy);
-            stmt.setTimestamp(8, modifiedOn);
-            stmt.setString(9, transactionId);
+            stmt.setString(6, modifiedBy);
+            stmt.setString(7, transactionId);
             stmt.executeUpdate();
         }
     }
