@@ -1051,7 +1051,14 @@ const NestedKendoTable = ({
                       />
                     ),
                   }
-                : { text: NoSpinnerNumericEditor },
+                : {
+                    text: (cellProps) => (
+                      <NoSpinnerNumericEditor
+                        {...cellProps}
+                        allowNegative={col.allowNegative || false}
+                      />
+                    ),
+                  },
               data: (props) => (
                 <NestedHighlightCell
                   {...props}

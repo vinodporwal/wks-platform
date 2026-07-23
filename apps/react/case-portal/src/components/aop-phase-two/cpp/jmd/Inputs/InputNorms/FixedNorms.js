@@ -173,6 +173,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // May
@@ -183,6 +184,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // Jun
@@ -193,6 +195,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // Jul
@@ -203,6 +206,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // Aug
@@ -213,6 +217,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // Sep
@@ -223,6 +228,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // Oct
@@ -233,6 +239,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // Nov
@@ -243,6 +250,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     // Dec
@@ -253,6 +261,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     //Jan
@@ -263,6 +272,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     //Feb
@@ -273,6 +283,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     //Mar
@@ -283,6 +294,7 @@ const FixedNorms = () => {
       minWidth: 100,
       editable: true,
       type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
