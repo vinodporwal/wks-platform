@@ -826,7 +826,7 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
     return { 
       assetDisplayName: encodeURIComponent(item.AssetDisplayName) || '',
       eventName: encodeURIComponent(item.events.eventName) || '',
-      selectedEventId: encodeURIComponent(item.events.eventPkId) || '',
+      selectedEventId: item.events.eventPkId || '',
       assetId: encodeURIComponent(item.assetId) || '',
       assetName: encodeURIComponent(item.assetName) || '',
       startTimeStamp:  item.startTime ?  new Date(item.startTime.replace(" ", "T") + "Z").toISOString() : null,
@@ -839,13 +839,13 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
   const eventTrendUrlArray = mappedData.map((item) => ({
 
      urlId : item.selectedEventId,
-     url: `${Config.ApmBaseUrl}/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+     url: `${Config.ApmBaseUrl}/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${encodeURIComponent(item.selectedEventId)}&eventName=${item.eventName}&eventId=${encodeURIComponent(item.selectedEventId)}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
 
   }))
 
   const eventReportUrlArray = mappedData.map((item) => ({
     urlId : item.selectedEventId,
-    url: `${Config.ApmBaseUrl}/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
+    url: `${Config.ApmBaseUrl}/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${encodeURIComponent(item.selectedEventId)}`
   }))
 
  
@@ -874,7 +874,7 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
     CaseService.getSingleCaseByBusinessKey(keycloak, caseDefId, businessKeys[0]).then((data) => {
       console.log("In handleLinkCaseAction getCaseByBusinessKey data: ", data)
       setACase(data.data[0]);
-      setLinkSnackMessage(`Successfully linked the case ${data.data[0]?.caseTitle} to the events: ${eventIds}`);
+      setLinkSnackMessage(`Successfully linked the case ${businessKeys[0]} to the events: ${eventIds}`);
     })
    
     
