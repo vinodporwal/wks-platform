@@ -633,6 +633,7 @@ const FixedConsumption = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <FixedConsumptionJMD />
+      case 'hmd':
       case 'dmd':
         return <FixedConsumptionDMD />
       // case 'hmd':
@@ -656,7 +657,7 @@ const FixedConsumption = () => {
               currentRemark={currentRemark}
               setCurrentRemark={setCurrentRemark}
               currentRowId={currentRowId}
-              setCurrentRowId={() => {}}
+              setCurrentRowId={() => { }}
               saveChanges={saveChanges}
               handleExcelUpload={handleExcelUpload}
               handleExport={handleExport}
