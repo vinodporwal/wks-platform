@@ -2266,8 +2266,6 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 
 			boolean aromaticsPmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
 
-			boolean aromaticsHmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("HMD");
-
 			String steamLatentName = "";
 
 			if (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("DMD")) {
@@ -2401,11 +2399,6 @@ continue;
 				executeProcedure(procedure, plantFKId, year);
 			}
 
-			// execute sp for aromatics HMD
-			if(aromaticsHmd) {
-				String procedure=  verticalName + "_" + site.getName() + "_CalculateMatBal"; 
-				executeProcedure(procedure, plantFKId, year);
-			}
 			
 			return failedList;
 		} catch (Exception ex) {
