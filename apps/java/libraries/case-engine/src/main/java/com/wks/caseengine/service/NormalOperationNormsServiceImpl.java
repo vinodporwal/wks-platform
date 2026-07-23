@@ -675,10 +675,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	        	    Query query = entityManager.createNativeQuery(sql);
 	        	    
-	        	    System.out.println("Plant    : " + plant.getId());
-	        	    System.out.println("Site     : " + site.getId());
-	        	    System.out.println("Vertical : " + vertical.getId());
-
 	        	    query.setParameter("plantId", plant.getId());
 	        	    query.setParameter("siteId", site.getId());
 	        	    query.setParameter("verticalId", vertical.getId());
@@ -691,36 +687,33 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	              @SuppressWarnings("unchecked")
 	              List<Object[]> results = query.getResultList();
 	              
-	              List<ValidationErrorDTO> list = new ArrayList<>();
+					List<ValidationErrorDTO> list = new ArrayList<>();
 
-	              for (Object[] row : results) {
+					for (Object[] row : results) {
 
-	                  ValidationErrorDTO dto = new ValidationErrorDTO();
+						ValidationErrorDTO dto = new ValidationErrorDTO();
 
+						dto.setMaterialTypeId(toStringOrEmpty(row, 0));
+						dto.setMaterialTypeName(toStringOrEmpty(row, 1));
+						dto.setMaterialId(toStringOrEmpty(row, 2));
+						dto.setMaterialName(toStringOrEmpty(row, 3));
+						dto.setUom(toStringOrEmpty(row, 4));
 
-dto.setMaterialTypeId(toStringOrEmpty(row, 0));
-dto.setMaterialTypeName(toStringOrEmpty(row, 1));
-dto.setMaterialId(toStringOrEmpty(row, 2));
-dto.setMaterialName(toStringOrEmpty(row, 3));
-dto.setUom(toStringOrEmpty(row, 4));
+						dto.setMonth(toStringOrEmpty(row, 5));
+						dto.setYear(year);
 
-dto.setMonth(toStringOrEmpty(row, 5));
-dto.setYear(year);
-
-dto.setExpectedValue(toDouble(row, 6));   // WeightedValue
-dto.setActualValue(toDouble(row, 7));     // MCUNormValue
-dto.setDifference(toDouble(row, 8));
-dto.setMatchStatus(toStringOrEmpty(row, 9));
+						dto.setExpectedValue(toDouble(row, 6)); // WeightedValue
+						dto.setActualValue(toDouble(row, 7)); // MCUNormValue
+						dto.setDifference(toDouble(row, 8));
+						dto.setMatchStatus(toStringOrEmpty(row, 9));
 
 // Optional
-dto.setEnteredValue(toDouble(row, 7));
-dto.setSuggestedValue(0);
+						dto.setEnteredValue(toDouble(row, 7));
+						dto.setSuggestedValue(0);
 
-	                  list.add(dto);
-	              
-	                 
-	                
-	              }
+						list.add(dto);
+
+					}
 
 //	            boolean allValid = validateStapleGradeTotals(plantFKId, year, mCUNormsValueDTOList, gradeValidationErrors);
 
