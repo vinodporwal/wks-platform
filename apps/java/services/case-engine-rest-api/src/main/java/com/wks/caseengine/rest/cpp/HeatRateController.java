@@ -138,21 +138,23 @@ public class HeatRateController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping({"/stg-heat-rate/{financialYear}", "/stg-heat-rate/{financialYear}/{startDate}/{endDate}"})
+    @GetMapping("/stg-heat-rate/{financialYear}")
     public ResponseEntity<List<STGHeatRateDTO>> getSTGHeatRate(
             @PathVariable String financialYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String assetId,
+            @RequestParam(required = false) List<String> plantIds) {
         
         logger.info("========== GET STG HEAT RATE REQUEST ==========");
         logger.info("Request Parameters - financialYear: {}", financialYear);
-        logger.info("Optional Parameters - startDate: {}, endDate: {}", startDate, endDate);
+        logger.info("Optional Parameters - startDate: {}, endDate: {}, assetId: {}, plantIds: {}", startDate, endDate, assetId, plantIds);
         
         List<STGHeatRateDTO> result;
         
         if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
             logger.info("Date range provided - calling getSTGHeatRateWithProposed");
-            result = heatRateService.getSTGHeatRateWithProposed(financialYear, startDate, endDate);
+            result = heatRateService.getSTGHeatRateWithProposed(financialYear, startDate, endDate, assetId, plantIds);
         } else {
             logger.info("No date range provided - calling standard getSTGHeatRate");
             result = heatRateService.getSTGHeatRate(financialYear);
@@ -313,13 +315,15 @@ public class HeatRateController {
         }
     }
 
-    @GetMapping({"/stg-heat-rate/export/{financialYear}", "/stg-heat-rate/export/{financialYear}/{startDate}/{endDate}"})
+    @GetMapping("/stg-heat-rate/export/{financialYear}")
     public ResponseEntity<byte[]> exportSTGHeatRate(
             @PathVariable String financialYear,
-            @PathVariable(required = false) String startDate,
-            @PathVariable(required = false) String endDate) {
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String assetId,
+            @RequestParam(required = false) List<String> plantIds) {
         try {
-            byte[] excelData = heatRateService.exportSTGHeatRate(financialYear, startDate, endDate);
+            byte[] excelData = heatRateService.exportSTGHeatRate(financialYear, startDate, endDate, assetId, plantIds);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", "STG_Heat_Rate.xlsx");

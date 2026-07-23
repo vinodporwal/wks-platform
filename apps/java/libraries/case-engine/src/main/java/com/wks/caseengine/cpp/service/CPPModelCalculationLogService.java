@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.cpp.dto.*;
 import com.wks.caseengine.cpp.entity.CPPModelCalculationLog;
 import com.wks.caseengine.cpp.repository.CPPModelCalculationLogRepository;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.repository.PlantsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,25 +38,27 @@ public class CPPModelCalculationLogService {
 
     private final CPPModelCalculationLogRepository repository;
     private final ObjectMapper objectMapper;
+    private final PlantsRepository plantsRepository;
 
     /**
      * Get all parent executions (full year runs)
      */
-    public List<CPPModelCalculationLogListDTO> getAllParentExecutions(Integer financialYear) {
-        log.info("[CPPModelCalculationLogService] Fetching all parent executions from repository - financialYear: {}", financialYear);
+    public List<CPPModelCalculationLogListDTO> getAllParentExecutions(Integer financialYear, List<UUID> plantIds) {
+        log.info("[CPPModelCalculationLogService] Fetching all parent executions from repository - financialYear: {}, plantIds: {}", financialYear, plantIds);
         try {
             List<CPPModelCalculationLog> parents;
             if (financialYear != null) {
-                parents = repository.findParentExecutionsByFinancialYear(financialYear);
+                parents = repository.findParentExecutionsByFinancialYear(financialYear, plantIds);
             } else {
-                parents = repository.findAllParentExecutions();
+                parents = repository.findAllParentExecutions(plantIds);
             }
             log.info("[CPPModelCalculationLogService] Found {} parent execution records", parents.size());
             
             Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
+            Map<UUID, Plants> plantMap = buildPlantMap();
             
             List<CPPModelCalculationLogListDTO> result = parents.stream()
-                    .map(parent -> convertToListDTO(parent, statsMap))
+                    .map(parent -> convertToListDTO(parent, statsMap, plantMap))
                     .collect(Collectors.toList());
             
             log.info("[CPPModelCalculationLogService] Successfully converted {} parent executions to DTOs", result.size());
@@ -77,9 +81,10 @@ public class CPPModelCalculationLogService {
             log.info("[CPPModelCalculationLogService] Found {} parent execution records matching filters", parents.size());
             
             Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
+            Map<UUID, Plants> plantMap = buildPlantMap();
             
             List<CPPModelCalculationLogListDTO> result = parents.stream()
-                    .map(parent -> convertToListDTO(parent, statsMap))
+                    .map(parent -> convertToListDTO(parent, statsMap, plantMap))
                     .collect(Collectors.toList());
             
             log.info("[CPPModelCalculationLogService] Successfully converted {} filtered parent executions to DTOs", result.size());
@@ -102,7 +107,8 @@ public class CPPModelCalculationLogService {
             if (parent.isPresent()) {
                 log.info("[CPPModelCalculationLogService] Found parent execution with ID: {}", id);
                 Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
-                CPPModelCalculationLogListDTO dto = convertToListDTO(parent.get(), statsMap);
+                Map<UUID, Plants> plantMap = buildPlantMap();
+                CPPModelCalculationLogListDTO dto = convertToListDTO(parent.get(), statsMap, plantMap);
                 log.info("[CPPModelCalculationLogService] Successfully converted parent execution to DTO");
                 return Optional.of(dto);
             } else {
@@ -218,7 +224,8 @@ public class CPPModelCalculationLogService {
                 log.info("[CPPModelCalculationLogService] Found latest parent execution - ID: {}, Financial Year: {}, Execution Date: {}", 
                         latest.getId(), latest.getFinancialYear(), latest.getExecutionDateTime());
                 Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
-                CPPModelCalculationLogListDTO dto = convertToListDTO(latest, statsMap);
+                Map<UUID, Plants> plantMap = buildPlantMap();
+                CPPModelCalculationLogListDTO dto = convertToListDTO(latest, statsMap, plantMap);
                 log.info("[CPPModelCalculationLogService] Successfully converted latest parent execution to DTO");
                 return Optional.of(dto);
             } else {
@@ -250,9 +257,29 @@ public class CPPModelCalculationLogService {
     }
 
     /**
+     * Build a map of plantId -> Plants entity for quick lookup.
+     */
+    private Map<UUID, Plants> buildPlantMap() {
+        List<Plants> plants = plantsRepository.findAll();
+        Map<UUID, Plants> plantMap = new HashMap<>();
+        for (Plants plant : plants) {
+            plantMap.put(plant.getId(), plant);
+        }
+        log.debug("[CPPModelCalculationLogService] Built plant map with {} entries", plantMap.size());
+        return plantMap;
+    }
+
+    /**
      * Convert entity to list DTO with monthly summary statistics (using pre-fetched stats)
      */
     private CPPModelCalculationLogListDTO convertToListDTO(CPPModelCalculationLog parent, Map<UUID, Map<String, Long>> statsMap) {
+        return convertToListDTO(parent, statsMap, Collections.emptyMap());
+    }
+
+    /**
+     * Convert entity to list DTO with monthly summary statistics and plant lookup.
+     */
+    private CPPModelCalculationLogListDTO convertToListDTO(CPPModelCalculationLog parent, Map<UUID, Map<String, Long>> statsMap, Map<UUID, Plants> plantMap) {
         log.debug("[CPPModelCalculationLogService] Converting parent execution {} to DTO", parent.getId());
         
         Map<String, Long> stats = statsMap.getOrDefault(parent.getId(), Collections.emptyMap());
@@ -276,6 +303,14 @@ public class CPPModelCalculationLogService {
             executionDateTimeFormatted = sdf.format(parent.getExecutionDateTime());
         }
 
+        // Resolve plant info
+        UUID plantId = parent.getCppPlantFkId();
+        String plantName = null;
+        if (plantId != null && plantMap.containsKey(plantId)) {
+            Plants plant = plantMap.get(plantId);
+            plantName = plant.getDisplayName() != null ? plant.getDisplayName() : plant.getName();
+        }
+
         return CPPModelCalculationLogListDTO.builder()
                 .id(parent.getId())
                 .financialYear(parent.getFinancialYear())
@@ -287,6 +322,8 @@ public class CPPModelCalculationLogService {
                 .totalMonthsProcessed((int) totalMonthsProcessed)
                 .totalExecutionTime(parent.getExecutionTimeSeconds() != null ? 
                     parent.getExecutionTimeSeconds().toString() + "s" : null)
+                .plantId(plantId)
+                .plantName(plantName)
                 .monthsSucceeded(monthsSucceeded)
                 .monthsFailed(monthsFailed)
                 .monthsWithWarnings(monthsWithWarnings)
