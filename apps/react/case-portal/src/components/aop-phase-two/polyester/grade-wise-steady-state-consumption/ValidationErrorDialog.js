@@ -35,7 +35,7 @@ const ValidationErrorDialog = ({ open, onClose, errors = [] }) => {
   )
   const columns = [
     {
-      field: 'type',
+      field: 'materialTypeName',
       title: 'Type',
       minWidth: 250,
       type: 'text',
@@ -163,9 +163,9 @@ const ValidationErrorDialog = ({ open, onClose, errors = [] }) => {
           <AdvanceKendoTable
             columns={columns}
             rows={errors}
-            setRows={() => {}}
+            setRows={() => { }}
             modifiedCells={{}}
-            setModifiedCells={() => {}}
+            setModifiedCells={() => { }}
             permissions={permissions}
             customHeight={40}
             paginationConfig={{

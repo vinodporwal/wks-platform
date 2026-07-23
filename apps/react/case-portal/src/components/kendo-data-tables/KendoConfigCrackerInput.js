@@ -16,6 +16,7 @@ import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
 import NaphthaLimsDataSet from './NaphthaLimsDataSet'
 import NaphthaHMDComponent from './NaphthaHMDComponent'
 import ModeSelection from './ModeSelection'
+import SpyroInputMinMax from './SpyroInputMinMax'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -1082,11 +1083,54 @@ const CrackerConfig = () => {
             case 'Hydrogenation':
             case 'Recovery':
             case 'Optimizing':
-            case 'Furnace':
             case 'OptimizerPrices':
             case 'Constant':
               return (
                 <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={{
+                      ...adjustedPermissions,
+                      makePagable: false,
+                    }}
+                    handleCalculate={handleCalculate}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                    groupBy={currentTabDisplay == 'Naphtha' ? 'type' : ''}
+                  />
+                </Box>
+              )
+            case 'Furnace':
+              return (
+                <Box key={currentTabDisplay}>
+                  {IS_CRACKER_C2 && (
+                    <Box sx={{ mt: 1, mb: 3 }}>
+                      <SpyroInputMinMax />
+                    </Box>
+                  )}
                   <KendoDataTables
                     rows={rows}
                     setRows={setRowsForCurrent}

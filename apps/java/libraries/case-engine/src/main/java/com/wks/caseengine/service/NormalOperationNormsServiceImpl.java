@@ -27,9 +27,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.dto.MCUNormsValueDTO;
 import com.wks.caseengine.dto.ModeWiseNormsDTO;
+import com.wks.caseengine.dto.NormConfigurationDTO;
 import com.wks.caseengine.dto.ValidationErrorDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.MCUNormsValue;
@@ -612,6 +614,28 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	    return allValid;
 	}
+	   private static String toStringOrEmpty(Object[] row, int index) {
+	        if (row.length <= index || row[index] == null) {
+	            return "";
+	        }
+	        Object value = row[index];
+	        return value.toString();
+	    }
+	   
+	   private static Double toDouble(Object[] row, int index) {
+	        if (row.length <= index || row[index] == null) {
+	            return 0.0;
+	        }
+	        Object value = row[index];
+	        if (value instanceof Number) {
+	            return ((Number) value).doubleValue();
+	        }
+	        try {
+	            return Double.parseDouble(value.toString());
+	        } catch (NumberFormatException e) {
+	            return 0.0;
+	        }
+	    }
 	@Override
 	public AOPMessageVM saveNormalOperationNormsDataPolyester(List<MCUNormsValueDTO> mCUNormsValueDTOList,
 	        UUID plantFKId, String year, String gradeId, boolean isFromExcel) {
@@ -628,23 +652,86 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 	        boolean elastomerJMDIIR = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR");
 	        boolean isStapleWithGrade = vertical.getName().equalsIgnoreCase("STAPLE") && gradeId != null && !gradeId.trim().isEmpty();
+	        boolean isFilamentWithGrade = vertical.getName().equalsIgnoreCase("Filament") && gradeId != null && !gradeId.trim().isEmpty();
 	        boolean aromaticPmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
 	        boolean aromaticSEZ = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
 
 	      
 	       
-	        if (isStapleWithGrade) {
+	        if (isStapleWithGrade || isFilamentWithGrade) {
+	        	
+	        	  String procedureName = vertical.getName() + "_" + site.getName() + "_GradeValidation";
 
-	            boolean allValid = validateStapleGradeTotals(plantFKId, year, mCUNormsValueDTOList, gradeValidationErrors);
+	        	  String sql = "EXEC " + "[" + procedureName + "]" +
+	        	            " @plantId = :plantId," +
+	        	            " @siteId = :siteId," +
+	        	            " @verticalId = :verticalId," +
+	        	            " @finYear = :finYear," +
+	        	            " @GradeInputJson = :gradeInputJson";
 
-	            System.out.println("[VALIDATION] allValid=" + allValid + " | Errors=" + gradeValidationErrors.size());
+	        	    // Convert DTO List to JSON
+	        	    ObjectMapper objectMapper = new ObjectMapper();
+	        	    String gradeInputJson = objectMapper.writeValueAsString(mCUNormsValueDTOList);
 
-	            if (!allValid || !gradeValidationErrors.isEmpty()) {
+	        	    Query query = entityManager.createNativeQuery(sql);
+	        	    
+	        	    System.out.println("Plant    : " + plant.getId());
+	        	    System.out.println("Site     : " + site.getId());
+	        	    System.out.println("Vertical : " + vertical.getId());
+
+	        	    query.setParameter("plantId", plant.getId());
+	        	    query.setParameter("siteId", site.getId());
+	        	    query.setParameter("verticalId", vertical.getId());
+	        	    query.setParameter("finYear", year);
+	        	    query.setParameter("gradeInputJson", gradeInputJson);
+
+	        	
+	          
+
+	              @SuppressWarnings("unchecked")
+	              List<Object[]> results = query.getResultList();
+	              
+	              List<ValidationErrorDTO> list = new ArrayList<>();
+
+	              for (Object[] row : results) {
+
+	                  ValidationErrorDTO dto = new ValidationErrorDTO();
+
+
+dto.setMaterialTypeId(toStringOrEmpty(row, 0));
+dto.setMaterialTypeName(toStringOrEmpty(row, 1));
+dto.setMaterialId(toStringOrEmpty(row, 2));
+dto.setMaterialName(toStringOrEmpty(row, 3));
+dto.setUom(toStringOrEmpty(row, 4));
+
+dto.setMonth(toStringOrEmpty(row, 5));
+dto.setYear(year);
+
+dto.setExpectedValue(toDouble(row, 6));   // WeightedValue
+dto.setActualValue(toDouble(row, 7));     // MCUNormValue
+dto.setDifference(toDouble(row, 8));
+dto.setMatchStatus(toStringOrEmpty(row, 9));
+
+// Optional
+dto.setEnteredValue(toDouble(row, 7));
+dto.setSuggestedValue(0);
+
+	                  list.add(dto);
+	              
+	                 
+	                
+	              }
+
+//	            boolean allValid = validateStapleGradeTotals(plantFKId, year, mCUNormsValueDTOList, gradeValidationErrors);
+
+//	            System.out.println("[VALIDATION] allValid=" + allValid + " | Errors=" + gradeValidationErrors.size());
+
+	            if (!list.isEmpty()) {
 	                System.out.println("[STOP] Grade validation failed -> save aborted.");
 	                return AOPMessageVM.builder()
 	                        .code(400)
 	                        .message("Validation Failed")
-	                        .data(gradeValidationErrors)   
+	                        .data(list)   
 	                        .build();
 	            }
 	        }
@@ -659,7 +746,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                failedList.add(dto);
 	                continue;
 	            }
-	            if (isStapleWithGrade) {
+	            if (isStapleWithGrade || isFilamentWithGrade) {
 
 	            
 	                Optional<MCUNormsValueGrade> optionalValue = mcuNormsValueGradeRepository
@@ -894,7 +981,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	            if (mCUNormsValueDTO.getId() != null || !mCUNormsValueDTO.getId().isEmpty()) {
 
-	                if (isStapleWithGrade || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
+	                if (isFilamentWithGrade || isStapleWithGrade || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
 	                        || vertical.getName().equalsIgnoreCase("PET") || pvc) {
 
 	                    Optional<MCUNormsValueGrade> optionalNormsValue = mcuNormsValueGradeRepository

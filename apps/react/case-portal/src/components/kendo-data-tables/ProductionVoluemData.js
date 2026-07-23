@@ -1280,7 +1280,8 @@ const ProductionvolumeData = ({
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       downloadExcelBtnFromUI:
-        IS_PE_PP ||
+        IS_CRACKER_C2 ||
+          IS_PE_PP ||
           IS_PET ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
@@ -1459,7 +1460,7 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
+      saveBtn: IS_CRACKER_C2 || IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
@@ -1469,7 +1470,8 @@ const ProductionvolumeData = ({
           ? true
           : false,
       downloadExcelBtn:
-        IS_PE_PP ||
+        IS_CRACKER_C2 ||
+          IS_PE_PP ||
           IS_PET ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
@@ -1481,7 +1483,8 @@ const ProductionvolumeData = ({
           ? false
           : true,
       uploadExcelBtn:
-        IS_PE_PP ||
+        IS_CRACKER_C2 ||
+          IS_PE_PP ||
           IS_PET ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
