@@ -1837,67 +1837,64 @@ const DecokingConfig = () => {
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {/* Row 1: TA Start Date & TA End Date */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
-            {/* TA Start Date */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography
-                sx={{
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: '#252525',
-                  fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start', mb: 1.5 }}>
+          {/* TA Start Date */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#252525',
+                fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+              }}
+            >
+              TA Start Date
+            </Typography>
+            <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '185px' } }}>
+              <DatePicker
+                id='global-ta-start-date'
+                format='dd-MM-yyyy'
+                value={globalTaStartDate}
+                onChange={(e) => {
+                  setGlobalTaStartDate(e.value)
+                  setSummaryEdited(true)
                 }}
-              >
-                TA Start Date
-              </Typography>
-              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '185px' } }}>
-                <DatePicker
-                  id='global-ta-start-date'
-                  format='dd-MM-yyyy'
-                  value={globalTaStartDate}
-                  onChange={(e) => {
-                    setGlobalTaStartDate(e.value)
-                    setSummaryEdited(true)
-                  }}
-                  style={{ width: '100%', height: '36px' }}
-                  disabled={READ_ONLY}
-                />
-              </Box>
-            </Box>
-
-            {/* TA End Date */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography
-                sx={{
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: '#252525',
-                  fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
-                }}
-              >
-                TA End Date
-              </Typography>
-              <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '190px' } }}>
-                <DatePicker
-                  id='global-ta-end-date'
-                  format='dd-MM-yyyy'
-                  value={globalTaEndDate}
-                  onChange={(e) => {
-                    setGlobalTaEndDate(e.value)
-                    setSummaryEdited(true)
-                  }}
-                  style={{ width: '100%', height: '36px' }}
-                  disabled={READ_ONLY}
-                />
-              </Box>
+                style={{ width: '100%', height: '36px' }}
+                disabled={READ_ONLY}
+              />
             </Box>
           </Box>
 
-          {/* Row 2: Remaining C2 Specific Controls */}
+          {/* TA End Date */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#252525',
+                fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+              }}
+            >
+              TA End Date
+            </Typography>
+            <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '190px' } }}>
+              <DatePicker
+                id='global-ta-end-date'
+                format='dd-MM-yyyy'
+                value={globalTaEndDate}
+                onChange={(e) => {
+                  setGlobalTaEndDate(e.value)
+                  setSummaryEdited(true)
+                }}
+                style={{ width: '100%', height: '36px' }}
+                disabled={READ_ONLY}
+              />
+            </Box>
+          </Box>
+
+          {/* Remaining C2 Specific Controls */}
           {IS_CRACKER_C2 && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
+            <>
               {/* Max Duty For Pilot Furnace */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography
@@ -2063,7 +2060,7 @@ const DecokingConfig = () => {
                   }}
                 />
               </Box>
-            </Box>
+            </>
           )}
         </Box>
       </LocalizationProvider>

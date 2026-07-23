@@ -264,21 +264,36 @@ const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
         minWidth: 120,
         crackerValidation: col.type === 'number' ? true : false,
+        format: col.type === 'number' ? '{0:n2}' : col.format,
       }))
 
       setColumns(dynamicColumns)
 
-      const formatted = (raw || []).map((item, idx, arr) => ({
-        ...item,
-        idFromApi: item.Id,
-        id: idx,
-        isEditable: viewOnly
-          ? false
-          : idx === arr.length - 1
+      const formatted = (raw || []).map((item, idx, arr) => {
+        const isTotalRow =
+          idx === arr.length - 1 || item?.MonthName?.toLowerCase() === 'total'
+        const processedItem = { ...item }
+
+        if (isTotalRow) {
+          Object.keys(processedItem).forEach((key) => {
+            if (typeof processedItem[key] === 'number') {
+              processedItem[key] = processedItem[key].toFixed(2)
+            }
+          })
+        }
+
+        return {
+          ...processedItem,
+          idFromApi: item.Id,
+          id: idx,
+          isEditable: viewOnly
             ? false
-            : item?.isEditable,
-        originalRemark: item?.Remarks?.trim(),
-      }))
+            : idx === arr.length - 1
+              ? false
+              : item?.isEditable,
+          originalRemark: item?.Remarks?.trim(),
+        }
+      })
 
       const finalData = [...formatted]
 
