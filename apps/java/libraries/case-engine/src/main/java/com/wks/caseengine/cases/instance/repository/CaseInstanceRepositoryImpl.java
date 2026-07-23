@@ -297,11 +297,6 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 			CaseInstance caseInstance = getCollection().find(Filters.eq("businessKey", businessKey)).first();
 			if (caseInstance == null)
 				continue;
-			boolean has225 = caseInstance.getEventIds() != null && caseInstance.getEventIds().contains("225");
-			boolean has6 = caseInstance.getEventIds() != null && caseInstance.getEventIds().contains("6");
-			boolean incomingHas225 = eventIds != null && eventIds.contains("225");
-			boolean incomingHas6 = eventIds != null && eventIds.contains("6");
-			boolean shouldSendEmail = (has225 && incomingHas6) || (has6 && incomingHas225);
 			List<CaseAttribute> attributes = caseInstance.getAttributes();
 			for (CaseAttribute attr : attributes) {
 				if ("container".equals(attr.getName())) {
@@ -342,8 +337,11 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 							Map<String, Object> row = new HashMap<>();
 							row.put("textField1", fe.getAssetDisplayName());
 							row.put("textField2", fe.getAssetName());
-							row.put("textField3", fe.getEvents().getEventName());
-							row.put("textField4", fe.getEventCategory().getName());
+							row.put("textField3", fe.getEvents() != null ? fe.getEvents().getEventName() : "");
+							row.put("textField4", fe.getEventCategory() != null ? fe.getEventCategory().getName() : "");
+							row.put("subAsset", fe.getAssetDisplayName() != null ? fe.getAssetDisplayName() : "");
+							row.put("events", fe.getEvents() != null ? fe.getEvents().getEventName() : "");
+							row.put("eventCategory", fe.getEventCategory() != null ? fe.getEventCategory().getName() : "");
 							row.put("TextFaultStartTimeDate", formattedDate);
 							row.put("TextFaultEndTimeDate", "");
 							row.put("eventPkId", eventPkId);
@@ -367,13 +365,11 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 				}
 			}
 			updateEventTrendUrls(businessKey, eventTrendUrls, eventReportUrls);
-			if (shouldSendEmail) {
 				try {
 					caseDefinitionService.sendCaseLinkedEmail(businessKey);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
 		}
 	}
 
