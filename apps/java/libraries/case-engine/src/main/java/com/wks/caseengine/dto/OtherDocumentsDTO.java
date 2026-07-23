@@ -24,4 +24,6 @@ public class OtherDocumentsDTO {
     private String modifiedBy;
     private Date modifiedOn;
     private String content; // Base64-encoded file content
+    private String fileName;
+    private String fileSize;
 }

@@ -1825,9 +1825,16 @@ session.doWork(connection -> {
 				resultList.add(dto);
 			}
 
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "major-furnance-min-max");
+			map.put("resultList", resultList);
+			map.put("aopCalculation", aopCalculation);
+
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Success");
-			aopMessageVM.setData(resultList);
+			aopMessageVM.setData(map);
 			return aopMessageVM;
 		} catch (Exception ex) {
 			aopMessageVM.setCode(500);
