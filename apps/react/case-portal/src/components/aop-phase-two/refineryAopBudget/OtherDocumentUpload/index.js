@@ -37,7 +37,7 @@ const formatDateTime = (dateVal) => {
     if (!dateVal) return ''
     const m = moment(dateVal)
     if (m.isValid()) {
-        return m.format('DD-MM-YYYY HH:mm')
+        return m.format('DD-MM-YYYY HH:mm a')
     }
     return dateVal
 }
@@ -137,13 +137,33 @@ const OtherDocumentUpload = ({ permissions }) => {
                 AOP_YEAR,
             )
             if (response?.code === 200 && Array.isArray(response?.data)) {
-                const cleaned = response.data.map((row) => ({
-                    ...row,
-                    uploadedDateTime: formatDateTime(
-                        row.uploadedDateTime || row.uploadedAt || row.UploadedDateTime,
-                    ),
-                    size: typeof row.size === 'number' ? formatBytes(row.size) : row.size,
-                }))
+                const cleaned = response.data.map((row) => {
+                    const rawFileName =
+                        row.fileName ||
+                        row.file_name ||
+                        row.originalFileName ||
+                        ''
+                    const rawSize =
+                        row.fileSize ??
+                        row.size ??
+                        row.file_size ??
+                        row.fileLength ??
+                        row.bytes ??
+                        row.contentLength
+
+                    return {
+                        ...row,
+                        fileName: rawFileName,
+                        fileSize:
+                            typeof rawSize === 'number'
+                                ? formatBytes(rawSize)
+                                : rawSize || '',
+                        uploadedDateTime: formatDateTime(
+                            row.uploadedDateTime || row.uploadedAt || row.UploadedDateTime,
+                        ),
+                        size: typeof row.size === 'number' ? formatBytes(row.size) : row.size,
+                    }
+                })
                 setRows(cleaned)
             } else if (response?.message) {
                 showMessage(response.message, 'error')
@@ -327,6 +347,8 @@ const OtherDocumentUpload = ({ permissions }) => {
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
                         'application/vnd.ms-excel': '.xls',
                         'application/pdf': '.pdf',
+                        'text/csv': '.csv',
+                        'application/csv': '.csv',
                     }
 
                     const ext = mimeMap[mimeType] || ''
@@ -334,7 +356,7 @@ const OtherDocumentUpload = ({ permissions }) => {
                 }
 
                 const fileName = getFileNameWithExtension(
-                    file.documentName || file.name,
+                    file.fileName || file.documentName || file.name,
                     contentType,
                 )
 
@@ -553,6 +575,18 @@ const OtherDocumentUpload = ({ permissions }) => {
                 title: 'Uploaded By',
                 editable: false,
                 minWidth: 160,
+            },
+            {
+                field: 'fileName',
+                title: 'File Name',
+                editable: false,
+                minWidth: 280
+            },
+            {
+                field: 'fileSize',
+                title: 'File Size',
+                editable: false,
+                minWidth: 120
             },
             {
                 field: 'action',
