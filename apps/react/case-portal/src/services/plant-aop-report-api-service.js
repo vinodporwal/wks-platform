@@ -14,6 +14,8 @@ export const PlantAopReportApiService = {
   deleteReliabilityImprovementInitiative,
   getGroupedSelection,
   saveGroupedSelection,
+  getGroupMaterialDetails,
+  saveGroupMaterialDetails,
   GetPlanningNotification,
 }
 async function getPlantsafetyPerformance(keycloak, PLANT_ID, AOP_YEAR) {
@@ -266,6 +268,42 @@ async function saveGroupedSelection(keycloak, payload) {
     return Promise.reject(e)
   }
 }
+async function getGroupMaterialDetails(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/group-material-details?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveGroupMaterialDetails(keycloak, AOP_YEAR, payload) {
+  const url = `${Config.CaseEngineUrl}/task/group-material-details?year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return saveGroupedSelection(keycloak, payload)
+  }
+}
+
 async function GetPlanningNotification(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/decoking-planning-notification?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {

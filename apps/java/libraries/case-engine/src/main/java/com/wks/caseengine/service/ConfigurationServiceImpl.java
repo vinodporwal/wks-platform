@@ -66,6 +66,7 @@ import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
+import com.wks.caseengine.dto.GroupMaterialDetailsDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
@@ -6531,4 +6532,116 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 			throw new RuntimeException("Failed to fetch cracker C2 optimizing variables dropdown", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getGroupMaterialDetails(String year, String plantFKId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = verticalName + "_" + site.getName() + "_GetGroupMaterialDetails";
+  
+			 List<GroupMaterialDetailsDTO> result = getGroupMaterialDetailsFromSP(procedureName, year, plantFKId);
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(result);
+			return aopMessageVM;
+	
 }
+
+@Transactional
+	public List<GroupMaterialDetailsDTO> getGroupMaterialDetailsFromSP(String procedureName, String aopYear,String plantId) {
+		try {
+		String sql = "EXEC [RIL.AOP].[dbo].[" + procedureName + "] @aopYear = ?, @plantId = ?";
+
+		return jdbcTemplate.query(sql, new Object[] { aopYear, plantId }, (rs, rowNum) -> new GroupMaterialDetailsDTO(
+				rs.getString("Id"),
+				rs.getString("Name"),
+				rs.getString("UOM"),
+				rs.getString("GroupName"),
+				rs.getString("Apr"),
+				rs.getString("May"),
+				rs.getString("Jun"),
+				rs.getString("Jul"),
+				rs.getString("Aug"),
+				rs.getString("Sep"),
+				rs.getString("Oct"),
+				rs.getString("Nov"),
+				rs.getString("Dec"),
+				rs.getString("Jan"),
+				rs.getString("Feb"),
+				rs.getString("Mar"),
+				rs.getString("NormParameter_FK_Id"),
+				rs.getString("Plant_FK_Id"),
+				rs.getInt("DisplayOrder")
+				
+			));
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data from stored procedure: " + procedureName, ex);
+		}
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM saveGroupMaterialDetails(String year, List<GroupMaterialDetailsDTO> dtoList) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+		for (GroupMaterialDetailsDTO dto : dtoList) {
+			if (dto.getId() == null || dto.getId().isEmpty()) {
+				throw new RuntimeException("Id is required");
+			}
+
+			UUID normParameterFKId = UUID.fromString(dto.getId());
+
+			// April (4) to March (3) — fiscal year order
+			Map<Integer, String> monthValues = new LinkedHashMap<>();
+			monthValues.put(4,  dto.getApr() != null ? dto.getApr() : "0");
+			monthValues.put(5,  dto.getMay() != null ? dto.getMay() : "0");
+			monthValues.put(6,  dto.getJun() != null ? dto.getJun() : "0");
+			monthValues.put(7,  dto.getJul() != null ? dto.getJul() : "0");
+			monthValues.put(8,  dto.getAug() != null ? dto.getAug() : "0");
+			monthValues.put(9,  dto.getSep() != null ? dto.getSep() : "0");
+			monthValues.put(10, dto.getOct() != null ? dto.getOct() : "0");
+			monthValues.put(11, dto.getNov() != null ? dto.getNov() : "0");
+			monthValues.put(12, dto.getDec() != null ? dto.getDec() : "0");
+			monthValues.put(1,  dto.getJan() != null ? dto.getJan() : "0");
+			monthValues.put(2,  dto.getFeb() != null ? dto.getFeb() : "0");
+			monthValues.put(3,  dto.getMar() != null ? dto.getMar() : "0");
+
+			for (Map.Entry<Integer, String> entry : monthValues.entrySet()) {
+				Integer month = entry.getKey();
+				String value = entry.getValue();
+
+				Optional<NormAttributeTransactions> existing =
+						normAttributeTransactionsRepository
+								.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
+
+				if (existing.isPresent()) {
+					NormAttributeTransactions transaction = existing.get();
+					transaction.setAttributeValue(value);
+					transaction.setModifiedOn(new Date());
+					normAttributeTransactionsRepository.save(transaction);
+				} else {
+					NormAttributeTransactions transaction = NormAttributeTransactions.builder()
+							.normParameterFKId(normParameterFKId)
+							.attributeValue(value)
+							.aopMonth(month)
+							.auditYear(year)
+							.createdOn(new Date())
+							.modifiedOn(new Date())
+							.build();
+					normAttributeTransactionsRepository.save(transaction);
+				}
+			}
+		}
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		return aopMessageVM;
+	}
+		
+}
+			
+
