@@ -334,6 +334,9 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+      fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
     } catch (error) {
       console.error('Error saving heat rate data:', error)
       setSnackbarOpen(true)
@@ -364,7 +367,9 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchHeatRateData(selectedPlant)
+        const formattedStartDate = formatDate(startDate)
+        const formattedEndDate = formatDate(endDate)
+        fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

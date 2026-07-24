@@ -23,6 +23,7 @@ import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.service.HeatRateService;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import java.util.List;
 
@@ -395,12 +396,16 @@ public class HeatRateController {
     }
 
     @PostMapping("/stg-heat-rate/import")
-    public ResponseEntity<Void> importSTGHeatRate(@RequestParam("file") MultipartFile file) {
+    public AOPMessageVM importSTGHeatRate(@RequestParam("file") MultipartFile file) {
+        logger.info("========== IMPORT STG HEAT RATE REQUEST ==========");
+        logger.info("File name: {}, size: {} bytes", file.getOriginalFilename(), file.getSize());
         try {
             heatRateService.importSTGHeatRate(file);
-            return ResponseEntity.ok().build();
+            logger.info("STG heat rate import completed successfully");
+            return new AOPMessageVM(200, "STG heat rate imported successfully", null);
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("Error importing STG heat rate: {}", e.getMessage(), e);
+            return new AOPMessageVM(500, "Failed to import STG heat rate: " + e.getMessage(), null);
         }
     }
 
