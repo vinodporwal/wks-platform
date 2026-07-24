@@ -9,8 +9,9 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material'
-import React, { useCallback, useEffect, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import DecokingPlanningNotification from './DecokingPlanningNotification.js'
+import Notification from 'components/Utilities/Notification'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -134,6 +135,22 @@ const DecokingConfig = () => {
   const [maxDutyPilot, setMaxDutyPilot] = useState('')
   const [maxDutyMain, setMaxDutyMain] = useState('')
 
+  const sadDurationRef = useRef(sadDuration)
+  const maxDutyPilotRef = useRef(maxDutyPilot)
+  const maxDutyMainRef = useRef(maxDutyMain)
+
+  useEffect(() => {
+    sadDurationRef.current = sadDuration
+  }, [sadDuration])
+
+  useEffect(() => {
+    maxDutyPilotRef.current = maxDutyPilot
+  }, [maxDutyPilot])
+
+  useEffect(() => {
+    maxDutyMainRef.current = maxDutyMain
+  }, [maxDutyMain])
+
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -234,46 +251,46 @@ const DecokingConfig = () => {
       (Number(actualRunLength) * Number(reduction)) / 100
     return isNaN(val) ? null : Math.ceil(val) // <-- round up to nearest integer
   }
-  useEffect(() => {
-    const fetchOtherCost = async () => {
-      if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
-      try {
-        const resp = await DataService.getOtherFurnanceDetails(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
+  const fetchOtherCost = useCallback(async () => {
+    if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
+    try {
+      const resp = await DataService.getOtherFurnanceDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (resp?.code === 200 && resp?.data) {
+        const rows = resp.data
+        const sadRow = rows.find((r) => r.displayName === 'SAD Duration')
+        const pilotRow = rows.find(
+          (r) => r.displayName === 'Max Duty For Pilot Furnace',
         )
-        if (resp?.code === 200 && resp?.data) {
-          const rows = resp.data
-          const sadRow = rows.find((r) => r.displayName === 'SAD Duration')
-          const pilotRow = rows.find(
-            (r) => r.displayName === 'Max Duty For Pilot Furnace',
-          )
-          const mainRow = rows.find(
-            (r) => r.displayName === 'Max Duty For Main Furnaces',
-          )
+        const mainRow = rows.find(
+          (r) => r.displayName === 'Max Duty For Main Furnaces',
+        )
 
-          setSadDurationRow(sadRow || null)
-          setMaxDutyPilotRow(pilotRow || null)
-          setMaxDutyMainRow(mainRow || null)
-          const formatTwoDecimals = (val) => {
-            if (val === null || val === undefined || val === '') return ''
-            const num = parseFloat(val)
-            return !isNaN(num) ? num.toFixed(2) : String(val)
-          }
-
-          setSadDuration(sadRow && sadRow.attributeValue != null ? formatTwoDecimals(sadRow.attributeValue) : '')
-          setMaxDutyPilot(pilotRow && pilotRow.attributeValue != null ? formatTwoDecimals(pilotRow.attributeValue) : '')
-          setMaxDutyMain(mainRow && mainRow.attributeValue != null ? formatTwoDecimals(mainRow.attributeValue) : '')
+        setSadDurationRow(sadRow || null)
+        setMaxDutyPilotRow(pilotRow || null)
+        setMaxDutyMainRow(mainRow || null)
+        const formatTwoDecimals = (val) => {
+          if (val === null || val === undefined || val === '') return ''
+          const num = parseFloat(val)
+          return !isNaN(num) ? num.toFixed(2) : String(val)
         }
-        console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
-      } catch (error) {
-        console.error('Error fetching other furnance details:', error)
-      }
-    }
 
-    fetchOtherCost()
+        setSadDuration(sadRow && sadRow.attributeValue != null ? formatTwoDecimals(sadRow.attributeValue) : '')
+        setMaxDutyPilot(pilotRow && pilotRow.attributeValue != null ? formatTwoDecimals(pilotRow.attributeValue) : '')
+        setMaxDutyMain(mainRow && mainRow.attributeValue != null ? formatTwoDecimals(mainRow.attributeValue) : '')
+      }
+      console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
+    } catch (error) {
+      console.error('Error fetching other furnance details:', error)
+    }
   }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2])
+
+  useEffect(() => {
+    fetchOtherCost()
+  }, [fetchOtherCost])
 
   const fetchData = useCallback(
     async (screen = null) => {
@@ -594,18 +611,20 @@ const DecokingConfig = () => {
   }
 
   const saveRunningDurationParams = async (
-    currentSad = sadDuration,
-    currentPilot = maxDutyPilot,
-    currentMain = maxDutyMain
+    currentSad = sadDurationRef.current,
+    currentPilot = maxDutyPilotRef.current,
+    currentMain = maxDutyMainRef.current
   ) => {
-    const sadVal = parseFloat(currentSad)
-    if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'SAD Duration must be between 2.1 and 3.0 Only!',
-        severity: 'error',
-      })
-      return false
+    if (currentSad !== '' && currentSad !== null && currentSad !== undefined) {
+      const sadVal = parseFloat(currentSad)
+      if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'SAD Duration must be between 2.1 and 3.0 Only!',
+          severity: 'error',
+        })
+        return false
+      }
     }
 
     const payload = [
@@ -641,6 +660,7 @@ const DecokingConfig = () => {
         if (maxDutyPilotRow) maxDutyPilotRow.attributeValue = currentPilot;
         if (maxDutyMainRow) maxDutyMainRow.attributeValue = currentMain;
         setSummaryEdited(false)
+        fetchOtherCost()
         return true
       } else {
         setSnackbarOpen(true)
@@ -1031,11 +1051,7 @@ const DecokingConfig = () => {
     setLoading(true)
     try {
       if (IS_CRACKER_C2) {
-        const success = await saveRunningDurationParams(
-          sadDuration,
-          maxDutyPilot,
-          maxDutyMain,
-        )
+        const success = await saveRunningDurationParams()
         if (!success) {
           setLoading(false)
           return
@@ -1150,6 +1166,7 @@ const DecokingConfig = () => {
         setSummaryEdited(false)
         fetchData(2)
         fetchData(3)
+        fetchOtherCost()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1170,16 +1187,14 @@ const DecokingConfig = () => {
   const postIbr2 = async (newRow) => {
     setLoading(true)
     try {
+      let durationSaved = false
       if (IS_CRACKER_C2) {
-        const success = await saveRunningDurationParams(
-          sadDuration,
-          maxDutyPilot,
-          maxDutyMain,
-        )
+        const success = await saveRunningDurationParams()
         if (!success) {
           setLoading(false)
           return
         }
+        durationSaved = true
       }
 
       if (!ibrPlanColumns || ibrPlanColumns.length === 0) {
@@ -1187,7 +1202,24 @@ const DecokingConfig = () => {
       }
 
       if (!newRow || newRow.length === 0) {
-        throw new Error('No rows to save')
+        if (durationSaved) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Data Saved Successfully!',
+            severity: 'success',
+          })
+          setSummaryEdited(false)
+          fetchOtherCost()
+          setLoading(false)
+          return
+        }
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
       }
 
       const requiredFields = ['Remarks']
@@ -1916,16 +1948,11 @@ const DecokingConfig = () => {
                     setMaxDutyPilot(e.target.value)
                     setSummaryEdited(true)
                   }}
-                  onBlur={async (e) => {
+                  onBlur={(e) => {
                     const val = e.target.value
                     const num = parseFloat(val)
-                    let formattedVal = val
                     if (!isNaN(num)) {
-                      formattedVal = num.toFixed(2)
-                      setMaxDutyPilot(formattedVal)
-                    }
-                    if (val !== (maxDutyPilotRow?.attributeValue ?? '')) {
-                      await saveRunningDurationParams(sadDuration, formattedVal, maxDutyMain)
+                      setMaxDutyPilot(num.toFixed(2))
                     }
                   }}
                   disabled={READ_ONLY}
@@ -1971,16 +1998,11 @@ const DecokingConfig = () => {
                     setMaxDutyMain(e.target.value)
                     setSummaryEdited(true)
                   }}
-                  onBlur={async (e) => {
+                  onBlur={(e) => {
                     const val = e.target.value
                     const num = parseFloat(val)
-                    let formattedVal = val
                     if (!isNaN(num)) {
-                      formattedVal = num.toFixed(2)
-                      setMaxDutyMain(formattedVal)
-                    }
-                    if (val !== (maxDutyMainRow?.attributeValue ?? '')) {
-                      await saveRunningDurationParams(sadDuration, maxDutyPilot, formattedVal)
+                      setMaxDutyMain(num.toFixed(2))
                     }
                   }}
                   disabled={READ_ONLY}
@@ -2027,16 +2049,11 @@ const DecokingConfig = () => {
                     setSadDuration(e.target.value)
                     setSummaryEdited(true)
                   }}
-                  onBlur={async (e) => {
+                  onBlur={(e) => {
                     const val = e.target.value
                     const num = parseFloat(val)
-                    let formattedVal = val
                     if (!isNaN(num)) {
-                      formattedVal = num.toFixed(2)
-                      setSadDuration(formattedVal)
-                    }
-                    if (val !== (sadDurationRow?.attributeValue ?? '')) {
-                      await saveRunningDurationParams(formattedVal, maxDutyPilot, maxDutyMain)
+                      setSadDuration(num.toFixed(2))
                     }
                   }}
                   disabled={READ_ONLY}
@@ -2090,6 +2107,7 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculateSdTa}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        disableInnerNotification={true}
         titleName={IS_CRACKER_C2 ? 'Furnace un-availability and M&I activity' : 'IBR/SD/HSS Activities'}
       />
 
@@ -2176,6 +2194,12 @@ const DecokingConfig = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
     </Box>
   )
 }
