@@ -2266,6 +2266,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
 			boolean aromaticsPmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+			boolean aromaticsHmd = verticalName.equalsIgnoreCase("AROMATICS")
+					&& site.getName().equalsIgnoreCase("HMD");
 
 			String steamLatentName = "";
 
