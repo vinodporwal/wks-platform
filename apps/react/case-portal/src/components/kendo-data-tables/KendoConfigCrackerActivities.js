@@ -1389,7 +1389,7 @@ const DecokingConfig = () => {
   }
 
   const saveCrackerRunLength = async (newRow) => {
-    setTimeout(() => setLoading(true), 0)
+    setLoading(true)
     try {
       const referenceRows = getRows('IBR Plan')[2]
 
