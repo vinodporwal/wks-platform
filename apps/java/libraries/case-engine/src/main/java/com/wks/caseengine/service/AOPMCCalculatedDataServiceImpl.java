@@ -2309,6 +2309,7 @@ if (!isValidTable) {
 
 			boolean pe = vertical.getName().equalsIgnoreCase("PE");
 			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2383,7 +2384,7 @@ if (!isValidTable) {
 	                }
 	            }
 				// seperate export method to handle grid specific locking
-	            if(pe || meg) {
+	            if(pe || meg || crackerC2) {
 					List<String> editableGrids = new ArrayList<>();
 					if(pe) {
 						editableGrids.add("proposedoperatingcapacity"); 
@@ -2392,6 +2393,11 @@ if (!isValidTable) {
 					if(meg) {
 						editableGrids.addAll(Arrays.asList("DesignCapacity", "ProposedOperatingCapacity")); 
 					}
+
+					if(crackerC2) {
+						editableGrids.addAll(Arrays.asList("DesignCapacity")); 
+					}
+					// seperate exoport method to disable grid based on editableGrids
 	            	return excelUtilityService.generateFlexibleExcelPP(structure, data, editableGrids);
 
 	            }
