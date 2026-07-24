@@ -57,9 +57,11 @@ const ACCEPTED_TYPES = [
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel.sheet.macroenabled.12',
+  'text/csv',
+  'application/csv',
 ]
 
-const ACCEPTED_EXTENSIONS = '.xls,.xlsx,.xlsm,.pdf'
+const ACCEPTED_EXTENSIONS = '.xls,.xlsx,.xlsm,.pdf,.csv'
 const MAX_FILE_SIZE_MB = 5
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
@@ -112,7 +114,7 @@ const UploadDocumentDialog = ({
         file.name.toLowerCase().endsWith(ext),
       )
     if (!isTypeValid) {
-      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: XLS, XLSX, XLSM, PDF.`
+      return `Unsupported file type (.${getFileExtension(file.name)}). Allowed: XLS, XLSX, XLSM, PDF, CSV.`
     }
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return `File size (${formatBytes(file.size)}) exceeds the ${MAX_FILE_SIZE_MB} MB limit.`
@@ -239,7 +241,7 @@ const UploadDocumentDialog = ({
           >
             <FileIcon sx={{ fontSize: '1rem', color: '#f57f17' }} />
             <Typography sx={{ fontSize: '0.78rem', color: '#5d4037' }}>
-              Replacing: <strong>{selectedRowForUpdate?.documentName || selectedRowForUpdate?.name}</strong>
+              Replacing: <strong>{selectedRowForUpdate?.fileName || selectedRowForUpdate?.name}</strong>
             </Typography>
           </Box>
         )}
@@ -305,7 +307,7 @@ const UploadDocumentDialog = ({
             Browse File
           </Button>
           <Typography variant='caption' color='text.secondary' textAlign='center' sx={{ lineHeight: 1.4 }}>
-            Supported: XLS, XLSX, XLSM, PDF
+            Supported: XLS, XLSX, XLSM, PDF, CSV
             <br />
             Max size: {MAX_FILE_SIZE_MB} MB
           </Typography>

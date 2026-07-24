@@ -144,6 +144,7 @@ const KendoDataTablesCracker = ({
   handleExcelUpload = () => { },
   downloadExcelForConfiguration = () => { },
   onLoad = () => { },
+  disableInnerNotification = false,
 }) => {
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -1119,12 +1120,14 @@ const KendoDataTablesCracker = ({
           </Button>
         </Box>
       )}
-      <Notification
-        open={snackbarOpen}
-        message={snackbarData?.message || ''}
-        severity={snackbarData?.severity || 'info'}
-        onClose={() => setSnackbarOpen(false)}
-      />
+      {!disableInnerNotification && (
+        <Notification
+          open={snackbarOpen}
+          message={snackbarData?.message || ''}
+          severity={snackbarData?.severity || 'info'}
+          onClose={() => setSnackbarOpen(false)}
+        />
+      )}
       <CompactDialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}

@@ -211,7 +211,7 @@ const KendoDataTables = ({
   allRedCell2 = [],
   modifiedCells = [],
   setRows,
-  columns,
+  columns: rawColumns,
   summaryEdited,
   revision,
   loading = false,
@@ -279,6 +279,23 @@ const KendoDataTables = ({
   currentTabDisplayName,
   cellHighlightStrategy = '',
 }) => {
+  const columns = useMemo(() => {
+    const normalize = (cols) => {
+      if (!cols) return cols
+      return cols.map((col) => {
+        const nextCol = { ...col }
+        if (col.width && !col.minWidth) {
+          nextCol.minWidth = col.width
+        }
+        if (col.children) {
+          nextCol.children = normalize(col.children)
+        }
+        return nextCol
+      })
+    }
+    return normalize(rawColumns)
+  }, [rawColumns])
+
   const _export = useRef(null)
 
   const _grid = React.useRef(undefined)
@@ -3043,8 +3060,30 @@ const KendoDataTables = ({
                 )}
                 {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
 
-                {columns?.map((col) => {
-                  {
+                {(() => {
+                  const renderColumn = (col) => {
+                    if (col?.children && Array.isArray(col.children) && col.children.length > 0) {
+                      return (
+                        <GridColumn
+                          locked={col.locked || false}
+                          key={col?.field || col?.title || col?.headerName}
+                          field={col?.field}
+                          title={col?.title || col?.headerName}
+                          hidden={col?.hidden}
+                          width={col?.width}
+                          cells={{
+                            headerCell: SimpleHeaderWithTooltip,
+                          }}
+                        >
+                          {col.children.map((childCol) => renderColumn(childCol))}
+                        </GridColumn>
+                      )
+                    }
+                    return renderSingleColumn(col)
+                  }
+
+                  const renderSingleColumn = (col) => {
+                    {
                     permissions?.unitForExcelToadd && (
                       <ExcelExportColumn field={selectedUOM} title='UOM' />
                     )
@@ -4963,7 +5002,10 @@ const KendoDataTables = ({
                       columnMenu={ColumnMenuCheckboxFilter}
                     />
                   )
-                })}
+                  }
+
+                  return columns?.map((col) => renderColumn(col))
+                })()}
 
                 {permissions?.deleteButton && (
                   <GridColumn

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Box } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import moment from '../../../node_modules/moment/moment.js'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
@@ -158,7 +158,7 @@ export default function DecokingPlanningNotification() {
                saveBtn: false,
                alwaysEnableSave: true,
                showTitleNameBusiness: true,
-               titleName: 'SAD Overlapping',
+               titleName: 'SAD Overlapping notification',
                adjustedPermissions: true,
                downloadExcelBtn: false,
                uploadExcelBtn: false,
@@ -173,23 +173,42 @@ export default function DecokingPlanningNotification() {
           <Box>
                <LoaderBackdrop open={!!loading} />
 
-               <KendoDataTables
-                    rows={rows}
-                    setRows={setRows}
-                    columns={columns}
-                    title='Material Grouped Selection'
-                    modifiedCells={modifiedCells}
-                    setModifiedCells={setModifiedCells}
-                    remarkDialogOpen={remarkDialogOpen}
-                    setRemarkDialogOpen={setRemarkDialogOpen}
-                    currentRemark={currentRemark}
-                    setCurrentRemark={setCurrentRemark}
-                    currentRowId={currentRowId}
-                    setCurrentRowId={setCurrentRowId}
-                    enableSaveAddBtn={enableSaveAddBtn}
-                    handleRemarkCellClick={handleRemarkCellClick}
-                    permissions={adjustedPermissionsC}
-               />
+               {rows.length > 0 ? (
+                    <KendoDataTables
+                         rows={rows}
+                         setRows={setRows}
+                         columns={columns}
+                         title='SAD Overlapping notification'
+                         modifiedCells={modifiedCells}
+                         setModifiedCells={setModifiedCells}
+                         remarkDialogOpen={remarkDialogOpen}
+                         setRemarkDialogOpen={setRemarkDialogOpen}
+                         currentRemark={currentRemark}
+                         setCurrentRemark={setCurrentRemark}
+                         currentRowId={currentRowId}
+                         setCurrentRowId={setCurrentRowId}
+                         enableSaveAddBtn={enableSaveAddBtn}
+                         handleRemarkCellClick={handleRemarkCellClick}
+                         permissions={adjustedPermissionsC}
+                    />
+               ) : (
+                    !loading && (
+                         <Box
+                              sx={{
+                                   p: 3,
+                                   textAlign: 'center',
+                                   display: 'flex',
+                                   justifyContent: 'center',
+                                   alignItems: 'center',
+                                   minHeight: '80px',
+                              }}
+                         >
+                              <Typography variant='body1' sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                                   No concurrent SAD found for current furnaces plan
+                              </Typography>
+                         </Box>
+                    )
+               )}
 
                <Notification
                     open={snackbarOpen}

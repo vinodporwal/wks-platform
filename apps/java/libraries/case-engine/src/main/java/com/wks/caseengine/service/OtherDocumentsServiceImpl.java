@@ -76,6 +76,8 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
                                 .content(contentBytes != null
                                         ? Base64.getEncoder().encodeToString(contentBytes)
                                         : null)
+                                .fileName(rs.getString("FileName"))
+                                .fileSize(rs.getString("FileSize"))
                                 .build();
                         result.add(dto);
                     }
@@ -108,17 +110,19 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
             String verticalId, String aopYear, MultipartFile file) {
         AOPMessageVM response = new AOPMessageVM();
         try {
-            byte[] content = file.getBytes();
-            String contentType = file.getContentType();
+            byte[] content    = file.getBytes();
+            String contentType = resolveContentType(file.getContentType());
+            String fileName    = file.getOriginalFilename() != null ? file.getOriginalFilename() : "";
+            String fileSize    = formatFileSize(file.getSize());
             String currentUser = Utility.getUserName();
-            Timestamp now = Timestamp.from(Instant.now());
+            Timestamp now      = Timestamp.from(Instant.now());
 
             if (transactionId == null || transactionId.isBlank()) {
-                insertDocument(masterId, verticalId, aopYear, content, contentType, currentUser, now);
+                insertDocument(masterId, verticalId, aopYear, content, contentType, fileName, fileSize, currentUser, now);
                 response.setCode(200);
                 response.setMessage("Document uploaded successfully");
             } else {
-                updateDocument(transactionId, content, contentType, currentUser, now);
+                updateDocument(transactionId, content, contentType, fileName, fileSize, currentUser, now);
                 response.setCode(200);
                 response.setMessage("Document updated successfully");
             }
@@ -130,12 +134,55 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
         return response;
     }
 
+    /**
+     * Converts a MIME type string into a short, human-readable file-type label.
+     * Falls back to the raw value (or "unknown") when no mapping is found.
+     */
+    private String resolveContentType(String mimeType) {
+        if (mimeType == null) return "unknown";
+        switch (mimeType.toLowerCase().trim()) {
+            case "application/pdf":                                                                         return "pdf";
+            case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":                      return "xlsx";
+            case "application/vnd.ms-excel":                                                               return "xls";
+            case "application/vnd.ms-excel.sheet.macroenabled.12":                                         return "xlsm";
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":                return "docx";
+            case "application/msword":                                                                     return "doc";
+            case "application/vnd.openxmlformats-officedocument.presentationml.presentation":              return "pptx";
+            case "application/vnd.ms-powerpoint":                                                          return "ppt";
+            case "text/plain":                                                                             return "txt";
+            case "text/csv":                                                                               return "csv";
+            case "image/jpeg":                                                                             return "jpg";
+            case "image/png":                                                                              return "png";
+            case "image/gif":                                                                              return "gif";
+            case "application/zip":                                                                        return "zip";
+            default:
+                // Last-resort: try to derive from the subtype (e.g. "image/webp" ? "webp")
+                int slash = mimeType.lastIndexOf('/');
+                return slash >= 0 ? mimeType.substring(slash + 1) : mimeType;
+        }
+    }
+
+    /**
+     * Formats a byte count into a human-readable size string.
+     * Examples: 512 bytes ? "512 B", 10240 ? "10 KB", 2097152 ? "2 MB"
+     */
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) {
+            return bytes + " B";
+        } else if (bytes < 1024L * 1024) {
+            return (bytes / 1024) + " KB";
+        } else {
+            return (bytes / (1024L * 1024)) + " MB";
+        }
+    }
+
     private void insertDocument(String masterId, String verticalId, String aopYear,
-            byte[] content, String contentType, String uploadedBy, Timestamp uploadedDateTime)
+            byte[] content, String contentType, String fileName, String fileSize,
+            String uploadedBy, Timestamp uploadedDateTime)
             throws SQLException {
         String sql = "INSERT INTO RefineryOtherDocumentTransaction "
-                + "(Id, MasterId, VerticalId, AOPYear, Content, ContentType, UploadedBy, UploadedDateTime) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                + "(Id, MasterId, VerticalId, AOPYear, Content, ContentType, FileName, FileSize, UploadedBy, UploadedDateTime) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -146,17 +193,20 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
             stmt.setString(4, aopYear);
             stmt.setBytes(5, content);
             stmt.setString(6, contentType);
-            stmt.setString(7, uploadedBy);
-            stmt.setTimestamp(8, uploadedDateTime);
+            stmt.setString(7, fileName);
+            stmt.setString(8, fileSize);
+            stmt.setString(9, uploadedBy);
+            stmt.setTimestamp(10, uploadedDateTime);
             stmt.executeUpdate();
         }
     }
 
     private void updateDocument(String transactionId, byte[] content, String contentType,
-            String modifiedBy, Timestamp modifiedOn) throws SQLException {
+            String fileName, String fileSize, String modifiedBy, Timestamp modifiedOn)
+            throws SQLException {
         String sql = "UPDATE RefineryOtherDocumentTransaction "
-                + "SET Content = ?, ContentType = ?, ModifiedBy = ?, ModifiedOn = ?, "
-                + "UploadedBy = ?, UploadedDateTime = ? "
+                + "SET Content = ?, ContentType = ?, FileName = ?, FileSize = ?, "
+                + "ModifiedBy = ?, ModifiedOn = ?, UploadedBy = ?, UploadedDateTime = ? "
                 + "WHERE Id = ?";
 
         try (Connection conn = dataSource.getConnection();
@@ -164,11 +214,13 @@ public class OtherDocumentsServiceImpl implements OtherDocumentsService {
 
             stmt.setBytes(1, content);
             stmt.setString(2, contentType);
-            stmt.setString(3, modifiedBy);
-            stmt.setTimestamp(4, modifiedOn);
+            stmt.setString(3, fileName);
+            stmt.setString(4, fileSize);
             stmt.setString(5, modifiedBy);
             stmt.setTimestamp(6, modifiedOn);
-            stmt.setString(7, transactionId);
+            stmt.setString(7, modifiedBy);
+            stmt.setTimestamp(8, modifiedOn);
+            stmt.setString(9, transactionId);
             stmt.executeUpdate();
         }
     }

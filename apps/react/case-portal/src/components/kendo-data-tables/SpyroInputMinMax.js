@@ -231,11 +231,9 @@ export default function SpyroInputMinMax() {
                )
 
                if (res?.code === 200) {
-                    const rawList = Array.isArray(res?.data)
-                         ? res.data
-                         : Array.isArray(res?.data?.Data)
-                              ? res.data.Data
-                              : []
+                    const rawList = Array.isArray(res?.data.resultList)
+                         ? res.data.resultList
+                         : []
                     const mapped = transformMinMaxData(rawList)
                     setRows(mapped)
                } else {

@@ -224,7 +224,7 @@ const CrackerConfig = () => {
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
                 : (currentTabDisplay === 'Recovery' ||
-                  currentTabDisplay === 'Hydrogenation') &&
+                    currentTabDisplay === 'Hydrogenation') &&
                   lowerSiteName === 'c2'
                   ? 'cracker_c2_recovery'
                   : lowerSiteName === 'c2'
@@ -1126,11 +1126,11 @@ const CrackerConfig = () => {
             case 'Furnace':
               return (
                 <Box key={currentTabDisplay}>
-                  {/* {IS_CRACKER_C2 && (
+                  {IS_CRACKER_C2 && (
                     <Box sx={{ mt: 1, mb: 3 }}>
                       <SpyroInputMinMax />
                     </Box>
-                  )} */}
+                  )}
                   <KendoDataTables
                     rows={rows}
                     setRows={setRowsForCurrent}
