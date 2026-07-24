@@ -103,4 +103,5 @@ public interface ConfigurationService {
         public AOPMessageVM getAopBasiswithStartDate(String year, String plantFKId, String type);
         public AOPMessageVM getCrackerC2OptimizingVariablesDropdown();
         public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(String year, String plantFKId, List<SpyroInputMinMaxDTO> configurationDTOList);
+        public AOPMessageVM getGroupMaterialDetails(String year, String plantFKId);
 }

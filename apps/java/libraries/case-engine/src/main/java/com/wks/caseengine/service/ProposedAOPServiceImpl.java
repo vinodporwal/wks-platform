@@ -490,11 +490,39 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			List<ProposedAOPDTO> data = readProposedAOPExcel(file.getInputStream());
 			List<ProposedAOPDTO> failedRecords = new ArrayList<>();
 
+			// Cache grades per (plantId_aopYear) to avoid redundant DB calls
+			Map<String, List<Map<String, Object>>> gradesCache = new HashMap<>();
+
 			for (ProposedAOPDTO dto : data) {
 				if ("Failed".equals(dto.getSaveStatus())) {
 					failedRecords.add(dto);
 					continue;
 				}
+
+				// Skip rows belonging to an "All Grade" grade silently
+				if (dto.getPlantId() != null && dto.getAopYear() != null && dto.getGradeId() != null) {
+					String plantIdStr = dto.getPlantId().toString();
+					String aopYearStr = dto.getAopYear();
+					String cacheKey = plantIdStr + "_" + aopYearStr;
+
+					List<Map<String, Object>> grades = gradesCache.computeIfAbsent(cacheKey, k -> {
+						AOPMessageVM gradesVM = aopConsumptionNormService.getProposedAOPGrades(aopYearStr, plantIdStr);
+						@SuppressWarnings("unchecked")
+						List<Map<String, Object>> list = (List<Map<String, Object>>) gradesVM.getData();
+						return list != null ? list : new ArrayList<>();
+					});
+
+					boolean isAllGrade = grades.stream()
+							.anyMatch(g -> g.get("gradeId") != null
+									&& g.get("gradeId").toString().equalsIgnoreCase(dto.getGradeId().toString())
+									&& g.get("DisplayName") != null
+									&& "All Grade".equalsIgnoreCase(g.get("DisplayName").toString()));
+
+					if (isAllGrade) {
+						continue; 
+					}
+				}
+
 				try {
 					saveProposedAOP(Collections.singletonList(dto));
 				} catch (IllegalArgumentException e) {

@@ -66,6 +66,7 @@ import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
+import com.wks.caseengine.dto.GroupMaterialDetailsDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
@@ -6531,4 +6532,57 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 			throw new RuntimeException("Failed to fetch cracker C2 optimizing variables dropdown", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getGroupMaterialDetails(String year, String plantFKId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = verticalName + "_" + site.getName() + "_GetGroupMaterialDetails";
+  
+			 List<GroupMaterialDetailsDTO> result = getGroupMaterialDetailsFromSP(procedureName, year, plantFKId);
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(result);
+			return aopMessageVM;
+	
 }
+
+@Transactional
+	public List<GroupMaterialDetailsDTO> getGroupMaterialDetailsFromSP(String procedureName, String aopYear,String plantId) {
+		try {
+		String sql = "EXEC [RIL.AOP].[dbo].[" + procedureName + "] @aopYear = ?, @plantId = ?";
+
+		return jdbcTemplate.query(sql, new Object[] { aopYear, plantId }, (rs, rowNum) -> new GroupMaterialDetailsDTO(
+				rs.getString("Id"),
+				rs.getString("Name"),
+				rs.getString("SAPMaterialCode"),
+				rs.getString("GroupName"),
+				rs.getString("Apr"),
+				rs.getString("May"),
+				rs.getString("Jun"),
+				rs.getString("Jul"),
+				rs.getString("Aug"),
+				rs.getString("Sep"),
+				rs.getString("Oct"),
+				rs.getString("Nov"),
+				rs.getString("Dec"),
+				rs.getString("Jan"),
+				rs.getString("Feb"),
+				rs.getString("Mar"),
+				rs.getString("NormParameter_FK_Id"),
+				rs.getString("Plant_FK_Id"),
+				rs.getInt("DisplayOrder")
+				
+			));
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data from stored procedure: " + procedureName, ex);
+		}
+	}
+		
+}
+			
+
