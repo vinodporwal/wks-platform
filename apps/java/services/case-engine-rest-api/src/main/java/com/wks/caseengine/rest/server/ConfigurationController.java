@@ -527,4 +527,9 @@ public class ConfigurationController {
 		return configurationService.saveSpyroInputMinMax(year, plantFKId, configurationDTOList);
 	}
 
+	@GetMapping(value = "/group-material-details")
+	public AOPMessageVM getGroupMaterialDetails(@RequestParam String year,@RequestParam String plantFKId) {
+		return configurationService.getGroupMaterialDetails(year,plantFKId);
+	}
+
 }
