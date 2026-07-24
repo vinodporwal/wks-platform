@@ -44,7 +44,7 @@ public class OtherFurnanceDetailsServiceImpl implements OtherFurnanceDetailsServ
         Sites site = siteRepository.findById(plant.getSiteFkId()).get();
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
         
-        String procedureName = vertical.getName() + "_" + site.getName() + "_" + "GetOtherFurnanceDetails";
+        String procedureName = vertical.getName() + "_" + site.getName() + "_" + "GetFurnanceOtherDetails";
            
      List<OtherFurnanceDetailsDTO> data = getOtherFurnanceDetailsFromSP(procedureName, plantId, aopYear);
 
