@@ -13,6 +13,7 @@ import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
+import com.wks.caseengine.dto.GroupMaterialDetailsDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
@@ -104,4 +105,6 @@ public interface ConfigurationService {
         public AOPMessageVM getCrackerC2OptimizingVariablesDropdown();
         public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(String year, String plantFKId, List<SpyroInputMinMaxDTO> configurationDTOList);
         public AOPMessageVM getGroupMaterialDetails(String year, String plantFKId);
+
+        public AOPMessageVM saveGroupMaterialDetails(String year, List<GroupMaterialDetailsDTO> dtoList);
 }

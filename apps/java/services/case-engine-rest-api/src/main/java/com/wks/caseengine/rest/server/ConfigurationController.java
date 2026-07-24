@@ -27,6 +27,7 @@ import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
+import com.wks.caseengine.dto.GroupMaterialDetailsDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -530,6 +531,11 @@ public class ConfigurationController {
 	@GetMapping(value = "/group-material-details")
 	public AOPMessageVM getGroupMaterialDetails(@RequestParam String year,@RequestParam String plantFKId) {
 		return configurationService.getGroupMaterialDetails(year,plantFKId);
+	}
+
+	@PostMapping(value = "/group-material-details")
+	public AOPMessageVM saveGroupMaterialDetails(@RequestParam String year, @RequestBody List<GroupMaterialDetailsDTO> dtoList) {
+		return configurationService.saveGroupMaterialDetails(year, dtoList);
 	}
 
 }

@@ -6582,6 +6582,65 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 			throw new RuntimeException("Failed to fetch data from stored procedure: " + procedureName, ex);
 		}
 	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM saveGroupMaterialDetails(String year, List<GroupMaterialDetailsDTO> dtoList) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+		for (GroupMaterialDetailsDTO dto : dtoList) {
+			if (dto.getId() == null || dto.getId().isEmpty()) {
+				throw new RuntimeException("Id is required");
+			}
+
+			UUID normParameterFKId = UUID.fromString(dto.getId());
+
+			// April (4) to March (3) — fiscal year order
+			Map<Integer, String> monthValues = new LinkedHashMap<>();
+			monthValues.put(4,  dto.getApr() != null ? dto.getApr() : "0");
+			monthValues.put(5,  dto.getMay() != null ? dto.getMay() : "0");
+			monthValues.put(6,  dto.getJun() != null ? dto.getJun() : "0");
+			monthValues.put(7,  dto.getJul() != null ? dto.getJul() : "0");
+			monthValues.put(8,  dto.getAug() != null ? dto.getAug() : "0");
+			monthValues.put(9,  dto.getSep() != null ? dto.getSep() : "0");
+			monthValues.put(10, dto.getOct() != null ? dto.getOct() : "0");
+			monthValues.put(11, dto.getNov() != null ? dto.getNov() : "0");
+			monthValues.put(12, dto.getDec() != null ? dto.getDec() : "0");
+			monthValues.put(1,  dto.getJan() != null ? dto.getJan() : "0");
+			monthValues.put(2,  dto.getFeb() != null ? dto.getFeb() : "0");
+			monthValues.put(3,  dto.getMar() != null ? dto.getMar() : "0");
+
+			for (Map.Entry<Integer, String> entry : monthValues.entrySet()) {
+				Integer month = entry.getKey();
+				String value = entry.getValue();
+
+				Optional<NormAttributeTransactions> existing =
+						normAttributeTransactionsRepository
+								.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
+
+				if (existing.isPresent()) {
+					NormAttributeTransactions transaction = existing.get();
+					transaction.setAttributeValue(value);
+					transaction.setModifiedOn(new Date());
+					normAttributeTransactionsRepository.save(transaction);
+				} else {
+					NormAttributeTransactions transaction = NormAttributeTransactions.builder()
+							.normParameterFKId(normParameterFKId)
+							.attributeValue(value)
+							.aopMonth(month)
+							.auditYear(year)
+							.createdOn(new Date())
+							.modifiedOn(new Date())
+							.build();
+					normAttributeTransactionsRepository.save(transaction);
+				}
+			}
+		}
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		return aopMessageVM;
+	}
 		
 }
 			
