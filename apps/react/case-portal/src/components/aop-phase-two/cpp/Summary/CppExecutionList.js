@@ -23,8 +23,9 @@ const CppExecutionList = ({ onViewClick }) => {
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
-  const { year, yearChanged } = dataGridStore
+  const { plantObject, year, yearChanged } = dataGridStore
   const AOP_YEAR = year?.selectedYear
+  const PLANT_ID = plantObject?.id
   // Column definitions
   const columns = [
     {
@@ -81,23 +82,10 @@ const CppExecutionList = ({ onViewClick }) => {
   ]
 
   useEffect(() => {
-    fetchCppModelLogs()
-  }, [yearChanged])
-
-  const data = [
-    {
-      id: 'ed724e8c-6f7a-4f0a-9a92-42fc401ac2ae',
-      financialYear: 2025,
-      executionDateTime: 'Jan 26, 2026, 8:47:21 PM',
-      status: 'Success',
-      totalIterations: 102,
-      totalMonthsProcessed: 12,
-      totalExecutionTime: '0.00s',
-      monthsSucceeded: 12,
-      monthsFailed: 0,
-      monthsWithWarnings: 0,
-    },
-  ]
+    if (PLANT_ID && AOP_YEAR) {
+      fetchCppModelLogs()
+    }
+  }, [yearChanged, PLANT_ID])
 
   const fetchCppModelLogs = async () => {
     setLoading(true)
@@ -106,6 +94,7 @@ const CppExecutionList = ({ onViewClick }) => {
       const res = await SummaryApiService.getCppModelLogs(
         keycloak,
         financialYear,
+        PLANT_ID,
       )
       //   const res = data
       if (res?.length === 0) {

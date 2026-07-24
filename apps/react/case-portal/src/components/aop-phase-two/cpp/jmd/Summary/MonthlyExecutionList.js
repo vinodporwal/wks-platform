@@ -19,6 +19,45 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
+  // Custom action cell with view and download icons
+  const CustomActionsCell = ({ dataItem }) => {
+    return (
+      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '15px',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={eyeIcon}
+              themeColor='primary'
+              size='xlarge'
+              style={{ cursor: 'pointer', width: 22, height: 22 }}
+              onClick={() => handleViewClick(dataItem)}
+              title='View Details'
+              data-testid='view-details-icon'
+            />
+          </Tooltip>
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={fileExcelIcon}
+              themeColor='success'
+              size='xlarge'
+              style={{ cursor: 'pointer', width: 22, height: 22 }}
+              onClick={() => handleDownloadExcel(dataItem)}
+              title='Download Excel Report'
+              data-testid='download-icon'
+            />
+          </Tooltip>
+        </div>
+      </td>
+    )
+  }
+
   // Column definitions
   const columns = [
     {
@@ -69,6 +108,16 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
       minWidth: 150,
       type: 'text',
       editable: false,
+    },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: CustomActionsCell,
+      // locked: true,
+      // lockPosition: 'right',
     },
   ]
 
@@ -130,41 +179,6 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
     showTitle: true,
     titleName: 'Monthly Execution Details',
     customActionButton: true,
-  }
-
-  // Custom action cell with view and download icons
-  const CustomActionsCell = ({ dataItem }) => {
-    return (
-      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-        <div
-          style={{
-            display: 'flex',
-            gap: '10px',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Tooltip anchorElement='target' position='top'>
-            <SvgIcon
-              icon={eyeIcon}
-              themeColor='primary'
-              style={{ cursor: 'pointer' }}
-              onClick={() => handleViewClick(dataItem)}
-              title='View Details'
-            />
-          </Tooltip>
-          <Tooltip anchorElement='target' position='top'>
-            <SvgIcon
-              icon={fileExcelIcon}
-              themeColor='success'
-              style={{ cursor: 'pointer' }}
-              onClick={() => handleDownloadExcel(dataItem)}
-              title='Download Excel Report'
-            />
-          </Tooltip>
-        </div>
-      </td>
-    )
   }
 
   const handleViewClick = (dataItem) => {
@@ -265,7 +279,6 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 20,
         }}
-        customActionCell={CustomActionsCell}
         READ_ONLY={true}
       />
     </Box>

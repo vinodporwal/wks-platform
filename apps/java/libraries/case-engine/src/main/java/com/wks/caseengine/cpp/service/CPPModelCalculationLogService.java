@@ -46,11 +46,13 @@ public class CPPModelCalculationLogService {
     public List<CPPModelCalculationLogListDTO> getAllParentExecutions(Integer financialYear, List<UUID> plantIds) {
         log.info("[CPPModelCalculationLogService] Fetching all parent executions from repository - financialYear: {}, plantIds: {}", financialYear, plantIds);
         try {
-            List<CPPModelCalculationLog> parents;
+            List<CPPModelCalculationLog> parents = new ArrayList<>();
             if (financialYear != null) {
-                parents = repository.findParentExecutionsByFinancialYear(financialYear, plantIds);
-            } else {
-                parents = repository.findAllParentExecutions(plantIds);
+                if (plantIds == null || plantIds.isEmpty()) {
+                    parents = repository.findParentExecutionsByFinancialYear(financialYear);
+                } else {
+                    parents = repository.findParentExecutionsByFinancialYearAndPlantIds(financialYear, plantIds);
+                }
             }
             log.info("[CPPModelCalculationLogService] Found {} parent execution records", parents.size());
             
