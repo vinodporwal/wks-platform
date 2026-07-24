@@ -16,7 +16,6 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterProductionProductionNormBasis from 'utils/ValueFormatterProduction_ProductionNormBasis'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import GroupMaterial from './GroupMaterial'
 const SelectivityData = (props) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -1077,7 +1076,6 @@ const SelectivityData = (props) => {
               : ''
           }
         />
-        <GroupMaterial />
       </Box>
 
     </div>
