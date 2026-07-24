@@ -14,7 +14,9 @@ import '../../css/advance-kendo-table.css'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { handleTabKeyNavigation, applyDateCalculations } from './utility'
+import { useFilterChips } from '../hooks/useFilterChips'
 import RemarkDialog from './components/RemarkDialog'
+import FilterChips from './components/FilterChips'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
@@ -254,6 +256,7 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  showFilters = false,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -304,7 +307,7 @@ const AdvanceKendoTable = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))
@@ -1338,6 +1341,13 @@ const AdvanceKendoTable = ({
     HeaderWithSubtitle.displayName = `HeaderWithSubtitle(${subtitle})`
     return HeaderWithSubtitle
   }
+
+  const {
+    activeFilters,
+    getColumnTitle,
+    handleRemoveFilter,
+    handleClearAllFilters,
+  } = useFilterChips(filter, setFilter, columns)
 
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
 
@@ -2885,6 +2895,15 @@ const AdvanceKendoTable = ({
             </Box>
           </Box>
         </Box>
+      )}
+
+      {(showFilters || IS_CPP) && (
+        <FilterChips
+          activeFilters={activeFilters}
+          getColumnTitle={getColumnTitle}
+          handleRemoveFilter={handleRemoveFilter}
+          handleClearAllFilters={handleClearAllFilters}
+        />
       )}
 
       <Collapse in={gridExpanded}>

@@ -683,15 +683,13 @@ const Norms = () => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.data?.list
-        ?.filter((item) => item?.accountName !== 'Stores & Spares')
-        .map((item, index) => {
-          return {
-            ...item,
-            id: item.id || index + 1,
-            remarks: item.remarks || '',
-          }
-        })
+      let tempRes = res?.data?.list?.map((item, index) => {
+        return {
+          ...item,
+          id: item.id || index + 1,
+          remarks: item.remarks || '',
+        }
+      })
 
       setRows(tempRes)
       setCalculateBtnEnabled(res?.data?.aopCalculation?.length > 0)
