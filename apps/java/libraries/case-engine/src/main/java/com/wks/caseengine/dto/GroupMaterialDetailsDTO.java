@@ -13,7 +13,7 @@ public class GroupMaterialDetailsDTO {
 
     private String id;
     private String name;
-    private String sapMaterialCode;
+    private String uom;
     private String groupName;
     private String apr;
     private String may;

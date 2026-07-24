@@ -6559,7 +6559,7 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 		return jdbcTemplate.query(sql, new Object[] { aopYear, plantId }, (rs, rowNum) -> new GroupMaterialDetailsDTO(
 				rs.getString("Id"),
 				rs.getString("Name"),
-				rs.getString("SAPMaterialCode"),
+				rs.getString("UOM"),
 				rs.getString("GroupName"),
 				rs.getString("Apr"),
 				rs.getString("May"),
