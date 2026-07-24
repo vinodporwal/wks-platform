@@ -158,7 +158,7 @@ export default function DecokingPlanningNotification() {
                saveBtn: false,
                alwaysEnableSave: true,
                showTitleNameBusiness: true,
-               titleName: 'SAD Overlapping',
+               titleName: 'SAD Overlapping notification',
                adjustedPermissions: true,
                downloadExcelBtn: false,
                uploadExcelBtn: false,
@@ -178,7 +178,7 @@ export default function DecokingPlanningNotification() {
                          rows={rows}
                          setRows={setRows}
                          columns={columns}
-                         title='Material Grouped Selection'
+                         title='SAD Overlapping notification'
                          modifiedCells={modifiedCells}
                          setModifiedCells={setModifiedCells}
                          remarkDialogOpen={remarkDialogOpen}

@@ -90,7 +90,7 @@ const PlantCapacities = ({ permissions }) => {
     },
     {
       field: 'max',
-      title: 'Max',
+      title: 'Max (MCU)',
       editable: true, // "From MCU"
       align: 'right',
       headerAlign: 'right',

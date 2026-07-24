@@ -34,6 +34,7 @@ const SDTAActivitiesGrid = ({
   summaryEdited,
   setSummaryEdited,
   gridKey,
+  disableInnerNotification,
   titleName = 'IBR/SD/HSS Activities',
 }) => {
   return (
@@ -66,6 +67,7 @@ const SDTAActivitiesGrid = ({
         handleCalculate={handleCalculate}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        disableInnerNotification={disableInnerNotification}
       />
     </Box>
   )
