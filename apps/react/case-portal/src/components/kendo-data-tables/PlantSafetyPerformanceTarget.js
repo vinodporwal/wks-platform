@@ -53,7 +53,7 @@ export default function PlantSafetyPerformanceTarget() {
   const [modifiedCellsP, setModifiedCellsP] = useState({})
   const [enableSaveAddBtnP, setEnableSaveAddBtnP] = useState(false)
 
-  const [rows3, setRows3] = useState([])
+  //const [rows3, setRows3] = useState([])
 
   const [remarkDialogOpen3, setRemarkDialogOpen3] = useState(false)
   const [currentRemark3, setCurrentRemark3] = useState('')
@@ -61,7 +61,7 @@ export default function PlantSafetyPerformanceTarget() {
   const [modifiedCells3, setModifiedCells3] = useState({})
   const [enableSaveAddBtn3, setEnableSaveAddBtn3] = useState(false)
 
-  const [rows4, setRows4] = useState([])
+  //const [rows4, setRows4] = useState([])
 
   const [enableSaveAddBtn4, setEnableSaveAddBtn4] = useState(false)
   const [remarkDialogOpen4, setRemarkDialogOpen4] = useState(false)
@@ -370,8 +370,8 @@ export default function PlantSafetyPerformanceTarget() {
     }
   }, [modifiedCellsP])
 
-  const handleCalculate = () => {}
-  const handleCalculateP = () => {}
+  const handleCalculate = () => { }
+  const handleCalculateP = () => { }
 
   const handleRemarkCellClick = useCallback((row) => {
     if (READ_ONLY) return
@@ -550,7 +550,7 @@ export default function PlantSafetyPerformanceTarget() {
         permissions={adjustedPermissionsP}
         columns={columns3}
       /> */}
-      <KendoDataTables
+      {/* <KendoDataTables
         rows={rows3}
         setRows={setRows3}
         title='Procurement Budget'
@@ -568,9 +568,9 @@ export default function PlantSafetyPerformanceTarget() {
         // handleRemarkCellClick={handleRemarkCellClick3}
         permissions={adjustedPermissions3}
         columns={columns3}
-      />
+      /> */}
 
-      <KendoDataTables
+      {/* <KendoDataTables
         rows={rows4}
         setRows={setRows4}
         title='Procurement Budget'
@@ -588,7 +588,7 @@ export default function PlantSafetyPerformanceTarget() {
         // handleRemarkCellClick={handleRemarkCellClick4}
         permissions={adjustedPermissions4}
         columns={columns4}
-      />
+      /> */}
 
       <Notification
         open={snackbarOpen}
