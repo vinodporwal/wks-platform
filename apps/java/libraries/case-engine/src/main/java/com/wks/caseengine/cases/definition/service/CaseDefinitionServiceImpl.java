@@ -39,6 +39,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -81,10 +82,14 @@ import com.wks.caseengine.cases.instance.CaseInstance;
 public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
     private final JavaMailSender mailSender;
+    private final CaseManagementSyncService caseManagementSyncService;
 
     @Autowired
-    public CaseDefinitionServiceImpl(JavaMailSender mailSender) {
+    public CaseDefinitionServiceImpl(
+            JavaMailSender mailSender,
+            CaseManagementSyncService caseManagementSyncService) {
         this.mailSender = mailSender;
+        this.caseManagementSyncService = caseManagementSyncService;
     }
 
     @Autowired
@@ -435,6 +440,7 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
     }
 
     @Override
+    @Transactional(transactionManager = "db2TransactionManager")
     public void linkEventsToCase(String businessKey, List<Long> eventIds) {
         // 1. Fetch event details
         List<FaultEvents> faultEvents = getAllEvents(eventIds);
@@ -502,7 +508,8 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
             caseData.setEventIds(existingEventIds);
 
             // 5. Save
-            caseRepository.save(caseData);
+            Case savedCase = caseRepository.save(caseData);
+            caseManagementSyncService.synchronize(savedCase);
             System.out.println("linkEventsToCase: Updated case " + businessKey + " with " + faultEvents.size() + " new events");
         } catch (Exception e) {
             throw new RuntimeException("Failed to update dataGrid2 for case " + businessKey + ": " + e.getMessage(), e);
@@ -564,6 +571,7 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 //	}
 
     @Override
+    @Transactional(transactionManager = "db2TransactionManager")
     public Case saveCase(Case caseData) {
         System.out.println("In saveCase");
 
@@ -842,12 +850,12 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
                 System.out.println("After Updating Attributes...");
                 System.out.println(attributes.get(0).getValue());
                 caseData.setAttributes(attributes);
-                caseDetails = caseRepository.save(caseData);
-                return caseDetails;
             } catch(Exception e) {
                 e.printStackTrace();
             }
         // }
+        caseDetails = caseRepository.save(caseData);
+        caseManagementSyncService.synchronize(caseDetails);
         return caseDetails;
     }
 
@@ -1186,6 +1194,7 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 
 
     @Override
+    @Transactional(transactionManager = "db2TransactionManager")
     public Case addRecommendation(Recommendations recommendation) {
         String caseNo = recommendation.getCaseNo();
         Case caseDetails = caseRepository.getByCaseNo(caseNo);
@@ -1198,6 +1207,7 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
         System.out.println("After processing everything...");
         System.out.println("..."+ caseDetails.getAttributes().get(0).getValue());
         caseDetails = caseRepository.save(caseDetails);
+        caseManagementSyncService.synchronize(caseDetails);
         return caseDetails;
     }
 
@@ -1386,6 +1396,7 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 
     @Override
 //	@Scheduled(cron = "0 */5 * * * ?")
+    @Transactional(transactionManager = "db2TransactionManager")
     public List<Case> updateRecommendationStatus() throws Exception {
         LocalDate today = LocalDate.now();
         LocalDate oneMonthBefore = today.minusDays(10); //.minusMonths(1);
@@ -1418,12 +1429,14 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
                 }
             }
             if (updated) { // Save only if changes were made
-                caseRepository.save(caseDetails);
+                Case savedCase = caseRepository.save(caseDetails);
+                caseManagementSyncService.synchronize(savedCase);
             }
         }
         return cases;
     }
     @Override
+    @Transactional(transactionManager = "db2TransactionManager")
     public Case saveAnalysis(Case caseData) {
         String assetName = "%"+caseData.getAssetName();
         String hierarchyNodePKID = "";
@@ -1552,6 +1565,7 @@ data.put("assignedToLabel", assignedToLabel);
         // ---- END Analysis Team notification ----
 
         caseDetails = caseRepository.save(caseData);
+        caseManagementSyncService.synchronize(caseDetails);
         return caseDetails;
     }
     private String getGEAPMRecommendationStatusAndUpdateRecommendationStatus(String geAPMAcsessToken, String recommendationNo) {
