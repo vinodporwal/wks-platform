@@ -147,7 +147,7 @@ const EtheleneStock = () => {
             filterable: true,
             filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
             align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-            ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
+            ...(isNumberCol ? { format: '{0:0.0}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
             widthT: col?.field === 'Ethylene Stock in Cryo-Tank' ? 200 : 110,

@@ -22,7 +22,13 @@ const buildCrackerC2Columns = (rawColumns = []) => {
     }
   })
 
-  const getColDef = (field, defaultTitle, defaultType = 'number', overrideEditable) => {
+  const getColDef = (
+    field,
+    defaultTitle,
+    defaultType = 'number',
+    overrideEditable,
+    customMinWidth,
+  ) => {
     const raw = colMap[field] || {}
     const type = raw.type || defaultType
     return {
@@ -37,7 +43,12 @@ const buildCrackerC2Columns = (rawColumns = []) => {
             ? false
             : type === 'number' || field === 'Remarks',
       hidden: hiddenKeys.includes(field) ? true : !!raw.hidden,
-      minWidth: 120,
+      minWidth:
+        customMinWidth !== undefined
+          ? customMinWidth
+          : field === 'Remarks'
+            ? 120
+            : 100,
       crackerValidation: type === 'number',
       format: type === 'number' ? '{0:n2}' : raw.format,
     }
@@ -45,8 +56,13 @@ const buildCrackerC2Columns = (rawColumns = []) => {
 
   const result = []
 
-  // MonthName standalone column
-  result.push(getColDef('MonthName', 'MonthName', 'string', false))
+  // MonthName standalone column locked
+  result.push({
+    ...getColDef('MonthName', 'MonthName', 'string', false),
+    locked: true,
+    isVisible: true,
+    minWidth: 100,
+  })
 
   // Main furnace parent group
   result.push({
@@ -74,10 +90,10 @@ const buildCrackerC2Columns = (rawColumns = []) => {
   result.push({
     title: 'Mode',
     children: [
-      getColDef('5FD', '5F+Pilot'),
-      getColDef('6FBFD', '6F+Pilot'),
-      getColDef('5F', '5F'),
-      getColDef('6FSFD', '6F'),
+      getColDef('5FD', '5F+Pilot', 'number', undefined, 80),
+      getColDef('6FBFD', '6F+Pilot', 'number', undefined, 80),
+      getColDef('5F', '5F', 'number', undefined, 80),
+      getColDef('6FSFD', '6F', 'number', undefined, 80),
     ],
   })
 
@@ -117,7 +133,7 @@ const buildCrackerC2Columns = (rawColumns = []) => {
             ? false
             : col.type === 'number' || col.field === 'Remarks',
         hidden: hiddenKeys.includes(col.field) ? true : !!col.hidden,
-        minWidth: 120,
+        minWidth: 100,
         crackerValidation: col.type === 'number',
         format: col.type === 'number' ? '{0:n2}' : col.format,
       })

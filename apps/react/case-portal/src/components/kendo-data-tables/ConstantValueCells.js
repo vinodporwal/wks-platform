@@ -112,7 +112,7 @@ export const ConstantValueEditCell = (props) => {
         const year = date.getFullYear()
         if (year >= 1000 && year <= 9999) {
           const month = String(date.getMonth() + 1).padStart(2, '0')
-          const day = isMonthUom ? '01' : String(date.getDate()).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
           const formattedValue = `${day}-${month}-${year}`
           onChange({
             dataItem,
@@ -136,7 +136,6 @@ export const ConstantValueEditCell = (props) => {
         value={localDate}
         format='dd-MM-yyyy'
         onChange={handleChange}
-        {...(isMonthUom && { calendar: CustomMonthYearCalendar })}
         width='100%'
         size='small'
         style={{

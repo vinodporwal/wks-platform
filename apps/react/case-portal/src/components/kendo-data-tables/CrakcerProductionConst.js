@@ -16,6 +16,7 @@ import { validateFields } from 'utils/validationUtils'
 import { ProductionConstarintsApiService } from 'services/production-constraints-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { parseDateRobust } from './ConstantValueCells'
 const CrakcerProductionConst = () => {
   const keycloak = useSession()
 
@@ -336,21 +337,41 @@ const CrakcerProductionConst = () => {
       }
 
       const data = constantsRes?.data || []
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.Remarks,
-        srNo: index + 1,
-        Particulars: item.NormTypeName || item.DisplayName,
-        remarks: item.Remarks,
-        startDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
-        StartDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
-        endDate: item.EndDate ?? item.endDate ?? null,
-        EndDate: item.EndDate ?? item.endDate ?? null,
-        ConstantValue: item.ConstantValue ?? item.constantValue ?? item.Duration ?? item.duration ?? item.may ?? '',
-        Duration: item.Duration ?? item.duration ?? item.ConstantValue ?? item.constantValue ?? item.may ?? '',
-      }))
+      const formattedData = data.map((item, index) => {
+        const rawStart = item.StartDate ?? item.startDate ?? item.apr ?? null
+        let rawEnd = item.EndDate ?? item.endDate ?? null
+        const rawDur = item.Duration ?? item.duration ?? item.ConstantValue ?? item.constantValue ?? item.may ?? ''
+        const uom = (item.UOM || item.uom || '').trim().toLowerCase()
+
+        if (!rawEnd && rawStart && rawDur && (uom === 'month' || uom === 'months')) {
+          const startObj = parseDateRobust(rawStart)
+          const durNum = Number(rawDur)
+          if (startObj && !isNaN(startObj.getTime()) && !isNaN(durNum)) {
+            const endObj = new Date(startObj)
+            endObj.setMonth(endObj.getMonth() + durNum)
+            const dd = String(endObj.getDate()).padStart(2, '0')
+            const mm = String(endObj.getMonth() + 1).padStart(2, '0')
+            const yyyy = endObj.getFullYear()
+            rawEnd = `${dd}-${mm}-${yyyy}`
+          }
+        }
+
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.Remarks,
+          srNo: index + 1,
+          Particulars: item.NormTypeName || item.DisplayName,
+          remarks: item.Remarks,
+          startDate: rawStart,
+          StartDate: rawStart,
+          endDate: rawEnd,
+          EndDate: rawEnd,
+          ConstantValue: rawDur,
+          Duration: rawDur,
+        }
+      })
 
       setProductionRowsConstants(formattedData)
     } catch (error) {

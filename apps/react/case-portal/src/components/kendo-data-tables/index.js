@@ -221,6 +221,7 @@ const KendoDataTables = ({
   permissions = {},
   errorRows = new Set(),
   setSnackbarOpen = () => { },
+  setSnackbarData = () => { },
   snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
   setRemarkDialogOpen = () => { },
@@ -813,11 +814,14 @@ const KendoDataTables = ({
 
       // ✅ Pre-calculate End Date if Duration or Start Date changed
       let calculatedEndDate = null
+      let calculatedDuration = null
       const durationFields = ['Duration', 'duration', 'may']
       const startDateFields = ['startDate', 'StartDate', 'apr']
+      const endDateFields = ['endDate', 'EndDate']
 
       const shouldCalculateEndDate =
         durationFields.includes(field) || startDateFields.includes(field)
+      const shouldCalculateDuration = endDateFields.includes(field)
 
       if (shouldCalculateEndDate) {
         const currentRow =
@@ -842,7 +846,7 @@ const KendoDataTables = ({
         if (!isDurationValid) {
           calculatedEndDate = null
         } else {
-          const durationInDays = Number(rawDuration)
+          const durationVal = Number(rawDuration)
           const startDateObj = parseDateRobust(rawStartDate)
 
           if (!startDateObj || isNaN(startDateObj.getTime())) {
@@ -855,13 +859,52 @@ const KendoDataTables = ({
               })
             }
           } else {
-            const endDateObj = new Date(
-              startDateObj.getTime() + durationInDays * 24 * 60 * 60 * 1000,
-            )
+            const uom = (currentRow?.UOM || dataItem?.UOM || '').trim().toLowerCase()
+            const isMonthUom = uom === 'month' || uom === 'months'
+
+            let endDateObj
+            if (isMonthUom) {
+              endDateObj = new Date(startDateObj)
+              endDateObj.setMonth(endDateObj.getMonth() + durationVal)
+            } else {
+              endDateObj = new Date(
+                startDateObj.getTime() + durationVal * 24 * 60 * 60 * 1000,
+              )
+            }
             const dd = String(endDateObj.getDate()).padStart(2, '0')
             const mm = String(endDateObj.getMonth() + 1).padStart(2, '0')
             const yyyy = endDateObj.getFullYear()
             calculatedEndDate = `${dd}-${mm}-${yyyy}`
+          }
+        }
+      }
+
+      if (shouldCalculateDuration) {
+        const currentRow =
+          (rowsRef.current || []).find((r) => r.id === itemId) || dataItem
+        const rawEndDate = endDateFields.includes(field)
+          ? value
+          : currentRow?.endDate ?? currentRow?.EndDate
+        const rawStartDate = startDateFields.includes(field)
+          ? value
+          : currentRow?.startDate ?? currentRow?.StartDate ?? currentRow?.apr
+
+        const startDateObj = parseDateRobust(rawStartDate)
+        const endDateObj = parseDateRobust(rawEndDate)
+
+        if (startDateObj && !isNaN(startDateObj.getTime()) && endDateObj && !isNaN(endDateObj.getTime())) {
+          const uom = (currentRow?.UOM || dataItem?.UOM || '').trim().toLowerCase()
+          const isMonthUom = uom === 'month' || uom === 'months'
+
+          if (isMonthUom) {
+            const months =
+              (endDateObj.getFullYear() - startDateObj.getFullYear()) * 12 +
+              (endDateObj.getMonth() - startDateObj.getMonth())
+            calculatedDuration = months >= 0 ? String(months) : '0'
+          } else {
+            const diffMs = endDateObj.getTime() - startDateObj.getTime()
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+            calculatedDuration = diffDays >= 0 ? String(diffDays) : '0'
           }
         }
       }
@@ -874,6 +917,12 @@ const KendoDataTables = ({
           if (shouldCalculateEndDate) {
             updated.endDate = calculatedEndDate
             updated.EndDate = calculatedEndDate
+          }
+          if (calculatedDuration !== null) {
+            updated.Duration = calculatedDuration
+            updated.duration = calculatedDuration
+            updated.ConstantValue = calculatedDuration
+            updated.constantValue = calculatedDuration
           }
 
           if (
@@ -1144,6 +1193,12 @@ const KendoDataTables = ({
           if (shouldCalculateEndDate) {
             base.endDate = calculatedEndDate
             base.EndDate = calculatedEndDate
+          }
+          if (calculatedDuration !== null) {
+            base.Duration = calculatedDuration
+            base.duration = calculatedDuration
+            base.ConstantValue = calculatedDuration
+            base.constantValue = calculatedDuration
           }
 
           if (
