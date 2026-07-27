@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { DatePicker as KendoDatePicker } from '@progress/kendo-react-dateinputs'
+import {
+  DatePicker as KendoDatePicker,
+  Calendar as KendoCalendar,
+} from '@progress/kendo-react-dateinputs'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
+
+const CustomMonthYearCalendar = (props) => {
+  return (
+    <KendoCalendar
+      bottomView='year'
+      topView='year'
+      activeView='year'
+      value={props.value}
+      onChange={props.onChange}
+    />
+  )
+}
 
 export const parseDateRobust = (value) => {
   if (!value) return null
@@ -64,18 +79,23 @@ export const parseDateRobust = (value) => {
   return null
 }
 
+const durationFields = ['ConstantValue', 'constantValue', 'Duration', 'duration', 'may']
+
 export const ConstantValueEditCell = (props) => {
   const { dataItem, field, onChange } = props
-  const uom = (dataItem?.UOM || '').toLowerCase()
-  const isDateOrDay =
-    uom === 'date' ||
-    uom === 'day' ||
+  const uom = (dataItem?.UOM || '').trim().toLowerCase()
+  const isMonthUom = uom === 'month' || uom === 'months'
+  const isDateUom = uom === 'date' || uom === 'day'
+
+  const isDateField =
     field === 'startDate' ||
     field === 'StartDate' ||
-    props.column?.type === 'crackerC2DatePicker'
+    field === 'endDate' ||
+    field === 'EndDate' ||
+    ((isDateUom || isMonthUom) && !durationFields.includes(field))
 
   const currentRaw = dataItem?.[field]
-  const initialDate = isDateOrDay ? parseDateRobust(currentRaw) : null
+  const initialDate = isDateField ? parseDateRobust(currentRaw) : null
 
   const [localDate, setLocalDate] = useState(initialDate)
 
@@ -83,7 +103,7 @@ export const ConstantValueEditCell = (props) => {
     setLocalDate(initialDate)
   }, [currentRaw])
 
-  if (isDateOrDay) {
+  if (isDateField) {
     const handleChange = (event) => {
       setLocalDate(event.value)
 
@@ -92,7 +112,7 @@ export const ConstantValueEditCell = (props) => {
         const year = date.getFullYear()
         if (year >= 1000 && year <= 9999) {
           const month = String(date.getMonth() + 1).padStart(2, '0')
-          const day = String(date.getDate()).padStart(2, '0')
+          const day = isMonthUom ? '01' : String(date.getDate()).padStart(2, '0')
           const formattedValue = `${day}-${month}-${year}`
           onChange({
             dataItem,
@@ -116,6 +136,7 @@ export const ConstantValueEditCell = (props) => {
         value={localDate}
         format='dd-MM-yyyy'
         onChange={handleChange}
+        {...(isMonthUom && { calendar: CustomMonthYearCalendar })}
         width='100%'
         size='small'
         style={{
@@ -150,15 +171,18 @@ export const ConstantValueDataCell = (props) => {
     RedHighlightCell2,
   } = props
   const value = dataItem[field]
-  const uom = (dataItem?.UOM || '').toLowerCase()
-  const isDateOrDay =
-    uom === 'date' ||
-    uom === 'day' ||
+  const uom = (dataItem?.UOM || '').trim().toLowerCase()
+  const isMonthUom = uom === 'month' || uom === 'months'
+  const isDateUom = uom === 'date' || uom === 'day'
+
+  const isDateField =
     field === 'startDate' ||
     field === 'StartDate' ||
-    props.column?.type === 'crackerC2DatePicker'
+    field === 'endDate' ||
+    field === 'EndDate' ||
+    ((isDateUom || isMonthUom) && !durationFields.includes(field))
 
-  if (isDateOrDay) {
+  if (isDateField) {
     let displayValue = value
     if (value) {
       const d = parseDateRobust(value)

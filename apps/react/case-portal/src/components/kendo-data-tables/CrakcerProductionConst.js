@@ -150,8 +150,16 @@ const CrakcerProductionConst = () => {
           minWidth: 100,
         },
         {
-          field: 'ConstantValue',
-          title: 'Value',
+          field: 'endDate',
+          title: 'End Date',
+          editable: true,
+          type: 'crackerC2DatePicker',
+          widthT: 120,
+          minWidth: 100,
+        },
+        {
+          field: 'Duration',
+          title: 'Duration',
           editable: true,
           type: 'number',
           widthT: 120,
@@ -208,6 +216,8 @@ const CrakcerProductionConst = () => {
   }, [FORMATE_VALUE, IS_CRACKER_C2])
 
   const saveProductionConstrant = async (newRow) => {
+    console.log(newRow, "newwwww");
+
     setLoading1(true)
     try {
       var payload = []
@@ -222,13 +232,33 @@ const CrakcerProductionConst = () => {
           startDateVal = row.apr
         }
 
-        const constantVal = row.ConstantValue ?? row.may ?? row.apr ?? null
+        let endDateVal = null
+        if ('endDate' in row) {
+          endDateVal = row.endDate
+        } else if ('EndDate' in row) {
+          endDateVal = row.EndDate
+        } else if ('may' in row) {
+          endDateVal = row.may
+        }
+
+        let durationVal = null
+        if ('duration' in row) {
+          durationVal = row.duration
+        } else if ('Duration' in row) {
+          durationVal = row.Duration
+        } else if ('jun' in row) {
+          durationVal = row.jun
+        }
+
+        const constantVal = IS_CRACKER_C2 ? row.Duration ?? row.duration ?? row.ConstantValue ?? row.may ?? row.apr ?? null : row.ConstantValue ?? row?.Duration ?? null
         const aprVal = IS_CRACKER_C2 ? startDateVal : constantVal
+        const mayVal = IS_CRACKER_C2 ? endDateVal : constantVal
+        const junVal = IS_CRACKER_C2 ? durationVal : constantVal
 
         return {
           apr: aprVal,
-          may: constantVal,
-          jun: constantVal,
+          may: mayVal,
+          jun: junVal,
           jul: constantVal,
           aug: constantVal,
           sep: constantVal,
@@ -238,9 +268,12 @@ const CrakcerProductionConst = () => {
           jan: constantVal,
           feb: constantVal,
           mar: constantVal,
-          startDate: startDateVal,
-          StartDate: startDateVal,
-          ConstantValue: constantVal,
+          // startDate: startDateVal,
+          // StartDate: startDateVal,
+          // endDate: endDateVal,
+          // EndDate: endDateVal,
+          //ConstantValue: constantVal,
+          //Duration: constantVal,
           UOM: '',
           auditYear: AOP_YEAR,
           normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
@@ -313,7 +346,10 @@ const CrakcerProductionConst = () => {
         remarks: item.Remarks,
         startDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
         StartDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
-        ConstantValue: item.ConstantValue ?? item.constantValue ?? item.may ?? '',
+        endDate: item.EndDate ?? item.endDate ?? null,
+        EndDate: item.EndDate ?? item.endDate ?? null,
+        ConstantValue: item.ConstantValue ?? item.constantValue ?? item.Duration ?? item.duration ?? item.may ?? '',
+        Duration: item.Duration ?? item.duration ?? item.ConstantValue ?? item.constantValue ?? item.may ?? '',
       }))
 
       setProductionRowsConstants(formattedData)
