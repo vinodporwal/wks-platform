@@ -16,7 +16,7 @@ public interface JMDNormBasedUtilityBudgetService {
 
     AOPMessageVM getNormBasedUtilityBudget(List<UUID> cppPlantIds, String financialYear);
 
-    AOPMessageVM getNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear);
+    AOPMessageVM getNormBasedUtilityBudgetSummary(String cppPlantIds, String financialYear);
 
     AOPMessageVM saveOrUpdate(NormsMonthUpdateRequestDTO dto, String financialYear, List<Object[]> remarkUpdates, List<NormsMonthDetail> allNormsMonthDetailsToUpdate);
 
@@ -25,7 +25,7 @@ public interface JMDNormBasedUtilityBudgetService {
     
     byte[] exportNormBasedUtilityBudget(List<UUID> cppPlantIds, String financialYear, boolean isAfterSave, List<OutputNormsUtilityBudgetResponseDTO> dtoList);
 
-    byte[] exportNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear);
+    byte[] exportNormBasedUtilityBudgetSummary(String cppPlantIds, String financialYear);
 
     byte[] exportNormBasedUtilityBudgetDetailed(List<UUID> cppPlantId, String financialYear);
 

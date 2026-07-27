@@ -104,18 +104,18 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     }
 
     @Override
-    public AOPMessageVM getNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear) {
+    public AOPMessageVM getNormBasedUtilityBudgetSummary(String cppPlantIds, String financialYear) {
 
         log.info("=== Starting getNormBasedUtilityBudgetSummary ===");
-        log.info("CPPPlantId: {}, FinancialYear: {}", cppPlantId, financialYear);
+        log.info("CPPPlantId: {}, FinancialYear: {}", cppPlantIds, financialYear);
 
         AOPMessageVM vm = new AOPMessageVM();
 
         try {
-            if (cppPlantId == null) {
-                log.error("CPPPlantId is null");
+            if (cppPlantIds == null || cppPlantIds.trim().isEmpty()) {
+                log.error("CPPPlantIds is null or empty");
                 vm.setCode(400);
-                vm.setMessage("CPPPlantId cannot be null");
+                vm.setMessage("CPPPlantIds cannot be null or empty");
                 vm.setData(new ArrayList<>());
                 return vm;
             }
@@ -125,7 +125,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                     .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
                     .registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
 
-            sp.setParameter(1, cppPlantId.toString());
+            log.info("CPPPlantIds: {}, FinancialYear: {}", cppPlantIds, financialYear);
+
+            sp.setParameter(1, cppPlantIds);
             sp.setParameter(2, financialYear);
 
             log.info("Executing stored procedure dbo.CPP_NMD_GetNormBasedUtilityBudget_Summary ...");
@@ -1437,9 +1439,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     }
 
     @Override
-    public byte[] exportNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear) {
+    public byte[] exportNormBasedUtilityBudgetSummary(String cppPlantIds, String financialYear) {
         try {
-            AOPMessageVM result = getNormBasedUtilityBudgetSummary(cppPlantId, financialYear);
+            AOPMessageVM result = getNormBasedUtilityBudgetSummary(cppPlantIds, financialYear);
             List<NormBasedUtilityBudgetSummaryResponseDTO> dtoList = new ArrayList<>();
             if (result.getData() instanceof List) {
                 @SuppressWarnings("unchecked")
