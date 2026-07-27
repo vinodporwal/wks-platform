@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useDispatch, useSelector } from 'react-redux'
@@ -7,13 +7,12 @@ import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { setIsReleased } from 'store/reducers/dataGridStore'
-import { ReleaseAPIService } from '../../services/common/releaseAPIService'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
-import { generateExcelName } from '../../common/utilities/excelNameUtil'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import { useDebounce } from 'hooks/useDebounce'
 
 const NormsQtyCostReport = () => {
   const keycloak = useSession()
@@ -27,11 +26,22 @@ const NormsQtyCostReport = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, siteObject, verticalObject, year, screenTitle } =
-    dataGridStore
+  const {
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+    jmdSelectedPlants,
+  } = dataGridStore
   const PLANT_ID = plantObject?.id
 
   const AOP_YEAR = year?.selectedYear
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
 
   const EXCEL_NAME = generateExcelName(
     dataGridStore,
@@ -126,6 +136,16 @@ const NormsQtyCostReport = () => {
 
   // Base columns (common to all views)
   const baseColumns = [
+    //Generating Plant
+    {
+      field: 'cppPlantName',
+      title: 'CPP Plant',
+      widthT: 180,
+      type: 'text',
+      editable: false,
+      locked: true,
+      minWidth: 180,
+    },
     //Generating Plant
     {
       field: 'generatingPlantName',
@@ -225,19 +245,12 @@ const NormsQtyCostReport = () => {
   const [originalRows, setOriginalRows] = useState([])
   const [calculationLoading, setCaculationLoading] = useState(false)
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchNormsData()
-      setModifiedCells({})
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchNormsData = async () => {
+  const fetchNormsData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await UtilityPlantApiServiceV2.getNormBasedUtilityBudget(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -245,6 +258,7 @@ const NormsQtyCostReport = () => {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
       let tempRes = res?.data?.list?.map((item, index) => {
@@ -264,7 +278,18 @@ const NormsQtyCostReport = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchNormsData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchNormsData],
+  )
 
   // Permissions for monthly view (editable)
   const monthlyPermissions = useMemo(() => {
@@ -290,7 +315,7 @@ const NormsQtyCostReport = () => {
     try {
       const res = await UtilityPlantApiServiceV2.calculateNormsData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -427,7 +452,7 @@ const NormsQtyCostReport = () => {
       const response = await UtilityPlantApiServiceV2.saveNormsExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -493,7 +518,7 @@ const NormsQtyCostReport = () => {
     try {
       await UtilityPlantApiServiceV2.exportNormBasedUtilityBudgetDetailed(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -547,7 +572,7 @@ const NormsQtyCostReport = () => {
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           customHeight={80}
-          groupBy={['generatingPlantName']}
+          groupBy={['cppPlantName', 'generatingPlantName']}
         />
       </Box>
     </Box>

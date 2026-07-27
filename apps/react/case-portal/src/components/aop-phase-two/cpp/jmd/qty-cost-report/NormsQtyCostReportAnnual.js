@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { generateExcelName } from '../../common/utilities/excelNameUtil'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import { useDebounce } from 'hooks/useDebounce'
 
 const NormsQtyCostReportAnnual = () => {
   const keycloak = useSession()
@@ -21,11 +22,22 @@ const NormsQtyCostReportAnnual = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, siteObject, verticalObject, year, screenTitle } =
-    dataGridStore
+  const {
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+    jmdSelectedPlants,
+  } = dataGridStore
   const PLANT_ID = plantObject?.id
 
   const AOP_YEAR = year?.selectedYear
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
 
   const EXCEL_NAME = generateExcelName(
     dataGridStore,
@@ -244,19 +256,13 @@ const NormsQtyCostReportAnnual = () => {
     ...QUARTERLY_COLUMNS,
   ]
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchNormsData()
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchNormsData = async () => {
+  const fetchNormsData = useCallback(async () => {
     setLoading(true)
     try {
       const res =
         await UtilityPlantApiServiceV2.getNormBasedUtilityBudgetSummary(
           keycloak,
-          PLANT_ID,
+          PLANT_ID_LIST,
           AOP_YEAR,
         )
 
@@ -266,6 +272,7 @@ const NormsQtyCostReportAnnual = () => {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
 
@@ -285,7 +292,17 @@ const NormsQtyCostReportAnnual = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchNormsData()
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchNormsData],
+  )
 
   // Permissions for quarterly and annual view (read-only)
   const permissions = useMemo(() => {
@@ -316,7 +333,7 @@ const NormsQtyCostReportAnnual = () => {
     try {
       await UtilityPlantApiServiceV2.exportNormBasedUtilityBudgetSummary(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -349,7 +366,7 @@ const NormsQtyCostReportAnnual = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={80}
-        groupBy={['generatingPlantName']}
+        groupBy={['cppPlantName', 'generatingPlantName']}
       />
     </Box>
   )
