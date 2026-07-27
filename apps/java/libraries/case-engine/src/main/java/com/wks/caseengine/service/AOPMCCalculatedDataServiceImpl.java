@@ -1896,8 +1896,11 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-        
+        Sites site = siteRepository.findById(plant.getSiteFkId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
 				boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+				boolean crackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs = new ArrayList<>();
@@ -1926,6 +1929,10 @@ boolean isValidTable = false;
    if(meg) {
 	isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity")
 	|| tableId.equalsIgnoreCase("DesignCapacity");
+   }
+
+   else if(crackerC2) {
+	isValidTable = tableId.equalsIgnoreCase("DesignCapacity");
    }
         else {
 			isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity");
