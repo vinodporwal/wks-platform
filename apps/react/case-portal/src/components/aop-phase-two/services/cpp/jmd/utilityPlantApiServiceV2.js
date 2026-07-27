@@ -811,8 +811,8 @@ async function getSRMappingCostCenters(keycloak, plantIds = null) {
   }
 }
 // Delete a single SR Mapping record by id
-async function deleteSRMapping(keycloak, id) {
-  const url = `${Config.CaseEngineUrl}/task/sr-mapping/${id}`
+async function deleteSRMapping(keycloak, id, year) {
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping/${id}?financialYear=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

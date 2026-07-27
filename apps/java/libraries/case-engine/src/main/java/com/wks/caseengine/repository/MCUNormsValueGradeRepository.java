@@ -19,6 +19,10 @@ public interface MCUNormsValueGradeRepository extends JpaRepository<MCUNormsValu
 	        UUID plantFkId,
 	        String financialYear,
 	        UUID materialFkId);
-	
+
+	List<MCUNormsValueGrade> findByPlantFkIdAndGradeFkIdAndFinancialYear(
+	        UUID plantFkId,
+	        UUID gradeFkId,
+	        String financialYear);
 
 }

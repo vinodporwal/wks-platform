@@ -161,6 +161,11 @@ import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
 import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
 import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
+import NetProductionHoursPCG from 'components/aop-phase-two/pcg/net-production-hours/index'
+import MonthwiseProductionPlanPCG from 'components/aop-phase-two/pcg/monthwise-production-plan/index'
+import ShutdownActivitiesPCG from 'components/aop-phase-two/pcg/shutdown-activities/index'
+import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consumption/index'
+
 // PCG Ended
 
 // Vertical Refinery Utility
@@ -1081,6 +1086,39 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'shutdown-activities-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-activities-pcg'>
+                <ShutdownActivitiesPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-pcg',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-pcg'>
+                <NetProductionHoursPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-pcg',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-pcg'>
+                <MonthwiseProductionPlanPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-pcg'>
+                <ShutdownConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical PCG Ended
           //Vertical Refinery utility Started
           {

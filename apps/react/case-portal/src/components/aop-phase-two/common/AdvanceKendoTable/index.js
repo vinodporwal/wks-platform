@@ -70,6 +70,7 @@ import {
   calculateMonthDuration,
   getMonthStartEndDate,
 } from '../utilities/durationHelpers'
+import { convertFromScientificNotation } from '../commonUtilityFunctions'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -257,6 +258,7 @@ const AdvanceKendoTable = ({
   siteDropdown = [],
   plantDropdown = [],
   showFilters = false,
+  convertScientificValue = false,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -1079,7 +1081,11 @@ const AdvanceKendoTable = ({
       return (
         <td
           {...tdProps}
-          title={value}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
           style={{
             ...tdProps?.style,
           }}
@@ -1108,7 +1114,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
@@ -1147,7 +1155,14 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
+        >
           {formattedValue}
         </td>
       )
@@ -1216,7 +1231,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
           color:
