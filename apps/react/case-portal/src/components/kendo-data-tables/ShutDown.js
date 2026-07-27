@@ -268,7 +268,7 @@ const ShutDown = ({ permissions }) => {
             record.monthly,
             AOP_YEAR,
           )
-          if (!expectedDuration) continue // no valid month � skip
+          if (!expectedDuration) continue // no valid month ? skip
           const recordMins = parseDurationToMinutes(record.durationInHrs)
           const expectedMins = parseDurationToMinutes(expectedDuration)
           if (recordMins > expectedMins) {
