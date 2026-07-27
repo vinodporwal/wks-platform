@@ -4,31 +4,14 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { ShutdownPlanApiService } from '../../services/polyester/shutdownPlanApiService'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from '../../common/utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
-import { calculateMonthDuration } from 'components/aop-phase-two/common/utilities/durationHelpers'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAINTENANCE_TYPE = 'Shutdown'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-// ─── Month options (April → March fiscal order) ───────────────────────────────
-const MONTH_OPTIONS = [
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-  'January',
-  'February',
-  'March',
-]
 
 /** Add IST (+5:30) offset to a Date before sending to API */
 function addTimeOffset(dateTime) {
@@ -66,45 +49,7 @@ function formatDuration(row) {
   return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
 }
 
-/** Parse fiscal year string "2026-27" → { startYear: 2026, endYear: 2027 } */
-function parseFiscalYear(yearStr) {
-  if (!yearStr || !yearStr.includes('-')) return null
-  const parts = yearStr.split('-')
-  const startYear = parseInt(parts[0], 10)
-  const endYearShort = parseInt(parts[1], 10)
-  const endYear = endYearShort < 100 ? 2000 + endYearShort : endYearShort
-  if (isNaN(startYear) || isNaN(endYear)) return null
-  return {
-    startLimit: new Date(`${startYear}-04-01T00:00:00`),
-    endLimit: new Date(`${endYear}-03-31T23:59:59`),
-  }
-}
-
-/** Format a Date to "dd/mm/yyyy" */
-function formatDateDDMMYYYY(date) {
-  if (!(date instanceof Date) || isNaN(date)) return ''
-  const d = date.getDate().toString().padStart(2, '0')
-  const m = (date.getMonth() + 1).toString().padStart(2, '0')
-  return `${d}/${m}/${date.getFullYear()}`
-}
-
-// Helper: parse "HH.MM" string ? total minutes (numeric)
-const parseDurationToMinutes = (val) => {
-  if (!val && val !== 0) return 0
-  const [hrsPart, minPart = '0'] = String(val).split('.')
-  const hrs = parseInt(hrsPart, 10) || 0
-  const mins = parseInt(String(minPart).padEnd(2, '0').slice(0, 2), 10) || 0
-  return hrs * 60 + mins
-}
-
-// Helper: format total minutes back to "HH.MM" for display
-const formatMinutesToDuration = (totalMins) => {
-  const hrs = Math.floor(totalMins / 60)
-  const mins = totalMins % 60
-  return `${hrs}.${mins.toString().padStart(2, '0')}`
-}
-
-// ─── Column definitions (mirrors ShutDownPeColumnsldpe12) ────────────────────
+// ─── Column definitions ─────────────────────────────────────────────────────
 const columns = [
   {
     field: 'discription',
@@ -121,15 +66,22 @@ const columns = [
     editable: false,
   },
   {
-    field: 'monthly',
-    title: 'Month',
-    type: 'select',
+    field: 'maintStartDateTime',
+    title: 'SD - From',
     editable: true,
-    widthT: 150,
-    minWidth: 150,
+    widthT: 200,
+    minWidth: 180,
+    type: 'dateTime',
   },
   {
-    // Auto-handled by AdvanceKendoTable: field name includes 'durationInHrs'
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+    widthT: 200,
+    minWidth: 180,
+    type: 'dateTime',
+  },
+  {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
@@ -137,7 +89,6 @@ const columns = [
     minWidth: 140,
   },
   {
-    // Auto-handled by AdvanceKendoTable: field name is 'remark' → RemarkCell dialog
     field: 'remark',
     title: 'Remarks',
     editable: true,
@@ -206,18 +157,6 @@ const ShutdownActivitiesGrid = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // ─── Dynamic column options (month + product) ─────────────────────────────
-
-  const columnsWithOptions = columns.map((col) => {
-    if (col.field === 'monthly') {
-      return {
-        ...col,
-        options: MONTH_OPTIONS.map((m) => ({ value: m, label: m })),
-      }
-    }
-    return col
-  })
-
   // ─── Fetch ───────────────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
@@ -266,12 +205,6 @@ const ShutdownActivitiesGrid = () => {
           maintStartDateTime: startDate,
           maintEndDateTime: endDate,
           discription: item.discription,
-          monthly:
-            item?.monthly ||
-            item?.month ||
-            (startDate && !isNaN(startDate.getTime())
-              ? CALENDAR_MONTH_NAMES[startDate.getMonth()]
-              : ''),
         }
       })
 
@@ -298,7 +231,6 @@ const ShutdownActivitiesGrid = () => {
   const saveChanges = useCallback(async () => {
     const data = Object.values(modifiedCells)
 
-    console.log('dat ', data)
     // 1. No records
     if (data.length === 0) {
       setSnackbarOpen(true)
@@ -306,76 +238,144 @@ const ShutdownActivitiesGrid = () => {
       return
     }
 
-    // 2. Parse fiscal year boundary
-    // const fiscalLimits = parseFiscalYear(AOP_YEAR)
+    // 2. Parse fiscal year boundary for date validation
+    const yearStr = AOP_YEAR
+    let startLimit, endLimit
+    if (yearStr) {
+      const [startYear, endYear] = yearStr
+        .split('-')
+        .map((y) => parseInt(y.trim(), 10))
+      if (!isNaN(startYear) && !isNaN(endYear)) {
+        startLimit = new Date(`${startYear}-04-01T00:00:00`)
+        endLimit = new Date(`20${endYear}-03-31T23:59:59`)
+      }
+    }
 
+    const formatDateDDMMYYYY = (date) => {
+      if (!(date instanceof Date) || isNaN(date)) return ''
+      const d = date.getDate().toString().padStart(2, '0')
+      const m = (date.getMonth() + 1).toString().padStart(2, '0')
+      return `${d}/${m}/${date.getFullYear()}`
+    }
+
+    // 3. Date validation: fiscal year bounds, start < end, required
     for (const record of data) {
-      const expectedDuration = calculateMonthDuration(record.monthly, AOP_YEAR)
-      if (!expectedDuration) continue // no valid month  skip
-      const recordMins = parseDurationToMinutes(record.durationInHrs)
-      const expectedMins = parseDurationToMinutes(expectedDuration)
-      if (recordMins > expectedMins) {
+      const startDate =
+        record.maintStartDateTime instanceof Date
+          ? record.maintStartDateTime
+          : new Date(record.maintStartDateTime)
+      const endDate =
+        record.maintEndDateTime instanceof Date
+          ? record.maintEndDateTime
+          : new Date(record.maintEndDateTime)
+
+      if (!record.maintStartDateTime || !record.maintEndDateTime) {
         record.isError = true
         setSnackbarOpen(true)
         setSnackbarData({
-          message: `Duration hrs for ${record.monthly} should not exceed ${expectedDuration}.`,
+          message: 'Start Date and End Date are required for all records.',
           severity: 'error',
         })
         return
       }
-    }
 
-    const modifiedById = {}
-    for (const record of data) {
-      modifiedById[record.id] = record
-    }
-    const existingRowIds = new Set(rows.map((r) => r.id))
-    const mergedExisting = rows.map((row) => modifiedById[row.id] ?? row)
-    const newRows = data.filter((record) => !existingRowIds.has(record.id))
-    const allRowsMerged = [...mergedExisting, ...newRows]
-
-    // Group by month and sum total minutes
-    const monthTotals = {}
-    const monthDisplayName = {}
-    for (const row of allRowsMerged) {
-      const monthKey = (row.monthly || '').toLowerCase()
-      if (!monthKey) continue
-      monthTotals[monthKey] =
-        (monthTotals[monthKey] || 0) + parseDurationToMinutes(row.durationInHrs)
-      if (!monthDisplayName[monthKey]) monthDisplayName[monthKey] = row.monthly
-    }
-
-    // Validate each month's total against its max
-    for (const [monthKey, totalMins] of Object.entries(monthTotals)) {
-      const displayMonth = monthDisplayName[monthKey] || monthKey
-      const expectedDuration = calculateMonthDuration(displayMonth, AOP_YEAR)
-      const expectedMins = parseDurationToMinutes(expectedDuration)
-      if (totalMins > expectedMins) {
+      if (
+        startLimit &&
+        endLimit &&
+        (isNaN(startDate) ||
+          isNaN(endDate) ||
+          startDate < startLimit ||
+          startDate > endLimit ||
+          endDate < startLimit ||
+          endDate > endLimit)
+      ) {
+        record.isError = true
         setSnackbarOpen(true)
         setSnackbarData({
-          message: `Total shutdown hours for ${displayMonth} (${formatMinutesToDuration(totalMins)} hrs) exceeds the month limit of ${expectedDuration} hrs. Please reduce the entries for ${displayMonth}.`,
+          message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year.`,
+          severity: 'error',
+        })
+        return
+      }
+
+      if (
+        record.maintStartDateTime &&
+        record.maintEndDateTime &&
+        new Date(record.maintStartDateTime).getTime() >=
+          new Date(record.maintEndDateTime).getTime()
+      ) {
+        record.isError = true
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Start time must be before end time for "${record.discription || 'this record'}".`,
           severity: 'error',
         })
         return
       }
     }
 
-    // 4. Required fields: discription, monthly and remark
+    // 4. Check shutdown doesn't span multiple months
+    const allRecords = [...rows]
+    for (const row of allRecords) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
+
+      const isSameMonth =
+        start.getMonth() === end.getMonth() &&
+        start.getFullYear() === end.getFullYear()
+
+      if (!isSameMonth) {
+        row.isError = true
+        const formatDate = (date) =>
+          date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `The shutdown timeframe for '${row.discription}' spans multiple months (from ${formatDate(start)} to ${formatDate(end)}). Please split it into separate entries for each month.`,
+          severity: 'error',
+        })
+        return
+      }
+    }
+
+    // 5. Check for overlapping timeframes
+    for (let i = 0; i < allRecords.length; i++) {
+      const a = allRecords[i]
+      const aStart = new Date(a.maintStartDateTime).getTime()
+      const aEnd = new Date(a.maintEndDateTime).getTime()
+      if (isNaN(aStart) || isNaN(aEnd)) continue
+
+      for (let j = 0; j < allRecords.length; j++) {
+        if (i === j) continue
+        const b = allRecords[j]
+        const bStart = new Date(b.maintStartDateTime).getTime()
+        const bEnd = new Date(b.maintEndDateTime).getTime()
+        if (isNaN(bStart) || isNaN(bEnd)) continue
+
+        if (aStart < bEnd && bStart < aEnd) {
+          a.isError = true
+          b.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `The shutdown timeframe for "${a.discription || b.discription || 'this record'}" overlaps with "${b.discription}". Please ensure no overlapping timeframes.`,
+            severity: 'error',
+          })
+          return
+        }
+      }
+    }
+
+    // 6. Required fields: discription and remark
     for (const record of data) {
       if (!record.discription || String(record.discription).trim() === '') {
         record.isError = true
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Shutdown Desc is required for all records.',
-          severity: 'error',
-        })
-        return
-      }
-      if (!record.monthly || String(record.monthly).trim() === '') {
-        record.isError = true
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Monthly is required for all records.',
           severity: 'error',
         })
         return
@@ -410,17 +410,17 @@ const ShutdownActivitiesGrid = () => {
       return
     }
 
-    // 6. Build payload
+    // 7. Build payload — send dates instead of month (PET vertical)
     const shutdownDetails = data.map((row) => ({
       discription: row.discription || row.discriptionDrpdwn,
-      rate: row.rate,
+      maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+      maintEndDateTime: addTimeOffset(row.maintEndDateTime),
       durationInHrs: (() => {
         const v = findDuration(row)
         if (!v) return null
         const [h = '00', m = '00'] = String(v).split('.')
         return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
       })(),
-      month: row.monthly || row.month, // Use month field
       audityear: AOP_YEAR,
       id: row.idFromApi || null,
       remark: row.remark || 'null',
@@ -500,7 +500,7 @@ const ShutdownActivitiesGrid = () => {
       if (!file) return
       setLoading(true)
       try {
-        const response = await ShutdownPlanApiService.importShutdownPlan(
+        const response = await ShutdownPlanApiService.importShutdownNonProduct(
           file,
           keycloak,
           PLANT_ID,
@@ -584,7 +584,7 @@ const ShutdownActivitiesGrid = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      await ShutdownPlanApiService.exportShutdownPlan(
+      await ShutdownPlanApiService.exportShutdownNonProduct(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -640,7 +640,7 @@ const ShutdownActivitiesGrid = () => {
       <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
-        columns={columnsWithOptions}
+        columns={columns}
         rows={rows}
         setRows={setRows}
         modifiedCells={modifiedCells}
