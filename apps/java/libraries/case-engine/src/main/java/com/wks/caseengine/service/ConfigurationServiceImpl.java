@@ -2267,6 +2267,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
 			boolean aromaticsPmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+			boolean aromaticsHmd = verticalName.equalsIgnoreCase("AROMATICS")
+					&& site.getName().equalsIgnoreCase("HMD");
 
 			String steamLatentName = "";
 
@@ -2401,7 +2403,34 @@ continue;
 				executeProcedure(procedure, plantFKId, year);
 			}
 
-			
+			if (aromaticsHmd) {
+				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+						.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+				UUID siteId = site.getId();
+				UUID verticalId = vertical.getId();
+				String storedProcedure = verticalName + "_" + site.getName() + "_LoadMCValues";
+
+				String callSql = "{call " + storedProcedure + "(?, ?, ?, ?)}";
+
+				try (Connection connection = dataSource.getConnection();
+						CallableStatement stmt = connection.prepareCall(callSql)) {
+
+					// Set parameters in the correct order
+					stmt.setString(1, year); // @finYear
+					stmt.setString(2, plantFKId); // @plantId
+					stmt.setString(3, verticalId.toString()); // @verticalId
+					stmt.setString(4, siteId.toString()); // @siteId
+
+					// Execute the stored procedure
+					int rowsAffected = stmt.executeUpdate();
+
+					// Optional: commit if auto-commit is off
+					if (!connection.getAutoCommit()) {
+						connection.commit();
+					}
+				}
+			}
 			return failedList;
 		} catch (Exception ex) {
 			ex.printStackTrace();

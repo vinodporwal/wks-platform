@@ -47,7 +47,7 @@ export default function SpyroInputMinMax() {
      const IS_OLD_YEAR = oldYear?.oldYear
      const vertName = verticalChange?.selectedVertical
      const lowerVertName = vertName?.toLowerCase()
-     const ValueFormate=ValueFormatterProduction()
+     const ValueFormate = ValueFormatterProduction()
      const headerMap = generateHeaderNames(AOP_YEAR)
      const [snackbarData, setSnackbarData] = useState({
           message: '',
@@ -79,17 +79,17 @@ export default function SpyroInputMinMax() {
                     {
                          field: `${m.key}Min`,
                          title: 'Min',
-                         width: 40,
+                         width: 30,
                          editable: true,
-                         format:ValueFormate,
+                         format: ValueFormate,
                          type: 'number',
                     },
                     {
                          field: `${m.key}Max`,
                          title: 'Max',
-                         width: 40,
+                         width: 30,
                          editable: true,
-                         format:ValueFormate,
+                         format: ValueFormate,
                          type: 'number',
                     },
                ],
@@ -110,15 +110,17 @@ export default function SpyroInputMinMax() {
                },
                {
                     field: 'displayName',
-                    title: 'DisplaName',
-                    width: 140,
+                    title: 'Particulars',
+                    width: 110,
                     editable: false,
+                    locked: true,
                },
                {
                     field: 'uom',
                     title: 'UOM',
-                    width: 80,
+                    width: 40,
                     editable: false,
+                    locked: true,
                },
                ...monthCols,
                {
@@ -127,17 +129,19 @@ export default function SpyroInputMinMax() {
                          {
                               field: 'minWeightAverage',
                               title: 'min',
-                              width: 50,
+                              width: 30,
                               editable: false,
                               type: 'number',
+                              format: ValueFormate,
                               isDisabled: false,
                          },
                          {
                               field: 'maxWeightAverage',
                               title: 'max',
-                              width: 50,
+                              width: 30,
                               editable: false,
                               type: 'number',
+                              format: ValueFormate,
                               isDisabled: false,
                          },
                     ],
@@ -193,7 +197,7 @@ export default function SpyroInputMinMax() {
                monthsKeys.forEach((m) => {
                     const minKey = `${m}Min`
                     const maxKey = `${m}Max`
-                    
+
                     if (cleanRow[minKey] !== undefined) {
                          const val = cleanRow[minKey]
                          cleanRow[minKey] = (val === null || val === undefined || val === '' || Number(val) === 0 || isNaN(Number(val))) ? null : Number(val)
@@ -290,11 +294,11 @@ export default function SpyroInputMinMax() {
                     payload,
                )
 
-               const isSuccess = 
-                    response === null || 
-                    response === undefined || 
+               const isSuccess =
+                    response === null ||
+                    response === undefined ||
                     Array.isArray(response) ||
-                    response?.code === 200 || 
+                    response?.code === 200 ||
                     response?.status === 200 ||
                     response?.message === 'Success' ||
                     response?.status === 'success' ||

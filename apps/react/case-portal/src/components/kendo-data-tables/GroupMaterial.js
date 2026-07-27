@@ -10,163 +10,6 @@ import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { validateFields } from 'utils/validationUtils'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
-const DUMMY_DATA = [
-    {
-        id: 1,
-        idFromApi: 1,
-        name: 'Polypropylene Resin (PP-500)',
-        particular: 'Polypropylene Resin (PP-500)',
-        sapCode: 'SAP-MAT-001',
-        groupName: 'Raw Materials',
-        apl: true,
-        may: false,
-        jun: false,
-        jul: true,
-        aug: false,
-        sep: false,
-        oct: true,
-        nov: false,
-        dec: false,
-        jan: true,
-        feb: false,
-        mar: false,
-        status: true,
-        isEditable: true,
-    },
-    {
-        id: 2,
-        idFromApi: 2,
-        name: 'High Density Polyethylene (HDPE-200)',
-        particular: 'High Density Polyethylene (HDPE-200)',
-        sapCode: 'SAP-MAT-002',
-        groupName: 'Raw Materials',
-        apl: false,
-        may: true,
-        jun: false,
-        jul: false,
-        aug: true,
-        sep: false,
-        oct: false,
-        nov: true,
-        dec: false,
-        jan: false,
-        feb: true,
-        mar: false,
-        status: false,
-        isEditable: true,
-    },
-    {
-        id: 7,
-        idFromApi: 7,
-        name: 'Low Density Polyethylene (HDPE-200) 11',
-        particular: 'Low Density Polyethylene (HDPE-200) 11',
-        sapCode: 'SAP-MAT-011',
-        groupName: 'Raw Materials',
-        apl: false,
-        may: false,
-        jun: true,
-        jul: false,
-        aug: false,
-        sep: true,
-        oct: false,
-        nov: false,
-        dec: true,
-        jan: false,
-        feb: false,
-        mar: true,
-        status: false,
-        isEditable: true,
-    },
-    {
-        id: 3,
-        idFromApi: 3,
-        name: 'Ziegler-Natta Catalyst',
-        particular: 'Ziegler-Natta Catalyst',
-        sapCode: 'SAP-MAT-003',
-        groupName: 'Catalysts',
-        apl: true,
-        may: false,
-        jun: true,
-        jul: false,
-        aug: true,
-        sep: false,
-        oct: true,
-        nov: false,
-        dec: true,
-        jan: false,
-        feb: true,
-        mar: false,
-        status: true,
-        isEditable: true,
-    },
-    {
-        id: 4,
-        idFromApi: 4,
-        name: 'Triethylaluminum (TEAL)',
-        particular: 'Triethylaluminum (TEAL)',
-        sapCode: 'SAP-MAT-004',
-        groupName: 'Catalysts',
-        apl: false,
-        may: true,
-        jun: false,
-        jul: true,
-        aug: false,
-        sep: true,
-        oct: false,
-        nov: true,
-        dec: false,
-        jan: true,
-        feb: false,
-        mar: true,
-        status: false,
-        isEditable: true,
-    },
-    {
-        id: 5,
-        idFromApi: 5,
-        name: 'Heavy Duty HDPE Bags (25kg)',
-        particular: 'Heavy Duty HDPE Bags (25kg)',
-        sapCode: 'SAP-MAT-005',
-        groupName: 'Packaging Materials',
-        apl: true,
-        may: true,
-        jun: false,
-        jul: false,
-        aug: true,
-        sep: true,
-        oct: false,
-        nov: false,
-        dec: true,
-        jan: true,
-        feb: false,
-        mar: false,
-        status: true,
-        isEditable: true,
-    },
-    {
-        id: 6,
-        idFromApi: 6,
-        name: 'Wooden Pallets (Standard 1.2m x 1m)',
-        particular: 'Wooden Pallets (Standard 1.2m x 1m)',
-        sapCode: 'SAP-MAT-006',
-        groupName: 'Packaging Materials',
-        apl: false,
-        may: false,
-        jun: true,
-        jul: true,
-        aug: false,
-        sep: false,
-        oct: true,
-        nov: true,
-        dec: false,
-        jan: false,
-        feb: true,
-        mar: true,
-        status: false,
-        isEditable: true,
-    },
-]
-
 export default function GroupMaterial({ onSaveSuccess }) {
     const keycloak = useSession()
     const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -184,7 +27,7 @@ export default function GroupMaterial({ onSaveSuccess }) {
     const PLANT_NAME_NO_CASE = plantObject?.name?.toLowerCase()
     const thisYear = AOP_YEAR
 
-    const [rows, setRows] = useState(DUMMY_DATA)
+    const [rows, setRows] = useState()
     const [loading, setLoading] = useState(false)
 
     const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -225,8 +68,8 @@ export default function GroupMaterial({ onSaveSuccess }) {
                 locked: true
             },
             {
-                field: 'sapCode',
-                title: 'SAP Material Code',
+                field: 'uom',
+                title: 'UOM',
                 editable: false,
                 minWidth: 170,
                 locked: true
@@ -325,16 +168,16 @@ export default function GroupMaterial({ onSaveSuccess }) {
         [headerMap, FORMATE_DECIMAL],
     )
 
-const parseBoolean = (val) => {
-    if (val === true || val === 1 || val === '1' || val === 'true' || val === 'TRUE' || val === 'True') {
-        return true
+    const parseBoolean = (val) => {
+        if (val === true || val === 1 || val === '1' || val === 'true' || val === 'TRUE' || val === 'True') {
+            return true
+        }
+        return false
     }
-    return false
-}
 
     const fetchData = useCallback(async () => {
         if (!PLANT_ID || !AOP_YEAR) {
-            setRows(DUMMY_DATA)
+            setRows()
             return
         }
         setModifiedCells({})
@@ -358,7 +201,7 @@ const parseBoolean = (val) => {
                         idFromApi: item.id || item.Id || idx + 1,
                         name: item.name || item.Name || item.displayName || item.DisplayName,
                         particular: item.displayName || item.name || item.DisplayName || item.Name,
-                        sapCode: item.sapMaterialCode || item.sapCode || item.SapMaterialCode || item.SapCode,
+                        uom: item.uom || item.UOM,
                         status: parseBoolean(item.status !== undefined ? item.status : item.Status),
                         groupName: item.groupName || item.normParameterType || item.GroupName || item.NormParameterType,
                         apl: parseBoolean(aprVal),
@@ -378,11 +221,11 @@ const parseBoolean = (val) => {
                 })
                 setRows(mapped || [])
             } else {
-                setRows(DUMMY_DATA)
+                setRows()
             }
         } catch (e) {
             console.log(e)
-            setRows(DUMMY_DATA)
+            setRows()
         } finally {
             setLoading(false)
         }
@@ -510,7 +353,6 @@ const parseBoolean = (val) => {
                     plantFkId: item.plantFkId || item.plantFKId || PLANT_ID,
                     plantFKId: item.plantFKId || item.plantFkId || PLANT_ID,
                     isEditable: item.isEditable !== undefined ? item.isEditable : true,
-                    sapMaterialCode: item.sapCode || item.sapMaterialCode,
                     normParameterType: item.groupName || item.normParameterType,
                     groupName: item.groupName || item.normParameterType,
                     aopYear: item.aopYear || AOP_YEAR,
