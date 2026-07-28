@@ -186,6 +186,7 @@ import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCap
 import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
 import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
 import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
+import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
 
 // Naphthasplitter Ended
 
@@ -1029,6 +1030,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='quality-packaging-norms-polyester'>
                 <QualityPackagingNormsPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'material-grouped-selection-polyester',
+            element: (
+              <PrivateRoute routeId='material-grouped-selection-polyester'>
+                <MaterialGroupedSelectionPolyester />
               </PrivateRoute>
             ),
           },
