@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Box } from '@mui/material'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,13 +8,10 @@ import { AssetPriorityApiService } from 'components/aop-phase-two/services/cpp/j
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const PowerAssetAvailability = ({
-  initialRows = [],
-  onRefresh,
-  externalLoading = false,
-}) => {
+const PowerAssetAvailability = ({ apiData, dataLoading, onRefresh }) => {
   const keycloak = useSession()
   // State management
 
@@ -46,6 +43,10 @@ const PowerAssetAvailability = ({
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
 
   const PLANT_ID_LIST = plantObject?.id
+  // useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+  //   [jmdSelectedPlants],
+  // )
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 
@@ -187,13 +188,25 @@ const PowerAssetAvailability = ({
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
+  // Sync data from parent when apiData changes
   useEffect(() => {
-    setRows(initialRows)
-    setOriginalRows(initialRows)
+    if (apiData) {
+      const rowsWithEditableFlag = apiData.map((row, index) => ({
+        ...row,
+        id: row.id || index + 1,
+        remarks: row.remarks || '',
+      }))
+      setRows(rowsWithEditableFlag)
+      setOriginalRows(rowsWithEditableFlag)
+    }
     setModifiedCells({})
-  }, [initialRows])
+  }, [apiData])
 
-  const combinedLoading = loading || externalLoading
+  const fetchAssetPriorityData = useCallback(async () => {
+    if (onRefresh) {
+      onRefresh()
+    }
+  }, [onRefresh])
 
   // Permissions (adjust as needed)
   const permissions = {
@@ -290,7 +303,7 @@ const PowerAssetAvailability = ({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      await onRefresh?.()
+      fetchAssetPriorityData()
     } catch (error) {
       console.error('Error saving plant requirement data:', error)
       setSnackbarOpen(true)
@@ -308,12 +321,14 @@ const PowerAssetAvailability = ({
 
     setLoading(true)
     try {
-      const response = await AssetPriorityApiService.importPowerAssetPriority(
-        file,
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
+      const response =
+        await AssetPriorityApiService.importAssetPriorityExcelUnified(
+          file,
+          keycloak,
+          PLANT_ID_LIST,
+          AOP_YEAR,
+          'All',
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -322,7 +337,7 @@ const PowerAssetAvailability = ({
           severity: 'success',
         })
         setModifiedCells({})
-        await onRefresh?.()
+        await fetchAssetPriorityData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -348,7 +363,7 @@ const PowerAssetAvailability = ({
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await onRefresh?.()
+        await fetchAssetPriorityData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -375,10 +390,11 @@ const PowerAssetAvailability = ({
     })
 
     try {
-      await AssetPriorityApiService.exportPowerAssetPriority(
+      await AssetPriorityApiService.exportAssetPriorityExcelUnified(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'All',
         EXCEL_NAME,
       )
       setSnackbarData({
@@ -403,7 +419,7 @@ const PowerAssetAvailability = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!combinedLoading} />
+      <LoaderBackdrop open={!!loading || !!dataLoading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
