@@ -204,8 +204,6 @@ const Inputs = () => {
       case 'hmd':
       case 'dmd':
         return <InputsDMD />
-      // case 'hmd':
-      //   return <InputsHMD />
       case 'nmd':
       default:
         return (

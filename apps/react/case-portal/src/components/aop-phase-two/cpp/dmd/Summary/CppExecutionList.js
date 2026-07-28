@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 
@@ -24,14 +24,11 @@ const CppExecutionList = ({ onViewClick }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { jmdSelectedPlants, year, plantObject } = dataGridStore
+  const { plantObject, year } = dataGridStore
   const AOP_YEAR = year?.selectedYear
+  const PLANT_ID = plantObject?.id
 
-  const PLANT_ID_LIST = plantObject?.id //BA558F95-8A3F-4769-9C78-FF7B6C639DDF
-  // useMemo(
-  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-  //   [jmdSelectedPlants],
-  // )
+  const PLANT_ID_LIST = useMemo(() => (PLANT_ID ? [PLANT_ID] : []), [PLANT_ID])
 
   // Custom action cell with view and download icons
   const CustomActionsCell = ({ dataItem }) => {
