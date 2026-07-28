@@ -462,13 +462,19 @@ console.log('*****  taskId:  ', taskId);
           setIsAttachmentEnabled(false);
           setIsCommentEnabled(false);
           if (level1?.components) {
-            const [level2, , , , analysisSection, , level6, valueRealizationSection, level7] = level1.components;
+            const [, , , , , analysisSection, level6, valueRealizationSection, level7] = level1.components;
+            // const analysisSection =
+            //   level1.components.find(
+            //     component =>
+            //       component?.key === 'panel5' ||
+            //       component?.title === 'Analysis'
+            //   ) ?? null;
 
             // Analysis Section: Hide submit and edit buttons
-            if (analysisSection?.components[0]?.columns.length > 2) {
+            if (analysisSection?.components?.[0]?.columns?.length > 2) {
               const analysisColumns = analysisSection.components[0].columns[2];
-              const analysisSubmitButton = analysisColumns.components?.[3] ?? null;
-              const analysisEditButton = analysisColumns.components?.[4] ?? null;
+              const analysisSubmitButton = analysisColumns?.components?.[3] ?? null;
+              const analysisEditButton = analysisColumns?.components?.[4] ?? null;
 
               analysisSubmitButton && (analysisSubmitButton.hidden = true);
               analysisEditButton && (analysisEditButton.hidden = true);
@@ -503,8 +509,8 @@ console.log('*****  taskId:  ', taskId);
           }
         } else {
           if (!isDraft) {
-            const analysis = level1.components?.[4] ?? null;
-            const recommendationRadio = level1.components?.[5] ?? null;
+            const analysis = level1.components?.[5] ?? null;
+            const recommendationRadio = level1.components?.[4] ?? null;
             const recommendation = level1.components?.[6] ?? null;
             const caseDetails = level1.components?.[3] ?? null;
             const valueRealization = level1.components?.[7] ?? null;
@@ -515,7 +521,7 @@ console.log('*****  taskId:  ', taskId);
                 component.id !== caseDetails?.id &&
                 component.id !== analysis?.id &&
                 component.id !== valueRealization?.id &&
-                component.id !== recommendationRadio.id &&
+                component.id !== recommendationRadio?.id &&
                 component.id !== level7Buttons?.id
               ) {
                 component.disabled = true;
