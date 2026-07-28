@@ -83,6 +83,7 @@ export default function SpyroInputMinMax() {
                          editable: true,
                          format: ValueFormate,
                          type: 'number',
+                         filter: false,
                     },
                     {
                          field: `${m.key}Max`,
@@ -91,6 +92,7 @@ export default function SpyroInputMinMax() {
                          editable: true,
                          format: ValueFormate,
                          type: 'number',
+                         filter: false,
                     },
                ],
           }))
@@ -134,6 +136,7 @@ export default function SpyroInputMinMax() {
                               type: 'number',
                               format: ValueFormate,
                               isDisabled: false,
+                              filter: false,
                          },
                          {
                               field: 'maxWeightAverage',
@@ -143,6 +146,7 @@ export default function SpyroInputMinMax() {
                               type: 'number',
                               format: ValueFormate,
                               isDisabled: false,
+                              filter: false,
                          },
                     ],
                },

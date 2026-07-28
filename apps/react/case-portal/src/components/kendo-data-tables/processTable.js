@@ -90,10 +90,10 @@ const buildCrackerC2Columns = (rawColumns = []) => {
   result.push({
     title: 'Mode',
     children: [
-      getColDef('5FD', '5F+Pilot', 'number', undefined, 80),
-      getColDef('6FBFD', '6F+Pilot', 'number', undefined, 80),
-      getColDef('5F', '5F', 'number', undefined, 80),
-      getColDef('6FSFD', '6F', 'number', undefined, 80),
+      getColDef('5FD', '5F+Pilot', 'number', undefined, 78),
+      getColDef('6FBFD', '6F+Pilot', 'number', undefined, 78),
+      getColDef('5F', '5F', 'number', undefined, 60),
+      getColDef('6FSFD', '6F', 'number', undefined, 60),
     ],
   })
 

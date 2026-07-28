@@ -4875,7 +4875,11 @@ const KendoDataTables = ({
                               ),
                             headerCell: SimpleHeaderWithTooltip,
                           }}
-                          columnMenu={ColumnMenuCheckboxFilter}
+                          columnMenu={
+                            col?.filter === false
+                              ? undefined
+                              : ColumnMenuCheckboxFilter
+                          }
                           filter='numeric'
                           format={col?.format}
                         />
