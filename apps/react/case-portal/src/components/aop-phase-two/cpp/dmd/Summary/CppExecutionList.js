@@ -27,7 +27,7 @@ const CppExecutionList = ({ onViewClick }) => {
   const { jmdSelectedPlants, year, plantObject } = dataGridStore
   const AOP_YEAR = year?.selectedYear
 
-  const PLANT_ID_LIST = plantObject?.id;  //BA558F95-8A3F-4769-9C78-FF7B6C639DDF
+  const PLANT_ID_LIST = plantObject?.id //BA558F95-8A3F-4769-9C78-FF7B6C639DDF
   // useMemo(
   //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
   //   [jmdSelectedPlants],

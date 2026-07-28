@@ -12,7 +12,7 @@ const AssetAvailability = () => {
   const { year, jmdSelectedPlants, plantObject } = dataGridStore
   const AOP_YEAR = year?.selectedYear
 
-  const PLANT_ID_LIST = plantObject?.id;
+  const PLANT_ID_LIST = plantObject?.id
 
   // useMemo(
   //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],

@@ -67,13 +67,33 @@ const NormsDMD = () => {
   const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
   // Month field names in fiscal year order
   const MONTH_FIELDS = [
-    'apr', 'may', 'jun', 'jul', 'aug', 'sep',
-    'oct', 'nov', 'dec', 'jan', 'feb', 'mar',
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
   ]
 
   const MONTH_TO_INDEX = {
-    apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9,
-    oct: 10, nov: 11, dec: 12, jan: 1, feb: 2, mar: 3,
+    apr: 4,
+    may: 5,
+    jun: 6,
+    jul: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12,
+    jan: 1,
+    feb: 2,
+    mar: 3,
   }
 
   // Generate nested month columns with children (norms, quantity, amount, price)
@@ -227,30 +247,29 @@ const NormsDMD = () => {
         setLoading(false)
         return
       }
-      let tempRes = res?.data?.list
-        ?.map((item, index) => {
-          // Transform month data from API response to match column structure
-          const transformedItem = {
-            ...item,
-            id: item.id || index + 1,
-            remarks: item.remarks || '',
-          }
+      let tempRes = res?.data?.list?.map((item, index) => {
+        // Transform month data from API response to match column structure
+        const transformedItem = {
+          ...item,
+          id: item.id || index + 1,
+          remarks: item.remarks || '',
+        }
 
-          // Map each month's data to the expected nested structure
-          MONTH_FIELDS.forEach((month) => {
-            const monthData = item[month]
-            if (monthData) {
-              transformedItem[month] = {
-                norms: monthData.norms || monthData.Norms,
-                quantity: monthData.quantity || monthData.Quantity,
-                amount: monthData.amount || monthData.Amount,
-                price: monthData.price || monthData.Price,
-              }
+        // Map each month's data to the expected nested structure
+        MONTH_FIELDS.forEach((month) => {
+          const monthData = item[month]
+          if (monthData) {
+            transformedItem[month] = {
+              norms: monthData.norms || monthData.Norms,
+              quantity: monthData.quantity || monthData.Quantity,
+              amount: monthData.amount || monthData.Amount,
+              price: monthData.price || monthData.Price,
             }
-          })
-
-          return transformedItem
+          }
         })
+
+        return transformedItem
+      })
 
       setRows(tempRes)
       setCalculateBtnEnabled(true)
@@ -612,7 +631,7 @@ const NormsDMD = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}

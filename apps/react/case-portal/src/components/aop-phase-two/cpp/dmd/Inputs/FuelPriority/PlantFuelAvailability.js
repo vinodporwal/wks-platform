@@ -12,7 +12,11 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import { useDebounce } from 'hooks/useDebounce'
 
-const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap }) => {
+const PlantFuelAvailability = ({
+  fuelOptions,
+  setFuelOptions,
+  setPlantFuelMap,
+}) => {
   const keycloak = useSession()
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -59,7 +63,9 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
     const map = {}
     rows.forEach((row) => {
       if (!row.plantName || !row.fuelFkId) return
-      const option = fuelOptions.find((o) => String(o.value) === String(row.fuelFkId))
+      const option = fuelOptions.find(
+        (o) => String(o.value) === String(row.fuelFkId),
+      )
       if (!option) return
       if (!map[row.plantName]) map[row.plantName] = []
       // Avoid duplicates
@@ -476,7 +482,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}

@@ -771,7 +771,7 @@ const ProcessUnitGrid = ({ importData }) => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         handleExport={handleExport}
         handleExcelUpload={handleExcelUpload}
         snackbarData={snackbarData}

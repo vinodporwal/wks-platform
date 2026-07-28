@@ -58,9 +58,8 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
   const [procurementPlantOptions, setProcurementPlantOptions] = useState([])
 
   // Read plant list, year, and role flags from the global store
-  const { jmdSelectedPlants, year, oldYear, isReleased, plantObject } = useSelector(
-    (state) => state.dataGridStore,
-  )
+  const { jmdSelectedPlants, year, oldYear, isReleased, plantObject } =
+    useSelector((state) => state.dataGridStore)
 
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased

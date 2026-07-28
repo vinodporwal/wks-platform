@@ -49,7 +49,7 @@ const FixedNorms = () => {
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
 
-  const PLANT_ID_LIST = plantObject?.id;
+  const PLANT_ID_LIST = plantObject?.id
   // useMemo(
   //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
   //   [jmdSelectedPlants],
@@ -763,7 +763,7 @@ const FixedNorms = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
