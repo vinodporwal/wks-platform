@@ -262,11 +262,11 @@ const KendoDataTablesReports = ({
   )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -644,8 +644,8 @@ const KendoDataTablesReports = ({
                 'productName',
                 'normParameterDisplayName',
                 'normParameterTypeDisplayName',
-                'UOM',
-                'uom',
+                // 'UOM',
+                // 'uom',
               ].includes(col.field)
                 ? ''
                 : !isEditable
@@ -734,10 +734,10 @@ const KendoDataTablesReports = ({
             title={col.title || col.headerName}
             width={setWidth(
               col?.fixedWidth ||
-                col?.width ||
-                col?.widthT ||
-                col?.minWidth ||
-                130,
+              col?.width ||
+              col?.widthT ||
+              col?.minWidth ||
+              130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
@@ -800,8 +800,8 @@ const KendoDataTablesReports = ({
               'productName',
               'normParameterDisplayName',
               'normParameterTypeDisplayName',
-              'UOM',
-              'uom',
+              // 'UOM',
+              // 'uom',
             ].includes(col.field)
               ? ''
               : !isEditable
@@ -1096,7 +1096,7 @@ const KendoDataTablesReports = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -1187,9 +1187,9 @@ const KendoDataTablesReports = ({
                   ? false
                   : rows?.length > 100
                     ? {
-                        buttonCount: 4,
-                        pageSizes: [10, 50, 100],
-                      }
+                      buttonCount: 4,
+                      pageSizes: [10, 50, 100],
+                    }
                     : false
               }
               onRowClick={handleRowClick}
