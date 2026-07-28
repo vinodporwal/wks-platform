@@ -61,7 +61,7 @@ const buildCrackerC2Columns = (rawColumns = []) => {
     ...getColDef('MonthName', 'MonthName', 'string', false),
     locked: true,
     isVisible: true,
-    minWidth: 100,
+    minWidth: 110,
   })
 
   // Main furnace parent group
