@@ -36,8 +36,12 @@ const PowerAssetCapacity = ({
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Asset_Capacity')
 
   // Multi-plant list — same pattern as PowerAssetAvailability
-
   const PLANT_ID_LIST = plantObject?.id
+  // useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+  //   [jmdSelectedPlants],
+  // )
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -54,6 +58,66 @@ const PowerAssetCapacity = ({
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const MONTH_CONFIG = [
+    { prefix: 'apr', headerIndex: 4 },
+    { prefix: 'may', headerIndex: 5 },
+    { prefix: 'jun', headerIndex: 6 },
+    { prefix: 'jul', headerIndex: 7 },
+    { prefix: 'aug', headerIndex: 8 },
+    { prefix: 'sep', headerIndex: 9 },
+    { prefix: 'oct', headerIndex: 10 },
+    { prefix: 'nov', headerIndex: 11 },
+    { prefix: 'dec', headerIndex: 12 },
+    { prefix: 'jan', headerIndex: 1 },
+    { prefix: 'feb', headerIndex: 2 },
+    { prefix: 'mar', headerIndex: 3 },
+  ]
+
+  // Generate month column groups: each month gets Min + Max child columns
+  const MONTH_COLUMNS = MONTH_CONFIG.map(({ prefix, headerIndex }) => ({
+    title: headerMap[headerIndex],
+    children: [
+      {
+        field: `${prefix}Min`,
+        title: 'Min Capacity',
+        widthT: 140,
+        minWidth: 140,
+        editable: true,
+        type: 'number1',
+        format: valueFormat,
+        minValue: 'fixedMin',
+        maxValue: 'fixedMax',
+      },
+      {
+        field: `${prefix}Max`,
+        title: 'Max Capacity',
+        widthT: 140,
+        minWidth: 140,
+        editable: true,
+        type: 'number1',
+        format: valueFormat,
+        minValue: 'fixedMin',
+        maxValue: 'fixedMax',
+      },
+      {
+        field: `${prefix}ManLoad`,
+        title: 'Man. Load',
+        widthT: 140,
+        minWidth: 140,
+        editable: true,
+        type: 'select',
+        options: [
+          { label: 1, value: 1 },
+          { label: 0, value: 0 },
+        ],
+        // wholeNumberOnly: true,
+        // errorMessage: 'Enter 0 (False) or 1 (True) only.',
+        // minValue: 0,
+        // maxValue: 1,
+      },
+    ],
+  }))
 
   const columns = [
     { field: 'id', title: 'ID', hidden: true },
@@ -137,330 +201,10 @@ const PowerAssetCapacity = ({
       type: 'number1',
       format: valueFormat,
     },
-    {
-      title: headerMap[4],
-      children: [
-        {
-          field: 'aprMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'aprMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[5],
-      children: [
-        {
-          field: 'mayMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'mayMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[6],
-      children: [
-        {
-          field: 'junMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'junMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[7],
-      children: [
-        {
-          field: 'julMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'julMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[8],
-      children: [
-        {
-          field: 'augMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'augMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[9],
-      children: [
-        {
-          field: 'sepMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'sepMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[10],
-      children: [
-        {
-          field: 'octMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'octMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[11],
-      children: [
-        {
-          field: 'novMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'novMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[12],
-      children: [
-        {
-          field: 'decMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'decMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[1],
-      children: [
-        {
-          field: 'janMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'janMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[2],
-      children: [
-        {
-          field: 'febMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'febMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
-    {
-      title: headerMap[3],
-      children: [
-        {
-          field: 'marMin',
-          title: 'Min Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-        {
-          field: 'marMax',
-          title: 'Max Capacity',
-          widthT: 140,
-          minWidth: 140,
-          editable: true,
-          type: 'number1',
-          format: valueFormat,
-          minValue: 'fixedMin',
-          maxValue: 'fixedMax',
-        },
-      ],
-    },
+
+    // Monthly columns — Apr → Mar (generated)
+    ...MONTH_COLUMNS,
+
     {
       field: 'remarks',
       title: 'Remarks',
@@ -468,6 +212,8 @@ const PowerAssetCapacity = ({
       type: 'textarea',
       editable: true,
       minWidth: 250,
+      // locked: true,
+      // lockPosition: 'right',
     },
   ]
 
@@ -659,11 +405,12 @@ const PowerAssetCapacity = ({
 
     setLoading(true)
     try {
-      const response = await InputApiService.importPowerAssetCapacityExcel(
+      const response = await InputApiService.importAssetCapacityExcelUnified(
         file,
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'All',
       )
 
       if (response?.code === 200) {
@@ -727,10 +474,11 @@ const PowerAssetCapacity = ({
     })
 
     try {
-      await InputApiService.exportPowerAssetCapacityExcel(
+      await InputApiService.exportAssetCapacityExcelUnified(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        'All',
         EXCEL_NAME,
       )
       setSnackbarData({
@@ -770,7 +518,7 @@ const PowerAssetCapacity = ({
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}

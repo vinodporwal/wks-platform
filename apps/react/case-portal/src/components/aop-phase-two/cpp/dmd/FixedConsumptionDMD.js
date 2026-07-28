@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Box } from '@mui/material'
+import { Box, Tooltip, IconButton } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -12,6 +14,8 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
+import AddFixedConsumptionDialog from 'components/aop-phase-two/cpp/common/AddFixedConsumptionDialog/index'
 
 const FixedConsumptionDMD = () => {
   const keycloak = useSession()
@@ -43,11 +47,7 @@ const FixedConsumptionDMD = () => {
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Fixed_Consumption')
 
-  // const PLANT_ID_LIST = useMemo(
-  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-  //   [jmdSelectedPlants],
-  // )
-
+  const PLANT_ID_LIST = plantObject?.id
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
   const customFormatTwo = customValueFormatterPhaseTwo(2)
@@ -57,6 +57,11 @@ const FixedConsumptionDMD = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const [addRowDialogOpen, setAddRowDialogOpen] = useState(false)
+  const [editRowData, setEditRowData] = useState(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [rowToDelete, setRowToDelete] = useState(null)
 
   // Fiscal-year month order: Apr → Mar
   const MONTH_TO_INDEX = {
@@ -109,117 +114,153 @@ const FixedConsumptionDMD = () => {
     title: headerMap[MONTH_TO_INDEX[mon]],
   }))
 
+  // Edit/Delete action cell
+  const ActionCell = ({ dataItem, tdProps }) => {
+    return (
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title='Delete Row'>
+            <IconButton
+              size='medium'
+              color='error'
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='medium' />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </td>
+    )
+  }
+
   // Column definitions
-  const columns = useMemo(
-    () => [
-      {
-        field: 'plant',
-        title: 'Plant',
-        widthT: 150,
-        minWidth: 150,
-        type: 'text',
-        editable: false,
-        hidden: false,
-      },
-      {
-        field: 'plantId',
-        title: 'Plant ID',
-        widthT: 120,
-        minWidth: 120,
-        type: 'text',
-        editable: false,
-        hidden: false,
-      },
-      {
-        field: 'costCenter',
-        title: 'Cost Center',
-        widthT: 150,
-        minWidth: 150,
-        type: 'text',
-        editable: false,
-        hidden: false,
-      },
-      {
-        field: 'costCenterId',
-        title: 'Cost Center ID',
-        widthT: 170,
-        minWidth: 170,
-        type: 'text',
-        editable: false,
-        hidden: false,
-      },
-      {
-        field: 'cppUtility',
-        title: 'CPP Utilities',
-        widthT: 150,
-        minWidth: 150,
-        type: 'text',
-        editable: false,
-      },
-      {
-        field: 'cppUtilityId',
-        title: 'CPP Utility IDs',
-        widthT: 170,
-        minWidth: 170,
-        type: 'text',
-        editable: false,
-      },
-      {
-        field: 'cppPlant',
-        title: 'CPP Plant',
-        widthT: 150,
-        minWidth: 150,
-        type: 'text',
-        editable: false,
-      },
-      {
-        field: 'cppPlantId',
-        title: 'CPP Plant ID',
-        widthT: 170,
-        minWidth: 170,
-        type: 'text',
-        editable: false,
-        hidden: false,
-      },
-      {
-        field: 'uom',
-        title: 'UOM',
-        widthT: 100,
-        minWidth: 100,
-        type: 'text',
-        editable: false,
-      },
+  const columns = [
+    {
+      field: 'plant',
+      title: 'Plant',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+      hidden: false,
+    },
+    {
+      field: 'plantId',
+      title: 'Plant ID',
+      widthT: 120,
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'costCenter',
+      title: 'Cost Center',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+      hidden: false,
+    },
+    {
+      field: 'costCenterId',
+      title: 'Cost Center ID',
+      widthT: 170,
+      minWidth: 170,
+      type: 'text',
+      editable: false,
+      hidden: false,
+    },
+    {
+      field: 'cppUtility',
+      title: 'CPP Utilities',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'cppUtilityId',
+      title: 'CPP Utility IDs',
+      widthT: 170,
+      minWidth: 170,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'cppPlant',
+      title: 'CPP Plant',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'cppPlantId',
+      title: 'CPP Plant ID',
+      widthT: 170,
+      minWidth: 170,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      widthT: 100,
+      minWidth: 100,
+      type: 'text',
+      editable: false,
+    },
 
-      // Monthly columns - Apr → Mar (editable)
-      ...MONTH_COLUMNS,
+    // Monthly columns - Apr → Mar (editable)
+    ...MONTH_COLUMNS,
 
-      {
-        field: 'total',
-        title: 'Total',
-        widthT: 130,
-        minWidth: 130,
-        type: 'number1',
-        editable: false,
-        format: customFormatTwo,
-      },
-      {
-        field: 'remarks',
-        title: 'Remarks',
-        widthT: 250,
-        type: 'textarea',
-        editable: true,
-        minWidth: 250,
-      },
-    ],
-    [headerMap],
-  )
+    {
+      field: 'total',
+      title: 'Total',
+      widthT: 130,
+      minWidth: 130,
+      type: 'number1',
+      editable: false,
+      format: customFormatTwo,
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 250,
+      type: 'textarea',
+      editable: true,
+      minWidth: 250,
+    },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: ActionCell,
+      // locked: true,
+      // lockPosition: 'right',
+    },
+  ]
 
   const fetchFixedConsumptionData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await UtilityPlantApiServiceV2.getFixedConsumptionData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       if (res?.data?.length === 0) {
@@ -229,6 +270,8 @@ const FixedConsumptionDMD = () => {
         setLoading(false)
         return
       }
+
+      console.log('*** fixed consumption data', res)
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
@@ -244,23 +287,57 @@ const FixedConsumptionDMD = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
   useDebounce(
     () => {
-      if (PLANT_ID?.length && AOP_YEAR) {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
         fetchFixedConsumptionData()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID, AOP_YEAR, fetchFixedConsumptionData],
+    [PLANT_ID_LIST, AOP_YEAR, fetchFixedConsumptionData],
   )
+
+  // Delete handler
+  const handleConfirmDelete = async () => {
+    if (!rowToDelete) return
+
+    setDeleteDialogOpen(false)
+    setLoading(true)
+
+    try {
+      if (rowToDelete.id) {
+        await UtilityPlantApiServiceV2.deleteFixedConsumptionRow(
+          keycloak,
+          rowToDelete.id,
+        )
+      }
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Row deleted successfully!',
+        severity: 'success',
+      })
+      fetchFixedConsumptionData()
+    } catch (error) {
+      console.error('Error deleting fixed consumption row:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete row. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setRowToDelete(null)
+    }
+  }
 
   // Permissions (adjust as needed)
   const permissions = {
     showAction: true,
-    addButton: false,
+    addButton: true,
+    addBtnName: 'Add Row',
     deleteButton: false,
     editButton: true,
     saveBtn: true,
@@ -276,6 +353,7 @@ const FixedConsumptionDMD = () => {
   // Save handler with API call
   const saveChanges = async () => {
     setLoading(true)
+
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length == 0) {
       setSnackbarOpen(true)
@@ -318,20 +396,23 @@ const FixedConsumptionDMD = () => {
 
     const payload = modifiedData
     try {
+      console.log('payload', payload)
+
       // Call the API to save changes
       const response = await UtilityPlantApiServiceV2.saveFixedConsumptionData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         payload,
         AOP_YEAR,
       )
+      console.log('response', response)
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchFixedConsumptionData()
+      await fetchFixedConsumptionData()
     } catch (error) {
       console.error('Error saving fixed consumption data:', error)
       setSnackbarOpen(true)
@@ -352,7 +433,7 @@ const FixedConsumptionDMD = () => {
       const response = await UtilityPlantApiServiceV2.saveFixedConsumptionExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -431,7 +512,7 @@ const FixedConsumptionDMD = () => {
     try {
       await UtilityPlantApiServiceV2.exportFixedConsumptionExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -472,7 +553,7 @@ const FixedConsumptionDMD = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
@@ -488,6 +569,28 @@ const FixedConsumptionDMD = () => {
           defaultPageSize: 100,
         }}
         groupBy={'plant'}
+        customAddRow={() => {
+          setEditRowData(null)
+          setAddRowDialogOpen(true)
+        }}
+      />
+
+      <AddFixedConsumptionDialog
+        open={addRowDialogOpen}
+        onClose={() => {
+          setAddRowDialogOpen(false)
+          setEditRowData(null)
+        }}
+        onSuccess={fetchFixedConsumptionData}
+        editRowData={editRowData}
+      />
+
+      <DeleteDialog
+        openDeleteDialogeBox={deleteDialogOpen}
+        setOpenDeleteDialogeBox={setDeleteDialogOpen}
+        deleteTheRecord={handleConfirmDelete}
+        message='Are you sure you want to delete this row?'
+        confirmButtonText='Delete'
       />
     </Box>
   )

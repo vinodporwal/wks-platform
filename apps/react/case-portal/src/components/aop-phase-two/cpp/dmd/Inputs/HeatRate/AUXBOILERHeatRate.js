@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
@@ -10,7 +10,8 @@ import { customValueFormatterPhaseTwo as customValueFormat } from 'components/ao
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
-const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
+
+const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -21,6 +22,8 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [selectedPlant, setSelectedPlant] = useState('')
+  const [dropdownOptions, setDropdownOptions] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     plantID,
@@ -37,8 +40,6 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const PLANT_ID_LIST = plantObject?.id
 
-  const [selectedPlant, setSelectedPlant] = useState(null)
-  const [dropdownOptions, setDropdownOptions] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -47,37 +48,38 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'equipType',
       title: 'Equipment Type',
-      widthT: 180,
-      minWidth: 180,
+      width: 180,
       type: 'text',
       editable: false,
       locked: true,
+      minWidth: 180,
     },
     {
       field: 'cppUtility',
       title: 'CPP Utility',
-      widthT: 120,
-      minWidth: 120,
+      width: 150,
       type: 'text',
       editable: false,
+      minWidth: 150,
     },
     {
-      field: 'stgLoad',
-      title: 'STG Load (MW)',
-      width: 150,
-      minWidth: 150,
+      field: 'auxBoilerLoad',
+      title: 'Aux Boiler Load',
+      width: 120,
       type: 'number1',
-      editable: false,
+      format: customValueFormat(1),
+      editable: true,
+      minWidth: 120,
     },
     {
       field: 'oemHeatRate',
       title: 'OEM HR',
       widthT: 150,
-      minWidth: 150,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: true,
+      minWidth: 150,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'OEM',
@@ -86,11 +88,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       field: 'prevYearFinalHeatRate',
       title: 'PREVIOUS YEAR BUDGET HR',
       widthT: 230,
-      minWidth: 230,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: false,
+      minWidth: 230,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'PREVIOUS_YEAR',
@@ -100,11 +102,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       title: 'PROPOSED HR',
       subtitle: '(Based On Actual Data)',
       widthT: 200,
-      minWidth: 200,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: false,
+      minWidth: 200,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'PROPOSED',
@@ -113,22 +115,20 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       field: 'finalHeatRate',
       title: 'Final HR',
       widthT: 150,
-      minWidth: 150,
       type: 'number1',
       format: customValueFormat(1),
       editable: true,
+      minWidth: 150,
     },
-
     {
       field: 'remarks',
       title: 'Remark',
-      width: 230,
+      width: 250,
       type: 'textarea',
       editable: true,
-      minWidth: 230,
+      minWidth: 250,
     },
   ]
-
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
@@ -140,23 +140,25 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     return `${year}-${month}-${day}`
   }
 
+  useEffect(() => {
+    if (selectedPlant && startDate && endDate) {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+      fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
+    }
+  }, [selectedPlant, startDate, endDate])
+
   const getPlantList = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await HeatRateApiService.getGTAssetDropdown(
+      const res = await HeatRateApiService.getAuxBoilerAssetDropdown(
         keycloak,
         PLANT_ID_LIST,
-        'STG',
+        'AUXBOILER',
       )
 
       // Convert to required format with plant name
       const convertedData = res?.map((item) => {
-        // Find plant name from jmdSelectedPlants by matching cppPlantFkId
-        // const plant = jmdSelectedPlants?.find(
-        //   (p) => p.id?.toUpperCase() === item.cppPlantFkId?.toUpperCase(),
-        // )
-        // const plantName = plant?.name
-
         return {
           id: item.assetId,
           name: `${item.assetName} (${plantObject?.name})`,
@@ -182,7 +184,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       setSelectedPlant(convertedData[0]?.id)
       setDropdownOptions(convertedData)
     } catch (error) {
-      console.error('Error fetching plant list:', error)
+      console.error('Error fetching AUXBOILER dropdown options:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
@@ -201,56 +203,72 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     [PLANT_ID_LIST, AOP_YEAR, getPlantList],
   )
 
-  useEffect(() => {
-    if (AOP_YEAR && startDate && endDate && selectedPlant) {
-      fetchHeatRateData(
-        selectedPlant,
-        formatDate(startDate),
-        formatDate(endDate),
-      )
-    }
-  }, [selectedPlant, startDate, endDate])
+  const fetchHeatRateData = useCallback(
+    async (assetId, startDate, endDate) => {
+      setLoading(true)
+      try {
+        const res = await HeatRateApiService.getAuxBoilerHeatRateData(
+          keycloak,
+          assetId,
+          AOP_YEAR,
+          startDate,
+          endDate,
+          PLANT_ID_LIST,
+        )
 
-  const fetchHeatRateData = async (
-    assetId,
-    formattedStartDate,
-    formattedEndDate,
-  ) => {
-    setLoading(true)
-    try {
-      const res = await HeatRateApiService.getSTGHeatRateData(
-        keycloak,
-        assetId,
-        AOP_YEAR,
-        formattedStartDate,
-        formattedEndDate,
-        PLANT_ID_LIST,
-      )
+        if (!res?.data || res?.data?.length === 0) {
+          setRows([])
+          setOriginalRows([])
+          setSnackbarOpen(true)
+          setSnackbarData({ message: 'No data found', severity: 'info' })
+          return
+        }
+        let tempRes = res?.data?.map((item, index) => {
+          const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
 
-      if (res?.data?.length === 0) {
+          // Validate if selectedHeatRate matches the actual finalHeatRate value
+          const fieldMapping = {
+            OEM: 'oemHeatRate',
+            PREVIOUS_YEAR: 'prevYearFinalHeatRate',
+            PROPOSED: 'proposedYearFinalHeatRate',
+          }
+
+          const selectedField = fieldMapping[selectedHeatRate]
+          const selectedValue = selectedField ? item[selectedField] : null
+          const finalValue = item.finalHeatRate
+
+          // Check if selected column value matches final heat rate
+          const isMatch =
+            selectedValue !== null &&
+            selectedValue !== undefined &&
+            finalValue !== null &&
+            finalValue !== undefined &&
+            parseFloat(selectedValue) === parseFloat(finalValue)
+
+          return {
+            ...item,
+            id: item.id || index + 1,
+            remarks: item.remarks || '',
+            selectedHeatRate: isMatch ? selectedHeatRate : 'OTHER',
+          }
+        })
+        setRows(tempRes)
+        setOriginalRows(tempRes)
+      } catch (error) {
+        console.error('Error fetching AUXBOILER heat rate data:', error)
         setRows([])
+        setOriginalRows([])
         setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        return
+        setSnackbarData({
+          message: error?.message || 'Error fetching data',
+          severity: 'error',
+        })
+      } finally {
+        setLoading(false)
       }
-      setRows(res?.data)
-      setOriginalRows(res?.data)
-    } catch (error) {
-      console.error('Error fetching STG heat rate data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const dropdownConfig = {
-    options: dropdownOptions,
-    label: 'Plant',
-    placeholder: 'Select Plant',
-    valueKey: 'id',
-    labelKey: 'name',
-  }
+    },
+    [keycloak, AOP_YEAR, PLANT_ID_LIST],
+  )
 
   const permissions = {
     showAction: true,
@@ -263,9 +281,17 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     titleName: screenTitle?.title,
     showImport: true,
     showExport: true,
-    ExcelName: `STG Heat Rate - ${AOP_YEAR}`,
+    ExcelName: `AUXBOILER Heat Rate - ${AOP_YEAR}`,
     showTitle: true,
     showDropdown: true,
+  }
+
+  const dropdownConfig = {
+    options: dropdownOptions,
+    label: 'Plant',
+    placeholder: 'Select Plant',
+    valueKey: 'id',
+    labelKey: 'name',
   }
 
   const saveChanges = async () => {
@@ -294,16 +320,12 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     }
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = [
-      'oemHeatRate',
-      'prevYearFinalHeatRate',
-      'proposedYearFinalHeatRate',
-      'finalHeatRate',
-    ]
+    const fieldsToCheck = ['auxBoilerLoad', 'oemHeatRate', 'finalHeatRate']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
+      'auxBoilerLoad',
     )
 
     if (validationError) {
@@ -321,9 +343,12 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         const { inEdit, ...rest } = item
         return rest
       })
-      const tempPayload = JSON.stringify(payload)
 
-      await HeatRateApiService.saveSTGHeatRateData(keycloak, AOP_YEAR, payload)
+      const res = await HeatRateApiService.saveAuxBoilerHeatRateData(
+        keycloak,
+        AOP_YEAR,
+        payload,
+      )
 
       setModifiedCells({})
       setSnackbarOpen(true)
@@ -331,13 +356,15 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
       await fetchHeatRateData(
         selectedPlant,
-        formatDate(startDate),
-        formatDate(endDate),
+        formattedStartDate,
+        formattedEndDate,
       )
     } catch (error) {
-      console.error('Error saving heat rate data:', error)
+      console.error('Error saving AUXBOILER heat rate data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -356,7 +383,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      const response = await HeatRateApiService.saveSTGHeatRateExcel(
+      const response = await HeatRateApiService.saveAuxBoilerHeatRateExcel(
         file,
         keycloak,
         AOP_YEAR,
@@ -379,7 +406,10 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
           formattedEndDate,
         )
       } else if (response?.code === 400 && response?.data) {
-        downloadBase64Excel(response.data, 'STG_Heat_Rate_Import_Status.xlsx')
+        downloadBase64Excel(
+          response.data,
+          'AUXBOILER_Heat_Rate_Import_Status.xlsx',
+        )
         setSnackbarOpen(true)
         setSnackbarData({
           message:
@@ -419,15 +449,16 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     })
 
     try {
-      const formattedStartDate = startDate ? formatDate(startDate) : null
-      const formattedEndDate = endDate ? formatDate(endDate) : null
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
 
-      const selectedOption = dropdownOptions?.find(
+      // Get the selected asset name with plant name
+      const selectedAsset = dropdownOptions.find(
         (opt) => opt.id === selectedPlant,
       )
-      const assetDisplayName = selectedOption?.name
+      const assetDisplayName = selectedAsset?.name || 'AUXBOILER_Heat_Rate'
 
-      await HeatRateApiService.exportSTGHeatRateExcel(
+      await HeatRateApiService.exportAuxBoilerHeatRateExcel(
         keycloak,
         selectedPlant,
         AOP_YEAR,
@@ -441,7 +472,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting STG Heat Rate data:', error)
+      console.error('Error exporting AUXBOILER Heat Rate data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -673,7 +704,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         setModifiedCells={setModifiedCells}
         externalCustomModifiedCells={customModifiedCells}
         externalSetCustomModifiedCells={setCustomModifiedCells}
-        title='STG Heat Rate'
+        title='AUXBOILER Heat Rate'
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -688,11 +719,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        customItemChange={handleCustomItemChange}
         dropdownConfig={dropdownConfig}
         selectedDropdownValue={selectedPlant}
         setSelectedDropdownValue={setSelectedPlant}
-        customItemChange={handleCustomItemChange}
-        setSnackbarData={setSnackbarData}
         customHeight={70}
         paginationConfig={{
           threshold: 20,
@@ -705,4 +736,4 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   )
 }
 
-export default STGHeatRate
+export default AUXBOILERHeatRate
