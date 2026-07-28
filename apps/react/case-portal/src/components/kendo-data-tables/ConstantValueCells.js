@@ -10,7 +10,7 @@ const CustomMonthYearCalendar = (props) => {
   return (
     <KendoCalendar
       bottomView='year'
-      topView='year'
+      topView='decade'
       activeView='year'
       value={props.value}
       onChange={props.onChange}
@@ -136,6 +136,7 @@ export const ConstantValueEditCell = (props) => {
         value={localDate}
         format='dd-MM-yyyy'
         onChange={handleChange}
+        {...(isMonthUom && { calendar: CustomMonthYearCalendar })}
         width='100%'
         size='small'
         style={{
