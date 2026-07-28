@@ -302,6 +302,33 @@ const GradeWiseSteadyStateConsumption = () => {
     [PLANT_ID, AOP_YEAR, keycloak],
   )
 
+  const validateGradeNorms = useCallback(
+    async (gradeId) => {
+      if (!gradeId || !PLANT_ID || !AOP_YEAR) return
+      try {
+        const valRes =
+          await SteadyStateConsumptionApiService.validateGradeSteadyStateNorms(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+        if (
+          valRes &&
+          (valRes.code === 400 || valRes.status === 400 || valRes.code === 200) &&
+          Array.isArray(valRes.data) &&
+          valRes.data.length > 0
+        ) {
+          setValidationErrors(valRes.data)
+          setValidationErrorDialogOpen(true)
+        }
+      } catch (err) {
+        console.error('Error validating grade steady state norms:', err)
+      }
+    },
+    [PLANT_ID, AOP_YEAR, keycloak],
+  )
+
   // ===================== Initial load & Grade change (same as NormalOpNorms fetchAllData) =====================
 
   useEffect(() => {
@@ -314,13 +341,14 @@ const GradeWiseSteadyStateConsumption = () => {
     Promise.all([fetchGrades(), fetchNormTransactions()])
   }, [PLANT_ID, AOP_YEAR])
 
-  // Re-fetch data when selectedGradeId changes
+  // Re-fetch data & validate when selectedGradeId changes
   useEffect(() => {
     if (selectedGradeId) {
       fetchData(selectedGradeId)
       fetchNormTransactions()
+      validateGradeNorms(selectedGradeId)
     }
-  }, [selectedGradeId, fetchData, fetchNormTransactions])
+  }, [selectedGradeId, fetchData, fetchNormTransactions, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -661,7 +689,7 @@ const GradeWiseSteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}
