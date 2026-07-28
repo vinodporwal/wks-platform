@@ -329,7 +329,7 @@ const NormsQtyCostReportAnnual = () => {
       message: 'Excel download started!',
       severity: 'info',
     })
-
+    setLoading(true)
     try {
       await UtilityPlantApiServiceV2.exportNormBasedUtilityBudgetSummary(
         keycloak,
@@ -347,6 +347,8 @@ const NormsQtyCostReportAnnual = () => {
         message: 'Excel download failed. Please try again.',
         severity: 'error',
       })
+    } finally {
+      setLoading(false)
     }
   }
 

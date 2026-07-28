@@ -514,6 +514,7 @@ const NormsQtyCostReport = () => {
       message: 'Excel download started!',
       severity: 'info',
     })
+    setLoading(true)
 
     try {
       await UtilityPlantApiServiceV2.exportNormBasedUtilityBudgetDetailed(
@@ -532,6 +533,8 @@ const NormsQtyCostReport = () => {
         message: 'Excel download failed. Please try again.',
         severity: 'error',
       })
+    } finally {
+      setLoading(false)
     }
   }
 
