@@ -123,6 +123,7 @@ const SiteAOPReport = ({ permissions }) => {
   const [tabIndex, setTabIndex] = useState(0)
   const defaultTabs = [
     'Site Team',
+    'Safety Performance & Targets',
     'Energy Performance',
     'Fixed Expenses',
     'Capex/PIO Plan',
@@ -134,7 +135,6 @@ const SiteAOPReport = ({ permissions }) => {
     'Major Reliability Improvement',
     'Major People Initiative',
     'MCU Capacity Utilization (%)',
-    'Safety Performance & Targets',
     // 'Contribution (Rs/ MT & Rs Crs.)',
     // 'Major Process Incidents',
     // 'Major Process Incidents FY26',
@@ -1055,7 +1055,8 @@ const SiteAOPReport = ({ permissions }) => {
           screenType='shutdown'
         />
       )}
-      {tabIndex === 1 && (
+      {tabIndex === 1 && <SiteSafetyPerformanceTarget />}
+      {tabIndex === 2 && (
         <>
           <KendoDataTables
             modifiedCells={modifiedCellsEnergyPerformance}
@@ -1120,25 +1121,25 @@ const SiteAOPReport = ({ permissions }) => {
           </Box>
         </>
       )}
-      {tabIndex === 2 && <FixedExpenses />}
 
-      {tabIndex === 3 && <Capex />}
-      {tabIndex === 4 && <ShutdownSlowdownPlan />}
+      {tabIndex === 3 && <FixedExpenses />}
 
-      {tabIndex === 5 && <TechnicalAvailability />}
+      {tabIndex === 4 && <Capex />}
+      {tabIndex === 5 && <ShutdownSlowdownPlan />}
 
-      {tabIndex === 6 && <CrackerReportMannualEntry tabIndex={5} />}
+      {tabIndex === 6 && <TechnicalAvailability />}
 
-      {tabIndex === 7 && <MajorSafetyInitiative />}
+      {tabIndex === 7 && <CrackerReportMannualEntry tabIndex={5} />}
 
-      {tabIndex === 8 && <MajorProfitInitiative />}
+      {tabIndex === 8 && <MajorSafetyInitiative />}
 
-      {tabIndex === 9 && <MajorReliabilityInitiative />}
+      {tabIndex === 9 && <MajorProfitInitiative />}
 
-      {tabIndex === 10 && <MajorPeopleInitiative />}
+      {tabIndex === 10 && <MajorReliabilityInitiative />}
 
-      {tabIndex === 11 && <MCUCapacityUtilization />}
-      {tabIndex=== 12 && <SiteSafetyPerformanceTarget/>}
+      {tabIndex === 11 && <MajorPeopleInitiative />}
+
+      {tabIndex === 12 && <MCUCapacityUtilization />}
 
       {tabIndex === 13 && (
         <KendoDataTablesReports

@@ -16,6 +16,7 @@ import { validateFields } from 'utils/validationUtils'
 import { ProductionConstarintsApiService } from 'services/production-constraints-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { parseDateRobust } from './ConstantValueCells'
 const CrakcerProductionConst = () => {
   const keycloak = useSession()
 
@@ -150,8 +151,16 @@ const CrakcerProductionConst = () => {
           minWidth: 100,
         },
         {
-          field: 'ConstantValue',
-          title: 'Value',
+          field: 'endDate',
+          title: 'End Date',
+          editable: true,
+          type: 'crackerC2DatePicker',
+          widthT: 120,
+          minWidth: 100,
+        },
+        {
+          field: 'Duration',
+          title: 'Duration',
           editable: true,
           type: 'number',
           widthT: 120,
@@ -208,6 +217,8 @@ const CrakcerProductionConst = () => {
   }, [FORMATE_VALUE, IS_CRACKER_C2])
 
   const saveProductionConstrant = async (newRow) => {
+    console.log(newRow, "newwwww");
+
     setLoading1(true)
     try {
       var payload = []
@@ -222,13 +233,33 @@ const CrakcerProductionConst = () => {
           startDateVal = row.apr
         }
 
-        const constantVal = row.ConstantValue ?? row.may ?? row.apr ?? null
+        let endDateVal = null
+        if ('endDate' in row) {
+          endDateVal = row.endDate
+        } else if ('EndDate' in row) {
+          endDateVal = row.EndDate
+        } else if ('may' in row) {
+          endDateVal = row.may
+        }
+
+        let durationVal = null
+        if ('duration' in row) {
+          durationVal = row.duration
+        } else if ('Duration' in row) {
+          durationVal = row.Duration
+        } else if ('jun' in row) {
+          durationVal = row.jun
+        }
+
+        const constantVal = IS_CRACKER_C2 ? row.Duration ?? row.duration ?? row.ConstantValue ?? row.may ?? row.apr ?? null : row.ConstantValue ?? row?.Duration ?? null
         const aprVal = IS_CRACKER_C2 ? startDateVal : constantVal
+        const mayVal = IS_CRACKER_C2 ? endDateVal : constantVal
+        const junVal = IS_CRACKER_C2 ? durationVal : constantVal
 
         return {
           apr: aprVal,
-          may: constantVal,
-          jun: constantVal,
+          may: mayVal,
+          jun: junVal,
           jul: constantVal,
           aug: constantVal,
           sep: constantVal,
@@ -238,9 +269,12 @@ const CrakcerProductionConst = () => {
           jan: constantVal,
           feb: constantVal,
           mar: constantVal,
-          startDate: startDateVal,
-          StartDate: startDateVal,
-          ConstantValue: constantVal,
+          // startDate: startDateVal,
+          // StartDate: startDateVal,
+          // endDate: endDateVal,
+          // EndDate: endDateVal,
+          //ConstantValue: constantVal,
+          //Duration: constantVal,
           UOM: '',
           auditYear: AOP_YEAR,
           normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
@@ -303,18 +337,41 @@ const CrakcerProductionConst = () => {
       }
 
       const data = constantsRes?.data || []
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.Remarks,
-        srNo: index + 1,
-        Particulars: item.NormTypeName || item.DisplayName,
-        remarks: item.Remarks,
-        startDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
-        StartDate: item.StartDate ?? item.startDate ?? item.apr ?? null,
-        ConstantValue: item.ConstantValue ?? item.constantValue ?? item.may ?? '',
-      }))
+      const formattedData = data.map((item, index) => {
+        const rawStart = item.StartDate ?? item.startDate ?? item.apr ?? null
+        let rawEnd = item.EndDate ?? item.endDate ?? null
+        const rawDur = item.Duration ?? item.duration ?? item.ConstantValue ?? item.constantValue ?? item.may ?? ''
+        const uom = (item.UOM || item.uom || '').trim().toLowerCase()
+
+        if (!rawEnd && rawStart && rawDur && (uom === 'month' || uom === 'months')) {
+          const startObj = parseDateRobust(rawStart)
+          const durNum = Number(rawDur)
+          if (startObj && !isNaN(startObj.getTime()) && !isNaN(durNum)) {
+            const endObj = new Date(startObj)
+            endObj.setMonth(endObj.getMonth() + durNum)
+            const dd = String(endObj.getDate()).padStart(2, '0')
+            const mm = String(endObj.getMonth() + 1).padStart(2, '0')
+            const yyyy = endObj.getFullYear()
+            rawEnd = `${dd}-${mm}-${yyyy}`
+          }
+        }
+
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.Remarks,
+          srNo: index + 1,
+          Particulars: item.NormTypeName || item.DisplayName,
+          remarks: item.Remarks,
+          startDate: rawStart,
+          StartDate: rawStart,
+          endDate: rawEnd,
+          EndDate: rawEnd,
+          ConstantValue: rawDur,
+          Duration: rawDur,
+        }
+      })
 
       setProductionRowsConstants(formattedData)
     } catch (error) {

@@ -2131,11 +2131,12 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				map.put("DisplayName", row[3]);
 				map.put("UOM", row[4]);
 				map.put("StartDate", row[5]);
-				map.put("ConstantValue", row[6]);
-				map.put("AuditYear", row[7]);
-				map.put("Remarks", row[8]);
+				map.put("EndDate", row[6]);
+				map.put("Duration", row[7]);
+				map.put("AuditYear", row[8]);
+				map.put("Remarks", row[9]);
 				boolean isEditable;
-				Object flagObj = row[9];
+				Object flagObj = row[10];
 				if (flagObj instanceof Boolean) {
 					isEditable = (Boolean) flagObj;
 				} else if (flagObj instanceof Number) {

@@ -47,7 +47,8 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
     
     public List<GroupedSelectionDTO> fetchGroupedSelectionFromProcedure(UUID plantId, String aopYear, String procedureName) {
 
-        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+       
+        String sql = "EXEC [" + procedureName + "] @plantId = ?, @aopYear = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) ->
             GroupedSelectionDTO.builder()
                 .id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)

@@ -1602,12 +1602,11 @@ const ProductionvolumeData = ({
       } else {
         if (gridType === 'design') {
           if (IS_CRACKER_DMD || IS_CRACKER_C2) {
-            await ProductionVolumeDataApiService.getDesignCapacityExcel(
+            await ProductionVolumeDataApiService.getProductionVolExcelCommon(
               keycloak,
               PLANT_ID,
               AOP_YEAR,
               EXCEL_EXPORT_TITLE,
-              'design-capacity',
             )
           } else {
             await ProductionVolumeDataApiService.getDesignCapacityExcel(
@@ -1670,7 +1669,7 @@ const ProductionvolumeData = ({
             AOP_YEAR,
           )
       } else if ((IS_CRACKER_DMD || IS_CRACKER_C2) && gridType === 'design') {
-        response = await ProductionVolumeDataApiService.saveDesignCapacity(
+        response = await ProductionVolumeDataApiService.saveProductionVolDataExcel(
           rawFile,
           keycloak,
           PLANT_ID,

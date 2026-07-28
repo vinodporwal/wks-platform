@@ -2648,18 +2648,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     private List<STGHeatRateDTO> getSTGHeatRateByAssetId(String assetId, String financialYear) {
         String previousFinancialYear = calculatePreviousFinancialYear(financialYear);
         UUID assetUUID = UUID.fromString(assetId);
-        String assetName = null;
-        try {
-            assetName = jdbcTemplate.queryForObject(
-                    "SELECT AssetName FROM PowerGenerationAssets WITH(NOLOCK) WHERE AssetId = ?",
-                    String.class, assetUUID);
-        } catch (Exception e) {
-            logger.error("[JMDHeatRate] Error retrieving asset name for assetId {}: {}", assetUUID, e.getMessage());
-        }
-        if (assetName == null || assetName.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        List<STGHeatRateProjection> projections = heatRateRepository.findStgHeatRateByAssetName(assetName, financialYear, previousFinancialYear);
+        List<STGHeatRateProjection> projections = heatRateRepository.findStgHeatRateByAssetId(assetUUID, financialYear, previousFinancialYear);
         return projections.stream()
                 .map(projection -> {
                     STGHeatRateDTO dto = new STGHeatRateDTO();
@@ -2694,24 +2683,13 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
     }
 
     private Map<Double, Double> calculateProposedSTGHeatRates(UUID assetId, String startDate, String endDate, List<UUID> plantIds) {
-        String assetName = null;
-        try {
-            assetName = jdbcTemplate.queryForObject(
-                    "SELECT AssetName FROM PowerGenerationAssets WITH(NOLOCK) WHERE AssetId = ?",
-                    String.class, assetId);
-        } catch (Exception e) {
-            logger.error("[JMDHeatRate] Error retrieving asset name for assetId {}: {}", assetId, e.getMessage());
-        }
-        if (assetName == null || assetName.trim().isEmpty()) {
-            return new HashMap<>();
-        }
         String plantIdsStr = "";
         if (plantIds != null && !plantIds.isEmpty()) {
             plantIdsStr = plantIds.stream()
                     .map(UUID::toString)
                     .collect(java.util.stream.Collectors.joining(","));
         }
-        String sql = "EXEC CPP_CalculateCommonSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?, @AssetName = ?, @PlantIds = ?";
+        String sql = "EXEC CPP_CalculateCommonSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?, @AssetId = ?, @PlantIds = ?";
         Map<Double, Double> proposedHeatRateMap = new HashMap<>();
         try {
             jdbcTemplate.query(sql,
@@ -2722,7 +2700,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                             proposedHeatRateMap.put(stgLoad, heatRate);
                         }
                     },
-                    startDate, endDate, assetName, plantIdsStr);
+                    startDate, endDate, assetId.toString(), plantIdsStr);
         } catch (Exception e) {
             logger.error("[JMDHeatRate] Error calling STG stored procedure: {}", e.getMessage(), e);
         }

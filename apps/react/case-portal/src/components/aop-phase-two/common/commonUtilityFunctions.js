@@ -244,6 +244,24 @@ export const isEmptyNullUndefined = (value, options = {}) => {
   return false
 }
 
+// Convert scientific notation (e.g. 2e-3, 1.5E+6) to normal decimal string
+export const convertFromScientificNotation = (value) => {
+  if (value === null || value === undefined || value === '') return value
+
+  const str = String(value)
+
+  // Already a normal number
+  if (!/[eE]/.test(str)) return str
+
+  const num = Number(str)
+  if (Number.isNaN(num)) return value
+
+  return num.toLocaleString('en-US', {
+    useGrouping: false,
+    maximumFractionDigits: 20,
+  })
+}
+
 // Validation function: Check that start date is before end date for all rows
 export const validateDateRanges = (
   rows,
