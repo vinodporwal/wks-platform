@@ -42,6 +42,12 @@ public class CPPModelCalculationLog {
     private UUID id;
 
     /**
+     * Plant FK
+     */
+    @Column(name = "CPP_Plant_FK_Id")
+    private UUID cppPlantFkId;
+
+    /**
      * Parent execution FK - NULL for parent records, non-null for child month records
      */
     @Column(name = "ParentExecution_FK_Id")

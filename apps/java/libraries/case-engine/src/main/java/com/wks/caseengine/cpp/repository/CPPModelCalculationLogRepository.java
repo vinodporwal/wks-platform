@@ -31,14 +31,37 @@ public interface CPPModelCalculationLogRepository extends JpaRepository<CPPModel
      * Find all parent execution records (full year runs)
      * Parent records have parentExecutionFkId = NULL
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND (Status IS NULL OR Status != 'InProgress') ORDER BY ExecutionDateTime DESC", nativeQuery = true)
-    List<CPPModelCalculationLog> findAllParentExecutions();
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND (:plantIds IS NULL OR CPP_Plant_FK_Id IN (:plantIds)) AND (Status IS NULL OR Status != 'InProgress') ORDER BY ExecutionDateTime DESC", nativeQuery = true)
+    List<CPPModelCalculationLog> findAllParentExecutions(@Param("plantIds") List<UUID> plantIds);
 
     /**
      * Find parent executions by financial year
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND FinancialYear = :financialYear AND (Status IS NULL OR Status != 'InProgress') ORDER BY ExecutionDateTime DESC", nativeQuery = true)
-    List<CPPModelCalculationLog> findParentExecutionsByFinancialYear(@Param("financialYear") Integer financialYear);
+    @Query(value = """
+            SELECT *
+            FROM CPPModelCalculationLogs WITH(NOLOCK)
+            WHERE ParentExecution_FK_Id IS NULL
+              AND Month IS NULL
+              AND FinancialYear = :financialYear
+              AND (Status IS NULL OR Status != 'InProgress')
+            ORDER BY ExecutionDateTime DESC
+            """, nativeQuery = true)
+    List<CPPModelCalculationLog> findParentExecutionsByFinancialYear(
+            @Param("financialYear") Integer financialYear);
+
+    @Query(value = """
+            SELECT *
+            FROM CPPModelCalculationLogs WITH(NOLOCK)
+            WHERE ParentExecution_FK_Id IS NULL
+              AND Month IS NULL
+              AND FinancialYear = :financialYear
+              AND CPP_Plant_FK_Id IN (:plantIds)
+              AND (Status IS NULL OR Status != 'InProgress')
+            ORDER BY ExecutionDateTime DESC
+            """, nativeQuery = true)
+    List<CPPModelCalculationLog> findParentExecutionsByFinancialYearAndPlantIds(
+            @Param("financialYear") Integer financialYear,
+            @Param("plantIds") List<UUID> plantIds);
 
     /**
      * Find parent executions by status

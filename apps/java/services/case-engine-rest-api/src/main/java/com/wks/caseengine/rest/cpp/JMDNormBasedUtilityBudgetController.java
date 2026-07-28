@@ -78,15 +78,15 @@ public class JMDNormBasedUtilityBudgetController {
 
     @GetMapping("/jmd/norm-based-utility-budget/summary")
     public ResponseEntity<?> getNormBasedUtilityBudgetSummary(
-            @RequestParam UUID cppPlantId,
+            @RequestParam String cppPlantIds,
             @RequestParam String financialYear
     ) {
         try {
             log.info("=== Controller Received Summary Request ===");
-            log.info("CPPPlantId: {}", cppPlantId);
+            log.info("CPPPlantIds: {}", cppPlantIds);
             log.info("FinancialYear: {}", financialYear);
 
-            AOPMessageVM result = normBasedUtilityBudgetService.getNormBasedUtilityBudgetSummary(cppPlantId, financialYear);
+            AOPMessageVM result = normBasedUtilityBudgetService.getNormBasedUtilityBudgetSummary(cppPlantIds, financialYear);
 
             log.info("=== Controller Returning Summary Response ===");
             log.info("Response Code: {}", result.getCode());
@@ -200,10 +200,10 @@ public class JMDNormBasedUtilityBudgetController {
 
     @GetMapping(value = "/jmd/norm-based-utility-budget/summary/export")
     public ResponseEntity<byte[]> exportNormBasedUtilityBudgetSummary(
-            @RequestParam UUID cppPlantId,
+            @RequestParam String cppPlantIds,
             @RequestParam String financialYear) {
 
-        byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudgetSummary(cppPlantId, financialYear);
+        byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudgetSummary(cppPlantIds, financialYear);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
