@@ -182,7 +182,7 @@ allow {
 # gate action is theirs to take, is decided server-side from WorkflowStepRoles
 # and returned in the status "viewer" block.
 allow {
-    input.path = "aop-approval"
+    input.path == "aop-approval"
     input.method in ["GET", "POST", "OPTION", "HEAD"]
     check_origin_request
     is_user_profile

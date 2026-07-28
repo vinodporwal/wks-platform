@@ -7,13 +7,16 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.AopBasisDTO;
 import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
+import com.wks.caseengine.dto.GroupMaterialDetailsDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.entity.NormAttributeTransactionReceipe;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -87,4 +90,21 @@ public interface ConfigurationService {
         public byte[] createManualEntryExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList);
 
         public AOPMessageVM importManualEntryExcel(String year, UUID plantFKId, MultipartFile file);
+
+        public AOPMessageVM calculateCombine(UUID plantId, String aopYear);
+
+        public AOPMessageVM getConfigurationOtherCost(String year, UUID plantFKId);
+        public List<ConfigurationDTO> saveConfigurationOtherCost(String year, String plantFKId, List<ConfigurationDTO> configurationDTOList);
+
+        public byte[] createConfigurationOtherCostExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList);
+        public AOPMessageVM importConfigurationOtherCostExcel(String year, UUID plantFKId, MultipartFile file);
+
+        public List<AopBasisDTO> saveAopBasis(String year, String plantFKId, List<AopBasisDTO> configurationDTOList);
+        public AOPMessageVM getAopBasis(String year, String plantFKId, String type);
+        public AOPMessageVM getAopBasiswithStartDate(String year, String plantFKId, String type);
+        public AOPMessageVM getCrackerC2OptimizingVariablesDropdown();
+        public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(String year, String plantFKId, List<SpyroInputMinMaxDTO> configurationDTOList);
+        public AOPMessageVM getGroupMaterialDetails(String year, String plantFKId);
+
+        public AOPMessageVM saveGroupMaterialDetails(String year, List<GroupMaterialDetailsDTO> dtoList);
 }

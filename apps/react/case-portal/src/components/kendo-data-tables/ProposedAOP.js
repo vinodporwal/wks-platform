@@ -59,6 +59,7 @@ const ProposedAOP = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [gradeId, setGradeId] = useState(null)
+  const [gradeName, setGradeName] = useState(null)
   const [grades, setGrades] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -150,65 +151,72 @@ const ProposedAOP = () => {
   const fetchGradeDropdowns = async () => {
     try {
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
 
-      if (response?.code === 200) {
-        setGrades(response?.data || [])
-        if (response?.data && response?.data.length > 0) {
-          const firstGrade = response.data[0]
-          const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
-          setGradeId(firstId)
-          fetchData(firstId)
-        } else {
-          fetchData(null)
+      if (response?.code == 200) {
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          displayName: grade.displayName || grade.DisplayName || grade.name || grade.Name || '',
+          name: grade.name || grade.Name || '',
+        }))
+        setGrades(normalized)
+        if (response?.data?.length > 0) {
+          setGradeId(response?.data[0]?.gradeId)
         }
-      } else {
-        setGrades([])
-        fetchData(null)
       }
+
+      fetchData(response?.data[0]?.gradeId)
     } catch (error) {
       setGrades([])
-      console.error('Error fetching grades:', error)
+      console.error('Error fetching data:', error)
     }
   }
+
 
   const fetchGradeDropdownsAfterCalc = async () => {
     try {
       setGrades([])
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
 
-      if (response?.code === 200) {
-        setGrades(response?.data || [])
-        if (response?.data && response?.data.length > 0) {
-          const firstGrade = response.data[0]
-          const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
-          setGradeId(firstId)
-          fetchData(firstId)
-        } else {
-          setGradeId(null)
-          fetchData(null)
-        }
-      } else {
-        setGrades([])
-        setGradeId(null)
-        fetchData(null)
+      if (response?.code == 200) {
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          displayName: grade.displayName || grade.DisplayName || grade.name || grade.Name || '',
+          name: grade.name || grade.Name || '',
+        }))
+        setGrades(normalized)
       }
+
+      if (response?.data?.length === 0) {
+        setGradeId(null)
+        await fetchData(null)
+        return
+      }
+
+      const firstGrade = response?.data[0]
+      const firstId =
+        firstGrade?.id ?? firstGrade?.gradeId ?? firstGrade?.gradeFkId ?? null
+
+      setGradeId(firstId)
+
+      fetchData(firstId)
     } catch (error) {
       setGrades([])
-      console.error('Error fetching grades after calculation:', error)
+      console.error('Error fetching Business Demand data:', error)
     }
   }
 
-  const fetchData = async (currentGradeId) => {
+
+  const fetchData = async (currentGradeId, passedGradeName = null) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if ((isPEPP || isPET) && !currentGradeId) return
     setLoading(true)
@@ -231,6 +239,15 @@ const ProposedAOP = () => {
         return
       }
 
+      let resolvedGradeName = passedGradeName
+      if (!resolvedGradeName && grades.length > 0) {
+        const matchedGrade = grades.find((g) => (g.gradeId ?? g.id) === currentGradeId)
+        resolvedGradeName = matchedGrade?.name ?? null
+      }
+      if (!resolvedGradeName) {
+        resolvedGradeName = gradeName
+      }
+
       setCalculationObject(response?.data?.aopCalculation || [])
 
       const formattedData = (response?.data?.proposedAOP || []).map(
@@ -242,7 +259,7 @@ const ProposedAOP = () => {
             id: index,
             Particulars: item.normParameterTypeDisplayName || 'Type',
             UOM: item.uom,
-            isEditable: true,
+            isEditable: resolvedGradeName === 'All Grade' ? false : true,
           }
         },
       )
@@ -308,6 +325,99 @@ const ProposedAOP = () => {
     }
   }
 
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
+  const handleExport = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await ProposedAopApiService.exportProposedAOP(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+        SCREEN_NAME,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    if (!rawFile) return
+    setLoading(true)
+    try {
+      const response = await ProposedAopApiService.importProposedAOP(
+        rawFile,
+        keycloak,
+      )
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Upload Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData(gradeId)
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Proposed AOP.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData(gradeId)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -321,6 +431,7 @@ const ProposedAOP = () => {
       saveBtn: false,
       isOldYear: isOldYear,
       showCalculate: false,
+      uploadExcelBtn: false,
     }
   }
 
@@ -343,9 +454,9 @@ const ProposedAOP = () => {
       showG: true,
       marginBottom: true,
       dropdownLabel: 'Grade',
-      uploadExcelBtn: false,
+      uploadExcelBtn: true,
       showImport: false,
-      showExport: false,
+      showExport: true,
       isHeight: rows?.length > 10,
       showTitleNameBusiness: true,
       showTitle: true,
@@ -357,7 +468,10 @@ const ProposedAOP = () => {
 
   const handleGradeChange = (selectedGradeId) => {
     setGradeId(selectedGradeId)
-    fetchData(selectedGradeId)
+    const selectedGrade = grades.find((g) => (g.gradeId ?? g.id) === selectedGradeId)
+    const selectedName = selectedGrade?.name ?? null
+    setGradeName(selectedName)
+    fetchData(selectedGradeId, selectedName)
   }
 
   return (
@@ -393,6 +507,9 @@ const ProposedAOP = () => {
           handleGradeChange={handleGradeChange}
           plantID={PLANT_ID}
           title={SCREEN_NAME}
+          handleExport={handleExport}
+          handleExcelUpload={handleExcelUpload}
+          isProposedAOP={false}
         />
       </Box>
     </div>

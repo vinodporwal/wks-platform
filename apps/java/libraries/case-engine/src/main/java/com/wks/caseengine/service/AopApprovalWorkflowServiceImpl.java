@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -91,6 +92,12 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     @Override
     @Transactional
     public WorkflowDTO start(String plantId, String year, String actorUserId) {
+        return start(plantId, year, actorUserId, null, null);
+    }
+
+    @Override
+    @Transactional
+    public WorkflowDTO start(String plantId, String year, String actorUserId, String remark, String actorRole) {
         UUID plantUuid = UUID.fromString(plantId);
         Plants plant = plantsRepository.findById(plantUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown plant: " + plantId));
@@ -114,6 +121,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         vars.add(strVar("year", year));
 
         String businessKey = businessKey(plantId, year);
+        cleanupStaleEngineInstances(businessKey);
         String processInstanceId = startEngineProcess(businessKey, vars);
 
         Workflow wf = Workflow.builder()
@@ -131,7 +139,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         StepMeta prep = steps.get(PREPARE);
         auditService.record(businessKey, year, plantUuid, PREPARE,
                 prep != null ? prep.displayName : null, prep != null ? prep.sequence : null,
-                SUBMITTED, actorUserId, null, null, PREPARE, "gate1");
+                SUBMITTED, actorUserId, actorRole, remark, PREPARE, "gate1");
 
         notifyGate(masterId, "gate1", steps, plant, year, businessKey,
                 "AOP submitted – Gate 1 approval required");
@@ -194,13 +202,35 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         }
     }
 
-    /** Resolve a running instance id by business key, or null if there is none. */
+    /** Delete any stale/abandoned process instances in Camunda for this business key before starting fresh. */
+    private void cleanupStaleEngineInstances(String businessKey) {
+        try {
+            List<ProcessInstance> existing = processInstanceService.find(
+                    Optional.of(PROCESS_KEY), Optional.of(businessKey), Optional.empty());
+            if (existing != null) {
+                for (ProcessInstance pi : existing) {
+                    if (pi != null && pi.getId() != null) {
+                        try {
+                            processInstanceService.delete(pi.getId());
+                            log.info("AOP: cleaned up stale Camunda process instance {}", pi.getId());
+                        } catch (Exception e) {
+                            log.warn("AOP: failed to delete stale instance {}: {}", pi.getId(), e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("AOP: stale instance cleanup failed for businessKey {}: {}", businessKey, ex.getMessage());
+        }
+    }
+
+    /** Resolve the latest running instance id by business key, or null if there is none. */
     private String findProcessInstanceId(String businessKey) {
         try {
             List<ProcessInstance> found = processInstanceService.find(
                     Optional.of(PROCESS_KEY), Optional.of(businessKey), Optional.empty());
-            if (found != null && !found.isEmpty() && found.get(0) != null) {
-                return found.get(0).getId();
+            if (found != null && !found.isEmpty()) {
+                return found.get(found.size() - 1).getId();
             }
         } catch (Exception ex) {
             log.warn("AOP: process instance lookup failed for businessKey {}: {}", businessKey, ex.getMessage());
@@ -307,7 +337,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             if (task.getId() != null && task.getId().equals(taskId)) {
                 selected = task;
             } else if (callerRoles != null && task.getAssignee() != null
-                    && callerRoles.contains(task.getAssignee())) {
+                    && hasRole(callerRoles, task.getAssignee())) {
                 matched.add(task);
             }
         }
@@ -358,20 +388,6 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         notificationService.notifyRoles(subject, roles, null, placeholders);
     }
 
-    /**
-     * The AOP approval configuration — gates and their approver roles.
-     *
-     * <p>One definition serves every vertical and every plant. The gates
-     * themselves are fixed in the BPMN, so a per-vertical copy of the master
-     * could only ever differ in its role lists, and the flow is the same for
-     * the whole business: a single global row (the one with no vertical) is
-     * the definition.</p>
-     *
-     * <p>A vertical may still override it by owning a row of its own, and that
-     * row wins where it exists. That is what makes this deployable ahead of the
-     * data migration: until the global row is seeded, today's per-vertical rows
-     * are still found and nothing changes.</p>
-     */
     private UUID resolveWorkflowMasterId(UUID verticalId) {
         if (verticalId != null) {
             List<WorkflowMaster> override =
@@ -504,25 +520,51 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .viewer(viewer).build();
         }
 
-        // Self-heal rows written before the start-failure guard existed (or by the
-        // legacy submit path, which never carried a process instance id).
-        backfillProcessInstanceId(active.get(0), businessKey);
+        Workflow activeWf = active.get(0);
+        if (activeWf.getProcessInstanceId() == null || activeWf.getProcessInstanceId().isBlank()) {
+            backfillProcessInstanceId(activeWf, businessKey);
+        }
+        String activeProcId = activeWf.getProcessInstanceId();
 
         List<Task> tasks = safeFind(businessKey);
+        if (activeProcId != null && !activeProcId.isBlank()) {
+            List<Task> instanceTasks = tasks.stream()
+                    .filter(t -> activeProcId.equals(t.getProcessInstanceId()))
+                    .collect(Collectors.toList());
+            if (!instanceTasks.isEmpty()) {
+                tasks = instanceTasks;
+            } else {
+                String latestProcId = findProcessInstanceId(businessKey);
+                if (latestProcId != null && !latestProcId.equals(activeProcId)) {
+                    List<Task> latestTasks = tasks.stream()
+                            .filter(t -> latestProcId.equals(t.getProcessInstanceId()))
+                            .collect(Collectors.toList());
+                    if (!latestTasks.isEmpty()) {
+                        tasks = latestTasks;
+                        activeWf.setProcessInstanceId(latestProcId);
+                        workflowRepository.save(activeWf);
+                    }
+                }
+            }
+        }
+
         String currentStep = currentStepOf(tasks, meta);
+
+        // Filter tasks to only those belonging to the current active gate step
+        List<Task> currentGateTasks = tasks.stream()
+                .filter(t -> currentStep != null && currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
+                .collect(Collectors.toList());
+
         Integer currentSeq = currentStep != null && meta.containsKey(currentStep) ? meta.get(currentStep).sequence : null;
         markStatuses(steps, currentSeq);
 
-        // One decision per person per gate visit: having already approved or
-        // reverted at this gate, the caller gets no further buttons here - even if
-        // they hold several of the gate's roles. A revert re-entering the gate
-        // starts a new visit and they can act again.
+        // One decision per person per gate visit
         boolean alreadyActed = auditService.hasActedInCurrentCycle(
-                businessKey, currentStep, callerUserId, visitStartOf(tasks, currentStep));
+                businessKey, currentStep, callerUserId, visitStartOf(currentGateTasks, currentStep));
 
-        // Actionable task = one whose assignee role is held by the caller.
-        Task mine = alreadyActed ? null : tasks.stream()
-                .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+        // Actionable task = one whose assignee role is held by the caller at the active gate.
+        Task mine = alreadyActed ? null : currentGateTasks.stream()
+                .filter(t -> t.getAssignee() != null && hasRole(roles, t.getAssignee()))
                 .findFirst().orElse(null);
 
         AopViewerDTO.AopViewerDTOBuilder viewer = AopViewerDTO.builder().roles(roles);
@@ -558,6 +600,12 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         }
         for (Workflow wf : workflowRepository.findAllByCaseDefIdAndIsDeletedFalse(CASE_DEF_ID)) {
             List<Task> tasks = safeFind(wf.getCaseId());
+            String activeProcId = wf.getProcessInstanceId();
+            if (activeProcId != null && !activeProcId.isBlank()) {
+                tasks = tasks.stream()
+                        .filter(t -> activeProcId.equals(t.getProcessInstanceId()))
+                        .collect(Collectors.toList());
+            }
             Task mine = tasks.stream()
                     .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
                     .findFirst().orElse(null);
@@ -713,9 +761,24 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         return roles != null ? roles : new ArrayList<>();
     }
 
+    private boolean hasRole(List<String> roles, String targetRole) {
+        if (roles == null || targetRole == null) {
+            return false;
+        }
+        for (String r : roles) {
+            if (r != null && r.trim().equalsIgnoreCase(targetRole.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean rolesIntersect(List<String> a, List<String> b) {
+        if (a == null || b == null) {
+            return false;
+        }
         for (String r : a) {
-            if (b.contains(r)) {
+            if (hasRole(b, r)) {
                 return true;
             }
         }

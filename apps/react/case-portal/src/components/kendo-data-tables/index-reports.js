@@ -110,6 +110,8 @@ export const dateFields = [
   'ibrDueDate',
   'shutdownDate',
   'startupDate',
+  'Date',
+  'date',
 ]
 export const monthMap = {
   january: 1,
@@ -134,29 +136,31 @@ const KendoDataTablesReports = ({
   columns,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
-  handleExport = () => {},
-  handleExcelUpload = () => {},
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
+  handleExport = () => { },
+  handleExcelUpload = () => { },
   groupBy = null,
   grades = [],
-  handleGradeChange = () => {},
-  handleRelease = () => {},
+  handleGradeChange = () => { },
+  handleRelease = () => { },
   isReleaseDisabled = true,
   supressGridHeight = false,
+  isProposedAOP = false,
+  gridHeight,
 }) => {
   const grid = React.useRef(null)
   const minGridWidth = useRef(0)
@@ -258,11 +262,11 @@ const KendoDataTablesReports = ({
   )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -495,8 +499,12 @@ const KendoDataTablesReports = ({
         READ_ONLY ||
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
 
+      const dataIndex = (isProposedAOP && rows) ? rows.indexOf(dataItem) : -1
+      const isEvenRow = dataIndex !== -1 && dataIndex % 2 === 1
+
       const rowClassName = [
         className,
+        isEvenRow ? 'k-alt' : '',
         isDisabled ? 'custom-disabled-row' : '',
         dataItem.isBold ? 'custom-bold-row' : '',
       ]
@@ -508,7 +516,7 @@ const KendoDataTablesReports = ({
         </tr>
       )
     },
-    [IS_OLD_YEAR],
+    [IS_OLD_YEAR, READ_ONLY, rows, isProposedAOP],
   )
   useEffect(() => {
     if (!permissions?.showG || !grades?.length) return
@@ -628,7 +636,22 @@ const KendoDataTablesReports = ({
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
-            className={!isEditable ? 'non-editable-cell' : ''}
+            className={
+              [
+                'Particulars',
+                'particulars',
+                'particular',
+                'productName',
+                'normParameterDisplayName',
+                'normParameterTypeDisplayName',
+                // 'UOM',
+                // 'uom',
+              ].includes(col.field)
+                ? ''
+                : !isEditable
+                  ? 'non-editable-cell'
+                  : ''
+            }
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
             width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
@@ -711,10 +734,10 @@ const KendoDataTablesReports = ({
             title={col.title || col.headerName}
             width={setWidth(
               col?.fixedWidth ||
-                col?.width ||
-                col?.widthT ||
-                col?.minWidth ||
-                130,
+              col?.width ||
+              col?.widthT ||
+              col?.minWidth ||
+              130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
@@ -769,7 +792,22 @@ const KendoDataTablesReports = ({
             data: toolTipRenderer,
             headerCell: SimpleHeaderWithTooltip,
           }}
-          className={!isEditable ? 'non-editable-cell' : ''}
+          className={
+            [
+              'Particulars',
+              'particulars',
+              'particular',
+              'productName',
+              'normParameterDisplayName',
+              'normParameterTypeDisplayName',
+              // 'UOM',
+              // 'uom',
+            ].includes(col.field)
+              ? ''
+              : !isEditable
+                ? 'non-editable-cell'
+                : ''
+          }
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
           width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
@@ -1058,7 +1096,7 @@ const KendoDataTablesReports = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -1112,11 +1150,13 @@ const KendoDataTablesReports = ({
                 flex: 1,
                 overflow: 'auto',
                 height:
-                  supressGridHeight == true
-                    ? undefined
-                    : rows?.length > 10
-                      ? `${calculatedVH}vh`
-                      : undefined,
+                  gridHeight !== undefined
+                    ? gridHeight
+                    : supressGridHeight == true
+                      ? undefined
+                      : rows?.length > 10
+                        ? `${calculatedVH}vh`
+                        : undefined,
               }}
               modifiedCells={modifiedCells}
               data={rows}
@@ -1140,15 +1180,17 @@ const KendoDataTablesReports = ({
               defaultSkip={0}
               defaultTake={100}
               contextMenu={true}
-              filterable={columns.some((col) => dateFields.includes(col.field))}
+              // filterable={columns.some((col) => dateFields.includes(col.field))}
               size='small'
               pageable={
-                rows?.length > 100
-                  ? {
+                permissions?.disablePagination
+                  ? false
+                  : rows?.length > 100
+                    ? {
                       buttonCount: 4,
                       pageSizes: [10, 50, 100],
                     }
-                  : false
+                    : false
               }
               onRowClick={handleRowClick}
               lockGroups={true}

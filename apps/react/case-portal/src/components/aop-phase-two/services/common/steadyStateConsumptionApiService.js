@@ -7,6 +7,7 @@ export const SteadyStateConsumptionApiService = {
   exportSteadyStateConsumption,
   importSteadyStateConsumption,
   calculateSteadyStateConsumption,
+  calculateCommonSteadyStateConsumption,
 }
 
 // ========================|| Steady State Consumption APIs ||=====================================//
@@ -175,6 +176,35 @@ async function importSteadyStateConsumption(
  */
 async function calculateSteadyStateConsumption(keycloak, plantId, year) {
   const baseUrl = `${Config.CaseEngineUrl}/task/crude/calculate-steady-state-norms`
+  const queryParams = new URLSearchParams({
+    year,
+    plantId,
+  })
+
+  const url = `${baseUrl}?${queryParams.toString()}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Common Calculate Steady State Consumption
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Number} plantId - Plant ID
+ * @param {Number} year - AOP Year
+ * @returns {Promise<Array>} Calculated data
+ */
+async function calculateCommonSteadyStateConsumption(keycloak, plantId, year) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/calculate-steady-state-norms`
   const queryParams = new URLSearchParams({
     year,
     plantId,

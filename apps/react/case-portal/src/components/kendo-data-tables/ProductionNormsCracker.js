@@ -790,14 +790,12 @@ const ProductionNormsCracker = ({ permissions }) => {
           showCalculate: IS_NMD || IS_VMD ? false : true,
           allAction: true,
           showNote: true,
-          showTitleNameBusiness: false,
-          titleName: '',
+          showTitleNameBusiness: IS_CRACKER_C2 ? true : false,
+          titleName: IS_CRACKER_C2 ? 'Ethylene Consumption' : '',
           saveBtn: IS_CRACKER_C2 ? false : true,
           downloadExcelBtnFromUI: true,
           ExcelName: `${EXCEL_NAME_OTHER_PRODUCTION}`,
-          showCalculateVisibility:
-            calculationObjectOtherProduction &&
-            Object.keys(calculationObjectOtherProduction).length > 0,
+          showCalculateVisibility: true,
         },
         isOldYear,
       ),

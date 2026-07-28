@@ -186,7 +186,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
           id: item?.id || index + 1,
           attributeValue: formattedAttributeValue,
           isEditable: item.isEditable,
-          allowNegative: item?.allowNegative || item.name === 'Additional TSRF'
+          allowNegative: item?.allowNegative || item.name === 'Additional TSRF',
         }
       })
 

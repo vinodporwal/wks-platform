@@ -902,7 +902,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 
 			
-			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadLIMSSpyroInput";
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetLIMSSpyroInput";
 			List<Object[]> results = executeLIMSSpyroInput(procedureName, plantId, aopYear);
 
 			List<CrackerHMDLoadLIMSSpyroInputDTO> dtoList = new ArrayList<>();
@@ -954,7 +954,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_Calculate_LIMSSpyroInput";  
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadLIMSSpyroInput";  
 			
 			Integer result=  executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 					vertical.getId().toString(), year);

@@ -1,4 +1,8 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import SendIcon from '@mui/icons-material/Send'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import UndoIcon from '@mui/icons-material/Undo'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { Box, Step, StepLabel, Stepper } from '@mui/material'
 import MuiAccordion from '@mui/material/Accordion'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
@@ -61,6 +65,8 @@ import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionn
 import AopTabs from 'components/AopTabs'
 import { AopApprovalService } from 'services/AopApprovalService'
 import AopMyApprovals from 'components/data-tables/AOPWorkFlow/AopMyApprovals'
+import WorkflowRemarksDialog from 'components/Utilities/WorkflowRemarksDialog'
+import AopWorkflowStepper from 'components/Utilities/AopWorkflowStepper'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -106,6 +112,14 @@ const WorkFlowMerge = () => {
   const [aopRole, setAopRole] = useState('')
   const [aopExists, setAopExists] = useState(false)
   const [aopRejectOpen, setAopRejectOpen] = useState(false)
+
+  // Utility Remarks Dialog state for all workflow actions (Submit, Approve, Revert)
+  const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false)
+  const [workflowActionConfig, setWorkflowActionConfig] = useState({
+    type: 'APPROVE',
+    label: 'Approve',
+    decision: 'APPROVED',
+  })
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -589,7 +603,8 @@ const WorkFlowMerge = () => {
         severity: 'success',
       })
       setLoading(true)
-      getCaseId()
+      await getCaseId()
+      await fetchAopStatus()
       fetchData()
     } catch (error) {
       console.error('Error creating workflow:', error)
@@ -612,6 +627,16 @@ const WorkFlowMerge = () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
       const data = await AopApprovalService.getStatus(keycloak, PLANT_ID, AOP_YEAR)
+      console.log('=== [AOP Approval Status Debug] ===')
+      console.log('Plant ID:', PLANT_ID, '| Year:', AOP_YEAR)
+      console.log('Workflow Exists:', data?.exists)
+      console.log('Current Gate Name:', data?.currentGateName, '(', data?.currentGateDisplayName, ')')
+      console.log('Task ID:', data?.taskId)
+      console.log('Assigned Role:', data?.assignedRole)
+      console.log('Viewer Mode:', data?.viewer?.mode)
+      console.log('Viewer Permissions -> Can Submit:', data?.viewer?.canSubmit, '| Can Approve:', data?.viewer?.canApprove, '| Can Revert:', data?.viewer?.canRevert)
+      console.log('User Roles (from Viewer/Keycloak):', data?.viewer?.roles || keycloak?.realmAccess?.roles)
+      console.log('===================================')
       setViewer(data?.viewer || null)
       setAopGate(data?.currentGateName || '')
       setAopTaskId(data?.taskId || '')
@@ -623,12 +648,13 @@ const WorkFlowMerge = () => {
   }
 
   // Start the AOP approval workflow (Prepare -> Gate 1).
-  const aopStart = async () => {
+  const aopStart = async (remarkText = '') => {
     setIsCreatingCase(true)
     try {
-      await AopApprovalService.start(keycloak, PLANT_ID, AOP_YEAR)
-      setSnackbarData({ message: 'AOP workflow started', severity: 'success' })
+      await AopApprovalService.start(keycloak, PLANT_ID, AOP_YEAR, remarkText, aopRole || 'preparer')
+      setSnackbarData({ message: 'AOP workflow submitted for approval', severity: 'success' })
       await fetchAopStatus()
+      await getCaseId()
     } catch (error) {
       setSnackbarData({
         message: error.message || 'Failed to start workflow',
@@ -640,10 +666,10 @@ const WorkFlowMerge = () => {
     }
   }
 
-  // Apply a gate decision (APPROVED / REVERTED) with the remark from `text`.
-  const aopAct = async (decision) => {
+  // Apply a gate decision (APPROVED / REVERTED) with the remark from `remarkText`.
+  const aopAct = async (decision, remarkText = '') => {
     if (!aopTaskId) return
-    if (decision === 'REVERTED' && viewer?.remarkMandatory && !text?.trim()) {
+    if (decision === 'REVERTED' && viewer?.remarkMandatory && !remarkText?.trim()) {
       setSnackbarData({ message: 'A remark is required to revert', severity: 'error' })
       setSnackbarOpen(true)
       return
@@ -656,21 +682,61 @@ const WorkFlowMerge = () => {
         year: AOP_YEAR,
         gateName: aopGate,
         decision,
-        remark: text,
+        remark: remarkText,
         actorRole: aopRole,
       })
       setSnackbarData({
-        message: decision === 'APPROVED' ? 'Approved' : 'Reverted for update',
+        message: decision === 'APPROVED' ? 'Approved successfully' : 'Reverted for update successfully',
         severity: 'success',
       })
       setText('')
       setAopRejectOpen(false)
       await fetchAopStatus()
+      await getCaseId()
     } catch (err) {
       setSnackbarData({ message: err.message, severity: 'error' })
     } finally {
       setActionDisabled(false)
       setSnackbarOpen(true)
+    }
+  }
+
+  // Handlers for opening the WorkflowRemarksDialog for each button action
+  const handleOpenSubmitDialog = () => {
+    setWorkflowActionConfig({
+      type: 'SUBMIT',
+      label: 'Submit for Approval',
+      decision: 'START',
+    })
+    setWorkflowDialogOpen(true)
+  }
+
+  const handleOpenApproveDialog = () => {
+    setWorkflowActionConfig({
+      type: 'APPROVE',
+      label: 'Approve',
+      decision: 'APPROVED',
+    })
+    setWorkflowDialogOpen(true)
+  }
+
+  const handleOpenRevertDialog = () => {
+    setWorkflowActionConfig({
+      type: 'REVERT',
+      label: 'Revert',
+      decision: 'REVERTED',
+    })
+    setWorkflowDialogOpen(true)
+  }
+
+  const handleWorkflowRemarksSubmit = async (remarkText) => {
+    const { type, decision } = workflowActionConfig
+    setWorkflowDialogOpen(false)
+
+    if (type === 'SUBMIT') {
+      await aopStart(remarkText)
+    } else if (type === 'APPROVE' || type === 'REVERT') {
+      await aopAct(decision, remarkText)
     }
   }
 
@@ -715,7 +781,8 @@ const WorkFlowMerge = () => {
         severity: 'success',
       })
       setActionDisabled(true)
-      getCaseId()
+      await getCaseId()
+      await fetchAopStatus()
     } catch (err) {
       console.error('Error submitting', err)
       setSnackbarData({ message: err.message, severity: 'error' })
@@ -735,7 +802,8 @@ const WorkFlowMerge = () => {
         severity: 'success',
       })
       setActionDisabled(true)
-      // getCaseId()
+      await getCaseId()
+      await fetchAopStatus()
     } catch (err) {
       console.error('Error while save', err)
       setSnackbarData({ message: err.message, severity: 'error' })
@@ -891,87 +959,153 @@ const WorkFlowMerge = () => {
       }}
     >
       <Box>
-        <Stepper
+        <AopWorkflowStepper
+          steps={masterSteps}
           activeStep={activeStep}
-          alternativeLabel
+        />
+
+        <Box
           sx={{
-            marginBottom: '10px',
-            '& .MuiStepLabel-label': {
-              fontWeight: 'normal',
-            },
-            '& .MuiStepLabel-label.Mui-active': {
-              fontWeight: 'bold',
-              color: '#000',
-            },
-            '& .MuiStepLabel-alternativeLabel': {
-              marginTop: '3px !important',
-            },
+            mb: 1,
+            px: 1.5,
+            py: 0.6,
+            borderRadius: '6px',
+            backgroundColor: '#f0f7ff',
+            border: '1px solid #bae6fd',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
           }}
         >
-          {masterSteps?.map((step) => (
-            <Step
-              key={step.displayName}
-              completed={step.status === 'completed'}
-              sx={{
-                cursor: 'pointer',
-                '& .MuiStepIcon-root.Mui-active': {
-                  color: '#0100cb',
-                },
-              }}
-            >
-              <StepLabel
-                error={step.status === 'error'}
-                StepIconProps={{
-                  sx: {
-                    color: step.status === 'completed' ? '#0100cb' : 'grey',
+          <InfoOutlinedIcon sx={{ fontSize: 16, color: '#0284c7', flexShrink: 0 }} />
+          <Typography
+            variant='body2'
+            sx={{
+              color: '#334155',
+              fontSize: '0.78rem',
+              fontWeight: 500,
+              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+            }}
+          >
+            Prices - <strong>MIIS BPC</strong> (Last Budget Year) &nbsp;|&nbsp; Actual Values - <strong>MIIS Contribution</strong> (YTD)
+          </Typography>
+        </Box>
+
+        {/* AOP approval buttons — visibility comes from the server `viewer` */}
+        {((viewer?.canSubmit && !aopExists) || (viewer?.mode === 'ACTION' && aopTaskId)) && (
+          <Stack
+            direction='row'
+            spacing={1.5}
+            alignItems='center'
+            justifyContent='flex-end'
+            sx={{ mt: 1, mb: 1.5 }}
+          >
+            {viewer?.canSubmit && !aopExists && (
+              <Button
+                variant='outlined'
+                className='btn-save'
+                onClick={handleOpenSubmitDialog}
+                disabled={isCreatingCase}
+                startIcon={<SendIcon sx={{ fontSize: '16px !important' }} />}
+                sx={{
+                  height: '34px',
+                  px: 2.2,
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  textTransform: 'none',
+                  color: '#1565c0',
+                  backgroundColor: '#e3f2fd',
+                  border: '1.5px solid #1976d2',
+                  boxShadow: '0 2px 4px rgba(25, 118, 210, 0.12)',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: '#bbdefb',
+                    borderColor: '#1565c0',
+                    color: '#0d47a1',
+                    boxShadow: '0 4px 8px rgba(25, 118, 210, 0.25)',
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#f5f5f5',
+                    color: '#bdbdbd',
+                    borderColor: '#e0e0e0',
                   },
                 }}
               >
-                {' '}
-                {step.displayName}
-              </StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-
-        <Typography
-          component='div'
-          // className='info-note'
-          sx={{
-            mb: 1.5,
-            px: 1.5,
-            py: 1,
-            fontSize: '14px',
-            fontWeight: 500,
-            letterSpacing: '0.2px',
-            lineHeight: 1.7,
-            borderRadius: '10px',
-            background:
-              'linear-gradient(90deg, rgba(25,118,210,0.08) 0%, rgba(25,118,210,0.02) 100%)',
-            borderLeft: '4px solid #1976d2',
-            color: '#1f2937',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}
-        >
-          <span
-            className='info-note__asterisk'
-            style={{
-              color: '#d32f2f',
-              fontSize: '18px',
-              fontWeight: 700,
-            }}
-          >
-            *
-          </span>
-
-          <span>
-            Prices - <strong>MIIS BPC</strong> (Last Budget Year), Actual Values
-            -<strong> MIIS Contribution</strong> (YTD).
-          </span>
-        </Typography>
+                Submit for Approval
+              </Button>
+            )}
+            {viewer?.mode === 'ACTION' && aopTaskId && (
+              <>
+                <Button
+                  variant='outlined'
+                  className='btn-add'
+                  onClick={handleOpenApproveDialog}
+                  disabled={actionDisabled}
+                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '16px !important' }} />}
+                  sx={{
+                    height: '34px',
+                    px: 2.2,
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    textTransform: 'none',
+                    color: '#2e7d32',
+                    backgroundColor: '#e8f5e9',
+                    border: '1.5px solid #2e7d32',
+                    boxShadow: '0 2px 4px rgba(46, 125, 50, 0.12)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: '#c8e6c9',
+                      borderColor: '#1b5e20',
+                      color: '#1b5e20',
+                      boxShadow: '0 4px 8px rgba(46, 125, 50, 0.25)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#f5f5f5',
+                      color: '#bdbdbd',
+                      borderColor: '#e0e0e0',
+                    },
+                  }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant='outlined'
+                  onClick={handleOpenRevertDialog}
+                  disabled={actionDisabled}
+                  startIcon={<UndoIcon sx={{ fontSize: '16px !important' }} />}
+                  sx={{
+                    height: '34px',
+                    px: 2.2,
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    textTransform: 'none',
+                    color: '#c62828',
+                    backgroundColor: '#ffebee',
+                    border: '1.5px solid #c62828',
+                    boxShadow: '0 2px 4px rgba(198, 40, 40, 0.12)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: '#ffcdd2',
+                      borderColor: '#b71c1c',
+                      color: '#b71c1c',
+                      boxShadow: '0 4px 8px rgba(198, 40, 40, 0.25)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#f5f5f5',
+                      color: '#bdbdbd',
+                      borderColor: '#e0e0e0',
+                    },
+                  }}
+                >
+                  Revert
+                </Button>
+              </>
+            )}
+          </Stack>
+        )}
 
         <Stack
           direction='row'
@@ -1000,85 +1134,22 @@ const WorkFlowMerge = () => {
               />
             ))}
           </AopTabs>
-
-          {/* RIGHT: AOP approval buttons — visibility comes from the server `viewer` */}
-          <Stack direction='row' spacing={1} alignItems='center'>
-            {viewer?.canSubmit && !aopExists && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={aopStart}
-                disabled={isCreatingCase}
-                sx={{ height: 'auto' }}
-              >
-                Submit for Approval
-              </Button>
-            )}
-            {viewer?.mode === 'ACTION' && aopTaskId && (
-              <>
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={() => aopAct('APPROVED')}
-                  disabled={actionDisabled}
-                  sx={{ height: 'auto' }}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant='outlined'
-                  onClick={() => setAopRejectOpen(true)}
-                  disabled={actionDisabled}
-                  sx={{ color: '#c62828', border: '1px solid', height: 'auto' }}
-                >
-                  Revert
-                </Button>
-              </>
-            )}
-          </Stack>
-
-          {/* Revert remark dialog (remark mandatory when viewer.remarkMandatory) */}
-          <Dialog
-            open={aopRejectOpen}
-            onClose={() => setAopRejectOpen(false)}
-            fullWidth
-            maxWidth='sm'
-          >
-            <DialogTitle>Revert for Update / Improvement</DialogTitle>
-            <DialogContent>
-              <TextField
-                autoFocus
-                margin='dense'
-                label={
-                  viewer?.remarkMandatory ? 'Remark (required)' : 'Remark (optional)'
-                }
-                fullWidth
-                multiline
-                minRows={3}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button
-                onClick={() => {
-                  setAopRejectOpen(false)
-                  setText('')
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant='contained'
-                color='error'
-                onClick={() => aopAct('REVERTED')}
-                disabled={actionDisabled}
-              >
-                Revert
-              </Button>
-            </DialogActions>
-          </Dialog>
         </Stack>
+
+        {/* Utility Remarks PopUp for Workflow Actions (Submit, Approve, Revert) */}
+        <WorkflowRemarksDialog
+          open={workflowDialogOpen}
+          onClose={() => setWorkflowDialogOpen(false)}
+          onSubmit={handleWorkflowRemarksSubmit}
+          actionType={workflowActionConfig.type}
+          actionLabel={workflowActionConfig.label}
+          role={aopRole || 'Workflow User'}
+          gateName={aopGate || 'AOP Approval'}
+          plantName={PLANT_NAME}
+          year={AOP_YEAR}
+          isMandatory={true}
+          loading={isCreatingCase || actionDisabled}
+        />
 
         {/* For CRACKER */}
         {lowerVertName === 'cracker' ? (

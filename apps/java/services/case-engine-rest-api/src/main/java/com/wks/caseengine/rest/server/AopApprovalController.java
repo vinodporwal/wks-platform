@@ -42,8 +42,12 @@ public class AopApprovalController {
 
     /** Start a new AOP approval workflow for a plant + year (409 if one exists). */
     @PostMapping(value = "/start")
-    public WorkflowDTO start(@RequestParam String plantId, @RequestParam String year) {
-        return aopApprovalWorkflowService.start(plantId, year, currentUserId());
+    public WorkflowDTO start(
+            @RequestParam String plantId,
+            @RequestParam String year,
+            @RequestParam(required = false) String remark,
+            @RequestParam(required = false) String actorRole) {
+        return aopApprovalWorkflowService.start(plantId, year, currentUserId(), remark, actorRole);
     }
 
     /** Apply a gate decision (approve / revert) with an optional remark. */

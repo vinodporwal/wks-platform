@@ -260,9 +260,13 @@ private String executeNormCalculationProcedure(UUID plantId, String aopYear, UUI
                                              String procedureName) {
 
     try {
+        String sanitizedProcedureName = procedureName;
+        if (!sanitizedProcedureName.startsWith("[") && !sanitizedProcedureName.endsWith("]")) {
+            sanitizedProcedureName = "[" + sanitizedProcedureName + "]";
+        }
 
         StoredProcedureQuery query = entityManager
-                .createStoredProcedureQuery(procedureName);
+                .createStoredProcedureQuery(sanitizedProcedureName);
 
         // Input parameters
         query.registerStoredProcedureParameter("plantId", String.class, ParameterMode.IN);

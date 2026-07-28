@@ -10,6 +10,7 @@ export const SteadyStateConsumptionApiService = {
   calculateSteadyStateConsumptionPE,
   exportSteadyStateConsumptionPE,
   importSteadyStateConsumptionByGrade,
+  saveGradeWiseSteadyStateConsumption,
   // Generic (kept for backward compat)
   getSteadyStateConsumption,
   saveSteadyStateConsumption,
@@ -382,6 +383,38 @@ async function calculateSteadyStateConsumption(keycloak, plantId, year) {
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+/**
+ * Save Steady State Consumption by Grade (PE/PP vertical)
+ * Same as NormalOperationNormsApiService.saveNormalOperationNormsData(..., 'pe', ...)
+ * Endpoint: POST /task/steady-state-norms/polyester?year=&plantId=&gradeId=
+ */
+async function saveGradeWiseSteadyStateConsumption(
+  PLANT_ID,
+  payload,
+  keycloak,
+  gradeId,
+  AOP_YEAR,
+) {
+  const queryParams = new URLSearchParams({ year: AOP_YEAR, plantId: PLANT_ID })
+  if (gradeId) queryParams.append('gradeId', gradeId)
+  const url = `${Config.CaseEngineUrl}/task/steady-state-norms/polyester?${queryParams.toString()}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

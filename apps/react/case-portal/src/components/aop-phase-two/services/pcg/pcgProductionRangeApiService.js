@@ -120,7 +120,9 @@ async function getProductionRangeExcel(
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     if (!resp.ok) {
-      throw new Error(`Failed to export data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
     }
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)
@@ -161,7 +163,9 @@ async function getProductionRangeLimitExcel(
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     if (!resp.ok) {
-      throw new Error(`Failed to export data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
     }
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)

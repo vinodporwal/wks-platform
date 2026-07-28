@@ -35,4 +35,16 @@ public interface JMDAssetsService {
             List<UUID> plantIds,
             String financialYear,
             MultipartFile file);
+
+    // ── UNIFIED export/import (Power, Steam, or All) ──────────────────────────
+    byte[] exportOperationalHoursExcel(
+            List<UUID> plantIds,
+            String financialYear,
+            String assetCategory);
+            
+    AOPMessageVM importOperationalHoursExcel(
+            List<UUID> plantIds,
+            String financialYear,
+            String assetCategory,
+            MultipartFile file);
 }

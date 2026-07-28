@@ -217,6 +217,8 @@ export const DataService = {
 
   getEtheleneStock,
   getCatChemCalculationDataWithoutGrade,
+  getOtherFurnanceDetails,
+  saveOtherFurnanceDetails,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4942,3 +4944,42 @@ async function getCatChemCalculationDataWithoutGrade(
     return await Promise.reject(e)
   }
 }
+async function getOtherFurnanceDetails(keycloak, PlantId, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/other-furnance-details?plantId=${PlantId}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveOtherFurnanceDetails(keycloak, PlantId, AOP_YEAR, payload) {
+  const url = `${Config.CaseEngineUrl}/task/other-furnance-details?plantId=${PlantId}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+
+
+
