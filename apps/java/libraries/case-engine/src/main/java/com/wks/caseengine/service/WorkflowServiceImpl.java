@@ -171,13 +171,28 @@ public class WorkflowServiceImpl implements WorkflowService {
 			}
 
 			workflowPageDTO.setWorkflowList(dtoList);
+			// A vertical's own definition wins where it has one; otherwise the
+			// global definition (Vertical_FK_Id NULL) applies, so a vertical
+			// needs no configuration of its own to run the standard workflow.
 			List<WorkflowMaster> wmlist = workflowMasterRepository.findAllByVerticalFKId(UUID.fromString(verticalId));
+			if (wmlist == null || wmlist.isEmpty()) {
+				// Prefer the global definition of the workflow these instances
+				// actually run; only fall back to "the global definition" when
+				// there are no instances yet to name one.
+				wmlist = list.isEmpty()
+						? workflowMasterRepository.findAllByVerticalFKIdIsNull()
+						: workflowMasterRepository
+								.findAllByCaseDefIdAndVerticalFKIdIsNull(list.get(0).getCaseDefId());
+			}
 
 			if (wmlist.size() > 0) {
 				WorkflowMasterDTO wmDTO = new WorkflowMasterDTO();
 				wmDTO.setId(wmlist.get(0).getId().toString());
 				wmDTO.setCasedefId(wmlist.get(0).getCaseDefId());
-				wmDTO.setVerticalFKId(wmlist.get(0).getVerticalFKId().toString());
+				// Null on a global definition — it belongs to no single vertical.
+				wmDTO.setVerticalFKId(wmlist.get(0).getVerticalFKId() != null
+						? wmlist.get(0).getVerticalFKId().toString()
+						: null);
 				wmDTO.setWorkflowId(wmlist.get(0).getWorkflowId());
 
 				List<Object[]> wsmlist = workflowStepsMasterRepository

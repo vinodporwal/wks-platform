@@ -3,9 +3,19 @@
    ---------------------------------------------------------------------
    Seeds the 5-gate AOP approval flow into the existing generic workflow
    config tables:
-     - WorkflowMaster       : the workflow definition (per vertical)
+     - WorkflowMaster       : the workflow definition (GLOBAL, all verticals)
      - WorkflowStepsMaster  : one row per gate (prepare + gate1..gate5)
-     - WorkflowStepRoles    : approver roles per gate (1..N per gate)   [NEW]
+     - WorkflowStepRoles    : approver roles per gate (1..N per gate)
+
+   ONE definition serves every vertical and every plant. The row is marked
+   global by leaving Vertical_FK_Id NULL, and the service layer resolves it
+   by WorkflowId. Run this ONCE per environment — not once per vertical.
+
+   A vertical may still override the flow by owning a WorkflowMaster row of
+   its own with the same WorkflowId; the service prefers that row where it
+   exists. Nothing in AOP uses that today, and legacy per-vertical AOP rows
+   should be removed with AOP_Approval_Workflow_Vertical_Cleanup.sql, or
+   they will keep winning over this one.
 
    Gates and routing are fixed in the BPMN (AOP_Approval_v2.bpmn).
    The ONLY thing configured here that can change later WITHOUT code/BPMN
@@ -14,37 +24,24 @@
      - remove a role         -> set isActive = 0
 
    Idempotent: safe to re-run. Keyed on natural keys.
-
-   BEFORE RUNNING — set the two config values below to match this
-   environment. Run against the AOP (db1) SQL Server database.
+   Run against the AOP (db1) SQL Server database.
    ===================================================================== */
 
 SET NOCOUNT ON;
 
-DECLARE @VerticalName NVARCHAR(255) = N'AOP';            -- <-- vertical Name in dbo.Verticals
 DECLARE @WorkflowId   NVARCHAR(255) = N'AOP_Approval_v2'; -- Camunda process key of AOP_Approval_v2.bpmn
 DECLARE @CaseDefId    NVARCHAR(255) = N'AOP_Approval_v2'; -- case definition id used at start
 
-/* ---- resolve vertical -------------------------------------------------- */
-DECLARE @VerticalId UNIQUEIDENTIFIER =
-    (SELECT TOP 1 Id FROM dbo.Verticals WHERE Name = @VerticalName);
-
-IF @VerticalId IS NULL
-BEGIN
-    RAISERROR('Vertical "%s" not found in dbo.Verticals. Set @VerticalName correctly.', 16, 1, @VerticalName);
-    RETURN;
-END
-
-/* ---- WorkflowMaster ---------------------------------------------------- */
+/* ---- WorkflowMaster (global — no vertical) ----------------------------- */
 DECLARE @WorkflowMasterId UNIQUEIDENTIFIER =
     (SELECT TOP 1 Id FROM dbo.WorkflowMaster
-     WHERE WorkflowId = @WorkflowId AND Vertical_FK_Id = @VerticalId);
+     WHERE WorkflowId = @WorkflowId AND Vertical_FK_Id IS NULL);
 
 IF @WorkflowMasterId IS NULL
 BEGIN
     SET @WorkflowMasterId = NEWID();
     INSERT INTO dbo.WorkflowMaster (Id, WorkflowId, case_Def_Id, Vertical_FK_Id)
-    VALUES (@WorkflowMasterId, @WorkflowId, @CaseDefId, @VerticalId);
+    VALUES (@WorkflowMasterId, @WorkflowId, @CaseDefId, NULL);
 END
 
 /* ---- WorkflowStepsMaster (gates) -------------------------------------- */
@@ -102,4 +99,5 @@ WHEN NOT MATCHED BY TARGET THEN
     INSERT (Id, WorkflowStep_FK_Id, Role, isActive)
     VALUES (NEWID(), src.StepId, src.Role, 1);
 
-PRINT 'AOP approval workflow seed complete for vertical: ' + @VerticalName;
+PRINT 'AOP approval workflow seed complete (global, all verticals). Master: '
+      + CAST(@WorkflowMasterId AS NVARCHAR(50));

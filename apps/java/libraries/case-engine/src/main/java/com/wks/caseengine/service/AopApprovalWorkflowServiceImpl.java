@@ -358,12 +358,35 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         notificationService.notifyRoles(subject, roles, null, placeholders);
     }
 
+    /**
+     * The AOP approval configuration — gates and their approver roles.
+     *
+     * <p>One definition serves every vertical and every plant. The gates
+     * themselves are fixed in the BPMN, so a per-vertical copy of the master
+     * could only ever differ in its role lists, and the flow is the same for
+     * the whole business: a single global row (the one with no vertical) is
+     * the definition.</p>
+     *
+     * <p>A vertical may still override it by owning a row of its own, and that
+     * row wins where it exists. That is what makes this deployable ahead of the
+     * data migration: until the global row is seeded, today's per-vertical rows
+     * are still found and nothing changes.</p>
+     */
     private UUID resolveWorkflowMasterId(UUID verticalId) {
-        List<WorkflowMaster> masters = workflowMasterRepository.findAllByVerticalFKId(verticalId);
-        if (masters == null || masters.isEmpty()) {
-            throw new IllegalStateException("No WorkflowMaster configured for vertical " + verticalId);
+        if (verticalId != null) {
+            List<WorkflowMaster> override =
+                    workflowMasterRepository.findAllByWorkflowIdAndVerticalFKId(PROCESS_KEY, verticalId);
+            if (override != null && !override.isEmpty()) {
+                return override.get(0).getId();
+            }
         }
-        return masters.get(0).getId();
+
+        List<WorkflowMaster> global = workflowMasterRepository.findAllByWorkflowIdAndVerticalFKIdIsNull(PROCESS_KEY);
+        if (global == null || global.isEmpty()) {
+            throw new IllegalStateException("No WorkflowMaster configured for workflow " + PROCESS_KEY
+                    + " - seed the global definition (Vertical_FK_Id NULL)");
+        }
+        return global.get(0).getId();
     }
 
     /** Comma-delimited active roles for a step; fails if a gate has no roles. */
