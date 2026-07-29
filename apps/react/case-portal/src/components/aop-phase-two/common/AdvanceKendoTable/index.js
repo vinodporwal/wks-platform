@@ -2325,13 +2325,19 @@ const AdvanceKendoTable = ({
                 text: (cellProps) => {
                   const { dataItem, field, onChange } = cellProps
                   const checked = !!dataItem[field]
+                  const isCellDisabled =
+                    !isEditable || dataItem?.isEditable === false
                   return (
                     <td style={{ textAlign: 'center', padding: '6px 2px' }}>
                       <Checkbox
                         checked={checked}
+                        disabled={isCellDisabled}
                         onChange={(e) => {
+                          if (isCellDisabled) return
                           const newVal =
-                            e.value ?? e.target?.checked ?? !checked
+                            typeof e.value === 'boolean'
+                              ? e.value
+                              : (e.target?.checked ?? !checked)
                           onChange({ dataItem, field, value: newVal })
                         }}
                         size='medium'
@@ -2342,19 +2348,15 @@ const AdvanceKendoTable = ({
               },
               data: (cellProps) => {
                 const { dataItem, field, tdProps } = cellProps
-                const rowId = dataItem.id
-                const isEdited = Object.prototype.hasOwnProperty.call(
-                  customModifiedCells?.[rowId] || {},
-                  field,
-                )
                 const checked = !!dataItem[field]
+                const isCellDisabled =
+                  !isEditable || dataItem?.isEditable === false
                 return (
                   <td
                     {...tdProps}
                     style={{
                       textAlign: 'center',
                       ...tdProps?.style,
-                      outline: isEdited ? '2px solid orange' : undefined,
                     }}
                     // Prevent the row-click from propagating so the grid
                     // doesn't enter full row-edit mode on checkbox click
@@ -2362,10 +2364,13 @@ const AdvanceKendoTable = ({
                   >
                     <Checkbox
                       checked={checked}
+                      disabled={isCellDisabled}
                       onChange={(e) => {
-                        if (!isEditable) return
-                        const newVal = e.value ?? e.target?.checked ?? !checked
-                        // Call itemChange directly — it's in closure scope
+                        if (isCellDisabled) return
+                        const newVal =
+                          typeof e.value === 'boolean'
+                            ? e.value
+                            : (e.target?.checked ?? !checked)
                         itemChange({ dataItem, field, value: newVal })
                       }}
                       size='medium'

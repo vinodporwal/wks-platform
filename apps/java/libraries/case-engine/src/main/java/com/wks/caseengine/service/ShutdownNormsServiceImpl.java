@@ -183,6 +183,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				shutdownNormsValueDTO.setUOM(row[28] != null ? row[28].toString() : null);
 				shutdownNormsValueDTO.setIsEditable(row[29] != null ? Boolean.valueOf(row[29].toString()) : null);
 				shutdownNormsValueDTO.setProductName(row[30] != null ? row[30].toString() : null);
+				if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
+				shutdownNormsValueDTO.setSapCode(row[31] != null ? row[31].toString() : "");
+				}
 				shutdownNormsValueDTOList.add(shutdownNormsValueDTO);
 			}
 			Map<String, Object> map = new HashMap<>();

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useMemo, useCallback, useState } from 'react'
+import { Box } from '@mui/material'
+import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 
 import { SvgIcon } from '@progress/kendo-react-common'
@@ -9,6 +10,7 @@ import Config from 'consts/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { SummaryApiService } from 'components/aop-phase-two/services/cpp/jmd/summaryApiService'
+import { useDebounce } from 'hooks/useDebounce'
 
 const CppExecutionList = ({ onViewClick }) => {
   const keycloak = useSession()
@@ -21,6 +23,52 @@ const CppExecutionList = ({ onViewClick }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { plantObject, year } = dataGridStore
+  const AOP_YEAR = year?.selectedYear
+  const PLANT_ID = plantObject?.id
+
+  const PLANT_ID_LIST = useMemo(() => (PLANT_ID ? [PLANT_ID] : []), [PLANT_ID])
+
+  // Custom action cell with view and download icons
+  const CustomActionsCell = ({ dataItem }) => {
+    return (
+      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '15px',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={eyeIcon}
+              themeColor='primary'
+              size='xlarge'
+              style={{ cursor: 'pointer', width: 22, height: 22 }}
+              onClick={() => handleViewClick(dataItem)}
+              title='View Details'
+              data-testid='view-details-icon'
+            />
+          </Tooltip>
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={downloadIcon}
+              themeColor='success'
+              size='xlarge'
+              style={{ cursor: 'pointer', width: 22, height: 22 }}
+              onClick={() => handleDownloadAllExcel(dataItem)}
+              title='Download All Monthly Reports'
+              data-testid='download-icon'
+            />
+          </Tooltip>
+        </div>
+      </td>
+    )
+  }
+
   // Column definitions
   const columns = [
     {
@@ -31,6 +79,13 @@ const CppExecutionList = ({ onViewClick }) => {
       type: 'text',
       editable: false,
       hidden: true,
+    },
+    {
+      field: 'plantName',
+      title: 'CPP Plant',
+      minWidth: 150,
+      type: 'text',
+      editable: false,
     },
     {
       field: 'financialYearDisplay',
@@ -74,36 +129,32 @@ const CppExecutionList = ({ onViewClick }) => {
       type: 'text',
       editable: false,
     },
-  ]
-
-  useEffect(() => {
-    fetchCppModelLogs()
-  }, [])
-
-  const data = [
     {
-      id: 'ed724e8c-6f7a-4f0a-9a92-42fc401ac2ae',
-      financialYear: 2025,
-      executionDateTime: 'Jan 26, 2026, 8:47:21 PM',
-      status: 'Success',
-      totalIterations: 102,
-      totalMonthsProcessed: 12,
-      totalExecutionTime: '0.00s',
-      monthsSucceeded: 12,
-      monthsFailed: 0,
-      monthsWithWarnings: 0,
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: CustomActionsCell,
+      // locked: true,
+      // lockPosition: 'right',
     },
   ]
 
-  const fetchCppModelLogs = async () => {
+  const fetchCppModelLogs = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await SummaryApiService.getCppModelLogs(keycloak)
-      //   const res = data
+      const financialYear = AOP_YEAR ? parseInt(AOP_YEAR.split('-')[0]) : null
+      const res = await SummaryApiService.getCppModelLogs(
+        keycloak,
+        financialYear,
+        PLANT_ID_LIST,
+      )
       if (res?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
 
@@ -118,7 +169,18 @@ const CppExecutionList = ({ onViewClick }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, AOP_YEAR, PLANT_ID_LIST])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchCppModelLogs()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchCppModelLogs],
+  )
 
   // Permissions for view-only grid
   const permissions = {
@@ -135,41 +197,6 @@ const CppExecutionList = ({ onViewClick }) => {
     showTitle: true,
     titleName: 'CPP Model Logs',
     customActionButton: true, // Enable custom action button
-  }
-
-  // Custom action cell with view and download icons
-  const CustomActionsCell = ({ dataItem }) => {
-    return (
-      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-        <div
-          style={{
-            display: 'flex',
-            gap: '10px',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Tooltip anchorElement='target' position='top'>
-            <SvgIcon
-              icon={eyeIcon}
-              themeColor='primary'
-              style={{ cursor: 'pointer' }}
-              onClick={() => handleViewClick(dataItem)}
-              title='View Details'
-            />
-          </Tooltip>
-          <Tooltip anchorElement='target' position='top'>
-            <SvgIcon
-              icon={downloadIcon}
-              themeColor='success'
-              style={{ cursor: 'pointer' }}
-              onClick={() => handleDownloadAllExcel(dataItem)}
-              title='Download All Monthly Reports'
-            />
-          </Tooltip>
-        </div>
-      </td>
-    )
   }
 
   const handleViewClick = (dataItem) => {
@@ -268,14 +295,14 @@ const CppExecutionList = ({ onViewClick }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // customHeight={40}
+        groupBy={['plantName']}
+        customHeight={50}
         paginationConfig={{
           threshold: 50,
           buttonCount: 5,
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 20,
         }}
-        customActionCell={CustomActionsCell}
         READ_ONLY={true}
       />
     </Box>
