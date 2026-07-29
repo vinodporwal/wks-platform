@@ -2112,8 +2112,14 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                dto.setId(idString);
 	                
 	                if (dto.getId() == null && !alreadyFailed) { // Only check DB if ID is missing (for new records) and no prior error
-	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
-	                            plantFKId.toString(), year, dto.getDiscription());
+	                    List<Object[]> obj;
+	                    if (pvcDmd && dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+	                        obj = shutDownPlanRepository.findDiscriptionByPlantIdAndTypeAndLine("Shutdown",
+	                                plantFKId.toString(), year, dto.getDiscription(), dto.getLineId());
+	                    } else {
+	                        obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
+	                                plantFKId.toString(), year, dto.getDiscription());
+	                    }
 
 	                    if (obj.size() > 0) {
 	                        dto.setSaveStatus("Failed");
