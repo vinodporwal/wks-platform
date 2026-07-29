@@ -1,6 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Box } from '@mui/material'
-import { Stack } from '@mui/material'
+import { useEffect, useState, useMemo } from 'react'
+import { Box, Stack, Tooltip, IconButton } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
@@ -9,23 +8,21 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/input
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { useDebounce } from 'hooks/useDebounce'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import {
   transformApiResponseToGridFormat,
   transformGridFormatToApiFormat,
 } from './utils'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import AddAssetDialog from './components/AddAssetDialog'
 
 const STGGrid = ({
   hoursRows = [],
-  steamData = [],
-  refreshData,
-  snackbarOpen,
-  snackbarData,
-  setSnackbarOpen,
-  setSnackbarData,
-  loading,
-  setLoading,
+  apiData = [],
+  dataLoading = false,
+  onRefresh,
 }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -33,7 +30,9 @@ const STGGrid = ({
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Steam_Operational_HRS')
-  // const PLANT_ID_LIST = useMemo(
+  const PLANT_ID_LIST = plantObject?.id
+
+  // useMemo(
   //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
   //   [jmdSelectedPlants],
   // )
@@ -44,9 +43,112 @@ const STGGrid = ({
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [addAssetDialogOpen, setAddAssetDialogOpen] = useState(false)
+  const [editAssetRowData, setEditAssetRowData] = useState(null)
+  const [deleteAssetRowData, setDeleteAssetRowData] = useState(null)
+  const [deleteAssetDialogOpen, setDeleteAssetDialogOpen] = useState(false)
+
+  const handleEditAsset = (dataItem) => {
+    setEditAssetRowData(dataItem)
+    setAddAssetDialogOpen(true)
+  }
+
+  const handleDeleteAsset = (dataItem) => {
+    setDeleteAssetRowData(dataItem)
+    setDeleteAssetDialogOpen(true)
+  }
+
+  const AssetActionCell = ({ dataItem, tdProps }) => {
+    return (
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title='Edit Asset'>
+            <IconButton size='small' onClick={() => handleEditAsset(dataItem)}>
+              <EditIcon fontSize='small' />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title='Delete Asset'>
+            <IconButton
+              size='small'
+              color='error'
+              onClick={() => handleDeleteAsset(dataItem)}
+            >
+              <DeleteOutlineIcon fontSize='small' />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </td>
+    )
+  }
+
+  const MONTH_TO_INDEX = {
+    april: 4,
+    may: 5,
+    june: 6,
+    july: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12,
+    jan: 1,
+    feb: 2,
+    march: 3,
+  }
+  const MONTH_FIELDS = [
+    'april',
+    'may',
+    'june',
+    'july',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'march',
+  ]
+
+  const MONTH_COLUMNS = MONTH_FIELDS.map((mon) => ({
+    title: headerMap[MONTH_TO_INDEX[mon]],
+    children: [
+      {
+        field: `${mon}.shutdownHrs`,
+        title: 'Shutdown Hrs',
+        widthT: 150,
+        minWidth: 150,
+        editable: true,
+        type: 'wholeNumber',
+        format: valueFormat,
+      },
+      {
+        field: `${mon}.netOperationHrs`,
+        title: 'Operational Hrs',
+        widthT: 150,
+        minWidth: 150,
+        editable: false,
+        type: 'wholeNumber',
+        format: valueFormat,
+      },
+    ],
+  }))
 
   const nestedColumns = [
     {
@@ -100,282 +202,7 @@ const STGGrid = ({
       type: 'text',
       editable: false,
     },
-    {
-      title: headerMap[4],
-      children: [
-        {
-          field: 'april.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'april.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[5],
-      children: [
-        {
-          field: 'may.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'may.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[6],
-      children: [
-        {
-          field: 'june.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'june.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[7],
-      children: [
-        {
-          field: 'july.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'july.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[8],
-      children: [
-        {
-          field: 'aug.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'aug.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[9],
-      children: [
-        {
-          field: 'sep.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'sep.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[10],
-      children: [
-        {
-          field: 'oct.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'oct.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[11],
-      children: [
-        {
-          field: 'nov.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'nov.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[12],
-      children: [
-        {
-          field: 'dec.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'dec.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[1],
-      children: [
-        {
-          field: 'jan.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'jan.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[2],
-      children: [
-        {
-          field: 'feb.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'feb.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
-    {
-      title: headerMap[3],
-      children: [
-        {
-          field: 'march.shutdownHrs',
-          title: 'Shutdown Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: true,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-        {
-          field: 'march.netOperationHrs',
-          title: 'Operational Hrs',
-          widthT: 150,
-          minWidth: 150,
-          editable: false,
-          type: 'wholeNumber',
-          format: valueFormat,
-        },
-      ],
-    },
+    ...MONTH_COLUMNS,
     {
       field: 'remarks',
       title: 'Remarks',
@@ -384,41 +211,42 @@ const STGGrid = ({
       editable: true,
       minWidth: 250,
     },
+    // {
+    //   field: 'customActions',
+    //   title: 'Action',
+    //   type: 'customAction',
+    //   minWidth: 100,
+    //   className: 'k-text-center',
+    //   cell: AssetActionCell,
+    // },
   ]
 
+  // Transform parent-provided apiData into grid rows whenever it changes
   useEffect(() => {
-    try {
-      setModifiedCells({})
-      const steamResponse = steamData
-      const transformedData = transformApiResponseToGridFormat(
-        steamResponse,
-        hoursRows,
-      )
-      const rowsWithIds = transformedData?.map((row, index) => ({
-        ...row,
-        id: row.id || index + 1,
-      }))
-
-      setRows(rowsWithIds)
-      setOriginalRows(rowsWithIds)
-    } catch (error) {
-      console.error('Error fetching power grid data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
+    if (!apiData || apiData.length === 0) {
+      setRows([])
+      setOriginalRows([])
+      return
     }
-  }, [steamData, keycloak, PLANT_ID, AOP_YEAR, hoursRows])
+    const transformedData = transformApiResponseToGridFormat(apiData, hoursRows)
+    const rowsWithIds = transformedData?.map((row, index) => ({
+      ...row,
+      id: row.id || index + 1,
+    }))
+    setRows(rowsWithIds)
+    setOriginalRows(rowsWithIds)
+  }, [apiData, hoursRows])
 
   const permissions = {
     showAction: true,
     addButton: false,
+    addBtnName: 'Add Asset',
     deleteButton: false,
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showImport: true,
-    showExport: true,
+    showImport: false,
+    showExport: false,
     ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: false,
@@ -472,16 +300,21 @@ const STGGrid = ({
     const gridFormatData = modifiedData.map(({ inEdit, ...rest }) => rest)
     const apiFormatData = transformGridFormatToApiFormat(gridFormatData)
     try {
-      await InputApiService.saveOperationHours(keycloak, PLANT_ID, AOP_YEAR, {
-        steamResponse: apiFormatData,
-      })
+      await InputApiService.saveOperationHours(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+        {
+          steamResponse: apiFormatData,
+        },
+      )
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      refreshData()
+      onRefresh()
     } catch (error) {
       console.error('Error saving STG grid data:', error)
       setSnackbarOpen(true)
@@ -501,7 +334,7 @@ const STGGrid = ({
       const response = await InputApiService.saveSteamResponseExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       if (response?.code === 200) {
@@ -511,7 +344,7 @@ const STGGrid = ({
           severity: 'success',
         })
         setModifiedCells({})
-        await refreshData()
+        await onRefresh()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteArray = new Uint8Array(
@@ -536,7 +369,7 @@ const STGGrid = ({
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await refreshData()
+        await onRefresh()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
@@ -559,7 +392,7 @@ const STGGrid = ({
     try {
       await InputApiService.exportSteamResponseExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -582,6 +415,37 @@ const STGGrid = ({
     setRemarkDialogOpen(true)
   }
 
+  const handleAddAsset = () => {
+    setEditAssetRowData(null)
+    setAddAssetDialogOpen(true)
+  }
+
+  const confirmDeleteAsset = async () => {
+    if (!deleteAssetRowData) return
+    setLoading(true)
+    try {
+      const assetId = deleteAssetRowData.assetFkId || deleteAssetRowData.id
+      await InputApiService.deleteAsset(keycloak, assetId)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Asset deleted successfully!',
+        severity: 'success',
+      })
+      onRefresh()
+    } catch (error) {
+      console.error('Error deleting asset:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete asset. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setDeleteAssetDialogOpen(false)
+      setDeleteAssetRowData(null)
+    }
+  }
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -592,6 +456,7 @@ const STGGrid = ({
           setRows={setRows}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
+          title='Steam Shutdown and Operational Input (Hours)'
           permissions={permissions}
           handleRemarkCellClick={handleRemarkCellClick}
           remarkDialogOpen={remarkDialogOpen}
@@ -609,8 +474,31 @@ const STGGrid = ({
           setSnackbarData={setSnackbarData}
           groupBy={['assetType']}
           hoursRows={hoursRows}
+          customAddRow={handleAddAsset}
         />
       </Stack>
+
+      <AddAssetDialog
+        open={addAssetDialogOpen}
+        onClose={() => {
+          setAddAssetDialogOpen(false)
+          setEditAssetRowData(null)
+        }}
+        onSuccess={() => {
+          setAddAssetDialogOpen(false)
+          setEditAssetRowData(null)
+          onRefresh()
+        }}
+        editRowData={editAssetRowData}
+        assetCategory='Steam'
+      />
+
+      <DeleteDialog
+        openDeleteDialogeBox={deleteAssetDialogOpen}
+        setOpenDeleteDialogeBox={setDeleteAssetDialogOpen}
+        deleteTheRecord={confirmDeleteAsset}
+        confirmButtonText={'Delete'}
+      />
     </Box>
   )
 }

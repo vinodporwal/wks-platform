@@ -185,6 +185,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setUOM(row[27] != null ? row[27].toString() : null);
 					mCUNormsValueDTO.setIsEditable(row[28] != null ? Boolean.valueOf(row[28].toString()) : null);
 					mCUNormsValueDTO.setProductName(row[29] != null ? row[29].toString() : null);
+					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
+					mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
+					}
 				} else {
 					mCUNormsValueDTO.setMaterialFkId(row[4].toString());
 
@@ -213,6 +216,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setUOM(row[26] != null ? row[26].toString() : null);
 					mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
 					mCUNormsValueDTO.setProductName(row[28] != null ? row[28].toString() : null);
+					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
+					mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
+					}
 					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						mCUNormsValueDTO.setWtAverage(row[29] != null ? Double.parseDouble(row[29].toString()) : null);
 						

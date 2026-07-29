@@ -515,6 +515,8 @@ const PlantRequirement = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <PlantRequirementJMD />
+      case 'vmd':
+      case 'hmd':
       case 'dmd':
         return <PlantRequirementDMD />
       // case 'hmd':

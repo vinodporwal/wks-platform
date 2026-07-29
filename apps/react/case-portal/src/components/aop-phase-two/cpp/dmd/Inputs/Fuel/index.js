@@ -6,11 +6,15 @@ import { Stack } from '@mui/material'
 const Fuel = () => {
   return (
     <Stack>
-      <Stack sx={{ mb: 2 }}>
+      {/* <Stack sx={{ mb: 2 }}>
         <FuelAvailability />
-      </Stack>
+      </Stack> */}
       <Stack>
         <JCBFuel />
+      </Stack>
+
+      <Stack sx={{ mb: 2 }}>
+        <FuelAvailability />
       </Stack>
     </Stack>
   )

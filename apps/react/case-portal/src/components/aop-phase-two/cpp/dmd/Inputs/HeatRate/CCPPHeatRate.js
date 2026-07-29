@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
@@ -11,7 +11,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 
-const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
+const CCPPHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -39,22 +39,11 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const valueFormat = ValueFormatterPhaseTwo()
 
   const PLANT_ID_LIST = plantObject?.id
-
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const columns = [
-    {
-      field: 'id',
-      title: 'Id',
-      width: 150,
-      type: 'text',
-      editable: false,
-      locked: true,
-      minWidth: 100,
-      hidden: true,
-    },
     {
       field: 'equipType',
       title: 'Equipment Type',
@@ -73,8 +62,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       minWidth: 150,
     },
     {
-      field: 'hrsgLoad',
-      title: 'HRSG Load',
+      field: 'ccppLoad',
+      title: 'CCPP Load',
       width: 120,
       type: 'number1',
       format: customValueFormat(1),
@@ -161,20 +150,13 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const getPlantList = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await HeatRateApiService.getHRSGAssetDropdown(
+      const res = await HeatRateApiService.getCcppAssetDropdown(
         keycloak,
         PLANT_ID_LIST,
-        'HRSG',
+        'CCPP',
       )
 
-      // Convert to required format with plant name
       const convertedData = res?.map((item) => {
-        // Find plant name from jmdSelectedPlants by matching cppPlantFkId
-        // const plant = jmdSelectedPlants?.find(
-        //   (p) => p.id?.toUpperCase() === item.cppPlantFkId?.toUpperCase(),
-        // )
-        // const plantName = plant?.name
-
         return {
           id: item.assetId,
           name: `${item.assetName} (${plantObject?.name})`,
@@ -183,7 +165,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         }
       })
 
-      // Sort by plantName
       convertedData?.sort((a, b) => {
         const nameA = a.plantName || ''
         const nameB = b.plantName || ''
@@ -193,17 +174,14 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       if (convertedData?.length === 0) {
         setDropdownOptions([])
         setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No HRSG data found',
-          severity: 'info',
-        })
+        setSnackbarData({ message: 'No data found', severity: 'info' })
         setLoading(false)
         return
       }
       setSelectedPlant(convertedData[0]?.id)
       setDropdownOptions(convertedData)
     } catch (error) {
-      console.error('Error fetching HRSG dropdown options:', error)
+      console.error('Error fetching CCPP dropdown options:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
@@ -226,7 +204,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     async (assetId, startDate, endDate) => {
       setLoading(true)
       try {
-        const res = await HeatRateApiService.getHRSGHeatRateData(
+        const res = await HeatRateApiService.getCcppHeatRateData(
           keycloak,
           assetId,
           AOP_YEAR,
@@ -245,7 +223,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         let tempRes = res?.data?.map((item, index) => {
           const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
 
-          // Validate if selectedHeatRate matches the actual finalHeatRate value
           const fieldMapping = {
             OEM: 'oemHeatRate',
             PREVIOUS_YEAR: 'prevYearFinalHeatRate',
@@ -256,7 +233,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
           const selectedValue = selectedField ? item[selectedField] : null
           const finalValue = item.finalHeatRate
 
-          // Check if selected column value matches final heat rate
           const isMatch =
             selectedValue !== null &&
             selectedValue !== undefined &&
@@ -274,7 +250,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         setRows(tempRes)
         setOriginalRows(tempRes)
       } catch (error) {
-        console.error('Error fetching HRSG heat rate data:', error)
+        console.error('Error fetching CCPP heat rate data:', error)
         setRows([])
         setOriginalRows([])
         setSnackbarOpen(true)
@@ -300,7 +276,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     titleName: screenTitle?.title,
     showImport: true,
     showExport: true,
-    ExcelName: `HRSG Heat Rate - ${AOP_YEAR}`,
+    ExcelName: `CCPP Heat Rate - ${AOP_YEAR}`,
     showTitle: true,
     showDropdown: true,
   }
@@ -338,13 +314,12 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       return
     }
 
-    // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = ['hrsgLoad', 'oemHeatRate', 'finalHeatRate']
+    const fieldsToCheck = ['ccppLoad', 'oemHeatRate', 'finalHeatRate']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'hrsgLoad',
+      'ccppLoad',
     )
 
     if (validationError) {
@@ -362,9 +337,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         const { inEdit, ...rest } = item
         return rest
       })
-      const tempPayload = JSON.stringify(payload)
 
-      const res = await HeatRateApiService.saveHRSGHeatRateData(
+      const res = await HeatRateApiService.saveCcppHeatRateData(
         keycloak,
         AOP_YEAR,
         payload,
@@ -384,7 +358,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         formattedEndDate,
       )
     } catch (error) {
-      console.error('Error saving heat rate data:', error)
+      console.error('Error saving CCPP heat rate data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -394,6 +368,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       setLoading(false)
     }
   }
+
   const handleExcelUpload = async (file) => {
     if (!file) return
 
@@ -402,7 +377,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      const response = await HeatRateApiService.saveHRSGHeatRateExcel(
+      const response = await HeatRateApiService.saveCcppHeatRateExcel(
         file,
         keycloak,
         AOP_YEAR,
@@ -425,7 +400,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
           formattedEndDate,
         )
       } else if (response?.code === 400 && response?.data) {
-        downloadBase64Excel(response.data, 'HRSG_Heat_Rate_Import_Status.xlsx')
+        downloadBase64Excel(response.data, 'CCPP_Heat_Rate_Import_Status.xlsx')
         setSnackbarOpen(true)
         setSnackbarData({
           message:
@@ -468,13 +443,12 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      // Get the selected asset name with plant name
       const selectedAsset = dropdownOptions.find(
         (opt) => opt.id === selectedPlant,
       )
-      const assetDisplayName = selectedAsset?.name || 'HRSG_Heat_Rate'
+      const assetDisplayName = selectedAsset?.name || 'CCPP_Heat_Rate'
 
-      await HeatRateApiService.exportHRSGHeatRateExcel(
+      await HeatRateApiService.exportCcppHeatRateExcel(
         keycloak,
         selectedPlant,
         AOP_YEAR,
@@ -488,7 +462,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting HRSG Heat Rate data:', error)
+      console.error('Error exporting CCPP Heat Rate data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -496,21 +470,17 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     }
   }
 
-  // Handle remark cell click
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
-  // Custom itemChange handler for radio selection with bidirectional sync
   const handleCustomItemChange = (e, setRows) => {
     const { dataItem, field, value } = e
     const itemId = dataItem.id
 
-    // When radio selection changes, update the Final Heat Rate
     if (field === 'selectedHeatRate') {
-      // Map radioValue to field name
       const fieldMapping = {
         OEM: 'oemHeatRate',
         PREVIOUS_YEAR: 'prevYearFinalHeatRate',
@@ -533,7 +503,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         }),
       )
 
-      // Track both fields in modifiedCells
       setModifiedCells((prev) => {
         const currentRow = rows.find((r) => r.id === itemId)
         return {
@@ -559,7 +528,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       return
     }
 
-    // When a source column is edited, update finalHeatRate ONLY if that source is currently selected
     const sourceFieldMapping = {
       oemHeatRate: 'OEM',
       prevYearFinalHeatRate: 'PREVIOUS_YEAR',
@@ -572,7 +540,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       setRows((prev) =>
         prev.map((r) => {
           if (r.id === dataItem.id) {
-            // Only update finalHeatRate if this source is currently selected
             if (r.selectedHeatRate === radioValueForThisField) {
               return {
                 ...r,
@@ -580,7 +547,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
                 finalHeatRate: value,
               }
             }
-            // Otherwise just update the source field
             return {
               ...r,
               [field]: value,
@@ -590,10 +556,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         }),
       )
 
-      // Track changes in modifiedCells and customModifiedCells
       const currentRow = rows.find((r) => r.id === itemId)
       if (currentRow?.selectedHeatRate === radioValueForThisField) {
-        // Update both source field and finalHeatRate
         setModifiedCells((prev) => ({
           ...prev,
           [itemId]: {
@@ -613,7 +577,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
           },
         }))
       } else {
-        // Still track the source field change even if not selected (for orange highlighting)
         setModifiedCells((prev) => ({
           ...prev,
           [itemId]: {
@@ -635,7 +598,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       return
     }
 
-    // When Final Heat Rate is manually edited, check if it matches any source column
     if (field === 'finalHeatRate') {
       const sourceFields = [
         {
@@ -657,7 +619,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
       let matchedRadioValue = null
 
-      // Check if the entered value matches any source column value
       for (const source of sourceFields) {
         if (
           source.value !== null &&
@@ -675,7 +636,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
             return {
               ...r,
               finalHeatRate: value,
-              // Auto-select radio if value matches a source, otherwise set to OTHER
               selectedHeatRate: matchedRadioValue || 'OTHER',
             }
           }
@@ -683,7 +643,6 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         }),
       )
 
-      // Track both fields in modifiedCells
       setModifiedCells((prev) => {
         const currentRow = rows.find((r) => r.id === itemId)
         return {
@@ -720,7 +679,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         setModifiedCells={setModifiedCells}
         externalCustomModifiedCells={customModifiedCells}
         externalSetCustomModifiedCells={setCustomModifiedCells}
-        title='HRSG Heat Rate'
+        title='CCPP Heat Rate'
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -752,4 +711,4 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   )
 }
 
-export default HRSGHeatRate
+export default CCPPHeatRate
