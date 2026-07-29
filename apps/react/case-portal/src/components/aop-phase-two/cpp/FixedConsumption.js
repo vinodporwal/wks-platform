@@ -633,11 +633,10 @@ const FixedConsumption = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <FixedConsumptionJMD />
-      case 'hmd':
       case 'dmd':
+      case 'hmd':
+      case 'vmd':
         return <FixedConsumptionDMD />
-      // case 'hmd':
-      //   return <FixedConsumptionHMD />
       case 'nmd':
       default:
         return (

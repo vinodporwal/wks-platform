@@ -12,6 +12,7 @@ import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
+import ManualEntryDyanamic from './ManualEntryDyanamic'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -236,7 +237,7 @@ const ProductionNormsBasis = () => {
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
       case 'Manual Entry':
-        return <ManualEntry startDate={startDate} endDate={endDate} />
+        return <ManualEntryDyanamic startDate={startDate} endDate={endDate} />
       default:
         return null
     }
