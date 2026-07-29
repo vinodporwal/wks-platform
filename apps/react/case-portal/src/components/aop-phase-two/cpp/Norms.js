@@ -663,6 +663,7 @@ const Norms = () => {
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
+      getIsReleased()
       fetchNormsData()
       setModifiedCells({})
     }
@@ -751,9 +752,6 @@ const Norms = () => {
       console.error('Error fetching release status:', error)
     }
   }
-  useEffect(() => {
-    getIsReleased()
-  }, [keycloak, AOP_YEAR, PLANT_ID])
 
   const handleRelease = () => {
     setOpenReleaseDialogBox(true)
@@ -1052,9 +1050,9 @@ const Norms = () => {
         return <NormsJMD />
 
       case 'dmd':
+      case 'hmd':
+      case 'vmd':
         return <NormsDMD />
-      // case 'hmd':
-      //   return <NormsHMD />
       case 'nmd':
       default:
         return (

@@ -45,6 +45,8 @@ const Summary = () => {
       case 'jmd':
         return <SummaryJMD />
       case 'dmd':
+      case 'hmd':
+      case 'vmd':
         return <SummaryDMD />
       case 'nmd':
       default:
