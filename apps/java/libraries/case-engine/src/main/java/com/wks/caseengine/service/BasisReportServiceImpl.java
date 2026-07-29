@@ -678,7 +678,14 @@ public AOPMessageVM getEtheleneStockBasis(String plantId, String aopYear) {
 	public List<List<Map<String, Object>>> getAllColumnMetadataForPEE(
 	    String plantId, String aopYear, String periodFrom, String periodTo, String type, String storedProcedure) {
 
-			String verticalName = verticalRepository.findById(UUID.fromString(plantId)).get().getName();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+			.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+Sites site = siteRepository.findById(plant.getSiteFkId())
+			.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+			.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String verticalName = vertical.getName();
 	 
 			String tmpCall = "{ call [" + storedProcedure + "](?, ?, ?, ?) }";
 
