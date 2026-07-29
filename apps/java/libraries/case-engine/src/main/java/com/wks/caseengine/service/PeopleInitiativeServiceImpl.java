@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Date;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -271,7 +270,6 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 				peopleInitiative.setPlantId(plantId);
 				peopleInitiative.setRemark(peopleInitiativeDTO.getRemark());
 				peopleInitiative.setTargetDate(peopleInitiativeDTO.getTargetDate());
-				peopleInitiative.setModifiedOn(new Date());
 				peopleInitiativeRepository.save(peopleInitiative);
 			}
 			

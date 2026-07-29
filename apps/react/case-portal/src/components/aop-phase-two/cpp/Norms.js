@@ -683,18 +683,16 @@ const Norms = () => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.data?.list
-        ?.filter((item) => item?.accountName !== 'Stores & Spares')
-        .map((item, index) => {
-          return {
-            ...item,
-            id: item.id || index + 1,
-            remarks: item.remarks || '',
-          }
-        })
+      let tempRes = res?.data?.list?.map((item, index) => {
+        return {
+          ...item,
+          id: item.id || index + 1,
+          remarks: item.remarks || '',
+        }
+      })
 
       setRows(tempRes)
-      setCalculateBtnEnabled(true)
+      setCalculateBtnEnabled(res?.data?.aopCalculation?.length > 0)
       setOriginalRows(tempRes)
       setAopCalaculation(res?.data?.aopCalculation || [])
     } catch (error) {
@@ -724,7 +722,7 @@ const Norms = () => {
       showExport: true,
       ExcelName: `Norms - ${AOP_YEAR}`,
       showReleaseBtn: true,
-      isReleaseDisabled: isReleaseDisabled,
+      isReleaseDisabled: isReleaseDisabled || calculateBtnEnabled,
       note:
         aopCalaculation?.length > 0
           ? ' Please calculate again there are some utilities updated.'
@@ -1086,7 +1084,7 @@ const Norms = () => {
             customHeight={80}
             groupBy={['generatingPlantName']}
             handleRelease={handleRelease}
-            isReleaseDisabled={isReleaseDisabled}
+            isReleaseDisabled={isReleaseDisabled || calculateBtnEnabled}
           />
         )
     }

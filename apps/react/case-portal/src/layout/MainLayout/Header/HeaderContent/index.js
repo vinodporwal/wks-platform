@@ -178,8 +178,8 @@ export default function HeaderContent({ keycloak, navigation }) {
     '/dashboard',
     '/user-management',
     '/user-form',
+    '/my-approvals'
   ].includes(location.pathname)
-
 
   const Hide_Dropdown = [
     '/refinery-aop-budget/plant-capacities',
@@ -199,7 +199,7 @@ export default function HeaderContent({ keycloak, navigation }) {
     HIDE_DASHBOARD_DROPDOWN ||
     HIDE_PLANT_PATHS.some((s) => location.pathname.includes(s))
 
-  if (['/dashboard'].includes(location.pathname))
+  if (['/dashboard', '/my-approvals'].includes(location.pathname))
     dispatch(openDrawer({ drawerOpen: false }))
 
   useEffect(() => {
@@ -872,7 +872,7 @@ export default function HeaderContent({ keycloak, navigation }) {
             overflow: 'hidden',
           }}
         >
-          {!(HIDE_DASHBOARD_DROPDOWN) && (
+          {!HIDE_DASHBOARD_DROPDOWN && (
             <React.Fragment>
               <Typography
                 variant='h6'
@@ -936,60 +936,62 @@ export default function HeaderContent({ keycloak, navigation }) {
           }}
         >
           {/* Year */}
-          <Box sx={dropdownContainerStyle}>
-            {headerLoading ? (
-              <DropdownSkeleton />
-            ) : (
-              <FormControl size='small' variant='outlined'>
-                {' '}
-                <Select
-                  IconComponent={ArrowDropDownIcon}
-                  value={selectedYear}
-                  onChange={handleYearChange}
-                  sx={selectStyle}
-                  MenuProps={menuPropsStyle}
-                  renderValue={(value) => {
-                    const yearObj = aopYears.find((y) => y.AOPYear === value)
-                    return (
-                      <Box
-                        sx={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 1,
-                        }}
-                      >
+          {location.pathname !== '/my-approvals' && (
+            <Box sx={dropdownContainerStyle}>
+              {headerLoading ? (
+                <DropdownSkeleton />
+              ) : (
+                <FormControl size='small' variant='outlined'>
+                  {' '}
+                  <Select
+                    IconComponent={ArrowDropDownIcon}
+                    value={selectedYear}
+                    onChange={handleYearChange}
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const yearObj = aopYears.find((y) => y.AOPYear === value)
+                      return (
                         <Box
-                          component='img'
-                          src={CalenderIcon}
-                          className='w16-icon'
-                        />
-
-                        <Box component='span' className='header-dropdown-label'>
-                          Year:
-                        </Box>
-                        <Box
-                          component='strong'
-                          className='header-dropdown-value'
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
                         >
-                          {yearObj?.AOPDisplayYear}
+                          <Box
+                            component='img'
+                            src={CalenderIcon}
+                            className='w16-icon'
+                          />
+
+                          <Box component='span' className='header-dropdown-label'>
+                            Year:
+                          </Box>
+                          <Box
+                            component='strong'
+                            className='header-dropdown-value'
+                          >
+                            {yearObj?.AOPDisplayYear}
+                          </Box>
                         </Box>
-                      </Box>
-                    )
-                  }}
-                >
-                  {aopYears.map((y) => (
-                    <MenuItem
-                      key={y.AOPYear}
-                      value={y.AOPYear}
-                      sx={menuItemStyle}
-                    >
-                      {y.AOPDisplayYear}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          </Box>
+                      )
+                    }}
+                  >
+                    {aopYears.map((y) => (
+                      <MenuItem
+                        key={y.AOPYear}
+                        value={y.AOPYear}
+                        sx={menuItemStyle}
+                      >
+                        {y.AOPDisplayYear}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          )}
 
           {/* Vertical */}
           {!(

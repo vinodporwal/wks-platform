@@ -47,14 +47,15 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
     
     public List<GroupedSelectionDTO> fetchGroupedSelectionFromProcedure(UUID plantId, String aopYear, String procedureName) {
 
-        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+       
+        String sql = "EXEC [" + procedureName + "] @plantId = ?, @aopYear = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) ->
             GroupedSelectionDTO.builder()
                 .id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
                 .name(rs.getString("Name"))
                 .displayName(rs.getString("DisplayName"))
                 .uom(rs.getString("UOM"))
-                .value(rs.getString("Value"))
+             //   .value(rs.getString("Value"))
                 .status(Boolean.parseBoolean(rs.getString("Expression"))) // parse the string into boolean
                 .dependantAttributeId(rs.getString("DependantAttributeId") != null ? UUID.fromString(rs.getString("DependantAttributeId")) : null)
                 .normParameterTypeFkId(rs.getString("NormParameterType_FK_Id") != null ? UUID.fromString(rs.getString("NormParameterType_FK_Id")) : null)
@@ -62,6 +63,7 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
                 .isEditable(rs.getBoolean("IsEditable"))
                 .sapMaterialCode(rs.getString("SAPMaterialCode"))
                 .normParameterType(rs.getString("NormParameterType"))
+                .aopYear(aopYear)
                 .build(),
             plantId.toString(), aopYear
         );
@@ -71,19 +73,33 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
     @Transactional
     public AOPMessageVM saveGroupedSelection( List<GroupedSelectionDTO> dtoList) {
         try {
-     
+            String userName = com.wks.caseengine.utility.Utility.getUserName();
+            if (userName == null || userName.isEmpty()) {
+                userName = "System";
+            }
 
             for (GroupedSelectionDTO dto : dtoList) {
-                if (dto.getId() == null) {
+                if (dto.getId() == null || dto.getAopYear() == null || dto.getPlantFkId() == null) {
                     continue;
                 } else {
-                   
-                    String updateSql = "UPDATE NormParameters " +
-                        "SET Expression = ? " +
-                        "WHERE Id = ?";
-                    jdbcTemplate.update(updateSql,
-                        String.valueOf(dto.isStatus()), dto.getId().toString());
-            
+                    String selectSql = "SELECT COUNT(*) FROM MaterialGroupedSelection " +
+                        "WHERE NormparamterFkId = ? AND AopYear = ? AND PlantFkId = ?";
+                    Integer count = jdbcTemplate.queryForObject(selectSql, Integer.class,
+                        dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
+                    
+                    if (count != null && count > 0) {
+                        String updateSql = "UPDATE MaterialGroupedSelection " +
+                            "SET Value = ?, ModifiedOn = GETDATE(), ModifiedBy = ? " +
+                            "WHERE NormparamterFkId = ? AND AopYear = ? AND PlantFkId = ?";
+                        jdbcTemplate.update(updateSql,
+                            dto.isStatus(), userName, dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
+                    } else {
+                        String insertSql = "INSERT INTO MaterialGroupedSelection " +
+                            "(Id, Value, NormparamterFkId, AopYear, PlantFkId, ModifiedOn, ModifiedBy) " +
+                            "VALUES (?, ?, ?, ?, ?, GETDATE(), ?)";
+                        jdbcTemplate.update(insertSql,
+                            UUID.randomUUID().toString(), dto.isStatus(), dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString(), userName);
+                    }
                 }
             }
             AOPMessageVM vm = new AOPMessageVM();

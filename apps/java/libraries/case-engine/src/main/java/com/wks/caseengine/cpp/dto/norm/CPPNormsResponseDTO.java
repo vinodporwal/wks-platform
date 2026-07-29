@@ -59,6 +59,9 @@ public class CPPNormsResponseDTO {
     
     private BigDecimal actualNorm;
     private Boolean applyActualNormToAll;
+    
+    private BigDecimal calculatedNorms;
+    private String calculationFormula;
 
     // Fields for import/export tracking
     private String saveStatus;

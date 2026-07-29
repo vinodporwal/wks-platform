@@ -13,6 +13,7 @@ import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ModeSelection from './ModeSelection'
+import CrackerC2OptimizingVariables from './CrackerC2OptimizingVariables'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -105,6 +106,7 @@ const CrackerConfig = () => {
   const [feedsRows, setFeedsRows] = useState([])
   const [spyroOutputProductRows, setSpyroOutputProductRows] = useState([])
   const [otherSpyroOutputRows, setOtherSpyroOutputRows] = useState([])
+  const [optimizing, setOptimizing] = useState([])
 
   const FORMATE_VALUE = ValueFormatterProduction()
 
@@ -120,7 +122,9 @@ const CrackerConfig = () => {
   const productionColumns = useMemo(() => {
     const configType =
       currentTabDisplay === 'Composition'
-        ? 'cracker_composition'
+        ? SITE_NAME === 'C2'
+          ? 'cracker_composition_c2'
+          : 'cracker_composition'
         : currentTabDisplay === 'Constant'
           ? 'cracker_constants'
           : currentTabDisplay === 'Yield'
@@ -129,7 +133,9 @@ const CrackerConfig = () => {
               : SITE_NAME == 'VMD'
                 ? 'cracker_yield_vmd'
                 : 'cracker_yield_dmd'
-            : 'cracker'
+            : SITE_NAME === 'C2'
+              ? 'cracker_c2'
+              : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -216,7 +222,7 @@ const CrackerConfig = () => {
       console.error('Error fetching cracker tabs matrix:', err)
       setTabs(rawTabsStatic)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID])
 
   const fetchAvailableTabs = useCallback(async () => {
     try {
@@ -290,6 +296,8 @@ const CrackerConfig = () => {
           return hydrogenationRows
         case 'Miscellaneous Parameters':
           return feedTotalRows
+        case 'Optimizing':
+          return optimizing
         case 'Constant':
           return constantsRows
         case 'Yield':
@@ -322,6 +330,7 @@ const CrackerConfig = () => {
       spyroOutputProductRows,
       feedsRows,
       otherSpyroOutputRows,
+      optimizing,
     ],
   )
 
@@ -335,6 +344,9 @@ const CrackerConfig = () => {
         break
       case 'Total Products':
         setHydrogenationRows(data)
+        break
+      case 'Optimizing':
+        setOptimizing(data)
         break
       case 'Constant':
         setConstantsRows(data)
@@ -1167,6 +1179,41 @@ const CrackerConfig = () => {
                       downloadExcelForConfiguration
                     }
                   />
+                </Box>
+              )
+            case 'Optimizing':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
+                  {IS_CRACKER_C2 && <CrackerC2OptimizingVariables />}
                 </Box>
               )
             default:

@@ -269,14 +269,12 @@ const NormsQtyCostReportAnnual = () => {
         return
       }
 
-      let tempRes = res?.data
-        ?.filter((item) => item?.accountName !== 'Stores & Spares')
-        .map((item, index) => {
-          return {
-            ...item,
-            id: item.id || index + 1,
-          }
-        })
+      let tempRes = res?.data?.map((item, index) => {
+        return {
+          ...item,
+          id: item.id || index + 1,
+        }
+      })
 
       console.log('Fetched data:', tempRes)
       setRows(tempRes)

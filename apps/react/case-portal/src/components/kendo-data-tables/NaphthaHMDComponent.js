@@ -88,19 +88,20 @@ export default function NaphthaHMDComponent() {
       widthT: 200,
     },
     {
-      field: 'max',
-      title: 'Max',
-      editable: true,
-      type: 'number',
-      widthT: 120,
-    },
-    {
       field: 'min',
       title: 'Min',
       type: 'number',
       editable: true,
       widthT: 120,
     },
+    {
+      field: 'max',
+      title: 'Max',
+      editable: true,
+      type: 'number',
+      widthT: 120,
+    },
+
     {
       field: 'months',
       title: 'Month',

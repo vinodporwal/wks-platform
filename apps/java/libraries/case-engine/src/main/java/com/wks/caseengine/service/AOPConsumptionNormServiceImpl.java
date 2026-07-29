@@ -846,6 +846,47 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getProposedAOPGrades(String financialYear, String plantId) {
+		List<Map<String, Object>> gradeList = new ArrayList<>();
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String viewName = "vwScrn" + vertical.getName() + "ProposedAOPGrade";
+			// Validate or sanitize viewName before using it directly in the query to
+			// prevent SQL injection
+			String sql = "SELECT * FROM " + "[" + viewName + "]"
+					+ " WHERE AOPYear = :financialYear AND Plant_FK_Id = :plantId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("financialYear", financialYear);
+			query.setParameter("plantId", plantId);
+
+			List<Object[]> obj = query.getResultList(); // You can cast this to a DTO later
+
+			for (Object[] result : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("gradeId", result[0].toString());
+				map.put("Name", result[1].toString());
+				map.put("DisplayName", result[2].toString());
+				map.put("plantId", result[3].toString());
+				map.put("aopYear", result[4].toString());
+				map.put("DisplayOrder", result[5].toString());
+				gradeList.add(map);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(gradeList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 	
 	public List<Object[]> getOverallConsumptionData(String plantId, String aopYear) {
 		try {

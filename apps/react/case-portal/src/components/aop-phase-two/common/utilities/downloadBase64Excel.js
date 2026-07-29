@@ -24,3 +24,22 @@ export function downloadBase64Excel(base64Data, fileName) {
   document.body.removeChild(link)
   window.URL.revokeObjectURL(url)
 }
+
+/**
+ * Decodes a base64-encoded Excel file from an API response and triggers a
+ * browser download. Use this whenever an import API returns code 400 with a
+ * base64 error-file payload.
+ *
+ * @param {blob} blob - Blob of the Excel file
+ * @param {string} fileName   - File name for the download (e.g. 'Prices_Errors.xlsx')
+ */
+export function downloadBlobExcel(blob, fileName) {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}

@@ -14,7 +14,10 @@ import {
   Checkbox,
   ListItemText,
   Divider,
+  Button,
 } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import FactCheckIcon from '@mui/icons-material/FactCheck'
 import { useDispatch, useSelector } from 'react-redux'
 import Notification from 'components/Utilities/Notification'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
@@ -44,6 +47,7 @@ const STATUS_MAP = {
 }
 
 export default function AopDashboardCompact() {
+  const navigate = useNavigate()
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -636,6 +640,32 @@ export default function AopDashboardCompact() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </Box>
+          <Button
+            variant='contained'
+            onClick={() => navigate('/my-approvals')}
+            startIcon={<FactCheckIcon sx={{ fontSize: '18px !important' }} />}
+            sx={{
+              height: '36px',
+              px: 2,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontSize: '13px',
+              fontWeight: 600,
+              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+              backgroundColor: '#005eb8',
+              color: '#ffffff',
+              boxShadow: '0 2px 5px rgba(0, 94, 184, 0.25)',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: '#004b93',
+                boxShadow: '0 4px 10px rgba(0, 94, 184, 0.35)',
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            My Approvals
+          </Button>
           <Box className='status-dropdown' onClick={handleStatusMenuOpen}>
             <Box
               component='img'
@@ -759,6 +789,16 @@ export default function AopDashboardCompact() {
               style: { padding: '4px 0' },
             }}
           >
+            <MenuItem
+              onClick={() => {
+                setMoreMenuAnchor(null)
+                setApprovalsOpen(true)
+              }}
+              sx={{ minHeight: '32px', padding: '6px 10px' }}
+            >
+              <Typography sx={menuItemStyle}>My Approvals</Typography>
+            </MenuItem>
+            <Divider sx={{ margin: `4px 0px !important` }} />
             <MenuItem
               onClick={() => handleExpandCollapseAll(true)}
               sx={{ minHeight: '32px', padding: '6px 10px' }}
@@ -1036,6 +1076,8 @@ export default function AopDashboardCompact() {
           labelPlacement='start'
         />
       </Box> */}
+
+
 
       <Notification
         open={snackbar.open}

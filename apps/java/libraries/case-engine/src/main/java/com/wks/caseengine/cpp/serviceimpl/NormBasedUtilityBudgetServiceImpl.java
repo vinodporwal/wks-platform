@@ -84,18 +84,18 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
     }
 
     @Override
-    public AOPMessageVM getNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear) {
+    public AOPMessageVM getNormBasedUtilityBudgetSummary(UUID cppPlantIds, String financialYear) {
 
         log.info("=== Starting getNormBasedUtilityBudgetSummary ===");
-        log.info("CPPPlantId: {}, FinancialYear: {}", cppPlantId, financialYear);
+        log.info("CPPPlantId: {}, FinancialYear: {}", cppPlantIds, financialYear);
 
         AOPMessageVM vm = new AOPMessageVM();
 
         try {
-            if (cppPlantId == null) {
-                log.error("CPPPlantId is null");
+            if (cppPlantIds == null) {
+                log.error("cppPlantIds is null");
                 vm.setCode(400);
-                vm.setMessage("CPPPlantId cannot be null");
+                vm.setMessage("cppPlantIds cannot be null");
                 vm.setData(new ArrayList<>());
                 return vm;
             }
@@ -105,7 +105,7 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
                     .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
                     .registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
 
-            sp.setParameter(1, cppPlantId.toString());
+            sp.setParameter(1, cppPlantIds.toString());
             sp.setParameter(2, financialYear);
 
             log.info("Executing stored procedure dbo.CPP_NMD_GetNormBasedUtilityBudget_Summary ...");

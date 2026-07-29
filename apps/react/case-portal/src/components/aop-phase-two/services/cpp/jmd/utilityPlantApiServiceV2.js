@@ -22,9 +22,12 @@ export const UtilityPlantApiServiceV2 = {
 
   //Norm Based Utility Budget APIs
   getNormBasedUtilityBudget,
+  getNormBasedUtilityBudgetSummary,
   saveNormsData,
   saveNormsExcel,
   exportNormsExcel,
+  exportNormBasedUtilityBudgetSummary,
+  exportNormBasedUtilityBudgetDetailed,
   calculateNormsData,
 
   // SR Mapping APIs
@@ -262,7 +265,32 @@ async function saveImportConsumptionData(keycloak, PLANT_ID, payload) {
 async function getNormBasedUtilityBudget(keycloak, plantIds, financialYear) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
-  const url = `${Config.CaseEngineUrl}/task/jmd-norm-based-utility-budget?cppPlantIds=${queryParams}&financialYear=${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/jmd/norm-based-utility-budget?cppPlantIds=${queryParams}&financialYear=${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNormBasedUtilityBudgetSummary(
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/norm-based-utility-budget/summary?cppPlantIds=${queryParams}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -534,7 +562,7 @@ async function saveNormsExcel(file, keycloak, plantIds, AOP_YEAR) {
   return saveExcelData(
     file,
     keycloak,
-    `jmd-norm-based-utility-budget/import?cppPlantIds=${queryParams}&financialYear=${AOP_YEAR}`,
+    `jmd/norm-based-utility-budget/import?cppPlantIds=${queryParams}&financialYear=${AOP_YEAR}`,
     null,
     null,
   )
@@ -545,9 +573,43 @@ async function exportNormsExcel(keycloak, plantIds, AOP_YEAR, fileName) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
   return exportExcelData(keycloak, {
-    endpoint: `jmd-norm-based-utility-budget/export`,
+    endpoint: `jmd/norm-based-utility-budget/export`,
     queryParams: { cppPlantIds: queryParams, financialYear: AOP_YEAR },
     fileName: fileName || `Norms_${AOP_YEAR}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// Norm Based Utility Budget Summary Export
+async function exportNormBasedUtilityBudgetSummary(
+  keycloak,
+  plantIds,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  return exportExcelData(keycloak, {
+    endpoint: `jmd/norm-based-utility-budget/summary/export`,
+    queryParams: { cppPlantIds: queryParams, financialYear: AOP_YEAR },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// Norm Based Utility Budget Detailed (Monthly) Export
+async function exportNormBasedUtilityBudgetDetailed(
+  keycloak,
+  plantIds,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  return exportExcelData(keycloak, {
+    endpoint: `jmd/norm-based-utility-budget/detailed/export`,
+    queryParams: { cppPlantIds: queryParams, financialYear: AOP_YEAR },
+    fileName: EXCEL_NAME,
     method: 'GET',
   })
 }
@@ -749,8 +811,8 @@ async function getSRMappingCostCenters(keycloak, plantIds = null) {
   }
 }
 // Delete a single SR Mapping record by id
-async function deleteSRMapping(keycloak, id) {
-  const url = `${Config.CaseEngineUrl}/task/sr-mapping/${id}`
+async function deleteSRMapping(keycloak, id, year) {
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping/${id}?financialYear=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

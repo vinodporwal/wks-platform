@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
@@ -27,6 +28,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     private JdbcTemplate jdbcTemplate;
 
     @Override
+    @Transactional
     public AOPMessageVM getPlantReport(String plantId, String aopYear) {
         try {
             String sql = "EXEC Sp_PlantSafetyPerformanceTargets @plantId = ?, @aopYear = ?";
@@ -64,6 +66,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM savePlantReport(List<PlantReportDTO> plantReportDTOs) {
         try {
             String updatedBy = Utility.getUserName();
@@ -120,6 +123,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM getPlantSafetyImprovement(String plantId, String aopYear) {
         try {
             String sql = "EXEC Sp_PlantSafetyImprovementInitiatives @plantId = ?, @aopYear = ?";
@@ -157,6 +161,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM savePlantSafetyImprovement(List<PlantSafetyImprovementDTO> plantSafetyImprovementDTOs) {
         try {
             String updatedBy = Utility.getUserName();
@@ -205,6 +210,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM deletePlantSafetyImprovement(String id) {
         try {
             String deleteSql = "DELETE FROM PlantSafetyImprovementInitiatives WHERE Id = ?";
@@ -216,6 +222,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM getProfitImprovementInitiative(String plantId, String aopYear) {
         try {
             String sql = "EXEC Sp_ProfitImprovementInitiative @plantId = ?, @aopYear = ?";
@@ -254,6 +261,7 @@ public class PlantReportServiceImpl implements PlantReportService {
 
 
     @Override
+    @Transactional
     public AOPMessageVM saveProfitImprovementInitiative(List<ProfitImprovementInitiativeDTO> profitImprovementInitiativeDTOs) {
         try {
             String updatedBy = Utility.getUserName();
@@ -305,6 +313,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM deleteProfitImprovementInitiative(String id) {
         try {
             String deleteSql = "DELETE FROM ProfitImprovementInitiative WHERE Id = ?";
@@ -316,6 +325,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM getReliabilityImprovement(String plantId, String aopYear) {
         try {
             String sql = "EXEC Sp_ReliabilityImprovementIntiative @plantId = ?, @aopYear = ?";
@@ -354,6 +364,7 @@ public class PlantReportServiceImpl implements PlantReportService {
 
 
     @Override
+    @Transactional
     public AOPMessageVM saveReliabilityImprovement(List<ReliabilityImprovementDTO> reliabilityImprovementDTOs) {
         try {
             String updatedBy = Utility.getUserName();
@@ -404,6 +415,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM deleteReliabilityImprovement(String id) {
         try {
             String deleteSql = "DELETE FROM ReliabilityImprovementIntiative WHERE Id = ?";
@@ -415,6 +427,7 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM getSiteSafetyPerformanceTargets(String siteId, String aopYear) {
         try {
             String sql = "EXEC Sp_SiteSafetyPerformanceTargets @siteId = ?, @aopYear = ?";
@@ -453,6 +466,7 @@ public class PlantReportServiceImpl implements PlantReportService {
 
 
     @Override
+    @Transactional
     public AOPMessageVM saveSiteSafetyPerformanceTargets(List<SiteSafetyPerformanceTargetsDTO> siteSafetyPerformanceTargetsDTOs) {
         try {
             String updatedBy = Utility.getUserName();

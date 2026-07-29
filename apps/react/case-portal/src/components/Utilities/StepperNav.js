@@ -81,8 +81,11 @@ export default function StepperNav() {
 
     setSteps(filteredSteps)
 
-    const currentSlug = location.pathname.split('/').pop()
-    const found = filteredSteps.some((s) => s.url.includes(currentSlug))
+    const found = filteredSteps.some(
+      (s) =>
+        location.pathname === s.url ||
+        location.pathname.startsWith(s.url + '/'),
+    )
 
     if (filteredSteps.length && !found) {
       navigate(filteredSteps[0].url, { replace: true })
@@ -93,7 +96,24 @@ export default function StepperNav() {
   // Active Step
   // -------------------------
   const activeStep = useMemo(() => {
-    return steps.findIndex((s) => location.pathname.includes(s.url))
+    // Prefer exact match first, then longest prefix match to avoid
+    // partial slug collisions (e.g. /configuration vs /configuration-other-cost)
+    const exactIdx = steps.findIndex((s) => location.pathname === s.url)
+    if (exactIdx !== -1) return exactIdx
+
+    // Fallback: find the step whose url is the longest prefix of the pathname
+    let bestIdx = -1
+    let bestLen = 0
+    steps.forEach((s, i) => {
+      if (
+        location.pathname.startsWith(s.url + '/') &&
+        s.url.length > bestLen
+      ) {
+        bestIdx = i
+        bestLen = s.url.length
+      }
+    })
+    return bestIdx
   }, [steps, location.pathname])
 
   // -------------------------

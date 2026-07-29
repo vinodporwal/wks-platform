@@ -635,7 +635,12 @@ async function saveTargetGasifierOperationData(
  * @param {string} year - AOP Year
  * @returns {Promise} Import response
  */
-async function importTargetGasifierOperationExcel(file, keycloak, plantId, year) {
+async function importTargetGasifierOperationExcel(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
   return saveExcelData(file, keycloak, 'production-range-import', {
     year: year,
     plantId: plantId,
@@ -651,11 +656,17 @@ async function importTargetGasifierOperationExcel(file, keycloak, plantId, year)
  * @param {string} fileName - File name
  * @returns {Promise} Export response
  */
-async function exportTargetGasifierOperationExcel(keycloak, plantId, year, fileName) {
+async function exportTargetGasifierOperationExcel(
+  keycloak,
+  plantId,
+  year,
+  fileName,
+) {
   return ImportExportApiService.exportExcelData(keycloak, {
     endpoint: `production-range-export?year=${year}&plantId=${plantId}`,
     queryParams: {},
-    fileName: fileName || `Production_Norms_Target_Gasifier_Operation_${year}.xlsx`,
+    fileName:
+      fileName || `Production_Norms_Target_Gasifier_Operation_${year}.xlsx`,
     method: 'GET',
   })
 }

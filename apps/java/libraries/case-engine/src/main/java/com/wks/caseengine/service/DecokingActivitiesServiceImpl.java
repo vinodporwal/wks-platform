@@ -147,7 +147,6 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	        Map<String, Object> dynamicResult = fetchDataWithMetadata(sql, params, columnTitleMap);
 	        List<Map<String, Object>> resultList = (List<Map<String, Object>>) dynamicResult.get("data");
 	        List<Map<String, Object>> columns = (List<Map<String, Object>>) dynamicResult.get("columns");
-	
 
 	        
 	        for (Map<String, Object> map : resultList) {
@@ -187,8 +186,6 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 	        List<Map<String, Object>> data = new ArrayList<>();
 	        List<Map<String, Object>> columns = new ArrayList<>();
-
-			
 
 	        String jdbcSql = sql;
 	        List<Object> paramValues = new ArrayList<>();
@@ -852,11 +849,6 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    List<Map<String, Object>> failedList = new ArrayList<>();
 
-		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-        boolean CrackerVmd = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("VMD");
-
 	    final Set<String> EXCLUDE = Set.of("AOPYear", "aopYear", "Id", "Plant_Fk_Id", "plantId",
 	                                       "saveStatus", "errDescription", "Month", "Date","id");
 
@@ -879,7 +871,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	            }
 
 	            if (existingRecord.isPresent()) {
-	                updateExistingRecordDynamic(existingRecord.get().getId(), payload, EXCLUDE, CrackerVmd);
+	                updateExistingRecordDynamic(existingRecord.get().getId(), payload, EXCLUDE);
 	            } else {
 	                
 	                insertNewRecordWithDefaults(payload, plantUuid, year, dateString);
@@ -899,30 +891,18 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    }
 	}
 	
-	private void updateExistingRecordDynamic(UUID id, Map<String, Object> payload, Set<String> exclude, boolean isCrackerVmd) {
+	private void updateExistingRecordDynamic(UUID id, Map<String, Object> payload, Set<String> exclude) {
 	    StringBuilder sql = new StringBuilder("UPDATE DecokeRunLength SET ");
 	    Map<String, Object> params = new HashMap<>();
 	    boolean first = true;
 
-	for (Map.Entry<String, Object> entry : payload.entrySet()) {
+	    for (Map.Entry<String, Object> entry : payload.entrySet()) {
 	        String key = entry.getKey();
-			
-			if(exclude.contains(key) || key.contains("Actual")) continue;
-	     
+	        if (exclude.contains(key) || key.contains("Actual")) continue; 
 
-	        String dbColumn;
-	        if (isCrackerVmd && key.matches("H10[1-6] (Actual|Proposed)")) {
-	            String[] parts = key.split(" ", 2);
-	            String hPart = parts[0]; // e.g. "H101"
-	            String type  = parts[1]; // "Actual" or "Proposed"
-	            int lastDigit = Character.getNumericValue(hPart.charAt(hPart.length() - 1));
-	            int colNum = lastDigit + 9;
-	            dbColumn = "H" + colNum + "_" + type;
-	        } else {
-	            dbColumn = key.replace(" ", "_");
-	        }
-
+	        String dbColumn = key.replace(" ", "_");
 	        if (!first) sql.append(", ");
+	        
 	        String paramName = "p_" + dbColumn.replaceAll("[^a-zA-Z0-9]", "");
 	        sql.append("[").append(dbColumn).append("] = :").append(paramName);
 	        params.put(paramName, entry.getValue());
@@ -1107,44 +1087,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 				stmt.setString(1, plantId); 
 				stmt.setString(2, aopYear); 
 
-			//	int rowsAffected = stmt.executeUpdate();
-			int rowsAffected = 0;
-			boolean hasResultSet = stmt.execute();
-			if (hasResultSet) {
-				ResultSet rs = stmt.getResultSet();
-				ResultSetMetaData rsmd = rs.getMetaData();
-				int columnCount = rsmd.getColumnCount();
-
-				List<Map<String, Object>> columns = new ArrayList<>();
-				for (int i = 1; i <= columnCount; i++) {
-					String columnName = rsmd.getColumnLabel(i);
-					Map<String, Object> meta = new HashMap<>();
-					meta.put("field", columnName);
-					meta.put("title", columnName);
-					meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
-					columns.add(meta);
-				}
-
-				List<Map<String, Object>> data = new ArrayList<>();
-				while (rs.next()) {
-					Map<String, Object> row = new LinkedHashMap<>();
-					for (int i = 1; i <= columnCount; i++) {
-						String colName = rsmd.getColumnLabel(i);
-						Object value = rs.getObject(i);
-						row.put(colName, value != null ? value : "");
-					}
-					data.add(row);
-				}
-
-				Map<String, Object> finalData = new HashMap<>();
-				finalData.put("data", data);
-				finalData.put("columns", columns);
-				aopMessageVM.setData(finalData);
-			} else {
-				 rowsAffected = stmt.getUpdateCount();
-				 aopMessageVM.setData(rowsAffected);
-				System.out.println("Rows affected: " + rowsAffected);
-			}
+				int rowsAffected = stmt.executeUpdate();
 
 				if (!connection.getAutoCommit()) {
 					connection.commit();
@@ -1167,7 +1110,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("SP Executed successfully");
-			//	aopMessageVM.setData(rowsAffected);
+				aopMessageVM.setData(rowsAffected);
 				return aopMessageVM;
 
 			} catch (SQLException e) {
@@ -1822,6 +1765,75 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		}
 	}
 
+	@Override
+	@Transactional
+	public AOPMessageVM getDecokingPlanningNotification(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID: " + plantId));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new RuntimeException("Site not found for plant: " + plantId));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new RuntimeException("Vertical not found for plant: " + plantId));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_DecokingPlanningNotification";
+			String callSql = "{call " + "[RIL.AOP].[dbo]." + storedProcedure + "(?, ?)}";
+
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+
+				stmt.setString(1, plantId);
+				stmt.setString(2, aopYear);
+
+				boolean hasResultSet = stmt.execute();
+				if (hasResultSet) {
+					ResultSet rs = stmt.getResultSet();
+					ResultSetMetaData rsmd = rs.getMetaData();
+					int columnCount = rsmd.getColumnCount();
+
+					List<Map<String, Object>> columns = new ArrayList<>();
+					for (int i = 1; i <= columnCount; i++) {
+						String columnName = rsmd.getColumnLabel(i);
+						Map<String, Object> meta = new HashMap<>();
+						meta.put("field", columnName);
+						meta.put("title", columnName);
+						meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+						columns.add(meta);
+					}
+
+					List<Map<String, Object>> data = new ArrayList<>();
+					while (rs.next()) {
+						Map<String, Object> row = new LinkedHashMap<>();
+						for (int i = 1; i <= columnCount; i++) {
+							String colName = rsmd.getColumnLabel(i);
+							Object value = rs.getObject(i);
+							row.put(colName, value != null ? value : "");
+						}
+						data.add(row);
+					}
+
+					Map<String, Object> finalData = new HashMap<>();
+					finalData.put("data", data);
+					finalData.put("columns", columns);
+					aopMessageVM.setData(finalData);
+				}
+
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("Data fetched successfully");
+				return aopMessageVM;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				throw new RuntimeException("Error executing stored procedure: " + storedProcedure, e);
+			}
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch decoking planning notification data", ex);
+		}
+	}
 
 
 

@@ -10,11 +10,17 @@ import ValueFormatterPhaseTwo, {
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from 'components/aop-phase-two/services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import { downloadBase64Excel, downloadBlobExcel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
+  const EXCEL_NAME = generateExcelName(
+    dataGridStore,
+    'Steady_State_Consumption',
+  )
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -376,14 +382,10 @@ const SteadyStateConsumption = () => {
           PLANT_ID,
           AOP_YEAR,
         )
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `Steady_State_Consumption_${AOP_YEAR}.xlsx`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      downloadBlobExcel(
+          blob,
+          EXCEL_NAME,
+        )
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -407,20 +409,40 @@ const SteadyStateConsumption = () => {
     })
 
     try {
-      const importedData =
+      const response =
         await SteadyStateConsumptionApiService.importSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           file,
         )
-      setRows([])
-      setOriginalRows([])
-      setSnackbarData({
-        message: 'Data imported successfully!',
-        severity: 'success',
-      })
-      await fetchData()
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        await fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        // Partial save — download error file
+        downloadBase64Excel(
+          response.data,
+          'Error File Steady State Consumption.xlsx',
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Import failed. Please try again.',
+          severity: 'error',
+        })
+      }
     } catch (error) {
       console.error('Error importing steady state consumption data:', error)
       setSnackbarData({
@@ -474,7 +496,7 @@ const SteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}

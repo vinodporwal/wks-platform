@@ -10,6 +10,7 @@ import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/comp
 import { useDebounce } from 'hooks/useDebounce'
 
 // ── Constants ────────────────────────────────────────────────────────────────
+const SR_MAPPING_ROLE = 'sr_mapping'
 
 const PREFIXES = ['sender', 'receiver']
 
@@ -133,6 +134,12 @@ const SenderReceiverMapping = () => {
     screenTitle,
     jmdSelectedPlants,
   } = dataGridStore
+
+  const isSRMappingRole = useMemo(
+    () => keycloak?.realmAccess?.roles?.includes(SR_MAPPING_ROLE) || false,
+    [keycloak?.realmAccess?.roles],
+  )
+
   const PLANT_ID = plantObject?.id
   const lowerSiteName = siteObject?.name?.toLowerCase()
   const AOP_YEAR = year?.selectedYear
@@ -159,6 +166,35 @@ const SenderReceiverMapping = () => {
             },
           ],
     [jmdSelectedPlants, plantObject, lowerSiteName],
+  )
+
+  const ActionCell = ({ dataItem, tdProps }) => (
+    <td
+      {...tdProps}
+      style={{
+        ...tdProps?.style,
+        textAlign: 'center',
+        verticalAlign: 'middle',
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Tooltip title='Delete Row'>
+          <span>
+            <IconButton
+              size='medium'
+              color='error'
+              disabled={!isSRMappingRole}
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='medium' />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
+    </td>
   )
 
   // ── Data Fetching ──────────────────────────────────────────────────────────
@@ -242,6 +278,7 @@ const SenderReceiverMapping = () => {
         remarks: item?.remarks || '',
         id: item?.id || index + 1,
         apiId: item?.id,
+        isEditable: false,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -488,7 +525,7 @@ const SenderReceiverMapping = () => {
       title: 'CPP Plant',
       widthT: 200,
       minWidth: 200,
-      editable: true,
+      editable: isSRMappingRole,
       type: 'select',
       searchable: true,
       displayMode: 'label',
@@ -503,7 +540,7 @@ const SenderReceiverMapping = () => {
       dynamicOptions: true,
       displayMode: 'label',
       getOptions: getFilteredCostCenters,
-      editable: true,
+      editable: isSRMappingRole,
     },
     {
       field: 'senderCostCenterCode',
@@ -522,7 +559,7 @@ const SenderReceiverMapping = () => {
       dynamicOptions: true,
       displayMode: 'label',
       getOptions: getFilteredPlants,
-      editable: true,
+      editable: isSRMappingRole,
     },
     {
       field: 'senderPlantCode',
@@ -541,7 +578,7 @@ const SenderReceiverMapping = () => {
       dynamicOptions: true,
       displayMode: 'label',
       getOptions: getFilteredSenderUtilities,
-      editable: true,
+      editable: isSRMappingRole,
     },
     {
       field: 'senderUtilityCode',
@@ -564,7 +601,7 @@ const SenderReceiverMapping = () => {
       title: 'Receiver Cost Center',
       widthT: 180,
       minWidth: 180,
-      editable: true,
+      editable: isSRMappingRole,
       type: 'select',
       dynamicOptions: true,
       displayMode: 'label',
@@ -587,7 +624,7 @@ const SenderReceiverMapping = () => {
       dynamicOptions: true,
       displayMode: 'label',
       getOptions: getFilteredPlants,
-      editable: true,
+      editable: isSRMappingRole,
     },
     {
       field: 'receiverPlantCode',
@@ -606,7 +643,7 @@ const SenderReceiverMapping = () => {
       dynamicOptions: true,
       displayMode: 'label',
       getOptions: getFilteredReceiverUtilities,
-      editable: true,
+      editable: isSRMappingRole,
       hidden: false,
     },
     {
@@ -632,7 +669,18 @@ const SenderReceiverMapping = () => {
       widthT: 200,
       minWidth: 200,
       type: 'textarea',
-      editable: true,
+      editable: isSRMappingRole,
+    },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: ActionCell,
+      editable: isSRMappingRole,
+      // locked: true,
+      // lockPosition: 'right',
     },
   ]
 
@@ -659,6 +707,7 @@ const SenderReceiverMapping = () => {
         await UtilityPlantApiServiceV2.deleteSRMapping(
           keycloak,
           rowToDelete.apiId,
+          AOP_YEAR,
         )
       }
       handleDeleteRow(rowToDelete)
@@ -681,32 +730,6 @@ const SenderReceiverMapping = () => {
     }
   }
 
-  const DeleteActionCell = ({ dataItem, tdProps }) => (
-    <td
-      {...tdProps}
-      style={{
-        ...tdProps?.style,
-        textAlign: 'center',
-        verticalAlign: 'middle',
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Tooltip title='Delete Row'>
-          <IconButton
-            size='small'
-            color='error'
-            onClick={() => {
-              setRowToDelete(dataItem)
-              setDeleteDialogOpen(true)
-            }}
-          >
-            <DeleteOutlineIcon fontSize='small' />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </td>
-  )
-
   // ── Permissions ───────────────────────────────────────────────────────────
 
   const permissions = {
@@ -716,6 +739,7 @@ const SenderReceiverMapping = () => {
     editButton: true,
     saveBtn: true,
     allAction: true,
+    disableActionButtons: !isSRMappingRole,
     downloadExcelBtnFromUI: false,
     ExcelName: 'Sender Receiver Mapping',
     showImport: false,
@@ -930,7 +954,6 @@ const SenderReceiverMapping = () => {
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
           setCurrentRowId={() => {}}
-          customActionCell={DeleteActionCell}
         />
       </Stack>
 

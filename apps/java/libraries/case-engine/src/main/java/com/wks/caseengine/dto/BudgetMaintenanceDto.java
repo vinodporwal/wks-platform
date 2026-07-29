@@ -20,15 +20,13 @@ public class BudgetMaintenanceDto {
 
     private UUID plantId;
 
-    private UUID masterId;
-
     private String plantName;
 
-    private String costName;  // material name
+    private String costName;
 
-    private String budgetType; // sub category
+    private String budgetType;
 
-    private String budgetCategory; // category
+    private String budgetCategory;
 
     private Double apr;
 
@@ -63,8 +61,6 @@ public class BudgetMaintenanceDto {
 	private String updatedBy;
 	
 	private Date modifiedOn;
-
-    private Double total;
 	
 	private String saveStatus;
 	private String errDescription;

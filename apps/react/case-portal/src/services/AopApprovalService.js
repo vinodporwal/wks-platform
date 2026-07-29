@@ -23,11 +23,15 @@ function authHeaders(keycloak) {
 }
 
 // Start a new AOP approval workflow for a plant + year (409 if one already exists).
-async function start(keycloak, plantId, year) {
-  const url = `${base()}/start?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+async function start(keycloak, plantId, year, remark = '', actorRole = '') {
+  await keycloak.updateToken(30)
+  let url = `${base()}/start?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+  if (remark) url += `&remark=${encodeURIComponent(remark)}`
+  if (actorRole) url += `&actorRole=${encodeURIComponent(actorRole)}`
   const resp = await fetch(url, {
     method: 'POST',
     headers: authHeaders(keycloak),
+    body: JSON.stringify({ remark, actorRole }),
   })
   return json(keycloak, resp)
 }

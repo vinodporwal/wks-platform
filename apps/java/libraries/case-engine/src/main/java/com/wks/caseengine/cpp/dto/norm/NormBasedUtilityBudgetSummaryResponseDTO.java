@@ -20,6 +20,12 @@ public class NormBasedUtilityBudgetSummaryResponseDTO {
     @JsonProperty("utilityId")
     private String utilityId;
 
+    @JsonProperty("cppPlantName")
+    private String cppPlantName;
+
+    @JsonProperty("cppPlantId")
+    private String cppPlantId;
+
     @JsonProperty("uom")
     private String uom;
 
