@@ -23,6 +23,7 @@ import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/
 import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
 import MonthCell from './Utilities-Kendo/MonthCell'
 import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
+import { NoSpinnerIntegerEditor } from './Utilities-Kendo/integerColumns'
 import ProductCell from './Utilities-Kendo/ProductCell'
 import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
 
@@ -119,30 +120,31 @@ const KendoDataTablesCracker = ({
   summaryEdited,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleGradeChange = () => {},
-  handleRemarkCellClick = () => {},
+  handleDeleteSelected = () => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleGradeChange = () => { },
+  handleRemarkCellClick = () => { },
   selectedUsers = [],
   groupBy = null,
   note = '',
   titleName = '',
   allProducts = [],
   allMonths = [],
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
-  onLoad = () => {},
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
+  onLoad = () => { },
+  disableInnerNotification = false,
 }) => {
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -176,11 +178,11 @@ const KendoDataTablesCracker = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -280,8 +282,10 @@ const KendoDataTablesCracker = ({
   }
   const itemChange = useCallback(
     (e) => {
+
       const { dataItem, field, value } = e
       const itemId = dataItem.id || dataItem.Id
+
 
       // Ignore group header expand/collapse events — they are not real edits
       if (!field || dataItem?.items) {
@@ -289,6 +293,7 @@ const KendoDataTablesCracker = ({
       }
 
       setIsRowEdited(true)
+
 
       setRows((prev) =>
         prev.map((r) => {
@@ -529,23 +534,49 @@ const KendoDataTablesCracker = ({
           )
         }
         if (dateFieldsCracker.includes(col.field)) {
+          const isColEditable = col.editable !== false
           return (
             <GridColumn
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
+              editable={isColEditable}
               cells={{
-                edit: {
-                  date: DateOnlyPicker,
-                },
+                edit: isColEditable ? { date: DateOnlyPicker } : undefined,
                 data: toolTipRenderer,
                 headerCell: SimpleHeaderWithTooltip,
               }}
               format='{0:dd-MM-yyyy}'
-              editor='date'
+              editor={isColEditable ? 'date' : undefined}
               hidden={col.hidden}
               sortable={false}
               width={setWidth(col.minWidth || col.widthT || 130)}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+            />
+          )
+        }
+        if (col.type === 'integer' || col.field === 'Duration') {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              width={setWidth(col.minWidth || col.widthT || 130)}
+              hidden={col.hidden}
+              className={
+                col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
+              }
+              editable={col?.editable !== false}
+              headerClassName={isActive ? 'active-column' : ''}
+              cells={{
+                edit: { text: NoSpinnerIntegerEditor },
+                data: toolTipRenderer,
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+              filter='numeric'
+              format={col.format}
+              sortable={false}
             />
           )
         }
@@ -867,7 +898,7 @@ const KendoDataTablesCracker = ({
             >
               {/* CASE 1: Permission TRUE ? Full Header UI */}
               {permissions?.showTitleNameBusiness ||
-              permissions?.showTitleName ? (
+                permissions?.showTitleName ? (
                 <Typography
                   component='div'
                   sx={{
@@ -1044,7 +1075,7 @@ const KendoDataTablesCracker = ({
                     rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility
+                      !permissions?.showCalculateVisibility
                   }
                   className='btn-calculate'
                   startIcon={
@@ -1089,12 +1120,14 @@ const KendoDataTablesCracker = ({
           </Button>
         </Box>
       )}
-      <Notification
-        open={snackbarOpen}
-        message={snackbarData?.message || ''}
-        severity={snackbarData?.severity || 'info'}
-        onClose={() => setSnackbarOpen(false)}
-      />
+      {!disableInnerNotification && (
+        <Notification
+          open={snackbarOpen}
+          message={snackbarData?.message || ''}
+          severity={snackbarData?.severity || 'info'}
+          onClose={() => setSnackbarOpen(false)}
+        />
+      )}
       <CompactDialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}

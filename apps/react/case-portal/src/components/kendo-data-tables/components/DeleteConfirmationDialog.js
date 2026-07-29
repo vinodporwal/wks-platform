@@ -90,7 +90,7 @@ const DeleteConfirmationDialog = ({
         </Box>
 
         {/* File name highlight */}
-        {selectedRowForDelete?.name && (
+        {(selectedRowForDelete?.name || selectedRowForDelete?.documentName) && (
           <Box sx={{
             p: 1.25,
             borderRadius: 1.5,
@@ -100,7 +100,7 @@ const DeleteConfirmationDialog = ({
             mb: 1.5,
           }}>
             <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#b71c1c', wordBreak: 'break-all' }}>
-              {selectedRowForDelete.name}
+              {selectedRowForDelete.documentName || selectedRowForDelete.name}
             </Typography>
           </Box>
         )}

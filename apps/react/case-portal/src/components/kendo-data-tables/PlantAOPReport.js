@@ -4,6 +4,7 @@ import SafetyImprovementInitiative from './SafetyImprovementInitiative'
 import ProfitImprovementInitiative from './ProfitImprovementInitiative'
 import ReliabilityImprovementInitiative from './ReliabilityImprovementInitiative'
 import PlantTeam from './PlantTeam'
+import PlantSafetyPerformanceTarget from './PlantSafetyPerformanceTarget'
 
 const PlantAOPReport = ({ permissions }) => {
   const [tabIndex, setTabIndex] = useState(0)
@@ -25,17 +26,17 @@ const PlantAOPReport = ({ permissions }) => {
         />
       )}
       {tabIndex === 0 && <PlantTeam onlyPlantTeam />}
-
-      {tabIndex === 1 && (
+      {tabIndex === 1 && <PlantSafetyPerformanceTarget  />}
+      {tabIndex === 2 && (
         <SafetyImprovementInitiative permissions={permissions} />
       )}
-      {tabIndex === 2 && (
+      {tabIndex === 3 && (
         <ProfitImprovementInitiative permissions={permissions} />
       )}
-      {tabIndex === 3 && (
+      {tabIndex === 4 && (
         <ReliabilityImprovementInitiative permissions={permissions} />
       )}
-      {tabIndex === 4 && <PlantTeam onlyPeopleInitiative />}
+      {tabIndex === 5 && <PlantTeam onlyPeopleInitiative />}
     </div>
   )
 }

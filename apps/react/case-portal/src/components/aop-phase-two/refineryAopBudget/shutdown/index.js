@@ -151,11 +151,60 @@ const Shutdown = ({ permissions }) => {
       setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
       return
     }
+    // Custom check: Ensure all columns are filled for modified rows, indicating specific missing fields
+    for (const row of modifiedData) {
+      const missingFields = []
+      if (!row.siteName || String(row.siteName).trim() === '') {
+        missingFields.push('Site')
+      }
+      if (!row.plantName || String(row.plantName).trim() === '') {
+        missingFields.push('Plant')
+      }
+      if (row.sdTotalDurationDays === undefined || row.sdTotalDurationDays === null || String(row.sdTotalDurationDays).trim() === '') {
+        missingFields.push('SD Total Duration Days')
+      }
+      if (!row.dateOfCommencement) {
+        missingFields.push('Date of Commencement')
+      }
+      if (!row.remark || String(row.remark).trim() === '') {
+        missingFields.push('Purpose of Shutdown')
+      }
+
+      if (missingFields.length > 0) {
+        const rowIndex = rows.findIndex((r) => r.id === row.id)
+        const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+        const displayName = row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : row.siteName
+            ? `${row.siteName} (${rowNumLabel})`
+            : rowNumLabel
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Remaining fields to fill for ${displayName}: ${missingFields.join(', ')}`,
+          severity: 'error',
+        })
+        return
+      }
+    }
+
+    // Create unique display name for standard validation to handle duplicate plants clearly
+    const modifiedDataForValidation = modifiedData.map((row) => {
+      const rowIndex = rows.findIndex((r) => r.id === row.id)
+      const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+      return {
+        ...row,
+        plantNameUnique: row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : rowNumLabel,
+      }
+    })
+
     const validationError = validateRowDataWithRemarks(
-      modifiedData,
+      modifiedDataForValidation,
       originalRows,
-      ['sdTotalDurationDays', 'dateOfCommencement', 'remark'],
-      'plantName',
+      ['sdTotalDurationDays', 'dateOfCommencement'],
+      'plantNameUnique',
       'remark',
     )
 
@@ -231,7 +280,7 @@ const Shutdown = ({ permissions }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      const EXCEL_NAME = `Shutdown.xlsx`
+      const EXCEL_NAME = `Refinery_Shutdown.xlsx`
       await ShutdownApiService.exportShutdownData(
         keycloak,
         PLANT_ID,
@@ -321,37 +370,37 @@ const Shutdown = ({ permissions }) => {
   )
 
   const deleteRowData = async (paramsForDelete) => {
-      setLoading(true)
-  
-      try {
-        const { idFromApi, id } = paramsForDelete
-        const deleteId = id
-  
-        if (!idFromApi) {
-          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-          setModifiedCells((prev) => {
-            const newModifiedCells = { ...prev }
-            delete newModifiedCells[deleteId]
-            return newModifiedCells
-          })
-        }
-  
-        if (idFromApi) {
-          await ShutdownApiService.deleteShutdownData(idFromApi, keycloak, PLANT_ID)
-          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Record Deleted successfully!',
-            severity: 'success',
-          })
-          fetchData()
-        } else {
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('Error deleting Record', error)
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
       }
+
+      if (idFromApi) {
+        await ShutdownApiService.deleteShutdownData(idFromApi, keycloak, PLANT_ID)
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
     }
+  }
 
   const adjustedPermissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },

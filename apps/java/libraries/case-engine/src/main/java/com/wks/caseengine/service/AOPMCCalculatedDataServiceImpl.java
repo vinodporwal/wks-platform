@@ -1896,8 +1896,11 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-        
+        Sites site = siteRepository.findById(plant.getSiteFkId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
 				boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+				boolean crackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs = new ArrayList<>();
@@ -1926,6 +1929,10 @@ boolean isValidTable = false;
    if(meg) {
 	isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity")
 	|| tableId.equalsIgnoreCase("DesignCapacity");
+   }
+
+   else if(crackerC2) {
+	isValidTable = tableId.equalsIgnoreCase("DesignCapacity");
    }
         else {
 			isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity");
@@ -2309,6 +2316,7 @@ if (!isValidTable) {
 
 			boolean pe = vertical.getName().equalsIgnoreCase("PE");
 			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2383,7 +2391,7 @@ if (!isValidTable) {
 	                }
 	            }
 				// seperate export method to handle grid specific locking
-	            if(pe || meg) {
+	            if(pe || meg || crackerC2) {
 					List<String> editableGrids = new ArrayList<>();
 					if(pe) {
 						editableGrids.add("proposedoperatingcapacity"); 
@@ -2392,6 +2400,11 @@ if (!isValidTable) {
 					if(meg) {
 						editableGrids.addAll(Arrays.asList("DesignCapacity", "ProposedOperatingCapacity")); 
 					}
+
+					if(crackerC2) {
+						editableGrids.addAll(Arrays.asList("DesignCapacity")); 
+					}
+					// seperate exoport method to disable grid based on editableGrids
 	            	return excelUtilityService.generateFlexibleExcelPP(structure, data, editableGrids);
 
 	            }
