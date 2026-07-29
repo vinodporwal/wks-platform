@@ -570,7 +570,7 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                     boolean isGridDisabled = false;
                     String cleanedTableId = tableId.substring(0, tableId.lastIndexOf('_'));
                     if("pvcDmd".equalsIgnoreCase(verticalSite)) {
-                        isGridDisabled = "DesignCapacity".equalsIgnoreCase(cleanedTableId) || "MaxAchievedCapacity".equalsIgnoreCase(cleanedTableId);
+                        isGridDisabled = "DesignCapacity".equalsIgnoreCase(cleanedTableId) || "MaxAchievedCapacity".equalsIgnoreCase(cleanedTableId) || "SummaryProposedOperatingCapacity".equalsIgnoreCase(cleanedTableId);
                     }
 
                     // Write structure rows
