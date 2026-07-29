@@ -83,7 +83,7 @@ const ManualEntryDyanamic = ({ startDate, endDate }) => {
     if (PLANT_ID && AOP_YEAR && PERIOD_FROM && PERIOD_TO) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, startDate, endDate])
+  }, [PLANT_ID, AOP_YEAR])
 
   const fetchData = async () => {
     setLoading(true)
@@ -177,7 +177,7 @@ const ManualEntryDyanamic = ({ startDate, endDate }) => {
           message: 'Calculation completed successfully!',
           severity: 'success',
         })
-        await fetchData()
+        // await fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -312,7 +312,7 @@ const ManualEntryDyanamic = ({ startDate, endDate }) => {
     titleName: 'Manual Production',
     showDropdown: false,
     remarksEditable: true,
-    showCalculate: true,
+    showCalculate: false,
   }
 
   return (
@@ -332,7 +332,7 @@ const ManualEntryDyanamic = ({ startDate, endDate }) => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
