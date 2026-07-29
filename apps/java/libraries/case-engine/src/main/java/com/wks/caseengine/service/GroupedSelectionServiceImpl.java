@@ -55,7 +55,7 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
                 .name(rs.getString("Name"))
                 .displayName(rs.getString("DisplayName"))
                 .uom(rs.getString("UOM"))
-                .value(rs.getString("Value"))
+             //   .value(rs.getString("Value"))
                 .status(Boolean.parseBoolean(rs.getString("Expression"))) // parse the string into boolean
                 .dependantAttributeId(rs.getString("DependantAttributeId") != null ? UUID.fromString(rs.getString("DependantAttributeId")) : null)
                 .normParameterTypeFkId(rs.getString("NormParameterType_FK_Id") != null ? UUID.fromString(rs.getString("NormParameterType_FK_Id")) : null)
@@ -92,13 +92,13 @@ public class GroupedSelectionServiceImpl implements GroupedSelectionService {
                             "SET Value = ?, ModifiedOn = GETDATE(), ModifiedBy = ? " +
                             "WHERE NormparamterFkId = ? AND AopYear = ? AND PlantFkId = ?";
                         jdbcTemplate.update(updateSql,
-                            String.valueOf(dto.isStatus()), userName, dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
+                            dto.isStatus(), userName, dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString());
                     } else {
                         String insertSql = "INSERT INTO MaterialGroupedSelection " +
-                            "(Id, NormparamterFkId, AopYear, PlantFkId, Value, ModifiedOn, ModifiedBy) " +
+                            "(Id, Value, NormparamterFkId, AopYear, PlantFkId, ModifiedOn, ModifiedBy) " +
                             "VALUES (?, ?, ?, ?, ?, GETDATE(), ?)";
                         jdbcTemplate.update(insertSql,
-                            UUID.randomUUID().toString(), dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString(), String.valueOf(dto.isStatus()), userName);
+                            UUID.randomUUID().toString(), dto.isStatus(), dto.getId().toString(), dto.getAopYear(), dto.getPlantFkId().toString(), userName);
                     }
                 }
             }

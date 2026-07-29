@@ -27,7 +27,9 @@ import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
+import com.wks.caseengine.dto.GroupMaterialDetailsDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ConfigurationService;
 
@@ -111,6 +113,12 @@ public class ConfigurationController {
 	@GetMapping(value="/production-configuration-basis")
 	public AOPMessageVM getAopBasis(@RequestParam String year,@RequestParam String plantFKId, @RequestParam(required = false) String type) {
 		return configurationService.getAopBasis(year, plantFKId, type);
+	}
+
+	// ref : /production-configuration-basis  | added new column. april value as startdate and may value as ConstantValue
+	@GetMapping(value="/data-config")
+	public AOPMessageVM getAopBasiswithStartDate(@RequestParam String year,@RequestParam String plantFKId, @RequestParam(required = false) String type) {
+		return configurationService.getAopBasiswithStartDate(year, plantFKId, type);
 	}
 
 
@@ -508,6 +516,26 @@ public class ConfigurationController {
 	@GetMapping(value = "/calculate-combine")
 	public AOPMessageVM calculateCombine(@RequestParam String plantId, @RequestParam String aopYear) {
 		return configurationService.calculateCombine(UUID.fromString(plantId), aopYear);
+	}
+
+	@GetMapping(value = "/cracker-c2-optimizing-variables-dropdown")
+	public AOPMessageVM getCrackerC2OptimizingVariablesDropdown() {
+		return configurationService.getCrackerC2OptimizingVariablesDropdown();
+	}
+
+	@PostMapping(value = "/spyro-input-min-max")
+	public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(@RequestParam String year,@RequestParam String plantFKId, @RequestBody List<SpyroInputMinMaxDTO> configurationDTOList) {
+		return configurationService.saveSpyroInputMinMax(year, plantFKId, configurationDTOList);
+	}
+
+	@GetMapping(value = "/group-material-details")
+	public AOPMessageVM getGroupMaterialDetails(@RequestParam String year,@RequestParam String plantFKId) {
+		return configurationService.getGroupMaterialDetails(year,plantFKId);
+	}
+
+	@PostMapping(value = "/group-material-details")
+	public AOPMessageVM saveGroupMaterialDetails(@RequestParam String year, @RequestBody List<GroupMaterialDetailsDTO> dtoList) {
+		return configurationService.saveGroupMaterialDetails(year, dtoList);
 	}
 
 }

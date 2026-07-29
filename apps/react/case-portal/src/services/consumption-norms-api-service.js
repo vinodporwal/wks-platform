@@ -12,6 +12,7 @@ export const ConsumptionNormsApiService = {
   proposedNormsImport,
   slowdownconsumptionExportMEG,
   ExcelSlowdownConsumptionMEG,
+  getProposedAOPNormsGrades,
 }
 async function saveAOPConsumptionNorm(PLANT_ID, shutdownDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/overall-consumption`
@@ -288,6 +289,21 @@ async function ExcelSlowdownConsumptionMEG(file, keycloak, PLANT_ID, AOP_YEAR) {
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
     console.error('Error importing Optimizer Input Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+async function getProposedAOPNormsGrades(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/proposed-aop/grades?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

@@ -181,12 +181,12 @@ import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/ov
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
 import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
 import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
-import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUpload'
 import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
 import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
 import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
 import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
 import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
+import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 
 // Naphthasplitter Ended
 
