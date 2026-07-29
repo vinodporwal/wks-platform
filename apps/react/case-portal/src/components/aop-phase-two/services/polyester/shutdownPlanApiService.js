@@ -8,6 +8,8 @@ export const ShutdownPlanApiService = {
   exportShutdownPlan,
   importShutdownPlan,
   deleteMultipleShutdown,
+  exportShutdownNonProduct,
+  importShutdownNonProduct,
 }
 
 // ========================|| PE Shutdown Plan APIs ||=====================================//
@@ -210,6 +212,80 @@ async function importShutdownPlan(file, keycloak, plantId, year) {
  * @param {string} PLANT_ID   - Plant ID
  * @returns {Promise<string>}
  */
+
+/**
+ * Export all shutdown activities for a plant as Excel (non-product)
+ * GET /task/shutdown-export-non-product?year=&plantId=&maintenanceTypeName=Shutdown
+ *
+ * @param {Object} keycloak      - Keycloak session
+ * @param {string} plantId       - Plant UUID
+ * @param {string} year          - AOP year
+ * @param {string} excelTitle    - Filename prefix
+ * @returns {Promise<void>}
+ */
+async function exportShutdownNonProduct(keycloak, plantId, year, excelTitle) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-export-non-product` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    `&maintenanceTypeName=Shutdown`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) throw new Error(`Export failed: ${resp.status}`)
+
+    const blob = await resp.blob()
+    const blobUrl = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = `${excelTitle}_Shutdown Activities.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(blobUrl)
+  } catch (e) {
+    console.error('Error exporting shutdown non-product:', e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Import shutdown activities for a plant from Excel (non-product)
+ * POST /task/shutdown-import-non-product?plantId=&year=&maintenanceTypeName=Shutdown
+ *
+ * @param {File}   file      - Excel file to upload
+ * @param {Object} keycloak  - Keycloak session
+ * @param {string} plantId   - Plant UUID
+ * @param {string} year      - AOP year
+ * @returns {Promise<{code, message, data}>}
+ */
+async function importShutdownNonProduct(file, keycloak, plantId, year) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-import-non-product` +
+    `?plantId=${encodeURIComponent(plantId)}` +
+    `&year=${encodeURIComponent(year)}` +
+    `&maintenanceTypeName=Shutdown`
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body: formData })
+    return resp.json()
+  } catch (e) {
+    console.error('Error importing shutdown non-product:', e)
+    return Promise.reject(e)
+  }
+}
 
 async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
   const url = `${Config.CaseEngineUrl}/task/shutdown?plantMaintenanceTransactionIds=${ids.join(',')}&plantId=${PLANT_ID}`

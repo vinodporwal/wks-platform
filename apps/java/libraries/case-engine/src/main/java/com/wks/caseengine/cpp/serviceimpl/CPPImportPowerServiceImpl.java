@@ -49,6 +49,9 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
     private CPPImportPowerRepository repository;
 
     @Autowired
+    private com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository powerSourceOperationHoursRepository;
+
+    @Autowired
     private NormParametersRepository normParametersRepository;
 
     @Autowired
@@ -1003,6 +1006,24 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             CPPImportPower savedImportPower = repository.save(importPower);
             logger.info("[ADD Source] CPPImportPower created with Id: {}", savedImportPower.getId());
 
+            // --- Step 4: Create CPPPowerSourceOperationHours entry with zero values ---
+            com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours opHours = new com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours();
+            opHours.setId(UUID.randomUUID());
+            opHours.setAssetFkId(savedImportPower.getId());
+            opHours.setApr(0.0);  opHours.setMay(0.0);  opHours.setJun(0.0);
+            opHours.setJul(0.0);  opHours.setAug(0.0);  opHours.setSep(0.0);
+            opHours.setOct(0.0);  opHours.setNov(0.0);  opHours.setDec(0.0);
+            opHours.setJan(0.0);  opHours.setFeb(0.0);  opHours.setMar(0.0);
+            opHours.setAopYear(request.getAopYear());
+            opHours.setRemarks(null);
+            opHours.setSiteFkId(siteFkId);
+            opHours.setVerticalFkId(verticalFkId);
+            opHours.setPlantFkId(request.getCppPlant());
+            opHours.setCreatedDate(LocalDateTime.now());
+            opHours.setModifiedDate(LocalDateTime.now());
+            powerSourceOperationHoursRepository.save(opHours);
+            logger.info("[ADD Source] CPPPowerSourceOperationHours created with Id: {} for PowerSource_FK_Id: {}", opHours.getId(), savedImportPower.getId());
+
             Map<String, Object> data = new HashMap<>();
             data.put("normParameterId", savedNorm.getId());
             data.put("importPowerId", savedImportPower.getId());
@@ -1141,6 +1162,13 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             norm.setIsVisible(false);
             normParametersRepository.save(norm);
             logger.info("[DELETE Source] NormParameters {} marked as not visible", normParameterId);
+
+            // Also delete corresponding CPPPowerSourceOperationHours entries
+            CPPImportPower importPower = repository.findByNormParameterFkId(normParameterId);
+            if (importPower != null) {
+                powerSourceOperationHoursRepository.deleteByAssetFkId(importPower.getId());
+                logger.info("[DELETE Source] CPPPowerSourceOperationHours deleted for PowerSource_FK_Id: {}", importPower.getId());
+            }
 
             response.setCode(200);
             response.setMessage("Import power source deleted successfully (soft delete)");

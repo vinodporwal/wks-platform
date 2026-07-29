@@ -15,4 +15,5 @@ public class JMDOperationalHoursRequestDTO {
     
     private List<CPPAssetOperationalHoursResponseDto> powerResponse;
     private List<CPPAssetOperationalHoursResponseDto> steamResponse;
+    private List<CPPAssetOperationalHoursResponseDto> importResponse;
 }

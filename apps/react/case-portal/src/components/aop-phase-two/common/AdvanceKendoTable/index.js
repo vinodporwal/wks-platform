@@ -14,7 +14,9 @@ import '../../css/advance-kendo-table.css'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { handleTabKeyNavigation, applyDateCalculations } from './utility'
+import { useFilterChips } from '../hooks/useFilterChips'
 import RemarkDialog from './components/RemarkDialog'
+import FilterChips from './components/FilterChips'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
@@ -68,6 +70,7 @@ import {
   calculateMonthDuration,
   getMonthStartEndDate,
 } from '../utilities/durationHelpers'
+import { convertFromScientificNotation } from '../commonUtilityFunctions'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -254,6 +257,8 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  showFilters = false,
+  convertScientificValue = false,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -304,7 +309,7 @@ const AdvanceKendoTable = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))
@@ -1076,7 +1081,11 @@ const AdvanceKendoTable = ({
       return (
         <td
           {...tdProps}
-          title={value}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
           style={{
             ...tdProps?.style,
           }}
@@ -1105,7 +1114,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
@@ -1144,7 +1155,14 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
+        >
           {formattedValue}
         </td>
       )
@@ -1213,7 +1231,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
           color:
@@ -1338,6 +1358,13 @@ const AdvanceKendoTable = ({
     HeaderWithSubtitle.displayName = `HeaderWithSubtitle(${subtitle})`
     return HeaderWithSubtitle
   }
+
+  const {
+    activeFilters,
+    getColumnTitle,
+    handleRemoveFilter,
+    handleClearAllFilters,
+  } = useFilterChips(filter, setFilter, columns)
 
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
 
@@ -2298,13 +2325,19 @@ const AdvanceKendoTable = ({
                 text: (cellProps) => {
                   const { dataItem, field, onChange } = cellProps
                   const checked = !!dataItem[field]
+                  const isCellDisabled =
+                    !isEditable || dataItem?.isEditable === false
                   return (
                     <td style={{ textAlign: 'center', padding: '6px 2px' }}>
                       <Checkbox
                         checked={checked}
+                        disabled={isCellDisabled}
                         onChange={(e) => {
+                          if (isCellDisabled) return
                           const newVal =
-                            e.value ?? e.target?.checked ?? !checked
+                            typeof e.value === 'boolean'
+                              ? e.value
+                              : (e.target?.checked ?? !checked)
                           onChange({ dataItem, field, value: newVal })
                         }}
                         size='medium'
@@ -2315,19 +2348,15 @@ const AdvanceKendoTable = ({
               },
               data: (cellProps) => {
                 const { dataItem, field, tdProps } = cellProps
-                const rowId = dataItem.id
-                const isEdited = Object.prototype.hasOwnProperty.call(
-                  customModifiedCells?.[rowId] || {},
-                  field,
-                )
                 const checked = !!dataItem[field]
+                const isCellDisabled =
+                  !isEditable || dataItem?.isEditable === false
                 return (
                   <td
                     {...tdProps}
                     style={{
                       textAlign: 'center',
                       ...tdProps?.style,
-                      outline: isEdited ? '2px solid orange' : undefined,
                     }}
                     // Prevent the row-click from propagating so the grid
                     // doesn't enter full row-edit mode on checkbox click
@@ -2335,10 +2364,13 @@ const AdvanceKendoTable = ({
                   >
                     <Checkbox
                       checked={checked}
+                      disabled={isCellDisabled}
                       onChange={(e) => {
-                        if (!isEditable) return
-                        const newVal = e.value ?? e.target?.checked ?? !checked
-                        // Call itemChange directly — it's in closure scope
+                        if (isCellDisabled) return
+                        const newVal =
+                          typeof e.value === 'boolean'
+                            ? e.value
+                            : (e.target?.checked ?? !checked)
                         itemChange({ dataItem, field, value: newVal })
                       }}
                       size='medium'
@@ -2885,6 +2917,15 @@ const AdvanceKendoTable = ({
             </Box>
           </Box>
         </Box>
+      )}
+
+      {(showFilters || IS_CPP) && (
+        <FilterChips
+          activeFilters={activeFilters}
+          getColumnTitle={getColumnTitle}
+          handleRemoveFilter={handleRemoveFilter}
+          handleClearAllFilters={handleClearAllFilters}
+        />
       )}
 
       <Collapse in={gridExpanded}>

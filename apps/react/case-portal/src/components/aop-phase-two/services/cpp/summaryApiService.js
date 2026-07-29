@@ -9,8 +9,11 @@ export const SummaryApiService = {
 }
 
 // ===================== || CPP Model Logs APIs || ===================== //
-async function getCppModelLogs(keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/cpp-model-logs`
+async function getCppModelLogs(keycloak, financialYear, plantId) {
+  const plantIdArray = Array.isArray(plantId) ? plantId : [plantId]
+  const plantIdParam = plantIdArray.join(',')
+  const queryParam = `?plantIds=${plantIdParam}${financialYear ? `&financialYear=${financialYear}` : ''}`
+  const url = `${Config.CaseEngineUrl}/task/cpp-model-logs${queryParam}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

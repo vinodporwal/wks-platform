@@ -707,6 +707,7 @@ const SenderReceiverMapping = () => {
         await UtilityPlantApiServiceV2.deleteSRMapping(
           keycloak,
           rowToDelete.apiId,
+          AOP_YEAR,
         )
       }
       handleDeleteRow(rowToDelete)

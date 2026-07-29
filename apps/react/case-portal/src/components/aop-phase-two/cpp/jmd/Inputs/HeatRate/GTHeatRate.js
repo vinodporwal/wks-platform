@@ -284,7 +284,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         setLoading(false)
       }
     },
-    [keycloak, AOP_YEAR],
+    [keycloak, AOP_YEAR, PLANT_ID_LIST],
   )
 
   const permissions = {

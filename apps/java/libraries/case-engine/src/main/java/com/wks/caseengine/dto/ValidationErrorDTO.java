@@ -13,17 +13,27 @@ import lombok.Setter;
 @Builder
 public class ValidationErrorDTO {
 
-	private String materialName;
+    private String materialTypeId;
+    private String materialTypeName;
+    private String materialId;
+    private String materialName;
+    private String uom;
+
     private String month;
     private String year;
-    private double expectedValue;
-    private double actualValue;
-    private double difference;
 
+    // Expected (Weighted Avg)
+    private double expectedValue;
+
+    // Actual (MCU Norm)
+    private double actualValue;
+
+    private double difference;
+    private String matchStatus;
+
+    // Optional (future use)
     private String gradeId;
-    private String gradeName;   // agar available ho to
+    private String gradeName;
     private double enteredValue;
     private double suggestedValue;
-
-	 
 }
