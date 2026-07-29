@@ -1915,6 +1915,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
 	                if (dto.getDiscription() != null) {
 	                    String descTrimmed = dto.getDiscription().trim();
+						// for pvcdmd, only check duplicates within same line
 	                    if (pvcDmd) {
 	                        String lineKey = (line != null) ? line.trim() : "";
 	                        List<String> lineDescriptions = desPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());
@@ -1995,6 +1996,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                        
 	                        if (ldtStart != null && !alreadyFailed) {
 	                            boolean overlapsFile = false;
+								// for pvcdmd, only check overlaps within same line
 	                            if (pvcDmd) {
 	                                String lineKey = (line != null) ? line.trim() : "";
 	                                List<LocalDateTime[]> lineTimeRanges = validTimeRangesPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());

@@ -2241,6 +2241,12 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 		List<LocalDateTime[]> validTimeRanges = new ArrayList<>(); // Stores [ldtStart, ldtEnd] for valid rows
 
+		Plants plant = plantsRepository.findById(plantFKId).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("dmd");
+		
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -2263,23 +2269,23 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				try {
 					dto.setAudityear(year);
 
-					String desc = getStringCellValue(row.getCell(0), dto);
-					dto.setDiscription(desc);
-
-					if (desc != null && dto.getSaveStatus() == null) {
-						boolean exists = dtoList.stream()
-							.anyMatch(existing ->
-								desc.equals(existing.getDiscription())
-								&& "Success".equals(existing.getSaveStatus())
-							);
-						if (exists) {
-							dto.setSaveStatus("Failed");
-							dto.setErrDescription("Description cannot be duplicate");
-						}
+				String desc = getStringCellValue(row.getCell(0), dto);
+				dto.setDiscription(desc);
+// for pvcdmd, only check duplicates within same line
+				if (desc != null && dto.getSaveStatus() == null && !pvcDmd) {
+					boolean exists = dtoList.stream()
+						.anyMatch(existing ->
+							desc.equals(existing.getDiscription())
+							&& "Success".equals(existing.getSaveStatus())
+						);
+					if (exists) {
+						dto.setSaveStatus("Failed");
+						dto.setErrDescription("Description cannot be duplicate");
 					}
-					
-					
-					dto.setProductName(getStringCellValue(row.getCell(1), dto)); 
+				}
+				
+				
+				dto.setProductName(getStringCellValue(row.getCell(1), dto));
 					if (dto.getSaveStatus() == null) {
 						if (dto.getProductName() != null) {
 							UUID productId = normParametersRepository
@@ -2301,14 +2307,30 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 					String view="vwScrn"+verticalName+"GetLineDetails";
 					List<Object[]> object=getLineId(view,plantFKId.toString(),line);
-					if (object != null && !object.isEmpty()) {
-					    Object[] firstRow = object.get(0);
-					    if (firstRow != null && firstRow.length > 1) {
-					        Object element = firstRow[0];
-					        dto.setLineId(element != null ? element.toString() : ""); 
-					    }
+				if (object != null && !object.isEmpty()) {
+				    Object[] firstRow = object.get(0);
+				    if (firstRow != null && firstRow.length > 1) {
+				        Object element = firstRow[0];
+				        dto.setLineId(element != null ? element.toString() : ""); 
+				    }
+				}
+  // for pvcdmd, only check duplicates within same line
+				if (pvcDmd && desc != null && dto.getSaveStatus() == null) {
+					String currentLineId = dto.getLineId();
+					boolean exists = dtoList.stream()
+						.anyMatch(existing ->
+							desc.equals(existing.getDiscription())
+							&& "Success".equals(existing.getSaveStatus())
+							&& currentLineId != null
+							&& currentLineId.equals(existing.getLineId())
+						);
+					if (exists) {
+						dto.setSaveStatus("Failed");
+						dto.setErrDescription("Description cannot be duplicate");
 					}
-	                if(dto.getLineId()==null) {
+				}
+
+                if(dto.getLineId()==null) {
 	                	dto.setSaveStatus("Failed");
                         dto.setErrDescription("Please add line.");
 	                }
