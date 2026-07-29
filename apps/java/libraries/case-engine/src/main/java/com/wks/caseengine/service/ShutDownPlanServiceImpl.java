@@ -8,9 +8,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -1838,13 +1840,17 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	    List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 	    List<LocalDateTime[]> validTimeRanges = new ArrayList<>();
 	    List<String> des = new ArrayList<>();
+	    Map<String, List<LocalDateTime[]>> validTimeRangesPerLine = new HashMap<>();
+	    Map<String, List<String>> desPerLine = new HashMap<>();
 	    Plants plant = plantsRepository.findById(plantFKId)
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
-	    boolean isPPSEZ= vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ");      
+	    boolean isPPSEZ= vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ"); 
+		
+		boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("dmd");
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 	    
 	    List<Object[]> slowdownTimeRanges = new ArrayList<>();
@@ -1893,27 +1899,39 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                
 	                String line = getStringCellValue(row.getCell(1), dto);
 	                String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
-					String view="vwScrn"+verticalName+"GetLineDetails";
-					List<Object[]> object=getLineId(view,plantFKId.toString(),line);
-					if (object != null && !object.isEmpty()) {
-					    Object[] firstRow = object.get(0);
-					    if (firstRow != null && firstRow.length > 1) {
-					        Object element = firstRow[0];
-					        dto.setLineId(element != null ? element.toString() : ""); 
-					    }
-					}
+				String view="vwScrn"+verticalName+"GetLineDetails";
+				List<Object[]> object=getLineId(view,plantFKId.toString(),line);
+				if (object != null && !object.isEmpty()) {
+				    Object[] firstRow = object.get(0);
+				    if (firstRow != null && firstRow.length > 1) {
+				        Object element = firstRow[0];
+				        dto.setLineId(element != null ? element.toString() : ""); 
+				    }
+				}
 	                if(dto.getLineId()==null) {
 	                	dto.setSaveStatus("Failed");
                         dto.setErrDescription("Please add line.");
 	                }
 
 	                if (dto.getDiscription() != null) {
-	                    if (des.contains(dto.getDiscription().trim())) {
-	                        dto.setSaveStatus("Failed");
-	                        dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
-	                        alreadyFailed = true;
+	                    String descTrimmed = dto.getDiscription().trim();
+	                    if (pvcDmd) {
+	                        String lineKey = (line != null) ? line.trim() : "";
+	                        List<String> lineDescriptions = desPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());
+	                        if (lineDescriptions.contains(descTrimmed)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                            alreadyFailed = true;
+	                        }
+	                        lineDescriptions.add(descTrimmed);
+	                    } else {
+	                        if (des.contains(descTrimmed)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                            alreadyFailed = true;
+	                        }
+	                        des.add(descTrimmed);
 	                    }
-	                    des.add(dto.getDiscription().trim());
 	                } else {
 	                    dto.setSaveStatus("Failed");
 	                    dto.setErrDescription("Description is missing.");
@@ -1977,12 +1995,25 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                        
 	                        if (ldtStart != null && !alreadyFailed) {
 	                            boolean overlapsFile = false;
-	                            for (LocalDateTime[] prevPeriod : validTimeRanges) {
-	                                LocalDateTime prevLdtStart = prevPeriod[0];
-	                                LocalDateTime prevLdtEnd = prevPeriod[1];
-	                                if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
-	                                    overlapsFile = true;
-	                                    break;
+	                            if (pvcDmd) {
+	                                String lineKey = (line != null) ? line.trim() : "";
+	                                List<LocalDateTime[]> lineTimeRanges = validTimeRangesPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());
+	                                for (LocalDateTime[] prevPeriod : lineTimeRanges) {
+	                                    LocalDateTime prevLdtStart = prevPeriod[0];
+	                                    LocalDateTime prevLdtEnd = prevPeriod[1];
+	                                    if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                        overlapsFile = true;
+	                                        break;
+	                                    }
+	                                }
+	                            } else {
+	                                for (LocalDateTime[] prevPeriod : validTimeRanges) {
+	                                    LocalDateTime prevLdtStart = prevPeriod[0];
+	                                    LocalDateTime prevLdtEnd = prevPeriod[1];
+	                                    if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                        overlapsFile = true;
+	                                        break;
+	                                    }
 	                                }
 	                            }
 
@@ -2022,7 +2053,12 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            
 	                            
 	                            if (!alreadyFailed) {
-	                                validTimeRanges.add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                if (pvcDmd) {
+	                                    String lineKey = (line != null) ? line.trim() : "";
+	                                    validTimeRangesPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>()).add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                } else {
+	                                    validTimeRanges.add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                }
 	                            }
 	                        }
 
