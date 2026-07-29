@@ -138,6 +138,10 @@ public class BasisReportServiceImpl implements BasisReportService {
 		} else if (type.equalsIgnoreCase("causticSodaLye")) {
 			storedProcedure = vertical.getName() + "_" + site.getName() + "_CausticSodaLyeBasisReport";
 		}
+
+		if(vertical.getName().equalsIgnoreCase("PCG")) {
+			storedProcedure = "[RIL.AOP.Refinery].[dbo].[" + storedProcedure + "]";
+		}
 	    
 	    try {
 	        // 1. Fetch ALL column metadata (List of Lists of Maps) - NEW
@@ -674,8 +678,16 @@ public AOPMessageVM getEtheleneStockBasis(String plantId, String aopYear) {
 	public List<List<Map<String, Object>>> getAllColumnMetadataForPEE(
 	    String plantId, String aopYear, String periodFrom, String periodTo, String type, String storedProcedure) {
 
+			String verticalName = verticalRepository.findById(UUID.fromString(plantId)).get().getName();
 	 
-			String storedProcedureCall = "{ call [" + storedProcedure + "](?, ?, ?, ?) }";
+			String tmpCall = "{ call [" + storedProcedure + "](?, ?, ?, ?) }";
+
+			if(verticalName.equalsIgnoreCase("PCG")) {
+				tmpCall = "{ call " + storedProcedure + "(?, ?, ?, ?) }";
+
+			}
+
+			String storedProcedureCall = tmpCall;
 
 	    Session session = entityManager.unwrap(Session.class);
 
