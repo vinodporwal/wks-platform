@@ -26,6 +26,7 @@ import { useSession } from 'SessionStoreContext'
 import { setVerticalChangeFromDashboard } from 'store/reducers/dataGridStore'
 import '../../dashboard-v2.css'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AopMyApprovals from 'components/data-tables/AOPWorkFlow/AopMyApprovals'
 import {
   AllStatusIcon,
   BusinessBlueIcon,
@@ -624,147 +625,135 @@ export default function AopDashboardCompact() {
             />{' '}
             View by Businesses
           </Box>
+          <Box
+            className={`view-toggle-btn ${viewMode === 'approvals' ? 'active' : ''}`}
+            onClick={() => setViewMode('approvals')}
+          >
+            <FactCheckIcon
+              className='toggle-btn-icon'
+              sx={{ fontSize: '16px !important', color: viewMode === 'approvals' ? '#005eb8' : '#64748b' }}
+            />{' '}
+            Approvals
+          </Box>
         </Box>
         <Box className='filters-right'>
-          <Box className='search-input-wrapper'>
-            <Box
-              component='img'
-              src={SearchIcon}
-              alt='Search Icon'
-              className='w16-icon'
-            />
-            <input
-              type='text'
-              placeholder='Search for Site, Plant or Business name...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </Box>
-          <Button
-            variant='contained'
-            onClick={() => navigate('/my-approvals')}
-            startIcon={<FactCheckIcon sx={{ fontSize: '18px !important' }} />}
-            sx={{
-              height: '36px',
-              px: 2,
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontSize: '13px',
-              fontWeight: 600,
-              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-              backgroundColor: '#005eb8',
-              color: '#ffffff',
-              boxShadow: '0 2px 5px rgba(0, 94, 184, 0.25)',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                backgroundColor: '#004b93',
-                boxShadow: '0 4px 10px rgba(0, 94, 184, 0.35)',
-                transform: 'translateY(-1px)',
-              },
-            }}
-          >
-            My Approvals
-          </Button>
-          <Box className='status-dropdown' onClick={handleStatusMenuOpen}>
-            <Box
-              component='img'
-              src={AllStatusIcon}
-              alt='Search Icon'
-              className='w16-icon'
-            />
-            <Typography component='span' className='all-status-label'>
-              Status:{' '}
-              <strong className='all-status-value'>
-                {selectedStatuses.length === ALL_STATUSES.length
-                  ? 'All'
-                  : selectedStatuses.length === 0
-                    ? 'None'
-                    : selectedStatuses.length === 1
-                      ? selectedStatuses[0].replace('-', ' ')
-                      : `${selectedStatuses.length} selected`}
-              </strong>
-            </Typography>
-            <IconChevronDown size={14} className='dropdown-chevron' />
-          </Box>
+          {viewMode !== 'approvals' && (
+            <>
+              <Box className='search-input-wrapper'>
+                <Box
+                  component='img'
+                  src={SearchIcon}
+                  alt='Search Icon'
+                  className='w16-icon'
+                />
+                <input
+                  type='text'
+                  placeholder='Search for Site, Plant or Business name...'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </Box>
+              <Box className='status-dropdown' onClick={handleStatusMenuOpen}>
+                <Box
+                  component='img'
+                  src={AllStatusIcon}
+                  alt='Search Icon'
+                  className='w16-icon'
+                />
+                <Typography component='span' className='all-status-label'>
+                  Status:{' '}
+                  <strong className='all-status-value'>
+                    {selectedStatuses.length === ALL_STATUSES.length
+                      ? 'All'
+                      : selectedStatuses.length === 0
+                        ? 'None'
+                        : selectedStatuses.length === 1
+                          ? selectedStatuses[0].replace('-', ' ')
+                          : `${selectedStatuses.length} selected`}
+                  </strong>
+                </Typography>
+                <IconChevronDown size={14} className='dropdown-chevron' />
+              </Box>
 
-          <Menu
-            anchorEl={statusMenuAnchor}
-            open={Boolean(statusMenuAnchor)}
-            onClose={handleStatusMenuClose}
-            PaperProps={{
-              style: {
-                minWidth: 160,
-                borderRadius: 6,
-                boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
-                border: '1px solid #e2e8f0',
-              },
-            }}
-            MenuListProps={{
-              style: { padding: '4px 0' },
-            }}
-          >
-            <MenuItem
-              onClick={() => toggleStatus('all')}
-              sx={{ minHeight: '32px', padding: '6px 10px' }}
-            >
-              <Checkbox
-                checked={selectedStatuses.length === ALL_STATUSES.length}
-                size='small'
-                sx={{
-                  padding: 0,
-                  marginRight: '8px',
-                  color: '#e2e8f0',
-                  '&.Mui-checked': {
-                    color: '#005eb8',
-                  },
-                  '& .MuiSvgIcon-root': {
-                    fontSize: 18,
-                    borderRadius: '2px',
+              <Menu
+                anchorEl={statusMenuAnchor}
+                open={Boolean(statusMenuAnchor)}
+                onClose={handleStatusMenuClose}
+                PaperProps={{
+                  style: {
+                    minWidth: 160,
+                    borderRadius: 6,
+                    boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
+                    border: '1px solid #e2e8f0',
                   },
                 }}
-              />
-              <ListItemText
-                primary='Select all'
-                primaryTypographyProps={menuItemStyle}
-              />
-            </MenuItem>
-            <Divider
-              sx={{
-                my: '4px !important',
-                border: `1px solid ${DashboardColors.divider} !important`,
-              }}
-            />
-
-            {ALL_STATUSES.map((status) => (
-              <MenuItem
-                key={status}
-                onClick={() => toggleStatus(status)}
-                sx={{ minHeight: '32px', padding: '6px 10px' }}
+                MenuListProps={{
+                  style: { padding: '4px 0' },
+                }}
               >
-                <Checkbox
-                  checked={selectedStatuses.includes(status)}
-                  size='small'
+                <MenuItem
+                  onClick={() => toggleStatus('all')}
+                  sx={{ minHeight: '32px', padding: '6px 10px' }}
+                >
+                  <Checkbox
+                    checked={selectedStatuses.length === ALL_STATUSES.length}
+                    size='small'
+                    sx={{
+                      padding: 0,
+                      marginRight: '8px',
+                      color: '#e2e8f0',
+                      '&.Mui-checked': {
+                        color: '#005eb8',
+                      },
+                      '& .MuiSvgIcon-root': {
+                        fontSize: 18,
+                        borderRadius: '2px',
+                      },
+                    }}
+                  />
+                  <ListItemText
+                    primary='Select all'
+                    primaryTypographyProps={menuItemStyle}
+                  />
+                </MenuItem>
+                <Divider
                   sx={{
-                    padding: 0,
-                    marginRight: '8px',
-                    color: '#e2e8f0',
-                    '&.Mui-checked': {
-                      color: '#005eb8',
-                    },
-                    '& .MuiSvgIcon-root': {
-                      fontSize: 18,
-                      borderRadius: '2px',
-                    },
+                    my: '4px !important',
+                    border: `1px solid ${DashboardColors.divider} !important`,
                   }}
                 />
-                <ListItemText
-                  primary={status.replace('-', ' ')}
-                  primaryTypographyProps={menuItemStyle}
-                />
-              </MenuItem>
-            ))}
-          </Menu>
+
+                {ALL_STATUSES.map((status) => (
+                  <MenuItem
+                    key={status}
+                    onClick={() => toggleStatus(status)}
+                    sx={{ minHeight: '32px', padding: '6px 10px' }}
+                  >
+                    <Checkbox
+                      checked={selectedStatuses.includes(status)}
+                      size='small'
+                      sx={{
+                        padding: 0,
+                        marginRight: '8px',
+                        color: '#e2e8f0',
+                        '&.Mui-checked': {
+                          color: '#005eb8',
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 18,
+                          borderRadius: '2px',
+                        },
+                      }}
+                    />
+                    <ListItemText
+                      primary={status.replace('-', ' ')}
+                      primaryTypographyProps={menuItemStyle}
+                    />
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          )}
 
           <Box
             className='more-btn'
@@ -790,16 +779,6 @@ export default function AopDashboardCompact() {
             }}
           >
             <MenuItem
-              onClick={() => {
-                setMoreMenuAnchor(null)
-                setApprovalsOpen(true)
-              }}
-              sx={{ minHeight: '32px', padding: '6px 10px' }}
-            >
-              <Typography sx={menuItemStyle}>My Approvals</Typography>
-            </MenuItem>
-            <Divider sx={{ margin: `4px 0px !important` }} />
-            <MenuItem
               onClick={() => handleExpandCollapseAll(true)}
               sx={{ minHeight: '32px', padding: '6px 10px' }}
             >
@@ -817,8 +796,10 @@ export default function AopDashboardCompact() {
       </Box>
 
       <Card className='dashboard-main-card'>
-        {/* Business Units List - Each Site is a Summary Bar Accordion */}
-        {groupedRows.map((site) => {
+        {viewMode === 'approvals' ? (
+          <AopMyApprovals onClose={() => setViewMode('sites')} />
+        ) : (
+          groupedRows.map((site) => {
           const siteStatusSummary = getSiteStatusSummary(site.rows)
           const isSiteExpanded = expandedSites[site.site]
 
@@ -1056,7 +1037,8 @@ export default function AopDashboardCompact() {
               )}
             </Box>
           )
-        })}
+        })
+        )}
       </Card>
 
       {/* <Box className='floating-switch-container'>

@@ -100,8 +100,10 @@ const DecokingConfig = () => {
   const [currentRemarkRunLength, setCurrentRemarkRunLength] = useState('')
   const [currentRowIdRunLength, setCurrentRowId3] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
-  const [openDecokingPlanningDialog, setOpenDecokingPlanningDialog] = useState(false)
-  const [decokingPlanningRecordsCount, setDecokingPlanningRecordsCount] = useState(0)
+  const [openDecokingPlanningDialog, setOpenDecokingPlanningDialog] =
+    useState(false)
+  const [decokingPlanningRecordsCount, setDecokingPlanningRecordsCount] =
+    useState(0)
 
   useEffect(() => {
     const fetchDecokingNotificationCount = async () => {
@@ -150,7 +152,6 @@ const DecokingConfig = () => {
   useEffect(() => {
     maxDutyMainRef.current = maxDutyMain
   }, [maxDutyMain])
-
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -278,9 +279,21 @@ const DecokingConfig = () => {
           return !isNaN(num) ? num.toFixed(2) : String(val)
         }
 
-        setSadDuration(sadRow && sadRow.attributeValue != null ? formatTwoDecimals(sadRow.attributeValue) : '')
-        setMaxDutyPilot(pilotRow && pilotRow.attributeValue != null ? formatTwoDecimals(pilotRow.attributeValue) : '')
-        setMaxDutyMain(mainRow && mainRow.attributeValue != null ? formatTwoDecimals(mainRow.attributeValue) : '')
+        setSadDuration(
+          sadRow && sadRow.attributeValue != null
+            ? formatTwoDecimals(sadRow.attributeValue)
+            : '',
+        )
+        setMaxDutyPilot(
+          pilotRow && pilotRow.attributeValue != null
+            ? formatTwoDecimals(pilotRow.attributeValue)
+            : '',
+        )
+        setMaxDutyMain(
+          mainRow && mainRow.attributeValue != null
+            ? formatTwoDecimals(mainRow.attributeValue)
+            : '',
+        )
       }
       console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
     } catch (error) {
@@ -613,7 +626,7 @@ const DecokingConfig = () => {
   const saveRunningDurationParams = async (
     currentSad = sadDurationRef.current,
     currentPilot = maxDutyPilotRef.current,
-    currentMain = maxDutyMainRef.current
+    currentMain = maxDutyMainRef.current,
   ) => {
     if (currentSad !== '' && currentSad !== null && currentSad !== undefined) {
       const sadVal = parseFloat(currentSad)
@@ -656,9 +669,9 @@ const DecokingConfig = () => {
         payload,
       )
       if (resp?.code === 200) {
-        if (sadDurationRow) sadDurationRow.attributeValue = currentSad;
-        if (maxDutyPilotRow) maxDutyPilotRow.attributeValue = currentPilot;
-        if (maxDutyMainRow) maxDutyMainRow.attributeValue = currentMain;
+        if (sadDurationRow) sadDurationRow.attributeValue = currentSad
+        if (maxDutyPilotRow) maxDutyPilotRow.attributeValue = currentPilot
+        if (maxDutyMainRow) maxDutyMainRow.attributeValue = currentMain
         setSummaryEdited(false)
         fetchOtherCost()
         return true
@@ -1094,7 +1107,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1276,7 +1289,7 @@ const DecokingConfig = () => {
           if (row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1841,13 +1854,14 @@ const DecokingConfig = () => {
 
       // itemChange in index-cracker calls setRows as a functional updater:
       // setRows((prev) => prev.map(...))
-      // So `data` may be a function — handle both forms.
+      // So `data` may be a function � handle both forms.
       if (typeof data === 'function') {
         setIbrScreen2Rows((prev) => applyCalc(data(prev)))
       } else {
         setRowsForTab('IBR Plan', applyCalc(data), 2)
       }
     },
+
     [IS_CRACKER_C2, setRowsForTab, setIbrScreen2Rows, calculateIbrEdDate],
   )
 
@@ -1868,7 +1882,15 @@ const DecokingConfig = () => {
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start', mb: 1.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 3,
+            alignItems: 'flex-start',
+            mb: 1.5,
+          }}
+        >
           {/* TA Start Date */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Typography
@@ -1876,12 +1898,20 @@ const DecokingConfig = () => {
                 fontSize: '14px',
                 fontWeight: 700,
                 color: '#252525',
-                fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                fontFamily:
+                  '"Honeywell Sans Web", "Inter", sans-serif !important',
               }}
             >
               TA Start Date
             </Typography>
-            <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '185px' } }}>
+            <Box
+              sx={{
+                '& .k-picker, & .k-datepicker': {
+                  height: '36px',
+                  width: '185px',
+                },
+              }}
+            >
               <DatePicker
                 id='global-ta-start-date'
                 format='dd-MM-yyyy'
@@ -1903,12 +1933,20 @@ const DecokingConfig = () => {
                 fontSize: '14px',
                 fontWeight: 700,
                 color: '#252525',
-                fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                fontFamily:
+                  '"Honeywell Sans Web", "Inter", sans-serif !important',
               }}
             >
               TA End Date
             </Typography>
-            <Box sx={{ '& .k-picker, & .k-datepicker': { height: '36px', width: '190px' } }}>
+            <Box
+              sx={{
+                '& .k-picker, & .k-datepicker': {
+                  height: '36px',
+                  width: '190px',
+                },
+              }}
+            >
               <DatePicker
                 id='global-ta-end-date'
                 format='dd-MM-yyyy'
@@ -1933,7 +1971,8 @@ const DecokingConfig = () => {
                     fontSize: '14px',
                     fontWeight: 700,
                     color: '#252525',
-                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   Max Duty For Pilot Furnace
@@ -1983,7 +2022,8 @@ const DecokingConfig = () => {
                     fontSize: '14px',
                     fontWeight: 700,
                     color: '#252525',
-                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   Max Duty For Main Furnaces
@@ -2034,7 +2074,8 @@ const DecokingConfig = () => {
                     fontSize: '14px',
                     fontWeight: 700,
                     color: '#252525',
-                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   SAD Duration
@@ -2107,7 +2148,11 @@ const DecokingConfig = () => {
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
         disableInnerNotification={true}
-        titleName={IS_CRACKER_C2 ? 'Furnace un-availability and M&I activity' : 'IBR/SD/HSS Activities'}
+        titleName={
+          IS_CRACKER_C2
+            ? 'Furnace un-availability and M&I activity'
+            : 'IBR/SD/HSS Activities'
+        }
       />
 
       {(IS_DMD || IS_C2) && (
@@ -2137,7 +2182,9 @@ const DecokingConfig = () => {
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleCalculate={handleCalculate}
-        onInfoClick={IS_CRACKER_C2 ? () => setOpenDecokingPlanningDialog(true) : null}
+        onInfoClick={
+          IS_CRACKER_C2 ? () => setOpenDecokingPlanningDialog(true) : null
+        }
         infoIconColor={decokingPlanningRecordsCount > 0 ? '#ff0000' : '#008000'}
       />
 
@@ -2166,7 +2213,7 @@ const DecokingConfig = () => {
             setOpenDecokingPlanningDialog(false)
           }
         }}
-        maxWidth="md"
+        maxWidth='md'
         fullWidth
         disableScrollLock
         disableEnforceFocus={true}
@@ -2185,8 +2232,8 @@ const DecokingConfig = () => {
         <DialogActions sx={{ px: 1.5, pb: 1 }}>
           <Button
             onClick={() => setOpenDecokingPlanningDialog(false)}
-            variant="contained"
-            className="btn-no"
+            variant='contained'
+            className='btn-no'
             sx={{ textTransform: 'none' }}
           >
             Close
@@ -2203,4 +2250,3 @@ const DecokingConfig = () => {
   )
 }
 export default DecokingConfig
-

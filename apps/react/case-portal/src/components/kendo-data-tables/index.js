@@ -5102,8 +5102,6 @@ const KendoDataTables = ({
                     // Support custom cell renderer passed via col.cell
                     if (col?.cell) {
                       const CustomCell = col.cell
-                      const isFilterable = col?.filterable !== false
-                      const isSortable = col?.sortable !== false
                       return (
                         <GridColumn
                           locked={col.locked || false}
@@ -5112,15 +5110,14 @@ const KendoDataTables = ({
                           title={col?.title || col?.headerName}
                           width={setWidth(col?.minWidth || 150)}
                           hidden={col?.hidden}
-                          editable={col?.editable ? true : false}
-                          filterable={isFilterable}
-                          sortable={isSortable}
+                          editable={false}
+                          filterable={false}
+                          sortable={false}
                           headerClassName={isActive ? 'active-column' : ''}
                           cells={{
                             data: CustomCell,
                             headerCell: SimpleHeaderWithTooltip,
                           }}
-                          columnMenu={isFilterable ? ColumnMenuCheckboxFilter : undefined}
                         />
                       )
                     }

@@ -1,0 +1,231 @@
+/* AopMyApprovals.css - Custom Scoped Chip & Grid Styling for My Approvals */
+
+/* Container spacing */
+.aop-my-approvals-container {
+  width: 100%;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Header Action Bar */
+.aop-back-btn {
+  background-color: #ffffff !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.aop-back-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+  transform: translateY(-1px);
+}
+
+.aop-title-text {
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  font-size: 1.15rem !important;
+  letter-spacing: -0.01em !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+}
+
+.aop-count-chip {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  border: 1px solid #bae6fd !important;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.08) !important;
+}
+
+/* Search Bar & Toolbar Features */
+.aop-search-field {
+  min-width: 240px;
+}
+
+.aop-search-field .MuiOutlinedInput-root {
+  background-color: #ffffff !important;
+  border-radius: 8px !important;
+  font-size: 0.82rem !important;
+  height: 36px !important;
+  transition: border-color 0.2s ease !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.aop-search-field .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #94a3b8 !important;
+}
+
+.aop-search-field .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #005eb8 !important;
+  border-width: 1.5px !important;
+}
+
+.aop-refresh-btn {
+  background-color: #ffffff !important;
+  color: #005eb8 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.aop-refresh-btn:hover {
+  background-color: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+/* Scoped Kendo Grid Container & Card Wrapper */
+.aop-my-approvals-kendo-wrapper {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+/* Direct Target: .kendo-data-grid inside AOP Approvals wrapper */
+.aop-my-approvals-kendo-wrapper .kendo-data-grid {
+  font-family: 'Inter', 'Honeywell Sans Web', sans-serif !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background-color: #ffffff !important;
+}
+
+/* Ensure Grid Tables Have Crisp Borders & Vertical Separator Lines */
+.aop-my-approvals-kendo-wrapper .kendo-data-grid .k-grid-content table,
+.aop-my-approvals-kendo-wrapper .kendo-data-grid .k-grid-header table {
+  border-collapse: collapse !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid .k-grid-header th {
+  background: #f8fafc !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+  font-size: 0.81rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  padding: 10px 14px !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid .k-grid-header th:last-child {
+  border-right: none !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid td {
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-right: 1px solid #f1f5f9 !important;
+  padding: 8px 12px !important;
+  font-size: 0.86rem !important;
+  color: #1e293b !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid td:last-child {
+  border-right: none !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid tr:nth-of-type(even) td {
+  background-color: #fafafa !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid tr:nth-of-type(even):hover td {
+  background-color: #f1f5f9 !important;
+}
+
+/* Styled Chips for Plant, Site, Vertical, Year, Role */
+.aop-chip {
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  border-radius: 6px !important;
+  padding: 2px 4px !important;
+}
+
+.aop-chip-plant {
+  background-color: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.aop-chip-site {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+.aop-chip-vertical {
+  background-color: #faf5ff !important;
+  color: #7e22ce !important;
+  border: 1px solid #e9d5ff !important;
+}
+
+.aop-chip-year {
+  background-color: #fff7ed !important;
+  color: #c2410c !important;
+  border: 1px solid #ffedd5 !important;
+}
+
+.aop-chip-role {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Stage status chips */
+.aop-chip-stage-default {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.aop-chip-stage-approved {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+}
+
+.aop-chip-stage-pending {
+  background-color: #fffbe6 !important;
+  color: #d97706 !important;
+  border: 1px solid #fef08a !important;
+}
+
+.aop-chip-stage-gate {
+  background-color: #f0f9ff !important;
+  color: #0284c7 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+/* Action Redirect Button */
+.aop-go-to-plant-btn {
+  background-color: #005eb8 !important;
+  color: #ffffff !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  border-radius: 6px !important;
+  padding: 4px 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 94, 184, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+.aop-go-to-plant-btn:hover {
+  background-color: #004b93 !important;
+  box-shadow: 0 3px 6px rgba(0, 94, 184, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.aop-go-to-plant-btn:disabled {
+  background-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}

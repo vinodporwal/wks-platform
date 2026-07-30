@@ -200,11 +200,10 @@ const Inputs = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <InputsJMD />
+      case 'vmd':
       case 'hmd':
       case 'dmd':
         return <InputsDMD />
-      // case 'hmd':
-      //   return <InputsHMD />
       case 'nmd':
       default:
         return (

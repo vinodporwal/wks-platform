@@ -102,8 +102,11 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
       elevation={0}
       sx={{
         py: 1.25,
-        px: 2,
+        px: 1.5,
         mb: 1,
+        width: '100%',
+        boxSizing: 'border-box',
+        overflowX: 'auto',
         borderRadius: '8px',
         border: '1px solid #cbd5e1',
         background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
@@ -114,6 +117,11 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
         activeStep={activeStep}
         alternativeLabel
         connector={<ColorlibConnector />}
+        sx={{
+          minWidth: '850px',
+          width: '100%',
+          py: 0.5,
+        }}
       >
         {steps.map((step, index) => {
           const isCompleted = step.status === 'completed' || index < activeStep
@@ -141,6 +149,8 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
               onClick={() => onStepClick && onStepClick(step, index)}
               sx={{
                 cursor: onStepClick ? 'pointer' : 'default',
+                minWidth: '120px',
+                px: 0.5,
               }}
             >
               <StepLabel
@@ -152,8 +162,24 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
                   />
                 )}
                 sx={{
-                  '& .MuiStepLabel-label': {
-                    mt: 0.25,
+                  '&.MuiStepLabel-alternativeLabel': {
+                    position: 'relative !important',
+                    top: 'auto !important',
+                    left: '0 !important',
+                    right: '0 !important',
+                    marginTop: '6px !important',
+                    width: '100% !important',
+                  },
+                  '& .MuiStepLabel-labelContainer': {
+                    width: '100% !important',
+                  },
+                  '& .MuiStepLabel-label.MuiStepLabel-alternativeLabel': {
+                    position: 'relative !important',
+                    top: 'auto !important',
+                    left: '0 !important',
+                    right: '0 !important',
+                    marginTop: '6px !important',
+                    width: '100% !important',
                   },
                 }}
               >
@@ -162,21 +188,24 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: 0.25,
+                    gap: 0.5,
                   }}
                 >
                   <Typography
                     variant='body2'
                     sx={{
                       fontWeight: isInProgress ? 700 : isCompleted ? 600 : 500,
-                      fontSize: '0.78rem',
+                      fontSize: '0.72rem',
                       fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                       color: isInProgress
                         ? '#005eb8'
                         : isCompleted
                           ? '#1e293b'
                           : '#64748b',
-                      lineHeight: 1.15,
+                      lineHeight: 1.2,
+                      textAlign: 'center',
+                      wordBreak: 'break-word',
+                      maxWidth: '135px',
                     }}
                   >
                     {step.displayName}
@@ -186,14 +215,14 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
                     label={statusLabel}
                     size='small'
                     sx={{
-                      height: '16px',
+                      height: '18px',
                       fontSize: '0.62rem',
                       fontWeight: 600,
                       backgroundColor: statusColor.bg,
                       color: statusColor.color,
                       border: `1px solid ${statusColor.border}`,
                       '& .MuiChip-label': {
-                        px: 0.6,
+                        px: 0.8,
                         py: 0,
                       },
                     }}
