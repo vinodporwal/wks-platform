@@ -319,7 +319,6 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
                 .feb(rs.getDouble("February"))
                 .mar(rs.getDouble("March"))
                 .remarks(rs.getString("Remarks"))
-                .type(rs.getString("Type"))
                 .modifiedBy(rs.getString("ModifiedBy"))
                 .modifiedDateTime(rs.getDate("ModifiedDateTime"))
                 .build(),
