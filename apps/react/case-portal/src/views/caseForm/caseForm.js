@@ -97,6 +97,9 @@ const [currentData, setCurrentData] = useState(null);
   const [isDraft, setIsDraft] = useState(true);
   const [processExistsForBusinessKey, setProcessExistsForBusinessKey] = useState(false)
 
+  const [isOverdue, setIsOverdue] = useState(false);
+  useEffect(() => { setIsOverdue(aCase?.isDraft === 'o'); }, [aCase]);
+
 const initialDataRef = useRef(null);
 const isFormReadyRef = useRef(false);
 const hasUnsavedChangesRef = useRef(false); 
@@ -406,6 +409,7 @@ console.log('*****  taskId:  ', taskId);
       .then(({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
         setIsDraft(isDraft);
+        setIsOverdue(caseData?.isDraft === 'o');
         const isFinalRecommendationSubmitted = caseData?.isFinalRecommendationSubmitted;
 
         const attributeValue = caseData.attributes[0].value;
@@ -1665,18 +1669,18 @@ console.log('*****  taskId:  ', taskId);
                 <Tabs value={mainTabIndex} onChange={handleMainTabChanged} >
                   <Tab
                     label={t('pages.caseform.tabs.details')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed'}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o'}
                     {...a11yProps(0)}
                   />
                   <Tab
                     label={t('pages.caseform.tabs.attachments')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed'}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o'}
                     {...a11yProps(1)}
                    
                   />
                   <Tab
                     label={t('pages.caseform.tabs.comments')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed'}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o'}
                     {...a11yProps(2)}
                   
                   />
@@ -1756,12 +1760,12 @@ console.log('*****  taskId:  ', taskId);
 {console.log('***** formData at render', formData)}
                     
                     {isFormData && (
-                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${aCase?.status?.name === 'Closed' ? 'case-closed' : ''}`}>
+                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o' ? 'case-closed' : ''}`}>
                       <Form
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
                         options={{
-                          readOnly: isCaseViewer || aCase?.status?.name === 'Closed',
+                          readOnly: isCaseViewer || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o',
                           fileService: new StorageService(),
                         }}
                         onSubmit={(submission) => {

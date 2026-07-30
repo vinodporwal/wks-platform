@@ -173,12 +173,7 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 
 						jdbcTemplate.update(
 								"UPDATE c " +
-										"SET c.status_id = 4, c.updated_date = GETDATE(), " +
-										"    c.attributes = JSON_MODIFY( " +
-										"        c.attributes, " +
-										"        CONCAT('$[', j.[key], '].value'), " +
-										"        JSON_MODIFY(JSON_VALUE(j.value, '$.value'), '$.caseStatus', 4) " +
-										"    ) " +
+										"SET c.isDraft = 'o', c.updated_date = GETDATE() " +
 										"FROM [CaseManagement].[dbo].[Cases] c " +
 										"CROSS APPLY OPENJSON(c.attributes) j " +
 										"WHERE c.business_key = ? " +
@@ -345,8 +340,8 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 							row.put("TextFaultStartTimeDate", formattedDate);
 							row.put("TextFaultEndTimeDate", "");
 							row.put("eventPkId", eventPkId);
-							row.put("btnEventTrend", false);
-							row.put("btnEventLink", false);
+							row.put("btnEventTrend", true);
+							row.put("btnEventLink", true);
 							dataGrid2.add(row);
 						}
 						// Put back updated grid

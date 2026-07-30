@@ -514,6 +514,7 @@ export const CaseList = ({ status, caseDefId }) => {
         headerName: 'Case Status',
         flex: 1,
         valueGetter: (value, row) => {
+          console.log('value=========================',value, row)
           try {
             if (!row) {
               return ''
@@ -562,6 +563,8 @@ export const CaseList = ({ status, caseDefId }) => {
               : {}
 
             const caseStatusValue = parsedContainer.caseStatus || ''
+                      console.log('value===',caseStatusValue)
+
 
             // Find the label corresponding to the value
             const matchingOption = caseStatusOptions.find(
@@ -578,7 +581,7 @@ export const CaseList = ({ status, caseDefId }) => {
         field: 'isDraft',
         headerName: 'Status',
         width: 150,
-        valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
+        valueGetter: (value, row) => (value === 'y' ? 'Draft' : value === 'o' ? 'Overdue' : 'Submitted'),
       },
       {
         field: 'assignedTo',
