@@ -108,6 +108,13 @@ const ShutdownConsumption = () => {
       minWidth: 200,
     },
     {
+      field: 'sapCode',
+      title: 'Sap Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'uom',
       title: 'UOM',
       widthT: 80,
@@ -117,7 +124,7 @@ const ShutdownConsumption = () => {
     },
     ...monthsConfig.map((m) => ({
       field: m.field,
-      title: m.title,
+      title: headerMap[m.key] || m.title,
       editable: true,
       type: 'numberNonGrey',
       format: valueFormat,

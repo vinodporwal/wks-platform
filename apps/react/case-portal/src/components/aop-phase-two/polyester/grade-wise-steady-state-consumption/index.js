@@ -98,6 +98,13 @@ const GradeWiseSteadyStateConsumption = () => {
       hidden: true,
     },
     {
+      field: 'sapCode',
+      title: 'Sap Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'UOM',
       title: 'UOM',
       minWidth: 100,
@@ -574,10 +581,11 @@ const GradeWiseSteadyStateConsumption = () => {
       if (
         response &&
         response.code === 400 &&
-        response.message === 'Validation Failed'
+        (response.message === 'Validation Failed' || Array.isArray(response.data))
       ) {
         isWeightedAverageError = true
         errorMsg = response.message || 'Import validation failed.'
+        errorDataList = Array.isArray(response.data) ? response.data : []
       }
 
       if (isWeightedAverageError) {
