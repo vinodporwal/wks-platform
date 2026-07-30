@@ -2,6 +2,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import SendIcon from '@mui/icons-material/Send'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import UndoIcon from '@mui/icons-material/Undo'
+import HistoryIcon from '@mui/icons-material/History'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { Box, Step, StepLabel, Stepper } from '@mui/material'
 import MuiAccordion from '@mui/material/Accordion'
@@ -9,6 +10,7 @@ import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import { styled } from '@mui/material/styles'
 import Notification from 'components/Utilities/Notification'
+import AuditTrailDialog from 'components/data-tables/AOPWorkFlow/AopMyApprovals/AuditTrailDialog'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 // import { CaseService } from 'services/CaseService'
@@ -1039,6 +1041,32 @@ const WorkFlowMerge = () => {
               <>
                 <Button
                   variant='outlined'
+                  onClick={handleAuditOpen}
+                  startIcon={<HistoryIcon sx={{ fontSize: '16px !important' }} />}
+                  sx={{
+                    height: '34px',
+                    px: 2.2,
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    textTransform: 'none',
+                    color: '#005eb8',
+                    backgroundColor: '#e0f2fe',
+                    border: '1.5px solid #005eb8',
+                    boxShadow: '0 2px 4px rgba(0, 94, 184, 0.12)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: '#bae6fd',
+                      borderColor: '#004b93',
+                      color: '#004b93',
+                      boxShadow: '0 4px 8px rgba(0, 94, 184, 0.25)',
+                    },
+                  }}
+                >
+                  Audit Trail
+                </Button>
+                <Button
+                  variant='outlined'
                   className='btn-add'
                   onClick={handleOpenApproveDialog}
                   disabled={actionDisabled}
@@ -1392,6 +1420,16 @@ const WorkFlowMerge = () => {
           message={snackbarData.message}
           severity={snackbarData.severity}
           onClose={() => setSnackbarOpen(false)}
+        />
+        <AuditTrailDialog
+          open={Boolean(openAuditPopup)}
+          onClose={handleAuditClose}
+          row={{
+            plantId: plantObject?.id || plantID,
+            plantName: plantObject?.displayName || plantObject?.name || plantObject?.id,
+            year: AOP_YEAR,
+            aopYear: AOP_YEAR,
+          }}
         />
       </Box>
     </div>

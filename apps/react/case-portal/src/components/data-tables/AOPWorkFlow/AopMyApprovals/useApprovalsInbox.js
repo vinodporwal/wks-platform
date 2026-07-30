@@ -252,6 +252,16 @@ export default function useApprovalsInbox(onClose) {
     [sitesData, keycloak, dispatch, navigate, onClose],
   )
 
+  const [auditRow, setAuditRow] = useState(null)
+
+  const handleOpenAudit = useCallback((row) => {
+    setAuditRow(row)
+  }, [])
+
+  const handleCloseAudit = useCallback(() => {
+    setAuditRow(null)
+  }, [])
+
   return {
     items,
     setItems,
@@ -271,5 +281,8 @@ export default function useApprovalsInbox(onClose) {
     expandedRows,
     toggleRowExpand,
     handleExpandChange,
+    auditRow,
+    handleOpenAudit,
+    handleCloseAudit,
   }
 }

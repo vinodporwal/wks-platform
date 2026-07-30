@@ -142,6 +142,18 @@
   background-color: #f1f5f9 !important;
 }
 
+/* Expanded Detail Row & Cell Visual Separation */
+.aop-my-approvals-kendo-wrapper .kendo-data-grid tr.k-detail-row {
+  background-color: #f0f7ff !important;
+}
+
+.aop-my-approvals-kendo-wrapper .kendo-data-grid tr.k-detail-row td,
+.aop-my-approvals-kendo-wrapper .kendo-data-grid tr.k-detail-row td.k-detail-cell {
+  background-color: #f0f7ff !important;
+  padding: 10px 16px !important;
+  border-bottom: 2px solid #bae6fd !important;
+}
+
 /* Styled Chips for Plant, Site, Vertical, Year, Role */
 .aop-chip {
   font-weight: 600 !important;
