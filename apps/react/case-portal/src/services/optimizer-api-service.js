@@ -371,7 +371,7 @@ async function calculateSubGradeAllocation(
   AOP_YEAR,
   keycloak,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/sub-grade-budgeted-export-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/calculate-sub-grade-budget-operation-hours?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,

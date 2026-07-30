@@ -16,6 +16,7 @@ import { Box } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [modifiedCellsSubGrade, setModifiedCellsSubGrade] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -290,7 +291,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     if (!PLANT_ID || !AOP_YEAR) return
     const lineId = lineDetails[tabIndex]?.id
     if (!lineId) return // wait until lineDetails has loaded
-    setModifiedCells({})
+    setModifiedCellsSubGrade({})
     setLoading(true)
     try {
       const res =
@@ -373,7 +374,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const saveChanges = React.useCallback(async () => {
     try {
       setLoading(true)
-      const data = Object.values(modifiedCells)
+      const data = Object.values(modifiedCellsSubGrade)
 
       if (data.length === 0) {
         setSnackbarOpen(true)
@@ -434,7 +435,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           message: 'Saved Successfully!',
           severity: 'success',
         })
-        setModifiedCells({})
+        setModifiedCellsSubGrade({})
         fetchDataSubGradeAllocation()
         setRefreshSignal((prev) => prev + 1)
       } else {
@@ -453,7 +454,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchDataSubGradeAllocation, setRefreshSignal])
+  }, [modifiedCellsSubGrade, keycloak, PLANT_ID, AOP_YEAR, fetchDataSubGradeAllocation, setRefreshSignal])
   useEffect(() => {
     if (tabIndex === 0) {
       fetchData()
@@ -603,7 +604,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           message: 'Uploaded Successfully!',
           severity: 'success',
         })
-        setModifiedCells({})
+        setModifiedCellsSubGrade({})
         fetchDataSubGradeAllocation()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
@@ -718,8 +719,8 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         </Box>
       )}
       <KendoDataTables
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
+        modifiedCells={modifiedCellsSubGrade}
+        setModifiedCells={setModifiedCellsSubGrade}
         setRows={setRowsAllocation}
         columns={columns}
         rows={rowsAllocation}
@@ -766,11 +767,11 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
+        //handleRemarkCellClick={handleRemarkCellClick}
+        //remarkDialogOpen={remarkDialogOpen}
+        //setRemarkDialogOpen={setRemarkDialogOpen}
+        //currentRemark={currentRemark}
+        //setCurrentRemark={setCurrentRemark}
         handleCalculate={handleCalculate}
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
