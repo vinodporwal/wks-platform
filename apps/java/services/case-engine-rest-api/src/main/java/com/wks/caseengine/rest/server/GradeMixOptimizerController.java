@@ -48,6 +48,7 @@ public class GradeMixOptimizerController {
         return gradeMixOptimizerService.getBudgetedOperatingHoursData(UUID.fromString(plantId), aopYear, UUID.fromString(lineId));
     }
 
+/*
     @PostMapping("/budgeted-operating-hours-data")
     public AOPMessageVM saveBudgetedOperatingHoursData(
             @RequestParam String plantId,
@@ -57,6 +58,7 @@ public class GradeMixOptimizerController {
         return gradeMixOptimizerService.saveBudgetedOperatingHoursData(
             UUID.fromString(plantId), aopYear, UUID.fromString(lineId), dtoList);
     }
+*/
 
     @GetMapping("/budgeted-operating-hours-export-excel")
     public ResponseEntity<byte[]> exportBudgetedOperatingHoursExcel(
@@ -78,6 +80,7 @@ public class GradeMixOptimizerController {
         }
     }
 
+/*
     @PostMapping(value = "/budgeted-operating-hours-import-excel", consumes = "multipart/form-data")
     public AOPMessageVM importBudgetedOperatingHoursExcel(
             @RequestParam String plantId,
@@ -86,4 +89,5 @@ public class GradeMixOptimizerController {
         return gradeMixOptimizerService.importBudgetedOperatingHoursExcel(
             UUID.fromString(plantId), aopYear, file);
     }
+*/
 }
