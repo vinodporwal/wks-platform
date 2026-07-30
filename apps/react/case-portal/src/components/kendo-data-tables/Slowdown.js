@@ -26,6 +26,7 @@ import { SlowDownPeColumns } from 'components/colums/PeColums'
 import {
   SlowDownPpColumns,
   SlowDownPpDtaColumns,
+  SlowDownPvcDmdColumns,
 } from 'components/colums/PpColums'
 import {
   SlowDownPtaColumns,
@@ -686,12 +687,38 @@ const SlowDown = ({ permissions }) => {
       }
 
       // Duplicate check
-      const allDescriptions = rows.map((r) =>
-        (r.discription || '').trim().toLowerCase(),
-      )
-      const duplicate = allDescriptions.find(
-        (d, i) => d && allDescriptions.indexOf(d) !== i,
-      )
+      let duplicate = null
+      let duplicateLineId = null
+
+      if (IS_PVC_DMD) {
+        const lineGroups = {}
+        for (const r of rows) {
+          const lId = r.lineId ?? 'default'
+          if (!lineGroups[lId]) lineGroups[lId] = []
+          lineGroups[lId].push(r)
+        }
+
+        for (const lId in lineGroups) {
+          const groupDescs = lineGroups[lId].map((r) =>
+            (r.discription || '').trim().toLowerCase(),
+          )
+          const found = groupDescs.find(
+            (d, i) => d && groupDescs.indexOf(d) !== i,
+          )
+          if (found) {
+            duplicate = found
+            duplicateLineId = lId
+            break
+          }
+        }
+      } else {
+        const allDescriptions = rows.map((r) =>
+          (r.discription || '').trim().toLowerCase(),
+        )
+        duplicate = allDescriptions.find(
+          (d, i) => d && allDescriptions.indexOf(d) !== i,
+        )
+      }
 
       if (
         duplicate &&
@@ -702,8 +729,18 @@ const SlowDown = ({ permissions }) => {
         !IS_CHEMICAL_HMD_BUTADIENE
       ) {
         rows.forEach((row) => {
-          if ((row.discription || '').trim().toLowerCase() === duplicate) {
-            row.isError = true
+          const desc = (row.discription || '').trim().toLowerCase()
+          if (IS_PVC_DMD) {
+            const lId = row.lineId ?? 'default'
+            if (desc === duplicate && String(lId) === String(duplicateLineId)) {
+              row.isError = true
+            } else {
+              row.isError = false
+            }
+          } else {
+            if (desc === duplicate) {
+              row.isError = true
+            }
           }
         })
         setSnackbarOpen(true)
@@ -1392,7 +1429,7 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.AROMATICS:
         return SlowDownAromaticsColumns
       case verticalEnums.PVC:
-        return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
+        return IS_PVC_VMD ? SlowDownPeColumns : IS_PVC_DMD ? SlowDownPvcDmdColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
         return IS_VCM_DMD_VCM
           ? SlowDownVcmColumns

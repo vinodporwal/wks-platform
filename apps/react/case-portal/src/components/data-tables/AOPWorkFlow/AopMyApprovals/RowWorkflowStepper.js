@@ -4,6 +4,7 @@ import TimelineIcon from '@mui/icons-material/Timeline'
 import { useSession } from 'SessionStoreContext'
 import { AopApprovalService } from 'services/AopApprovalService'
 import AopWorkflowStepper from 'components/Utilities/AopWorkflowStepper'
+import { DataService } from 'services/DataService'
 
 /**
  * RowWorkflowStepper Component
@@ -21,18 +22,40 @@ const RowWorkflowStepper = ({ row }) => {
     const fetchCaseDetails = async () => {
       if (!row) return
 
-      let pid = row.plantId || row.pid || row.plant_id
-      if (!pid && row.id && typeof row.id === 'string' && !row.id.includes('_') && row.id.length > 20) {
-        pid = row.id
-      }
-      let sid = row.siteId || row.sid || row.sId || row.site_id
-      let v_id = row.verticalId || row.v_id || row.vid || row.vertical_id
-      const year = row.year
+      let pid = row.plantId || row.plantFKId || row.plant_fk_id || row.pid || row.plant_id
+      const year = row.year ? String(row.year) : ''
 
-      if (!year || (!pid && !row.plantName)) {
+      if (!pid && row.plantName) {
+        try {
+          const hierarchy = await DataService.getAllSites(keycloak)
+          if (active && Array.isArray(hierarchy)) {
+            for (const vertical of hierarchy) {
+              for (const site of vertical.sites || []) {
+                for (const plant of site.plants || []) {
+                  if (
+                    String(plant.id).toUpperCase() === String(row.plantName).toUpperCase() ||
+                    String(plant.name || plant.displayName || '').toUpperCase() === String(row.plantName).toUpperCase()
+                  ) {
+                    pid = plant.id
+                    break
+                  }
+                }
+                if (pid) break
+              }
+              if (pid) break
+            }
+          }
+        } catch (e) {
+          console.warn('Plant ID resolution from DataService failed:', e)
+        }
+      }
+
+      if (!year || !pid) {
         if (active) setError('Missing required plant information or year.')
         return
       }
+
+      pid = String(pid).toUpperCase()
 
       setLoading(true)
       setError(null)

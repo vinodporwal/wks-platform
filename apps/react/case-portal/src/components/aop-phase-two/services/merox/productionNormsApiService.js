@@ -24,6 +24,10 @@ export const ProductionNormsApiService = {
   saveManualEntryData,
   importManualEntryExcel,
   exportManualEntryExcel,
+  // Manual Production Dynamic APIs
+  getManualProduction,
+  calculateManualProduction,
+  saveManualProduction,
   // Norm Calculation API
   loadButtonNormCalculation,
 }
@@ -582,4 +586,115 @@ async function exportManualEntryExcel(keycloak, plantId, year) {
     fileName: `MEROX_Production_Norms_Manual_Entry_${year}.xlsx`,
     method: 'POST',
   })
+}
+
+// ========================|| Manual Production Dynamic APIs ||=====================================//
+/**
+ * Get Manual Production data with dynamic columns
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @param {string} periodFrom - Period start date (yyyy-mm-dd)
+ * @param {string} periodTo - Period end date (yyyy-mm-dd)
+ * @returns {Promise} Manual production data with columns and rows
+ */
+async function getManualProduction(
+  keycloak,
+  plantId,
+  aopYear,
+  periodFrom,
+  periodTo,
+) {
+  const url = `${Config.CaseEngineUrl}/task/manual-production?plantId=${plantId}&aopYear=${aopYear}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Calculate Manual Production data (triggers SP, no direct response data)
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @param {string} periodFrom - Period start date (yyyy-mm-dd)
+ * @param {string} periodTo - Period end date (yyyy-mm-dd)
+ * @returns {Promise} Calculate response
+ */
+async function calculateManualProduction(
+  keycloak,
+  plantId,
+  aopYear,
+  periodFrom,
+  periodTo,
+) {
+  const url = `${Config.CaseEngineUrl}/task/manual-production/calculate?plantId=${plantId}&aopYear=${aopYear}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Manual Production data with dynamic columns
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @param {string} periodFrom - Period start date (yyyy-mm-dd)
+ * @param {string} periodTo - Period end date (yyyy-mm-dd)
+ * @param {Array} payload - Data to save (List of Map<String, Object>)
+ * @returns {Promise} Save response
+ */
+async function saveManualProduction(
+  keycloak,
+  plantId,
+  aopYear,
+  periodFrom,
+  periodTo,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/manual-production?plantId=${plantId}&aopYear=${aopYear}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
 }

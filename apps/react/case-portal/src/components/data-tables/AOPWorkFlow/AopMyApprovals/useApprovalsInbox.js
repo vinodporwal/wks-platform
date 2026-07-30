@@ -105,13 +105,15 @@ export default function useApprovalsInbox(onClose) {
           const year = String(item.year || '').toLowerCase()
           const stage = String(item.gateDisplayName || item.gateName || '').toLowerCase()
           const role = String(item.assignedRole || '').toLowerCase()
+          const modeStr = item.actions?.mode === 'ACTION' ? 'action required' : 'in progress tracked'
           return (
             pName.includes(term) ||
             sName.includes(term) ||
             vName.includes(term) ||
             year.includes(term) ||
             stage.includes(term) ||
-            role.includes(term)
+            role.includes(term) ||
+            modeStr.includes(term)
           )
         })
 

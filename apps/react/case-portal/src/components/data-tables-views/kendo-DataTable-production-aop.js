@@ -116,14 +116,77 @@ const ProductionAopView = ({
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      // const response = await AOPWorkFlowService.getWorkflowDataProduction(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
+      const response = await AOPWorkFlowService.getWorkflowDataProduction(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
-      setRows([])
-      setColumns([])
+      setCalculationObject(response?.data?.aopCalculation)
+      // Correct path is response.data.data
+      const apiData = response?.data?.data
+
+      if (!apiData?.results || !Array.isArray(apiData.results)) {
+        console.error('No results found')
+        setRows([])
+        setColumns([])
+        return
+      }
+
+      let formattedRows = apiData.results.map((row, id) => {
+        const newRow = { id }
+        Object.entries(row).forEach(([key, val]) => {
+          if (['syAop', 'fyActual', 'fyAop'].includes(key)) {
+            newRow[key] = val !== '' && !isNaN(val) ? Number(val) : val
+          } else {
+            newRow[key] = val
+          }
+        })
+        return newRow
+      })
+
+      formattedRows = formattedRows.map((item) => ({
+        ...item,
+        path: [item.particulates],
+      }))
+
+      setRows(formattedRows)
+
+      // Use apiData.results for numeric keys calculation
+      const numericKeys = getNumericKeysInAllRows(apiData.results)
+
+      const generateColumns = ({ headers, keys }) => {
+        // Match keys to headers length to avoid mismatch
+        const validKeys = keys.slice(0, headers.length)
+        const cols = headers.map((header, idx) => {
+          const key = validKeys[idx]
+          const isRemark = key === 'remark'
+          return {
+            field: key,
+            headerName: header,
+            editable: isRemark,
+            minWidth: 120,
+            flex: 1,
+            ...(idx === 0 && {
+              renderHeader: (params) => <div>{params.colDef.headerName}</div>,
+            }),
+            ...(numericKeys.includes(key) && {
+              align: 'right',
+              type: 'number',
+              format: VALUE_FORMATOR,
+            }),
+          }
+        })
+
+        const remarkIdx = cols.findIndex((col) => col.field === 'remark')
+        if (remarkIdx !== -1) {
+          cols[remarkIdx] = remarkColumn(handleRemarkCellClick)
+        }
+
+        return cols
+      }
+
+      setColumns(generateColumns(apiData))
     } catch (error) {
       console.error('Error fetching data:', error)
       setRows([])

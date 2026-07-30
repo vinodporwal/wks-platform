@@ -22,7 +22,6 @@ import {
   TextField,
   Typography,
   Collapse,
-  Stack,
 } from '../../../node_modules/@mui/material/index'
 import { styled } from '@mui/material/styles'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
@@ -49,11 +48,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import HistoryIcon from '@mui/icons-material/History'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import UndoIcon from '@mui/icons-material/Undo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AuditTrailDialog from 'components/data-tables/AOPWorkFlow/AopMyApprovals/AuditTrailDialog'
 import {
   FileExportIcon,
   FileImportIcon,
@@ -166,12 +161,6 @@ const KendoDataTablesReports = ({
   supressGridHeight = false,
   isProposedAOP = false,
   gridHeight,
-  openAuditPopup = false,
-  handleAuditOpen = () => {},
-  handleAuditClose = () => {},
-  handleRejectClick = () => {},
-  handleSubmit = () => {},
-  taskId = null,
 }) => {
   const grid = React.useRef(null)
   const minGridWidth = useRef(0)
@@ -1130,6 +1119,24 @@ const KendoDataTablesReports = ({
                 </Button>
               )}
 
+              {/* {permissions?.showWorkFlowBtns && (
+                      <Stack direction='row' spacing={1} alignItems='center'>
+                        {taskId && (
+                          <Button
+                            variant='contained'
+                            onClick={handleRejectClick}
+                            disabled={isButtonDisabled|| READ_ONLY}
+                          >
+                            Accept
+                          </Button>
+                        )}
+                        <Button variant='outlined'                           
+                        disabled={isButtonDisabled|| READ_ONLY}
+                        onClick={handleAuditOpen}>
+                          Audit Trail
+                        </Button>
+                      </Stack>
+                    )} */}
             </Box>
           </Box>
         </Box>

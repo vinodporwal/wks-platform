@@ -106,10 +106,19 @@ public class SlowdownPlanController {
 	    try {
 	    	byte[] excelBytes=null;
 	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
+
+			if(pvcDmd) {
+				// ref : slowdownExportLine | seperate method with removed duration column and rate renamed to quantity
+				excelBytes = slowdownPlanService.slowdownExportLineQuantity(year, plantId,maintenanceTypeName, false, null);
+			}
+			else {
 			
 				 excelBytes = slowdownPlanService.slowdownExportLine(year, plantId,maintenanceTypeName, false, null);
-			
+			}
 	       
 
 	        HttpHeaders headers = new HttpHeaders();
@@ -206,6 +215,15 @@ public class SlowdownPlanController {
             @RequestParam("year") String year,@RequestParam String maintenanceTypeName,
 			@RequestParam("file") MultipartFile file
 	        ) {
+				Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+				Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
+			if(pvcDmd) { 
+				// ref : importSlowdownLineExcel | seperate method with removed duration column and rate renamed to quantity
+				return slowdownPlanService.importSlowdownLineQuantityExcel(year, UUID.fromString(plantId), maintenanceTypeName, file);
+			}
 			return	slowdownPlanService.importSlowdownLineExcel(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
 	}
 	

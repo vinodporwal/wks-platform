@@ -17,6 +17,8 @@ import ClearIcon from '@mui/icons-material/Clear'
  */
 export default function ApprovalsHeader({
   itemCount,
+  actionCount = 0,
+  trackedCount = 0,
   searchTerm,
   setSearchTerm,
   load,
@@ -31,15 +33,41 @@ export default function ApprovalsHeader({
       spacing={1.5}
       sx={{ mb: 1 }}
     >
-      <Stack direction='row' alignItems='center' spacing={1.5}>
-        <Typography className='aop-title-text' variant='h6'>
-          Action Items
+      <Stack direction='row' alignItems='center' spacing={1.25} flexWrap='wrap'>
+        <Typography className='aop-title-text' variant='h6' sx={{ fontWeight: 600 }}>
+          Workflow Inbox & Tracking
         </Typography>
         <Chip
           className='aop-count-chip'
-          label={`${itemCount} ${itemCount === 1 ? 'Item' : 'Items'}`}
+          label={`${itemCount} ${itemCount === 1 ? 'Total' : 'Total'}`}
           size='small'
         />
+        {actionCount > 0 && (
+          <Chip
+            size='small'
+            label={`${actionCount} Action Needed`}
+            sx={{
+              backgroundColor: '#dcfce7',
+              color: '#15803d',
+              fontWeight: 600,
+              fontSize: '11px',
+              border: '1px solid #86efac',
+            }}
+          />
+        )}
+        {trackedCount > 0 && (
+          <Chip
+            size='small'
+            label={`${trackedCount} Tracked`}
+            sx={{
+              backgroundColor: '#fef3c7',
+              color: '#b45309',
+              fontWeight: 500,
+              fontSize: '11px',
+              border: '1px solid #fde68a',
+            }}
+          />
+        )}
       </Stack>
 
       <Stack direction='row' alignItems='center' spacing={1.5}>

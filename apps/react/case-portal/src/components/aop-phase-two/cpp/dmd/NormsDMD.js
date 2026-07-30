@@ -240,7 +240,7 @@ const NormsDMD = () => {
         AOP_YEAR,
       )
 
-      if (res?.data?.list?.length === 0) {
+      if (!res?.data?.list || res?.data?.list?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })

@@ -8,9 +8,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -475,12 +477,12 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	int remarkColIndex = vertical.getName().equalsIgnoreCase("PTA") ? 3 : 4;
 	int totalCols = innerHeaders.size();
 
-	// Wrap style for remark column â€” top-aligned with text wrapping enabled
+	// Wrap style for remark column — top-aligned with text wrapping enabled
 	CellStyle wrapStyle = Utility.createBorderedStyle(workbook);
 	wrapStyle.setWrapText(true);
 	wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
 
-		// Fixed preferred width for remark column (~50 characters Ã— 256 units)
+		// Fixed preferred width for remark column (~50 characters × 256 units)
 		final int REMARK_CHARS = 50;
 		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
 
@@ -1838,13 +1840,17 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	    List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 	    List<LocalDateTime[]> validTimeRanges = new ArrayList<>();
 	    List<String> des = new ArrayList<>();
+	    Map<String, List<LocalDateTime[]>> validTimeRangesPerLine = new HashMap<>();
+	    Map<String, List<String>> desPerLine = new HashMap<>();
 	    Plants plant = plantsRepository.findById(plantFKId)
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
-	    boolean isPPSEZ= vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ");      
+	    boolean isPPSEZ= vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ"); 
+		
+		boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("dmd");
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 	    
 	    List<Object[]> slowdownTimeRanges = new ArrayList<>();
@@ -1893,27 +1899,40 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                
 	                String line = getStringCellValue(row.getCell(1), dto);
 	                String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
-					String view="vwScrn"+verticalName+"GetLineDetails";
-					List<Object[]> object=getLineId(view,plantFKId.toString(),line);
-					if (object != null && !object.isEmpty()) {
-					    Object[] firstRow = object.get(0);
-					    if (firstRow != null && firstRow.length > 1) {
-					        Object element = firstRow[0];
-					        dto.setLineId(element != null ? element.toString() : ""); 
-					    }
-					}
+				String view="vwScrn"+verticalName+"GetLineDetails";
+				List<Object[]> object=getLineId(view,plantFKId.toString(),line);
+				if (object != null && !object.isEmpty()) {
+				    Object[] firstRow = object.get(0);
+				    if (firstRow != null && firstRow.length > 1) {
+				        Object element = firstRow[0];
+				        dto.setLineId(element != null ? element.toString() : ""); 
+				    }
+				}
 	                if(dto.getLineId()==null) {
 	                	dto.setSaveStatus("Failed");
                         dto.setErrDescription("Please add line.");
 	                }
 
 	                if (dto.getDiscription() != null) {
-	                    if (des.contains(dto.getDiscription().trim())) {
-	                        dto.setSaveStatus("Failed");
-	                        dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
-	                        alreadyFailed = true;
+	                    String descTrimmed = dto.getDiscription().trim();
+						// for pvcdmd, only check duplicates within same line
+	                    if (pvcDmd) {
+	                        String lineKey = (line != null) ? line.trim() : "";
+	                        List<String> lineDescriptions = desPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());
+	                        if (lineDescriptions.contains(descTrimmed)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                            alreadyFailed = true;
+	                        }
+	                        lineDescriptions.add(descTrimmed);
+	                    } else {
+	                        if (des.contains(descTrimmed)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                            alreadyFailed = true;
+	                        }
+	                        des.add(descTrimmed);
 	                    }
-	                    des.add(dto.getDiscription().trim());
 	                } else {
 	                    dto.setSaveStatus("Failed");
 	                    dto.setErrDescription("Description is missing.");
@@ -1977,12 +1996,26 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                        
 	                        if (ldtStart != null && !alreadyFailed) {
 	                            boolean overlapsFile = false;
-	                            for (LocalDateTime[] prevPeriod : validTimeRanges) {
-	                                LocalDateTime prevLdtStart = prevPeriod[0];
-	                                LocalDateTime prevLdtEnd = prevPeriod[1];
-	                                if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
-	                                    overlapsFile = true;
-	                                    break;
+								// for pvcdmd, only check overlaps within same line
+	                            if (pvcDmd) {
+	                                String lineKey = (line != null) ? line.trim() : "";
+	                                List<LocalDateTime[]> lineTimeRanges = validTimeRangesPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());
+	                                for (LocalDateTime[] prevPeriod : lineTimeRanges) {
+	                                    LocalDateTime prevLdtStart = prevPeriod[0];
+	                                    LocalDateTime prevLdtEnd = prevPeriod[1];
+	                                    if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                        overlapsFile = true;
+	                                        break;
+	                                    }
+	                                }
+	                            } else {
+	                                for (LocalDateTime[] prevPeriod : validTimeRanges) {
+	                                    LocalDateTime prevLdtStart = prevPeriod[0];
+	                                    LocalDateTime prevLdtEnd = prevPeriod[1];
+	                                    if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                        overlapsFile = true;
+	                                        break;
+	                                    }
 	                                }
 	                            }
 
@@ -2022,7 +2055,12 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            
 	                            
 	                            if (!alreadyFailed) {
-	                                validTimeRanges.add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                if (pvcDmd) {
+	                                    String lineKey = (line != null) ? line.trim() : "";
+	                                    validTimeRangesPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>()).add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                } else {
+	                                    validTimeRanges.add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                }
 	                            }
 	                        }
 
@@ -2074,8 +2112,14 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                dto.setId(idString);
 	                
 	                if (dto.getId() == null && !alreadyFailed) { // Only check DB if ID is missing (for new records) and no prior error
-	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
-	                            plantFKId.toString(), year, dto.getDiscription());
+	                    List<Object[]> obj;
+	                    if (pvcDmd && dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+	                        obj = shutDownPlanRepository.findDiscriptionByPlantIdAndTypeAndLine("Shutdown",
+	                                plantFKId.toString(), year, dto.getDiscription(), dto.getLineId());
+	                    } else {
+	                        obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
+	                                plantFKId.toString(), year, dto.getDiscription());
+	                    }
 
 	                    if (obj.size() > 0) {
 	                        dto.setSaveStatus("Failed");
@@ -3101,6 +3145,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
+		//boolean gasifier=  verticalName.equalsIgnoreCase("PCG") && (site.getName().equalsIgnoreCase("DTA") || site.getName().equalsIgnoreCase("SEZ"))  && (plant.getName().equalsIgnoreCase("GASIFIER") || plant.getName().equalsIgnoreCase("SRU"));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",
@@ -3220,9 +3265,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
     int actualYear;
     if (month.getValue() >= Month.APRIL.getValue()) {
-        actualYear = startYear; // Aprâ€“Dec â†’ 2026
+        actualYear = startYear; // Apr–Dec ? 2026
     } else {
-        actualYear = endYear;   // Janâ€“Mar â†’ 2027
+        actualYear = endYear;   // Jan–Mar ? 2027
     }
 
     YearMonth yearMonth = YearMonth.of(actualYear, month);

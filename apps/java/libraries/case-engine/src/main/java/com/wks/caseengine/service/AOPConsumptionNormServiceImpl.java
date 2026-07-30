@@ -171,6 +171,9 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					dto.setUOM(row[22] != null ? row[22].toString() : null);
 					dto.setIsEditable(row[23] != null ? Boolean.valueOf(row[23].toString()) : null);
 					dto.setProductName(row[24] != null ? row[24].toString() : null);
+					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
+					dto.setSapCode(row[25] != null ? row[25].toString() : "");
+					}
 					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						dto.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : null);
 						
@@ -633,6 +636,10 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			String storedProcedure = vertical.getName() + "_" + site.getName() + "_CalculateConsumptionAOPValues";
+
+			if(vertical.getName().equalsIgnoreCase("PCG")) {
+				storedProcedure = "[RIL.AOP.Refinery].[dbo].[" + storedProcedure + "]";
+			}
 			
 			Integer result=  executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 					vertical.getId().toString(), year);
@@ -660,8 +667,14 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId,
 			String finYear) {
 		try {
+
+		String verticalName = verticalRepository.findById(UUID.fromString(verticalId)).get().getName();
 			
 			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
+
+			if(verticalName.equalsIgnoreCase("PCG")) {
+				callSql = "{call "  + procedureName  + "(?, ?, ?, ?)}";
+			}
 
 	        try (Connection connection = dataSource.getConnection();
 	             CallableStatement stmt = connection.prepareCall(callSql)) {
@@ -789,7 +802,11 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			}
 			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear AND Grade_FK_Id = :gradeId";
-			}else {
+			}
+			if(vertical.getName().equalsIgnoreCase("PCG")) {
+				sql = "SELECT * FROM " +  "[RIL.AOP.Refinery].[dbo].[" + viewName + "]" + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear";
+			}
+			else {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear";
 			}
 

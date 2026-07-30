@@ -795,35 +795,59 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         for (Workflow wf : workflowRepository.findAllByCaseDefIdAndIsDeletedFalse(CASE_DEF_ID)) {
             String processInstanceId = canonicalProcessInstanceId(wf, wf.getCaseId());
             List<Task> tasks = safeFind(wf.getCaseId(), processInstanceId);
-            Task mine = tasks.stream()
-                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                    .findFirst().orElse(null);
-            if (mine == null) {
+            if (tasks == null || tasks.isEmpty()) {
                 continue;
             }
+
             Plants plant = wf.getPlantFKId() != null ? plantsRepository.findById(wf.getPlantFKId()).orElse(null) : null;
             UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
             Map<String, StepMeta> meta = loadStepMeta(masterId);
-            String stepName = stepNameForTask(mine.getTaskDefinitionKey());
 
-            // Same one-decision-per-visit rule as getStatus — except Prepare,
-            // where remaining multi-instance slots must still be finishable.
-            if (!PREPARE.equals(stepName)
-                    && auditService.hasActedInCurrentCycle(wf.getCaseId(), stepName, callerUserId,
-                    visitStartOf(tasks, stepName))) {
-                continue;
+            Task mine = tasks.stream()
+                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+                    .findFirst().orElse(null);
+
+            boolean isActionable = false;
+            Task targetTask = mine;
+
+            if (mine != null) {
+                String mineStep = stepNameForTask(mine.getTaskDefinitionKey());
+                boolean alreadyActed = !PREPARE.equals(mineStep)
+                        && auditService.hasActedInCurrentCycle(wf.getCaseId(), mineStep, callerUserId,
+                        visitStartOf(tasks, mineStep));
+                if (!alreadyActed) {
+                    isActionable = true;
+                }
             }
-            StepMeta sm = stepName != null ? meta.get(stepName) : null;
 
+            if (!isActionable) {
+                targetTask = tasks.get(0);
+            }
+
+            String stepName = stepNameForTask(targetTask.getTaskDefinitionKey());
+            StepMeta sm = stepName != null ? meta.get(stepName) : null;
             boolean prepareStage = PREPARE.equals(stepName);
-            AopViewerDTO actions = AopViewerDTO.builder()
-                    .mode("ACTION")
-                    .canApprove(!prepareStage)
-                    .canRevert(!prepareStage)
-                    .canEdit(prepareStage)
-                    .canSubmit(prepareStage)
-                    .remarkMandatory(sm != null && !sm.remarksDisabled)
-                    .roles(roles).build();
+
+            AopViewerDTO actions;
+            if (isActionable) {
+                actions = AopViewerDTO.builder()
+                        .mode("ACTION")
+                        .canApprove(!prepareStage)
+                        .canRevert(!prepareStage)
+                        .canEdit(prepareStage)
+                        .canSubmit(prepareStage)
+                        .remarkMandatory(sm != null && !sm.remarksDisabled)
+                        .roles(roles).build();
+            } else {
+                actions = AopViewerDTO.builder()
+                        .mode("READ_ONLY")
+                        .canApprove(false)
+                        .canRevert(false)
+                        .canEdit(false)
+                        .canSubmit(false)
+                        .remarkMandatory(false)
+                        .roles(roles).build();
+            }
 
             items.add(AopPendingItemDTO.builder()
                     .caseId(wf.getCaseId())
@@ -835,8 +859,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .gateName(stepName)
                     .gateDisplayName(sm != null ? sm.displayName : stepName)
                     .sequence(sm != null ? sm.sequence : null)
-                    .assignedRole(mine.getAssignee())
-                    .taskId(mine.getId())
+                    .assignedRole(targetTask.getAssignee())
+                    .taskId(isActionable && mine != null ? mine.getId() : null)
                     .actions(actions)
                     .build());
         }

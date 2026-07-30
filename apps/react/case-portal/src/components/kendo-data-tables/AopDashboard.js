@@ -755,43 +755,47 @@ export default function AopDashboardCompact() {
             </>
           )}
 
-          <Box
-            className='more-btn'
-            onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
-          >
-            <IconDots size={20} />
-          </Box>
+          {viewMode !== 'approvals' && (
+            <>
+              <Box
+                className='more-btn'
+                onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
+              >
+                <IconDots size={20} />
+              </Box>
 
-          <Menu
-            anchorEl={moreMenuAnchor}
-            open={Boolean(moreMenuAnchor)}
-            onClose={() => setMoreMenuAnchor(null)}
-            PaperProps={{
-              style: {
-                minWidth: 160,
-                borderRadius: 6,
-                boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
-                border: '1px solid #e2e8f0',
-              },
-            }}
-            MenuListProps={{
-              style: { padding: '4px 0' },
-            }}
-          >
-            <MenuItem
-              onClick={() => handleExpandCollapseAll(true)}
-              sx={{ minHeight: '32px', padding: '6px 10px' }}
-            >
-              <Typography sx={menuItemStyle}>Expand All</Typography>
-            </MenuItem>
-            <Divider sx={{ margin: `4px 0px !important` }} />
-            <MenuItem
-              onClick={() => handleExpandCollapseAll(false)}
-              sx={{ minHeight: '32px', padding: '6px 10px' }}
-            >
-              <Typography sx={menuItemStyle}>Collapse All</Typography>
-            </MenuItem>
-          </Menu>
+              <Menu
+                anchorEl={moreMenuAnchor}
+                open={Boolean(moreMenuAnchor)}
+                onClose={() => setMoreMenuAnchor(null)}
+                PaperProps={{
+                  style: {
+                    minWidth: 160,
+                    borderRadius: 6,
+                    boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
+                    border: '1px solid #e2e8f0',
+                  },
+                }}
+                MenuListProps={{
+                  style: { padding: '4px 0' },
+                }}
+              >
+                <MenuItem
+                  onClick={() => handleExpandCollapseAll(true)}
+                  sx={{ minHeight: '32px', padding: '6px 10px' }}
+                >
+                  <Typography sx={menuItemStyle}>Expand All</Typography>
+                </MenuItem>
+                <Divider sx={{ margin: `4px 0px !important` }} />
+                <MenuItem
+                  onClick={() => handleExpandCollapseAll(false)}
+                  sx={{ minHeight: '32px', padding: '6px 10px' }}
+                >
+                  <Typography sx={menuItemStyle}>Collapse All</Typography>
+                </MenuItem>
+              </Menu>
+            </>
+          )}
         </Box>
       </Box>
 

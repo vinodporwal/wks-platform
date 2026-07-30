@@ -315,7 +315,7 @@ const SteadyStateConsumptionPCG = () => {
 
     try {
       const response =
-        await SteadyStateConsumptionApiService.calculateSteadyStateConsumption(
+        await SteadyStateConsumptionApiService.calculateCommonSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,

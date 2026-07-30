@@ -327,10 +327,66 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
     }
 
     @Override
+    public AOPMessageVM getSubGradeBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId) {
+
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+        
+        String procedureName = verticalName + "_" + siteName + "_GetSubGradeBudgetedOperatingHours";
+        List<BudgetedOperatingHoursDTO> budgetedOperatingHoursData = fetchSubGradeBudgetedOperatingHoursDataFromProcedure(plantId, aopYear, lineId, procedureName);
+
+        Map<String, Object> map = new HashMap<>();
+
+        List<AopCalculation> aopCalculation = aopCalculationRepository
+                .findByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear, "budget-operating-hours");
+        map.put("budgetedOperatingHoursData", budgetedOperatingHoursData);
+        map.put("aopCalculation", aopCalculation);
+
+
+        return AOPMessageVM.builder()
+            .code(200)
+            .message("Budgeted operating hours data fetched successfully")
+            .data(map)
+            .build();
+    }
+
+    public List<BudgetedOperatingHoursDTO> fetchSubGradeBudgetedOperatingHoursDataFromProcedure(UUID plantId, String aopYear, UUID lineId, String procedureName) {
+        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?, @lineId = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+            BudgetedOperatingHoursDTO.builder()
+                .id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
+                .gradeId(rs.getString("GradeId") != null ? UUID.fromString(rs.getString("GradeId")) : null)
+                .displayName(rs.getString("DisplayName"))
+                .isEditable(rs.getBoolean("IsEditable"))
+                .uom(rs.getString("UOM"))
+
+                .apr(rs.getDouble("April"))
+                .may(rs.getDouble("May"))
+                .jun(rs.getDouble("June"))
+                .jul(rs.getDouble("July"))
+                .aug(rs.getDouble("August"))
+                .sep(rs.getDouble("September"))
+                .oct(rs.getDouble("October"))
+                .nov(rs.getDouble("November"))
+                .dec(rs.getDouble("December"))
+                .jan(rs.getDouble("January"))
+                .feb(rs.getDouble("February"))
+                .mar(rs.getDouble("March"))
+                .remarks(rs.getString("Remarks"))
+                .modifiedBy(rs.getString("ModifiedBy"))
+                .modifiedDateTime(rs.getDate("ModifiedDateTime"))
+                .build(),
+            plantId.toString(), aopYear, lineId.toString()
+        );
+    }
+
+    @Override
     @Transactional
-    public AOPMessageVM saveBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId,
+    public AOPMessageVM saveSubGradeBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId,
             List<BudgetedOperatingHoursDTO> dtoList) {
         try {
+            String type = "Sub Grade";
             String modifiedBy = Utility.getUserName();
             List<BudgetedOperatingHoursDTO> failedList = new ArrayList<>();
 
@@ -339,15 +395,15 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
                     String insertSql = "INSERT INTO GradewiseMonthWiseBudgetedOperatingHours " +
                         "(Id, GradeId, LineId, PlantId, AopYear, April, May, June, July, August, " +
                         "September, October, November, December, January, February, March, Remarks, " +
-                        "ModifiedBy, ModifiedDateTime) " +
-                        "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())";
+                        "ModifiedBy, ModifiedDateTime, Type) " +
+                        "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
                     jdbcTemplate.update(insertSql,
                         dto.getGradeId() != null ? dto.getGradeId().toString() : null,
                         lineId.toString(), plantId.toString(), aopYear,
                         dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
                         dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
                         dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
-                        dto.getRemarks(), modifiedBy);
+                        dto.getRemarks(), modifiedBy, type);
                 } else {
                     BudgetedOperatingHoursDTO existing = fetchExistingBudgetedOperatingHoursRecord(dto.getId());
                     if (existing != null && isRemarkValidationFailed(existing, dto)) {
@@ -360,12 +416,12 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
                         "SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
                         "October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, " +
                         "Remarks = ?, ModifiedBy = ?, ModifiedDateTime = GETDATE() " +
-                        "WHERE Id = ?";
+                        "WHERE Id = ? and Type = ?";
                     jdbcTemplate.update(updateSql,
                         dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
                         dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
                         dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
-                        dto.getRemarks(), modifiedBy, dto.getId().toString());
+                        dto.getRemarks(), modifiedBy, dto.getId().toString(), type);
                 }
             }
 
@@ -411,6 +467,57 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
                         if (lineId == null || lineId.isEmpty()) continue;
 
                         Map<String, Object> data = (Map<String, Object>) getBudgetedOperatingHoursData(plantId, aopYear, UUID.fromString(lineId)).getData();
+                        List<BudgetedOperatingHoursDTO> budgetedOperatingHoursData = (List<BudgetedOperatingHoursDTO>) data.get("budgetedOperatingHoursData");
+
+                        writeSheet(workbook, displayName != null ? displayName : lineId,
+                            budgetedOperatingHoursData, dynamicMonthHeaders, headerStyle, dataStyle, false);
+                    }
+                } else {
+                    // Error file: group failed records by lineName, one sheet per line
+                    Map<String, List<BudgetedOperatingHoursDTO>> byLine = new LinkedHashMap<>();
+                    for (BudgetedOperatingHoursDTO dto : dtoList) {
+                        String key = dto.getLineName() != null ? dto.getLineName() : "Unknown";
+                        byLine.computeIfAbsent(key, k -> new ArrayList<>()).add(dto);
+                    }
+                    for (Map.Entry<String, List<BudgetedOperatingHoursDTO>> entry : byLine.entrySet()) {
+                        writeSheet(workbook, entry.getKey(), entry.getValue(),
+                            dynamicMonthHeaders, headerStyle, dataStyle, true);
+                    }
+                }
+
+                workbook.write(baos);
+                return baos.toByteArray();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to export budgeted operating hours Excel", e);
+        }
+    }
+
+    @Override
+    public byte[] exportSubGradeBudgetedOperatingHoursExcel(UUID plantId, String aopYear, boolean isAfterSave, List<BudgetedOperatingHoursDTO> dtoList) {
+        try {
+            List<String> dynamicMonthHeaders = getFinancialYearMonths(aopYear);
+
+            try (Workbook workbook = new XSSFWorkbook();
+                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+                CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+                CellStyle dataStyle = Utility.createBorderedStyle(workbook);
+
+                if (!isAfterSave) {
+                    Plants plants = plantsRepository.findById(plantId)
+                        .orElseThrow(() -> new RuntimeException("Plant not found"));
+                    String verticalName = verticalRepository.findById(plants.getVerticalFKId())
+                        .orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+                  
+                    List<Map<String, Object>> lines = getLineDetailsForPlant(plantId, verticalName);
+
+                    for (Map<String, Object> line : lines) {
+                        String lineId = getMapValue(line, "id");
+                        String displayName = getMapValue(line, "displayName");
+                        if (lineId == null || lineId.isEmpty()) continue;
+
+                        Map<String, Object> data = (Map<String, Object>) getSubGradeBudgetedOperatingHoursData(plantId, aopYear, UUID.fromString(lineId)).getData();
                         List<BudgetedOperatingHoursDTO> budgetedOperatingHoursData = (List<BudgetedOperatingHoursDTO>) data.get("budgetedOperatingHoursData");
 
                         writeSheet(workbook, displayName != null ? displayName : lineId,
@@ -508,7 +615,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
 
     @Override
     @Transactional
-    public AOPMessageVM importBudgetedOperatingHoursExcel(UUID plantId, String aopYear, MultipartFile file) {
+    public AOPMessageVM importSubGradeBudgetedOperatingHoursExcel(UUID plantId, String aopYear, MultipartFile file) {
         AOPMessageVM vm = new AOPMessageVM();
         try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
 
@@ -529,7 +636,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             int totalSaved = 0;
             for (BudgetedOperatingHoursDTO dto : validRecords) {
                 try {
-                  List<BudgetedOperatingHoursDTO> failedList = (List<BudgetedOperatingHoursDTO>) saveBudgetedOperatingHoursData(plantId, aopYear, dto.getLineId(), List.of(dto)).getData();
+                  List<BudgetedOperatingHoursDTO> failedList = (List<BudgetedOperatingHoursDTO>) saveSubGradeBudgetedOperatingHoursData(plantId, aopYear, dto.getLineId(), List.of(dto)).getData();
                   if (failedList != null && !failedList.isEmpty()) {
                     failedRecords.addAll(failedList);
                     continue;
@@ -543,7 +650,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             }
 
             if (!failedRecords.isEmpty()) {
-                byte[] errorFileBytes = exportBudgetedOperatingHoursExcel(plantId, aopYear, true, failedRecords);
+                byte[] errorFileBytes = exportSubGradeBudgetedOperatingHoursExcel(plantId, aopYear, true, failedRecords);
                 vm.setData(Base64.getEncoder().encodeToString(errorFileBytes));
                 vm.setCode(400);
                 vm.setMessage("Import partially completed. Records saved: " + totalSaved
@@ -827,5 +934,36 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             case "feb": dto.setFeb(value); break;
             case "mar": dto.setMar(value); break;
         }
+    }
+
+    @Override
+    public AOPMessageVM calculateSubGradeBudgetOperationHours(UUID plantId, String aopYear) {
+        
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_CalculateSubGradeBudgetOperatingHours";
+
+        Integer result = executeBudgetOperationHoursCalculationSP(String.valueOf(plantId), aopYear, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
+				"budget-operating-hours");
+                
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("budget-operating-hours");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			AopCalculation aopCalculation = new AopCalculation();
+			aopCalculation.setAopYear(aopYear);
+			aopCalculation.setIsChanged(true);
+			aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+			aopCalculation.setPlantId(plantId);
+			aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+			aopCalculationRepository.save(aopCalculation);
+		}
+		return aopMessageVM;
     }
 }

@@ -138,6 +138,10 @@ public class BasisReportServiceImpl implements BasisReportService {
 		} else if (type.equalsIgnoreCase("causticSodaLye")) {
 			storedProcedure = vertical.getName() + "_" + site.getName() + "_CausticSodaLyeBasisReport";
 		}
+
+		if(vertical.getName().equalsIgnoreCase("PCG")) {
+			storedProcedure = "[RIL.AOP.Refinery].[dbo].[" + storedProcedure + "]";
+		}
 	    
 	    try {
 	        // 1. Fetch ALL column metadata (List of Lists of Maps) - NEW
@@ -519,7 +523,22 @@ public AOPMessageVM getEtheleneStockBasis(String plantId, String aopYear) {
 	@Transactional(readOnly = true) 
 	public List<List<Object[]>> getReportDataForPEE(String plantId, String aopYear, String periodFrom, String periodTo,String type,String storedProcedure) {
    
-	    String storedProcedureCall = "{ call " + "[" + storedProcedure + "]" + "(?, ?, ?, ?) }";
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+		.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+Sites site = siteRepository.findById(plant.getSiteFkId())
+		.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+		.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+		String verticalName = vertical.getName();
+
+	    String tmpCall = "{ call " + "[" + storedProcedure + "]" + "(?, ?, ?, ?) }";
+
+		if(verticalName.equalsIgnoreCase("PCG")) {
+			tmpCall = "{ call " + storedProcedure + "(?, ?, ?, ?) }";
+		}
+
+		String storedProcedureCall = tmpCall;
 	   
 	    Session session = entityManager.unwrap(Session.class);
   
@@ -674,8 +693,23 @@ public AOPMessageVM getEtheleneStockBasis(String plantId, String aopYear) {
 	public List<List<Map<String, Object>>> getAllColumnMetadataForPEE(
 	    String plantId, String aopYear, String periodFrom, String periodTo, String type, String storedProcedure) {
 
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+			.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+Sites site = siteRepository.findById(plant.getSiteFkId())
+			.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+			.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String verticalName = vertical.getName();
 	 
-			String storedProcedureCall = "{ call [" + storedProcedure + "](?, ?, ?, ?) }";
+			String tmpCall = "{ call [" + storedProcedure + "](?, ?, ?, ?) }";
+
+			if(verticalName.equalsIgnoreCase("PCG")) {
+				tmpCall = "{ call " + storedProcedure + "(?, ?, ?, ?) }";
+
+			}
+
+			String storedProcedureCall = tmpCall;
 
 	    Session session = entityManager.unwrap(Session.class);
 

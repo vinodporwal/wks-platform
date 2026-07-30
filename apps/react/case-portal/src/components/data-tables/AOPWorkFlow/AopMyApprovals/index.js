@@ -43,6 +43,8 @@ const AopMyApprovals = ({ onClose }) => {
       <ApprovalsHeader
         onClose={onClose}
         itemCount={filteredItems.length}
+        actionCount={filteredItems.filter((i) => i.actions?.mode === 'ACTION').length}
+        trackedCount={filteredItems.filter((i) => i.actions?.mode === 'READ_ONLY').length}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         load={load}
