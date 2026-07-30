@@ -135,7 +135,9 @@ public class CaseManagementSyncService {
             """;
 
     private static final String FIND_CASE_CLOSE_OUT_SQL = """
-            SELECT CaseCloseOut_PK_ID
+            SELECT
+                CaseCloseOut_PK_ID,
+                CloseOut_DT
             FROM dbo.CaseCloseOuts WITH (UPDLOCK, HOLDLOCK)
             WHERE Case_PK_ID = ?
             """;
@@ -163,8 +165,14 @@ public class CaseManagementSyncService {
                 ?,
                 GETUTCDATE(),
                 ?,
-                GETUTCDATE(),
-                ?,
+                CASE
+                    WHEN ? = N'Closed' THEN GETUTCDATE()
+                    ELSE NULL
+                END,
+                CASE
+                    WHEN ? = N'Closed' THEN ?
+                    ELSE NULL
+                END,
                 ?,
                 NULL,
                 NULL,
@@ -173,8 +181,41 @@ public class CaseManagementSyncService {
                 NULL,
                 ?,
                 0,
-                0
+                ?
             )
+            """;
+
+    private static final String UPDATE_CASE_CLOSE_OUT_SQL = """
+            UPDATE dbo.CaseCloseOuts
+            SET
+                Modified_DT = GETUTCDATE(),
+                ModifiedUser_PK_ID = ?,
+                CloseOut_DT =
+                    CASE
+                        WHEN ? = N'Closed' AND CloseOut_DT IS NULL
+                            THEN GETUTCDATE()
+                        WHEN ? <> N'Closed'
+                            THEN NULL
+                        ELSE CloseOut_DT
+                    END,
+                CloseOutUser_PK_ID =
+                    CASE
+                        WHEN ? = N'Closed' AND CloseOut_DT IS NULL
+                            THEN ?
+                        WHEN ? <> N'Closed'
+                            THEN NULL
+                        ELSE CloseOutUser_PK_ID
+                    END,
+                CaseCategory_PK_ID = ?,
+                CaseCause_PK_ID = NULL,
+                Reason = NULL,
+                Causes = NULL,
+                Consequences = NULL,
+                Recommendations = NULL,
+                Comments = ?,
+                Estimated_Savings = 0,
+                Cost = ?
+            WHERE Case_PK_ID = ?
             """;
 
     private final JdbcTemplate db1JdbcTemplate;
@@ -252,6 +293,7 @@ public class CaseManagementSyncService {
         }
 
         String closeOutComments = closeOutComments(container, caseNo);
+        long closeOutCost = totalValueCaptured(container, caseNo);
         CaseCauseCategory category = resolveSourceCategory(container, caseNo);
         Long caseCauseCategoryId = category.getId();
         String categoryName = requiredValue(
@@ -269,6 +311,7 @@ public class CaseManagementSyncService {
                 caseCauseCategoryId,
                 categoryName,
                 closeOutComments,
+                closeOutCost,
                 eventIds);
     }
 
@@ -296,14 +339,14 @@ public class CaseManagementSyncService {
         int mappingsAdded = insertMissingMappings(targetCase.casePkId(), faultIds, sourceData.createdBy());
         log.info("Added {} case mappings for WKS case {}", mappingsAdded, sourceData.caseNo());
 
-        if (CLOSED_STATUS.equals(sourceData.status())) {
-            ensureCaseCloseOut(
-                    targetCase.casePkId(),
-                    categoryId,
-                    sourceData.ownerId(),
-                    sourceData.closeOutComments(),
-                    sourceData.caseNo());
-        }
+        upsertCaseCloseOut(
+                targetCase.casePkId(),
+                categoryId,
+                sourceData.ownerId(),
+                sourceData.closeOutComments(),
+                sourceData.closeOutCost(),
+                sourceData.status(),
+                sourceData.caseNo());
     }
 
     private void validateTargetStatus(SourceCaseData sourceData) {
@@ -442,24 +485,44 @@ public class CaseManagementSyncService {
         return inserted;
     }
 
-    private void ensureCaseCloseOut(
+    private void upsertCaseCloseOut(
             UUID casePkId,
             UUID categoryId,
             UUID ownerId,
             String comments,
+            long cost,
+            String status,
             String caseNo) {
-        List<UUID> closeOutIds = db1JdbcTemplate.query(
+        List<TargetCaseCloseOut> closeOuts = db1JdbcTemplate.query(
                 FIND_CASE_CLOSE_OUT_SQL,
-                (rs, rowNum) -> uuid(
-                        rs.getString("CaseCloseOut_PK_ID"),
-                        caseNo,
-                        "case closeout ID"),
+                (rs, rowNum) -> new TargetCaseCloseOut(
+                        uuid(
+                                rs.getString("CaseCloseOut_PK_ID"),
+                                caseNo,
+                                "case closeout ID"),
+                        rs.getTimestamp("CloseOut_DT")),
                 casePkId);
-        if (closeOutIds.size() > 1) {
-            throw failure(caseNo, "multiple target case closeouts exist.");
+        if (closeOuts.size() > 1) {
+            throw failure(caseNo, "multiple CaseCloseOuts rows exist for the target case.");
         }
-        if (closeOutIds.size() == 1) {
-            log.debug("DB1 closeout already exists for WKS case {}", caseNo);
+
+        if (closeOuts.size() == 1) {
+            int updated = db1JdbcTemplate.update(
+                    UPDATE_CASE_CLOSE_OUT_SQL,
+                    ownerId,
+                    status,
+                    status,
+                    status,
+                    ownerId,
+                    status,
+                    categoryId,
+                    comments,
+                    cost,
+                    casePkId);
+            if (updated != 1) {
+                throw failure(caseNo, "target case closeout update affected an unexpected number of rows.");
+            }
+            log.info("Updated DB1 closeout for WKS case {}", caseNo);
             return;
         }
 
@@ -467,9 +530,12 @@ public class CaseManagementSyncService {
                 INSERT_CASE_CLOSE_OUT_SQL,
                 casePkId,
                 ownerId,
+                status,
+                status,
                 ownerId,
                 categoryId,
-                comments);
+                comments,
+                cost);
         if (inserted != 1) {
             throw failure(caseNo, "target case closeout insert affected an unexpected number of rows.");
         }
@@ -582,6 +648,32 @@ public class CaseManagementSyncService {
         return value.textValue().trim();
     }
 
+    private long totalValueCaptured(JsonNode container, String caseNo) {
+        JsonNode value = container.get("totalValueCaptured");
+        if (value == null || value.isNull()
+                || (value.isTextual() && value.textValue().trim().isEmpty())) {
+            return 0L;
+        }
+
+        long parsedValue;
+        if (value.isIntegralNumber() && value.canConvertToLong()) {
+            parsedValue = value.longValue();
+        } else if (value.isTextual()) {
+            try {
+                parsedValue = Long.parseLong(value.textValue().trim());
+            } catch (NumberFormatException e) {
+                throw failure(caseNo, "total value captured is invalid.");
+            }
+        } else {
+            throw failure(caseNo, "total value captured is invalid.");
+        }
+
+        if (parsedValue < 0) {
+            throw failure(caseNo, "total value captured must be a non-negative whole number.");
+        }
+        return parsedValue;
+    }
+
     private String requiredJsonText(
             JsonNode container,
             String field,
@@ -657,6 +749,7 @@ public class CaseManagementSyncService {
             Long caseCauseCategoryId,
             String categoryName,
             String closeOutComments,
+            long closeOutCost,
             List<Integer> eventIds) {
     }
 
@@ -664,6 +757,9 @@ public class CaseManagementSyncService {
     }
 
     private record TargetCategory(UUID categoryPkId, String name) {
+    }
+
+    private record TargetCaseCloseOut(UUID caseCloseOutPkId, Timestamp closeOutDate) {
     }
 
     private static final class CaseSynchronizationException extends RuntimeException {
