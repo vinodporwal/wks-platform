@@ -786,6 +786,7 @@ const AdvanceKendoTable = ({
             'remarks',
             'remark',
             'Remark',
+            'Remarks',
             'purpose',
             'reasons',
             'majorJobs',
@@ -2337,7 +2338,7 @@ const AdvanceKendoTable = ({
                           const newVal =
                             typeof e.value === 'boolean'
                               ? e.value
-                              : (e.target?.checked ?? !checked)
+                              : e.target?.checked ?? !checked
                           onChange({ dataItem, field, value: newVal })
                         }}
                         size='medium'
@@ -2370,7 +2371,7 @@ const AdvanceKendoTable = ({
                         const newVal =
                           typeof e.value === 'boolean'
                             ? e.value
-                            : (e.target?.checked ?? !checked)
+                            : e.target?.checked ?? !checked
                         itemChange({ dataItem, field, value: newVal })
                       }}
                       size='medium'

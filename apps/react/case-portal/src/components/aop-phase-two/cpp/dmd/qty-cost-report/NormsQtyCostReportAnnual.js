@@ -262,9 +262,7 @@ const NormsQtyCostReportAnnual = () => {
           AOP_YEAR,
         )
 
-      console.log('API Response:', res)
-
-      if (res?.data?.length === 0) {
+      if (!res?.data || res?.data?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
