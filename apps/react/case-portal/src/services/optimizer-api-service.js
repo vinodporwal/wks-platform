@@ -17,6 +17,8 @@ export const OptimizerDataApiService = {
   budgetOperatingHourImport,
   VcmTradeImportExcel,
   calculateVcmStockBalance,
+  getSubGradewiseBudgetOperatingHours,
+  calculateSubGradeAllocation,
 }
 async function fetchModes(keycloak, PLANT_ID, AOP_YEAR, TYPE) {
   const url = `${Config.CaseEngineUrl}/task/modes?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${TYPE}`
@@ -121,7 +123,7 @@ async function saveGradeBudgetOperatingHours(
   AOP_YEAR,
   lineId,
 ) {
-  var url = `${Config.CaseEngineUrl}/task/budgeted-operating-hours-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
+  var url = `${Config.CaseEngineUrl}/task/sub-grade-budgeted-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -248,7 +250,7 @@ async function budgetOperatingLineExport(
   AOP_YEAR,
   EXCEL_NAME,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/budgeted-operating-hours-export-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/sub-grade-budgeted-export-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -280,7 +282,7 @@ async function budgetOperatingLineExport(
   }
 }
 async function budgetOperatingHourImport(file, keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/budgeted-operating-hours-import-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/sub-grade-budgeted-data-import-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const formData = new FormData()
   formData.append('file', file)
 
@@ -296,7 +298,7 @@ async function budgetOperatingHourImport(file, keycloak, PLANT_ID, AOP_YEAR) {
     })
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
-    console.error('Error importing Budget Operating Hours Excel:', e)
+    console.error('Error importing Gradewise Hours Allocation Excel:', e)
     return await Promise.reject(e)
   }
 }
@@ -340,6 +342,52 @@ async function calculateVcmStockBalance(keycloak, PLANT_ID, AOP_YEAR) {
     return data
   } catch (e) {
     console.error('Error calculating VCM stock balance:', e)
+    return Promise.reject(e)
+  }
+}
+async function getSubGradewiseBudgetOperatingHours(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  lineId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/sub-grade-budgeted-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function calculateSubGradeAllocation(
+  PLANT_ID,
+  AOP_YEAR,
+  keycloak,
+) {
+  const url = `${Config.CaseEngineUrl}/task/sub-grade-budgeted-export-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json()
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
   }
 }
