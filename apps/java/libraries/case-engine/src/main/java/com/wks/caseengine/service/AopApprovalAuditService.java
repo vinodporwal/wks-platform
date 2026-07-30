@@ -62,4 +62,7 @@ public interface AopApprovalAuditService {
      */
     boolean hasActedInCurrentCycle(String caseId, String gateName, String actorUserId,
             OffsetDateTime visitStart);
+
+    /** True after Gate 5 approval ends the Camunda process ({@code toGate = COMPLETED}). */
+    boolean hasCompleted(String caseId);
 }

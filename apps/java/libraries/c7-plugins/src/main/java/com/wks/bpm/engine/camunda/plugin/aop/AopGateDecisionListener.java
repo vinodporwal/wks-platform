@@ -15,7 +15,7 @@ import org.camunda.bpm.engine.RuntimeService;
  * engine. It uses only the engine's own {@link RuntimeService}, no Spring / no
  * DB.</p>
  *
- * <p>Policy = ALL must approve (uniform for every gate, any role count):</p>
+ * <p>Policy = ALL must approve to advance; <b>any single REVERTED exits early</b>:</p>
  * <ul>
  *   <li><b>create</b> — fires as each instance task is created at gate entry
  *       (all creates precede any completion), resetting {@code <gate>Result} so
@@ -23,8 +23,9 @@ import org.camunda.bpm.engine.RuntimeService;
  *   <li><b>complete</b> — each approver's decision is folded in with
  *       REVERTED-wins: once any instance reverts the gate result is REVERTED and
  *       stays there; only if every instance approves does it remain APPROVED.
- *       The gateway evaluates after all instances complete (no early exit), so
- *       the final value reflects the whole committee.</li>
+ *       The BPMN multi-instance {@code completionCondition} on each gate exits
+ *       as soon as {@code <gate>Result == 'REVERTED'}, cancelling sibling tasks
+ *       so the exclusive gateway can route without waiting for the full committee.</li>
  * </ul>
  *
  * <p>The per-approver choice is read from the task-local variable

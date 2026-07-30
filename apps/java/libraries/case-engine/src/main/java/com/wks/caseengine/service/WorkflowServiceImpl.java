@@ -68,6 +68,8 @@ import com.wks.caseengine.tasks.TaskService;
 @Service
 public class WorkflowServiceImpl implements WorkflowService {
 
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(WorkflowServiceImpl.class);
+
 	@Autowired
 	private WorkflowRepository workflowRepository;
 
@@ -220,7 +222,13 @@ public class WorkflowServiceImpl implements WorkflowService {
 					// .getActivityInstances(dtoList.get(0).getProcessInstanceId());
 					// if (actiList != null && actiList.size() > 0) {
 
+					// Camunda rework task is "prepareRework"; step master rows use "prepare".
+					// Without this map, no step is marked inprogress and updateStatuses
+					// incorrectly marks every subsequent gate as completed after a revert.
 					String status = taskDefinitionKey.split("-")[0];
+					if ("prepareRework".equalsIgnoreCase(status)) {
+						status = "prepare";
+					}
 					workflowPageDTO.setStatus(status);
 					for (WorkflowStepsMasterDTO dto : steps) {
 						if (dto.getName().equalsIgnoreCase(status)) {
@@ -269,7 +277,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
-	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public Map<String, Object> getWorkFlow(String plantId, String year) {
 		Map<String, Object> map = new HashMap<>();
 
@@ -300,7 +307,12 @@ public class WorkflowServiceImpl implements WorkflowService {
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
-			throw new RuntimeException("Failed to fetch data", ex);
+			// Never 500 the screen for missing Annual AOP Cost SPs.
+			log.error("getWorkFlow failed for plant {} year {}: {}", plantId, year, ex.getMessage());
+			map.put("headers", List.of("particulates", "uom", "fyAop", "fyActual", "syAop", "remark"));
+			map.put("keys", List.of("particulates", "uom", "fyAop", "fyActual", "syAop", "remark", "aopYear"));
+			map.put("results", new ArrayList<>());
+			return map;
 		}
 	}
 
@@ -348,25 +360,78 @@ public class WorkflowServiceImpl implements WorkflowService {
 		}
 	}
 
-	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getData(String plantId, String aopYear) {
 		try {
-			String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
-			// Prepare native SQL call with parameters
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
-
-			Query query = entityManagerDB2.createNativeQuery(sql);
-
-			// Set parameters
-			query.setParameter("plantId", plantId);
-			query.setParameter("aopYear", aopYear);
-
-			return query.getResultList();
+			return executeAnnualAopCostQuery(plantId, aopYear);
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
-			throw new RuntimeException("Failed to fetch data", ex);
+			// Missing SP must not take down the AOP Approval screen.
+			log.error("GetAnnualAOPCost failed for plant {} year {}: {}", plantId, aopYear, ex.getMessage());
+			return new ArrayList<>();
 		}
+	}
+
+	/**
+	 * Annual AOP Cost is loaded/calculated on the primary AOP DB
+	 * ({@link #calculateExpressionWorkFlow} uses {@code dataSource}). Reading via
+	 * JDBC (not JPA) so a missing SP cannot mark a surrounding transaction
+	 * rollback-only and 500 {@code GET /task/work-flow}.
+	 */
+	private List<Object[]> executeAnnualAopCostQuery(String plantId, String aopYear) {
+		List<String> candidates = annualAopCostProcedureCandidates(plantId);
+		Exception last = null;
+		for (String procedureName : candidates) {
+			String callableSql = "{call " + procedureName + "(?, ?)}";
+			try (Connection conn = dataSource.getConnection();
+					CallableStatement stmt = conn.prepareCall(callableSql)) {
+				stmt.setString(1, plantId);
+				stmt.setString(2, aopYear);
+				boolean hasResultSet = stmt.execute();
+				while (!hasResultSet && stmt.getUpdateCount() != -1) {
+					hasResultSet = stmt.getMoreResults();
+				}
+				List<Object[]> rows = new ArrayList<>();
+				if (hasResultSet) {
+					try (ResultSet rs = stmt.getResultSet()) {
+						ResultSetMetaData meta = rs.getMetaData();
+						int cols = meta.getColumnCount();
+						while (rs.next()) {
+							Object[] row = new Object[cols];
+							for (int i = 1; i <= cols; i++) {
+								row[i - 1] = rs.getObject(i);
+							}
+							rows.add(row);
+						}
+					}
+				}
+				return rows;
+			} catch (Exception ex) {
+				last = ex;
+				log.warn("Annual AOP Cost SP '{}' failed for plant {}: {}", procedureName, plantId, ex.getMessage());
+			}
+		}
+		if (last != null) {
+			throw new RuntimeException("Failed to fetch Annual AOP Cost data", last);
+		}
+		return new ArrayList<>();
+	}
+
+	private List<String> annualAopCostProcedureCandidates(String plantId) {
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+				.orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new RuntimeException("Site not found for ID: " + plant.getSiteFkId()));
+		String verticalName = vertical.getName();
+		String siteName = site.getName();
+		// Match Load SP naming used by calculateExpressionWorkFlow:
+		// {vertical}_{site}_LoadAnnualAOPCost — prefer the same prefix for Get.
+		List<String> names = new ArrayList<>();
+		names.add(verticalName + "_" + siteName + "_GetAnnualAOPCost");
+		names.add("GetAnnualAOPCost");
+		return names;
 	}
 	
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
@@ -424,39 +489,39 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	public List<String> getHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
-		String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
+		List<String> candidates = annualAopCostProcedureCandidates(plantId);
 
-		String callableSql = "{call " + procedureName + "(?, ?)}";
+		for (String procedureName : candidates) {
+			String callableSql = "{call " + procedureName + "(?, ?)}";
+			try (Connection conn = dataSource.getConnection();
+					CallableStatement stmt = conn.prepareCall(callableSql)) {
 
-		try (Connection conn = db2DataSource.getConnection();
-				CallableStatement stmt = conn.prepareCall(callableSql)) {
+				stmt.setString(1, plantId);
+				stmt.setString(2, aopYear);
 
-			stmt.setString(1, plantId);
-			stmt.setString(2, aopYear);
+				boolean hasResultSet = stmt.execute();
 
-			boolean hasResultSet = stmt.execute();
+				while (!hasResultSet && stmt.getUpdateCount() != -1) {
+					hasResultSet = stmt.getMoreResults();
+				}
 
-			// Move forward until we find a result set
-			while (!hasResultSet && stmt.getUpdateCount() != -1) {
-				hasResultSet = stmt.getMoreResults();
-			}
-
-			// If a result set is found, get metadata and headers
-			if (hasResultSet) {
-				try (ResultSet rs = stmt.getResultSet()) {
-					ResultSetMetaData metaData = rs.getMetaData();
-					int columnCount = metaData.getColumnCount();
-
-					for (int i = 1; i <= columnCount; i++) {
-						headers.add(metaData.getColumnLabel(i));
+				if (hasResultSet) {
+					try (ResultSet rs = stmt.getResultSet()) {
+						ResultSetMetaData metaData = rs.getMetaData();
+						int columnCount = metaData.getColumnCount();
+						for (int i = 1; i <= columnCount; i++) {
+							headers.add(metaData.getColumnLabel(i));
+						}
 					}
 				}
+				return headers;
+			} catch (SQLException e) {
+				log.warn("Annual AOP Cost headers via '{}' failed for plant {}: {}",
+						procedureName, plantId, e.getMessage());
 			}
-
-		} catch (SQLException e) {
-			throw new RuntimeException("Failed to fetch headers", e);
 		}
 
+		headers.addAll(List.of("particulates", "uom", "fyAop", "fyActual", "syAop", "remark"));
 		return headers;
 	}
 
@@ -518,9 +583,15 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	public List<WorkflowStepsMasterDTO> updateStatuses(List<WorkflowStepsMasterDTO> items) {
-		AtomicBoolean inProgressFound = new AtomicBoolean(false);
+		boolean hasInProgress = items.stream()
+				.anyMatch(item -> "inprogress".equalsIgnoreCase(item.getStatus()));
+		// Without a known current step, do not invent "completed" for every gate
+		// (that is what made post-revert steppers show all checkmarks).
+		if (!hasInProgress) {
+			return items;
+		}
 
-		// Looping with index-like logic via stream
+		AtomicBoolean inProgressFound = new AtomicBoolean(false);
 		IntStream.range(0, items.size())
 				.forEach(i -> {
 					WorkflowStepsMasterDTO item = items.get(i);
@@ -533,7 +604,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 					}
 				});
 		return items;
-
 	}
 
 	@Transactional

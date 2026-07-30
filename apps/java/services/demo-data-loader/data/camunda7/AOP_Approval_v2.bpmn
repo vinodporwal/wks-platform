@@ -23,6 +23,8 @@
       AopGateDecisionListener (camunda:class task listener on each gate).
       create=reset prior visit; complete=fold each approver's ${decision} into
       ${<gate>Result} with REVERTED-wins (APPROVED only if ALL roles approve).
+      Each gate's multi-instance completionCondition exits early on REVERTED so
+      sibling tasks are cancelled and the gateway can route immediately.
     - Role collections gate1Roles..gate5Roles / prepareRoles: injected as process
       variables at start by the case-engine service (from WorkflowStepRoles).
     - Stage email + audit trail: written service-side in case-engine on submit and
@@ -73,7 +75,11 @@
       <bpmn:incoming>Flow_rework_gate1</bpmn:incoming>
       <bpmn:outgoing>Flow_gate1_gw1</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics isSequential="false"
-          camunda:collection="gate1RoleList" camunda:elementVariable="role" />
+          camunda:collection="gate1RoleList" camunda:elementVariable="role">
+        <!-- Any REVERTED cancels remaining slots and leaves the gate immediately.
+             Approve still requires every role to complete. -->
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate1Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
     </bpmn:userTask>
     <bpmn:sequenceFlow id="Flow_gate1_gw1" sourceRef="gate1" targetRef="gw1" />
 
@@ -99,7 +105,9 @@
       <bpmn:incoming>Flow_gw1_approve</bpmn:incoming>
       <bpmn:outgoing>Flow_gate2_gw2</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics isSequential="false"
-          camunda:collection="gate2RoleList" camunda:elementVariable="role" />
+          camunda:collection="gate2RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate2Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
     </bpmn:userTask>
     <bpmn:sequenceFlow id="Flow_gate2_gw2" sourceRef="gate2" targetRef="gw2" />
 
@@ -126,7 +134,9 @@
       <bpmn:incoming>Flow_gw5_revert</bpmn:incoming>
       <bpmn:outgoing>Flow_gate3_gw3</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics isSequential="false"
-          camunda:collection="gate3RoleList" camunda:elementVariable="role" />
+          camunda:collection="gate3RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate3Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
     </bpmn:userTask>
     <bpmn:sequenceFlow id="Flow_gate3_gw3" sourceRef="gate3" targetRef="gw3" />
 
@@ -152,7 +162,9 @@
       <bpmn:incoming>Flow_gw3_approve</bpmn:incoming>
       <bpmn:outgoing>Flow_gate4_gw4</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics isSequential="false"
-          camunda:collection="gate4RoleList" camunda:elementVariable="role" />
+          camunda:collection="gate4RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate4Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
     </bpmn:userTask>
     <bpmn:sequenceFlow id="Flow_gate4_gw4" sourceRef="gate4" targetRef="gw4" />
 
@@ -178,7 +190,9 @@
       <bpmn:incoming>Flow_gw4_approve</bpmn:incoming>
       <bpmn:outgoing>Flow_gate5_gw5</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics isSequential="false"
-          camunda:collection="gate5RoleList" camunda:elementVariable="role" />
+          camunda:collection="gate5RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate5Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
     </bpmn:userTask>
     <bpmn:sequenceFlow id="Flow_gate5_gw5" sourceRef="gate5" targetRef="gw5" />
 

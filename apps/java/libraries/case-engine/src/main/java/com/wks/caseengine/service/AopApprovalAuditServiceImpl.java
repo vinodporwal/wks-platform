@@ -122,6 +122,12 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
                 .existsByCaseIdAndGateNameAndActorUserIdAndActionAtAfter(caseId, gateName, actorUserId, visitStart);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasCompleted(String caseId) {
+        return caseId != null && auditRepository.existsByCaseIdAndToGate(caseId, "COMPLETED");
+    }
+
     private AopApprovalHistoryDTO toDTO(AopApprovalHistory h) {
         return AopApprovalHistoryDTO.builder()
                 .id(h.getId() != null ? h.getId().toString() : null)

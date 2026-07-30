@@ -539,20 +539,18 @@ const WorkFlowMerge = () => {
       }
       const master = cases?.workflowMasterDTO
 
-      setMasterSteps(master?.steps)
-      // console.log(master?.steps, 'masterSteps')
-      // auto-pick the in-progress or next step
-      // setSteps(cases?.workflowMasterDTO?.steps.map((i) => i.displayName))
-
-      const activeIdx = master?.steps?.findIndex(
-        (s) => s.status === 'inprogress',
-      )
-      // console.log(activeIdx, 'activeIdx')
-      setActiveStep(
-        activeIdx > -1
-          ? activeIdx
-          : master?.steps?.findIndex((s) => s.status !== 'completed'),
-      )
+      // Stepper steps come from /aop-approval/status (fetchAopStatus). Do not
+      // overwrite them here — legacy getCaseId mishandles prepareRework and can
+      // mark every gate completed after a revert.
+      if (!masterSteps?.length && master?.steps?.length) {
+        setMasterSteps(master.steps)
+        const activeIdx = master.steps.findIndex((s) => s.status === 'inprogress')
+        setActiveStep(
+          activeIdx > -1
+            ? activeIdx
+            : master.steps.findIndex((s) => s.status !== 'completed'),
+        )
+      }
     } catch (err) {
       console.error('Error fetching case', err)
     } finally {
@@ -623,6 +621,7 @@ const WorkFlowMerge = () => {
   // --- New AOP approval flow (task/aop-approval/*) ---------------------------------
 
   // Fetch status + server-computed button state; drives the buttons below.
+  // Also owns the stepper steps (maps prepareRework → prepare).
   const fetchAopStatus = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
@@ -642,6 +641,19 @@ const WorkFlowMerge = () => {
       setAopTaskId(data?.taskId || '')
       setAopRole(data?.assignedRole || '')
       setAopExists(Boolean(data?.exists))
+      if (data?.steps?.length) {
+        setMasterSteps(data.steps)
+        const activeIdx = data.steps.findIndex((s) => s.status === 'inprogress')
+        if (activeIdx > -1) {
+          setActiveStep(activeIdx)
+        } else if (data.steps.every((s) => s.status === 'completed')) {
+          setActiveStep(data.steps.length)
+        } else if (typeof data.currentSequence === 'number' && data.currentSequence > 0) {
+          setActiveStep(Math.max(0, data.currentSequence - 1))
+        } else {
+          setActiveStep(0)
+        }
+      }
     } catch (err) {
       console.error('Error fetching AOP approval status', err)
     }
@@ -668,7 +680,14 @@ const WorkFlowMerge = () => {
 
   // Apply a gate decision (APPROVED / REVERTED) with the remark from `remarkText`.
   const aopAct = async (decision, remarkText = '') => {
-    if (!aopTaskId) return
+    if (!aopTaskId) {
+      setSnackbarData({
+        message: 'No active approval task found. Refresh the page and try again.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+      return
+    }
     if (decision === 'REVERTED' && viewer?.remarkMandatory && !remarkText?.trim()) {
       setSnackbarData({ message: 'A remark is required to revert', severity: 'error' })
       setSnackbarOpen(true)
@@ -686,11 +705,17 @@ const WorkFlowMerge = () => {
         actorRole: aopRole,
       })
       setSnackbarData({
-        message: decision === 'APPROVED' ? 'Approved successfully' : 'Reverted for update successfully',
+        message:
+          decision === 'REVERTED'
+            ? 'Reverted for update successfully'
+            : aopGate === 'prepare'
+              ? 'Submitted for approval successfully'
+              : 'Approved successfully',
         severity: 'success',
       })
       setText('')
       setAopRejectOpen(false)
+      // AOP status owns the stepper; refresh it first so Gate advances immediately.
       await fetchAopStatus()
       await getCaseId()
     } catch (err) {
@@ -734,7 +759,14 @@ const WorkFlowMerge = () => {
     setWorkflowDialogOpen(false)
 
     if (type === 'SUBMIT') {
-      await aopStart(remarkText)
+      // First submit starts the process (→ Gate 1). After a revert, Prepare is
+      // already an open Camunda task (prepareRework) — completing it with APPROVED
+      // resubmits to Gate 1.
+      if (aopExists && aopTaskId) {
+        await aopAct('APPROVED', remarkText)
+      } else {
+        await aopStart(remarkText)
+      }
     } else if (type === 'APPROVE' || type === 'REVERT') {
       await aopAct(decision, remarkText)
     }
@@ -1000,12 +1032,12 @@ const WorkFlowMerge = () => {
             justifyContent='flex-end'
             sx={{ mt: 1, mb: 1.5 }}
           >
-            {viewer?.canSubmit && !aopExists && (
+            {viewer?.canSubmit && (
               <Button
                 variant='outlined'
                 className='btn-save'
                 onClick={handleOpenSubmitDialog}
-                disabled={isCreatingCase}
+                disabled={isCreatingCase || actionDisabled}
                 startIcon={<SendIcon sx={{ fontSize: '16px !important' }} />}
                 sx={{
                   height: '34px',
@@ -1035,8 +1067,7 @@ const WorkFlowMerge = () => {
                 Submit for Approval
               </Button>
             )}
-            {viewer?.mode === 'ACTION' && aopTaskId && (
-              <>
+            {viewer?.canApprove && aopTaskId && (
                 <Button
                   variant='outlined'
                   className='btn-add'
@@ -1070,6 +1101,8 @@ const WorkFlowMerge = () => {
                 >
                   Approve
                 </Button>
+            )}
+            {viewer?.canRevert && aopTaskId && (
                 <Button
                   variant='outlined'
                   onClick={handleOpenRevertDialog}
@@ -1102,7 +1135,6 @@ const WorkFlowMerge = () => {
                 >
                   Revert
                 </Button>
-              </>
             )}
           </Stack>
         )}
