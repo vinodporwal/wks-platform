@@ -18,9 +18,13 @@ public interface GradeMixOptimizerService {
 
     AOPMessageVM getBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId);
 
-    AOPMessageVM saveBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId, List<BudgetedOperatingHoursDTO> dtoList);
+    AOPMessageVM getSubGradeBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId);
+
+    AOPMessageVM saveSubGradeBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId, List<BudgetedOperatingHoursDTO> dtoList);
 
     byte[] exportBudgetedOperatingHoursExcel(UUID plantId, String aopYear, boolean isAfterSave, List<BudgetedOperatingHoursDTO> dtoList);
 
-    AOPMessageVM importBudgetedOperatingHoursExcel(UUID plantId, String aopYear, MultipartFile file);
+    AOPMessageVM importSubGradeBudgetedOperatingHoursExcel(UUID plantId, String aopYear, MultipartFile file);
+
+    byte[] exportSubGradeBudgetedOperatingHoursExcel(UUID plantId, String aopYear, boolean isAfterSave, List<BudgetedOperatingHoursDTO> dtoList);
 }
