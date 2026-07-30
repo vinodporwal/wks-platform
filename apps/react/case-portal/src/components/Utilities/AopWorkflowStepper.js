@@ -124,9 +124,13 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
         }}
       >
         {steps.map((step, index) => {
-          const isCompleted = step.status === 'completed' || index < activeStep
-          const isInProgress = step.status === 'inprogress' || index === activeStep
-          const isError = step.status === 'error'
+          // Trust API status only. Mixing in `index < activeStep` made post-revert
+          // steppers show every gate as Completed when activeStep was wrong/missing.
+          const status = (step.status || '').toLowerCase()
+          const isCompleted = status === 'completed'
+          const isInProgress = status === 'inprogress'
+          const isError = status === 'error'
+          const isPending = !isCompleted && !isInProgress && !isError
 
           let statusLabel = 'Pending'
           let statusColor = { bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' }
@@ -140,6 +144,8 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
           } else if (isError) {
             statusLabel = 'Reverted'
             statusColor = { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' }
+          } else if (isPending) {
+            statusLabel = 'Pending'
           }
 
           return (

@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { Box, Chip, CircularProgress, Typography } from '@mui/material'
 import TimelineIcon from '@mui/icons-material/Timeline'
 import { useSession } from 'SessionStoreContext'
-import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
+import { AopApprovalService } from 'services/AopApprovalService'
 import AopWorkflowStepper from 'components/Utilities/AopWorkflowStepper'
 
 /**
  * RowWorkflowStepper Component
- * Fetches workflow details via task/getCaseId for expanded row
+ * Fetches workflow status via /aop-approval/status (maps prepareRework → prepare).
  */
 const RowWorkflowStepper = ({ row }) => {
   const keycloak = useSession()
@@ -37,25 +37,22 @@ const RowWorkflowStepper = ({ row }) => {
       setLoading(true)
       setError(null)
       try {
-        const cases = await AOPWorkFlowService.getCaseId(
-          keycloak,
-          pid,
-          year,
-          sid || '',
-          v_id || '',
-        )
+        const status = await AopApprovalService.getStatus(keycloak, pid, year)
         if (!active) return
 
-        const master = cases?.workflowMasterDTO
-        const steps = master?.steps || []
+        const steps = status?.steps || []
         setMasterSteps(steps)
 
         const activeIdx = steps.findIndex((s) => s.status === 'inprogress')
-        setActiveStep(
-          activeIdx > -1
-            ? activeIdx
-            : steps.findIndex((s) => s.status !== 'completed'),
-        )
+        if (activeIdx > -1) {
+          setActiveStep(activeIdx)
+        } else if (steps.every((s) => s.status === 'completed')) {
+          setActiveStep(steps.length)
+        } else if (typeof status?.currentSequence === 'number' && status.currentSequence > 0) {
+          setActiveStep(Math.max(0, status.currentSequence - 1))
+        } else {
+          setActiveStep(0)
+        }
       } catch (err) {
         if (active) setError(err.message || 'Failed to fetch workflow status.')
       } finally {

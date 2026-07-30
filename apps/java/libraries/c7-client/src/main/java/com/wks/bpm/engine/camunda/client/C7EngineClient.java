@@ -418,14 +418,12 @@ public class C7EngineClient implements BpmEngineClient {
 			log.error("Error1 completing camunda task", e);
 			System.out.println("Error1 completing camunda task: " + e.getMessage());
 			System.out.println("HTTP body: " + e.getResponseBody());
-		//	e.printStackTrace();
-		}
-
-		catch(Exception e) {
+			throw new IllegalStateException("Failed to complete Camunda task " + taskId
+					+ (e.getResponseBody() != null ? ": " + e.getResponseBody() : ""), e);
+		} catch (Exception e) {
 			log.error("Error2 completing camunda task", e);
 			System.out.println("Error2 completing camunda task: " + e.getMessage());
-		//	System.out.println("Http body: " + e.getResponseBody());
-			return;
+			throw new IllegalStateException("Failed to complete Camunda task " + taskId, e);
 		}
 	}
 

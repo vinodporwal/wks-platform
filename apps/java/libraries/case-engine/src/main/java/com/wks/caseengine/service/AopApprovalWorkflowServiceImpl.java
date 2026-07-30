@@ -91,29 +91,43 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     @Override
     @Transactional
     public WorkflowDTO start(String plantId, String year, String actorUserId) {
+        return start(plantId, year, actorUserId, null, null);
+    }
+
+    @Transactional
+    public WorkflowDTO start(String plantId, String year, String actorUserId, String remark, String actorRole) {
         UUID plantUuid = UUID.fromString(plantId);
         Plants plant = plantsRepository.findById(plantUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown plant: " + plantId));
 
-        // Single active workflow per (plant, year).
-        if (!workflowRepository.findAllByYearAndPlantFKIdAndIsDeletedFalse(year, plantUuid).isEmpty()) {
-            throw new WorkflowConflictException(
-                    "An AOP workflow already exists for plant " + plantId + " and year " + year);
+        String businessKey = businessKey(plantId, year);
+        List<Workflow> existing = workflowRepository.findAllByYearAndPlantFKIdAndIsDeletedFalse(year, plantUuid);
+        if (!existing.isEmpty()) {
+            if (auditService.hasCompleted(businessKey)) {
+                throw new WorkflowConflictException(
+                        "AOP workflow for plant " + plantId + " and year " + year
+                                + " is already fully approved");
+            }
+            // Live Camunda process still running — true conflict.
+            if (findProcessInstanceId(businessKey) != null) {
+                throw new WorkflowConflictException(
+                        "An AOP workflow already exists for plant " + plantId + " and year " + year);
+            }
+            // DB row left behind after a Camunda wipe/restart — reuse it instead of 409.
+            log.warn("AOP start: reusing dead workflow row for {}", businessKey);
+            Workflow wf = existing.get(0);
+            return restartExistingWorkflow(wf, plant, year, businessKey, actorUserId, remark, actorRole);
         }
 
         UUID masterId = resolveWorkflowMasterId(plant.getVerticalFKId());
         Map<String, StepMeta> steps = loadStepMeta(masterId);
 
         // Inject each gate's approver roles as comma-delimited process variables.
-        List<ProcessVariable> vars = new ArrayList<>();
-        vars.add(strVar("prepareRoles", requiredRoles(masterId, PREPARE)));
-        for (String gate : GATES) {
-            vars.add(strVar(gate + "Roles", requiredRoles(masterId, gate)));
-        }
-        vars.add(strVar("plantId", plantId));
-        vars.add(strVar("year", year));
-
-        String businessKey = businessKey(plantId, year);
+        List<ProcessVariable> vars = buildStartVariables(masterId, plantId, year, remark);
+        // DB unique-guard alone is not enough: prior failed starts / restarts can leave
+        // orphan Camunda instances on the same businessKey. Those mix into task queries
+        // and make Approve/Revert target the wrong gate.
+        deleteOrphanProcessInstances(businessKey, null);
         String processInstanceId = startEngineProcess(businessKey, vars);
 
         Workflow wf = Workflow.builder()
@@ -128,22 +142,61 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 .build();
         workflowRepository.save(wf);
 
-        StepMeta prep = steps.get(PREPARE);
-        auditService.record(businessKey, year, plantUuid, PREPARE,
-                prep != null ? prep.displayName : null, prep != null ? prep.sequence : null,
-                SUBMITTED, actorUserId, null, null, PREPARE, "gate1");
-
+        recordSubmitted(businessKey, year, plantUuid, steps, actorUserId, actorRole, remark);
         notifyGate(masterId, "gate1", steps, plant, year, businessKey,
                 "AOP submitted – Gate 1 approval required");
 
+        return toWorkflowDto(wf, plantId, year, plant);
+    }
+
+    private WorkflowDTO restartExistingWorkflow(Workflow wf, Plants plant, String year, String businessKey,
+            String actorUserId, String remark, String actorRole) {
+        UUID masterId = resolveWorkflowMasterId(plant.getVerticalFKId());
+        Map<String, StepMeta> steps = loadStepMeta(masterId);
+        List<ProcessVariable> vars = buildStartVariables(masterId, plant.getId().toString(), year, remark);
+        deleteOrphanProcessInstances(businessKey, null);
+        String processInstanceId = startEngineProcess(businessKey, vars);
+        wf.setProcessInstanceId(processInstanceId);
+        workflowRepository.save(wf);
+        recordSubmitted(businessKey, year, plant.getId(), steps, actorUserId, actorRole, remark);
+        notifyGate(masterId, "gate1", steps, plant, year, businessKey,
+                "AOP submitted – Gate 1 approval required");
+        return toWorkflowDto(wf, plant.getId().toString(), year, plant);
+    }
+
+    private List<ProcessVariable> buildStartVariables(UUID masterId, String plantId, String year, String remark) {
+        List<ProcessVariable> vars = new ArrayList<>();
+        vars.add(strVar("prepareRoles", requiredRoles(masterId, PREPARE)));
+        for (String gate : GATES) {
+            vars.add(strVar(gate + "Roles", requiredRoles(masterId, gate)));
+        }
+        vars.add(strVar("plantId", plantId));
+        vars.add(strVar("year", year));
+        if (remark != null && !remark.isBlank()) {
+            vars.add(strVar("remark", remark.trim()));
+        }
+        return vars;
+    }
+
+    private void recordSubmitted(String businessKey, String year, UUID plantUuid, Map<String, StepMeta> steps,
+            String actorUserId, String actorRole, String remark) {
+        StepMeta prep = steps.get(PREPARE);
+        auditService.record(businessKey, year, plantUuid, PREPARE,
+                prep != null ? prep.displayName : null, prep != null ? prep.sequence : null,
+                SUBMITTED, actorUserId, actorRole,
+                remark != null && !remark.isBlank() ? remark.trim() : null,
+                PREPARE, "gate1");
+    }
+
+    private WorkflowDTO toWorkflowDto(Workflow wf, String plantId, String year, Plants plant) {
         return WorkflowDTO.builder()
-                .caseId(businessKey)
+                .caseId(wf.getCaseId())
                 .plantFkId(plantId)
                 .year(year)
                 .siteFKId(asString(plant.getSiteFkId()))
                 .verticalFKId(asString(plant.getVerticalFKId()))
                 .caseDefId(CASE_DEF_ID)
-                .processInstanceId(processInstanceId)
+                .processInstanceId(wf.getProcessInstanceId())
                 .isDeleted(Boolean.FALSE)
                 .build();
     }
@@ -220,8 +273,35 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         Map<String, StepMeta> steps = loadStepMeta(masterId);
         String businessKey = businessKey(plantId, year);
 
-        String normalized = REVERTED.equalsIgnoreCase(decision) ? REVERTED : APPROVED;
-        StepMeta gateMeta = steps.get(gateName);
+        List<Workflow> active = workflowRepository.findAllByYearAndPlantFKIdAndIsDeletedFalse(year, plantUuid);
+        if (active.isEmpty()) {
+            throw new IllegalStateException("No active AOP workflow for plant " + plantId + " and year " + year);
+        }
+        String processInstanceId = ensureLiveProcess(active.get(0), plant, year, businessKey);
+        List<Task> openTasks = tasksForActing(businessKey, processInstanceId);
+
+        // Gate must come from the selected Camunda task, not the client payload.
+        // Orphan process instances on the same businessKey previously made status
+        // report "prepare" while the caller's taskId belonged to gate1 — matching
+        // on the client gateName then silently no-op'd every Approve/Revert.
+        Task selected = findTaskById(openTasks, taskId);
+        String resolvedGate = selected != null
+                ? stepNameForTask(selected.getTaskDefinitionKey())
+                : (gateName != null && !gateName.isBlank() ? gateName : null);
+        if (resolvedGate == null) {
+            throw new IllegalArgumentException("Cannot resolve gate for task " + taskId);
+        }
+        if (gateName != null && !gateName.isBlank() && !gateName.equals(resolvedGate)) {
+            log.warn("AOP act: client gateName '{}' disagrees with task {} gate '{}'; using task gate",
+                    gateName, taskId, resolvedGate);
+        }
+
+        String normalized = PREPARE.equals(resolvedGate)
+                ? APPROVED
+                : (REVERTED.equalsIgnoreCase(decision) ? REVERTED : APPROVED);
+        // Prefer SUBMITTED in the audit trail for prepare (matches first /start).
+        String auditAction = PREPARE.equals(resolvedGate) ? SUBMITTED : normalized;
+        StepMeta gateMeta = steps.get(resolvedGate);
 
         // One decision covers every role the caller holds at this gate. A gate fans
         // out one task per approver role; when one person wears several of those
@@ -230,7 +310,13 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         // nobody able to complete them. So apply the decision to all of them at
         // once, and audit each role separately so the trail still shows that every
         // required role was accounted for.
-        List<Task> toComplete = tasksForCallerAtGate(businessKey, gateName, taskId, callerRoles);
+        // Prepare: complete every multi-instance slot so one Submit advances.
+        // Revert: any one reverter must leave the gate — complete remaining slots
+        // (BPMN completionCondition also cancels them on new deployments; this
+        // covers in-flight processes still on the old definition).
+        List<Task> toComplete = (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized))
+                ? allOpenTasksAtGate(openTasks, resolvedGate, taskId)
+                : tasksForCallerAtGate(openTasks, resolvedGate, taskId, callerRoles);
 
         // Replayed request: the caller has no open task left at this gate, so this
         // decision has already been applied (a double-clicked button, a retried
@@ -240,7 +326,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         // was satisfied by the first request.
         if (toComplete.isEmpty()) {
             log.info("AOP act: no open task for {} at {} (user {}, roles {}) - already decided, ignoring replay",
-                    businessKey, gateName, actorUserId, callerRoles);
+                    businessKey, resolvedGate, actorUserId, callerRoles);
             return;
         }
 
@@ -249,23 +335,50 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         vars.add(strVar("remark", remark != null ? remark : ""));
 
         List<UUID> auditIds = new ArrayList<>();
-        for (Task task : toComplete) {
-            // Audit first: the trail must not claim an approval the engine rejected.
-            // toGate is unknown until the engine has routed — back-filled below.
-            auditIds.add(auditService.record(businessKey, year, plantUuid, gateName,
+        if (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized)) {
+            // One human action — one history row. Peer multi-instance slots are
+            // still completed (or already cancelled by BPMN completionCondition).
+            String actionRole = actorRole;
+            if (actionRole == null || actionRole.isBlank()) {
+                Task picked = findTaskById(toComplete, taskId);
+                actionRole = picked != null && picked.getAssignee() != null
+                        ? picked.getAssignee()
+                        : toComplete.get(0).getAssignee();
+            }
+            auditIds.add(auditService.record(businessKey, year, plantUuid, resolvedGate,
                     gateMeta != null ? gateMeta.displayName : null,
                     gateMeta != null ? gateMeta.sequence : null,
-                    normalized, actorUserId,
-                    task.getAssignee() != null ? task.getAssignee() : actorRole,
-                    remark, gateName, null));
+                    auditAction, actorUserId, actionRole,
+                    remark, resolvedGate, null));
+            for (Task task : toComplete) {
+                try {
+                    processEngineClientFacade.complete(task.getId(), vars);
+                } catch (Exception ex) {
+                    // Sibling may already be cancelled by MI completionCondition.
+                    log.warn("AOP act: could not complete task {} at {} ({}): {}",
+                            task.getId(), resolvedGate, task.getAssignee(), ex.getMessage());
+                }
+            }
+        } else {
+            for (Task task : toComplete) {
+                // Audit first: the trail must not claim an approval the engine rejected.
+                // toGate is unknown until the engine has routed — back-filled below.
+                // Gate multi-instance approve: one audit row per role completed in this act.
+                auditIds.add(auditService.record(businessKey, year, plantUuid, resolvedGate,
+                        gateMeta != null ? gateMeta.displayName : null,
+                        gateMeta != null ? gateMeta.sequence : null,
+                        auditAction, actorUserId,
+                        task.getAssignee() != null ? task.getAssignee() : actorRole,
+                        remark, resolvedGate, null));
 
-            // Deliberately NOT case-engine's TaskService: its TaskCompleteListener
-            // resolves a CaseInstance by businessKey and throws
-            // CaseInstanceNotFoundException for an AOP plan, which has no case
-            // document. That fires after the engine call, so the task completes but
-            // the request 500s. AOP is a plain Camunda process — go straight to the
-            // engine client.
-            processEngineClientFacade.complete(task.getId(), vars);
+                // Deliberately NOT case-engine's TaskService: its TaskCompleteListener
+                // resolves a CaseInstance by businessKey and throws
+                // CaseInstanceNotFoundException for an AOP plan, which has no case
+                // document. That fires after the engine call, so the task completes but
+                // the request 500s. AOP is a plain Camunda process — go straight to the
+                // engine client.
+                processEngineClientFacade.complete(task.getId(), vars);
+            }
         }
 
         // Where did the plan actually land? Asking the engine after the fact is the
@@ -273,13 +386,13 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         // itself advance anything (a peer may still revert it), so anything derived
         // from the decision alone would be a guess. Same gate back = still waiting
         // on that gate's other approvers.
-        List<Task> remaining = safeFind(businessKey);
+        List<Task> remaining = safeFind(businessKey, processInstanceId);
         String destination = remaining.isEmpty() ? COMPLETED : currentStepOf(remaining, steps);
         auditService.completeToGate(auditIds, destination);
 
         // Notify the approvers of whatever gate is now active (skip the gate just
         // acted on, so parallel completions within a gate don't re-email it).
-        notifyNextGates(masterId, gateName, steps, plant, year, businessKey);
+        notifyNextGates(masterId, resolvedGate, steps, plant, year, businessKey, processInstanceId);
     }
 
     /**
@@ -288,23 +401,24 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
      * left to act on there.
      *
      * <p>An empty result must mean "already decided", never "the lookup failed",
-     * or a replayed request would be indistinguishable from a first one. So this
-     * uses {@link #tasksForActing} rather than {@link #safeFind}: a genuine engine
-     * outage throws instead of silently yielding an empty list. An earlier version
-     * fabricated a synthetic task from the supplied id whenever the lookup came
-     * back empty, which turned every duplicate submission into an extra audit row
-     * for an engine action that had already happened.</p>
+     * or a replayed request would be indistinguishable from a first one. The
+     * caller must pass tasks from {@link #tasksForActing}, which throws on
+     * engine outage instead of silently yielding an empty list.</p>
      */
-    private List<Task> tasksForCallerAtGate(String businessKey, String gateName, String taskId,
+    private List<Task> tasksForCallerAtGate(List<Task> openTasks, String gateName, String taskId,
             List<String> callerRoles) {
 
         List<Task> matched = new ArrayList<>();
         Task selected = null;
-        for (Task task : tasksForActing(businessKey)) {
+        Set<String> seen = new HashSet<>();
+        for (Task task : openTasks) {
+            if (task.getId() == null || !seen.add(task.getId())) {
+                continue;
+            }
             if (!gateName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
                 continue;
             }
-            if (task.getId() != null && task.getId().equals(taskId)) {
+            if (task.getId().equals(taskId)) {
                 selected = task;
             } else if (callerRoles != null && task.getAssignee() != null
                     && callerRoles.contains(task.getAssignee())) {
@@ -317,13 +431,52 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         return matched;
     }
 
+    /**
+     * All open tasks at a step (used for Prepare/rework submit). Selected task
+     * first when still present; otherwise remaining instances in any order.
+     */
+    private List<Task> allOpenTasksAtGate(List<Task> openTasks, String gateName, String taskId) {
+        List<Task> matched = new ArrayList<>();
+        Task selected = null;
+        Set<String> seen = new HashSet<>();
+        for (Task task : openTasks) {
+            if (task.getId() == null || !seen.add(task.getId())) {
+                continue;
+            }
+            if (!gateName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
+                continue;
+            }
+            if (taskId != null && taskId.equals(task.getId())) {
+                selected = task;
+            } else {
+                matched.add(task);
+            }
+        }
+        if (selected != null) {
+            matched.add(0, selected);
+        }
+        return matched;
+    }
+
+    private Task findTaskById(List<Task> tasks, String taskId) {
+        if (taskId == null || tasks == null) {
+            return null;
+        }
+        for (Task task : tasks) {
+            if (taskId.equals(task.getId())) {
+                return task;
+            }
+        }
+        return null;
+    }
+
     /* ------------------------------------------------------------------ helpers */
 
     private void notifyNextGates(UUID masterId, String actedGate, Map<String, StepMeta> steps,
-            Plants plant, String year, String businessKey) {
+            Plants plant, String year, String businessKey, String processInstanceId) {
         List<Task> active;
         try {
-            active = taskService.find(Optional.of(businessKey));
+            active = filterByProcessInstance(taskService.find(Optional.of(businessKey)), processInstanceId);
         } catch (Exception ex) {
             log.error("AOP notify: could not list tasks for {}: {}", businessKey, ex.getMessage());
             return;
@@ -506,39 +659,122 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
 
         // Self-heal rows written before the start-failure guard existed (or by the
         // legacy submit path, which never carried a process instance id).
-        backfillProcessInstanceId(active.get(0), businessKey);
+        Workflow wf = active.get(0);
 
-        List<Task> tasks = safeFind(businessKey);
+        // Gate 5 approve ends the Camunda process. Do not treat that as a missing
+        // engine instance and restart at Gate 1.
+        if (auditService.hasCompleted(businessKey)) {
+            deleteOrphanProcessInstances(businessKey, null);
+            markAllCompleted(steps);
+            AopViewerDTO viewer = AopViewerDTO.builder()
+                    .mode("READ_ONLY")
+                    .roles(roles)
+                    .build();
+            return dto.exists(true)
+                    .currentGateName(COMPLETED)
+                    .currentGateDisplayName("Approved")
+                    .currentSequence(null)
+                    .viewer(viewer)
+                    .build();
+        }
+
+        String processInstanceId;
+        try {
+            processInstanceId = ensureLiveProcess(wf, plant, year, businessKey);
+        } catch (Exception ex) {
+            // Do not turn a Camunda outage / missing plugin into a 500 on status —
+            // the UI still needs to render. Act/start will surface the real error.
+            log.error("AOP status: could not ensure live process for {}: {}", businessKey, ex.getMessage());
+            AopViewerDTO viewer = AopViewerDTO.builder()
+                    .mode("READ_ONLY")
+                    .roles(roles)
+                    .build();
+            return dto.exists(true)
+                    .currentGateName(null)
+                    .currentGateDisplayName(null)
+                    .currentSequence(null)
+                    .viewer(viewer)
+                    .build();
+        }
+
+        if (processInstanceId == null) {
+            AopViewerDTO viewer = AopViewerDTO.builder()
+                    .mode("READ_ONLY")
+                    .roles(roles)
+                    .build();
+            return dto.exists(true)
+                    .currentGateName(null)
+                    .currentGateDisplayName(null)
+                    .currentSequence(null)
+                    .viewer(viewer)
+                    .build();
+        }
+
+        List<Task> tasks = safeFind(businessKey, processInstanceId);
         String currentStep = currentStepOf(tasks, meta);
         Integer currentSeq = currentStep != null && meta.containsKey(currentStep) ? meta.get(currentStep).sequence : null;
         markStatuses(steps, currentSeq);
 
-        // One decision per person per gate visit: having already approved or
-        // reverted at this gate, the caller gets no further buttons here - even if
-        // they hold several of the gate's roles. A revert re-entering the gate
-        // starts a new visit and they can act again.
-        boolean alreadyActed = auditService.hasActedInCurrentCycle(
-                businessKey, currentStep, callerUserId, visitStartOf(tasks, currentStep));
+        // One decision per person per gate visit — except Prepare/rework, where any
+        // preparer must be able to finish remaining multi-instance tasks and advance.
+        boolean alreadyActed = !PREPARE.equals(currentStep)
+                && auditService.hasActedInCurrentCycle(
+                        businessKey, currentStep, callerUserId, visitStartOf(tasks, currentStep));
 
-        // Actionable task = one whose assignee role is held by the caller.
-        Task mine = alreadyActed ? null : tasks.stream()
-                .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                .findFirst().orElse(null);
+        // Actionable task = one whose assignee role is held by the caller, preferring
+        // the current gate so a role match on a different step cannot win.
+        Task mine = null;
+        if (!alreadyActed) {
+            mine = tasks.stream()
+                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+                    .filter(t -> currentStep == null
+                            || currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
+                    .findFirst()
+                    .orElseGet(() -> tasks.stream()
+                            .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+                            .findFirst()
+                            .orElse(null));
+        }
+        // After one preparer completes their multi-instance slot, peer prepare
+        // tasks remain under other roles. Any preparer must still be able to
+        // Submit and clear those so the plan advances to Gate 1.
+        if (mine == null && PREPARE.equals(currentStep) && callerIsPreparer) {
+            mine = tasks.stream()
+                    .filter(t -> PREPARE.equals(stepNameForTask(t.getTaskDefinitionKey())))
+                    .findFirst()
+                    .orElse(null);
+        }
 
         AopViewerDTO.AopViewerDTOBuilder viewer = AopViewerDTO.builder().roles(roles);
         if (mine != null) {
-            boolean prepareStage = PREPARE.equals(currentStep);
+            String mineGate = stepNameForTask(mine.getTaskDefinitionKey());
+            // The gate the caller can act on is the source of truth for button state
+            // and the gateName the UI will send back on Approve/Revert.
+            String actionGate = mineGate != null ? mineGate : currentStep;
+            Integer actionSeq = actionGate != null && meta.containsKey(actionGate)
+                    ? meta.get(actionGate).sequence : currentSeq;
+            if (actionGate != null && !actionGate.equals(currentStep)) {
+                markStatuses(steps, actionSeq);
+            }
+            // Prepare / prepareRework is a submit step, not a gate decision.
+            // Approvers see Approve+Revert; preparers only see Submit for Approval.
+            boolean prepareStage = PREPARE.equals(actionGate);
             viewer.mode("ACTION")
-                    .canApprove(true)
-                    .canRevert(true)
+                    .canApprove(!prepareStage)
+                    .canRevert(!prepareStage)
                     .canEdit(prepareStage)
                     .canSubmit(prepareStage)
-                    .remarkMandatory(currentStep != null && meta.containsKey(currentStep)
-                            && !meta.get(currentStep).remarksDisabled);
+                    .remarkMandatory(actionGate != null && meta.containsKey(actionGate)
+                            && !meta.get(actionGate).remarksDisabled);
             dto.taskId(mine.getId()).assignedRole(mine.getAssignee());
-        } else {
-            viewer.mode("READ_ONLY");
+            return dto.exists(true)
+                    .currentGateName(actionGate)
+                    .currentGateDisplayName(displayNameOf(meta, actionGate))
+                    .currentSequence(actionSeq)
+                    .viewer(viewer.build())
+                    .build();
         }
+        viewer.mode("READ_ONLY");
 
         return dto.exists(true)
                 .currentGateName(currentStep)
@@ -557,7 +793,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             return items;
         }
         for (Workflow wf : workflowRepository.findAllByCaseDefIdAndIsDeletedFalse(CASE_DEF_ID)) {
-            List<Task> tasks = safeFind(wf.getCaseId());
+            String processInstanceId = canonicalProcessInstanceId(wf, wf.getCaseId());
+            List<Task> tasks = safeFind(wf.getCaseId(), processInstanceId);
             Task mine = tasks.stream()
                     .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
                     .findFirst().orElse(null);
@@ -569,17 +806,22 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             Map<String, StepMeta> meta = loadStepMeta(masterId);
             String stepName = stepNameForTask(mine.getTaskDefinitionKey());
 
-            // Same one-decision-per-visit rule as getStatus, so the inbox never
-            // offers an item the caller has already decided at this gate.
-            if (auditService.hasActedInCurrentCycle(wf.getCaseId(), stepName, callerUserId,
+            // Same one-decision-per-visit rule as getStatus — except Prepare,
+            // where remaining multi-instance slots must still be finishable.
+            if (!PREPARE.equals(stepName)
+                    && auditService.hasActedInCurrentCycle(wf.getCaseId(), stepName, callerUserId,
                     visitStartOf(tasks, stepName))) {
                 continue;
             }
             StepMeta sm = stepName != null ? meta.get(stepName) : null;
 
+            boolean prepareStage = PREPARE.equals(stepName);
             AopViewerDTO actions = AopViewerDTO.builder()
-                    .mode("ACTION").canApprove(true).canRevert(true)
-                    .canEdit(PREPARE.equals(stepName)).canSubmit(PREPARE.equals(stepName))
+                    .mode("ACTION")
+                    .canApprove(!prepareStage)
+                    .canRevert(!prepareStage)
+                    .canEdit(prepareStage)
+                    .canSubmit(prepareStage)
                     .remarkMandatory(sm != null && !sm.remarksDisabled)
                     .roles(roles).build();
 
@@ -655,23 +897,129 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
      * swallowed. Read paths use {@link #safeFind}, where degrading to an empty
      * list only costs a button.
      */
-    private List<Task> tasksForActing(String businessKey) {
+    private List<Task> tasksForActing(String businessKey, String processInstanceId) {
         try {
-            List<Task> tasks = taskService.find(Optional.of(businessKey));
-            return tasks != null ? tasks : new ArrayList<>();
+            return filterByProcessInstance(taskService.find(Optional.of(businessKey)), processInstanceId);
         } catch (Exception ex) {
             throw new IllegalStateException("AOP act: could not list tasks for " + businessKey
                     + " - refusing to record a decision without confirming it reached the engine", ex);
         }
     }
 
-    private List<Task> safeFind(String businessKey) {
+    private List<Task> safeFind(String businessKey, String processInstanceId) {
         try {
-            List<Task> tasks = taskService.find(Optional.of(businessKey));
-            return tasks != null ? tasks : new ArrayList<>();
+            return filterByProcessInstance(taskService.find(Optional.of(businessKey)), processInstanceId);
         } catch (Exception ex) {
             log.error("AOP status: could not list tasks for {}: {}", businessKey, ex.getMessage());
             return new ArrayList<>();
+        }
+    }
+
+    private List<Task> filterByProcessInstance(List<Task> tasks, String processInstanceId) {
+        if (tasks == null) {
+            return new ArrayList<>();
+        }
+        if (processInstanceId == null || processInstanceId.isBlank()) {
+            return new ArrayList<>(tasks);
+        }
+        List<Task> filtered = new ArrayList<>();
+        for (Task task : tasks) {
+            if (processInstanceId.equals(task.getProcessInstanceId())) {
+                filtered.add(task);
+            }
+        }
+        return filtered;
+    }
+
+    /**
+     * The Workflow row's process instance is the single source of truth. Extra
+     * Camunda instances sharing the business key (failed restarts, double submits
+     * before the DB guard) are deleted so task queries cannot mix gates.
+     */
+    private String canonicalProcessInstanceId(Workflow wf, String businessKey) {
+        backfillProcessInstanceId(wf, businessKey);
+        String keepId = wf != null ? wf.getProcessInstanceId() : null;
+        if ((keepId == null || keepId.isBlank()) && businessKey != null) {
+            keepId = findProcessInstanceId(businessKey);
+            if (keepId != null && wf != null) {
+                wf.setProcessInstanceId(keepId);
+                workflowRepository.save(wf);
+            }
+        }
+        deleteOrphanProcessInstances(businessKey, keepId);
+        return keepId;
+    }
+
+    /**
+     * Ensure the Workflow row points at a live Camunda process. If the engine was
+     * wiped/recreated (or the instance was deleted) while the DB row remained,
+     * restart the process in place so Approve/Revert buttons have a real task —
+     * except when the plan already finished Gate 5 (COMPLETED); that must stay
+     * terminal and must never be resurrected at gate1.
+     */
+    private String ensureLiveProcess(Workflow wf, Plants plant, String year, String businessKey) {
+        if (auditService.hasCompleted(businessKey)) {
+            deleteOrphanProcessInstances(businessKey, null);
+            return null;
+        }
+
+        String keepId = canonicalProcessInstanceId(wf, businessKey);
+        String liveId = findProcessInstanceId(businessKey);
+        if (liveId != null) {
+            if (!liveId.equals(keepId)) {
+                wf.setProcessInstanceId(liveId);
+                workflowRepository.save(wf);
+                deleteOrphanProcessInstances(businessKey, liveId);
+            }
+            return liveId;
+        }
+
+        log.warn("AOP: workflow row exists for {} but no live Camunda process; restarting at gate1", businessKey);
+        UUID masterId = resolveWorkflowMasterId(plant.getVerticalFKId());
+        List<ProcessVariable> vars = buildStartVariables(masterId, plant.getId().toString(), year, null);
+        String newId = startEngineProcess(businessKey, vars);
+        wf.setProcessInstanceId(newId);
+        workflowRepository.save(wf);
+        return newId;
+    }
+
+    private void markAllCompleted(List<WorkflowStepsMasterDTO> steps) {
+        if (steps == null) {
+            return;
+        }
+        for (WorkflowStepsMasterDTO s : steps) {
+            s.setStatus("completed");
+        }
+    }
+
+    private void deleteOrphanProcessInstances(String businessKey, String keepId) {
+        try {
+            List<ProcessInstance> found = processInstanceService.find(
+                    Optional.of(PROCESS_KEY), Optional.of(businessKey), Optional.empty());
+            if (found == null || found.isEmpty()) {
+                return;
+            }
+            // keepId == null means "delete every instance" (used before a fresh start).
+            // Never fall back to retaining found.get(0) in that case — that left orphans
+            // alive and the next start created yet another process on the same key.
+            for (ProcessInstance pi : found) {
+                if (pi == null || pi.getId() == null) {
+                    continue;
+                }
+                if (keepId != null && !keepId.isBlank() && keepId.equals(pi.getId())) {
+                    continue;
+                }
+                try {
+                    processInstanceService.delete(pi.getId());
+                    log.warn("AOP: deleted orphan process instance {} for businessKey {} (kept {})",
+                            pi.getId(), businessKey, keepId);
+                } catch (Exception ex) {
+                    log.error("AOP: failed to delete orphan process instance {} for {}: {}",
+                            pi.getId(), businessKey, ex.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("AOP: orphan process-instance cleanup failed for {}: {}", businessKey, ex.getMessage());
         }
     }
 
@@ -691,7 +1039,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         return current;
     }
 
-    /** completed for steps before the current sequence, inprogress at it. */
+    /** completed for steps before the current sequence, inprogress at it, pending after. */
     private void markStatuses(List<WorkflowStepsMasterDTO> steps, Integer currentSeq) {
         if (currentSeq == null) {
             return;
@@ -704,6 +1052,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 s.setStatus("completed");
             } else if (s.getSequence().equals(currentSeq)) {
                 s.setStatus("inprogress");
+            } else {
+                s.setStatus("pending");
             }
         }
     }

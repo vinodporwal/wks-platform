@@ -36,4 +36,7 @@ public interface AopApprovalHistoryRepository extends JpaRepository<AopApprovalH
     /** Has this user ever acted at this gate (used when there is no boundary yet)? */
     boolean existsByCaseIdAndGateNameAndActorUserId(
             String caseId, String gateName, String actorUserId);
+
+    /** True once Gate 5 approval has finished the process ({@code toGate = COMPLETED}). */
+    boolean existsByCaseIdAndToGate(String caseId, String toGate);
 }

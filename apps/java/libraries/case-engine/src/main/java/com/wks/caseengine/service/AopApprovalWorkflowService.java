@@ -27,6 +27,12 @@ public interface AopApprovalWorkflowService {
     WorkflowDTO start(String plantId, String year, String actorUserId);
 
     /**
+     * Same as {@link #start(String, String, String)} but persists the preparer's
+     * remark and acting role on the SUBMITTED audit row.
+     */
+    WorkflowDTO start(String plantId, String year, String actorUserId, String remark, String actorRole);
+
+    /**
      * Apply a gate decision: record the audit rows, complete the Camunda task(s)
      * with the decision, and notify the next gate's approvers.
      *
