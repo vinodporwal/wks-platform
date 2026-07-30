@@ -101,16 +101,16 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
     <Paper
       elevation={0}
       sx={{
-        py: 1.25,
-        px: 1.5,
-        mb: 1,
+        py: 1.5,
+        px: 2,
+        mb: 0.5,
         width: '100%',
         boxSizing: 'border-box',
         overflowX: 'auto',
         borderRadius: '8px',
-        border: '1px solid #cbd5e1',
-        background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-        boxShadow: '0 2px 6px rgba(0, 94, 184, 0.03)',
+        border: '1px solid #bae6fd',
+        background: 'linear-gradient(180deg, #f0f7ff 0%, #e6f2fe 100%)',
+        boxShadow: 'inset 0 1px 3px rgba(0, 94, 184, 0.04), 0 2px 6px rgba(0, 94, 184, 0.05)',
       }}
     >
       <Stepper

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Button, Chip, IconButton, Stack, Tooltip } from '@mui/material'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import HistoryIcon from '@mui/icons-material/History'
 import FactoryIcon from '@mui/icons-material/Factory'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
@@ -9,8 +10,6 @@ import BadgeIcon from '@mui/icons-material/Badge'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import HourglassTopIcon from '@mui/icons-material/HourglassTop'
 import RuleIcon from '@mui/icons-material/Rule'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 
 /**
  * Calculates dynamic column width based on maximum character length of row values
@@ -64,6 +63,7 @@ export const getApprovalsColumns = (
   items,
   navigatingId,
   handleGoToPlant,
+  handleOpenAudit,
 ) => [
   {
     field: 'year',
@@ -198,7 +198,7 @@ export const getApprovalsColumns = (
   {
     field: 'action',
     title: 'Action',
-    minWidth: 90,
+    minWidth: 120,
     editable: false,
     filterable: false,
     sortable: false,
@@ -209,25 +209,46 @@ export const getApprovalsColumns = (
 
       return (
         <td style={{ textAlign: 'center', padding: '6px 12px' }}>
-          <Tooltip title='Go to Plant'>
-            <span>
-              <IconButton
-                size='small'
-                onClick={() => handleGoToPlant(row)}
-                disabled={Boolean(navigatingId)}
-                sx={{
-                  backgroundColor: '#005eb8',
-                  color: '#ffffff',
-                  p: '6px',
-                  borderRadius: '6px',
-                  '&:hover': { backgroundColor: '#004b93' },
-                  '&.Mui-disabled': { backgroundColor: '#cbd5e1', color: '#94a3b8' },
-                }}
-              >
-                <ArrowForwardIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </span>
-          </Tooltip>
+          <Stack direction='row' alignItems='center' justifyContent='center' spacing={0.75}>
+            <Tooltip title='Go to Plant'>
+              <span>
+                <IconButton
+                  size='small'
+                  onClick={() => handleGoToPlant(row)}
+                  disabled={Boolean(navigatingId)}
+                  sx={{
+                    backgroundColor: '#005eb8',
+                    color: '#ffffff',
+                    p: '6px',
+                    borderRadius: '6px',
+                    '&:hover': { backgroundColor: '#004b93' },
+                    '&.Mui-disabled': { backgroundColor: '#cbd5e1', color: '#94a3b8' },
+                  }}
+                >
+                  <ArrowForwardIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            {typeof handleOpenAudit === 'function' && (
+              <Tooltip title='View Audit Trail'>
+                <IconButton
+                  size='small'
+                  onClick={() => handleOpenAudit(row)}
+                  sx={{
+                    backgroundColor: '#ffffff',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    p: '5px',
+                    borderRadius: '6px',
+                    '&:hover': { backgroundColor: '#f1f5f9', color: '#0f172a', borderColor: '#94a3b8' },
+                  }}
+                >
+                  <HistoryIcon sx={{ fontSize: 17 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
         </td>
       )
     },

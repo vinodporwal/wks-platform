@@ -4,6 +4,7 @@ import useApprovalsInbox from './useApprovalsInbox'
 import { getApprovalsColumns } from './approvalsColumns'
 import ApprovalsHeader from './ApprovalsHeader'
 import ApprovalsGrid from './ApprovalsGrid'
+import AuditTrailDialog from './AuditTrailDialog'
 import './AopMyApprovals.css'
 
 /**
@@ -24,6 +25,9 @@ const AopMyApprovals = ({ onClose }) => {
     handleGoToPlant,
     toggleRowExpand,
     handleExpandChange,
+    auditRow,
+    handleOpenAudit,
+    handleCloseAudit,
   } = useApprovalsInbox(onClose)
 
   const columns = getApprovalsColumns(
@@ -31,6 +35,7 @@ const AopMyApprovals = ({ onClose }) => {
     items,
     navigatingId,
     handleGoToPlant,
+    handleOpenAudit,
   )
 
   return (
@@ -52,6 +57,12 @@ const AopMyApprovals = ({ onClose }) => {
           loading={loading}
         />
       </Box>
+
+      <AuditTrailDialog
+        open={Boolean(auditRow)}
+        onClose={handleCloseAudit}
+        row={auditRow}
+      />
 
       <Snackbar
         open={snackbarOpen}

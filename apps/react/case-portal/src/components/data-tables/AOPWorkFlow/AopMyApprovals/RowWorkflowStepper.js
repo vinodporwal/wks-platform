@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Box, CircularProgress, Typography } from '@mui/material'
+import { Box, Chip, CircularProgress, Typography } from '@mui/material'
+import TimelineIcon from '@mui/icons-material/Timeline'
 import { useSession } from 'SessionStoreContext'
 import { AopApprovalService } from 'services/AopApprovalService'
 import AopWorkflowStepper from 'components/Utilities/AopWorkflowStepper'
@@ -20,11 +21,16 @@ const RowWorkflowStepper = ({ row }) => {
     const fetchCaseDetails = async () => {
       if (!row) return
 
-      const pid = row.plantId || row.pid || row.plant_id || row.id
+      let pid = row.plantId || row.pid || row.plant_id
+      if (!pid && row.id && typeof row.id === 'string' && !row.id.includes('_') && row.id.length > 20) {
+        pid = row.id
+      }
+      let sid = row.siteId || row.sid || row.sId || row.site_id
+      let v_id = row.verticalId || row.v_id || row.vid || row.vertical_id
       const year = row.year
 
-      if (!pid || !year) {
-        if (active) setError('Missing required plantId or year.')
+      if (!year || (!pid && !row.plantName)) {
+        if (active) setError('Missing required plant information or year.')
         return
       }
 
@@ -64,7 +70,7 @@ const RowWorkflowStepper = ({ row }) => {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, px: 2 }}>
         <CircularProgress size={18} color='primary' />
-        <Typography variant='body2' sx={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 500 }}>
+        <Typography variant='body2' sx={{ color: '#0369a1', fontSize: '0.8rem', fontWeight: 600 }}>
           Loading workflow details...
         </Typography>
       </Box>
@@ -94,31 +100,35 @@ const RowWorkflowStepper = ({ row }) => {
   return (
     <Box
       sx={{
-        p: 1.5,
-        my: 0.5,
+        p: 1.75,
+        my: 0.75,
         width: '100%',
         boxSizing: 'border-box',
         overflowX: 'auto',
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        border: '1px solid #cbd5e1',
-        boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.04)',
+        backgroundColor: '#ffffff',
+        borderRadius: '10px',
+        border: '1px solid #bae6fd',
+        borderLeft: '5px solid #005eb8',
+        boxShadow: '0 4px 14px rgba(0, 94, 184, 0.08)',
       }}
     >
-      <Typography
-        variant='caption'
-        sx={{
-          display: 'block',
-          mb: 1,
-          fontWeight: 700,
-          color: '#334155',
-          fontSize: '0.72rem',
-          letterSpacing: '0.5px',
-          textTransform: 'uppercase',
-        }}
-      >
-        Workflow Details
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.25 }}>
+        <Chip
+          icon={<TimelineIcon style={{ fontSize: 15, color: '#005eb8' }} />}
+          label='Workflow Details'
+          size='small'
+          sx={{
+            fontWeight: 800,
+            fontSize: '0.72rem',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            backgroundColor: '#e0f2fe',
+            color: '#0369a1',
+            border: '1px solid #bae6fd',
+            px: 0.5,
+          }}
+        />
+      </Box>
       <AopWorkflowStepper steps={masterSteps} activeStep={activeStep > -1 ? activeStep : 0} />
     </Box>
   )
