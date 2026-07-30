@@ -111,4 +111,9 @@ public class GradeMixOptimizerController {
         return gradeMixOptimizerService.importSubGradeBudgetedOperatingHoursExcel(
             UUID.fromString(plantId), aopYear, file);
     }
+
+    @GetMapping("/calculate-sub-grade-budget-operation-hours")
+    public AOPMessageVM calculateSubGradeBudgetOperationHours(@RequestParam String plantId, @RequestParam String aopYear) {
+        return gradeMixOptimizerService.calculateSubGradeBudgetOperationHours(UUID.fromString(plantId), aopYear);
+    }
 }

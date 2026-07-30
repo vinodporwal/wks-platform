@@ -27,4 +27,6 @@ public interface GradeMixOptimizerService {
     AOPMessageVM importSubGradeBudgetedOperatingHoursExcel(UUID plantId, String aopYear, MultipartFile file);
 
     byte[] exportSubGradeBudgetedOperatingHoursExcel(UUID plantId, String aopYear, boolean isAfterSave, List<BudgetedOperatingHoursDTO> dtoList);
+
+    AOPMessageVM calculateSubGradeBudgetOperationHours(UUID plantId, String aopYear);
 }
