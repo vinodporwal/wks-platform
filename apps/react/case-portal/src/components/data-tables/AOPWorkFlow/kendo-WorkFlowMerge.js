@@ -546,7 +546,9 @@ const WorkFlowMerge = () => {
       // mark every gate completed after a revert.
       if (!masterSteps?.length && master?.steps?.length) {
         setMasterSteps(master.steps)
-        const activeIdx = master.steps.findIndex((s) => s.status === 'inprogress')
+        const activeIdx = master.steps.findIndex(
+          (s) => s.status === 'inprogress',
+        )
         setActiveStep(
           activeIdx > -1
             ? activeIdx
@@ -627,16 +629,36 @@ const WorkFlowMerge = () => {
   const fetchAopStatus = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
-      const data = await AopApprovalService.getStatus(keycloak, PLANT_ID, AOP_YEAR)
+      const data = await AopApprovalService.getStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       console.log('=== [AOP Approval Status Debug] ===')
       console.log('Plant ID:', PLANT_ID, '| Year:', AOP_YEAR)
       console.log('Workflow Exists:', data?.exists)
-      console.log('Current Gate Name:', data?.currentGateName, '(', data?.currentGateDisplayName, ')')
+      console.log(
+        'Current Gate Name:',
+        data?.currentGateName,
+        '(',
+        data?.currentGateDisplayName,
+        ')',
+      )
       console.log('Task ID:', data?.taskId)
       console.log('Assigned Role:', data?.assignedRole)
       console.log('Viewer Mode:', data?.viewer?.mode)
-      console.log('Viewer Permissions -> Can Submit:', data?.viewer?.canSubmit, '| Can Approve:', data?.viewer?.canApprove, '| Can Revert:', data?.viewer?.canRevert)
-      console.log('User Roles (from Viewer/Keycloak):', data?.viewer?.roles || keycloak?.realmAccess?.roles)
+      console.log(
+        'Viewer Permissions -> Can Submit:',
+        data?.viewer?.canSubmit,
+        '| Can Approve:',
+        data?.viewer?.canApprove,
+        '| Can Revert:',
+        data?.viewer?.canRevert,
+      )
+      console.log(
+        'User Roles (from Viewer/Keycloak):',
+        data?.viewer?.roles || keycloak?.realmAccess?.roles,
+      )
       console.log('===================================')
       setViewer(data?.viewer || null)
       setAopGate(data?.currentGateName || '')
@@ -650,7 +672,10 @@ const WorkFlowMerge = () => {
           setActiveStep(activeIdx)
         } else if (data.steps.every((s) => s.status === 'completed')) {
           setActiveStep(data.steps.length)
-        } else if (typeof data.currentSequence === 'number' && data.currentSequence > 0) {
+        } else if (
+          typeof data.currentSequence === 'number' &&
+          data.currentSequence > 0
+        ) {
           setActiveStep(Math.max(0, data.currentSequence - 1))
         } else {
           setActiveStep(0)
@@ -665,8 +690,17 @@ const WorkFlowMerge = () => {
   const aopStart = async (remarkText = '') => {
     setIsCreatingCase(true)
     try {
-      await AopApprovalService.start(keycloak, PLANT_ID, AOP_YEAR, remarkText, aopRole || 'preparer')
-      setSnackbarData({ message: 'AOP workflow submitted for approval', severity: 'success' })
+      await AopApprovalService.start(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        remarkText,
+        aopRole || 'preparer',
+      )
+      setSnackbarData({
+        message: 'AOP workflow submitted for approval',
+        severity: 'success',
+      })
       await fetchAopStatus()
       await getCaseId()
     } catch (error) {
@@ -684,14 +718,22 @@ const WorkFlowMerge = () => {
   const aopAct = async (decision, remarkText = '') => {
     if (!aopTaskId) {
       setSnackbarData({
-        message: 'No active approval task found. Refresh the page and try again.',
+        message:
+          'No active approval task found. Refresh the page and try again.',
         severity: 'error',
       })
       setSnackbarOpen(true)
       return
     }
-    if (decision === 'REVERTED' && viewer?.remarkMandatory && !remarkText?.trim()) {
-      setSnackbarData({ message: 'A remark is required to revert', severity: 'error' })
+    if (
+      decision === 'REVERTED' &&
+      viewer?.remarkMandatory &&
+      !remarkText?.trim()
+    ) {
+      setSnackbarData({
+        message: 'A remark is required to revert',
+        severity: 'error',
+      })
       setSnackbarOpen(true)
       return
     }
@@ -993,10 +1035,7 @@ const WorkFlowMerge = () => {
       }}
     >
       <Box>
-        <AopWorkflowStepper
-          steps={masterSteps}
-          activeStep={activeStep}
-        />
+        <AopWorkflowStepper steps={masterSteps} activeStep={activeStep} />
 
         <Box
           sx={{
@@ -1011,7 +1050,9 @@ const WorkFlowMerge = () => {
             gap: 1,
           }}
         >
-          <InfoOutlinedIcon sx={{ fontSize: 16, color: '#0284c7', flexShrink: 0 }} />
+          <InfoOutlinedIcon
+            sx={{ fontSize: 16, color: '#0284c7', flexShrink: 0 }}
+          />
           <Typography
             variant='body2'
             sx={{
@@ -1021,12 +1062,14 @@ const WorkFlowMerge = () => {
               fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
             }}
           >
-            Prices - <strong>MIIS BPC</strong> (Last Budget Year) &nbsp;|&nbsp; Actual Values - <strong>MIIS Contribution</strong> (YTD)
+            Prices - <strong>MIIS BPC</strong> (Last Budget Year) &nbsp;|&nbsp;
+            Actual Values - <strong>MIIS Contribution</strong> (YTD)
           </Typography>
         </Box>
 
         {/* AOP approval buttons — visibility comes from the server `viewer` */}
-        {((viewer?.canSubmit && !aopExists) || (viewer?.mode === 'ACTION' && aopTaskId)) && (
+        {((viewer?.canSubmit && !aopExists) ||
+          (viewer?.mode === 'ACTION' && aopTaskId)) && (
           <Stack
             direction='row'
             spacing={1.5}
@@ -1070,10 +1113,13 @@ const WorkFlowMerge = () => {
               </Button>
             )}
             {viewer?.canApprove && aopTaskId && (
+              <>
                 <Button
                   variant='outlined'
                   onClick={handleAuditOpen}
-                  startIcon={<HistoryIcon sx={{ fontSize: '16px !important' }} />}
+                  startIcon={
+                    <HistoryIcon sx={{ fontSize: '16px !important' }} />
+                  }
                   sx={{
                     height: '34px',
                     px: 2.2,
@@ -1101,7 +1147,11 @@ const WorkFlowMerge = () => {
                   className='btn-add'
                   onClick={handleOpenApproveDialog}
                   disabled={actionDisabled}
-                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '16px !important' }} />}
+                  startIcon={
+                    <CheckCircleOutlineIcon
+                      sx={{ fontSize: '16px !important' }}
+                    />
+                  }
                   sx={{
                     height: '34px',
                     px: 2.2,
@@ -1129,40 +1179,41 @@ const WorkFlowMerge = () => {
                 >
                   Approve
                 </Button>
+              </>
             )}
             {viewer?.canRevert && aopTaskId && (
-                <Button
-                  variant='outlined'
-                  onClick={handleOpenRevertDialog}
-                  disabled={actionDisabled}
-                  startIcon={<UndoIcon sx={{ fontSize: '16px !important' }} />}
-                  sx={{
-                    height: '34px',
-                    px: 2.2,
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    textTransform: 'none',
-                    color: '#c62828',
-                    backgroundColor: '#ffebee',
-                    border: '1.5px solid #c62828',
-                    boxShadow: '0 2px 4px rgba(198, 40, 40, 0.12)',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: '#ffcdd2',
-                      borderColor: '#b71c1c',
-                      color: '#b71c1c',
-                      boxShadow: '0 4px 8px rgba(198, 40, 40, 0.25)',
-                    },
-                    '&:disabled': {
-                      backgroundColor: '#f5f5f5',
-                      color: '#bdbdbd',
-                      borderColor: '#e0e0e0',
-                    },
-                  }}
-                >
-                  Revert
-                </Button>
+              <Button
+                variant='outlined'
+                onClick={handleOpenRevertDialog}
+                disabled={actionDisabled}
+                startIcon={<UndoIcon sx={{ fontSize: '16px !important' }} />}
+                sx={{
+                  height: '34px',
+                  px: 2.2,
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  textTransform: 'none',
+                  color: '#c62828',
+                  backgroundColor: '#ffebee',
+                  border: '1.5px solid #c62828',
+                  boxShadow: '0 2px 4px rgba(198, 40, 40, 0.12)',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: '#ffcdd2',
+                    borderColor: '#b71c1c',
+                    color: '#b71c1c',
+                    boxShadow: '0 4px 8px rgba(198, 40, 40, 0.25)',
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#f5f5f5',
+                    color: '#bdbdbd',
+                    borderColor: '#e0e0e0',
+                  },
+                }}
+              >
+                Revert
+              </Button>
             )}
           </Stack>
         )}
@@ -1458,7 +1509,8 @@ const WorkFlowMerge = () => {
           onClose={handleAuditClose}
           row={{
             plantId: plantObject?.id || plantID,
-            plantName: plantObject?.displayName || plantObject?.name || plantObject?.id,
+            plantName:
+              plantObject?.displayName || plantObject?.name || plantObject?.id,
             year: AOP_YEAR,
             aopYear: AOP_YEAR,
           }}
