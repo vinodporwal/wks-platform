@@ -418,7 +418,7 @@ const NormalOpNormsScreenCracker = () => {
     ],
     [headerMap, valueFormat],
   )
-  const colDefsFinalNorms = IS_CRACKER_C2
+  const colDefsFinalNorms = IS_CRACKER_C2 || IS_CRACKER_DMD
     ? colDefsFinalNormsC2
     : IS_CRACKER_HMD
       ? colDefsFinalNormsHMD

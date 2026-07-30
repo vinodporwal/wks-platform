@@ -257,7 +257,7 @@ const BusinessDemand = ({ permissions }) => {
             isEditable: IS_PVC_DMD ? false : (item.isEditable ?? true),
             UOM:
               IS_VCM_VERTICAL ||
-              (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
+                (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
                 ? '%'
                 : item?.UOM,
             ...(IS_CRACKER_HMD && { avg }),
@@ -638,26 +638,26 @@ const BusinessDemand = ({ permissions }) => {
       isTotalFooterActive:
         // IS_VCM_VERTICAL ||
         IS_PE_PP_VERTICAL ||
-        // FOR PTA IT IS NOT REQUIRED
-        // IS_PTA_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_ELASTOMER_VERTICAL ||
-        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
+          // FOR PTA IT IS NOT REQUIRED
+          // IS_PTA_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_ELASTOMER_VERTICAL ||
+          (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
 
       downloadExcelBtn:
         IS_CRACKER_VERTICAL ||
-        IS_PE_PP_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_ELASTOMER_HMD ||
-        lowerVertName === 'meg'
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD ||
+          IS_ELASTOMER_HMD ||
+          lowerVertName === 'meg'
           ? true
           : false,
       uploadExcelBtn:
@@ -675,14 +675,14 @@ const BusinessDemand = ({ permissions }) => {
 
       downloadExcelBtnFromUI:
         IS_CRACKER_VERTICAL ||
-        IS_PE_PP_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_ELASTOMER_JMD ||
-        IS_ELASTOMER_HMD ||
-        lowerVertName === 'meg'
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD ||
+          IS_ELASTOMER_JMD ||
+          IS_ELASTOMER_HMD ||
+          lowerVertName === 'meg'
           ? false
           : true,
 
@@ -1020,7 +1020,7 @@ const BusinessDemand = ({ permissions }) => {
         handleCalculate={handleCalculate}
       />
 
-      {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
+      {/* {IS_CRACKER_DMD && <ManualEntryForFeedStreams />} */}
 
       {!IS_CARCKER_VMD &&
         !IS_CRACKER_HMD &&
