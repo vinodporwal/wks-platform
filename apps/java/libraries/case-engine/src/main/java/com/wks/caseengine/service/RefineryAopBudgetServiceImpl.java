@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -842,15 +843,27 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
 
-                // Skip completely empty rows (check visible columns 0-4)
+                // Skip completely empty rows (check visible columns 0-4).
+                // Col 3 (Date of Commencement) is intentionally checked without converting its
+                // type so that Excel-native NUMERIC date cells are not corrupted before the
+                // field-level handler below can read them properly.
                 boolean isEmpty = true;
                 for (int col = 0; col <= 4; col++) {
                     Cell cell = row.getCell(col);
                     if (cell != null) {
-                        cell.setCellType(CellType.STRING);
-                        if (!cell.getStringCellValue().trim().isEmpty()) {
-                            isEmpty = false;
-                            break;
+                        if (col == 3) {
+                            CellType ct = cell.getCellType();
+                            if (ct == CellType.NUMERIC
+                                    || (ct == CellType.STRING && !cell.getStringCellValue().trim().isEmpty())) {
+                                isEmpty = false;
+                                break;
+                            }
+                        } else {
+                            cell.setCellType(CellType.STRING);
+                            if (!cell.getStringCellValue().trim().isEmpty()) {
+                                isEmpty = false;
+                                break;
+                            }
                         }
                     }
                 }
@@ -896,20 +909,52 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     }
 
                     // Col 3 – Date of Commencement
+                    
                     Cell dateCell = row.getCell(3);
                     if (dateCell != null) {
-                        dateCell.setCellType(CellType.STRING);
-                        String dateStr = dateCell.getStringCellValue().trim();
-                        if(dateStr.isEmpty()) {  
-                            dto.setSaveStatus("Failed");
-                            dto.setErrorMessage("Date of Commencement is required");
+                        Date parsedDate = null;
+                        String dateError = null;
+
+                        if (dateCell.getCellType() == CellType.NUMERIC
+                                && DateUtil.isCellDateFormatted(dateCell)) {
+                            // Native Excel date cell – read directly, no string conversion needed.
+                            parsedDate = dateCell.getDateCellValue();
                         } else {
-                            try {
-                                dto.setDateOfCommencement(sdf.parse(dateStr));
-                            } catch (ParseException e) {
-                                dto.setSaveStatus("Failed");
-                                dto.setErrorMessage("Date of Commencement must be a valid date");
+                            // Text cell (Google Sheets export or manually typed value).
+                            // Try the canonical format first, then common alternatives that Excel
+                            // may produce when the user re-saves the sheet.
+                            dateCell.setCellType(CellType.STRING);
+                            String dateStr = dateCell.getStringCellValue().trim();
+                            if (dateStr.isEmpty()) {
+                                dateError = "Date of Commencement is required";
+                            } else {
+                                for (String pattern : Arrays.asList(
+                                        "dd-MM-yyyy",
+                                        "dd/MM/yyyy",
+                                        "M/d/yyyy",
+                                        "MM/dd/yyyy",
+                                        "d-M-yyyy",
+                                        "yyyy-MM-dd")) {
+                                    SimpleDateFormat fmt = new SimpleDateFormat(pattern);
+                                    fmt.setLenient(false);
+                                    try {
+                                        parsedDate = fmt.parse(dateStr);
+                                        break;
+                                    } catch (ParseException ignored) {
+                                        // try next format
+                                    }
+                                }
+                                if (parsedDate == null) {
+                                    dateError = "Date of Commencement must be a valid date";
+                                }
                             }
+                        }
+
+                        if (parsedDate != null) {
+                            dto.setDateOfCommencement(parsedDate);
+                        } else {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage(dateError != null ? dateError : "Date of Commencement is required");
                         }
                     }
 
