@@ -429,8 +429,8 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
             String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
 
-            String procedureName = verticalName + "_" + siteName + "_SaveGradeWiseMonthWiseBudgetOperatingHours";
-            executeBudgetOperationHoursCalculationSP(plantId.toString(), aopYear, procedureName);
+            // String procedureName = verticalName + "_" + siteName + "_SaveGradeWiseMonthWiseBudgetOperatingHours";
+            // executeBudgetOperationHoursCalculationSP(plantId.toString(), aopYear, procedureName);
 
             AOPMessageVM vm = new AOPMessageVM();
             vm.setCode(200);
