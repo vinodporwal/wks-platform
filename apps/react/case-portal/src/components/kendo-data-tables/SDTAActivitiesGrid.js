@@ -34,6 +34,8 @@ const SDTAActivitiesGrid = ({
   summaryEdited,
   setSummaryEdited,
   gridKey,
+  disableInnerNotification,
+  titleName = 'IBR/SD/HSS Activities',
 }) => {
   return (
     <Box sx={{ mt: 1 }}>
@@ -60,11 +62,12 @@ const SDTAActivitiesGrid = ({
         permissions={permissions}
         saveChanges={saveChanges}
         setRemarkDialogOpen={setRemarkDialogOpen}
-        titleName='IBR/SD/HSS Activities'
+        titleName={titleName}
         rowRender={CustomRow}
         handleCalculate={handleCalculate}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        disableInnerNotification={disableInnerNotification}
       />
     </Box>
   )

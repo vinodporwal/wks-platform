@@ -502,7 +502,7 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
           showCalculate: false,
           showNote: false,
           showTitleNameBusiness: true,
-          titleName: 'Percentage Deviation',
+          titleName: 'Percentage Utilization',
         },
         isOldYear,
       ),

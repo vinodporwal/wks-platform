@@ -2066,6 +2066,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		String storedProcedure = vertical.getName() + "_" + site.getName() + "_NormsCalculation";
+		if(vertical.getName().equalsIgnoreCase("PCG")) {
+			storedProcedure = "[RIL.AOP.Refinery].[dbo].[" + storedProcedure + "]";
+		}
 		System.out.println("storedProcedure" + storedProcedure);
 		int result = executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 				vertical.getId().toString(), year);
@@ -2133,7 +2136,14 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId,
 			String finYear) {
+
+			String verticalName = verticalRepository.findById(UUID.fromString(verticalId)).get().getName();
+
 		String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
+
+		if(verticalName.equalsIgnoreCase("PCG")) {
+			callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+		}
 
 		try (Connection connection = dataSource.getConnection();
 				CallableStatement stmt = connection.prepareCall(callSql)) {
@@ -2206,6 +2216,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			String viewName = "vwScrn" + vertical.getName() + "NormalOperationNorms";
 			if (withGrade || elastomer ) {
 				viewName = "vwScrn" + vertical.getName() + "NormalOperationNormsGrade";
+			}
+			else if (vertical.getName().equalsIgnoreCase("PCG")) { 
+				// [RIL.AOP.Refinery].[dbo].
+				 viewName = "[RIL.AOP.Refinery].[dbo].[vwScrn" + vertical.getName() + "NormalOperationNorms]";
 			}
 			// Validate or sanitize viewName before using it directly in the query to
 			// prevent SQL injection

@@ -13,6 +13,136 @@ import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import MaintenanceProcessTableNMD from './processTableNMD'
+const buildCrackerC2Columns = (rawColumns = []) => {
+  const hiddenKeys = ['Id', 'AOPYear', 'PlantId', 'Shoutdown']
+  const colMap = {}
+  rawColumns.forEach((col) => {
+    if (col && col.field) {
+      colMap[col.field] = col
+    }
+  })
+
+  const getColDef = (
+    field,
+    defaultTitle,
+    defaultType = 'number',
+    overrideEditable,
+    customMinWidth,
+  ) => {
+    const raw = colMap[field] || {}
+    const type = raw.type || defaultType
+    return {
+      ...raw,
+      field,
+      title: defaultTitle,
+      type,
+      editable:
+        overrideEditable !== undefined
+          ? overrideEditable
+          : field === 'NumberOfDays'
+            ? false
+            : type === 'number' || field === 'Remarks',
+      hidden: hiddenKeys.includes(field) ? true : !!raw.hidden,
+      minWidth:
+        customMinWidth !== undefined
+          ? customMinWidth
+          : field === 'Remarks'
+            ? 120
+            : 100,
+      crackerValidation: type === 'number',
+      format: type === 'number' ? '{0:n2}' : raw.format,
+    }
+  }
+
+  const result = []
+
+  // MonthName standalone column locked
+  result.push({
+    ...getColDef('MonthName', 'MonthName', 'string', false),
+    locked: true,
+    isVisible: true,
+    minWidth: 110,
+  })
+
+  // Main furnace parent group
+  result.push({
+    title: 'Main furnace un-availability due to Maintenance',
+    children: [
+      getColDef('BigCoilReplacement', 'IBR'),
+      getColDef('SAD', 'SAD'),
+      getColDef('BBU', 'Temp Up'),
+      getColDef('BBD', 'Temp Down'),
+    ],
+  })
+
+  // Pilot furnace parent group
+  result.push({
+    title: 'Pilot furnace un-availability due to Maintenance',
+    children: [
+      getColDef('CoilReplacement', 'IBR'),
+      getColDef('DemoSAD', 'SAD'),
+      getColDef('DemoBBU', 'Temp Up'),
+      getColDef('DemoBBD', 'Temp Down'),
+    ],
+  })
+
+  // Mode parent group
+  result.push({
+    title: 'Mode',
+    children: [
+      getColDef('5FD', '5F+Pilot', 'number', undefined, 78),
+      getColDef('6FBFD', '6F+Pilot', 'number', undefined, 78),
+      getColDef('5F', '5F', 'number', undefined, 60),
+      getColDef('6FSFD', '6F', 'number', undefined, 60),
+    ],
+  })
+
+  // Standalone columns after mode
+  result.push(getColDef('Total', 'Total'))
+  result.push(getColDef('NumberOfDays', 'Actual Days In Month', 'number', false))
+  result.push(getColDef('NoOfSAD', 'No Of SAD'))
+  result.push(getColDef('Remarks', 'Remarks', 'string'))
+
+  // Include any extra columns from rawColumns (excluding already mapped ones)
+  const processedFields = new Set([
+    'MonthName',
+    'BigCoilReplacement',
+    'SAD',
+    'BBU',
+    'BBD',
+    'CoilReplacement',
+    'DemoSAD',
+    'DemoBBU',
+    'DemoBBD',
+    '5FD',
+    '6FBFD',
+    '5F',
+    '6FSFD',
+    'Total',
+    'NumberOfDays',
+    'NoOfSAD',
+    'Remarks',
+  ])
+
+  rawColumns.forEach((col) => {
+    if (col && col.field && !processedFields.has(col.field)) {
+      result.push({
+        ...col,
+        editable:
+          col.field === 'NumberOfDays'
+            ? false
+            : col.type === 'number' || col.field === 'Remarks',
+        hidden: hiddenKeys.includes(col.field) ? true : !!col.hidden,
+        minWidth: 100,
+        crackerValidation: col.type === 'number',
+        format: col.type === 'number' ? '{0:n2}' : col.format,
+      })
+    }
+  })
+
+  return result
+}
+
 const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
   const keycloak = useSession()
 
@@ -254,31 +384,56 @@ const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
       const resp = await dataConfig.serviceFn(keycloak)
       const raw = resp.data?.data
       setCalculationObject(resp?.data?.aopCalculation)
+
+      const rawCols = resp.data?.columns || columns
       const hiddenKeys = ['Id', 'AOPYear', 'PlantId']
-      const dynamicColumns = (resp.data?.columns || columns).map((col) => ({
-        ...col,
-        editable:
-          col.field === 'NumberOfDays'
-            ? false
-            : col.type === 'number' || col.field === 'Remarks',
-        hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
-        minWidth: 120,
-        crackerValidation: col.type === 'number' ? true : false,
-      }))
+
+      const isCrackerC2 =
+        siteName === 'c2' && lowerVertName === 'cracker'
+      let dynamicColumns = []
+      if (isCrackerC2) {
+        dynamicColumns = buildCrackerC2Columns(rawCols)
+      } else {
+        dynamicColumns = rawCols.map((col) => ({
+          ...col,
+          editable:
+            col.field === 'NumberOfDays'
+              ? false
+              : col.type === 'number' || col.field === 'Remarks',
+          hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
+          minWidth: 120,
+          crackerValidation: col.type === 'number' ? true : false,
+          format: col.type === 'number' ? '{0:n2}' : col.format,
+        }))
+      }
 
       setColumns(dynamicColumns)
 
-      const formatted = (raw || []).map((item, idx, arr) => ({
-        ...item,
-        idFromApi: item.Id,
-        id: idx,
-        isEditable: viewOnly
-          ? false
-          : idx === arr.length - 1
+      const formatted = (raw || []).map((item, idx, arr) => {
+        const isTotalRow =
+          idx === arr.length - 1 || item?.MonthName?.toLowerCase() === 'total'
+        const processedItem = { ...item }
+
+        if (isTotalRow) {
+          Object.keys(processedItem).forEach((key) => {
+            if (typeof processedItem[key] === 'number') {
+              processedItem[key] = processedItem[key].toFixed(2)
+            }
+          })
+        }
+
+        return {
+          ...processedItem,
+          idFromApi: item.Id,
+          id: idx,
+          isEditable: viewOnly
             ? false
-            : item?.isEditable,
-        originalRemark: item?.Remarks?.trim(),
-      }))
+            : idx === arr.length - 1
+              ? false
+              : item?.isEditable,
+          originalRemark: item?.Remarks?.trim(),
+        }
+      })
 
       const finalData = [...formatted]
 
@@ -289,7 +444,7 @@ const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, keycloak, AOP_YEAR])
+  }, [PLANT_ID, keycloak, AOP_YEAR, siteName, plantName, siteObject, plantObject])
 
   const handleCalculate = useCallback(async () => {
     try {

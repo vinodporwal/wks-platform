@@ -16,6 +16,7 @@ import {
   IconButton,
   TextField,
   Typography,
+  Tooltip as MuiTooltip,
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
@@ -26,6 +27,7 @@ import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/inde
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import Info from '@mui/icons-material/Info'
 import MuiAccordion from '@mui/material/Accordion'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
@@ -103,6 +105,8 @@ const KendoDataTablesCrackerRunLength = ({
   titleName = '',
   handleExcelUpload = () => {},
   downloadExcelForConfiguration = () => {},
+  onInfoClick = null,
+  infoIconColor = '#0100cb',
 }) => {
   const fileInputRef = useRef(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -1535,6 +1539,22 @@ const KendoDataTablesCrackerRunLength = ({
 
                   {/* TITLE */}
                   {permissions?.titleName || titleName}
+                  {onInfoClick && (
+                    <MuiTooltip title='SAD Overlapping notification'>
+                      <IconButton
+                        size='small'
+                        sx={{
+                          p: '1px',
+                          width: 37,
+                          height: 37,
+                          ml: 1,
+                        }}
+                        onClick={onInfoClick}
+                      >
+                        <Info sx={{ fontSize: 30, color: infoIconColor }} />
+                      </IconButton>
+                    </MuiTooltip>
+                  )}
                 </Typography>
               ) : (
                 permissions?.showAccordian && (

@@ -795,9 +795,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           saveBtn: IS_CRACKER_C2 ? false : true,
           downloadExcelBtnFromUI: true,
           ExcelName: `${EXCEL_NAME_OTHER_PRODUCTION}`,
-          showCalculateVisibility:
-            calculationObjectOtherProduction &&
-            Object.keys(calculationObjectOtherProduction).length > 0,
+          showCalculateVisibility: true,
         },
         isOldYear,
       ),

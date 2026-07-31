@@ -636,6 +636,10 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			String storedProcedure = vertical.getName() + "_" + site.getName() + "_CalculateConsumptionAOPValues";
+
+			if(vertical.getName().equalsIgnoreCase("PCG")) {
+				storedProcedure = "[RIL.AOP.Refinery].[dbo].[" + storedProcedure + "]";
+			}
 			
 			Integer result=  executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 					vertical.getId().toString(), year);
@@ -663,8 +667,14 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId,
 			String finYear) {
 		try {
+
+		String verticalName = verticalRepository.findById(UUID.fromString(verticalId)).get().getName();
 			
 			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
+
+			if(verticalName.equalsIgnoreCase("PCG")) {
+				callSql = "{call "  + procedureName  + "(?, ?, ?, ?)}";
+			}
 
 	        try (Connection connection = dataSource.getConnection();
 	             CallableStatement stmt = connection.prepareCall(callSql)) {
@@ -792,7 +802,11 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			}
 			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear AND Grade_FK_Id = :gradeId";
-			}else {
+			}
+			if(vertical.getName().equalsIgnoreCase("PCG")) {
+				sql = "SELECT * FROM " +  "[RIL.AOP.Refinery].[dbo].[" + viewName + "]" + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear";
+			}
+			else {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear";
 			}
 
@@ -837,6 +851,47 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 				map.put("name", result[2].toString());
 				map.put("plantId", result[3].toString());
 				map.put("aopYear", result[4].toString());
+				gradeList.add(map);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(gradeList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getProposedAOPGrades(String financialYear, String plantId) {
+		List<Map<String, Object>> gradeList = new ArrayList<>();
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String viewName = "vwScrn" + vertical.getName() + "ProposedAOPGrade";
+			// Validate or sanitize viewName before using it directly in the query to
+			// prevent SQL injection
+			String sql = "SELECT * FROM " + "[" + viewName + "]"
+					+ " WHERE AOPYear = :financialYear AND Plant_FK_Id = :plantId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("financialYear", financialYear);
+			query.setParameter("plantId", plantId);
+
+			List<Object[]> obj = query.getResultList(); // You can cast this to a DTO later
+
+			for (Object[] result : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("gradeId", result[0].toString());
+				map.put("Name", result[1].toString());
+				map.put("DisplayName", result[2].toString());
+				map.put("plantId", result[3].toString());
+				map.put("aopYear", result[4].toString());
+				map.put("DisplayOrder", result[5].toString());
 				gradeList.add(map);
 			}
 			aopMessageVM.setCode(200);
