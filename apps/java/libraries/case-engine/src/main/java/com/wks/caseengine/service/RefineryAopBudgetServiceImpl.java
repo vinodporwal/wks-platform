@@ -108,6 +108,12 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             List<PlantCapacitiesTranscationDTO> failedRecords = new ArrayList<>();
 
             for (PlantCapacitiesTranscationDTO dto : plantCapacitiesTranscationDTOs) {
+                minMaxValidation(dto);
+                // skip records with failed validations
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
                 if (dto.getTransactionId() == null) {
                     String insertSql = "INSERT INTO PlantCapacityTransaction (id, masterId, min, max, remarks, plantId, aopYear, modifiedBy, modifiedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
@@ -128,7 +134,6 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     throw new RuntimeException("Record not found");
                 }
                 validateRemarkChangeForPlantCapacities(existing, dto);
-                minMaxValidation(dto);
 
                 // skip records with failed validations
                 if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
