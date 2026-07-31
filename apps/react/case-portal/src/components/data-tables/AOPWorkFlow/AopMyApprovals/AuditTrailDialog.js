@@ -254,7 +254,7 @@ const AuditTrailDialog = ({ open, onClose, row }) => {
               >
                 <CommentIcon sx={{ fontSize: 15, color: '#64748b', mt: 0.2 }} />
                 <Typography variant='body2' sx={{ fontSize: '0.8rem', color: '#334155', fontStyle: 'italic', lineHeight: 1.4 }}>
-                  "{remarkText}"
+                  &quot;{remarkText}&quot;
                 </Typography>
               </Box>
             )}
@@ -380,7 +380,7 @@ const AuditTrailDialog = ({ open, onClose, row }) => {
 
                 {item.remark && (
                   <Typography variant='body2' sx={{ fontSize: '0.78rem', color: '#334155', fontStyle: 'italic', mt: 0.5 }}>
-                    "{item.remark}"
+                    &quot;{item.remark}&quot;
                   </Typography>
                 )}
               </Paper>
@@ -447,7 +447,7 @@ const AuditTrailDialog = ({ open, onClose, row }) => {
                   </Stack>
                   {item.remark && (
                     <Typography variant='body2' sx={{ fontSize: '0.78rem', color: '#334155', fontStyle: 'italic', mt: 0.75 }}>
-                      "{item.remark}"
+                      &quot;{item.remark}&quot;
                     </Typography>
                   )}
                 </Box>
