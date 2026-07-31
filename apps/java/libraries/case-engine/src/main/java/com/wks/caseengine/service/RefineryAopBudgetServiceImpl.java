@@ -1030,8 +1030,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .plantFkId(rs.getString("plantFkId"))
                     .plantName(rs.getString("plantName"))
                     .tentativeDurationDays(rs.getInt("tentativeDurationDays"))
-                    .throughputDuringTheSlowdown(rs.getDouble("throughputDuringTheSlowdown"))
-                    .throughputUom(rs.getString("throughputUom"))
+                    .throughputDuringTheSlowdown(
+                        rs.getObject("throughputDuringTheSlowdown", Double.class)
+                    )                    .throughputUom(rs.getString("throughputUom"))
                     .tentativeMonth(rs.getInt("tentativeMonth"))
                     .remark(rs.getString("remark"))
                     .plantId(rs.getString("plantId"))
@@ -1390,14 +1391,13 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         }
                     }
 
-                    // Col 3 – Throughput during the Slowdown
+                    // Col 3 – Throughput during the Slowdown (optional)
                     Cell throughputCell = row.getCell(3);
                     if (throughputCell != null) {
                         throughputCell.setCellType(CellType.STRING);
                         String throughputStr = throughputCell.getStringCellValue().trim();
-                        if(throughputStr.isEmpty()) {
-                            dto.setSaveStatus("Failed");
-                            dto.setErrorMessage("Throughput during the Slowdown is required");
+                        if (throughputStr.isEmpty()) {
+                            dto.setThroughputDuringTheSlowdown(null);
                         } else {
                             try {
                                 dto.setThroughputDuringTheSlowdown(Double.parseDouble(throughputStr));
@@ -1406,24 +1406,25 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                                 dto.setErrorMessage("Throughput during the Slowdown must be a valid number");
                             }
                         }
+                    } else {
+                        dto.setThroughputDuringTheSlowdown(null);
                     }
 
-                    // Col 4 – Throughput UOM
+                    // Col 4 – Throughput UOM (optional)
                     Cell uomCell = row.getCell(4);
                     if (uomCell != null) {
                         uomCell.setCellType(CellType.STRING);
                         String uomStr = uomCell.getStringCellValue().trim();
                         if (uomStr.isEmpty()) {
-                            dto.setSaveStatus("Failed");
-                            dto.setErrorMessage("Throughput UOM is required");
-                        } 
-                       else if (!validUomNames.contains(uomStr)) {
+                            dto.setThroughputUom(null);
+                        } else if (!validUomNames.contains(uomStr)) {
                             dto.setSaveStatus("Failed");
                             dto.setErrorMessage("Throughput UOM '" + uomStr + "' is not a valid UOM value");
-                        } 
-                       
-                            dto.setThroughputUom(uomStr.isEmpty() ? null : uomStr);
-                        
+                        } else {
+                            dto.setThroughputUom(uomStr);
+                        }
+                    } else {
+                        dto.setThroughputUom(null);
                     }
 
                     // Col 5 – Tentative Month
