@@ -1,7 +1,11 @@
 package com.wks.caseengine.rest.server;
 
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.wks.caseengine.dto.BulkRoleAssignmentRequest;
+import com.wks.caseengine.dto.RoleCreateRequest;
 import com.wks.caseengine.service.KeycloakUserService;
 
 import java.util.List;
@@ -38,9 +42,53 @@ public class UserController {
 		return userService.updateUser(data);
 	}
 
+	/**
+	 * Assign realm roles to users. Each user can have a different set of roles.
+	 * POST /task/users/roles/assign
+	 * Body: { "assignments": [ { "userId": "...", "roles": ["role1"] }, ... ] }
+	 */
+	@PostMapping("/roles/assign")
+	public ResponseEntity<Map<String, Object>> assignRolesToUsers(@RequestBody BulkRoleAssignmentRequest request) throws Exception {
+		Map<String, Object> result = userService.assignRolesToUsers(request.getAssignments());
+		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 200;
+		return ResponseEntity.status(status == 207 ? HttpStatus.MULTI_STATUS : HttpStatus.OK).body(result);
+	}
+
+	/**
+	 * Create a new realm role.
+	 * POST /task/users/roles
+	 * Body: { "name": "role_name", "description": "optional" }
+	 */
+	@PostMapping("/roles")
+	public ResponseEntity<Map<String, Object>> createRole(@RequestBody RoleCreateRequest request) throws Exception {
+		Map<String, Object> result = userService.createRealmRole(request.getName(), request.getDescription());
+		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 201;
+		HttpStatus httpStatus = status == 409 ? HttpStatus.CONFLICT
+				: status == 201 ? HttpStatus.CREATED
+				: HttpStatus.OK;
+		return ResponseEntity.status(httpStatus).body(result);
+	}
+
+	/**
+	 * List available realm roles.
+	 * GET /task/users/roles
+	 * Optional: ?q=searchTerm&page=1&size=20
+	 */
 	@GetMapping("/roles")
-	public Map<String, Object> getRealmRoles() throws Exception {
-		return userService.getRealmRoles();
+	public Map<String, Object> getRealmRoles(
+			@RequestParam(value = "q", required = false) String q,
+			@RequestParam(value = "page", required = false) Integer page,
+			@RequestParam(value = "size", required = false) Integer size) throws Exception {
+		return userService.getRealmRoles(q, page, size);
+	}
+
+	/**
+	 * Fetch roles associated with a specific user.
+	 * GET /task/users/{userId}/roles
+	 */
+	@GetMapping("/{userId}/roles")
+	public Map<String, Object> getUserRoles(@PathVariable String userId) throws Exception {
+		return userService.getUserRoles(userId);
 	}
 	
 	@GetMapping("/groups")
