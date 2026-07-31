@@ -504,6 +504,42 @@ public class KeycloakUserService {
 	}
 
 	/**
+	 * Deletes a realm role from Keycloak.
+	 */
+	public Map<String, Object> deleteRealmRole(String name) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (name == null || name.isBlank()) {
+			throw new IllegalArgumentException("Role name must not be null or blank.");
+		}
+
+		String roleName = name.trim();
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			try {
+				keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+			} catch (Exception ex) {
+				result.put("status", 404);
+				result.put("message", "Role not found: " + roleName);
+				return result;
+			}
+
+			keycloak.realm(keycloakRealmName).roles().deleteRole(roleName);
+
+			result.put("status", 200);
+			result.put("message", "Role deleted successfully.");
+			result.put("data", Map.of("name", roleName));
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to delete role: " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	/**
 	 * Fetches direct realm roles assigned to a specific user.
 	 */
 	public Map<String, Object> getUserRoles(String userId) throws Exception {
