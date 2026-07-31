@@ -65,8 +65,8 @@ const AutoCalculatePopup = ({ open, onYes, onNo }) => {
             fontWeight: 600,
           }}
         >
-          Basis values have been updated. Click Calculate to refresh the results.
-
+          Basis values have been updated. Click Calculate to refresh the
+          results.
         </Typography>
       </DialogContent>
 

@@ -37,7 +37,10 @@ const MaterialBalance = ({ permissions }) => {
     SITE_NAME === 'VMD' &&
     PLANT_NAME === 'BUTADIENE'
   const IS_AROMATICS_HMD = lowerVertName === 'aromatics' && SITE_NAME === 'HMD'
-  const IS_AROMATICS_HMD_AROMATIC = lowerVertName === 'aromatics' && SITE_NAME === 'HMD' && PLANT_NAME === 'AROMATICS'
+  const IS_AROMATICS_HMD_AROMATIC =
+    lowerVertName === 'aromatics' &&
+    SITE_NAME === 'HMD' &&
+    PLANT_NAME === 'AROMATICS'
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -71,7 +74,9 @@ const MaterialBalance = ({ permissions }) => {
             Remarks: item?.Remarks || '',
             originalRemark: item?.Remarks || '',
             isEditable:
-              IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD ? true : item?.isEditable,
+              IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD
+                ? true
+                : item?.isEditable,
             ParticularG:
               item?.Type && String(item.Type).trim() ? item.Type : 'MatBal',
           }),
@@ -87,7 +92,14 @@ const MaterialBalance = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CHEMICAL_HMD, IS_CRACKER_HMD, IS_AROMATICS_HMD])
+  }, [
+    keycloak,
+    PLANT_ID,
+    AOP_YEAR,
+    IS_CHEMICAL_HMD,
+    IS_CRACKER_HMD,
+    IS_AROMATICS_HMD,
+  ])
 
   useEffect(() => {
     fetchMatbalData()
@@ -372,13 +384,17 @@ const MaterialBalance = ({ permissions }) => {
     {
       showAction: permissions?.showAction ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD_AROMATIC ? true : false,
+      saveBtn:
+        IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD_AROMATIC
+          ? true
+          : false,
       allAction: true,
 
       showTitleNameBusiness: true,
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
-      downloadExcelBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD ? true : false,
+      downloadExcelBtn:
+        IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD ? true : false,
       uploadExcelBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD ? true : false,
       showCalculate:
         IS_CRACKER_HMD || IS_CRACKER_C2 || IS_CHEMICAL_VMD_BUTADIENE,

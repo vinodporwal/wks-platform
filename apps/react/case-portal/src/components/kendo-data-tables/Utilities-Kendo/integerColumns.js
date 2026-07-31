@@ -18,7 +18,11 @@ export const NoSpinnerIntegerEditor = ({
     const val = e.target.value
     if (val === '' || /^\d+$/.test(val)) {
       setLocalValue(val)
-      onChange({ dataItem, field, value: val === '' ? null : parseInt(val, 10) })
+      onChange({
+        dataItem,
+        field,
+        value: val === '' ? null : parseInt(val, 10),
+      })
     }
   }
 

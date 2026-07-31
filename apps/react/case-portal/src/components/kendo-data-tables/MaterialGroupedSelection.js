@@ -65,7 +65,7 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
         title: 'Particular',
         editable: false,
         minWidth: 200,
-        locked: true
+        locked: true,
       },
       {
         field: 'sapCode',
@@ -94,7 +94,7 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
         field: 'groupName',
         title: 'Group',
         hidden: true,
-        isVisible: false
+        isVisible: false,
       },
     ],
     [FORMATE_DECIMAL],
@@ -110,8 +110,6 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
         PLANT_ID,
         AOP_YEAR,
       )
-
-
 
       if (res?.code === 200) {
         const rawData = Array.isArray(res?.data)
@@ -184,9 +182,10 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
   const saveChanges = useCallback(async () => {
     try {
       setLoading(true)
-      const data = Object.keys(modifiedCells).length > 0
-        ? Object.values(modifiedCells)
-        : rows
+      const data =
+        Object.keys(modifiedCells).length > 0
+          ? Object.values(modifiedCells)
+          : rows
 
       if (!data.length) {
         setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
@@ -248,7 +247,7 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
     }
   }, [modifiedCells, rows, keycloak, PLANT_ID, fetchData, AOP_YEAR])
 
-  const handleCalculate = () => { }
+  const handleCalculate = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')

@@ -29,7 +29,13 @@ async function getAopBasiswithStartDate(keycloak, PLANT_ID, AOP_YEAR, TYPE) {
   }
 }
 
-async function getProductionConstraints(keycloak, PLANT_ID, AOP_YEAR, TYPE, isCrackerC2 = false) {
+async function getProductionConstraints(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  TYPE,
+  isCrackerC2 = false,
+) {
   if (isCrackerC2) {
     return getAopBasiswithStartDate(keycloak, PLANT_ID, AOP_YEAR, TYPE)
   }

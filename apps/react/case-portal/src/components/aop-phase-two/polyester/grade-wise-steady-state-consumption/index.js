@@ -322,7 +322,9 @@ const GradeWiseSteadyStateConsumption = () => {
           )
         if (
           valRes &&
-          (valRes.code === 400 || valRes.status === 400 || valRes.code === 200) &&
+          (valRes.code === 400 ||
+            valRes.status === 400 ||
+            valRes.code === 200) &&
           Array.isArray(valRes.data) &&
           valRes.data.length > 0
         ) {
@@ -581,7 +583,8 @@ const GradeWiseSteadyStateConsumption = () => {
       if (
         response &&
         response.code === 400 &&
-        (response.message === 'Validation Failed' || Array.isArray(response.data))
+        (response.message === 'Validation Failed' ||
+          Array.isArray(response.data))
       ) {
         isWeightedAverageError = true
         errorMsg = response.message || 'Import validation failed.'
@@ -697,7 +700,7 @@ const GradeWiseSteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}

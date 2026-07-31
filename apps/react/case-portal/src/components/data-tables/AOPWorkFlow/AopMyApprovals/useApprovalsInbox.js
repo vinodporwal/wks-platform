@@ -34,14 +34,17 @@ export default function useApprovalsInbox(onClose) {
     }))
   }, [])
 
-  const handleExpandChange = useCallback((e) => {
-    const dataItem = e.dataItem
-    if (!dataItem) return
-    const rowId = dataItem.id || dataItem.taskId
-    if (rowId) {
-      toggleRowExpand(rowId)
-    }
-  }, [toggleRowExpand])
+  const handleExpandChange = useCallback(
+    (e) => {
+      const dataItem = e.dataItem
+      if (!dataItem) return
+      const rowId = dataItem.id || dataItem.taskId
+      if (rowId) {
+        toggleRowExpand(rowId)
+      }
+    },
+    [toggleRowExpand],
+  )
 
   // Load pending approvals list from backend
   const load = useCallback(async () => {
@@ -50,7 +53,12 @@ export default function useApprovalsInbox(onClose) {
       const data = await AopApprovalService.getMyPending(keycloak)
       const rawList = Array.isArray(data) ? data : []
       const itemsWithId = rawList.map((item, index) => {
-        const rowKey = item.id || item.taskId || (item.plantId && item.year ? `${item.plantId}_${item.year}` : `approval_row_${index}`)
+        const rowKey =
+          item.id ||
+          item.taskId ||
+          (item.plantId && item.year
+            ? `${item.plantId}_${item.year}`
+            : `approval_row_${index}`)
         return {
           ...item,
           id: rowKey,
@@ -95,17 +103,24 @@ export default function useApprovalsInbox(onClose) {
   const filteredItems = useMemo(() => {
     const list = items || []
     const term = searchTerm.trim().toLowerCase()
-    
+
     const matched = !term
       ? list
       : list.filter((item) => {
           const pName = String(item.plantName || item.plant || '').toLowerCase()
           const sName = String(item.siteName || item.site || '').toLowerCase()
-          const vName = String(item.verticalName || item.vertical || '').toLowerCase()
+          const vName = String(
+            item.verticalName || item.vertical || '',
+          ).toLowerCase()
           const year = String(item.year || '').toLowerCase()
-          const stage = String(item.gateDisplayName || item.gateName || '').toLowerCase()
+          const stage = String(
+            item.gateDisplayName || item.gateName || '',
+          ).toLowerCase()
           const role = String(item.assignedRole || '').toLowerCase()
-          const modeStr = item.actions?.mode === 'ACTION' ? 'action required' : 'in progress tracked'
+          const modeStr =
+            item.actions?.mode === 'ACTION'
+              ? 'action required'
+              : 'in progress tracked'
           return (
             pName.includes(term) ||
             sName.includes(term) ||
@@ -121,18 +136,24 @@ export default function useApprovalsInbox(onClose) {
       const rowId = item.id
 
       let sid = item.siteId || item.sid || item.sId || item.site_id || ''
-      let v_id = item.verticalId || item.v_id || item.vid || item.vertical_id || ''
+      let v_id =
+        item.verticalId || item.v_id || item.vid || item.vertical_id || ''
 
       if ((!sid || !v_id) && Array.isArray(sitesData)) {
         const pid = item.plantId || item.pid || item.plant_id
         for (const vertical of sitesData) {
           for (const site of vertical.sites || []) {
             for (const plant of site.plants || []) {
-              const matchesId = pid && String(plant.id).toUpperCase() === String(pid).toUpperCase()
-              const matchesName = item.plantName && (
-                String(plant.id).toUpperCase() === String(item.plantName).toUpperCase() ||
-                String(plant.displayName || plant.name || '').toUpperCase() === String(item.plantName).toUpperCase()
-              )
+              const matchesId =
+                pid &&
+                String(plant.id).toUpperCase() === String(pid).toUpperCase()
+              const matchesName =
+                item.plantName &&
+                (String(plant.id).toUpperCase() ===
+                  String(item.plantName).toUpperCase() ||
+                  String(
+                    plant.displayName || plant.name || '',
+                  ).toUpperCase() === String(item.plantName).toUpperCase())
               if (matchesId || matchesName) {
                 if (!sid) sid = site.id
                 if (!v_id) v_id = vertical.id
@@ -176,28 +197,42 @@ export default function useApprovalsInbox(onClose) {
         for (const vertical of hierarchy) {
           const verticalMatch =
             !row.verticalName ||
-            (v_id && String(vertical.id).toUpperCase() === String(v_id).toUpperCase()) ||
-            String(vertical.id).toUpperCase() === String(row.verticalName).toUpperCase() ||
-            String(vertical.displayName || vertical.name || '').toUpperCase() === String(row.verticalName).toUpperCase()
+            (v_id &&
+              String(vertical.id).toUpperCase() ===
+                String(v_id).toUpperCase()) ||
+            String(vertical.id).toUpperCase() ===
+              String(row.verticalName).toUpperCase() ||
+            String(
+              vertical.displayName || vertical.name || '',
+            ).toUpperCase() === String(row.verticalName).toUpperCase()
 
           if (!verticalMatch) continue
 
           for (const site of vertical.sites || []) {
             const siteMatch =
               !row.siteName ||
-              (sid && String(site.id).toUpperCase() === String(sid).toUpperCase()) ||
-              String(site.id).toUpperCase() === String(row.siteName).toUpperCase() ||
-              String(site.displayName || site.name || '').toUpperCase() === String(row.siteName).toUpperCase()
+              (sid &&
+                String(site.id).toUpperCase() === String(sid).toUpperCase()) ||
+              String(site.id).toUpperCase() ===
+                String(row.siteName).toUpperCase() ||
+              String(site.displayName || site.name || '').toUpperCase() ===
+                String(row.siteName).toUpperCase()
 
             if (!siteMatch) continue
 
             for (const plant of site.plants || []) {
               const matchesId =
-                pid && String(plant.id).toUpperCase() === String(plant.id).toUpperCase() && String(plant.id).toUpperCase() === String(pid).toUpperCase()
+                pid &&
+                String(plant.id).toUpperCase() ===
+                  String(plant.id).toUpperCase() &&
+                String(plant.id).toUpperCase() === String(pid).toUpperCase()
               const matchesName =
                 row.plantName &&
-                (String(plant.id).toUpperCase() === String(row.plantName).toUpperCase() ||
-                  String(plant.displayName || plant.name || '').toUpperCase() === String(row.plantName).toUpperCase())
+                (String(plant.id).toUpperCase() ===
+                  String(row.plantName).toUpperCase() ||
+                  String(
+                    plant.displayName || plant.name || '',
+                  ).toUpperCase() === String(row.plantName).toUpperCase())
 
               if (matchesId || matchesName) {
                 pid = plant.id

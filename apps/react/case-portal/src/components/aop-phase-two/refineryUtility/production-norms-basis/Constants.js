@@ -21,7 +21,10 @@ const Constants = ({ startDate, endDate }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, siteObject } = dataGridStore
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
+  const EXCEL_NAME = generateExcelName(
+    dataGridStore,
+    'Production_Norms_Basis_Constants',
+  )
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear

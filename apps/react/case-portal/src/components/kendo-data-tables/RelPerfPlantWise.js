@@ -138,12 +138,13 @@ export default function RelPerfPlantWise() {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      var data = await ReliabilityPerformancePlantWiseFunctionalApiService.getReliabilityPerformancePlantWise(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        'Reliability Performance',
-      )
+      var data =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.getReliabilityPerformancePlantWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'Reliability Performance',
+        )
 
       const processedData1 = data.data.map((item, index) => ({
         ...item,
@@ -182,10 +183,11 @@ export default function RelPerfPlantWise() {
         plantId: row?.plantId,
       }))
 
-      const response = await ReliabilityPerformancePlantWiseFunctionalApiService.saveReliabilityPerformancePlantWise(
-        payloadData,
-        keycloak,
-      )
+      const response =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.saveReliabilityPerformancePlantWise(
+          payloadData,
+          keycloak,
+        )
 
       setSnackbarOpenReliabilityPerformance(true)
       setSnackbarDataReliabilityPerformance({
@@ -286,12 +288,13 @@ export default function RelPerfPlantWise() {
     try {
       let response
 
-      response = await ReliabilityPerformancePlantWiseFunctionalApiService.importReliabilityPerformanceExcelPlantWise(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        rawFile,
-      )
+      response =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.importReliabilityPerformanceExcelPlantWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpenReliabilityPerformance(true)

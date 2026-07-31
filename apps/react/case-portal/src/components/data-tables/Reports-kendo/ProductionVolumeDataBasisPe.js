@@ -28,18 +28,30 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 
 const MONTH_MAP = {
-  jan: 1, january: 1,
-  feb: 2, february: 2,
-  mar: 3, march: 3,
-  apr: 4, april: 4,
+  jan: 1,
+  january: 1,
+  feb: 2,
+  february: 2,
+  mar: 3,
+  march: 3,
+  apr: 4,
+  april: 4,
   may: 5,
-  jun: 6, june: 6,
-  jul: 7, july: 7,
-  aug: 8, august: 8,
-  sep: 9, sept: 9, september: 9,
-  oct: 10, october: 10,
-  nov: 11, november: 11,
-  dec: 12, december: 12,
+  jun: 6,
+  june: 6,
+  jul: 7,
+  july: 7,
+  aug: 8,
+  august: 8,
+  sep: 9,
+  sept: 9,
+  september: 9,
+  oct: 10,
+  october: 10,
+  nov: 11,
+  november: 11,
+  dec: 12,
+  december: 12,
 }
 
 const ProductionVolumeDataBasisPe = () => {
@@ -105,8 +117,12 @@ const ProductionVolumeDataBasisPe = () => {
           const isNumberCol = col.type === 'number'
 
           let displayTitle = col.title || col.headerName || col.field
-          const titleKey = String(displayTitle || '').trim().toLowerCase()
-          const fieldKey = String(col.field || '').trim().toLowerCase()
+          const titleKey = String(displayTitle || '')
+            .trim()
+            .toLowerCase()
+          const fieldKey = String(col.field || '')
+            .trim()
+            .toLowerCase()
           const monthNum = MONTH_MAP[titleKey] || MONTH_MAP[fieldKey]
 
           if (monthNum && headerMap && headerMap[monthNum]) {

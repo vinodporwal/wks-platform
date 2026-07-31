@@ -40,15 +40,20 @@ export const GroupedColumnCell = (props) => {
   })
 
   const hoverTitle =
-    dataItem.originalValueStr !== undefined && dataItem.originalValueStr !== null
+    dataItem.originalValueStr !== undefined &&
+    dataItem.originalValueStr !== null
       ? String(dataItem.originalValueStr)
       : value !== null && value !== undefined
-      ? String(value)
-      : ''
+        ? String(value)
+        : ''
 
   const cellContent = hoverTitle ? (
-    <Tooltip title={hoverTitle} arrow placement="top" disableInteractive>
-      <span style={{ cursor: 'pointer', display: 'inline-block', width: '100%' }}>{displayValue}</span>
+    <Tooltip title={hoverTitle} arrow placement='top' disableInteractive>
+      <span
+        style={{ cursor: 'pointer', display: 'inline-block', width: '100%' }}
+      >
+        {displayValue}
+      </span>
     </Tooltip>
   ) : (
     displayValue

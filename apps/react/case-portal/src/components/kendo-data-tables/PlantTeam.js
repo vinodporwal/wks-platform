@@ -10,7 +10,10 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam = false }) {
+export default function PlantTeam({
+  onlyPeopleInitiative = false,
+  onlyPlantTeam = false,
+}) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -202,12 +205,14 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
 
       if (!onlyPlantTeam) {
         if (res1?.code === 200) {
-          const peopleInitiativeMapped = res1?.data?.Data?.map((item, index) => ({
-            ...item,
-            id: item.id || null,
-            idFromApi: item.id || null,
-            serialNumber: index + 1,
-          }))
+          const peopleInitiativeMapped = res1?.data?.Data?.map(
+            (item, index) => ({
+              ...item,
+              id: item.id || null,
+              idFromApi: item.id || null,
+              serialNumber: index + 1,
+            }),
+          )
           setPeopleInitiativeRows(peopleInitiativeMapped)
         } else {
           setPeopleInitiativeRows([])
@@ -220,7 +225,15 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID, PLANT_ID, AOP_YEAR, onlyPeopleInitiative, onlyPlantTeam])
+  }, [
+    keycloak,
+    yearChanged,
+    plantID,
+    PLANT_ID,
+    AOP_YEAR,
+    onlyPeopleInitiative,
+    onlyPlantTeam,
+  ])
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, fetchData])

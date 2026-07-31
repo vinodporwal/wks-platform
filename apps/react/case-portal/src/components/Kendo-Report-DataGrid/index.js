@@ -37,11 +37,11 @@ const KendoDataGrid = ({
 
   const initialGroup = groupBy
     ? [
-      {
-        field: groupBy,
-        dir: undefined,
-      },
-    ]
+        {
+          field: groupBy,
+          dir: undefined,
+        },
+      ]
     : []
 
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
@@ -217,12 +217,13 @@ const KendoDataGrid = ({
             defaultTake: 100,
           })}
           contextMenu={true}
-          {...(!permissions?.disablePagination && rows?.length > 100 && {
-            pageable: {
-              buttonCount: 4,
-              pageSizes: [10, 50, 100],
-            },
-          })}
+          {...(!permissions?.disablePagination &&
+            rows?.length > 100 && {
+              pageable: {
+                buttonCount: 4,
+                pageSizes: [10, 50, 100],
+              },
+            })}
           defaultGroup={initialGroup}
         >
           {columns?.map((col) => {
@@ -246,7 +247,9 @@ const KendoDataGrid = ({
                   width={widthT}
                   cells={{
                     edit: {
-                      date: ['dateTime', 'dateTime', 'mcuDate'].includes(col.field)
+                      date: ['dateTime', 'dateTime', 'mcuDate'].includes(
+                        col.field,
+                      )
                         ? DateOnlyPicker
                         : DateTimePickerEditor,
                     },

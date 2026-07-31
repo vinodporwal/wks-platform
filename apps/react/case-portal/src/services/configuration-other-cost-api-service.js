@@ -25,7 +25,12 @@ async function getConfigurationOtherCostData(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function saveConfigurationOtherCostData(PLANT_ID, payload, keycloak, AOP_YEAR) {
+async function saveConfigurationOtherCostData(
+  PLANT_ID,
+  payload,
+  keycloak,
+  AOP_YEAR,
+) {
   const url = `${Config.CaseEngineUrl}/task/configuration-other-cost?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',

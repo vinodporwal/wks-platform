@@ -77,7 +77,9 @@ const WorkflowRemarksDialog = ({
           color: '#2e7d32',
           bgColor: '#e8f5e9',
           borderColor: '#2e7d32',
-          icon: <CheckCircleOutlineIcon sx={{ fontSize: 20, color: '#2e7d32' }} />,
+          icon: (
+            <CheckCircleOutlineIcon sx={{ fontSize: 20, color: '#2e7d32' }} />
+          ),
           btnIcon: <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />,
           confirmText: 'Confirm Approval',
           btnBg: '#2e7d32',
@@ -137,7 +139,10 @@ const WorkflowRemarksDialog = ({
         }}
       >
         {config.icon}
-        <Typography variant='h6' sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#1e293b' }}>
+        <Typography
+          variant='h6'
+          sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#1e293b' }}
+        >
           {config.title}
         </Typography>
       </DialogTitle>
@@ -154,17 +159,43 @@ const WorkflowRemarksDialog = ({
           }}
         >
           <Stack spacing={1.2}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-              <Typography variant='caption' sx={{ color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              <Typography
+                variant='caption'
+                sx={{
+                  color: '#475569',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                }}
+              >
                 Workflow Action Details
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, pt: 0.5 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 1.5,
+                pt: 0.5,
+              }}
+            >
               {role && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                   <AssignmentIndIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                  <Typography variant='body2' sx={{ color: '#334155', fontSize: '0.82rem' }}>
+                  <Typography
+                    variant='body2'
+                    sx={{ color: '#334155', fontSize: '0.82rem' }}
+                  >
                     <strong>Role:</strong> {role}
                   </Typography>
                 </Box>
@@ -173,7 +204,10 @@ const WorkflowRemarksDialog = ({
               {gateName && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                   <AccountTreeIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                  <Typography variant='body2' sx={{ color: '#334155', fontSize: '0.82rem' }}>
+                  <Typography
+                    variant='body2'
+                    sx={{ color: '#334155', fontSize: '0.82rem' }}
+                  >
                     <strong>Stage:</strong> {gateName}
                   </Typography>
                 </Box>
@@ -182,7 +216,10 @@ const WorkflowRemarksDialog = ({
               {plantName && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                   <LocationOnIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                  <Typography variant='body2' sx={{ color: '#334155', fontSize: '0.82rem' }}>
+                  <Typography
+                    variant='body2'
+                    sx={{ color: '#334155', fontSize: '0.82rem' }}
+                  >
                     <strong>Plant:</strong> {plantName}
                   </Typography>
                 </Box>
@@ -191,7 +228,10 @@ const WorkflowRemarksDialog = ({
               {year && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                   <CalendarTodayIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                  <Typography variant='body2' sx={{ color: '#334155', fontSize: '0.82rem' }}>
+                  <Typography
+                    variant='body2'
+                    sx={{ color: '#334155', fontSize: '0.82rem' }}
+                  >
                     <strong>Year:</strong> {year}
                   </Typography>
                 </Box>
@@ -204,7 +244,11 @@ const WorkflowRemarksDialog = ({
         <TextField
           autoFocus
           margin='dense'
-          label={isMandatory ? 'Enter Remarks (Required) *' : 'Enter Remarks (Optional)'}
+          label={
+            isMandatory
+              ? 'Enter Remarks (Required) *'
+              : 'Enter Remarks (Optional)'
+          }
           placeholder='Write reason, notes or comments for this action...'
           fullWidth
           multiline
@@ -216,7 +260,9 @@ const WorkflowRemarksDialog = ({
             if (e.target.value.trim()) setError('')
           }}
           error={Boolean(error)}
-          helperText={error || 'Remarks will be saved to the workflow audit trail.'}
+          helperText={
+            error || 'Remarks will be saved to the workflow audit trail.'
+          }
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: '8px',
@@ -242,7 +288,13 @@ const WorkflowRemarksDialog = ({
           variant='contained'
           onClick={handleConfirm}
           disabled={loading}
-          startIcon={loading ? <CircularProgress size={16} color='inherit' /> : config.btnIcon}
+          startIcon={
+            loading ? (
+              <CircularProgress size={16} color='inherit' />
+            ) : (
+              config.btnIcon
+            )
+          }
           sx={{
             backgroundColor: config.btnBg,
             '&:hover': {

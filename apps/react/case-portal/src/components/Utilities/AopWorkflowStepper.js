@@ -110,7 +110,8 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
         borderRadius: '8px',
         border: '1px solid #bae6fd',
         background: 'linear-gradient(180deg, #f0f7ff 0%, #e6f2fe 100%)',
-        boxShadow: 'inset 0 1px 3px rgba(0, 94, 184, 0.04), 0 2px 6px rgba(0, 94, 184, 0.05)',
+        boxShadow:
+          'inset 0 1px 3px rgba(0, 94, 184, 0.04), 0 2px 6px rgba(0, 94, 184, 0.05)',
       }}
     >
       <Stepper
@@ -133,7 +134,11 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
           const isPending = !isCompleted && !isInProgress && !isError
 
           let statusLabel = 'Pending'
-          let statusColor = { bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' }
+          let statusColor = {
+            bg: '#f1f5f9',
+            color: '#64748b',
+            border: '#cbd5e1',
+          }
 
           if (isCompleted) {
             statusLabel = 'Completed'

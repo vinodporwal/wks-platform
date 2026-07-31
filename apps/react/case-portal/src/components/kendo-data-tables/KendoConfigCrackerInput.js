@@ -223,8 +223,8 @@ const CrackerConfig = () => {
               ? 'Naphtha'
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
-                : (currentTabDisplay === 'Hydrogenation') &&
-                  lowerSiteName === 'c2'
+                : currentTabDisplay === 'Hydrogenation' &&
+                    lowerSiteName === 'c2'
                   ? 'cracker_c2_recovery'
                   : lowerSiteName === 'c2'
                     ? 'cracker_c2'

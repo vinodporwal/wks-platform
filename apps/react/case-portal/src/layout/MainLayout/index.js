@@ -16,7 +16,8 @@ const MainLayout = ({ keycloak, authenticated }) => {
   const { items: menuItems } = useMenuContext()
   const menu = { items: [...menuItems] }
   const location = useLocation()
-  const isDashboard = location.pathname === '/dashboard' || location.pathname === '/my-approvals'
+  const isDashboard =
+    location.pathname === '/dashboard' || location.pathname === '/my-approvals'
   // Routes that should display StepperNav
   const stepperNavRoutes = ['/production-norms-plan', '/tcs', '/utilityPlant']
 
@@ -88,10 +89,10 @@ const MainLayout = ({ keycloak, authenticated }) => {
         {stepperNavRoutes.some((route) =>
           location?.pathname.startsWith(route),
         ) && (
-            <Box>
-              <StepperNav />
-            </Box>
-          )}
+          <Box>
+            <StepperNav />
+          </Box>
+        )}
 
         {/* HIDE AS OF NOW - 16 APRIL 2026 */}
         {/* {location.pathname.startsWith('/production-norms-plan') && (

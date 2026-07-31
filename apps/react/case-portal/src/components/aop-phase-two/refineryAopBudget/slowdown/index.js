@@ -34,7 +34,7 @@ const Slowdown = ({ permissions }) => {
   const [siteDropdown, setSiteDropdown] = useState([])
   const [plantDropdown, setPlantDropdown] = useState([])
   const [uomDropdown, setUomDropdown] = useState([])
-  const ValueFormat=ValueFormatterProduction()
+  const ValueFormat = ValueFormatterProduction()
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -68,7 +68,7 @@ const Slowdown = ({ permissions }) => {
     { value: 12, label: 'December' },
     { value: 1, label: 'January' },
     { value: 2, label: 'February' },
-    { value: 3, label: 'March' }
+    { value: 3, label: 'March' },
   ]
 
   const columns = [
@@ -108,8 +108,8 @@ const Slowdown = ({ permissions }) => {
     {
       field: 'throughputUom',
       title: 'Throughput UOM',
-      type:'select',
-      options:uomDropdown,
+      type: 'select',
+      options: uomDropdown,
       editable: true, // orange - CTS Team
       minWidth: 170,
     },
@@ -132,16 +132,18 @@ const Slowdown = ({ permissions }) => {
   useEffect(() => {
     const loadUomDropdownData = async () => {
       try {
-        const resp = await ShutdownApiService.getUomDropdownData(keycloak, PLANT_ID)
-        const mapped=resp.data.map(item => ({
+        const resp = await ShutdownApiService.getUomDropdownData(
+          keycloak,
+          PLANT_ID,
+        )
+        const mapped = resp.data.map((item) => ({
           value: item.name,
-          label: item.displayName
+          label: item.displayName,
         }))
         setUomDropdown(mapped)
-
       } catch (error) {
         console.error('Error fetching UOM Dropdown data:', error)
-      } 
+      }
     }
     loadUomDropdownData()
   }, [])
@@ -149,14 +151,17 @@ const Slowdown = ({ permissions }) => {
   useEffect(() => {
     const loadSitePlantData = async () => {
       try {
-        const resp = await ShutdownApiService.getSitePlantDropdownData(keycloak, PLANT_ID)
+        const resp = await ShutdownApiService.getSitePlantDropdownData(
+          keycloak,
+          PLANT_ID,
+        )
         const verticalData = resp?.sites
           ? resp
-          : (resp?.data?.sites
+          : resp?.data?.sites
             ? resp.data
-            : (resp?.data?.data?.sites
+            : resp?.data?.data?.sites
               ? resp.data.data
-              : {}))
+              : {}
         const sites = verticalData?.sites || []
         setSiteDropdown(sites)
         const plants = sites.flatMap((site) => site.plants || [])
@@ -174,7 +179,11 @@ const Slowdown = ({ permissions }) => {
     setModifiedCells({})
     setLoading(true)
     try {
-      const resp = await ShutdownApiService.getSlowdownData(keycloak, PLANT_ID, AOP_YEAR)
+      const resp = await ShutdownApiService.getSlowdownData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       const rawData = Array.isArray(resp?.data)
         ? resp.data
         : Array.isArray(resp?.data?.data)
@@ -194,8 +203,11 @@ const Slowdown = ({ permissions }) => {
           tentativeDurationDays: item.tentativeDurationDays,
           throughputDuringTheSlowdown: item.throughputDuringTheSlowdown,
           throughputUom: item.throughputUom,
-          tentativeMonths: item.tentativeMonth !== null && item.tentativeMonth !== undefined ? Number(item.tentativeMonth) : null,
-          isEditable: item.isEditable
+          tentativeMonths:
+            item.tentativeMonth !== null && item.tentativeMonth !== undefined
+              ? Number(item.tentativeMonth)
+              : null,
+          isEditable: item.isEditable,
         }
       })
       setRows(dataRows)
@@ -224,10 +236,18 @@ const Slowdown = ({ permissions }) => {
       if (!row.plantName || String(row.plantName).trim() === '') {
         missingFields.push('Plant')
       }
-      if (row.tentativeDurationDays === undefined || row.tentativeDurationDays === null || String(row.tentativeDurationDays).trim() === '') {
+      if (
+        row.tentativeDurationDays === undefined ||
+        row.tentativeDurationDays === null ||
+        String(row.tentativeDurationDays).trim() === ''
+      ) {
         missingFields.push('Tentative Duration in days')
       }
-      if (row.tentativeMonths === undefined || row.tentativeMonths === null || String(row.tentativeMonths).trim() === '') {
+      if (
+        row.tentativeMonths === undefined ||
+        row.tentativeMonths === null ||
+        String(row.tentativeMonths).trim() === ''
+      ) {
         missingFields.push('Tentative Month')
       }
       if (!row.remark || String(row.remark).trim() === '') {
@@ -286,29 +306,33 @@ const Slowdown = ({ permissions }) => {
     try {
       const payload = modifiedData.map((row) => {
         const matchedSite = siteDropdown.find((s) => s.name === row.siteName)
-        const matchedPlant = matchedSite?.plants?.find((p) => p.name === row.plantName)
+        const matchedPlant = matchedSite?.plants?.find(
+          (p) => p.name === row.plantName,
+        )
 
         return {
           id: row.idFromApi ?? null,
-          siteFkId: matchedSite ? matchedSite.id : (row.siteFkId ?? null),
-          plantFkId: matchedPlant ? matchedPlant.id : (row.plantFkId ?? null),
+          siteFkId: matchedSite ? matchedSite.id : row.siteFkId ?? null,
+          plantFkId: matchedPlant ? matchedPlant.id : row.plantFkId ?? null,
           siteName: row.siteName,
           plantName: row.plantName,
           tentativeDurationDays: row.tentativeDurationDays,
           throughputDuringTheSlowdown: row.throughputDuringTheSlowdown,
           throughputUom: row.throughputUom,
-          tentativeMonth: row.tentativeMonths !== null && row.tentativeMonths !== undefined ? Number(row.tentativeMonths) : null,
+          tentativeMonth:
+            row.tentativeMonths !== null && row.tentativeMonths !== undefined
+              ? Number(row.tentativeMonths)
+              : null,
           remark: row.remark,
           plantId: PLANT_ID,
           aopYear: AOP_YEAR,
         }
       })
 
-      const response =
-        await ShutdownApiService.saveSlowdownData(
-          payload,
-          keycloak,
-        )
+      const response = await ShutdownApiService.saveSlowdownData(
+        payload,
+        keycloak,
+      )
 
       if (response) {
         setSnackbarOpen(true)
@@ -329,14 +353,7 @@ const Slowdown = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [
-    modifiedCells,
-    originalRows,
-    PLANT_ID,
-    AOP_YEAR,
-    keycloak,
-    fetchData,
-  ])
+  }, [modifiedCells, originalRows, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
   useEffect(() => {
     fetchData()
@@ -451,7 +468,11 @@ const Slowdown = ({ permissions }) => {
       }
 
       if (idFromApi) {
-        await ShutdownApiService.deleteSlowdownData(idFromApi, keycloak, PLANT_ID)
+        await ShutdownApiService.deleteSlowdownData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({

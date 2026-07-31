@@ -29,7 +29,7 @@ const FeedTypeOrNumericEditor = (props) => {
         opt.value === dataItem[field] ||
         opt.name === dataItem[field] ||
         String(opt.value) === String(dataItem[field]) ||
-        String(opt.name) === String(dataItem[field])
+        String(opt.name) === String(dataItem[field]),
     ) ?? dropdownData[0]
 
   const handleChange = (e) => {

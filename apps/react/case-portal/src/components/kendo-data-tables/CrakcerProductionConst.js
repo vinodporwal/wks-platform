@@ -50,7 +50,8 @@ const CrakcerProductionConst = () => {
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
-  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME_NO_CASE === 'C2'
+  const IS_CRACKER_C2 =
+    lowerVertName === 'cracker' && SITE_NAME_NO_CASE === 'C2'
 
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
@@ -217,7 +218,7 @@ const CrakcerProductionConst = () => {
   }, [FORMATE_VALUE, IS_CRACKER_C2])
 
   const saveProductionConstrant = async (newRow) => {
-    console.log(newRow, "newwwww");
+    console.log(newRow, 'newwwww')
 
     setLoading1(true)
     try {
@@ -251,7 +252,14 @@ const CrakcerProductionConst = () => {
           durationVal = row.jun
         }
 
-        const constantVal = IS_CRACKER_C2 ? row.Duration ?? row.duration ?? row.ConstantValue ?? row.may ?? row.apr ?? null : row.ConstantValue ?? row?.Duration ?? null
+        const constantVal = IS_CRACKER_C2
+          ? row.Duration ??
+            row.duration ??
+            row.ConstantValue ??
+            row.may ??
+            row.apr ??
+            null
+          : row.ConstantValue ?? row?.Duration ?? null
         const aprVal = IS_CRACKER_C2 ? startDateVal : constantVal
         const mayVal = IS_CRACKER_C2 ? endDateVal : constantVal
         const junVal = IS_CRACKER_C2 ? durationVal : constantVal
@@ -283,12 +291,13 @@ const CrakcerProductionConst = () => {
         }
       })
 
-      const response = await ProductionConstarintsApiService.saveProductionConstraint(
-        PLANT_ID,
-        payload,
-        keycloak,
-        AOP_YEAR,
-      )
+      const response =
+        await ProductionConstarintsApiService.saveProductionConstraint(
+          PLANT_ID,
+          payload,
+          keycloak,
+          AOP_YEAR,
+        )
       if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -320,17 +329,17 @@ const CrakcerProductionConst = () => {
     try {
       const constantsRes = IS_CRACKER_C2
         ? await ProductionConstarintsApiService.getAopBasiswithStartDate(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          'constant',
-        )
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            'constant',
+          )
         : await ProductionConstarintsApiService.getProductionConstraints(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          'constant',
-        )
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            'constant',
+          )
       if (constantsRes?.code !== 200) {
         setProductionRowsConstants([])
         return
@@ -340,10 +349,21 @@ const CrakcerProductionConst = () => {
       const formattedData = data.map((item, index) => {
         const rawStart = item.StartDate ?? item.startDate ?? item.apr ?? null
         let rawEnd = item.EndDate ?? item.endDate ?? null
-        const rawDur = item.Duration ?? item.duration ?? item.ConstantValue ?? item.constantValue ?? item.may ?? ''
+        const rawDur =
+          item.Duration ??
+          item.duration ??
+          item.ConstantValue ??
+          item.constantValue ??
+          item.may ??
+          ''
         const uom = (item.UOM || item.uom || '').trim().toLowerCase()
 
-        if (!rawEnd && rawStart && rawDur && (uom === 'month' || uom === 'months')) {
+        if (
+          !rawEnd &&
+          rawStart &&
+          rawDur &&
+          (uom === 'month' || uom === 'months')
+        ) {
           const startObj = parseDateRobust(rawStart)
           const durNum = Number(rawDur)
           if (startObj && !isNaN(startObj.getTime()) && !isNaN(durNum)) {
@@ -560,7 +580,9 @@ const CrakcerProductionConst = () => {
           unsavedChangesRef={unsavedChangesRefConstants}
           handleRemarkCellClick={handleRemarkCellClickConstants}
           permissions={adjustedPermissionsConstants}
-          {...((SITE_NAME_NO_CASE === 'VMD' || SITE_NAME_NO_CASE === 'C2') && { groupBy: 'Particulars' })}
+          {...((SITE_NAME_NO_CASE === 'VMD' || SITE_NAME_NO_CASE === 'C2') && {
+            groupBy: 'Particulars',
+          })}
           plantID={PLANT_ID}
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}

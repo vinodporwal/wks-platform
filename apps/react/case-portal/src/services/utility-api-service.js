@@ -1,12 +1,10 @@
 import Config from '../consts'
 import { json } from './request'
 export const UtilityApiService = {
-  handleCalculateCombined
+  handleCalculateCombined,
 }
 
-
 async function handleCalculateCombined(plantId, year, keycloak) {
-
   const url = `${Config.CaseEngineUrl}/task/calculate-combine?plantId=${plantId}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
@@ -27,4 +25,3 @@ async function handleCalculateCombined(plantId, year, keycloak) {
     return Promise.reject(e)
   }
 }
-

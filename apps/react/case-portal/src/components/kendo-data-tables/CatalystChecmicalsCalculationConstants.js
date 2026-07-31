@@ -12,7 +12,6 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import CatChemReceipe from './CatChemReceipe'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 
-
 const CatalystChecmicalsCalculationConstants = ({ onSaveOrImport }) => {
   const [loading, setLoading] = useState(false)
   const valueFormat = ValueFormatterConsumption()
@@ -41,12 +40,12 @@ const CatalystChecmicalsCalculationConstants = ({ onSaveOrImport }) => {
 
   const [currentRemarkConstants, setCurrentRemarkConstants] = useState('')
   const [currentRowIdConstants, setCurrentRowIdConstants] = useState(null)
-  const [remarkDialogOpenConstants, setRemarkDialogOpenConstants] = useState(false)
+  const [remarkDialogOpenConstants, setRemarkDialogOpenConstants] =
+    useState(false)
   const unsavedChangesRefConstants = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
-
 
   // Grid 1: Constant Columns
   const colDefsConstants = [
@@ -226,13 +225,14 @@ const CatalystChecmicalsCalculationConstants = ({ onSaveOrImport }) => {
   const handleExcelUpload = async (file) => {
     setLoading(true)
     try {
-      const response = await DataService.saveConfigurationExcelConstantsIscatCam(
-        file,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        true,
-      )
+      const response =
+        await DataService.saveConfigurationExcelConstantsIscatCam(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          true,
+        )
       if (response?.code == 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -300,8 +300,6 @@ const CatalystChecmicalsCalculationConstants = ({ onSaveOrImport }) => {
     fetchConstantsData()
   }, [fetchConstantsData])
 
-
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <LoaderBackdrop open={!!loading} />
@@ -318,7 +316,9 @@ const CatalystChecmicalsCalculationConstants = ({ onSaveOrImport }) => {
         permissions={adjustedPermissionsConstant()}
         groupBy='Particulars'
         fetchData={fetchConstantsData}
-        downloadExcelForConfiguration={() => downloadExcel('constant', 'Constant')}
+        downloadExcelForConfiguration={() =>
+          downloadExcel('constant', 'Constant')
+        }
         handleExcelUpload={(file) => handleExcelUpload(file)}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

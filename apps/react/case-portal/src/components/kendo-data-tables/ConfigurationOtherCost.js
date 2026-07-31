@@ -301,12 +301,13 @@ const ConfigurationOtherCost = ({ permissions }) => {
       }))
 
       if (payload.length > 0) {
-        const response = await ConfigurationOtherCostApiService.saveConfigurationOtherCostData(
-          PLANT_ID,
-          payload,
-          keycloak,
-          AOP_YEAR,
-        )
+        const response =
+          await ConfigurationOtherCostApiService.saveConfigurationOtherCostData(
+            PLANT_ID,
+            payload,
+            keycloak,
+            AOP_YEAR,
+          )
         setSnackbarOpen(true)
         setSnackbarData({
           message: `Saved Successfully!`,
@@ -335,11 +336,12 @@ const ConfigurationOtherCost = ({ permissions }) => {
     try {
       setLoading(true)
       setRows([])
-      const response = await ConfigurationOtherCostApiService.getConfigurationOtherCostData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ConfigurationOtherCostApiService.getConfigurationOtherCostData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code !== 200) {
         setRows([])
@@ -349,16 +351,17 @@ const ConfigurationOtherCost = ({ permissions }) => {
 
       setCalculationObject(response?.data?.aopCalculation || [])
 
-      const formattedData = response?.data?.configurationDTOList?.map((item, index) => ({
-        ...item,
-        idFromApi: item.normParameterFKId,
-        id: index,
-        remarks: item?.remarks?.trim() || null,
-        originalRemark: item?.remarks?.trim(),
-        materialFkId: item?.normParameterFKId?.toLowerCase(),
-        Particulars: item.productName || 'Particulars',
-        isEditable: item.isEditable,
-      })) || []
+      const formattedData =
+        response?.data?.configurationDTOList?.map((item, index) => ({
+          ...item,
+          idFromApi: item.normParameterFKId,
+          id: index,
+          remarks: item?.remarks?.trim() || null,
+          originalRemark: item?.remarks?.trim(),
+          materialFkId: item?.normParameterFKId?.toLowerCase(),
+          Particulars: item.productName || 'Particulars',
+          isEditable: item.isEditable,
+        })) || []
 
       setRows(formattedData)
     } catch (error) {
@@ -445,15 +448,14 @@ const ConfigurationOtherCost = ({ permissions }) => {
     })
 
     try {
-
-      const resp = await ConfigurationOtherCostApiService.getConfigurationOtherCostExcel(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_EXPORT_TITLE,
-        SCREEN_NAME,
-      )
-
+      const resp =
+        await ConfigurationOtherCostApiService.getConfigurationOtherCostExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+          SCREEN_NAME,
+        )
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -571,7 +573,6 @@ const ConfigurationOtherCost = ({ permissions }) => {
     }
   }
 
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear !== 1) return permissions
     return {
@@ -651,8 +652,8 @@ const ConfigurationOtherCost = ({ permissions }) => {
               lineHeight: 1.5,
             }}
           >
-            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
-            , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>,{' '}
+            <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
             <b style={{ color: '#16a34a' }}>Reports</b> are verified before
             releasing for review.
           </DialogContentText>
@@ -697,7 +698,9 @@ const ConfigurationOtherCost = ({ permissions }) => {
             rows={rows}
             onAddRow={(newRow) => console.log('New Row Added:', newRow)}
             onDeleteRow={(id) => console.log('Row Deleted:', id)}
-            onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+            onRowUpdate={(updatedRow) =>
+              console.log('Row Updated:', updatedRow)
+            }
             paginationOptions={[100, 200, 300]}
             saveChanges={saveChanges}
             snackbarData={snackbarData}

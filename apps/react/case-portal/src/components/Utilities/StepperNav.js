@@ -105,10 +105,7 @@ export default function StepperNav() {
     let bestIdx = -1
     let bestLen = 0
     steps.forEach((s, i) => {
-      if (
-        location.pathname.startsWith(s.url + '/') &&
-        s.url.length > bestLen
-      ) {
+      if (location.pathname.startsWith(s.url + '/') && s.url.length > bestLen) {
         bestIdx = i
         bestLen = s.url.length
       }

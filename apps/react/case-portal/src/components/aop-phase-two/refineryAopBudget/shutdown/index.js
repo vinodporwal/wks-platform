@@ -81,14 +81,17 @@ const Shutdown = ({ permissions }) => {
   useEffect(() => {
     const loadSitePlantData = async () => {
       try {
-        const resp = await ShutdownApiService.getSitePlantDropdownData(keycloak, PLANT_ID)
+        const resp = await ShutdownApiService.getSitePlantDropdownData(
+          keycloak,
+          PLANT_ID,
+        )
         const verticalData = resp?.sites
           ? resp
-          : (resp?.data?.sites
+          : resp?.data?.sites
             ? resp.data
-            : (resp?.data?.data?.sites
+            : resp?.data?.data?.sites
               ? resp.data.data
-              : {}))
+              : {}
         const sites = verticalData?.sites || []
         setSiteDropdown(sites)
         const plants = sites.flatMap((site) => site.plants || [])
@@ -106,7 +109,11 @@ const Shutdown = ({ permissions }) => {
     setModifiedCells({})
     setLoading(true)
     try {
-      const resp = await ShutdownApiService.getShutdownData(keycloak, PLANT_ID, AOP_YEAR)
+      const resp = await ShutdownApiService.getShutdownData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       const rawData = Array.isArray(resp?.data)
         ? resp.data
         : Array.isArray(resp?.data?.data)
@@ -123,8 +130,10 @@ const Shutdown = ({ permissions }) => {
           plantFkId: item.plantFkId,
           siteName: item.siteName,
           plantName: item.plantName,
-          dateOfCommencement: item.dateOfCommencement ? new Date(item.dateOfCommencement) : null,
-          isEditable: item.isEditable
+          dateOfCommencement: item.dateOfCommencement
+            ? new Date(item.dateOfCommencement)
+            : null,
+          isEditable: item.isEditable,
         }
       })
       setRows(dataRows)
@@ -160,7 +169,11 @@ const Shutdown = ({ permissions }) => {
       if (!row.plantName || String(row.plantName).trim() === '') {
         missingFields.push('Plant')
       }
-      if (row.sdTotalDurationDays === undefined || row.sdTotalDurationDays === null || String(row.sdTotalDurationDays).trim() === '') {
+      if (
+        row.sdTotalDurationDays === undefined ||
+        row.sdTotalDurationDays === null ||
+        String(row.sdTotalDurationDays).trim() === ''
+      ) {
         missingFields.push('SD Total Duration Days')
       }
       if (!row.dateOfCommencement) {
@@ -222,12 +235,14 @@ const Shutdown = ({ permissions }) => {
     try {
       const payload = modifiedData.map((row) => {
         const matchedSite = siteDropdown.find((s) => s.name === row.siteName)
-        const matchedPlant = matchedSite?.plants?.find((p) => p.name === row.plantName)
+        const matchedPlant = matchedSite?.plants?.find(
+          (p) => p.name === row.plantName,
+        )
 
         return {
           id: row.idFromApi ?? null,
-          siteFkId: matchedSite ? matchedSite.id : (row.siteFkId ?? null),
-          plantFkId: matchedPlant ? matchedPlant.id : (row.plantFkId ?? null),
+          siteFkId: matchedSite ? matchedSite.id : row.siteFkId ?? null,
+          plantFkId: matchedPlant ? matchedPlant.id : row.plantFkId ?? null,
           siteName: row.siteName,
           plantName: row.plantName,
           sdTotalDurationDays: row.sdTotalDurationDays,
@@ -238,11 +253,10 @@ const Shutdown = ({ permissions }) => {
         }
       })
 
-      const response =
-        await ShutdownApiService.saveShutdownData(
-          payload,
-          keycloak,
-        )
+      const response = await ShutdownApiService.saveShutdownData(
+        payload,
+        keycloak,
+      )
 
       if (response) {
         setSnackbarOpen(true)
@@ -263,14 +277,7 @@ const Shutdown = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [
-    modifiedCells,
-    originalRows,
-    PLANT_ID,
-    AOP_YEAR,
-    keycloak,
-    fetchData,
-  ])
+  }, [modifiedCells, originalRows, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
   useEffect(() => {
     fetchData()
@@ -386,7 +393,11 @@ const Shutdown = ({ permissions }) => {
       }
 
       if (idFromApi) {
-        await ShutdownApiService.deleteShutdownData(idFromApi, keycloak, PLANT_ID)
+        await ShutdownApiService.deleteShutdownData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({

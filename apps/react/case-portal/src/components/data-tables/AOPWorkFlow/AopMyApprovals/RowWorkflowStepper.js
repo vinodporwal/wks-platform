@@ -22,7 +22,12 @@ const RowWorkflowStepper = ({ row }) => {
     const fetchCaseDetails = async () => {
       if (!row) return
 
-      let pid = row.plantId || row.plantFKId || row.plant_fk_id || row.pid || row.plant_id
+      let pid =
+        row.plantId ||
+        row.plantFKId ||
+        row.plant_fk_id ||
+        row.pid ||
+        row.plant_id
       const year = row.year ? String(row.year) : ''
 
       if (!pid && row.plantName) {
@@ -33,8 +38,11 @@ const RowWorkflowStepper = ({ row }) => {
               for (const site of vertical.sites || []) {
                 for (const plant of site.plants || []) {
                   if (
-                    String(plant.id).toUpperCase() === String(row.plantName).toUpperCase() ||
-                    String(plant.name || plant.displayName || '').toUpperCase() === String(row.plantName).toUpperCase()
+                    String(plant.id).toUpperCase() ===
+                      String(row.plantName).toUpperCase() ||
+                    String(
+                      plant.name || plant.displayName || '',
+                    ).toUpperCase() === String(row.plantName).toUpperCase()
                   ) {
                     pid = plant.id
                     break
@@ -71,7 +79,10 @@ const RowWorkflowStepper = ({ row }) => {
           setActiveStep(activeIdx)
         } else if (steps.every((s) => s.status === 'completed')) {
           setActiveStep(steps.length)
-        } else if (typeof status?.currentSequence === 'number' && status.currentSequence > 0) {
+        } else if (
+          typeof status?.currentSequence === 'number' &&
+          status.currentSequence > 0
+        ) {
           setActiveStep(Math.max(0, status.currentSequence - 1))
         } else {
           setActiveStep(0)
@@ -91,9 +102,14 @@ const RowWorkflowStepper = ({ row }) => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, px: 2 }}>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, px: 2 }}
+      >
         <CircularProgress size={18} color='primary' />
-        <Typography variant='body2' sx={{ color: '#0369a1', fontSize: '0.8rem', fontWeight: 600 }}>
+        <Typography
+          variant='body2'
+          sx={{ color: '#0369a1', fontSize: '0.8rem', fontWeight: 600 }}
+        >
           Loading workflow details...
         </Typography>
       </Box>
@@ -103,7 +119,10 @@ const RowWorkflowStepper = ({ row }) => {
   if (error) {
     return (
       <Box sx={{ py: 1, px: 2 }}>
-        <Typography variant='caption' sx={{ color: '#d32f2f', fontWeight: 600 }}>
+        <Typography
+          variant='caption'
+          sx={{ color: '#d32f2f', fontWeight: 600 }}
+        >
           {error}
         </Typography>
       </Box>
@@ -152,7 +171,10 @@ const RowWorkflowStepper = ({ row }) => {
           }}
         />
       </Box>
-      <AopWorkflowStepper steps={masterSteps} activeStep={activeStep > -1 ? activeStep : 0} />
+      <AopWorkflowStepper
+        steps={masterSteps}
+        activeStep={activeStep > -1 ? activeStep : 0}
+      />
     </Box>
   )
 }

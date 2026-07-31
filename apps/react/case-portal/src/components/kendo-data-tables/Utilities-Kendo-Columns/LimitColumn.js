@@ -20,10 +20,7 @@ export const LimitColumn = ({
       editable={col?.editable || true}
       cells={{
         data: (cellProps) => (
-          <LimitCellEditor
-            {...cellProps}
-            READ_ONLY={READ_ONLY}
-          />
+          <LimitCellEditor {...cellProps} READ_ONLY={READ_ONLY} />
         ),
         headerCell: SimpleHeaderWithTooltip,
       }}

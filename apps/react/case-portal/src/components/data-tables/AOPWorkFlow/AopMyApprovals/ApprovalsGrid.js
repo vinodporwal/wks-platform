@@ -23,7 +23,10 @@ const ApprovalsGrid = ({
   loading = false,
 }) => {
   return (
-    <div className='kendo-data-grid' style={{ width: '100%', overflow: 'hidden' }}>
+    <div
+      className='kendo-data-grid'
+      style={{ width: '100%', overflow: 'hidden' }}
+    >
       <Grid
         style={{
           width: '100%',

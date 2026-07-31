@@ -310,10 +310,22 @@ export default function PlantSafetyPerformanceTarget() {
         masterId: item.masterId,
         kpiName: item.kpiName,
         uom: item.uom,
-        bestAchieved: item.bestAchieved !== '' && item.bestAchieved != null ? Number(item.bestAchieved) : null,
-        prevAOP: item.prevAOP !== '' && item.prevAOP != null ? Number(item.prevAOP) : null,
-        prevActual: item.prevActual !== '' && item.prevActual != null ? Number(item.prevActual) : null,
-        currentPlan: item.currentPlan !== '' && item.currentPlan != null ? Number(item.currentPlan) : null,
+        bestAchieved:
+          item.bestAchieved !== '' && item.bestAchieved != null
+            ? Number(item.bestAchieved)
+            : null,
+        prevAOP:
+          item.prevAOP !== '' && item.prevAOP != null
+            ? Number(item.prevAOP)
+            : null,
+        prevActual:
+          item.prevActual !== '' && item.prevActual != null
+            ? Number(item.prevActual)
+            : null,
+        currentPlan:
+          item.currentPlan !== '' && item.currentPlan != null
+            ? Number(item.currentPlan)
+            : null,
         remark: item.remark || item.remarks || '',
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
@@ -322,10 +334,11 @@ export default function PlantSafetyPerformanceTarget() {
         displayOrder: item.displayOrder,
       }))
 
-      const response = await PlantAopReportApiService.savePlantsafetyPerformance(
-        keycloak,
-        payload,
-      )
+      const response =
+        await PlantAopReportApiService.savePlantsafetyPerformance(
+          keycloak,
+          payload,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -370,15 +383,18 @@ export default function PlantSafetyPerformanceTarget() {
     }
   }, [modifiedCellsP])
 
-  const handleCalculate = () => { }
-  const handleCalculateP = () => { }
+  const handleCalculate = () => {}
+  const handleCalculateP = () => {}
 
-  const handleRemarkCellClick = useCallback((row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || row.remarks || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [READ_ONLY])
+  const handleRemarkCellClick = useCallback(
+    (row) => {
+      if (READ_ONLY) return
+      setCurrentRemark(row.remark || row.remarks || '')
+      setCurrentRowId(row.id)
+      setRemarkDialogOpen(true)
+    },
+    [READ_ONLY],
+  )
 
   const handleRemarkCellClickP = useCallback((row) => {
     setCurrentRemarkP(row.remarks || '')

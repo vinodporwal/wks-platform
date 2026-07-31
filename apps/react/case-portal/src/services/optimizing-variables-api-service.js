@@ -8,11 +8,7 @@ export const OptimizingVariablesApiService = {
   getFeedTypeFlowMappings,
 }
 
-async function getCrackerC2OptimizingVariables(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
+async function getCrackerC2OptimizingVariables(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/optimizing-variables-dropdown?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',

@@ -24,7 +24,6 @@ export default function ApprovalsHeader({
   load,
   loading,
 }) {
-
   return (
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
@@ -34,7 +33,11 @@ export default function ApprovalsHeader({
       sx={{ mb: 1 }}
     >
       <Stack direction='row' alignItems='center' spacing={1.25} flexWrap='wrap'>
-        <Typography className='aop-title-text' variant='h6' sx={{ fontWeight: 600 }}>
+        <Typography
+          className='aop-title-text'
+          variant='h6'
+          sx={{ fontWeight: 600 }}
+        >
           Workflow Inbox & Tracking
         </Typography>
         <Chip

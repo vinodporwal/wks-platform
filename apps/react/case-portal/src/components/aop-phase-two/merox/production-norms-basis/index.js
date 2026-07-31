@@ -137,7 +137,6 @@ const ProductionNormsBasis = () => {
 
     setNormCalculationLoading(true)
     try {
-
       // After load succeeds, trigger calculateManualProduction
       await ProductionNormsApiService.calculateManualProduction(
         keycloak,
@@ -148,12 +147,12 @@ const ProductionNormsBasis = () => {
       )
       setSnackbarOpen(false)
       setSnackbarData({
-        message: response?.message || 'Norm calculation completed successfully!',
+        message:
+          response?.message || 'Norm calculation completed successfully!',
         severity: 'success',
         autoHide: true,
       })
       setRefreshData(true)
-
     } catch (error) {
       console.error('Error in norm calculation:', error)
       setSnackbarOpen(false)

@@ -37,7 +37,11 @@ const LimitCellEditor = (props) => {
         dataItemKey='value'
         value={currentValueObj}
         onChange={handleChange}
-        className={isDisabled ? 'dropdown-editor dropdown-editor-disabled' : 'dropdown-editor'}
+        className={
+          isDisabled
+            ? 'dropdown-editor dropdown-editor-disabled'
+            : 'dropdown-editor'
+        }
         style={{
           width: '100%',
         }}
@@ -59,7 +63,9 @@ const LimitCellEditor = (props) => {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         ...tdProps.style,
-        backgroundColor: isDisabled ? '#f1f5f9' : tdProps.style?.backgroundColor,
+        backgroundColor: isDisabled
+          ? '#f1f5f9'
+          : tdProps.style?.backgroundColor,
       }}
     >
       {displayLabel || '—'}
