@@ -15,7 +15,7 @@ public class GroupedSelectionDTO {
     private String name;
     private String displayName;
     private String uom;
-    private String value;
+ //   private String value;
     private boolean status;  // Expression
     private UUID dependantAttributeId;
     private UUID normParameterTypeFkId;

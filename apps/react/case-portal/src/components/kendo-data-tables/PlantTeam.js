@@ -10,7 +10,10 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function PlantTeam({ onlyPeopleInitiative = false }) {
+export default function PlantTeam({
+  onlyPeopleInitiative = false,
+  onlyPlantTeam = false,
+}) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -170,11 +173,14 @@ export default function PlantTeam({ onlyPeopleInitiative = false }) {
         res = await DataService.getDataTeamPlant(keycloak, PLANT_ID, AOP_YEAR)
       }
 
-      const res1 = await DataService.getPeopleInitiative(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      let res1
+      if (!onlyPlantTeam) {
+        res1 = await DataService.getPeopleInitiative(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       if (!onlyPeopleInitiative) {
         if (res?.code === 200) {
@@ -197,28 +203,40 @@ export default function PlantTeam({ onlyPeopleInitiative = false }) {
         }
       }
 
-      if (res1?.code === 200) {
-        const peopleInitiativeMapped = res1?.data?.Data?.map((item, index) => ({
-          ...item,
-          id: item.id || null,
-          idFromApi: item.id || null,
-          serialNumber: index + 1,
-        }))
-        setPeopleInitiativeRows(peopleInitiativeMapped)
-      } else {
-        setPeopleInitiativeRows([])
+      if (!onlyPlantTeam) {
+        if (res1?.code === 200) {
+          const peopleInitiativeMapped = res1?.data?.Data?.map(
+            (item, index) => ({
+              ...item,
+              id: item.id || null,
+              idFromApi: item.id || null,
+              serialNumber: index + 1,
+            }),
+          )
+          setPeopleInitiativeRows(peopleInitiativeMapped)
+        } else {
+          setPeopleInitiativeRows([])
+        }
       }
     } catch (err) {
       console.error('fetchData error', err)
       if (!onlyPeopleInitiative) setRows([])
-      setPeopleInitiativeRows([])
+      if (!onlyPlantTeam) setPeopleInitiativeRows([])
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID, PLANT_ID, AOP_YEAR, onlyPeopleInitiative])
+  }, [
+    keycloak,
+    yearChanged,
+    plantID,
+    PLANT_ID,
+    AOP_YEAR,
+    onlyPeopleInitiative,
+    onlyPlantTeam,
+  ])
   useEffect(() => {
     fetchData()
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, fetchData])
 
   const saveChanges = React.useCallback(async () => {
     try {
@@ -622,27 +640,29 @@ export default function PlantTeam({ onlyPeopleInitiative = false }) {
         />
       )}
 
-      <KendoDataTables
-        columns={peopleInitiativeColumns}
-        rows={peopleInitiativeRows}
-        setRows={setPeopleInitiativeRows}
-        title='People Initiative'
-        modifiedCells={modifiedPeopleCells}
-        setModifiedCells={setModifiedPeopleCells}
-        remarkDialogOpen={remarkDialogOpenPeople}
-        setRemarkDialogOpen={setRemarkDialogOpenPeople}
-        currentRemark={currentRemarkPeople}
-        setCurrentRemark={setCurrentRemarkPeople}
-        currentRowId={currentRowIdPeople}
-        setCurrentRowId={setCurrentRowIdPeople}
-        permissions={peopleInitiativePermissions}
-        saveChanges={saveChangesP}
-        deleteRowData={deleteRowDataPeople}
-        downloadExcelForConfiguration={() =>
-          downloadExcelForConfiguration('peopleInitiative')
-        }
-        handleExcelUpload={handleExcelUpload('peopleInitiative')}
-      />
+      {!onlyPlantTeam && (
+        <KendoDataTables
+          columns={peopleInitiativeColumns}
+          rows={peopleInitiativeRows}
+          setRows={setPeopleInitiativeRows}
+          title='People Initiative'
+          modifiedCells={modifiedPeopleCells}
+          setModifiedCells={setModifiedPeopleCells}
+          remarkDialogOpen={remarkDialogOpenPeople}
+          setRemarkDialogOpen={setRemarkDialogOpenPeople}
+          currentRemark={currentRemarkPeople}
+          setCurrentRemark={setCurrentRemarkPeople}
+          currentRowId={currentRowIdPeople}
+          setCurrentRowId={setCurrentRowIdPeople}
+          permissions={peopleInitiativePermissions}
+          saveChanges={saveChangesP}
+          deleteRowData={deleteRowDataPeople}
+          downloadExcelForConfiguration={() =>
+            downloadExcelForConfiguration('peopleInitiative')
+          }
+          handleExcelUpload={handleExcelUpload('peopleInitiative')}
+        />
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}

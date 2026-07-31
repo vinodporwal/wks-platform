@@ -8,6 +8,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from '../../common/utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
 import { calculateMonthDuration } from 'components/aop-phase-two/common/utilities/durationHelpers'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAINTENANCE_TYPE = 'Shutdown'
@@ -194,6 +195,7 @@ const ShutdownPlan = () => {
 
   // ─── State ──────────────────────────────────────────────────────────────────
   const [rows, setRows] = useState([])
+  const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -272,10 +274,15 @@ const ShutdownPlan = () => {
             (startDate && !isNaN(startDate.getTime())
               ? CALENDAR_MONTH_NAMES[startDate.getMonth()]
               : ''),
+          remark:
+            item?.remark === 'null' || item?.remark === 'NULL'
+              ? ''
+              : item?.remark || '',
         }
       })
 
       setRows(formatted)
+      setOriginalRows(formatted)
     } catch (error) {
       console.error('Error fetching shutdown plan data:', error)
       setRows([])
@@ -361,6 +368,23 @@ const ShutdownPlan = () => {
     }
 
     // 4. Required fields: discription, monthly and remark
+    const fieldsToCheck = ['discription', 'monthly', 'durationInHrs']
+    const validationError = validateRowDataWithRemarks(
+      data,
+      originalRows,
+      fieldsToCheck,
+      'discription',
+      'remark',
+    )
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      return
+    }
+
     for (const record of data) {
       if (!record.discription || String(record.discription).trim() === '') {
         record.isError = true
@@ -380,7 +404,11 @@ const ShutdownPlan = () => {
         })
         return
       }
-      if (!record.remark || String(record.remark).trim() === '') {
+      const isRemarkEmpty =
+        !record.remark ||
+        String(record.remark).trim() === '' ||
+        String(record.remark).trim().toLowerCase() === 'null'
+      if (isRemarkEmpty) {
         record.isError = true
         setSnackbarOpen(true)
         setSnackbarData({

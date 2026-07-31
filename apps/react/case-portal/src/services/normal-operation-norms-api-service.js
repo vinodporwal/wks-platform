@@ -936,7 +936,12 @@ async function getCatChemCalculationData(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-async function saveCatChemCalculationData(keycloak, PLANT_ID, AOP_YEAR, payload) {
+async function saveCatChemCalculationData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  payload,
+) {
   const url = `${Config.CaseEngineUrl}/task/save-catalyst-chemicals-calculation-data?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
@@ -944,7 +949,11 @@ async function saveCatChemCalculationData(keycloak, PLANT_ID, AOP_YEAR, payload)
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
-    const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) })
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

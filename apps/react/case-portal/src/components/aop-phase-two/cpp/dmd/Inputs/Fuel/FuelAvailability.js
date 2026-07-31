@@ -406,11 +406,11 @@ const FuelAvailability = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Fuel Availability - ${AOP_YEAR}`,
+    ExcelName: `Net Calorific Value - ${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Fuel Availability',
+    titleName: 'Net Calorific Value',
   }
 
   const saveChanges = async () => {

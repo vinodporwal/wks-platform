@@ -254,7 +254,7 @@ const BusinessDemand = ({ permissions }) => {
             inEdit: false,
             Particulars: item.normParameterTypeDisplayName,
             expanded: false,
-            isEditable: IS_PVC_DMD ? false : (item.isEditable ?? true),
+            isEditable: IS_PVC_DMD ? false : item.isEditable ?? true,
             UOM:
               IS_VCM_VERTICAL ||
               (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
@@ -627,8 +627,8 @@ const BusinessDemand = ({ permissions }) => {
       deleteButton: permissions?.deleteButton ?? false,
       editButton: permissions?.editButton ?? false,
       showUnit: permissions?.showUnit ?? false,
-      saveWithRemark: IS_PVC_DMD ? false : (permissions?.saveWithRemark ?? true),
-      saveBtn: IS_PVC_DMD ? false : (permissions?.saveBtn ?? true),
+      saveWithRemark: IS_PVC_DMD ? false : permissions?.saveWithRemark ?? true,
+      saveBtn: IS_PVC_DMD ? false : permissions?.saveBtn ?? true,
       allAction: permissions?.allAction ?? true,
       units: ['TPH', 'TPD'],
       showTitleNameBusiness: true,
@@ -660,18 +660,17 @@ const BusinessDemand = ({ permissions }) => {
         lowerVertName === 'meg'
           ? true
           : false,
-      uploadExcelBtn:
-        IS_PVC_DMD
-          ? false
-          : IS_CRACKER_VERTICAL ||
+      uploadExcelBtn: IS_PVC_DMD
+        ? false
+        : IS_CRACKER_VERTICAL ||
             IS_PE_PP_VERTICAL ||
             IS_PET_VERTICAL ||
             IS_PVC_VMD ||
             IS_PVC_HMD ||
             IS_ELASTOMER_HMD ||
             lowerVertName === 'meg'
-            ? true
-            : false,
+          ? true
+          : false,
 
       downloadExcelBtnFromUI:
         IS_CRACKER_VERTICAL ||
@@ -689,8 +688,7 @@ const BusinessDemand = ({ permissions }) => {
       // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
       enableOnOffDropdown: IS_CRACKER_HMD,
       showCalculate: IS_PVC_HMD,
-      showCalculateVisibility:
-        IS_PVC_HMD && aopCalculation.length > 0,
+      showCalculateVisibility: IS_PVC_HMD && aopCalculation.length > 0,
     },
     isOldYear,
   )
@@ -1020,7 +1018,7 @@ const BusinessDemand = ({ permissions }) => {
         handleCalculate={handleCalculate}
       />
 
-      {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
+      {/* {IS_CRACKER_DMD && <ManualEntryForFeedStreams />} */}
 
       {!IS_CARCKER_VMD &&
         !IS_CRACKER_HMD &&

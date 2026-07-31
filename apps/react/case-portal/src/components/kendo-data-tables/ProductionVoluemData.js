@@ -659,7 +659,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
-              isEditable: IS_VCM_DMD_EDC ? false : (item.isEditable ?? true),
+              isEditable: IS_VCM_DMD_EDC ? false : item.isEditable ?? true,
             }),
           }
         },
@@ -766,11 +766,11 @@ const ProductionvolumeData = ({
               (maxRow.materialFKId &&
                 row.materialFKId &&
                 maxRow.materialFKId.toLowerCase() ===
-                row.materialFKId.toLowerCase()) ||
+                  row.materialFKId.toLowerCase()) ||
               (maxRow.normParametersFKId &&
                 row.normParametersFKId &&
                 maxRow.normParametersFKId.toLowerCase() ===
-                row.normParametersFKId.toLowerCase()) ||
+                  row.normParametersFKId.toLowerCase()) ||
               (maxRow.productName &&
                 row.productName &&
                 maxRow.productName === row.productName),
@@ -1267,8 +1267,9 @@ const ProductionvolumeData = ({
 
       showTitleAndInformation:
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
-      titleAndInformation:
-        VERTICAL_NAME == 'cracker'
+      titleAndInformation: IS_CRACKER_C2
+        ? 'Computed the month-wise average E+P (Ethylene + Propylene) over the selected historical period, determined the month with the maximum average E+P, and extracted the corresponding Ethylene and Propylene values from that month.'
+        : VERTICAL_NAME == 'cracker'
           ? 'Maximum Ethylene Production achieved in the last 05 years historical data for 05 consecutive days in different furnace mode of operation.'
           : VERTICAL_NAME == 'vcm'
             ? `Maximum ${PLANT_NAME_NO_CASE} production achieved in the last five year historical data derived as average of top 10 percent data points.`
@@ -1278,13 +1279,14 @@ const ProductionvolumeData = ({
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       downloadExcelBtnFromUI:
+        IS_CRACKER_C2 ||
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          VERTICAL_NAME === 'meg'
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1398,16 +1400,16 @@ const ProductionvolumeData = ({
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC ||
-          IS_PP_SEZ ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_CRACKER_DMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD ||
-          IS_CRACKER_C2 ||
-          VERTICAL_NAME === 'meg'
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC ||
+        IS_PP_SEZ ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_CRACKER_DMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_CRACKER_C2 ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1416,8 +1418,9 @@ const ProductionvolumeData = ({
 
       showTitleAndInformation:
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
-      titleAndInformation:
-        VERTICAL_NAME == 'cracker'
+      titleAndInformation: IS_CRACKER_C2
+        ? 'Design capacity values for Ethylene and Propylene are defined according to standard industry guidelines.'
+        : VERTICAL_NAME == 'cracker'
           ? 'Design plant capacity for different furnace mode of operation as per licensor provided data.'
           : VERTICAL_NAME == 'vcm'
             ? 'Design plant capacity as per licensor provided data.'
@@ -1455,38 +1458,41 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
+      saveBtn:
+        IS_CRACKER_C2 || IS_VCM_DMD_EDC ? false : permissions?.saveBtn ?? true,
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
       showCalculateVisibility:
         VERTICAL_NAME === 'meg' &&
-          Object.keys(calculationObject || {}).length > 0
+        Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
       downloadExcelBtn:
+        IS_CRACKER_C2 ||
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD ||
-          permissions?.hideDownloadExcel ||
-          VERTICAL_NAME === 'meg'
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD ||
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       uploadExcelBtn:
+        IS_CRACKER_C2 ||
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD ||
-          IS_VCM_DMD_EDC ||
-          permissions?.hideDownloadExcel ||
-          VERTICAL_NAME === 'meg'
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD ||
+        IS_VCM_DMD_EDC ||
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
 
@@ -1494,8 +1500,9 @@ const ProductionvolumeData = ({
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
 
       //TEXT NOTE CHANGED TO 01 YEARS
-      titleAndInformation:
-        VERTICAL_NAME == 'cracker'
+      titleAndInformation: IS_CRACKER_C2
+        ? 'The Ethylene and Propylene values for the proposed operating capacity are sourced from the Optimizer Output – Total Product screen.'
+        : VERTICAL_NAME == 'cracker'
           ? 'Maximum Ethylene Production achieved in the last 01 years historical data for 05 consecutive days in different furnace mode of operation.'
           : VERTICAL_NAME == 'vcm'
             ? 'Steady state production operating capacity which is proposed for the AOP FY.'
@@ -1520,19 +1527,28 @@ const ProductionvolumeData = ({
     isOldYear,
   )
 
+  const isAromaticsHmd = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
+
   const adjustedPermissionsLast = getAdjustedPermissions(
     {
       allAction: true,
       showTitleAndInformation:
-        VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
-      titleAndInformation:
-        VERTICAL_NAME == 'cracker'
+        VERTICAL_NAME === 'cracker' || VERTICAL_NAME === 'vcm' || isAromaticsHmd
+          ? true
+          : false,
+      titleAndInformation: isAromaticsHmd
+        ? 'Proposed Operating Capacity compared with Max Achieved Capacity'
+        : VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
-          : VERTICAL_NAME == 'vcm'
+          : VERTICAL_NAME === 'vcm'
             ? `Percentage summary represent a month-wise percentage summary, comparing each months value against the highest ${PLANT_NAME_NO_CASE} production rate over the past 12 months.`
             : '',
       showTitleNameBusiness:
-        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
+        VERTICAL_NAME !== 'cracker' &&
+        VERTICAL_NAME !== 'vcm' &&
+        !isAromaticsHmd
+          ? true
+          : false,
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
@@ -1590,12 +1606,11 @@ const ProductionvolumeData = ({
       } else {
         if (gridType === 'design') {
           if (IS_CRACKER_DMD || IS_CRACKER_C2) {
-            await ProductionVolumeDataApiService.getDesignCapacityExcel(
+            await ProductionVolumeDataApiService.getProductionVolExcelCommon(
               keycloak,
               PLANT_ID,
               AOP_YEAR,
               EXCEL_EXPORT_TITLE,
-              'design-capacity',
             )
           } else {
             await ProductionVolumeDataApiService.getDesignCapacityExcel(
@@ -1658,12 +1673,13 @@ const ProductionvolumeData = ({
             AOP_YEAR,
           )
       } else if ((IS_CRACKER_DMD || IS_CRACKER_C2) && gridType === 'design') {
-        response = await ProductionVolumeDataApiService.saveDesignCapacity(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+        response =
+          await ProductionVolumeDataApiService.saveProductionVolDataExcel(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
       } else {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataExcel(

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -10,9 +10,13 @@ import SteamAssetCapacity from './SteamAssetCapacity'
 const AssetCapacity = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, jmdSelectedPlants } = dataGridStore
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID_LIST = plantObject?.id
+  // useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [plantObject?.id],
+  //   [jmdSelectedPlants, plantObject?.id],
+  // )
 
   const [powerRows, setPowerRows] = useState([])
   const [steamRows, setSteamRows] = useState([])
@@ -20,7 +24,7 @@ const AssetCapacity = () => {
   const fetchInProgressRef = useRef(false)
 
   const fetchAssetCapacityData = useCallback(async () => {
-    if (!PLANT_ID_LIST || !AOP_YEAR) return
+    if (!PLANT_ID_LIST?.length || !AOP_YEAR) return
     if (fetchInProgressRef.current) return
     fetchInProgressRef.current = true
     setLoading(true)

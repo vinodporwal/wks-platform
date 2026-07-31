@@ -734,3 +734,88 @@ export const ConsumptionAopPpColumns = [
     isVisible: false,
   },
 ]
+export const SlowDownPvcDmdColumns = [
+  {
+    field: 'discription',
+    title: 'Slowdown Desc',
+    editable: true,
+    widthT: 150,
+    autoAdjust: false,
+    minWidth: 100,
+    locked: true,
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'maintenanceId',
+    editable: false,
+    hidden: true,
+    minWidth: 100,
+    isVisible: false,
+  },
+
+  {
+    field: 'productName1',
+    title: 'Particulars',
+    editable: true,
+    widthT: 150,
+    autoAdjust: false,
+    minWidth: 100,
+  },
+  {
+    field: 'lineDisplayName',
+    title: 'Line',
+    type: 'lineDropdown',
+    editable: true,
+    width: 100,
+    minWidth: 100,
+  },
+
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD- From',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
+
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD- To',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 100,
+    minWidth: 100,
+  },
+
+  // {
+  //   field: 'durationInHrs',
+  //   title: 'Duration (hrs)',
+  //   editable: true,
+  //   widthT: 140,
+  //   minWidth: 100,
+  // },
+
+  {
+    field: 'rate',
+    title: 'Quantity',
+    editable: true,
+    type: 'number',
+    widthT: 130,
+    minWidth: 120,
+  },
+
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+    widthT: 200,
+    autoAdjust: false,
+    minWidth: 150,
+  },
+]

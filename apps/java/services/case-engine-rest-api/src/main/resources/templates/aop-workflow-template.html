@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AOP Approval Notification</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2933;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:24px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                       style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e4e7eb;">
+                    <tr>
+                        <td style="background:#0b5394;padding:20px 28px;color:#ffffff;font-size:18px;font-weight:bold;">
+                            AOP Approval Workflow
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:28px;">
+                            <p style="margin:0 0 16px;font-size:15px;">
+                                <span th:text="${headline} ?: 'An AOP approval action requires your attention.'">
+                                    An AOP approval action requires your attention.
+                                </span>
+                            </p>
+
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                                   style="font-size:14px;border-collapse:collapse;">
+                                <tr th:if="${plantName}">
+                                    <td style="padding:6px 0;color:#647890;width:150px;">Plant</td>
+                                    <td style="padding:6px 0;font-weight:bold;" th:text="${plantName}">Plant</td>
+                                </tr>
+                                <tr th:if="${siteName}">
+                                    <td style="padding:6px 0;color:#647890;">Site</td>
+                                    <td style="padding:6px 0;" th:text="${siteName}">Site</td>
+                                </tr>
+                                <tr th:if="${verticalName}">
+                                    <td style="padding:6px 0;color:#647890;">Vertical</td>
+                                    <td style="padding:6px 0;" th:text="${verticalName}">Vertical</td>
+                                </tr>
+                                <tr th:if="${year}">
+                                    <td style="padding:6px 0;color:#647890;">AOP Year</td>
+                                    <td style="padding:6px 0;" th:text="${year}">Year</td>
+                                </tr>
+                                <tr th:if="${gateDisplayName}">
+                                    <td style="padding:6px 0;color:#647890;">Stage</td>
+                                    <td style="padding:6px 0;font-weight:bold;" th:text="${gateDisplayName}">Stage</td>
+                                </tr>
+                                <tr th:if="${action}">
+                                    <td style="padding:6px 0;color:#647890;">Last action</td>
+                                    <td style="padding:6px 0;" th:text="${action}">Action</td>
+                                </tr>
+                                <tr th:if="${actorRole}">
+                                    <td style="padding:6px 0;color:#647890;">By role</td>
+                                    <td style="padding:6px 0;" th:text="${actorRole}">Role</td>
+                                </tr>
+                                <tr th:if="${remark}">
+                                    <td style="padding:6px 0;color:#647890;vertical-align:top;">Remark</td>
+                                    <td style="padding:6px 0;" th:text="${remark}">Remark</td>
+                                </tr>
+                            </table>
+
+                            <div th:if="${actionUrl}" style="margin-top:24px;">
+                                <a th:href="${actionUrl}" href="#"
+                                   style="display:inline-block;background:#0b5394;color:#ffffff;text-decoration:none;
+                                          padding:11px 22px;border-radius:6px;font-size:14px;font-weight:bold;">
+                                    Open in AOP Portal
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:16px 28px;background:#f4f5f7;color:#8794a3;font-size:12px;">
+                            This is an automated message from the AOP Approval Workflow. Please do not reply.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

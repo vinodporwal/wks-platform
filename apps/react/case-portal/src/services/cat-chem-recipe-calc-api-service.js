@@ -33,7 +33,11 @@ async function saveCatChemCalcData(keycloak, plantId, aopYear, payload) {
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
-    const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) })
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

@@ -19,6 +19,8 @@ public class CPPNormsRequestDTO {
 
     @JsonProperty("normTypeFkId")
     private Integer normTypeFkId;
+    
+    private String normTypeName;
 
     private BigDecimal aprNorms;
     private BigDecimal mayNorms;
@@ -35,6 +37,9 @@ public class CPPNormsRequestDTO {
 
     private String remarks;
     private Boolean applyActualNormToAll;
+    
+    private BigDecimal calculatedNorms;
+    private String calculationFormula;
     
     private String generatingPlantName;
     private String utilityName;

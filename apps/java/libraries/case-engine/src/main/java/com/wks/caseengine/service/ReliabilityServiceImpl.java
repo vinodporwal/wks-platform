@@ -35,11 +35,13 @@ import com.wks.caseengine.dto.BudgetMaintenanceDto;
 import com.wks.caseengine.dto.ReliabilityPerformanceDto;
 import com.wks.caseengine.dto.ReliabilityRecordDto;
 import com.wks.caseengine.entity.ReliabilityPerformance;
+import com.wks.caseengine.entity.ReliabilityPerformancePlant;
 import com.wks.caseengine.entity.ReliabilityRecords;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ReliabilityPerformanceRepository;
+import com.wks.caseengine.repository.ReliabilityPerformancePlantRepository;
 import com.wks.caseengine.repository.ReliabilityRecordsRepository;
 import com.wks.caseengine.utility.Utility;
 
@@ -54,6 +56,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	 
 	 @Autowired
 	 private ReliabilityPerformanceRepository reliabilityPerformanceRepository;
+	 
+	 @Autowired
+	 private ReliabilityPerformancePlantRepository reliabilityPerformancePlantRepository;
 	 
 	 @Autowired
 	 private ReliabilityRecordsRepository reliabilityRecordsRepository;
@@ -1197,4 +1202,348 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		return aopMessageVM;
 	}
 
+	 @Override
+	 public AOPMessageVM getReliabilityPerformancePlantWise(String plantId, String year, String type) {
+	     List<ReliabilityPerformanceDto> reliabilityPerformanceDtos = new ArrayList<>();
+	     try {
+	         String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+	         String procedure = "spGetReliabilityPerformancePlant";
+
+	         List<Object[]> rows = getData(year, plantId, type, procedure);
+	         for (Object[] row : rows) {
+	             ReliabilityPerformanceDto dto = new ReliabilityPerformanceDto();
+
+	             int idx = 0;
+	            
+	             dto.setId(row[idx] != null ? (row[idx].toString()) : "");
+	             idx++;
+	             
+	             dto.setMasterId(row[idx] != null ? (row[idx].toString()) : "");
+	             idx++;
+	            
+	             dto.setParameter(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+	             
+	             dto.setUom(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+	            
+	             if (row[idx] != null) {
+	                 dto.setBestAchieved(Double.parseDouble(row[idx].toString()));
+	             } else {
+	                 dto.setBestAchieved(null);
+	             }
+	             idx++;
+	             
+	             if (row[idx] != null) {
+	                 dto.setAop(Double.parseDouble(row[idx].toString()));
+	             } else {
+	                 dto.setAop(null);
+	             }
+	             idx++;
+	             
+	             if (row[idx] != null) {
+	                 dto.setActual(Double.parseDouble(row[idx].toString()));
+	             } else {
+	                 dto.setActual(null);
+	             }
+	             idx++;
+	             
+	             if (row[idx] != null) {
+	                 dto.setPlann(Double.parseDouble(row[idx].toString()));
+	             } else {
+	                 dto.setPlann(null);
+	             }
+	             idx++;
+	            
+	             dto.setLimit(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+	             
+	             dto.setRationale(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+	            
+	             if (row[idx] != null) {
+	                 java.sql.Timestamp ts = (java.sql.Timestamp) row[idx];
+	                 dto.setCreatedAt(new Date(ts.getTime()));
+	             } else {
+	                 dto.setCreatedAt(null);
+	             }
+	             idx++;
+	            
+	             if (row[idx] != null) {
+	                 java.sql.Timestamp ts = (java.sql.Timestamp) row[idx];
+	                 dto.setUpdatedAt(new Date(ts.getTime()));
+	             } else {
+	                 dto.setUpdatedAt(null);
+	             }
+	             idx++;
+	             
+	             dto.setUpdatedBy(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+	             
+	             dto.setRemarks(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+	             
+	             dto.setAopYear(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+	             
+	             dto.setPlantId(row[idx] != null ? (row[idx].toString()) : "");
+	             idx++;
+	             
+	             dto.setReportType(row[idx] != null ? row[idx].toString() : "");
+	             idx++;
+
+	             reliabilityPerformanceDtos.add(dto);
+	         }
+
+	         AOPMessageVM vm = new AOPMessageVM();
+	         vm.setCode(200);
+	         vm.setMessage("Data fetched successfully");
+	         vm.setData(reliabilityPerformanceDtos);
+	         return vm;
+
+	     } catch (IllegalArgumentException e) {
+	         throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	     } catch (Exception ex) {
+	         throw new RuntimeException("Failed to fetch data", ex);
+	     }
+	 }
+
+	 @Override
+	 public AOPMessageVM updateReliabilityPerformancePlantWise(List<ReliabilityPerformanceDto> reliabilityPerformanceDtos, String plantId) {
+		List<ReliabilityPerformancePlant> reliabilityPerformances = new ArrayList<>();
+		List<ReliabilityPerformanceDto> failedList= new ArrayList<>();
+		try {	
+			for(ReliabilityPerformanceDto reliabilityPerformanceDto:reliabilityPerformanceDtos) {
+				if (reliabilityPerformanceDto.getSaveStatus() != null
+						&& reliabilityPerformanceDto.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(reliabilityPerformanceDto);
+					continue;
+				}
+				ReliabilityPerformancePlant reliabilityPerformance = null;
+				if(reliabilityPerformanceDto.getId()!=null && !reliabilityPerformanceDto.getId().isEmpty()) {
+					Optional<ReliabilityPerformancePlant> reliabilityPerformanceOpt = reliabilityPerformancePlantRepository.findById(UUID.fromString(reliabilityPerformanceDto.getId()));
+					if(reliabilityPerformanceOpt.isPresent()) {
+						 reliabilityPerformance = reliabilityPerformanceOpt.get();
+						 reliabilityPerformance.setUpdatedAt(new Date());
+						 
+						 boolean valueChanged = false;
+						 boolean remarkChanged = false;
+						 if(!Objects.equals(reliabilityPerformance.getBestAchieved(), reliabilityPerformanceDto.getBestAchieved())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getAop(), reliabilityPerformanceDto.getAop())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getActual(), reliabilityPerformanceDto.getActual())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getPlann(), reliabilityPerformanceDto.getPlann())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getLimit(), reliabilityPerformanceDto.getLimit())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getRationale(), reliabilityPerformanceDto.getRationale())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getRemarks(), reliabilityPerformanceDto.getRemarks())) {
+							remarkChanged = true;
+						 }
+
+						 if(valueChanged && !remarkChanged) {
+							reliabilityPerformanceDto.setErrDescription("Please update remark");
+							reliabilityPerformanceDto.setSaveStatus("Failed");
+							failedList.add(reliabilityPerformanceDto);
+							continue;
+						  }
+					}
+				} else {
+						reliabilityPerformance=new ReliabilityPerformancePlant();
+						reliabilityPerformance.setMasterId(UUID.fromString(reliabilityPerformanceDto.getMasterId()));
+						reliabilityPerformance.setReportType(reliabilityPerformanceDto.getReportType());
+						reliabilityPerformance.setUom(reliabilityPerformanceDto.getUom());
+						reliabilityPerformance.setCreatedAt(new Date());
+						reliabilityPerformance.setAopYear(reliabilityPerformanceDto.getAopYear());
+						if(plantId!=null && !plantId.isEmpty()) {  
+							reliabilityPerformance.setPlantId(UUID.fromString(plantId));
+						}
+						else{
+							reliabilityPerformance.setPlantId(UUID.fromString(reliabilityPerformanceDto.getPlantId()));	
+						}
+				}
+				reliabilityPerformance.setActual(reliabilityPerformanceDto.getActual());
+				reliabilityPerformance.setAop(reliabilityPerformanceDto.getAop());
+				reliabilityPerformance.setBestAchieved(reliabilityPerformanceDto.getBestAchieved());
+				reliabilityPerformance.setLimit(reliabilityPerformanceDto.getLimit());
+				reliabilityPerformance.setPlann(reliabilityPerformanceDto.getPlann());
+				reliabilityPerformance.setRationale(reliabilityPerformanceDto.getRationale());
+				reliabilityPerformance.setRemarks(reliabilityPerformanceDto.getRemarks());
+				reliabilityPerformance.setUpdatedBy(Utility.getUserName());
+				reliabilityPerformances.add(reliabilityPerformancePlantRepository.save(reliabilityPerformance));
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+	         throw new RuntimeException("Failed to update data", ex);
+	     }
+		Map<String,Object> map=new HashMap<>();
+		map.put("Success", reliabilityPerformances);
+		map.put("Failed", failedList);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(map);
+		aopMessageVM.setMessage("Data updated successfully");
+		return aopMessageVM;
+	 }
+
+	 @Override
+	 public byte[] createExcelPlantWise(String year, String plantId, boolean isAfterSave,
+		        Map<String, List<ReliabilityPerformanceDto>> mapForExcel) {
+		    try {
+		        String structureJson = getJson();
+		        ObjectMapper mapper = new ObjectMapper();
+		        Map<String, List<List<Object>>> data = new HashMap<>();
+		        Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
+		        Map<String, List<ReliabilityPerformanceDto>> reliabilityPerformanceListMap = new HashMap<>();
+
+		        if (!isAfterSave) {
+		            AOPMessageVM reliabilityPerformanceVm = getReliabilityPerformancePlantWise(plantId, year, "Reliability Performance");
+		            List<ReliabilityPerformanceDto> reliabilityPerformanceData = (List<ReliabilityPerformanceDto>) reliabilityPerformanceVm.getData();
+		            if (reliabilityPerformanceData != null) {
+		            	reliabilityPerformanceListMap.put("ReliabilityPerformance", reliabilityPerformanceData);
+		            }
+		        }
+		        
+		        Map<String, Object> sheetData = (Map<String, Object>) structure.get("ReliabilityPerformance");
+		        List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get("tables");
+
+		        for (Map<String, Object> table : tables) {
+		            String tableId = (String) table.get("tableId");
+		            
+		            if (!"ReliabilityPerformance".equals(tableId)) {
+		                table.put("hideTable", true);
+		                continue;
+		            }
+		            
+		            List<String> headers = (List<String>) table.get("headers");
+		            Integer startingIndexofYear = (Integer) table.get("startingIndexOfYear");
+		            List<List<String>> headersOuterTitles = (List<List<String>>) table.get("headersTitles");
+
+		            headersOuterTitles.get(0).addAll(startingIndexofYear, excelUtilityService.getFinancialYear(year));
+
+		            List<List<Object>> dataList = new ArrayList<>();
+		            List<ReliabilityPerformanceDto> sourceData = null;
+
+		            if (isAfterSave) {
+		                if (mapForExcel.containsKey(tableId)) {
+		                    sourceData = mapForExcel.get(tableId);
+		                    headers.add("saveStatus");
+		                    headers.add("errDescription");
+		                    headersOuterTitles.get(0).add("");
+		                    headersOuterTitles.get(0).add("");
+		                    headersOuterTitles.get(0).add("");
+		                    headersOuterTitles.get(0).add("Status");
+		                    headersOuterTitles.get(0).add("Error Description");
+		                    List<Integer> hiddenColumns = (List<Integer>) table.get("hiddenColumns");
+		                    if (hiddenColumns != null) {
+		                        hiddenColumns.remove(Integer.valueOf(13));
+		                    }
+		                }
+		            } else {
+		                sourceData = reliabilityPerformanceListMap.get(tableId);
+		            }
+
+		            if (sourceData == null || sourceData.isEmpty()) {
+		                table.put("hideTable", true);
+		                continue;
+		            }
+
+		            if (!headers.contains("masterId")) {
+		                headers.add("masterId");
+		            }
+		            if (!headers.contains("reportType")) {
+		                headers.add("reportType");
+		            }
+
+		            for (ReliabilityPerformanceDto dto : sourceData) {
+		                List<Object> row = new ArrayList<>();
+		                for (String fieldName : headers) {
+		                    try {
+		                        String methodName = "get" + capitalize(fieldName);
+		                        Method method = dto.getClass().getMethod(methodName);
+		                        Object value = method.invoke(dto);
+		                        row.add(value);
+		                    } catch (NoSuchMethodException e) {
+		                        row.add(null);
+		                    }
+		                }
+		                if (!isAfterSave) {
+		                    row.add(tableId);
+		                }
+		                dataList.add(row);
+		            }
+		            
+		            data.put(tableId, dataList);
+		        }
+
+		        return excelUtilityService.generateFlexibleExcelForReliability(structure, data);
+
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        return null;
+		    }
+		}
+
+	 @Override
+	 public AOPMessageVM importExcelPlantWise(String year, String plantFKId, MultipartFile file) {
+			if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+				throw new IllegalArgumentException("Invalid or empty Excel file.");
+			}
+
+			try {
+				Map<String, List<ReliabilityPerformanceDto>> map = readReliabilityPerformanceExcel(file.getInputStream(), year);
+				Map<String, List<ReliabilityPerformanceDto>> mapForExcel = new HashMap<>();
+				List<ReliabilityPerformanceDto> failedRecords = new ArrayList<>();
+
+				for (String key : map.keySet()) {
+				    if (!"ReliabilityPerformance".equals(key)) {
+				        continue;
+				    }
+				    AOPMessageVM vm = updateReliabilityPerformancePlantWise(map.get(key), plantFKId);
+				    Object dataObj = vm.getData();
+				    if (dataObj instanceof Map) {
+				        @SuppressWarnings("unchecked")
+				        Map<String, Object> dataMap = (Map<String, Object>) dataObj;
+				        Object failedObj = dataMap.get("Failed");
+				        if (failedObj instanceof List) {
+				            @SuppressWarnings("unchecked")
+				            List<ReliabilityPerformanceDto> failedList = (List<ReliabilityPerformanceDto>) failedObj;
+				            failedRecords.addAll(failedList);
+				            mapForExcel.put(key, failedList);
+				        } else {
+				            mapForExcel.put(key, Collections.emptyList());
+				        }
+				    } else {
+				        mapForExcel.put(key, Collections.emptyList());
+				    }
+				}
+
+				AOPMessageVM aopMessageVM = new AOPMessageVM();
+				if (failedRecords != null && failedRecords.size() > 0) {
+					byte[] fileByteArray = createExcelPlantWise(year, plantFKId, true, mapForExcel);
+					String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+					aopMessageVM.setData(base64File);
+					aopMessageVM.setCode(400);
+					aopMessageVM.setMessage("Partial data has been saved");
+				} else {
+					aopMessageVM.setCode(200);
+					aopMessageVM.setMessage("All data has been saved");
+				}
+
+				return aopMessageVM;
+			} catch (IllegalArgumentException e) {
+				throw new RestInvalidArgumentException("Invalid UUID format ", e);
+			} catch (Exception ex) {
+				throw new RuntimeException("Failed to fetch data", ex);
+			}
+		}
 }

@@ -8,9 +8,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -1838,13 +1840,17 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	    List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 	    List<LocalDateTime[]> validTimeRanges = new ArrayList<>();
 	    List<String> des = new ArrayList<>();
+	    Map<String, List<LocalDateTime[]>> validTimeRangesPerLine = new HashMap<>();
+	    Map<String, List<String>> desPerLine = new HashMap<>();
 	    Plants plant = plantsRepository.findById(plantFKId)
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
-	    boolean isPPSEZ= vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ");      
+	    boolean isPPSEZ= vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ"); 
+		
+		boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("dmd");
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 	    
 	    List<Object[]> slowdownTimeRanges = new ArrayList<>();
@@ -1893,27 +1899,40 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                
 	                String line = getStringCellValue(row.getCell(1), dto);
 	                String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
-					String view="vwScrn"+verticalName+"GetLineDetails";
-					List<Object[]> object=getLineId(view,plantFKId.toString(),line);
-					if (object != null && !object.isEmpty()) {
-					    Object[] firstRow = object.get(0);
-					    if (firstRow != null && firstRow.length > 1) {
-					        Object element = firstRow[0];
-					        dto.setLineId(element != null ? element.toString() : ""); 
-					    }
-					}
+				String view="vwScrn"+verticalName+"GetLineDetails";
+				List<Object[]> object=getLineId(view,plantFKId.toString(),line);
+				if (object != null && !object.isEmpty()) {
+				    Object[] firstRow = object.get(0);
+				    if (firstRow != null && firstRow.length > 1) {
+				        Object element = firstRow[0];
+				        dto.setLineId(element != null ? element.toString() : ""); 
+				    }
+				}
 	                if(dto.getLineId()==null) {
 	                	dto.setSaveStatus("Failed");
                         dto.setErrDescription("Please add line.");
 	                }
 
 	                if (dto.getDiscription() != null) {
-	                    if (des.contains(dto.getDiscription().trim())) {
-	                        dto.setSaveStatus("Failed");
-	                        dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
-	                        alreadyFailed = true;
+	                    String descTrimmed = dto.getDiscription().trim();
+						// for pvcdmd, only check duplicates within same line
+	                    if (pvcDmd) {
+	                        String lineKey = (line != null) ? line.trim() : "";
+	                        List<String> lineDescriptions = desPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());
+	                        if (lineDescriptions.contains(descTrimmed)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                            alreadyFailed = true;
+	                        }
+	                        lineDescriptions.add(descTrimmed);
+	                    } else {
+	                        if (des.contains(descTrimmed)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                            alreadyFailed = true;
+	                        }
+	                        des.add(descTrimmed);
 	                    }
-	                    des.add(dto.getDiscription().trim());
 	                } else {
 	                    dto.setSaveStatus("Failed");
 	                    dto.setErrDescription("Description is missing.");
@@ -1977,12 +1996,26 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                        
 	                        if (ldtStart != null && !alreadyFailed) {
 	                            boolean overlapsFile = false;
-	                            for (LocalDateTime[] prevPeriod : validTimeRanges) {
-	                                LocalDateTime prevLdtStart = prevPeriod[0];
-	                                LocalDateTime prevLdtEnd = prevPeriod[1];
-	                                if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
-	                                    overlapsFile = true;
-	                                    break;
+								// for pvcdmd, only check overlaps within same line
+	                            if (pvcDmd) {
+	                                String lineKey = (line != null) ? line.trim() : "";
+	                                List<LocalDateTime[]> lineTimeRanges = validTimeRangesPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>());
+	                                for (LocalDateTime[] prevPeriod : lineTimeRanges) {
+	                                    LocalDateTime prevLdtStart = prevPeriod[0];
+	                                    LocalDateTime prevLdtEnd = prevPeriod[1];
+	                                    if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                        overlapsFile = true;
+	                                        break;
+	                                    }
+	                                }
+	                            } else {
+	                                for (LocalDateTime[] prevPeriod : validTimeRanges) {
+	                                    LocalDateTime prevLdtStart = prevPeriod[0];
+	                                    LocalDateTime prevLdtEnd = prevPeriod[1];
+	                                    if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                        overlapsFile = true;
+	                                        break;
+	                                    }
 	                                }
 	                            }
 
@@ -2022,7 +2055,12 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            
 	                            
 	                            if (!alreadyFailed) {
-	                                validTimeRanges.add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                if (pvcDmd) {
+	                                    String lineKey = (line != null) ? line.trim() : "";
+	                                    validTimeRangesPerLine.computeIfAbsent(lineKey, k -> new ArrayList<>()).add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                } else {
+	                                    validTimeRanges.add(new LocalDateTime[] { ldtStart, ldtEnd });
+	                                }
 	                            }
 	                        }
 
@@ -2074,8 +2112,14 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                dto.setId(idString);
 	                
 	                if (dto.getId() == null && !alreadyFailed) { // Only check DB if ID is missing (for new records) and no prior error
-	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
-	                            plantFKId.toString(), year, dto.getDiscription());
+	                    List<Object[]> obj;
+	                    if (pvcDmd && dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+	                        obj = shutDownPlanRepository.findDiscriptionByPlantIdAndTypeAndLine("Shutdown",
+	                                plantFKId.toString(), year, dto.getDiscription(), dto.getLineId());
+	                    } else {
+	                        obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
+	                                plantFKId.toString(), year, dto.getDiscription());
+	                    }
 
 	                    if (obj.size() > 0) {
 	                        dto.setSaveStatus("Failed");
@@ -3091,6 +3135,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean filament = verticalName.equalsIgnoreCase("Filament");
 		boolean staple = verticalName.equalsIgnoreCase("Staple");
+		boolean meg = verticalName.equalsIgnoreCase("MEG");
         boolean chemicalHmdDropdown = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD") && (
 			plant.getName().equalsIgnoreCase("butadiene") || plant.getName().equalsIgnoreCase("mtbe") || plant.getName().equalsIgnoreCase("butene") || plant.getName().equalsIgnoreCase("pdeb")
 		);
@@ -3100,6 +3145,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
+		//boolean gasifier=  verticalName.equalsIgnoreCase("PCG") && (site.getName().equalsIgnoreCase("DTA") || site.getName().equalsIgnoreCase("SEZ"))  && (plant.getName().equalsIgnoreCase("GASIFIER") || plant.getName().equalsIgnoreCase("SRU"));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",
@@ -3484,6 +3530,13 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 							// Save updated record
 							plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
+
+							if(meg) {
+								shutDownPlanDTO.setId(null);
+								updateSlowdownActivities(shutDownPlanDTO, plantMaintenanceTransaction, plantId);
+
+							}	
+							
 							if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD") && !descriptions.contains(plantMaintenanceTransaction.getDiscription())) {	
 								String monthName = shutDownPlanDTO.getMonth().toUpperCase(); 
 								Integer monthNumber = Month.valueOf(monthName).getValue();
@@ -3514,6 +3567,87 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
+	}
+
+	private void updateSlowdownActivities(ShutDownPlanDTO shutDownPlanDTO, PlantMaintenanceTransaction plantMaintenanceTransaction, UUID plantId) {  
+
+ // delete existing records
+		
+	UUID normparameterId1 = normParametersRepository.findNormParameterIdByNameAndPlant("EO", plantId);
+	if (normparameterId1 != null) {
+
+		List<UUID> ids = plantMaintenanceTransactionRepository.findRampActivityIdsByNormAndName(
+				normparameterId1, plantMaintenanceTransaction.getId().toString());
+		for (UUID id : ids) {
+			// Delete dependent NormAttributeTransactions first
+			List<NormAttributeTransactions> normAttributeTransactionsLists = normAttributeTransactionsRepository
+					.findByMaintenanceId(id);
+
+			if (normAttributeTransactionsLists != null && !normAttributeTransactionsLists.isEmpty()) {
+				for (NormAttributeTransactions normAttr : normAttributeTransactionsLists) {
+					if (normAttr != null) {
+		//				normAttributeTransactionsRepository.delete(normAttr);
+					}
+				}
+		//		normAttributeTransactionsRepository.flush(); // Ensure delete is committed before parent
+																// delete
+			}
+
+			plantMaintenanceTransactionRepository.deleteById(id);
+
+		}
+		
+	}
+
+	UUID normparameterId2 = normParametersRepository.findNormParameterIdByNameAndPlant("EOE", plantId);
+	if (normparameterId2 != null) {
+		List<UUID> ids = plantMaintenanceTransactionRepository.findRampActivityIdsByNormAndName(
+				normparameterId2, plantMaintenanceTransaction.getId().toString());
+		for (UUID id : ids) {
+			// Delete dependent NormAttributeTransactions first
+			List<NormAttributeTransactions> normAttributeTransactionsLists = normAttributeTransactionsRepository
+					.findByMaintenanceId(id);
+
+			if (normAttributeTransactionsLists != null && !normAttributeTransactionsLists.isEmpty()) {
+				for (NormAttributeTransactions normAttr : normAttributeTransactionsLists) {
+					if (normAttr != null) {
+					//	normAttributeTransactionsRepository.delete(normAttr);
+					}
+				}
+		//		normAttributeTransactionsRepository.flush(); // Ensure delete is committed before parent
+																// delete
+			}
+			plantMaintenanceTransactionRepository.deleteById(id);
+		}
+
+	}
+
+	plantMaintenanceTransactionRepository.flush();
+
+		// insert new records 
+		String description = shutDownPlanDTO.getDiscription();
+
+		shutDownPlanDTO.setCreatedOn(plantMaintenanceTransaction.getCreatedOn());
+						// shutDownPlanDTO.setMaintEndDateTime(shutDownPlanDTO.getMaintStartDateTime());
+						shutDownPlanDTO
+								.setPlantMaintenanceTransactionName(plantMaintenanceTransaction.getId().toString());
+						List<ShutDownPlanDTO> list = new ArrayList<>();
+						shutDownPlanDTO.setDurationInHrs(0.00);
+						shutDownPlanDTO.setDurationInMins(0);
+						shutDownPlanDTO.setDiscription(description + " Ramp Up");
+						shutDownPlanDTO.setProductId(
+								plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO", plantId));
+						list.add(shutDownPlanDTO);
+						slowdownPlanService.saveRampUpData(plantId, list);
+
+						List<ShutDownPlanDTO> list2 = new ArrayList<>();
+						shutDownPlanDTO.setDiscription(description + " Ramp Down");
+						shutDownPlanDTO.setProductId(
+								plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EOE", plantId));
+						shutDownPlanDTO.setDurationInHrs(0.00);
+						shutDownPlanDTO.setDurationInMins(0);
+						list2.add(shutDownPlanDTO);
+						slowdownPlanService.saveRampDownData(plantId, list2);
 	}
 
 	@Override

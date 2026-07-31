@@ -1,701 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useGridApiRef } from '@mui/x-data-grid'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { validateFields } from 'utils/validationUtils'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import { useSession } from 'SessionStoreContext'
+import { ShutdownApiService } from 'components/aop-phase-two/services/crude/shutdownApiService'
+import { useSelector } from 'react-redux'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
-/**
- * Source/Entry Owner:
- *   1. Yellow cells -> entered by EPS Team   (pimsCode, sapProductId, site,
- *      plant, tentativeDurationDays, tentativeMonth, purposeOfSlowdown)
- *   2. Orange cells -> entered by CTS Team   (throughput, throughputUom)
- *
- * Dummy/static data matching the screenshot.
- * Replace this array (and the fetchData/saveChanges TODOs below) once the
- * real GET/SAVE APIs are available.
- */
-const DUMMY_ROWS = [
-  {
-    id: 0,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CDU1',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 1,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CDU2',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 2,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DCOKER',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 3,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'VGOHT-1',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 4,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'VGOHT-2',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 5,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'SCANFINNER',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 6,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'LNUU',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 7,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CNHT',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 8,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DHT1',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 9,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DHT2',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 10,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'HNUU',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 11,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'KNHT',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 12,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'LNHT',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 13,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'FCCU',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 14,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'PLATFORMERUNIT',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 15,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'PRU',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 16,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'NAPSPLIT',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 17,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CBA',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 18,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'GASOLINEMEROX',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 19,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'KEROSINEMEROX',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 20,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'SATC3C4SPLITER',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 21,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'SATLPG',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 22,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'UNSATLPG',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 23,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA AGR SHIFTED',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 24,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA AGR UNSHIFTED',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 25,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA GASIFIER',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 26,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA PSA',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 27,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA SRU',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 28,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'CDUZ311',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 29,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'CDUZ312',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 30,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'COKERZ371',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 31,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'DHDSZ355',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 32,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'DHDSZ358',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 33,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'HNUUZ221',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 34,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SCANFINNER',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 35,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'VGOHTZ361',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 36,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'VGOHTZ362',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 37,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'FCCZ411',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KBD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 38,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'CCR Platforming',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 39,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'ALKYLATION',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 40,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'PRU',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 41,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'Naptha Splitter (NSPL)',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 42,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SULPHURPRCC',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: 'KTPD',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 43,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'GASOLINEMEROX',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 44,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SAT LPG MEROX',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 45,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'UNSAT LPG MEROX',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 46,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ AGR SHIFTED',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 47,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ AGR UNSHIFTED',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 48,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ GASIFIER',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 49,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ PSA',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 50,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ SNG',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-  {
-    id: 51,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ SRU',
-    tentativeDurationDays: null,
-    throughput: null,
-    throughputUom: '',
-    tentativeMonths: 'June',
-    purposeOfSlowdown: '',
-  },
-]
-
-const SlowdownSchedule = ({ permissions }) => {
+const Slowdown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [rows, setRows] = useState([])
+  const [originalRows, setOriginalRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -708,9 +24,19 @@ const SlowdownSchedule = ({ permissions }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const apiRef = useGridApiRef()
-
+  const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { plantObject, siteObject, verticalObject, year } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
+  const [siteDropdown, setSiteDropdown] = useState([])
+  const [plantDropdown, setPlantDropdown] = useState([])
+  const [uomDropdown, setUomDropdown] = useState([])
+  const ValueFormat = ValueFormatterProduction()
   const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -731,53 +57,34 @@ const SlowdownSchedule = ({ permissions }) => {
     return months
   }
   const monthOptions = [
-    { value: 'January', label: 'January' },
-    { value: 'February', label: 'February' },
-    { value: 'March', label: 'March' },
-    { value: 'April', label: 'April' },
-    { value: 'May', label: 'May' },
-    { value: 'June', label: 'June' },
-    { value: 'July', label: 'July' },
-    { value: 'August', label: 'August' },
-    { value: 'September', label: 'September' },
-    { value: 'October', label: 'October' },
-    { value: 'November', label: 'November' },
-    { value: 'December', label: 'December' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'May' },
+    { value: 6, label: 'June' },
+    { value: 7, label: 'July' },
+    { value: 8, label: 'August' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'October' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'December' },
+    { value: 1, label: 'January' },
+    { value: 2, label: 'February' },
+    { value: 3, label: 'March' },
   ]
+
   const columns = [
     {
-      field: 'particulars',
-      title: 'Particulars',
-      editable: false,
-      widthT: 300,
-      minWidth: 180,
-      hidden: true,
-    },
-    {
-      field: 'pimsCode',
-      title: 'PIMS Code',
-      editable: true, // yellow - "Reference in backend By EPS Mumbai"
-      minWidth: 130,
-      hidden: true,
-    },
-    {
-      field: 'sapProductId',
-      title: 'SAP Product_ID',
-      editable: true, // yellow - "Reference in backend By EPS Mumbai"
-      minWidth: 150,
-      hidden: true,
-    },
-    {
-      field: 'site',
+      field: 'siteName',
       title: 'Site',
-      editable: false, // yellow - "Should be unique and fix"
-      minWidth: 120,
+      editable: true,
+      minWidth: 150,
+      type: 'dropdownSiteplant',
     },
     {
-      field: 'plant',
+      field: 'plantName',
       title: 'Plant',
-      editable: false, // yellow - "Should be unique and fix"
-      minWidth: 120,
+      editable: true,
+      minWidth: 150,
+      type: 'dropdownSiteplant',
     },
     {
       field: 'tentativeDurationDays',
@@ -785,21 +92,24 @@ const SlowdownSchedule = ({ permissions }) => {
       editable: true, // yellow - "Note that provide days specific to days in that month."
       align: 'right',
       headerAlign: 'right',
-      type: 'number',
+      type: 'wholeNumber',
       minWidth: 220,
     },
     {
-      field: 'throughput',
+      field: 'throughputDuringTheSlowdown',
       title: 'Throughput during the Slowdown',
       editable: true, // orange - CTS Team, "Manual in Digital AOP"
       align: 'right',
       headerAlign: 'right',
       type: 'number',
+      format: ValueFormat,
       minWidth: 280,
     },
     {
       field: 'throughputUom',
       title: 'Throughput UOM',
+      type: 'select',
+      options: uomDropdown,
       editable: true, // orange - CTS Team
       minWidth: 170,
     },
@@ -807,87 +117,376 @@ const SlowdownSchedule = ({ permissions }) => {
       field: 'tentativeMonths',
       title: 'Tentative Month',
       type: 'select',
-      options:monthOptions,
+      options: monthOptions,
       editable: true, // yellow - EPS Team
       minWidth: 160,
     },
     {
-      field: 'purposeOfSlowdown',
+      field: 'remark',
       title: 'Purpose of Slowdown',
       editable: true, // yellow - EPS Team
       widthT: 250,
       minWidth: 220,
     },
   ]
+  useEffect(() => {
+    const loadUomDropdownData = async () => {
+      try {
+        const resp = await ShutdownApiService.getUomDropdownData(
+          keycloak,
+          PLANT_ID,
+        )
+        const mapped = resp.data.map((item) => ({
+          value: item.name,
+          label: item.displayName,
+        }))
+        setUomDropdown(mapped)
+      } catch (error) {
+        console.error('Error fetching UOM Dropdown data:', error)
+      }
+    }
+    loadUomDropdownData()
+  }, [])
 
-  // TODO: replace with the real GET API call once it's available.
+  useEffect(() => {
+    const loadSitePlantData = async () => {
+      try {
+        const resp = await ShutdownApiService.getSitePlantDropdownData(
+          keycloak,
+          PLANT_ID,
+        )
+        const verticalData = resp?.sites
+          ? resp
+          : resp?.data?.sites
+            ? resp.data
+            : resp?.data?.data?.sites
+              ? resp.data.data
+              : {}
+        const sites = verticalData?.sites || []
+        setSiteDropdown(sites)
+        const plants = sites.flatMap((site) => site.plants || [])
+        setPlantDropdown(plants)
+      } catch (error) {
+        console.error('Error fetching site data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSitePlantData()
+  }, [])
+
   const fetchData = useCallback(async () => {
     setModifiedCells({})
     setLoading(true)
     try {
-      // Simulate a small network delay so the LoaderBackdrop is visible.
-      await new Promise((resolve) => setTimeout(resolve, 300))
-      setRows(DUMMY_ROWS)
+      const resp = await ShutdownApiService.getSlowdownData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      const rawData = Array.isArray(resp?.data)
+        ? resp.data
+        : Array.isArray(resp?.data?.data)
+          ? resp.data.data
+          : []
+      const dataRows = rawData.map((item, index) => {
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: `${index}`,
+          originalRemark: item.remark,
+          remark: item.remark,
+          siteFkId: item.siteFkId,
+          plantFkId: item.plantFkId,
+          siteName: item.siteName,
+          plantName: item.plantName,
+          tentativeDurationDays: item.tentativeDurationDays,
+          throughputDuringTheSlowdown: item.throughputDuringTheSlowdown,
+          throughputUom: item.throughputUom,
+          tentativeMonths:
+            item.tentativeMonth !== null && item.tentativeMonth !== undefined
+              ? Number(item.tentativeMonth)
+              : null,
+          isEditable: item.isEditable,
+        }
+      })
+      setRows(dataRows)
+      setOriginalRows(JSON.parse(JSON.stringify(dataRows)))
+    } catch (error) {
+      console.error('Error fetching slowdown data:', error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
   // TODO: replace with the real SAVE API call once it's available.
   const saveChanges = useCallback(async () => {
-    try {
-      setLoading(true)
-      const data = Object.values(modifiedCells)
-
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
+    const modifiedData = Object.values(modifiedCells)
+    if (modifiedData.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+      return
+    }
+    // Custom check: Ensure all columns are filled for modified rows, indicating specific missing fields
+    for (const row of modifiedData) {
+      const missingFields = []
+      if (!row.siteName || String(row.siteName).trim() === '') {
+        missingFields.push('Site')
+      }
+      if (!row.plantName || String(row.plantName).trim() === '') {
+        missingFields.push('Plant')
+      }
+      if (
+        row.tentativeDurationDays === undefined ||
+        row.tentativeDurationDays === null ||
+        String(row.tentativeDurationDays).trim() === ''
+      ) {
+        missingFields.push('Tentative Duration in days')
+      }
+      if (
+        row.tentativeMonths === undefined ||
+        row.tentativeMonths === null ||
+        String(row.tentativeMonths).trim() === ''
+      ) {
+        missingFields.push('Tentative Month')
+      }
+      if (!row.remark || String(row.remark).trim() === '') {
+        missingFields.push('Purpose of Slowdown')
       }
 
-      const requiredFields = ['tentativeMonth']
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
+      if (missingFields.length > 0) {
+        const rowIndex = rows.findIndex((r) => r.id === row.id)
+        const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+        const displayName = row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : row.siteName
+            ? `${row.siteName} (${rowNumLabel})`
+            : rowNumLabel
+
         setSnackbarOpen(true)
         setSnackbarData({
-          message: validationMessage,
+          message: `Remaining fields to fill for ${displayName}: ${missingFields.join(', ')}`,
           severity: 'error',
         })
         return
       }
+    }
 
-      // No save API yet — just merge edits back into local state.
-      setRows((prevRows) =>
-        (prevRows || []).map((row) => {
-          const edited = modifiedCells[row.id]
-          return edited ? { ...row, ...edited } : row
-        }),
+    // Create unique display name for standard validation to handle duplicate plants clearly
+    const modifiedDataForValidation = modifiedData.map((row) => {
+      const rowIndex = rows.findIndex((r) => r.id === row.id)
+      const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+      return {
+        ...row,
+        plantNameUnique: row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : rowNumLabel,
+      }
+    })
+
+    const validationError = validateRowDataWithRemarks(
+      modifiedDataForValidation,
+      originalRows,
+      ['siteName', 'plantName', 'tentativeDurationDays', 'tentativeMonths'],
+      'plantNameUnique',
+      'remark',
+    )
+
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    try {
+      const payload = modifiedData.map((row) => {
+        const matchedSite = siteDropdown.find((s) => s.name === row.siteName)
+        const matchedPlant = matchedSite?.plants?.find(
+          (p) => p.name === row.plantName,
+        )
+
+        return {
+          id: row.idFromApi ?? null,
+          siteFkId: matchedSite ? matchedSite.id : row.siteFkId ?? null,
+          plantFkId: matchedPlant ? matchedPlant.id : row.plantFkId ?? null,
+          siteName: row.siteName,
+          plantName: row.plantName,
+          tentativeDurationDays: row.tentativeDurationDays,
+          throughputDuringTheSlowdown: row.throughputDuringTheSlowdown,
+          throughputUom: row.throughputUom,
+          tentativeMonth:
+            row.tentativeMonths !== null && row.tentativeMonths !== undefined
+              ? Number(row.tentativeMonths)
+              : null,
+          remark: row.remark,
+          plantId: PLANT_ID,
+          aopYear: AOP_YEAR,
+        }
+      })
+
+      const response = await ShutdownApiService.saveSlowdownData(
+        payload,
+        keycloak,
       )
 
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Saved Successfully! (local only - no API wired up yet)',
-        severity: 'success',
-      })
-      setModifiedCells({})
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
+        setModifiedCells({})
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'data not saved!', severity: 'error' })
+      }
     } catch (error) {
+      console.error('Error saving slowdown data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Unexpected error occurred!',
+        message: 'Save failed, please try again!',
         severity: 'error',
       })
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, originalRows, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
+  const handleExport = useCallback(async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({ message: 'Excel download started!', severity: 'info' })
+    try {
+      const EXCEL_NAME = `Refinery_Slowdown.xlsx`
+      await ShutdownApiService.exportSlowdownData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_NAME,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel downloaded successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error exporting Slowdown plan:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel download failed. Please try again.',
+        severity: 'error',
+      })
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  const handleExcelUpload = useCallback(
+    async (file) => {
+      if (!file) return
+      setLoading(true)
+      try {
+        const response = await ShutdownApiService.importSlowdownData(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+        if (response?.code === 200) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Uploaded Successfully!',
+            severity: 'success',
+          })
+          setModifiedCells({})
+          await fetchData()
+        } else if (response?.code === 400 && response?.data) {
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
+
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', 'Error File - Slowdown.xlsx')
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          fetchData()
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Upload Failed!',
+            severity: 'error',
+          })
+        }
+      } catch (error) {
+        console.error('Error importing slowdown plan:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Unexpected error during import.',
+          severity: 'error',
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID, AOP_YEAR, fetchData],
+  )
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
+      }
+
+      if (idFromApi) {
+        await ShutdownApiService.deleteSlowdownData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
   const adjustedPermissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
     textAlignment: 'center',
@@ -938,10 +537,15 @@ const SlowdownSchedule = ({ permissions }) => {
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
         disableRedHighlight={true}
-        screenType='slowdown-schedule'
+        handleExport={handleExport}
+        handleExcelUpload={handleExcelUpload}
+        deleteRowData={deleteRowData}
+        screenType='pims-product-master'
+        siteDropdown={siteDropdown}
+        plantDropdown={plantDropdown}
       />
     </div>
   )
 }
 
-export default SlowdownSchedule
+export default Slowdown

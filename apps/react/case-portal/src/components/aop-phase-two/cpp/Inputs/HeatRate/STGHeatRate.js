@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,6 +8,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
@@ -32,6 +33,8 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const AOP_YEAR = year?.selectedYear
   const valueFormat = ValueFormatterPhaseTwo()
 
+  const [selectedPlant, setSelectedPlant] = useState(null)
+  const [dropdownOptions, setDropdownOptions] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -125,14 +128,6 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
-  console.log('startDate', startDate)
-  console.log('endDate', endDate)
-  useEffect(() => {
-    if (AOP_YEAR && startDate && endDate) {
-      fetchHeatRateData()
-    }
-  }, [AOP_YEAR, startDate, endDate])
-
   const formatDate = (date) => {
     if (!date) return ''
     const year = date.getFullYear()
@@ -141,14 +136,75 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     return `${year}-${month}-${day}`
   }
 
-  const fetchHeatRateData = async () => {
+  const getPlantList = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await InputApiService.getSTGAssetDropdown(keycloak, PLANT_ID)
+
+      const plantName = plantObject?.name
+      const convertedData = res?.map((item) => {
+        return {
+          id: item.assetId,
+          name: `${item.assetName} (${plantName})`,
+          plantName: plantName,
+          cppPlantFkId: item.cppPlantFkId,
+        }
+      })
+
+      convertedData?.sort((a, b) => {
+        const nameA = a.plantName || ''
+        const nameB = b.plantName || ''
+        return nameA.localeCompare(nameB)
+      })
+
+      if (convertedData?.length === 0) {
+        setDropdownOptions([])
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
+        return
+      }
+      setSelectedPlant(convertedData[0]?.id)
+      setDropdownOptions(convertedData)
+    } catch (error) {
+      console.error('Error fetching plant list:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR, plantObject])
+
+  useEffect(() => {
+    if (PLANT_ID && AOP_YEAR) {
+      getPlantList()
+      setModifiedCells({})
+    }
+  }, [PLANT_ID, AOP_YEAR, getPlantList])
+
+  useEffect(() => {
+    if (AOP_YEAR && startDate && endDate && selectedPlant) {
+      fetchHeatRateData(
+        selectedPlant,
+        formatDate(startDate),
+        formatDate(endDate),
+      )
+    }
+  }, [selectedPlant, startDate, endDate])
+
+  const fetchHeatRateData = async (
+    assetId,
+    formattedStartDate,
+    formattedEndDate,
+  ) => {
     setLoading(true)
     try {
       const res = await InputApiService.getSTGHeatRateData(
         keycloak,
         AOP_YEAR,
-        formatDate(startDate),
-        formatDate(endDate),
+        formattedStartDate,
+        formattedEndDate,
+        assetId,
       )
 
       if (res?.length === 0) {
@@ -157,7 +213,6 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      console.log('res', res)
       setRows(res)
       setOriginalRows(res)
     } catch (error) {
@@ -167,6 +222,14 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const dropdownConfig = {
+    options: dropdownOptions,
+    label: 'Plant',
+    placeholder: 'Select Plant',
+    valueKey: 'id',
+    labelKey: 'name',
   }
 
   const permissions = {
@@ -182,7 +245,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     showExport: true,
     ExcelName: `STG Heat Rate - ${AOP_YEAR}`,
     showTitle: true,
-    showDropdown: false,
+    showDropdown: true,
   }
 
   const saveChanges = async () => {
@@ -248,7 +311,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      await fetchHeatRateData()
+      await fetchHeatRateData(
+        selectedPlant,
+        formatDate(startDate),
+        formatDate(endDate),
+      )
     } catch (error) {
       console.error('Error saving heat rate data:', error)
       setSnackbarOpen(true)
@@ -266,23 +333,46 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     setLoading(true)
     try {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+
       const response = await InputApiService.saveSTGHeatRateExcel(
         file,
         keycloak,
+        selectedPlant,
+        AOP_YEAR,
       )
 
-      if (response?.success) {
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Excel file imported successfully!',
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchHeatRateData()
+        await fetchHeatRateData(
+          selectedPlant,
+          formattedStartDate,
+          formattedEndDate,
+        )
+      } else if (response?.code === 400 && response?.data) {
+        downloadBase64Excel(response.data, 'STG_Heat_Rate_Import_Status.xlsx')
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
+        await fetchHeatRateData(
+          selectedPlant,
+          formattedStartDate,
+          formattedEndDate,
+        )
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Upload Failed!',
+          message: response?.message || 'Upload Failed!',
           severity: 'error',
         })
       }
@@ -309,11 +399,18 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = startDate ? formatDate(startDate) : null
       const formattedEndDate = endDate ? formatDate(endDate) : null
 
+      const selectedOption = dropdownOptions?.find(
+        (opt) => opt.id === selectedPlant,
+      )
+      const assetDisplayName = selectedOption?.name
+
       await InputApiService.exportSTGHeatRateExcel(
         keycloak,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
+        selectedPlant,
+        null,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -568,7 +665,17 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        dropdownConfig={dropdownConfig}
+        selectedDropdownValue={selectedPlant}
+        setSelectedDropdownValue={setSelectedPlant}
         customItemChange={handleCustomItemChange}
+        customHeight={70}
+        paginationConfig={{
+          threshold: 20,
+          buttonCount: 5,
+          pageSizes: [10, 20, 50, 100],
+          defaultPageSize: 100,
+        }}
       />
     </Box>
   )

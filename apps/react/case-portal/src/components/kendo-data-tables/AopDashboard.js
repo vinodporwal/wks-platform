@@ -14,7 +14,10 @@ import {
   Checkbox,
   ListItemText,
   Divider,
+  Button,
 } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import FactCheckIcon from '@mui/icons-material/FactCheck'
 import { useDispatch, useSelector } from 'react-redux'
 import Notification from 'components/Utilities/Notification'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
@@ -23,6 +26,7 @@ import { useSession } from 'SessionStoreContext'
 import { setVerticalChangeFromDashboard } from 'store/reducers/dataGridStore'
 import '../../dashboard-v2.css'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AopMyApprovals from 'components/data-tables/AOPWorkFlow/AopMyApprovals'
 import {
   AllStatusIcon,
   BusinessBlueIcon,
@@ -44,6 +48,7 @@ const STATUS_MAP = {
 }
 
 export default function AopDashboardCompact() {
+  const navigate = useNavigate()
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -620,403 +625,435 @@ export default function AopDashboardCompact() {
             />{' '}
             View by Businesses
           </Box>
+          <Box
+            className={`view-toggle-btn ${viewMode === 'approvals' ? 'active' : ''}`}
+            onClick={() => setViewMode('approvals')}
+          >
+            <FactCheckIcon
+              className='toggle-btn-icon'
+              sx={{
+                fontSize: '16px !important',
+                color: viewMode === 'approvals' ? '#005eb8' : '#64748b',
+              }}
+            />{' '}
+            Approvals
+          </Box>
         </Box>
         <Box className='filters-right'>
-          <Box className='search-input-wrapper'>
-            <Box
-              component='img'
-              src={SearchIcon}
-              alt='Search Icon'
-              className='w16-icon'
-            />
-            <input
-              type='text'
-              placeholder='Search for Site, Plant or Business name...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </Box>
-          <Box className='status-dropdown' onClick={handleStatusMenuOpen}>
-            <Box
-              component='img'
-              src={AllStatusIcon}
-              alt='Search Icon'
-              className='w16-icon'
-            />
-            <Typography component='span' className='all-status-label'>
-              Status:{' '}
-              <strong className='all-status-value'>
-                {selectedStatuses.length === ALL_STATUSES.length
-                  ? 'All'
-                  : selectedStatuses.length === 0
-                    ? 'None'
-                    : selectedStatuses.length === 1
-                      ? selectedStatuses[0].replace('-', ' ')
-                      : `${selectedStatuses.length} selected`}
-              </strong>
-            </Typography>
-            <IconChevronDown size={14} className='dropdown-chevron' />
-          </Box>
+          {viewMode !== 'approvals' && (
+            <>
+              <Box className='search-input-wrapper'>
+                <Box
+                  component='img'
+                  src={SearchIcon}
+                  alt='Search Icon'
+                  className='w16-icon'
+                />
+                <input
+                  type='text'
+                  placeholder='Search for Site, Plant or Business name...'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </Box>
+              <Box className='status-dropdown' onClick={handleStatusMenuOpen}>
+                <Box
+                  component='img'
+                  src={AllStatusIcon}
+                  alt='Search Icon'
+                  className='w16-icon'
+                />
+                <Typography component='span' className='all-status-label'>
+                  Status:{' '}
+                  <strong className='all-status-value'>
+                    {selectedStatuses.length === ALL_STATUSES.length
+                      ? 'All'
+                      : selectedStatuses.length === 0
+                        ? 'None'
+                        : selectedStatuses.length === 1
+                          ? selectedStatuses[0].replace('-', ' ')
+                          : `${selectedStatuses.length} selected`}
+                  </strong>
+                </Typography>
+                <IconChevronDown size={14} className='dropdown-chevron' />
+              </Box>
 
-          <Menu
-            anchorEl={statusMenuAnchor}
-            open={Boolean(statusMenuAnchor)}
-            onClose={handleStatusMenuClose}
-            PaperProps={{
-              style: {
-                minWidth: 160,
-                borderRadius: 6,
-                boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
-                border: '1px solid #e2e8f0',
-              },
-            }}
-            MenuListProps={{
-              style: { padding: '4px 0' },
-            }}
-          >
-            <MenuItem
-              onClick={() => toggleStatus('all')}
-              sx={{ minHeight: '32px', padding: '6px 10px' }}
-            >
-              <Checkbox
-                checked={selectedStatuses.length === ALL_STATUSES.length}
-                size='small'
-                sx={{
-                  padding: 0,
-                  marginRight: '8px',
-                  color: '#e2e8f0',
-                  '&.Mui-checked': {
-                    color: '#005eb8',
-                  },
-                  '& .MuiSvgIcon-root': {
-                    fontSize: 18,
-                    borderRadius: '2px',
+              <Menu
+                anchorEl={statusMenuAnchor}
+                open={Boolean(statusMenuAnchor)}
+                onClose={handleStatusMenuClose}
+                PaperProps={{
+                  style: {
+                    minWidth: 160,
+                    borderRadius: 6,
+                    boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
+                    border: '1px solid #e2e8f0',
                   },
                 }}
-              />
-              <ListItemText
-                primary='Select all'
-                primaryTypographyProps={menuItemStyle}
-              />
-            </MenuItem>
-            <Divider
-              sx={{
-                my: '4px !important',
-                border: `1px solid ${DashboardColors.divider} !important`,
-              }}
-            />
-
-            {ALL_STATUSES.map((status) => (
-              <MenuItem
-                key={status}
-                onClick={() => toggleStatus(status)}
-                sx={{ minHeight: '32px', padding: '6px 10px' }}
+                MenuListProps={{
+                  style: { padding: '4px 0' },
+                }}
               >
-                <Checkbox
-                  checked={selectedStatuses.includes(status)}
-                  size='small'
+                <MenuItem
+                  onClick={() => toggleStatus('all')}
+                  sx={{ minHeight: '32px', padding: '6px 10px' }}
+                >
+                  <Checkbox
+                    checked={selectedStatuses.length === ALL_STATUSES.length}
+                    size='small'
+                    sx={{
+                      padding: 0,
+                      marginRight: '8px',
+                      color: '#e2e8f0',
+                      '&.Mui-checked': {
+                        color: '#005eb8',
+                      },
+                      '& .MuiSvgIcon-root': {
+                        fontSize: 18,
+                        borderRadius: '2px',
+                      },
+                    }}
+                  />
+                  <ListItemText
+                    primary='Select all'
+                    primaryTypographyProps={menuItemStyle}
+                  />
+                </MenuItem>
+                <Divider
                   sx={{
-                    padding: 0,
-                    marginRight: '8px',
-                    color: '#e2e8f0',
-                    '&.Mui-checked': {
-                      color: '#005eb8',
-                    },
-                    '& .MuiSvgIcon-root': {
-                      fontSize: 18,
-                      borderRadius: '2px',
-                    },
+                    my: '4px !important',
+                    border: `1px solid ${DashboardColors.divider} !important`,
                   }}
                 />
-                <ListItemText
-                  primary={status.replace('-', ' ')}
-                  primaryTypographyProps={menuItemStyle}
-                />
-              </MenuItem>
-            ))}
-          </Menu>
 
-          <Box
-            className='more-btn'
-            onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
-          >
-            <IconDots size={20} />
-          </Box>
+                {ALL_STATUSES.map((status) => (
+                  <MenuItem
+                    key={status}
+                    onClick={() => toggleStatus(status)}
+                    sx={{ minHeight: '32px', padding: '6px 10px' }}
+                  >
+                    <Checkbox
+                      checked={selectedStatuses.includes(status)}
+                      size='small'
+                      sx={{
+                        padding: 0,
+                        marginRight: '8px',
+                        color: '#e2e8f0',
+                        '&.Mui-checked': {
+                          color: '#005eb8',
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 18,
+                          borderRadius: '2px',
+                        },
+                      }}
+                    />
+                    <ListItemText
+                      primary={status.replace('-', ' ')}
+                      primaryTypographyProps={menuItemStyle}
+                    />
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          )}
 
-          <Menu
-            anchorEl={moreMenuAnchor}
-            open={Boolean(moreMenuAnchor)}
-            onClose={() => setMoreMenuAnchor(null)}
-            PaperProps={{
-              style: {
-                minWidth: 160,
-                borderRadius: 6,
-                boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
-                border: '1px solid #e2e8f0',
-              },
-            }}
-            MenuListProps={{
-              style: { padding: '4px 0' },
-            }}
-          >
-            <MenuItem
-              onClick={() => handleExpandCollapseAll(true)}
-              sx={{ minHeight: '32px', padding: '6px 10px' }}
-            >
-              <Typography sx={menuItemStyle}>Expand All</Typography>
-            </MenuItem>
-            <Divider sx={{ margin: `4px 0px !important` }} />
-            <MenuItem
-              onClick={() => handleExpandCollapseAll(false)}
-              sx={{ minHeight: '32px', padding: '6px 10px' }}
-            >
-              <Typography sx={menuItemStyle}>Collapse All</Typography>
-            </MenuItem>
-          </Menu>
+          {viewMode !== 'approvals' && (
+            <>
+              <Box
+                className='more-btn'
+                onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
+              >
+                <IconDots size={20} />
+              </Box>
+
+              <Menu
+                anchorEl={moreMenuAnchor}
+                open={Boolean(moreMenuAnchor)}
+                onClose={() => setMoreMenuAnchor(null)}
+                PaperProps={{
+                  style: {
+                    minWidth: 160,
+                    borderRadius: 6,
+                    boxShadow: '0 4px 7px rgba(0,0,0,0.2)',
+                    border: '1px solid #e2e8f0',
+                  },
+                }}
+                MenuListProps={{
+                  style: { padding: '4px 0' },
+                }}
+              >
+                <MenuItem
+                  onClick={() => handleExpandCollapseAll(true)}
+                  sx={{ minHeight: '32px', padding: '6px 10px' }}
+                >
+                  <Typography sx={menuItemStyle}>Expand All</Typography>
+                </MenuItem>
+                <Divider sx={{ margin: `4px 0px !important` }} />
+                <MenuItem
+                  onClick={() => handleExpandCollapseAll(false)}
+                  sx={{ minHeight: '32px', padding: '6px 10px' }}
+                >
+                  <Typography sx={menuItemStyle}>Collapse All</Typography>
+                </MenuItem>
+              </Menu>
+            </>
+          )}
         </Box>
       </Box>
 
       <Card className='dashboard-main-card'>
-        {/* Business Units List - Each Site is a Summary Bar Accordion */}
-        {groupedRows.map((site) => {
-          const siteStatusSummary = getSiteStatusSummary(site.rows)
-          const isSiteExpanded = expandedSites[site.site]
+        {viewMode === 'approvals' ? (
+          <AopMyApprovals onClose={() => setViewMode('sites')} />
+        ) : (
+          groupedRows.map((site) => {
+            const siteStatusSummary = getSiteStatusSummary(site.rows)
+            const isSiteExpanded = expandedSites[site.site]
 
-          return (
-            <Box key={site.site} className='site-accordion-container'>
-              {/* Site Header Row (Styled as Summary Bar) */}
-              <Box
-                className='summary-bar'
-                onClick={() => toggleSite(site.site)}
-              >
-                <Box className='summary-item summary-item-site'>
-                  <Box
-                    className={`summary-icon-box ${viewMode === 'sites' ? 'active-site' : 'active-business'}`}
-                  >
-                    {viewMode === 'sites' ? (
-                      <Box
-                        component='img'
-                        src={SiteIcon}
-                        className='w16-icon'
-                      />
-                    ) : (
-                      <Box
-                        component='img'
-                        src={BusinessBlueIcon}
-                        className='w16-icon'
-                      />
-                    )}
-                  </Box>
-                  <Typography className='summary-label'>{site.site}</Typography>
-                </Box>
-
-                <Box className='summary-divider' />
-                <Box className='summary-item business'>
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                  >
-                    {viewMode === 'sites' ? (
-                      <Box
-                        component='img'
-                        src={BusinessBlueIcon}
-                        className='w16-icon'
-                      />
-                    ) : (
-                      <Box
-                        component='img'
-                        src={SiteIcon}
-                        className='w16-icon'
-                      />
-                    )}
-                    <Typography
-                      component='span'
-                      className='summary-label-total-business'
+            return (
+              <Box key={site.site} className='site-accordion-container'>
+                {/* Site Header Row (Styled as Summary Bar) */}
+                <Box
+                  className='summary-bar'
+                  onClick={() => toggleSite(site.site)}
+                >
+                  <Box className='summary-item summary-item-site'>
+                    <Box
+                      className={`summary-icon-box ${viewMode === 'sites' ? 'active-site' : 'active-business'}`}
                     >
-                      {viewMode === 'sites' ? 'Total Business' : 'Total Sites'}
-                    </Typography>
-                    <Typography component='span' className='summary-count'>
-                      {site.businessCategories?.length || 0}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Box className='summary-divider' />
-
-                <Box className='summary-item plants summary-item-plants'>
-                  <Box className='summary-icon-box'>
-                    <Box component='img' src={PlantIcon} className='w16-icon' />
-                  </Box>
-                  <Box>
-                    <Typography
-                      component='span'
-                      className='summary-label-total-business'
-                    >
-                      Plants
-                    </Typography>
-                    <Typography component='span' className='summary-count'>
-                      {site.rows.length}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Site-Specific Status Breakdown Chips */}
-                <Box className='status-chips-summary'>
-                  {ALL_STATUSES.map((status) => {
-                    const count = siteStatusSummary[status] || 0
-                    if (count === 0) return null
-                    return (
-                      <Box
-                        key={status}
-                        className={`status-summary-chip-width ${getStatusClass(status)}`}
-                      >
+                      {viewMode === 'sites' ? (
                         <Box
-                          className={`status-summary-chip ${getStatusClass(status)}`}
-                        >
-                          {count} {status}
-                        </Box>
-                      </Box>
-                    )
-                  })}
-                </Box>
+                          component='img'
+                          src={SiteIcon}
+                          className='w16-icon'
+                        />
+                      ) : (
+                        <Box
+                          component='img'
+                          src={BusinessBlueIcon}
+                          className='w16-icon'
+                        />
+                      )}
+                    </Box>
+                    <Typography className='summary-label'>
+                      {site.site}
+                    </Typography>
+                  </Box>
 
-                <Box sx={{ ml: 2 }}>
-                  {isSiteExpanded ? (
-                    <IconChevronUp size={24} className='chevron-arrow' />
-                  ) : (
-                    <IconChevronDown size={24} className='chevron-arrow' />
-                  )}
-                </Box>
-              </Box>
+                  <Box className='summary-divider' />
+                  <Box className='summary-item business'>
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      {viewMode === 'sites' ? (
+                        <Box
+                          component='img'
+                          src={BusinessBlueIcon}
+                          className='w16-icon'
+                        />
+                      ) : (
+                        <Box
+                          component='img'
+                          src={SiteIcon}
+                          className='w16-icon'
+                        />
+                      )}
+                      <Typography
+                        component='span'
+                        className='summary-label-total-business'
+                      >
+                        {viewMode === 'sites'
+                          ? 'Total Business'
+                          : 'Total Sites'}
+                      </Typography>
+                      <Typography component='span' className='summary-count'>
+                        {site.businessCategories?.length || 0}
+                      </Typography>
+                    </Box>
+                  </Box>
 
-              {/* Expanded Content: Sub-Accordions */}
-              {isSiteExpanded && (
-                <Box className='bu-expanded-main'>
-                  <Divider
-                    className='bu-expanded-divider'
-                    orientation='vertical'
-                    flexItem={{ mx: 2 }}
-                  />
-                  <Box className='bu-expanded-content'>
-                    {site.businessCategories.map((catName) => {
-                      const subKey = `${site.site}-${catName}`
-                      const isSubExpanded = expandedSubSites[subKey]
-                      const catRows = site?.rows?.filter(
-                        (i) => i?.business_category === catName,
-                      )
+                  <Box className='summary-divider' />
 
+                  <Box className='summary-item plants summary-item-plants'>
+                    <Box className='summary-icon-box'>
+                      <Box
+                        component='img'
+                        src={PlantIcon}
+                        className='w16-icon'
+                      />
+                    </Box>
+                    <Box>
+                      <Typography
+                        component='span'
+                        className='summary-label-total-business'
+                      >
+                        Plants
+                      </Typography>
+                      <Typography component='span' className='summary-count'>
+                        {site.rows.length}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Site-Specific Status Breakdown Chips */}
+                  <Box className='status-chips-summary'>
+                    {ALL_STATUSES.map((status) => {
+                      const count = siteStatusSummary[status] || 0
+                      if (count === 0) return null
                       return (
-                        <Box key={catName} className='sub-accordion-wrapper'>
+                        <Box
+                          key={status}
+                          className={`status-summary-chip-width ${getStatusClass(status)}`}
+                        >
                           <Box
-                            className='sub-header-row'
-                            onClick={() => toggleSubSite(site.site, catName)}
+                            className={`status-summary-chip ${getStatusClass(status)}`}
                           >
-                            <Box className='sub-header-left'>
-                              <Box className='sub-header-title-box'>
-                                {isSubExpanded ? (
-                                  <IconChevronUp
-                                    size={16}
-                                    className='chevron-arrow'
-                                  />
-                                ) : (
-                                  <IconChevronDown
-                                    size={16}
-                                    className='chevron-arrow'
-                                  />
-                                )}
-                                <Box className='sub-header-plants'>
-                                  {viewMode === 'sites' ? (
-                                    <Box
-                                      component='img'
-                                      src={BusinessBlueIcon}
-                                      className='w16-icon'
-                                    />
-                                  ) : (
-                                    <Box
-                                      component='img'
-                                      src={SiteIcon}
-                                      className='w16-icon'
-                                    />
-                                  )}
-                                  <Typography className='sub-category-name'>
-                                    {catName}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                              <Box className='summary-divider' />
-                              <Box className='sub-header-plants'>
-                                <Box
-                                  component='img'
-                                  src={PlantIcon}
-                                  alt='Plant'
-                                  className='w16-icon'
-                                />
-                                <Typography className='sub-label-small'>
-                                  Plants
-                                </Typography>
-                                <Typography className='sub-count-small'>
-                                  {catRows?.length}
-                                </Typography>
-                              </Box>
-                            </Box>
+                            {count} {status}
                           </Box>
-
-                          {isSubExpanded && (
-                            <Box className='sub-accordion-content'>
-                              <Box className='plant-grid'>
-                                {catRows?.map((plant) => (
-                                  <Box
-                                    key={`${catName}-${plant.id}-${plant.sId}`}
-                                    className='plant-item-card'
-                                    onClick={(e) =>
-                                      handlePlantClick(
-                                        e,
-                                        plant.id,
-                                        plant.sId,
-                                        plant.v_id,
-                                      )
-                                    }
-                                  >
-                                    <Box className='plant-card-left'>
-                                      <Box
-                                        component='img'
-                                        src={PlantIcon}
-                                        alt='Plant'
-                                        className='w16-icon'
-                                      />
-                                      <Typography className='plant-name'>
-                                        {plant.verticalName}
-                                      </Typography>
-                                    </Box>
-
-                                    <Box className='plant-card-right'>
-                                      <Box
-                                        className={`plant-status-chip ${getStatusClass(plant.status)}`}
-                                        // style={{
-                                        //   backgroundColor: plant.status_color,
-                                        //   color: plant.status_text_color,
-                                        // }}
-                                      >
-                                        {plant.status}
-                                      </Box>
-                                      <IconChevronRight
-                                        size={18}
-                                        className='chevron-arrow'
-                                      />
-                                    </Box>
-                                  </Box>
-                                ))}
-                              </Box>
-                            </Box>
-                          )}
                         </Box>
                       )
                     })}
                   </Box>
+
+                  <Box sx={{ ml: 2 }}>
+                    {isSiteExpanded ? (
+                      <IconChevronUp size={24} className='chevron-arrow' />
+                    ) : (
+                      <IconChevronDown size={24} className='chevron-arrow' />
+                    )}
+                  </Box>
                 </Box>
-              )}
-            </Box>
-          )
-        })}
+
+                {/* Expanded Content: Sub-Accordions */}
+                {isSiteExpanded && (
+                  <Box className='bu-expanded-main'>
+                    <Divider
+                      className='bu-expanded-divider'
+                      orientation='vertical'
+                      flexItem={{ mx: 2 }}
+                    />
+                    <Box className='bu-expanded-content'>
+                      {site.businessCategories.map((catName) => {
+                        const subKey = `${site.site}-${catName}`
+                        const isSubExpanded = expandedSubSites[subKey]
+                        const catRows = site?.rows?.filter(
+                          (i) => i?.business_category === catName,
+                        )
+
+                        return (
+                          <Box key={catName} className='sub-accordion-wrapper'>
+                            <Box
+                              className='sub-header-row'
+                              onClick={() => toggleSubSite(site.site, catName)}
+                            >
+                              <Box className='sub-header-left'>
+                                <Box className='sub-header-title-box'>
+                                  {isSubExpanded ? (
+                                    <IconChevronUp
+                                      size={16}
+                                      className='chevron-arrow'
+                                    />
+                                  ) : (
+                                    <IconChevronDown
+                                      size={16}
+                                      className='chevron-arrow'
+                                    />
+                                  )}
+                                  <Box className='sub-header-plants'>
+                                    {viewMode === 'sites' ? (
+                                      <Box
+                                        component='img'
+                                        src={BusinessBlueIcon}
+                                        className='w16-icon'
+                                      />
+                                    ) : (
+                                      <Box
+                                        component='img'
+                                        src={SiteIcon}
+                                        className='w16-icon'
+                                      />
+                                    )}
+                                    <Typography className='sub-category-name'>
+                                      {catName}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                <Box className='summary-divider' />
+                                <Box className='sub-header-plants'>
+                                  <Box
+                                    component='img'
+                                    src={PlantIcon}
+                                    alt='Plant'
+                                    className='w16-icon'
+                                  />
+                                  <Typography className='sub-label-small'>
+                                    Plants
+                                  </Typography>
+                                  <Typography className='sub-count-small'>
+                                    {catRows?.length}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+
+                            {isSubExpanded && (
+                              <Box className='sub-accordion-content'>
+                                <Box className='plant-grid'>
+                                  {catRows?.map((plant) => (
+                                    <Box
+                                      key={`${catName}-${plant.id}-${plant.sId}`}
+                                      className='plant-item-card'
+                                      onClick={(e) =>
+                                        handlePlantClick(
+                                          e,
+                                          plant.id,
+                                          plant.sId,
+                                          plant.v_id,
+                                        )
+                                      }
+                                    >
+                                      <Box className='plant-card-left'>
+                                        <Box
+                                          component='img'
+                                          src={PlantIcon}
+                                          alt='Plant'
+                                          className='w16-icon'
+                                        />
+                                        <Typography className='plant-name'>
+                                          {plant.verticalName}
+                                        </Typography>
+                                      </Box>
+
+                                      <Box className='plant-card-right'>
+                                        <Box
+                                          className={`plant-status-chip ${getStatusClass(plant.status)}`}
+                                          // style={{
+                                          //   backgroundColor: plant.status_color,
+                                          //   color: plant.status_text_color,
+                                          // }}
+                                        >
+                                          {plant.status}
+                                        </Box>
+                                        <IconChevronRight
+                                          size={18}
+                                          className='chevron-arrow'
+                                        />
+                                      </Box>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        )
+                      })}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            )
+          })
+        )}
       </Card>
 
       {/* <Box className='floating-switch-container'>

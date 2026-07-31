@@ -1,0 +1,41 @@
+[
+  {
+    "field": "particulars",
+    "title": "Particulars",
+    "editable": false,
+    "locked": true,
+    "widthT": 120,
+    "minWidth": 300,
+    "hidden": false,
+    "isVisible": true
+  },
+  {
+    "field": "uom",
+    "title": "UOM",
+    "editable": false,
+    "locked": true,
+    "width": 80,
+    "minWidth": 90
+  },
+  {
+    "field": "apr",
+    "title": "Value",
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": false,
+    "width": 120,
+    "type": "string",
+    "minWidth": 120
+  },
+  {
+    "field": "normParameterFKID",
+    "title": "normParameterFKID",
+    "filterable": false,
+    "hidden": true
+  }
+]

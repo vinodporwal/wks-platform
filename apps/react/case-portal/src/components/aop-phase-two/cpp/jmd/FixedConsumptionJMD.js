@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Box } from '@mui/material'
+import { Box, Tooltip, IconButton } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -12,6 +14,8 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
+import AddFixedConsumptionDialog from 'components/aop-phase-two/cpp/common/AddFixedConsumptionDialog/index'
 
 const FixedConsumptionJMD = () => {
   const keycloak = useSession()
@@ -57,6 +61,11 @@ const FixedConsumptionJMD = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const [addRowDialogOpen, setAddRowDialogOpen] = useState(false)
+  const [editRowData, setEditRowData] = useState(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [rowToDelete, setRowToDelete] = useState(null)
 
   // Fiscal-year month order: Apr → Mar
   const MONTH_TO_INDEX = {
@@ -108,6 +117,35 @@ const FixedConsumptionJMD = () => {
     field: mon,
     title: headerMap[MONTH_TO_INDEX[mon]],
   }))
+
+  // Edit/Delete action cell
+  const ActionCell = ({ dataItem, tdProps }) => {
+    return (
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title='Delete Row'>
+            <IconButton
+              size='medium'
+              color='error'
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='medium' />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </td>
+    )
+  }
 
   // Column definitions
   const columns = [
@@ -209,6 +247,16 @@ const FixedConsumptionJMD = () => {
       editable: true,
       minWidth: 250,
     },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: ActionCell,
+      // locked: true,
+      // lockPosition: 'right',
+    },
   ]
 
   const fetchFixedConsumptionData = useCallback(async () => {
@@ -256,10 +304,44 @@ const FixedConsumptionJMD = () => {
     [PLANT_ID_LIST, AOP_YEAR, fetchFixedConsumptionData],
   )
 
+  // Delete handler
+  const handleConfirmDelete = async () => {
+    if (!rowToDelete) return
+
+    setDeleteDialogOpen(false)
+    setLoading(true)
+
+    try {
+      if (rowToDelete.id) {
+        await UtilityPlantApiServiceV2.deleteFixedConsumptionRow(
+          keycloak,
+          rowToDelete.id,
+        )
+      }
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Row deleted successfully!',
+        severity: 'success',
+      })
+      fetchFixedConsumptionData()
+    } catch (error) {
+      console.error('Error deleting fixed consumption row:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete row. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setRowToDelete(null)
+    }
+  }
+
   // Permissions (adjust as needed)
   const permissions = {
     showAction: true,
-    addButton: false,
+    addButton: true,
+    addBtnName: 'Add Row',
     deleteButton: false,
     editButton: true,
     saveBtn: true,
@@ -491,6 +573,28 @@ const FixedConsumptionJMD = () => {
           defaultPageSize: 100,
         }}
         groupBy={'plant'}
+        customAddRow={() => {
+          setEditRowData(null)
+          setAddRowDialogOpen(true)
+        }}
+      />
+
+      <AddFixedConsumptionDialog
+        open={addRowDialogOpen}
+        onClose={() => {
+          setAddRowDialogOpen(false)
+          setEditRowData(null)
+        }}
+        onSuccess={fetchFixedConsumptionData}
+        editRowData={editRowData}
+      />
+
+      <DeleteDialog
+        openDeleteDialogeBox={deleteDialogOpen}
+        setOpenDeleteDialogeBox={setDeleteDialogOpen}
+        deleteTheRecord={handleConfirmDelete}
+        message='Are you sure you want to delete this row?'
+        confirmButtonText='Delete'
       />
     </Box>
   )

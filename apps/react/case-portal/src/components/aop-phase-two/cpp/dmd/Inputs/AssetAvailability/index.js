@@ -1,68 +1,68 @@
-import React, { useCallback, useState } from 'react'
-import { Stack } from '@mui/material'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { useDebounce } from 'hooks/useDebounce'
-import { AssetPriorityApiService } from 'components/aop-phase-two/services/cpp/jmd/assetPriorityApiService'
 import PowerAssetAvailability from './PowerAssetAvailability'
 import SteamAssetAvailability from './SteamAssetAvailability'
+import { AssetPriorityApiService } from 'components/aop-phase-two/services/cpp/jmd/assetPriorityApiService'
 
 const AssetAvailability = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { year, jmdSelectedPlants, plantObject } = dataGridStore
   const AOP_YEAR = year?.selectedYear
+
   const PLANT_ID_LIST = plantObject?.id
 
-  const [powerRows, setPowerRows] = useState([])
-  const [steamRows, setSteamRows] = useState([])
-  const [loading, setLoading] = useState(false)
+  // useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+  //   [jmdSelectedPlants],
+  // )
 
-  const fetchAssetPriorityData = useCallback(async () => {
-    if (!PLANT_ID_LIST || !AOP_YEAR) return
-    setLoading(true)
+  const [powerData, setPowerData] = useState([])
+  const [steamData, setSteamData] = useState([])
+  const [dataLoading, setDataLoading] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID_LIST?.length || !AOP_YEAR) return
+    setDataLoading(true)
     try {
       const res = await AssetPriorityApiService.getAssetPriority(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
       )
-      setPowerRows(res?.data?.PowerAssetPriorities ?? [])
-      setSteamRows(res?.data?.SteamAssetPriorities ?? [])
+      setPowerData(res?.data?.PowerAssetPriorities || [])
+      setSteamData(res?.data?.SteamAssetPriorities || [])
     } catch (error) {
       console.error('Error fetching asset priority data:', error)
-      setPowerRows([])
-      setSteamRows([])
     } finally {
-      setLoading(false)
+      setDataLoading(false)
     }
   }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
-  useDebounce(
-    () => {
-      fetchAssetPriorityData()
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchAssetPriorityData],
-  )
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   return (
-    <Stack>
+    <Box>
       <Stack sx={{ mb: 2 }}>
         <PowerAssetAvailability
-          initialRows={powerRows}
-          onRefresh={fetchAssetPriorityData}
-          externalLoading={loading}
+          apiData={powerData}
+          dataLoading={dataLoading}
+          onRefresh={fetchData}
         />
       </Stack>
       <Stack>
         <SteamAssetAvailability
-          initialRows={steamRows}
-          onRefresh={fetchAssetPriorityData}
-          externalLoading={loading}
+          apiData={steamData}
+          dataLoading={dataLoading}
+          onRefresh={fetchData}
         />
       </Stack>
-    </Stack>
+    </Box>
   )
 }
+
 export default AssetAvailability

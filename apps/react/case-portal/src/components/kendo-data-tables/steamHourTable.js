@@ -265,7 +265,10 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         .filter((row) => row.inEdit)
         .map((row) => {
           const metricName = (row.Metric || '').trim()
-          const isTargetMetric = ['Total S/D Hours', 'Net Operating Hrs'].includes(metricName)
+          const isTargetMetric = [
+            'Total S/D Hours',
+            'Net Operating Hrs',
+          ].includes(metricName)
           if (isTargetMetric) {
             const nextRemark = getNextRemark(row.originalRemark)
             return {
@@ -289,12 +292,17 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       // 1. Filter the data to only include non-target editable rows for validation
       const editableRowsForValidation = processedData.filter((row) => {
         const metricName = (row.Metric || '').trim()
-        const isTargetMetric = ['Total S/D Hours', 'Net Operating Hrs'].includes(metricName)
+        const isTargetMetric = [
+          'Total S/D Hours',
+          'Net Operating Hrs',
+        ].includes(metricName)
         return !isTargetMetric
       })
 
       // 2. Run the validation only on those filtered rows
-      const validationMessage = validateFields(editableRowsForValidation, ['Remarks'])
+      const validationMessage = validateFields(editableRowsForValidation, [
+        'Remarks',
+      ])
 
       if (validationMessage) {
         setSnackbarOpen(true)

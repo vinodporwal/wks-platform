@@ -212,25 +212,6 @@ const TargetGasifierOperation = () => {
     }
   }, [modifiedCells])
 
-  const DUMMY_DATA = [
-    {
-      id: 1,
-      displayName: 'Target Average Gasifier Operation',
-      particulars: 'Target Average Gasifier Operation',
-      uom: 'G',
-      apr: 2.9,
-      may: 3.3,
-      remarks: 'Test',
-      originalRemark: 'Test',
-      normParameterFKId: 1,
-      normParameterFkId: 1,
-      auditYear: AOP_YEAR,
-      normTypeName: 'Target Gasifier Operation',
-      isEditable: true,
-      type: '',
-    },
-  ]
-
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
@@ -239,11 +220,6 @@ const TargetGasifierOperation = () => {
     try {
       setLoading(true)
 
-      // ----- DUMMY DATA (remove when API is ready) -----
-      // setRows(DUMMY_DATA)
-      // return
-      // ----- END DUMMY DATA -----
-
       const response =
         await ProductionNormsApiService.getTargetGasifierOperationData(
           keycloak,
@@ -251,19 +227,21 @@ const TargetGasifierOperation = () => {
           AOP_YEAR,
         )
 
-      const formattedData = response?.data?.productionRangeList?.map((row, index) => ({
-        ...row,
-        id: row.id || index,
-        particulars: row.displayName,
+      const formattedData = response?.data?.productionRangeList?.map(
+        (row, index) => ({
+          ...row,
+          id: row.id || index,
+          particulars: row.displayName,
 
-        originalRemark: row.remarks || '',
-        normParameterFKId: row.normParameterFKId,
-        auditYear: row.auditYear,
-        normTypeName: row.normTypeName,
-        isEditable: row.isEditable,
-        displayName: row.displayName,
-        type: row.type,
-      }))
+          originalRemark: row.remarks || '',
+          normParameterFKId: row.normParameterFKId,
+          auditYear: row.auditYear,
+          normTypeName: row.normTypeName,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          type: row.type,
+        }),
+      )
 
       setRows(formattedData || [])
     } catch (error) {
@@ -384,7 +362,6 @@ const TargetGasifierOperation = () => {
           setRows={setRows}
           columns={NormConfigurationColumns}
           rows={rows}
-          paginationOptions={[100, 200, 300]}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           apiRef={apiRef}

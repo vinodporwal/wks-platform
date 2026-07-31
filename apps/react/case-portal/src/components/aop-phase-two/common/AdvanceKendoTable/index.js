@@ -14,10 +14,11 @@ import '../../css/advance-kendo-table.css'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { handleTabKeyNavigation, applyDateCalculations } from './utility'
+import { useFilterChips } from '../hooks/useFilterChips'
 import RemarkDialog from './components/RemarkDialog'
+import FilterChips from './components/FilterChips'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
-import ApproveDialog from '../../tcs/TcsInput/workflow/ApproveDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
 import { SelectCellEditor } from '../utilities/SelectCellEditor'
 import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
@@ -37,17 +38,10 @@ import {
   InlineRadioDisplayCell,
 } from '../utilities/RadioCellEditor'
 import {
-  Backdrop,
   Box,
   Button,
-  CircularProgress,
-  Divider,
-  MenuItem,
-  TextField,
   Typography,
 } from '../../../../../node_modules/@mui/material/index'
-import { Tooltip as MuiTooltip } from '@mui/material'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { keyframes } from '@mui/material/styles'
 import {
   FileExportIcon,
@@ -55,9 +49,7 @@ import {
   SaveIcon as SaveImageIcon,
   CalculateIcon as CalculateImageIcon,
 } from 'assets/images/icons'
-import { DashboardColors } from 'themes/colors'
 import DateOnlyPicker from '../utilities/DatePicker'
-import { recalcDuration, recalcEndDate } from '../commonUtilityFunctions'
 import {
   DurationEditor,
   DurationDisplayWithTooltipCell,
@@ -70,15 +62,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
 import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Collapse from '@mui/material/Collapse'
 import { useSelector } from 'react-redux'
 import DeleteSelectedDialog from './components/DeleteSelectedDialog'
@@ -86,6 +70,7 @@ import {
   calculateMonthDuration,
   getMonthStartEndDate,
 } from '../utilities/durationHelpers'
+import { convertFromScientificNotation } from '../commonUtilityFunctions'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -203,6 +188,7 @@ export const dateFields = [
   'ibrDueDate',
   'exclusionStartDate',
   'exclusionEndDate',
+  'dateOfCommencement',
 ]
 export const monthMap = {
   january: 1,
@@ -269,6 +255,10 @@ const AdvanceKendoTable = ({
   handleRelease = () => {},
   handleDeleteSelected = (selectedItems) => {},
   screenType = null,
+  siteDropdown = [],
+  plantDropdown = [],
+  showFilters = false,
+  convertScientificValue = false,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -319,7 +309,7 @@ const AdvanceKendoTable = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))
@@ -607,12 +597,20 @@ const AdvanceKendoTable = ({
         }
       }
 
+      const isDropdownSiteplant = columns?.some(
+        (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant',
+      )
+
       // First update modifiedCells to accumulate all changes
       let updatedModifiedCells
       setModifiedCells((prev) => {
         // Merge with previous modified cells to get all accumulated changes
         const previousModified = prev[itemId] || {}
         const base = { ...dataItem, ...previousModified, [field]: value }
+
+        if (field === 'siteName' && isDropdownSiteplant) {
+          base.plantName = ''
+        }
 
         // Apply date calculations if config is provided (convert dates to ISO strings)
         const dateUpdates = applyDateCalculations(
@@ -649,6 +647,10 @@ const AdvanceKendoTable = ({
             updated[field] = value
           }
 
+          if (field === 'siteName' && isDropdownSiteplant) {
+            updated.plantName = ''
+          }
+
           // Apply date calculations using the accumulated modified data
           if (updatedModifiedCells && dateCalculationConfig) {
             const { dateField1, dateField2, daysField } = dateCalculationConfig
@@ -674,6 +676,10 @@ const AdvanceKendoTable = ({
       setCustomModifiedCells((prev) => {
         const base = { ...(prev[itemId] || {}), [field]: value }
 
+        if (field === 'siteName' && isDropdownSiteplant) {
+          base.plantName = ''
+        }
+
         // For customModifiedCells, use dataItem as source for unchanged fields
         const sourceData = { ...dataItem, ...base }
         const dateUpdates = applyDateCalculations(
@@ -693,7 +699,7 @@ const AdvanceKendoTable = ({
 
       // Call custom itemChange handler if provided
       if (customItemChange) {
-        customItemChange(e, setRows)
+        customItemChange(e, setRows, setModifiedCells, setCustomModifiedCells)
       }
     },
     [setRows, setModifiedCells, setCustomModifiedCells, customItemChange],
@@ -780,6 +786,7 @@ const AdvanceKendoTable = ({
             'remarks',
             'remark',
             'Remark',
+            'Remarks',
             'purpose',
             'reasons',
             'majorJobs',
@@ -1075,7 +1082,11 @@ const AdvanceKendoTable = ({
       return (
         <td
           {...tdProps}
-          title={value}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
           style={{
             ...tdProps?.style,
           }}
@@ -1104,7 +1115,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
@@ -1143,7 +1156,14 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
+        >
           {formattedValue}
         </td>
       )
@@ -1212,7 +1232,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
           color:
@@ -1338,6 +1360,13 @@ const AdvanceKendoTable = ({
     return HeaderWithSubtitle
   }
 
+  const {
+    activeFilters,
+    getColumnTitle,
+    handleRemoveFilter,
+    handleClearAllFilters,
+  } = useFilterChips(filter, setFilter, columns)
+
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
 
   const isColumnActive = (field, filter, sort) => {
@@ -1426,7 +1455,6 @@ const AdvanceKendoTable = ({
       const isActive = isColumnActive(col.field, filter, sort)
 
       const headerColorClass = undefined
-
       if (col.children) {
         return (
           <GridColumn
@@ -2074,6 +2102,83 @@ const AdvanceKendoTable = ({
           />
         )
       }
+      if (col?.type === 'dropdownSiteplant') {
+        const isSiteColumn = col.field === 'siteName'
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  let options = []
+                  if (isSiteColumn) {
+                    options = siteDropdown.map((s) => ({
+                      label: s.displayName || s.name,
+                      value: s.name,
+                    }))
+                  } else {
+                    const selectedSiteName = cellProps.dataItem.siteName
+                    const site = siteDropdown.find(
+                      (s) => s.name === selectedSiteName,
+                    )
+                    const plants = site?.plants || []
+                    options = plants.map((p) => ({
+                      label: p.displayName || p.name,
+                      value: p.name,
+                    }))
+                  }
+                  return (
+                    <SelectCellEditor
+                      {...cellProps}
+                      options={options}
+                      textField='label'
+                      valueField='value'
+                      placeholder='Select...'
+                      searchable={col.searchable || false}
+                      showClearOption={col.showClearOption || false}
+                    />
+                  )
+                },
+              },
+              data: (props) => {
+                let options = []
+                if (isSiteColumn) {
+                  options = siteDropdown.map((s) => ({
+                    label: s.displayName || s.name,
+                    value: s.name,
+                  }))
+                } else {
+                  const selectedSiteName = props.dataItem.siteName
+                  const site = siteDropdown.find(
+                    (s) => s.name === selectedSiteName,
+                  )
+                  const plants = site?.plants || []
+                  options = plants.map((p) => ({
+                    label: p.displayName || p.name,
+                    value: p.name,
+                  }))
+                }
+                return createSelectToolTipRenderer(
+                  options,
+                  toolTipRenderer,
+                )({ ...props, displayMode: col.displayMode || 'label' })
+              },
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
       if (col?.type === 'select') {
         const isDynamic = !!col.dynamicOptions
 
@@ -2193,6 +2298,87 @@ const AdvanceKendoTable = ({
                   disableRedHighlight={disableRedHighlight}
                 />
               ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Checkbox Type Handler — column-level checkbox (col.type === 'checkbox')
+      // Fires itemChange like any other editor so changes are tracked in modifiedCells
+      if (col.type === 'checkbox') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={!isEditable ? 'non-editable-cell' : undefined}
+            headerClassName={`${isActive ? 'active-column' : ''}`}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  const { dataItem, field, onChange } = cellProps
+                  const checked = !!dataItem[field]
+                  const isCellDisabled =
+                    !isEditable || dataItem?.isEditable === false
+                  return (
+                    <td style={{ textAlign: 'center', padding: '6px 2px' }}>
+                      <Checkbox
+                        checked={checked}
+                        disabled={isCellDisabled}
+                        onChange={(e) => {
+                          if (isCellDisabled) return
+                          const newVal =
+                            typeof e.value === 'boolean'
+                              ? e.value
+                              : e.target?.checked ?? !checked
+                          onChange({ dataItem, field, value: newVal })
+                        }}
+                        size='medium'
+                      />
+                    </td>
+                  )
+                },
+              },
+              data: (cellProps) => {
+                const { dataItem, field, tdProps } = cellProps
+                const checked = !!dataItem[field]
+                const isCellDisabled =
+                  !isEditable || dataItem?.isEditable === false
+                return (
+                  <td
+                    {...tdProps}
+                    style={{
+                      textAlign: 'center',
+                      ...tdProps?.style,
+                    }}
+                    // Prevent the row-click from propagating so the grid
+                    // doesn't enter full row-edit mode on checkbox click
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      disabled={isCellDisabled}
+                      onChange={(e) => {
+                        if (isCellDisabled) return
+                        const newVal =
+                          typeof e.value === 'boolean'
+                            ? e.value
+                            : e.target?.checked ?? !checked
+                        itemChange({ dataItem, field, value: newVal })
+                      }}
+                      size='medium'
+                    />
+                  </td>
+                )
+              },
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
@@ -2331,6 +2517,30 @@ const AdvanceKendoTable = ({
             columnMenu={ColumnMenuCheckboxFilter}
             className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Custom Action Cell Handler — always render column, pass editable to cell
+      if (col.type === 'customAction' && col.cell) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={false}
+            filterable={false}
+            className={col.className || 'k-text-center'}
+            headerClassName={col.headerClassName || 'k-text-center'}
+            cells={{
+              data: col.cell,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            width={setWidth(col?.minWidth || col?.widthT || 80)}
           />
         )
       }
@@ -2553,7 +2763,11 @@ const AdvanceKendoTable = ({
                   className='btn-add'
                   startIcon={<AddIcon />}
                   onClick={handleAddRow}
-                  disabled={isButtonDisabled || READ_ONLY}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    permissions?.disableActionButtons
+                  }
                 >
                   {permissions?.addBtnName || 'Add Item'}
                 </Button>
@@ -2640,6 +2854,7 @@ const AdvanceKendoTable = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
+                    permissions?.disableActionButtons ||
                     Object.keys(modifiedCells).length === 0
                   }
                 >
@@ -2703,6 +2918,15 @@ const AdvanceKendoTable = ({
             </Box>
           </Box>
         </Box>
+      )}
+
+      {(showFilters || IS_CPP) && (
+        <FilterChips
+          activeFilters={activeFilters}
+          getColumnTitle={getColumnTitle}
+          handleRemoveFilter={handleRemoveFilter}
+          handleClearAllFilters={handleClearAllFilters}
+        />
       )}
 
       <Collapse in={gridExpanded}>
@@ -2786,7 +3010,7 @@ const AdvanceKendoTable = ({
                   />
                 )}
 
-                {customActionCell && (
+                {!READ_ONLY && customActionCell && (
                   <GridColumn
                     key='customActions'
                     field='customActions'

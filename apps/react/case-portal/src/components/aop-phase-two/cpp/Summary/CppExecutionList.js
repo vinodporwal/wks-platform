@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useSelector } from 'react-redux'
+import { Box } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { SummaryApiService } from '../../services/cpp/summaryApiService'
@@ -20,6 +21,11 @@ const CppExecutionList = ({ onViewClick }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const { plantObject, year, yearChanged } = dataGridStore
+  const AOP_YEAR = year?.selectedYear
+  const PLANT_ID = plantObject?.id
   // Column definitions
   const columns = [
     {
@@ -76,28 +82,20 @@ const CppExecutionList = ({ onViewClick }) => {
   ]
 
   useEffect(() => {
-    fetchCppModelLogs()
-  }, [])
-
-  const data = [
-    {
-      id: 'ed724e8c-6f7a-4f0a-9a92-42fc401ac2ae',
-      financialYear: 2025,
-      executionDateTime: 'Jan 26, 2026, 8:47:21 PM',
-      status: 'Success',
-      totalIterations: 102,
-      totalMonthsProcessed: 12,
-      totalExecutionTime: '0.00s',
-      monthsSucceeded: 12,
-      monthsFailed: 0,
-      monthsWithWarnings: 0,
-    },
-  ]
+    if (PLANT_ID && AOP_YEAR) {
+      fetchCppModelLogs()
+    }
+  }, [yearChanged, PLANT_ID])
 
   const fetchCppModelLogs = async () => {
     setLoading(true)
     try {
-      const res = await SummaryApiService.getCppModelLogs(keycloak)
+      const financialYear = AOP_YEAR ? parseInt(AOP_YEAR.split('-')[0]) : null
+      const res = await SummaryApiService.getCppModelLogs(
+        keycloak,
+        financialYear,
+        PLANT_ID,
+      )
       //   const res = data
       if (res?.length === 0) {
         setRows([])

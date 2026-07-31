@@ -1,5 +1,6 @@
 import { CaseStatus } from 'common/caseStatus'
 import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/kendo-WorkFlowMerge'
+import AopMyApprovals from 'components/data-tables/AOPWorkFlow/AopMyApprovals'
 import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
 
 import MonthwiseProduction from 'components/data-tables/Reports-kendo/kendo-MonthwiseProduction'
@@ -46,6 +47,7 @@ import AopBudget from 'components/kendo-data-tables/AopBudget'
 
 import PlantTeam from 'components/kendo-data-tables/PlantTeam'
 import RelPerf from 'components/kendo-data-tables/RelPerf'
+import RelPerfPlantWise from 'components/kendo-data-tables/RelPerfPlantWise'
 import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
 import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
 import RawDataSet from 'components/data-tables/Reports/RawDataSet'
@@ -137,6 +139,7 @@ import ShutdownPlanPolyester from 'components/aop-phase-two/polyester/shutdown-p
 import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-plan/index'
 import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
 import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
+import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -159,6 +162,11 @@ import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
 import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
 import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
+import NetProductionHoursPCG from 'components/aop-phase-two/pcg/net-production-hours/index'
+import MonthwiseProductionPlanPCG from 'components/aop-phase-two/pcg/monthwise-production-plan/index'
+import ShutdownActivitiesPCG from 'components/aop-phase-two/pcg/shutdown-activities/index'
+import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consumption/index'
+
 // PCG Ended
 
 // Vertical Refinery Utility
@@ -174,11 +182,12 @@ import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/ov
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
 import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
 import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
-import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUpload'
 import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
 import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
 import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
 import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
+import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
+import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 
 // Naphthasplitter Ended
 
@@ -547,7 +556,6 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
 
           {
             path: 'packaging-consumables',
@@ -947,6 +955,14 @@ export const MainRoutes = (
             ),
           },
           {
+            path: 'grade-wise-steady-state-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='grade-wise-steady-state-consumption-polyester'>
+                <GradeWiseSteadyStateConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
             path: 'overall-aop-consumption-polyester',
             element: (
               <PrivateRoute routeId='overall-aop-consumption-polyester'>
@@ -1018,6 +1034,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'material-grouped-selection-polyester',
+            element: (
+              <PrivateRoute routeId='material-grouped-selection-polyester'>
+                <MaterialGroupedSelectionPolyester />
+              </PrivateRoute>
+            ),
+          },
           //Vertical STAPLE (Polyester) Ended ****************************
 
           //Vertical MEROX Started
@@ -1072,6 +1096,39 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'shutdown-activities-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-activities-pcg'>
+                <ShutdownActivitiesPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-pcg',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-pcg'>
+                <NetProductionHoursPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-pcg',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-pcg'>
+                <MonthwiseProductionPlanPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-pcg'>
+                <ShutdownConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical PCG Ended
           //Vertical Refinery utility Started
           {
@@ -1407,6 +1464,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'plant-reliability-performance',
+            element: (
+              <PrivateRoute routeId='plant-reliability-performance'>
+                <RelPerfPlantWise />
+              </PrivateRoute>
+            ),
+          },
         ],
       },
 
@@ -1510,6 +1575,11 @@ export const MainRoutes = (
           <AopDashboard />
           // </PrivateRoute>
         ),
+      },
+
+      {
+        path: 'my-approvals',
+        element: <AopMyApprovals />,
       },
 
       {

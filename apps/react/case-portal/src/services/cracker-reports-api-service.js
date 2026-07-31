@@ -18,6 +18,8 @@ export const CrackerReportsApiDataService = {
   furnaceRawData,
   runLengthDataSet,
   calculateMonthWiseRawData,
+  getSpyroInputMinMaxData,
+  saveSpyroInputMinMaxData,
 }
 
 async function runLengthDataSet(keycloak, reportType, PLANT_ID, AOP_YEAR) {
@@ -380,6 +382,49 @@ async function spyroInputReport(
 
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+async function getSpyroInputMinMaxData(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+  mode,
+) {
+  let url = `${Config.CaseEngineUrl}/task/spyro-input-min-max?verticalId=${VERTICAL_ID}&siteId=${SITE_ID}&plantId=${PLANT_ID}&aopYear=${AOP_YEAR}&mode=${mode}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+async function saveSpyroInputMinMaxData(keycloak, PLANT_ID, AOP_YEAR, payload) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-input-min-max?plantFKId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

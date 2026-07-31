@@ -155,6 +155,10 @@ const ShutdownNorms = () => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'pdeb'
+  const IS_CHEMICAL_VMD_BENZENE =
+    lowerVertName === 'chemical' &&
+    SITE_NAME_LOWERCASE === 'vmd' &&
+    PLANT_NAME_LOWERCASE === 'benzene'
   const IS_CRACKER_C2_HMD_DMD =
     lowerVertName === 'cracker' &&
     (SITE_NAME_LOWERCASE === 'c2' ||
@@ -858,7 +862,7 @@ const ShutdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
-      showCalulcationPromt: IS_PE_C2 ? true : false,
+      showCalulcationPromt: IS_PE_C2 || lowerVertName === 'pta' ? true : false,
 
       showNote:
         lowerVertName === 'meg' ||
@@ -887,7 +891,8 @@ const ShutdownNorms = () => {
         IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE ||
         IS_CHEMICAL_HMD_PDEB ||
         IS_AROMATICS_HMD ||
-        IS_CRACKER_C2_HMD_DMD
+        IS_CRACKER_C2_HMD_DMD ||
+        IS_CHEMICAL_VMD_BENZENE
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||

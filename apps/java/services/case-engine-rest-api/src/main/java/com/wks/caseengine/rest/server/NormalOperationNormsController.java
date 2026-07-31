@@ -62,6 +62,40 @@ public class NormalOperationNormsController {
 		return normalOperationNormsService.getNormsTransactionFinalNorms(plantId, year);
 	}
 
+	@PostMapping(value = "/steady-state-norms/polyester")
+	public AOPMessageVM saveNormalOperationNormsDataPolyester(
+	        @RequestParam String plantId, @RequestParam String year,
+	        @RequestParam(required = false) String gradeId,
+	        @RequestBody List<MCUNormsValueDTO> mCUNormsValueDTOList) {
+	    try {
+	        return normalOperationNormsService.saveNormalOperationNormsDataPolyester(
+	                mCUNormsValueDTOList, UUID.fromString(plantId), year, gradeId, false);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return AOPMessageVM.builder()
+	                .code(500)
+	                .message("Failed to save data: " + e.getMessage())
+	                .data(null)
+	                .build();
+	    }
+	}
+	@GetMapping(value = "/steady-state-norms/grade/validation")
+	public AOPMessageVM checkAllGradeNormsPolyester(
+	        @RequestParam String plantId, @RequestParam String year,
+	        @RequestParam(required = false) String gradeId
+	       ) {
+	    try {
+	        return normalOperationNormsService.checkAllGradeNormsPolyester(
+	                UUID.fromString(plantId), year, gradeId);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return AOPMessageVM.builder()
+	                .code(500)
+	                .message("Failed to save data: " + e.getMessage())
+	                .data(null)
+	                .build();
+	    }
+	}
 	@PostMapping(value = "/steady-state-norms")
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData(
 		@RequestParam String plantId, @RequestParam String year,
@@ -152,6 +186,16 @@ public class NormalOperationNormsController {
 	    }
 	}
 
+	@PostMapping(value = "/steady-state-norms-import/polyester", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelPolyester(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+            @RequestParam(required = false) String gradeId,
+			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
+	        ) {
+			return	normalOperationNormsService.importExcelPolyester(year,UUID.fromString(plantId),gradeId, file,mode); 
+	}
+	
 	@PostMapping(value = "/steady-state-norms-import", consumes = "multipart/form-data")
 	public AOPMessageVM importExcel(
 	         @RequestParam("plantId") String plantId,

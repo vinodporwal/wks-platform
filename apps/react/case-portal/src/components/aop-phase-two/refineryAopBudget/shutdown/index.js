@@ -1,648 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useGridApiRef } from '@mui/x-data-grid'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { validateFields } from 'utils/validationUtils'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import { useSession } from 'SessionStoreContext'
+import { ShutdownApiService } from 'components/aop-phase-two/services/crude/shutdownApiService'
+import { useSelector } from 'react-redux'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
-/**
- * Source: Manual | Entry Owner: All by EPS Team
- * Dummy/static data matching the screenshot.
- * Replace this array (and the fetchData/saveChanges TODOs below) once the
- * real GET/SAVE APIs are available.
- *
- * NOTE: screenshot also calls out "Excel Upload provision required" —
- * uploadExcelBtn is left enabled below for that reason.
- */
-const DUMMY_ROWS = [
-  {
-    id: 0,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CDU1',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 1,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CDU2',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 2,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DCOKER',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 3,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'VGOHT-1',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 4,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'VGOHT-2',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 5,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'SCANFINNER',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 6,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'LNUU',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 7,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CNHT',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 8,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DHT1',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 9,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DHT2',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 10,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'HNUU',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 11,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'KNHT',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 12,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'LNHT',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 13,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'FCCU',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 14,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'PLATFORMERUNIT',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 15,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'PRU',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 16,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'NAPSPLIT',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 17,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'CBA',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 18,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'GASOLINEMEROX',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 19,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'KEROSINEMEROX',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 20,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'SATC3C4SPLITER',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 21,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'SATLPG',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 22,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'UNSATLPG',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 23,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA AGR SHIFTED',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 24,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA AGR UNSHIFTED',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 25,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA GASIFIER',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 26,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA PSA',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 27,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'DTA-Refinery',
-    plant: 'DTA SRU',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 28,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'CDUZ311',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 29,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'CDUZ312',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 30,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'COKERZ371',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 31,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'DHDSZ355',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 32,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'DHDSZ358',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 33,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'HNUUZ221',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 34,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SCANFINNER',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 35,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'VGOHTZ361',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 36,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'VGOHTZ362',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 37,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'FCCZ411',
-    uom: 'KBD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 38,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'CCR Platforming',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 39,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'ALKYLATION',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 40,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'PRU',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 41,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'Naptha Splitter (NSPL)',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 42,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SULPHURPRCC',
-    uom: 'KTPD',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 43,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'GASOLINEMEROX',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 44,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SAT LPG MEROX',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 45,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'UNSAT LPG MEROX',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 46,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ AGR SHIFTED',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 47,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ AGR UNSHIFTED',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 48,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ GASIFIER',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 49,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ PSA',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 50,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ SNG',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-  {
-    id: 51,
-    particulars: '',
-    pimsCode: '',
-    sapProductId: '',
-    site: 'SEZ-Refinery',
-    plant: 'SEZ SRU',
-    uom: '',
-    sdTotalDurationDays: '',
-    dateOfCommencement: '1-Apr-26',
-    purposeOfShutdown: '',
-  },
-]
-
-const ShutdownSchedule = ({ permissions }) => {
+const Shutdown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = useState({})
-  const [rows, setRows] = useState()
+  const [rows, setRows] = useState([])
+  const [originalRows, setOriginalRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -655,47 +23,36 @@ const ShutdownSchedule = ({ permissions }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const apiRef = useGridApiRef()
+  const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { plantObject, siteObject, verticalObject, year } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
+  const [siteDropdown, setSiteDropdown] = useState([])
+  const [plantDropdown, setPlantDropdown] = useState([])
 
   const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
   const columns = [
     {
-      field: 'particulars',
-      title: 'Particulars',
-      editable: false,
-      widthT: 300,
-      minWidth: 180,
-      hidden: true,
-    },
-    {
-      field: 'pimsCode',
-      title: 'PIMS Code',
-      editable: true, // "Reference in backend By EPS Mumbai"
-      minWidth: 130,
-      hidden: true,
-    },
-    {
-      field: 'sapProductId',
-      title: 'SAP Product_ID',
-      editable: true, // "Reference in backend By EPS Mumbai"
-      minWidth: 150,
-      hidden: true,
-    },
-    {
-      field: 'site',
+      field: 'siteName',
       title: 'Site',
-      editable: false, // "Should be unique and fix"
+      editable: true,
       minWidth: 150,
+      type: 'dropdownSiteplant',
     },
     {
-      field: 'plant',
+      field: 'plantName',
       title: 'Plant',
-      editable: false, // "Should be unique and fix"
+      editable: true,
       minWidth: 150,
+      type: 'dropdownSiteplant',
     },
     {
       field: 'sdTotalDurationDays',
@@ -703,7 +60,7 @@ const ShutdownSchedule = ({ permissions }) => {
       editable: true, // "Note that provide days specific to days in that month."
       align: 'right',
       headerAlign: 'right',
-      type: 'number',
+      type: 'wholeNumber',
       minWidth: 220,
     },
     {
@@ -711,83 +68,350 @@ const ShutdownSchedule = ({ permissions }) => {
       title: 'Date of Commencement',
       editable: true, // "Manual in Digital AOP"
       minWidth: 220,
+      type: 'date',
     },
     {
-      field: 'purposeOfShutdown',
+      field: 'remark',
       title: 'Purpose of Shutdown',
       editable: true,
       widthT: 250,
       minWidth: 200,
     },
   ]
+  useEffect(() => {
+    const loadSitePlantData = async () => {
+      try {
+        const resp = await ShutdownApiService.getSitePlantDropdownData(
+          keycloak,
+          PLANT_ID,
+        )
+        const verticalData = resp?.sites
+          ? resp
+          : resp?.data?.sites
+            ? resp.data
+            : resp?.data?.data?.sites
+              ? resp.data.data
+              : {}
+        const sites = verticalData?.sites || []
+        setSiteDropdown(sites)
+        const plants = sites.flatMap((site) => site.plants || [])
+        setPlantDropdown(plants)
+      } catch (error) {
+        console.error('Error fetching site data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSitePlantData()
+  }, [])
 
-  // TODO: replace with the real GET API call once it's available.
   const fetchData = useCallback(async () => {
     setModifiedCells({})
     setLoading(true)
     try {
-      // Simulate a small network delay so the LoaderBackdrop is visible.
-      await new Promise((resolve) => setTimeout(resolve, 300))
-      setRows(DUMMY_ROWS)
+      const resp = await ShutdownApiService.getShutdownData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      const rawData = Array.isArray(resp?.data)
+        ? resp.data
+        : Array.isArray(resp?.data?.data)
+          ? resp.data.data
+          : []
+      const dataRows = rawData.map((item, index) => {
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: `${index}`,
+          originalRemark: item.remark,
+          remark: item.remark,
+          siteFkId: item.siteFkId,
+          plantFkId: item.plantFkId,
+          siteName: item.siteName,
+          plantName: item.plantName,
+          dateOfCommencement: item.dateOfCommencement
+            ? new Date(item.dateOfCommencement)
+            : null,
+          isEditable: item.isEditable,
+        }
+      })
+      setRows(dataRows)
+      setOriginalRows(JSON.parse(JSON.stringify(dataRows)))
+    } catch (error) {
+      console.error('Error fetching steady state consumption data:', error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
   // TODO: replace with the real SAVE API call once it's available.
+  function addTimeOffset(dateTime) {
+    if (!dateTime) return null
+    const date = new Date(dateTime)
+    date.setUTCHours(date.getUTCHours() + 5)
+    date.setUTCMinutes(date.getUTCMinutes() + 30)
+    return date
+  }
   const saveChanges = useCallback(async () => {
-    try {
-      setLoading(true)
-      const data = Object.values(modifiedCells)
-
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
+    const modifiedData = Object.values(modifiedCells)
+    if (modifiedData.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+      return
+    }
+    // Custom check: Ensure all columns are filled for modified rows, indicating specific missing fields
+    for (const row of modifiedData) {
+      const missingFields = []
+      if (!row.siteName || String(row.siteName).trim() === '') {
+        missingFields.push('Site')
+      }
+      if (!row.plantName || String(row.plantName).trim() === '') {
+        missingFields.push('Plant')
+      }
+      if (
+        row.sdTotalDurationDays === undefined ||
+        row.sdTotalDurationDays === null ||
+        String(row.sdTotalDurationDays).trim() === ''
+      ) {
+        missingFields.push('SD Total Duration Days')
+      }
+      if (!row.dateOfCommencement) {
+        missingFields.push('Date of Commencement')
+      }
+      if (!row.remark || String(row.remark).trim() === '') {
+        missingFields.push('Purpose of Shutdown')
       }
 
-      const requiredFields = ['dateOfCommencement']
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
+      if (missingFields.length > 0) {
+        const rowIndex = rows.findIndex((r) => r.id === row.id)
+        const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+        const displayName = row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : row.siteName
+            ? `${row.siteName} (${rowNumLabel})`
+            : rowNumLabel
+
         setSnackbarOpen(true)
         setSnackbarData({
-          message: validationMessage,
+          message: `Remaining fields to fill for ${displayName}: ${missingFields.join(', ')}`,
           severity: 'error',
         })
         return
       }
+    }
 
-      // No save API yet — just merge edits back into local state.
-      setRows((prevRows) =>
-        (prevRows || []).map((row) => {
-          const edited = modifiedCells[row.id]
-          return edited ? { ...row, ...edited } : row
-        }),
+    // Create unique display name for standard validation to handle duplicate plants clearly
+    const modifiedDataForValidation = modifiedData.map((row) => {
+      const rowIndex = rows.findIndex((r) => r.id === row.id)
+      const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+      return {
+        ...row,
+        plantNameUnique: row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : rowNumLabel,
+      }
+    })
+
+    const validationError = validateRowDataWithRemarks(
+      modifiedDataForValidation,
+      originalRows,
+      ['sdTotalDurationDays', 'dateOfCommencement'],
+      'plantNameUnique',
+      'remark',
+    )
+
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    try {
+      const payload = modifiedData.map((row) => {
+        const matchedSite = siteDropdown.find((s) => s.name === row.siteName)
+        const matchedPlant = matchedSite?.plants?.find(
+          (p) => p.name === row.plantName,
+        )
+
+        return {
+          id: row.idFromApi ?? null,
+          siteFkId: matchedSite ? matchedSite.id : row.siteFkId ?? null,
+          plantFkId: matchedPlant ? matchedPlant.id : row.plantFkId ?? null,
+          siteName: row.siteName,
+          plantName: row.plantName,
+          sdTotalDurationDays: row.sdTotalDurationDays,
+          dateOfCommencement: addTimeOffset(row.dateOfCommencement),
+          remark: row.remark,
+          plantId: PLANT_ID,
+          aopYear: AOP_YEAR,
+        }
+      })
+
+      const response = await ShutdownApiService.saveShutdownData(
+        payload,
+        keycloak,
       )
 
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Saved Successfully! (local only - no API wired up yet)',
-        severity: 'success',
-      })
-      setModifiedCells({})
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
+        setModifiedCells({})
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'data not saved!', severity: 'error' })
+      }
     } catch (error) {
+      console.error('Error saving plant capacities:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Unexpected error occurred!',
+        message: 'Save failed, please try again!',
         severity: 'error',
       })
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, originalRows, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const handleExport = useCallback(async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({ message: 'Excel download started!', severity: 'info' })
+    try {
+      const EXCEL_NAME = `Refinery_Shutdown.xlsx`
+      await ShutdownApiService.exportShutdownData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_NAME,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel downloaded successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error exporting Shutdown plan:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel download failed. Please try again.',
+        severity: 'error',
+      })
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  const handleExcelUpload = useCallback(
+    async (file) => {
+      if (!file) return
+      setLoading(true)
+      try {
+        const response = await ShutdownApiService.importShutdownData(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+        if (response?.code === 200) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Uploaded Successfully!',
+            severity: 'success',
+          })
+          setModifiedCells({})
+          await fetchData()
+        } else if (response?.code === 400 && response?.data) {
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
+
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', 'Error File - Shutdown.xlsx')
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          fetchData()
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Upload Failed!',
+            severity: 'error',
+          })
+        }
+      } catch (error) {
+        console.error('Error importing slowdown plan:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Unexpected error during import.',
+          severity: 'error',
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID, AOP_YEAR, fetchData],
+  )
+
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
+      }
+
+      if (idFromApi) {
+        await ShutdownApiService.deleteShutdownData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
 
   const adjustedPermissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
@@ -839,10 +463,15 @@ const ShutdownSchedule = ({ permissions }) => {
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
         disableRedHighlight={true}
-        screenType='shutdown-schedule'
+        handleExport={handleExport}
+        handleExcelUpload={handleExcelUpload}
+        deleteRowData={deleteRowData}
+        screenType='pims-product-master'
+        siteDropdown={siteDropdown}
+        plantDropdown={plantDropdown}
       />
     </div>
   )
 }
 
-export default ShutdownSchedule
+export default Shutdown

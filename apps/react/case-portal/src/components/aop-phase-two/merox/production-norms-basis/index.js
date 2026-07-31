@@ -12,6 +12,7 @@ import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
+import ManualEntryDyanamic from './ManualEntryDyanamic'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -41,7 +42,8 @@ const ProductionNormsBasis = () => {
     severity: 'info',
     autoHide: true,
   })
-
+  const siteName = siteObject?.name?.replace(/\s+/g, '')?.toLowerCase() || ''
+  const plantName = plantObject?.name?.replace(/\s+/g, '')?.toLowerCase() || ''
   const getConfigurationTabsMatrix = async () => {
     if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
     setLoading(true)
@@ -130,46 +132,30 @@ const ProductionNormsBasis = () => {
       return
     }
 
+    const periodFrom = formatDateForAPI(startDate)
+    const periodTo = formatDateForAPI(endDate)
+
     setNormCalculationLoading(true)
     try {
-      const periodFrom = formatDateForAPI(startDate)
-      const periodTo = formatDateForAPI(endDate)
-
-      const response =
-        await ProductionNormsApiService.loadButtonNormCalculation(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          SITE_ID,
-          periodFrom,
-          periodTo,
-        )
-
-      if (response?.code === 422) {
-        // Then show validation error after a delay
-        setTimeout(() => {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: response.message || 'Validation error occurred.',
-            severity: 'error',
-            autoHide: false,
-          })
-          setRefreshData(true)
-        }, 500)
-      } else {
-        // Code 200 - show only success notification
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message:
-            response?.message || 'Norm calculation completed successfully!',
-          severity: 'success',
-          autoHide: true,
-        })
-        setRefreshData(true)
-      }
+      // After load succeeds, trigger calculateManualProduction
+      await ProductionNormsApiService.calculateManualProduction(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        periodFrom,
+        periodTo,
+      )
+      setSnackbarOpen(false)
+      setSnackbarData({
+        message:
+          response?.message || 'Norm calculation completed successfully!',
+        severity: 'success',
+        autoHide: true,
+      })
+      setRefreshData(true)
     } catch (error) {
       console.error('Error in norm calculation:', error)
-      setSnackbarOpen(true)
+      setSnackbarOpen(false)
       setSnackbarData({
         message: 'Failed to calculate norms. Please try again.',
         severity: 'error',
@@ -212,6 +198,16 @@ const ProductionNormsBasis = () => {
     })
     .filter((tab) => tab !== null)
 
+  const ManualEntryWrapper = ({ siteName, plantName, startDate, endDate }) => {
+    if (
+      siteName === 'dta' &&
+      (plantName === 'gasolinemerox' || plantName === 'kerosinemerox')
+    ) {
+      return <ManualEntryDyanamic startDate={startDate} endDate={endDate} />
+    }
+    return <ManualEntry startDate={startDate} endDate={endDate} />
+  }
+
   const renderTab = () => {
     if (!tabs.length || !availableTabs.length) {
       return null
@@ -236,7 +232,14 @@ const ProductionNormsBasis = () => {
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
       case 'Manual Entry':
-        return <ManualEntry startDate={startDate} endDate={endDate} />
+        return (
+          <ManualEntryWrapper
+            siteName={siteName}
+            plantName={plantName}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        )
       default:
         return null
     }
@@ -251,7 +254,7 @@ const ProductionNormsBasis = () => {
           isOldYear={isOldYear}
           isSummaryRequired={false}
           onDatesChange={handleDatesChange}
-          // onLoadNormCalculation={handleLoadNormCalculation}
+          onLoadNormCalculation={handleLoadNormCalculation}
           normCalculationLoading={normCalculationLoading}
         />
       </Stack>

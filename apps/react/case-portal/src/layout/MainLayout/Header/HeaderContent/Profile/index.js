@@ -8,6 +8,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Popper from '@mui/material/Popper'
 import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined'
 import avatar2 from 'assets/images/users/new-avatar.jpg'
@@ -75,7 +76,25 @@ const Profile = ({ keycloak }) => {
         />
       </IconButton>
 
-      {/* Simple Minimal Menu */}
+      {/* Quick Logout Button */}
+      <Tooltip title='Logout'>
+        <IconButton
+          onClick={handleLogout}
+          size='small'
+          sx={{
+            p: 0.8,
+            color: '#dc2626',
+            borderRadius: '6px',
+            '&:hover': {
+              backgroundColor: '#fee2e2',
+            },
+          }}
+        >
+          <LogoutOutlined style={{ fontSize: 16 }} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Profile Dropdown Menu */}
       <Popper
         open={open}
         anchorEl={anchorRef.current}
@@ -105,10 +124,21 @@ const Profile = ({ keycloak }) => {
                 </Stack>
               </MenuItem>
 
-              {/* <MenuItem onClick={handleLogout}>
-                <LogoutOutlined style={{ marginRight: 8 }} />
+              <Divider sx={{ my: 0.5 }} />
+
+              <MenuItem
+                onClick={handleLogout}
+                sx={{
+                  color: '#dc2626',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  borderRadius: '4px',
+                  '&:hover': { backgroundColor: '#fee2e2' },
+                }}
+              >
+                <LogoutOutlined style={{ marginRight: 8, fontSize: 15 }} />
                 Logout
-              </MenuItem> */}
+              </MenuItem>
             </Paper>
           </ClickAwayListener>
         )}

@@ -59,6 +59,7 @@ const ProposedAOP = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [gradeId, setGradeId] = useState(null)
+  const [gradeName, setGradeName] = useState(null)
   const [grades, setGrades] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -83,7 +84,7 @@ const ProposedAOP = () => {
         uom: row?.uom ?? null,
         lastFY: row?.lastFY ?? null,
         sysGrn: row?.sysGrn ?? null,
-        proposed: row?.proposed === '' ? null : (row?.proposed ?? null),
+        proposed: row?.proposed === '' ? null : row?.proposed ?? null,
         remarks: row?.remarks ?? null,
         plantId: row?.plantId ?? null,
         aopYear: row?.aopYear ?? null,
@@ -150,29 +151,33 @@ const ProposedAOP = () => {
   const fetchGradeDropdowns = async () => {
     try {
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
 
-      if (response?.code === 200) {
-        setGrades(response?.data || [])
-        if (response?.data && response?.data.length > 0) {
-          const firstGrade = response.data[0]
-          const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
-          setGradeId(firstId)
-          fetchData(firstId)
-        } else {
-          fetchData(null)
+      if (response?.code == 200) {
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          displayName:
+            grade.displayName ||
+            grade.DisplayName ||
+            grade.name ||
+            grade.Name ||
+            '',
+          name: grade.name || grade.Name || '',
+        }))
+        setGrades(normalized)
+        if (response?.data?.length > 0) {
+          setGradeId(response?.data[0]?.gradeId)
         }
-      } else {
-        setGrades([])
-        fetchData(null)
       }
+
+      fetchData(response?.data[0]?.gradeId)
     } catch (error) {
       setGrades([])
-      console.error('Error fetching grades:', error)
+      console.error('Error fetching data:', error)
     }
   }
 
@@ -180,35 +185,46 @@ const ProposedAOP = () => {
     try {
       setGrades([])
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+        await ConsumptionNormsApiService.getProposedAOPNormsGrades(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
 
-      if (response?.code === 200) {
-        setGrades(response?.data || [])
-        if (response?.data && response?.data.length > 0) {
-          const firstGrade = response.data[0]
-          const firstId = firstGrade?.gradeId ?? firstGrade?.id ?? null
-          setGradeId(firstId)
-          fetchData(firstId)
-        } else {
-          setGradeId(null)
-          fetchData(null)
-        }
-      } else {
-        setGrades([])
-        setGradeId(null)
-        fetchData(null)
+      if (response?.code == 200) {
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          displayName:
+            grade.displayName ||
+            grade.DisplayName ||
+            grade.name ||
+            grade.Name ||
+            '',
+          name: grade.name || grade.Name || '',
+        }))
+        setGrades(normalized)
       }
+
+      if (response?.data?.length === 0) {
+        setGradeId(null)
+        await fetchData(null)
+        return
+      }
+
+      const firstGrade = response?.data[0]
+      const firstId =
+        firstGrade?.id ?? firstGrade?.gradeId ?? firstGrade?.gradeFkId ?? null
+
+      setGradeId(firstId)
+
+      fetchData(firstId)
     } catch (error) {
       setGrades([])
-      console.error('Error fetching grades after calculation:', error)
+      console.error('Error fetching Business Demand data:', error)
     }
   }
 
-  const fetchData = async (currentGradeId) => {
+  const fetchData = async (currentGradeId, passedGradeName = null) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if ((isPEPP || isPET) && !currentGradeId) return
     setLoading(true)
@@ -231,6 +247,17 @@ const ProposedAOP = () => {
         return
       }
 
+      let resolvedGradeName = passedGradeName
+      if (!resolvedGradeName && grades.length > 0) {
+        const matchedGrade = grades.find(
+          (g) => (g.gradeId ?? g.id) === currentGradeId,
+        )
+        resolvedGradeName = matchedGrade?.name ?? null
+      }
+      if (!resolvedGradeName) {
+        resolvedGradeName = gradeName
+      }
+
       setCalculationObject(response?.data?.aopCalculation || [])
 
       const formattedData = (response?.data?.proposedAOP || []).map(
@@ -242,7 +269,7 @@ const ProposedAOP = () => {
             id: index,
             Particulars: item.normParameterTypeDisplayName || 'Type',
             UOM: item.uom,
-            isEditable: true,
+            isEditable: resolvedGradeName === 'All Grade' ? false : true,
           }
         },
       )
@@ -451,7 +478,12 @@ const ProposedAOP = () => {
 
   const handleGradeChange = (selectedGradeId) => {
     setGradeId(selectedGradeId)
-    fetchData(selectedGradeId)
+    const selectedGrade = grades.find(
+      (g) => (g.gradeId ?? g.id) === selectedGradeId,
+    )
+    const selectedName = selectedGrade?.name ?? null
+    setGradeName(selectedName)
+    fetchData(selectedGradeId, selectedName)
   }
 
   return (
@@ -489,7 +521,7 @@ const ProposedAOP = () => {
           title={SCREEN_NAME}
           handleExport={handleExport}
           handleExcelUpload={handleExcelUpload}
-          isProposedAOP={true}
+          isProposedAOP={false}
         />
       </Box>
     </div>

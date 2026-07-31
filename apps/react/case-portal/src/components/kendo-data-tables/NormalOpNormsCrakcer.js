@@ -120,6 +120,7 @@ const NormalOpNormsScreenCracker = () => {
   const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_CRACKER_NMD = lowerVertName === 'cracker' && lowerSiteName === 'nmd'
+  const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -417,11 +418,12 @@ const NormalOpNormsScreenCracker = () => {
     ],
     [headerMap, valueFormat],
   )
-  const colDefsFinalNorms = IS_CRACKER_C2
-    ? colDefsFinalNormsC2
-    : IS_CRACKER_HMD
-      ? colDefsFinalNormsHMD
-      : colDefsFinalNormsDefault
+  const colDefsFinalNorms =
+    IS_CRACKER_C2 || IS_CRACKER_DMD
+      ? colDefsFinalNormsC2
+      : IS_CRACKER_HMD
+        ? colDefsFinalNormsHMD
+        : colDefsFinalNormsDefault
 
   const colDefsFinalNorms1 = useMemo(
     () => [
@@ -687,7 +689,7 @@ const NormalOpNormsScreenCracker = () => {
 
   const finalPermissions = useMemo(() => {
     const base = { ...baseFinalPermissions }
-    base.saveBtn = IS_CRACKER_C2 ? true : false
+    base.saveBtn = IS_CRACKER_C2 || IS_CRACKER_DMD ? true : false
     base.showCalculate = true
 
     return getAdjustedPermissions(base, isOldYear)
@@ -783,7 +785,7 @@ const NormalOpNormsScreenCracker = () => {
         remark: item.remark || '',
         Particulars: item.normType || item.normParameterTypeDisplayName,
         Method: item.Method || item.method,
-        isEditable: IS_CRACKER_C2 ? true : false,
+        isEditable: IS_CRACKER_C2 || IS_CRACKER_DMD ? true : false,
       }))
 
       setRowsBestFinalNorms(mappedWithMethod)

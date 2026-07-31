@@ -44,6 +44,8 @@ const defs = {
     shutdownNorms: 'Shutdown Consumption (Quantity)',
     slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
     normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
+    normalOpNormsGradeWise:
+      'Grade Wise Steady State Consumption (Norm/Quantity)',
     slowdownPlan: 'Slowdown Activities',
     taPlan: 'Turnaround Activities',
     feedStock: 'Feed Stock Availability',
@@ -83,7 +85,8 @@ const defs = {
     runlengthData: 'Furnace Run Length ',
     functionalAop: 'CES',
     manufacturingDivision: 'Manufacturing Division',
-    reliabilityPerformance: 'Reliability Performance',
+    reliabilityPerformance: 'Site Reliability Performance',
+    plantReliabilityPerformance: 'Plant Reliability Performance',
     monthlyAop: 'Maintenance',
     siteWiseAop: 'Consumption Summary (Sites)',
     allSiteSummaryAop: 'Summary',
@@ -143,6 +146,7 @@ const defs = {
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
+    configurationOtherCost: 'Other Cost',
   },
   pages: {
     dashboard: {
@@ -287,6 +291,8 @@ const defs = {
         shutdownPlan: 'Shutdown Activities',
         shutdownNorms: 'Shutdown Consumption (Quantity)',
         normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
+        normalOpNormsGradeWise:
+          'Grade Wise Steady State Consumption (Norm/Quantity)',
         slowdownPlan: 'Slowdown Activities',
         taPlan: 'Turnaround Activities',
         productionNormsOutput: 'Production Norms (Output)',
@@ -311,7 +317,8 @@ const defs = {
         process: 'Process',
         functionalAop: 'CES',
         monthlyAop: 'Maintenance',
-        reliabilityPerformance: 'Reliability Performance',
+        reliabilityPerformance: 'Site Reliability Performance',
+        plantReliabilityPerformance: 'Plant Reliability Performance',
         siteWiseAop: 'Consumption Summary (Sites)',
         allSiteSummaryAop: 'Summary',
         manufacturingDivision: 'Manufacturing Division',

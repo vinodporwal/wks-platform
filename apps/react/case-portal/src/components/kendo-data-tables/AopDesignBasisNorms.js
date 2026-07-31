@@ -126,8 +126,9 @@ const AopDesignBasisNorms = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find((item) => item.Name === name)
-            ?.AttributeValue,
+          configurationExecutionDetails.find(
+            (item) => item.Name === name,
+          )?.AttributeValue,
         )
       setStartDate(getDateValue('StartDateNorms'))
       setEndDate(getDateValue('EndDateNorms'))

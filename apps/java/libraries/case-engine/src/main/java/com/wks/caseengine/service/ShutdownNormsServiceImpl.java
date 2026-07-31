@@ -124,7 +124,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				objList = getShutdownConsumptionData( plantId,year, storedProcedure);
 				return getShutdownGradeData(objList, plantId, year,gradeId);
 			}
-			else if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA")) || vertical.getName().equalsIgnoreCase("Staple") || vertical.getName().equalsIgnoreCase("Filament") && (!withGrade)) {
+			else if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Staple") || vertical.getName().equalsIgnoreCase("Filament")) && (!withGrade)) {
 				//objList = getShutdownNormsMEG(year, plant.getId(), "vwScrnShutdownNorms");
 				// view converted to sp
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnorms";
@@ -183,6 +183,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				shutdownNormsValueDTO.setUOM(row[28] != null ? row[28].toString() : null);
 				shutdownNormsValueDTO.setIsEditable(row[29] != null ? Boolean.valueOf(row[29].toString()) : null);
 				shutdownNormsValueDTO.setProductName(row[30] != null ? row[30].toString() : null);
+				if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
+				shutdownNormsValueDTO.setSapCode(row[31] != null ? row[31].toString() : "");
+				}
 				shutdownNormsValueDTOList.add(shutdownNormsValueDTO);
 			}
 			Map<String, Object> map = new HashMap<>();
@@ -1959,6 +1962,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			if(ptaDmd || staple) {
 				data = readDMDShutdownConsumptions(file.getInputStream(), plantFKId, year);
 			}else {
+				// sepearate method to ignore non active months
 				data = readShutdownConsumptions(file.getInputStream(), plantFKId, year);
 			}
 				Map<String,Object> map = saveShutdownNormsData(data);

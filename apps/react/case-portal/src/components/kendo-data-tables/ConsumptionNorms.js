@@ -33,7 +33,10 @@ const ConsumptionNorms = () => {
   const keycloak = useSession()
 
   const [open1, setOpen1] = useState(false)
-  const [openMaterialGroupedSelectionDialog, setOpenMaterialGroupedSelectionDialog] = useState(false)
+  const [
+    openMaterialGroupedSelectionDialog,
+    setOpenMaterialGroupedSelectionDialog,
+  ] = useState(false)
   const valueFormat = ValueFormatterConsumption()
 
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
@@ -669,53 +672,53 @@ const ConsumptionNorms = () => {
       customHeight: defaultCustomHeight,
       showG:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel: 'Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
-      showReleaseBtn: showReleaseButton ? true : false,
+      showReleaseBtn: false,
       titleName: `${SCREEN_NAME}`,
     },
     isOldYear,
@@ -847,7 +850,7 @@ const ConsumptionNorms = () => {
               setOpenMaterialGroupedSelectionDialog(false)
             }
           }}
-          maxWidth="md"
+          maxWidth='md'
           fullWidth
           disableScrollLock
           disableEnforceFocus={true}
@@ -871,8 +874,8 @@ const ConsumptionNorms = () => {
           <DialogActions sx={{ px: 1.5, pb: 1 }}>
             <Button
               onClick={() => setOpenMaterialGroupedSelectionDialog(false)}
-              variant="contained"
-              className="btn-no"
+              variant='contained'
+              className='btn-no'
               sx={{ textTransform: 'none' }}
             >
               Close

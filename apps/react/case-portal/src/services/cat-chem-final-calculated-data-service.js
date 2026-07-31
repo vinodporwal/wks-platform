@@ -23,7 +23,12 @@ async function getCatChemFinalCalculatedData(keycloak, plantId, aopYear) {
   }
 }
 
-async function exportCatChemFinalCalculatedExcel(keycloak, plantId, aopYear, fileName) {
+async function exportCatChemFinalCalculatedExcel(
+  keycloak,
+  plantId,
+  aopYear,
+  fileName,
+) {
   const url = `${Config.CaseEngineUrl}/task/final-calculated-cat-chem-export?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/octet-stream',

@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -908,6 +909,217 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
     @Override
     public AOPMessageVM importSteamAssetCapacity(List<UUID> plantIds, String aopYear, MultipartFile file) {
         return importAssetCapacity(plantIds, aopYear, file, false);
+    }
+
+    // ── UNIFIED EXPORT/IMPORT (Power, Steam, or All) ───────────────────────────
+
+    @Override
+    public byte[] exportAssetCapacityExcel(List<UUID> plantIds, String aopYear, String assetCategory) {
+        logger.info("[Export Unified Capacity] Exporting for plantIds: {}, aopYear: {}, assetCategory: {}", plantIds, aopYear, assetCategory);
+        try {
+            AOPMessageVM response = getAssetCapacitiesForPlants(plantIds, aopYear);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) response.getData();
+            @SuppressWarnings("unchecked")
+            List<CPPAssetCapacityResponseDto> powerCapacities =
+                    (List<CPPAssetCapacityResponseDto>) data.get("PowerAssetCapacities");
+            @SuppressWarnings("unchecked")
+            List<CPPAssetCapacityResponseDto> steamCapacities =
+                    (List<CPPAssetCapacityResponseDto>) data.get("SteamAssetCapacities");
+            if (powerCapacities == null) powerCapacities = new ArrayList<>();
+            if (steamCapacities == null) steamCapacities = new ArrayList<>();
+
+            List<CPPAssetCapacityResponseDto> combined = new ArrayList<>();
+            String sheetLabel;
+            if ("Power".equalsIgnoreCase(assetCategory)) {
+                combined.addAll(powerCapacities);
+                sheetLabel = "Power Asset Capacity";
+            } else if ("Steam".equalsIgnoreCase(assetCategory)) {
+                combined.addAll(steamCapacities);
+                sheetLabel = "Steam Asset Capacity";
+            } else {
+                combined.addAll(powerCapacities);
+                combined.addAll(steamCapacities);
+                sheetLabel = "Asset Capacity";
+            }
+
+            return generateAssetCapacityExcel(combined, sheetLabel, aopYear);
+        } catch (Exception e) {
+            logger.error("[Export Unified Capacity] Error: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public AOPMessageVM importAssetCapacityExcel(List<UUID> plantIds, String aopYear, String assetCategory, MultipartFile file) {
+        logger.info("[Import Unified Capacity] Importing for plantIds: {}, aopYear: {}, assetCategory: {}", plantIds, aopYear, assetCategory);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            List<CPPAssetCapacityResponseDto> excelData = readAssetCapacityExcel(file.getInputStream(), aopYear);
+            logger.info("[Import Unified Capacity] Read {} records from Excel", excelData.size());
+
+            // Separate records by assetCategory column in the Excel
+            List<CPPAssetCapacityResponseDto> powerRecords = new ArrayList<>();
+            List<CPPAssetCapacityResponseDto> steamRecords = new ArrayList<>();
+
+            for (CPPAssetCapacityResponseDto dto : excelData) {
+                String cat = dto.getAssetCategory();
+                if (cat != null && cat.trim().equalsIgnoreCase("Steam")) {
+                    steamRecords.add(dto);
+                } else if (cat != null && cat.trim().equalsIgnoreCase("Power")) {
+                    powerRecords.add(dto);
+                } else {
+                    // If assetCategory column is empty, use the assetCategory parameter
+                    if ("Steam".equalsIgnoreCase(assetCategory)) {
+                        steamRecords.add(dto);
+                    } else if ("Power".equalsIgnoreCase(assetCategory)) {
+                        powerRecords.add(dto);
+                    } else {
+                        // "All" – try to infer from assetCategory field, default to Power
+                        powerRecords.add(dto);
+                    }
+                }
+            }
+
+            logger.info("[Import Unified Capacity] Separated - Power: {}, Steam: {}", powerRecords.size(), steamRecords.size());
+
+            int totalSaved = 0, totalFailed = 0, totalSkipped = 0;
+            List<CPPAssetCapacityResponseDto> allFailedRecords = new ArrayList<>();
+            List<String> allFailureReasons = new ArrayList<>();
+
+            // Process Power records
+            if (!powerRecords.isEmpty() && ("Power".equalsIgnoreCase(assetCategory) || "All".equalsIgnoreCase(assetCategory))) {
+                AOPMessageVM powerResult = processImportBatch(plantIds, aopYear, powerRecords, true);
+                accumulateImportResults(powerResult, allFailedRecords, allFailureReasons);
+                totalSaved += extractCount(powerResult, "saved");
+                totalFailed += extractCount(powerResult, "failed");
+                totalSkipped += extractCount(powerResult, "skipped");
+            }
+
+            // Process Steam records
+            if (!steamRecords.isEmpty() && ("Steam".equalsIgnoreCase(assetCategory) || "All".equalsIgnoreCase(assetCategory))) {
+                AOPMessageVM steamResult = processImportBatch(plantIds, aopYear, steamRecords, false);
+                accumulateImportResults(steamResult, allFailedRecords, allFailureReasons);
+                totalSaved += extractCount(steamResult, "saved");
+                totalFailed += extractCount(steamResult, "failed");
+                totalSkipped += extractCount(steamResult, "skipped");
+            }
+
+            if (allFailedRecords.isEmpty()) {
+                response.setCode(200);
+                if (totalSaved == 0 && totalSkipped > 0) {
+                    response.setMessage("No changes detected. All " + totalSkipped + " records unchanged.");
+                } else {
+                    response.setMessage("All asset capacities imported successfully. " + totalSkipped + " unchanged, " + totalSaved + " updated.");
+                }
+            } else {
+                byte[] failedRecordsFile = generateAssetCapacityErrorExcel(allFailedRecords, allFailureReasons,
+                        "Asset Capacity", aopYear);
+                String base64File = java.util.Base64.getEncoder().encodeToString(failedRecordsFile);
+                response.setCode(400);
+                response.setMessage("Partial import: " + totalSaved + " saved, " + totalFailed
+                        + " failed, " + totalSkipped + " unchanged. Download file for details.");
+                response.setData(base64File);
+                logger.info("[Import Unified Capacity] Exported {} failed records to Excel", allFailedRecords.size());
+            }
+
+            logger.info("[Import Unified Capacity] Completed - Saved: {}, Failed: {}, Skipped: {}", totalSaved, totalFailed, totalSkipped);
+        } catch (Exception e) {
+            logger.error("[Import Unified Capacity] Error during import: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to import asset capacities: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private AOPMessageVM processImportBatch(List<UUID> plantIds, String aopYear,
+                                            List<CPPAssetCapacityResponseDto> records, boolean isPower) {
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            List<CPPAssetCapacityResponseDto> validRecords = new ArrayList<>();
+            List<CPPAssetCapacityResponseDto> failedRecords = new ArrayList<>();
+            List<String> failureReasons = new ArrayList<>();
+            int skippedCount = 0;
+
+            for (CPPAssetCapacityResponseDto dto : records) {
+                if (!isCapacityRecordModifiedForImport(dto, isPower)) {
+                    skippedCount++;
+                    logger.debug("[Import {} Capacity] Skipping unchanged record: {}", isPower ? "Power" : "Steam", dto.getAssetName());
+                    continue;
+                }
+
+                String validationError = validateAssetCapacityData(dto, isPower);
+                if (validationError != null) {
+                    failedRecords.add(dto);
+                    failureReasons.add(validationError);
+                    logger.warn("[Import {} Capacity] Invalid record - {}: {}", isPower ? "Power" : "Steam", dto.getAssetName(), validationError);
+                } else {
+                    validRecords.add(dto);
+                }
+            }
+
+            if (!validRecords.isEmpty()) {
+                try {
+                    AssetCapacityRequestDTO payload = new AssetCapacityRequestDTO();
+                    if (isPower) {
+                        payload.setPowerResponse(validRecords);
+                    } else {
+                        payload.setSteamResponse(validRecords);
+                    }
+                    saveAssetCapacities(plantIds, aopYear, payload);
+                } catch (Exception e) {
+                    logger.error("[Import {} Capacity] Error saving records: {}", isPower ? "Power" : "Steam", e.getMessage(), e);
+                    for (CPPAssetCapacityResponseDto failedDto : validRecords) {
+                        failedRecords.add(failedDto);
+                        failureReasons.add("Save failed: " + e.getMessage());
+                    }
+                }
+            }
+
+            // Store results in response data for accumulation
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("saved", validRecords.size());
+            resultData.put("failed", failedRecords.size());
+            resultData.put("skipped", skippedCount);
+            resultData.put("failedRecords", failedRecords);
+            resultData.put("failureReasons", failureReasons);
+            response.setData(resultData);
+            response.setCode(failedRecords.isEmpty() ? 200 : 400);
+        } catch (Exception e) {
+            logger.error("[Import {} Capacity] Error: {}", isPower ? "Power" : "Steam", e.getMessage(), e);
+            response.setCode(500);
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("saved", 0);
+            resultData.put("failed", records.size());
+            resultData.put("skipped", 0);
+            resultData.put("failedRecords", records);
+            resultData.put("failureReasons", Collections.nCopies(records.size(), "Error: " + e.getMessage()));
+            response.setData(resultData);
+        }
+        return response;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void accumulateImportResults(AOPMessageVM batchResult,
+                                         List<CPPAssetCapacityResponseDto> allFailedRecords,
+                                         List<String> allFailureReasons) {
+        if (batchResult.getData() instanceof Map) {
+            Map<String, Object> data = (Map<String, Object>) batchResult.getData();
+            List<CPPAssetCapacityResponseDto> failed = (List<CPPAssetCapacityResponseDto>) data.get("failedRecords");
+            List<String> reasons = (List<String>) data.get("failureReasons");
+            if (failed != null) allFailedRecords.addAll(failed);
+            if (reasons != null) allFailureReasons.addAll(reasons);
+        }
+    }
+
+    private int extractCount(AOPMessageVM batchResult, String key) {
+        if (batchResult.getData() instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) batchResult.getData();
+            Object val = data.get(key);
+            if (val instanceof Integer) return (Integer) val;
+        }
+        return 0;
     }
 
     private AOPMessageVM importAssetCapacity(List<UUID> plantIds, String aopYear, MultipartFile file, boolean isPower) {

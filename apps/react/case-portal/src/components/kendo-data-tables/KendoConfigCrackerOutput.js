@@ -13,6 +13,7 @@ import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ModeSelection from './ModeSelection'
+import CrackerC2OptimizingVariables from './CrackerC2OptimizingVariables'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -1102,7 +1103,6 @@ const CrackerConfig = () => {
             case 'Total Feed':
             case 'Total Products':
             case 'Miscellaneous Parameters':
-            case 'Optimizing':
             case 'Constant':
             case 'Other Product':
             case 'Yield':
@@ -1179,6 +1179,41 @@ const CrackerConfig = () => {
                       downloadExcelForConfiguration
                     }
                   />
+                </Box>
+              )
+            case 'Optimizing':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
+                  {IS_CRACKER_C2 && <CrackerC2OptimizingVariables />}
                 </Box>
               )
             default:

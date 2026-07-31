@@ -4,12 +4,14 @@ import { json } from 'services/request'
 export const SteadyStateConsumptionApiService = {
   // PE-specific (grade-based) — same endpoints as NormalOperationNormsApiService
   getSteadyStateConsumptionByGrade,
+  validateGradeSteadyStateNorms,
   getGrades,
   getNormTransactions,
   saveSteadyStateConsumptionByGrade,
   calculateSteadyStateConsumptionPE,
   exportSteadyStateConsumptionPE,
   importSteadyStateConsumptionByGrade,
+  saveGradeWiseSteadyStateConsumption,
   // Generic (kept for backward compat)
   getSteadyStateConsumption,
   saveSteadyStateConsumption,
@@ -19,6 +21,36 @@ export const SteadyStateConsumptionApiService = {
 }
 
 // ========================|| Steady State Consumption - PE/NMD Specific (same endpoints as NormalOperationNormsApiService) ||===//
+
+/**
+ * Validate Grade Steady State Norms
+ * Endpoint: GET /task/steady-state-norms/grade/validation?plantId=&year=&gradeId=
+ */
+async function validateGradeSteadyStateNorms(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  gradeId,
+) {
+  const queryParams = new URLSearchParams({
+    plantId: PLANT_ID,
+    year: AOP_YEAR,
+  })
+  if (gradeId) queryParams.append('gradeId', gradeId)
+  const url = `${Config.CaseEngineUrl}/task/steady-state-norms/grade/validation?${queryParams.toString()}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 
 /**
  * Get Steady State Consumption by Grade (for PE/PP vertical)
@@ -198,7 +230,7 @@ async function importSteadyStateConsumptionByGrade(
   AOP_YEAR,
   gradeId,
 ) {
-  let url = `${Config.CaseEngineUrl}/task/steady-state-norms-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  let url = `${Config.CaseEngineUrl}/task/steady-state-norms-import/polyester?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   if (gradeId) url += `&gradeId=${gradeId}`
   const formData = new FormData()
   formData.append('file', file)
@@ -382,6 +414,38 @@ async function calculateSteadyStateConsumption(keycloak, plantId, year) {
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+/**
+ * Save Steady State Consumption by Grade (PE/PP vertical)
+ * Same as NormalOperationNormsApiService.saveNormalOperationNormsData(..., 'pe', ...)
+ * Endpoint: POST /task/steady-state-norms/polyester?year=&plantId=&gradeId=
+ */
+async function saveGradeWiseSteadyStateConsumption(
+  PLANT_ID,
+  payload,
+  keycloak,
+  gradeId,
+  AOP_YEAR,
+) {
+  const queryParams = new URLSearchParams({ year: AOP_YEAR, plantId: PLANT_ID })
+  if (gradeId) queryParams.append('gradeId', gradeId)
+  const url = `${Config.CaseEngineUrl}/task/steady-state-norms/polyester?${queryParams.toString()}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

@@ -18,7 +18,6 @@ import { useLocation } from 'react-router-dom'
 import { Tooltip } from '@mui/material'
 
 const NavItem = ({ item, level, onItemClick, isPopover }) => {
-  
   const isDashboard = item.id === 'dashboard'
 
   const dispatch = useDispatch()
@@ -42,10 +41,14 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
   }
 
   useEffect(() => {
-    if (location.pathname.includes(item.id)) {
+    const isCurrent = item.url
+      ? location.pathname === item.url ||
+        location.pathname.startsWith(item.url + '/')
+      : location.pathname.includes(item.id)
+    if (isCurrent) {
       dispatch(activeItem({ openItem: [item.id] }))
     }
-  }, [location.pathname, item.id, dispatch])
+  }, [location.pathname, item.id, item.url, dispatch])
 
   const itemContent = (
     <ListItemButton

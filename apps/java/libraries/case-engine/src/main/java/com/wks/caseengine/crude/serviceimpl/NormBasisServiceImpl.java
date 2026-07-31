@@ -260,9 +260,13 @@ private String executeNormCalculationProcedure(UUID plantId, String aopYear, UUI
                                              String procedureName) {
 
     try {
+        String sanitizedProcedureName = procedureName;
+        if (!sanitizedProcedureName.startsWith("[") && !sanitizedProcedureName.endsWith("]")) {
+            sanitizedProcedureName = "[" + sanitizedProcedureName + "]";
+        }
 
         StoredProcedureQuery query = entityManager
-                .createStoredProcedureQuery(procedureName);
+                .createStoredProcedureQuery(sanitizedProcedureName);
 
         // Input parameters
         query.registerStoredProcedureParameter("plantId", String.class, ParameterMode.IN);
@@ -310,6 +314,10 @@ public List<NormBasisDTO> getPIMSThroughput(UUID plantId, String aopYear) {
     Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
     String procedureName = vertical.getName() + "_GetPIMS_Throughput";
+
+    if(vertical.getName().equalsIgnoreCase("PCG")) {
+        procedureName = "[RIL.AOP.Refinery].[dbo].[" + procedureName + "]";
+    }
 
     return fetchNormBasisFromProcedure(plantId, aopYear, procedureName);
 }

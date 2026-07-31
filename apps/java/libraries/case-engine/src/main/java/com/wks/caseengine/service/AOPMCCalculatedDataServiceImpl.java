@@ -32,6 +32,8 @@ import javax.sql.DataSource;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -1894,8 +1896,11 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-        
+        Sites site = siteRepository.findById(plant.getSiteFkId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
 				boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+				boolean crackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs = new ArrayList<>();
@@ -1925,6 +1930,10 @@ boolean isValidTable = false;
 	isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity")
 	|| tableId.equalsIgnoreCase("DesignCapacity");
    }
+
+   else if(crackerC2) {
+	isValidTable = tableId.equalsIgnoreCase("DesignCapacity");
+   }
         else {
 			isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity");
 		 }
@@ -1933,12 +1942,13 @@ if (!isValidTable) {
     continue;
 }
 
-				AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
 
-				try {
+			AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
 
-				dto.setProductName(getStringCellValue(row.getCell(0), dto));
-				dto.setApril(getNumericCellValue(row.getCell(1), dto));
+			try {
+
+			dto.setProductName(getStringCellValue(row.getCell(0), dto));
+			dto.setApril(getNumericCellValue(row.getCell(1), dto));
 				dto.setMay(getNumericCellValue(row.getCell(2), dto));
 				dto.setJune(getNumericCellValue(row.getCell(3), dto));
 				dto.setJuly(getNumericCellValue(row.getCell(4), dto));
@@ -1959,6 +1969,17 @@ if (!isValidTable) {
 				e.printStackTrace();
 				dto.setErrDescription(e.getMessage());
 				dto.setSaveStatus("Failed");
+			}
+
+			// skip the import if isEditable is false
+			if(meg) {
+				Optional<NormParameters> normParameter = normParametersRepository.findById(UUID.fromString(dto.getMaterialFKId()));
+				if(!normParameter.isPresent()) throw new IllegalArgumentException("Invalid material ID");
+					boolean isEditable = normParameter.get().getIsEditable();
+					if(!isEditable) {
+						continue;
+					}
+				
 			}
 			map.putIfAbsent(dto.getTableId(), new ArrayList<>());
 
@@ -2295,6 +2316,7 @@ if (!isValidTable) {
 
 			boolean pe = vertical.getName().equalsIgnoreCase("PE");
 			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2369,7 +2391,7 @@ if (!isValidTable) {
 	                }
 	            }
 				// seperate export method to handle grid specific locking
-	            if(pe || meg) {
+	            if(pe || meg || crackerC2) {
 					List<String> editableGrids = new ArrayList<>();
 					if(pe) {
 						editableGrids.add("proposedoperatingcapacity"); 
@@ -2378,6 +2400,11 @@ if (!isValidTable) {
 					if(meg) {
 						editableGrids.addAll(Arrays.asList("DesignCapacity", "ProposedOperatingCapacity")); 
 					}
+
+					if(crackerC2) {
+						editableGrids.addAll(Arrays.asList("DesignCapacity")); 
+					}
+					// seperate exoport method to disable grid based on editableGrids
 	            	return excelUtilityService.generateFlexibleExcelPP(structure, data, editableGrids);
 
 	            }
@@ -2398,6 +2425,13 @@ if (!isValidTable) {
 	    try {
 	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 	                .orElseThrow(() -> new RuntimeException("Plant not found"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+					boolean pvcDmd = vertical.getName().equalsIgnoreCase("Pvc") && site.getName().equalsIgnoreCase("dmd");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2510,7 +2544,11 @@ if (!isValidTable) {
 
 	            	combinedStructure.put(uniqueSheetName, clonedSheetData);
 	            }
-
+            if(pvcDmd) {
+				String verticalSite = vertical.getName()  + site.getName();
+				// seperate method to disable grids
+                return excelUtilityService.generateFlexibleExcelGridDisable(combinedStructure, data, verticalSite);
+            }
 	            return excelUtilityService.generateFlexibleExcel(combinedStructure, data);
 	        }
 	    } catch (Exception e) {

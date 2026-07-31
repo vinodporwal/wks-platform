@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
-import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/refineryUtility/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const Configuration = () => {
+const Constants = ({ startDate, endDate }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -20,23 +20,26 @@ const Configuration = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
+  const EXCEL_NAME = generateExcelName(
+    dataGridStore,
+    'Production_Norms_Basis_Constants',
+  )
   const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
-  const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const columns = [
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 250,
-      minWidth: 200,
+      widthT: 300,
+      minWidth: 250,
       type: 'text',
       editable: false,
       hidden: false,
@@ -45,136 +48,15 @@ const Configuration = () => {
       field: 'UOM',
       title: 'UOM',
       widthT: 120,
-      minWidth: 120,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
     {
-      field: 'apr',
-      title: headerMap[4],
+      field: 'value',
+      title: 'Value',
       editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      widthT: 120,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      widthT: 120,
+      widthT: 150,
       minWidth: 120,
       align: 'left',
       headerAlign: 'left',
@@ -183,45 +65,36 @@ const Configuration = () => {
     },
     {
       field: 'remarks',
-      title: 'Remarks',
-      widthT: 250,
+      title: 'Remark',
+      widthT: 350,
       type: 'textarea',
       editable: true,
-      minWidth: 250,
+      minWidth: 300,
     },
   ]
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
-      fetchConfigurationData()
+      fetchConstantsData()
     }
   }, [PLANT_ID, AOP_YEAR])
 
-  const fetchConfigurationData = async () => {
+  const fetchConstantsData = async () => {
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.getConfigurationData(
+      const res = await ProductionNormsApiService.getConstantsData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
-      if (response?.code !== 200) {
+      if (res?.data?.length === 0) {
         setRows([])
-        setLoading(false)
         return
       }
 
-      const res = response?.data || []
-
-      if (res.length === 0) {
-        setRows([])
-        setLoading(false)
-        return
-      }
-
-      console.log('Configuration data:', res)
-      const formattedData = res.map((item, index) => ({
+      console.log('Constants data:', res)
+      const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
@@ -229,7 +102,7 @@ const Configuration = () => {
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching configuration data:', error)
+      console.error('Error fetching constants data:', error)
       setRows([])
     } finally {
       setLoading(false)
@@ -244,15 +117,45 @@ const Configuration = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
+    ExcelName: `Production_Norms_Constants_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Configuration',
+    titleName: 'Constants',
+  }
+
+  const formatDateForAPI = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const saveChanges = async () => {
     setLoading(true)
+
+    // Validate required parameters
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    if (!SITE_ID) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Site ID is required.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
 
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
@@ -276,25 +179,12 @@ const Configuration = () => {
       return
     }
 
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
+    const fieldsToCheck = ['value']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'particulars',
+      'productName',
     )
 
     if (validationError) {
@@ -309,13 +199,19 @@ const Configuration = () => {
 
     const payload = modifiedData
     try {
-      console.log('Saving configuration data:', payload)
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
 
-      const response = await ProductionNormsApiService.saveConfigurationData(
+      console.log('Saving constants data:', payload)
+
+      const response = await ProductionNormsApiService.saveConstantsData(
         keycloak,
         AOP_YEAR,
-        payload,
         PLANT_ID,
+        SITE_ID,
+        periodFrom,
+        periodTo,
+        payload,
       )
 
       setModifiedCells({})
@@ -324,9 +220,8 @@ const Configuration = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      await fetchConfigurationData()
     } catch (error) {
-      console.error('Error saving configuration data:', error)
+      console.error('Error saving constants data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -340,13 +235,28 @@ const Configuration = () => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      return
+    }
+
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.importConfigurationExcel(
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
+      const response = await ProductionNormsApiService.importConstantsExcel(
         file,
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        periodFrom,
+        periodTo,
       )
 
       if (response?.code === 200) {
@@ -355,7 +265,7 @@ const Configuration = () => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchConfigurationData()
+        await fetchConstantsData()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -370,7 +280,7 @@ const Configuration = () => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Configuration_Errors_${new Date().getTime()}.xlsx`
+          link.download = `Constants_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -383,7 +293,7 @@ const Configuration = () => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchConfigurationData()
+          await fetchConstantsData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -419,17 +329,18 @@ const Configuration = () => {
     })
 
     try {
-      await ProductionNormsApiService.exportConfigurationExcel(
+      await ProductionNormsApiService.exportConstantsExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Configuration data:', error)
+      console.error('Error exporting Constants data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -468,8 +379,7 @@ const Configuration = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['TypeDisplayName']}
-        // customHeight={60}
+        groupBy={['type']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
@@ -481,4 +391,4 @@ const Configuration = () => {
   )
 }
 
-export default Configuration
+export default Constants

@@ -579,6 +579,22 @@
 }
 
 /* ===============================
+   PARENT / GROUP COLUMN HEADER – CENTERED
+   =============================== */
+
+.k-grid th.center-group-header,
+.k-grid .k-header.center-group-header {
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+.k-grid th.center-group-header .k-cell-inner,
+.k-grid th.center-group-header .k-link {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* ===============================
    INPUT EDITOR (Base)
    =============================== */
 
@@ -626,6 +642,15 @@
   padding: 2px 6px !important;
   box-sizing: border-box !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dropdown-editor-disabled,
+.dropdown-editor.k-disabled {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border-color: #cbd5e1 !important;
+  opacity: 0.75 !important;
+  cursor: not-allowed !important;
 }
 
 .dropdown-editor:hover {
@@ -891,4 +916,35 @@
 .kendo-data-grid .k-grid-header .k-header.k-grid-header-sticky:last-of-type,
 .kendo-data-grid .k-grid-content td.k-grid-content-sticky:last-of-type {
   border-right: 2px solid #94a3b8 !important;
+}
+
+/* Force all alternate row backgrounds in all Kendo grids to white while keeping disabled/non-editable columns gray */
+.k-grid
+  tr.k-table-alt-row
+  td:not(.non-editable-cell):not(.disabled-cell):not(.k-right-disabled):not(
+    .k-number-right-disabled
+  ),
+.k-grid
+  tr.k-alt
+  td:not(.non-editable-cell):not(.disabled-cell):not(.k-right-disabled):not(
+    .k-number-right-disabled
+  ),
+.k-grid
+  .k-table-alt-row
+  td:not(.non-editable-cell):not(.disabled-cell):not(.k-right-disabled):not(
+    .k-number-right-disabled
+  ),
+.k-grid
+  .k-alt-row
+  td:not(.non-editable-cell):not(.disabled-cell):not(.k-right-disabled):not(
+    .k-number-right-disabled
+  ) {
+  background-color: #ffffff !important;
+}
+
+.k-grid tr.k-table-alt-row:not(.custom-disabled-row),
+.k-grid tr.k-alt:not(.custom-disabled-row),
+.k-grid .k-table-alt-row:not(.custom-disabled-row),
+.k-grid .k-alt-row:not(.custom-disabled-row) {
+  background-color: #ffffff !important;
 }
