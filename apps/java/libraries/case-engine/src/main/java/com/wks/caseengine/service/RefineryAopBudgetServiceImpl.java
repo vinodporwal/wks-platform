@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -960,6 +961,26 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         } else {
                             dto.setSaveStatus("Failed");
                             dto.setErrorMessage(dateError != null ? dateError : "Date of Commencement is required");
+                        }
+                    }
+
+                    // Cross-field validation: SD Total Duration Days must not exceed the
+                    // remaining days in the month of the Date of Commencement.
+                    // Remaining Days = Total Days in Month − Day of Month
+                    if (dto.getDateOfCommencement() != null
+                            && dto.getSdTotalDurationDays() != null
+                            && !"Failed".equals(dto.getSaveStatus())) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(dto.getDateOfCommencement());
+                        int dayOfMonth   = cal.get(Calendar.DAY_OF_MONTH);
+                        int daysInMonth  = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+                        int remainingDays = daysInMonth - dayOfMonth;
+                        if (dto.getSdTotalDurationDays() > remainingDays) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage(
+                                "SD Total Duration Days (" + dto.getSdTotalDurationDays()
+                                + ") exceeds the remaining days in the commencement month ("
+                                + remainingDays + " days remaining)");
                         }
                     }
 
