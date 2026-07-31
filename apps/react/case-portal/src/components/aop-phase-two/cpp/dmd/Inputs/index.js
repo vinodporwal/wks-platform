@@ -16,6 +16,7 @@ import Prices from '../../Inputs/Prices/index'
 import FuelPriority from './FuelPriority/index'
 import ImportPower from '../../dmd/Inputs/ImportPowerMain/index'
 import InputNorms from './InputNorms/index'
+import SpinningMargin from '../../common/SpinningMargin/index'
 
 const InputsDMD = () => {
   const keycloak = useSession()
@@ -42,134 +43,7 @@ const InputsDMD = () => {
 
     switch (siteObject?.name?.toLowerCase()) {
       case 'dmd':
-        tabs = [
-          {
-            id: 'aop-design-basis',
-            name: 'aopDesignBasis',
-            displayName: 'AOP Design Basis',
-            displaySequence: 0,
-          },
-          {
-            id: 'purchase-power',
-            name: 'purchasePowerInput',
-            displayName: 'Purchase Power Input',
-            displaySequence: 1,
-          },
-          {
-            id: 'shutdown-operational',
-            name: 'shutdownOperationalHrs',
-            displayName: 'Shutdown and Operational Hrs.',
-            displaySequence: 2,
-          },
-          {
-            id: 'asset-priority',
-            name: 'assetPriority',
-            displayName: 'Asset Priority',
-            displaySequence: 3,
-          },
-          {
-            id: 'asset-capacity',
-            name: 'assetCapacity',
-            displayName: 'Asset Capacity',
-            displaySequence: 4,
-          },
-          {
-            id: 'heat-rate',
-            name: 'heatRate',
-            displayName: 'Heat Rate',
-            displaySequence: 5,
-          },
-          {
-            id: 'fixed-norms',
-            name: 'Norms',
-            displayName: 'Norms',
-            displaySequence: 6,
-          },
-          {
-            id: 'fuel-availability',
-            name: 'fuelAvailability',
-            displayName: 'Fuel Availability',
-            displaySequence: 7,
-          },
-          {
-            id: 'fuel-priority',
-            name: 'fuelPriority',
-            displayName: 'Fuel Priority',
-            displaySequence: 8,
-          },
-          {
-            id: 'prices',
-            name: 'prices',
-            displayName: 'Prices',
-            displaySequence: 9,
-          },
-        ]
-        break
-
       case 'hmd':
-        tabs = [
-          {
-            id: 'aop-design-basis',
-            name: 'aopDesignBasis',
-            displayName: 'AOP Design Basis',
-            displaySequence: 0,
-          },
-          {
-            id: 'purchase-power',
-            name: 'purchasePowerInput',
-            displayName: 'Purchase Power Input',
-            displaySequence: 1,
-          },
-          {
-            id: 'shutdown-operational',
-            name: 'shutdownOperationalHrs',
-            displayName: 'Shutdown and Operational Hrs.',
-            displaySequence: 2,
-          },
-          {
-            id: 'asset-priority',
-            name: 'assetPriority',
-            displayName: 'Asset Priority',
-            displaySequence: 3,
-          },
-          {
-            id: 'asset-capacity',
-            name: 'assetCapacity',
-            displayName: 'Asset Capacity',
-            displaySequence: 4,
-          },
-          {
-            id: 'heat-rate',
-            name: 'heatRate',
-            displayName: 'Heat Rate',
-            displaySequence: 5,
-          },
-          {
-            id: 'fixed-norms',
-            name: 'Norms',
-            displayName: 'Norms',
-            displaySequence: 6,
-          },
-          {
-            id: 'fuel-availability',
-            name: 'fuelAvailability',
-            displayName: 'Fuel Availability',
-            displaySequence: 7,
-          },
-          {
-            id: 'fuel-priority',
-            name: 'fuelPriority',
-            displayName: 'Fuel Priority',
-            displaySequence: 8,
-          },
-          {
-            id: 'prices',
-            name: 'prices',
-            displayName: 'Prices',
-            displaySequence: 9,
-          },
-        ]
-        break
       case 'vmd':
         tabs = [
           {
@@ -203,38 +77,43 @@ const InputsDMD = () => {
             displaySequence: 4,
           },
           {
+            id: 'spinning-margin',
+            name: 'spinningMargin',
+            displayName: 'Spinning Margin',
+            displaySequence: 5,
+          },
+          {
             id: 'heat-rate',
             name: 'heatRate',
             displayName: 'Heat Rate',
-            displaySequence: 5,
+            displaySequence: 6,
+          },
+          {
+            id: 'sr-mapping',
+            name: 'srMapping',
+            displayName: 'SR Mapping',
+            displaySequence: 7,
           },
           {
             id: 'fixed-norms',
             name: 'Norms',
             displayName: 'Norms',
-            displaySequence: 6,
+            displaySequence: 8,
           },
           {
             id: 'fuel-availability',
             name: 'fuelAvailability',
             displayName: 'Fuel Availability',
-            displaySequence: 7,
-          },
-          {
-            id: 'fuel-priority',
-            name: 'fuelPriority',
-            displayName: 'Fuel Priority',
-            displaySequence: 8,
-          },
-          {
-            id: 'prices',
-            name: 'prices',
-            displayName: 'Prices',
             displaySequence: 9,
           },
+          // {
+          //   id: 'fuel-priority',
+          //   name: 'fuelPriority',
+          //   displayName: 'Fuel Priority',
+          //   displaySequence: 10,
+          // },
         ]
         break
-
       default:
         tabs = []
         break
@@ -310,6 +189,8 @@ const InputsDMD = () => {
         return <ShutdownAndOperational />
       case 'export-availability':
         return <ExportAvailability />
+      case 'spinning-margin':
+        return <SpinningMargin />
       case 'heat-rate':
         return <HeatRate />
       case 'fixed-norms':
