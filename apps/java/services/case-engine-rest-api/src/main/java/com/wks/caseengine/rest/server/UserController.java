@@ -70,6 +70,18 @@ public class UserController {
 	}
 
 	/**
+	 * Delete a realm role.
+	 * DELETE /task/users/roles/{roleName}
+	 */
+	@DeleteMapping("/roles/{roleName}")
+	public ResponseEntity<Map<String, Object>> deleteRole(@PathVariable String roleName) throws Exception {
+		Map<String, Object> result = userService.deleteRealmRole(roleName);
+		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 200;
+		HttpStatus httpStatus = status == 404 ? HttpStatus.NOT_FOUND : HttpStatus.OK;
+		return ResponseEntity.status(httpStatus).body(result);
+	}
+
+	/**
 	 * List available realm roles.
 	 * GET /task/users/roles
 	 * Optional: ?q=searchTerm&page=1&size=20
