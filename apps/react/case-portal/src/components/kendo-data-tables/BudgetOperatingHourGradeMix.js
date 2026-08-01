@@ -64,6 +64,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     message: '',
     severity: 'info',
   })
+  const IS_PVC_DMD = VERTICAL_NAME_NO_CASE === 'PVC' && SITE_NAME_NO_CASE === 'DMD'
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -124,6 +125,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       editable: false,
       widthT: 300,
       minWidth: 150,
+      locked: true,
     },
     {
       field: 'apr',
@@ -718,38 +720,39 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
       )}
-      <KendoDataTables
-        modifiedCells={modifiedCellsSubGrade}
-        setModifiedCells={setModifiedCellsSubGrade}
-        setRows={setRowsAllocation}
-        columns={columns}
-        rows={rowsAllocation}
-        fetchData={fetchDataSubGradeAllocation}
-        saveChanges={saveChanges}
-        paginationOptions={[100, 200, 300]}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        apiRef={apiRef}
-        deleteId={deleteId}
-        open1={open1}
-        setDeleteId={setDeleteId}
-        setOpen1={setOpen1}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        handleCalculate={handleCalculateGradeAllocation}
-        currentRowId={currentRowId}
-        permissions={adjustedHoursAllocationPermissions}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
-        handleExcelUpload={handleExcelUpload}
-        disableRedHighlight={true}
-        screenType='shutdown'
-      />
-
+      {IS_PVC_DMD && (
+        <KendoDataTables
+          modifiedCells={modifiedCellsSubGrade}
+          setModifiedCells={setModifiedCellsSubGrade}
+          setRows={setRowsAllocation}
+          columns={columns}
+          rows={rowsAllocation}
+          fetchData={fetchDataSubGradeAllocation}
+          saveChanges={saveChanges}
+          paginationOptions={[100, 200, 300]}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          deleteId={deleteId}
+          open1={open1}
+          setDeleteId={setDeleteId}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          handleCalculate={handleCalculateGradeAllocation}
+          currentRowId={currentRowId}
+          permissions={adjustedHoursAllocationPermissions}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          handleExcelUpload={handleExcelUpload}
+          disableRedHighlight={true}
+          screenType='shutdown'
+        />
+      )}
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
