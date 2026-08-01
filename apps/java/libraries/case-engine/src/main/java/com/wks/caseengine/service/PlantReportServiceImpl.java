@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wks.caseengine.dto.ConversionVariableCostDTO;
 import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
 import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
@@ -517,6 +518,73 @@ public class PlantReportServiceImpl implements PlantReportService {
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new RuntimeException("Failed to save plant report data", ex);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM getConversionVariableCostData(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_GetConversionVariableConstData @siteId = ?, @aopyear = ?";
+
+            List<ConversionVariableCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                ConversionVariableCostDTO.builder()
+                    .id(Optional.ofNullable(rs.getString("Id")).map(UUID::fromString).orElse(null))
+                    .plantName(rs.getString("PlantName"))
+                    .costType(rs.getString("CostType"))
+                    .previousAop(rs.getDouble("PreviousAop"))
+                    .previousActual(rs.getDouble("PreviousActual"))
+                    .currentAop(rs.getDouble("CurrentAop"))
+                    .remark(rs.getString("Remark"))
+                    .siteFkId(Optional.ofNullable(rs.getString("Site_FK_Id")).map(UUID::fromString).orElse(null))
+                    .aopYear(rs.getString("AopYear"))
+                    .modifiedBy(rs.getString("ModifiedBy"))
+                    .modifiedOn(rs.getDate("ModifiedOn"))
+                    .isEditable(rs.getBoolean("IsEditable"))
+                    .build(), siteId, aopYear);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM saveConversionVariableCostData(List<ConversionVariableCostDTO> conversionVariableCostDTOs) {
+        try {
+            String modifiedBy = Utility.getUserName();
+            Timestamp modifiedOn = new Timestamp(new Date().getTime());
+
+            String updateSql = "UPDATE ConversionVariableCost " +
+                    "SET Remark = ?, ModifiedBy = ?, ModifiedOn = ? " +
+                    "WHERE Id = ?";
+
+            for (ConversionVariableCostDTO dto : conversionVariableCostDTOs) {
+                jdbcTemplate.update(updateSql,
+                    dto.getRemark(),
+                    modifiedBy,
+                    modifiedOn,
+                    dto.getId().toString());
+            }
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(null);
+            response.setMessage("Data saved successfully");
+            return response;
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to save conversion variable cost data", ex);
         }
     }
 
