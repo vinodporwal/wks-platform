@@ -10,7 +10,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const HistoricalMonths = ({ startDate, endDate }) => {
+const HistoricalMonths = ({ refreshData }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -247,11 +247,6 @@ const HistoricalMonths = ({ startDate, endDate }) => {
 
   const handleCalculate = async () => {
     setLoading(true)
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Calculating...',
-      severity: 'info',
-    })
 
     try {
       const response =
@@ -261,40 +256,21 @@ const HistoricalMonths = ({ startDate, endDate }) => {
           AOP_YEAR,
         )
 
-      if (response?.code === 422) {
-        setTimeout(() => {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: response.message || 'Validation error occurred.',
-            severity: 'error',
-            autoHide: false,
-          })
-        }, 500)
-      } else if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Calculation completed successfully!',
-          severity: 'success',
-        })
+      if (response?.code === 200) {
         await fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Calculation failed. Please try again.',
-          severity: 'error',
-        })
       }
     } catch (error) {
       console.error('Error calculating steady state consumption:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Calculation failed. Please try again.',
-        severity: 'error',
-      })
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (refreshData) {
+      handleCalculate()
+    }
+  }, [refreshData])
 
   const permissions = {
     showAction: true,
@@ -310,7 +286,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     titleName: 'Pigging - NP/P-4/P-5/NR',
     showDropdown: false,
     remarksEditable: true,
-    showCalculate: true,
+    showCalculate: false,
   }
 
   return (
