@@ -175,6 +175,38 @@ export const roleAccessApiService = {
       return Promise.reject(e)
     }
   },
+
+  /**
+   * 7. Get Users by Roles API (Union query with pagination)
+   * POST /task/users/by-roles
+   * Body: { roles: ["cts_head", "plant_manager"], page: 1, size: 20 }
+   */
+  getUsersByRoles: async (keycloak, { roles = [], page = 1, size = 20 } = {}) => {
+    const url = `${Config.CaseEngineUrl}/task/users/by-roles`
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: keycloak?.token ? `Bearer ${keycloak.token}` : '',
+    }
+
+    const payload = {
+      roles: Array.isArray(roles) ? roles : [roles],
+      page,
+      size,
+    }
+
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      })
+      return await handleResponse(keycloak, resp)
+    } catch (e) {
+      console.error('API Error in getUsersByRoles:', e)
+      return Promise.reject(e)
+    }
+  },
 }
 
 export default roleAccessApiService

@@ -15,6 +15,7 @@ import CreateRolePanel from './utilities/CreateRolePanel'
 import SystemRolesCatalogPanel from './utilities/SystemRolesCatalogPanel'
 import AssignRolesPanel from './utilities/AssignRolesPanel'
 import UserRoleInspectorPanel from './utilities/UserRoleInspectorPanel'
+import UsersByRolesPanel from './utilities/UsersByRolesPanel'
 import DeleteRoleDialog from './utilities/DeleteRoleDialog'
 import UnassignRoleDialog from './utilities/UnassignRoleDialog'
 
@@ -42,6 +43,14 @@ const RoleAccessManagement = ({ keycloak }) => {
   const [lookupUserLoading, setLookupUserLoading] = useState(false)
   const [retrievedUserRoles, setRetrievedUserRoles] = useState([])
   const [retrievingRoles, setRetrievingRoles] = useState(false)
+
+  // 5. Users by Roles Directory State
+  const [usersByRolesSelected, setUsersByRolesSelected] = useState([])
+  const [usersByRolesData, setUsersByRolesData] = useState([])
+  const [usersByRolesLoading, setUsersByRolesLoading] = useState(false)
+  const [usersByRolesPage, setUsersByRolesPage] = useState(1)
+  const [usersByRolesSize, setUsersByRolesSize] = useState(20)
+  const [usersByRolesTotal, setUsersByRolesTotal] = useState(0)
 
   // 5. Delete Role Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -317,6 +326,52 @@ const RoleAccessManagement = ({ keycloak }) => {
     }
   }
 
+  // Fetch Users by Roles Handler (POST /task/users/by-roles)
+  const handleFetchUsersByRoles = useCallback(
+    async (rolesToFetch = usersByRolesSelected, page = usersByRolesPage, size = usersByRolesSize) => {
+      const roleNames = (Array.isArray(rolesToFetch) ? rolesToFetch : [rolesToFetch])
+        .map((r) => (typeof r === 'string' ? r : r?.name || r?.code || r?.value || String(r)))
+        .filter(Boolean)
+
+      if (roleNames.length === 0) {
+        showNotification('Please select at least one role to search users', 'warning')
+        return
+      }
+
+      setUsersByRolesLoading(true)
+      try {
+        const res = await roleAccessApiService.getUsersByRoles(keycloak, {
+          roles: roleNames,
+          page,
+          size,
+        })
+        const fetchedList = res?.data || []
+        setUsersByRolesData(fetchedList)
+        setUsersByRolesTotal(res?.total || fetchedList.length)
+        setUsersByRolesPage(res?.page || page)
+        setUsersByRolesSize(res?.size || size)
+        showNotification(
+          `Found ${res?.total || fetchedList.length} user(s) matching selected role(s)`,
+          'info',
+        )
+      } catch (err) {
+        console.error('Error fetching users by roles:', err)
+        showNotification(err.message || 'Failed to fetch users by roles', 'error')
+        setUsersByRolesData([])
+        setUsersByRolesTotal(0)
+      } finally {
+        setUsersByRolesLoading(false)
+      }
+    },
+    [keycloak, usersByRolesSelected, usersByRolesPage, usersByRolesSize, showNotification],
+  )
+
+  const handleClearUsersByRoles = useCallback(() => {
+    setUsersByRolesData([])
+    setUsersByRolesTotal(0)
+    setUsersByRolesPage(1)
+  }, [])
+
   // Filtered Roles list based on search query
   const filteredRolesList = filterRoles(rolesList, roleSearchQuery)
 
@@ -386,7 +441,23 @@ const RoleAccessManagement = ({ keycloak }) => {
         handleOpenUnassignDialog={handleOpenUnassignDialog}
       />
 
-      {/* 5. MUI DELETE ROLE DIALOG */}
+      {/* 5. USERS BY ROLES DIRECTORY CELL PANEL */}
+      <UsersByRolesPanel
+        rolesFormattedForSelect={rolesFormattedForSelect}
+        selectedRoles={usersByRolesSelected}
+        setSelectedRoles={setUsersByRolesSelected}
+        onFetchUsers={(roles, page, size) => handleFetchUsersByRoles(roles, page, size)}
+        onClearUsers={handleClearUsersByRoles}
+        usersData={usersByRolesData}
+        loading={usersByRolesLoading}
+        totalUsers={usersByRolesTotal}
+        page={usersByRolesPage}
+        pageSize={usersByRolesSize}
+        onPageChange={(newPage) => handleFetchUsersByRoles(usersByRolesSelected, newPage, usersByRolesSize)}
+        onPageSizeChange={(newSize) => handleFetchUsersByRoles(usersByRolesSelected, 1, newSize)}
+      />
+
+      {/* 6. MUI DELETE ROLE DIALOG */}
       <DeleteRoleDialog
         deleteDialogOpen={deleteDialogOpen}
         setDeleteDialogOpen={setDeleteDialogOpen}
@@ -395,7 +466,7 @@ const RoleAccessManagement = ({ keycloak }) => {
         handleDeleteRole={handleDeleteRole}
       />
 
-      {/* 6. UNASSIGN ROLE CONFIRMATION DIALOG */}
+      {/* 7. UNASSIGN ROLE CONFIRMATION DIALOG */}
       <UnassignRoleDialog
         unassignDialogOpen={unassignDialogOpen}
         setUnassignDialogOpen={setUnassignDialogOpen}
@@ -405,7 +476,7 @@ const RoleAccessManagement = ({ keycloak }) => {
         handleConfirmUnassignRole={handleConfirmUnassignRole}
       />
 
-      {/* 7. MUI SNACKBAR NOTIFICATIONS */}
+      {/* 8. MUI SNACKBAR NOTIFICATIONS */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4500}
