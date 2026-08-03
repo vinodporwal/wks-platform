@@ -52,11 +52,11 @@ DECLARE @Steps TABLE (
     Name NVARCHAR(50), DisplayName NVARCHAR(255), Seq INT, RemarksDisabled BIT);
 INSERT INTO @Steps (Name, DisplayName, Seq, RemarksDisabled) VALUES
     (N'prepare', N'Prepare (CTS Lead / Production Manager)', 1, 1),
-    (N'gate1',   N'Gate 1 - Plant Manager',                  2, 0),
-    (N'gate2',   N'Gate 2 - Functional Heads',               3, 0),
-    (N'gate3',   N'Gate 3 - Site Head',                      4, 0),
-    (N'gate4',   N'Gate 4 - GMS Business Head',              5, 0),
-    (N'gate5',   N'Gate 5 - GMS Head',                       6, 0);
+    (N'gate1',   N'Plant Manager',                           2, 0),
+    (N'gate2',   N'Functional Heads',                        3, 0),
+    (N'gate3',   N'Site Head',                               4, 0),
+    (N'gate4',   N'GMS Business Head',                       5, 0),
+    (N'gate5',   N'GMS Head',                                6, 0);
 
 MERGE dbo.WorkflowStepsMaster AS tgt
 USING (
