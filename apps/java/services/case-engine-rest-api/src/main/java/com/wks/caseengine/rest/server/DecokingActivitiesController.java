@@ -116,5 +116,12 @@ public class DecokingActivitiesController {
     	}
 		return null;
 	}
+
+	@GetMapping(value = "/decoking-planning-notification")
+	public AOPMessageVM getDecokingPlanningNotification(
+			@RequestParam String plantId,
+			@RequestParam String aopYear) {
+		return decokingActivitiesService.getDecokingPlanningNotification(plantId, aopYear);
+	}
 }
 

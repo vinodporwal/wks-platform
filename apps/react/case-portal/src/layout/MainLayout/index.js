@@ -30,7 +30,13 @@ const MainLayout = ({ keycloak, authenticated }) => {
   const hideBreadcrumbs =
     location?.pathname === '/user-management' ||
     location?.pathname === '/user-form' ||
-    location?.pathname === '/dashboard'
+    location?.pathname === '/dashboard' ||
+    [
+      '/refinery-aop-budget/plant-capacities',
+      '/refinery-aop-budget/shutdown',
+      '/refinery-aop-budget/slowdown',
+      '/refinery-aop-budget/other-document-upload',
+    ].includes(location?.pathname)
 
   if (!keycloak || !authenticated) return null
 
@@ -81,10 +87,10 @@ const MainLayout = ({ keycloak, authenticated }) => {
         {stepperNavRoutes.some((route) =>
           location?.pathname.startsWith(route),
         ) && (
-          <Box>
-            <StepperNav />
-          </Box>
-        )}
+            <Box>
+              <StepperNav />
+            </Box>
+          )}
 
         {/* HIDE AS OF NOW - 16 APRIL 2026 */}
         {/* {location.pathname.startsWith('/production-norms-plan') && (

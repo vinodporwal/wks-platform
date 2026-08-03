@@ -3101,6 +3101,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
+		//boolean gasifier=  verticalName.equalsIgnoreCase("PCG") && (site.getName().equalsIgnoreCase("DTA") || site.getName().equalsIgnoreCase("SEZ"))  && (plant.getName().equalsIgnoreCase("GASIFIER") || plant.getName().equalsIgnoreCase("SRU"));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",

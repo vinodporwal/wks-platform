@@ -32,6 +32,7 @@ import { ExcelExport } from '@progress/kendo-react-excel-export'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import RemarkDialog from '../AdvanceKendoTable/components/RemarkDialog'
+import FilterChips from '../AdvanceKendoTable/components/FilterChips'
 import { NumericEditorWithMinMax } from '../utilities/NumericEditorWithMinMax'
 import { NumberCellEditor } from '../utilities/NumberCellEditor'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
@@ -41,6 +42,7 @@ import valueFormatterByUOM, {
 } from '../commonUtilityFunctions'
 import { NoSpinnerNumericEditor } from '../utilities/numbericColumns'
 import { handleTabKeyNavigation } from '../AdvanceKendoTable/utility'
+import { useFilterChips } from '../hooks/useFilterChips'
 import {
   NumberWithCheckboxCellEditor,
   NumberWithCheckboxDisplayCell,
@@ -154,6 +156,7 @@ const NestedKendoTable = ({
   customAddRow = null,
   isReleaseDisabled = true,
   handleRelease = () => {},
+  showFilters = false,
 }) => {
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -175,10 +178,11 @@ const NestedKendoTable = ({
   const keycloak = useSession()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { isReleased, oldYear } = dataGridStore
+  const { isReleased, oldYear, verticalObject } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
 
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field }))
@@ -963,6 +967,13 @@ const NestedKendoTable = ({
     )
   }
 
+  const {
+    activeFilters,
+    getColumnTitle,
+    handleRemoveFilter,
+    handleClearAllFilters,
+  } = useFilterChips(filter, setFilter, columns)
+
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
 
   const isColumnActive = (field, filter, sort) => {
@@ -1051,7 +1062,14 @@ const NestedKendoTable = ({
                       />
                     ),
                   }
-                : { text: NoSpinnerNumericEditor },
+                : {
+                    text: (cellProps) => (
+                      <NoSpinnerNumericEditor
+                        {...cellProps}
+                        allowNegative={col.allowNegative || false}
+                      />
+                    ),
+                  },
               data: (props) => (
                 <NestedHighlightCell
                   {...props}
@@ -1549,6 +1567,15 @@ const NestedKendoTable = ({
             </Box>
           </Box>
         </Box>
+      )}
+
+      {(showFilters || IS_CPP) && (
+        <FilterChips
+          activeFilters={activeFilters}
+          getColumnTitle={getColumnTitle}
+          handleRemoveFilter={handleRemoveFilter}
+          handleClearAllFilters={handleClearAllFilters}
+        />
       )}
 
       <Collapse in={gridExpanded}>

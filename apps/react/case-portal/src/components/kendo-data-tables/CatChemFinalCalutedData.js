@@ -28,7 +28,7 @@ const CatChemFinalCalutedData = ({ permissions, refreshTrigger }) => {
      const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
      const AOP_YEAR = year?.selectedYear
      const SCREEN_NAME = screenTitle?.title
-     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Catchem Final Calculated Data`
+     const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Calculated Norms`
      const IS_OLD_YEAR = oldYear?.oldYear
      const IS_RELEASED = isReleased
      const isOldYear = false
@@ -181,7 +181,7 @@ const CatChemFinalCalutedData = ({ permissions, refreshTrigger }) => {
                ExcelName: `${EXCEL_EXPORT_TITLE}`,
                showNoteWhileDeleting: false,
                showTitleNameBusiness: true,
-               titleName: 'Catchem Final Calculated Data',
+               titleName: 'Calculated Norms',
                uploadExcelBtn: false,
                showCalculate: true,
                showCalculateVisibility: Object.keys(calculationObject || {}).length > 0,

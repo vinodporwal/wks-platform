@@ -96,6 +96,11 @@ public class AOPConsumptionNormController {
 	public AOPMessageVM getConsumptionAOPGrades(@RequestParam String year,@RequestParam String plantId){
 		return	aopConsumptionNormService.getConsumptionAOPGrades(year, plantId);
 	}
+
+	@GetMapping(value="/proposed-aop/grades")
+	public AOPMessageVM getProposedAOPGrades(@RequestParam String year,@RequestParam String plantId){
+		return	aopConsumptionNormService.getProposedAOPGrades(year, plantId);
+	}
 	
 
 }

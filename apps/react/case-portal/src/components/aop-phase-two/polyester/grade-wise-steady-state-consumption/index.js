@@ -98,6 +98,13 @@ const GradeWiseSteadyStateConsumption = () => {
       hidden: true,
     },
     {
+      field: 'sapCode',
+      title: 'Sap Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'UOM',
       title: 'UOM',
       minWidth: 100,
@@ -302,6 +309,33 @@ const GradeWiseSteadyStateConsumption = () => {
     [PLANT_ID, AOP_YEAR, keycloak],
   )
 
+  const validateGradeNorms = useCallback(
+    async (gradeId) => {
+      if (!gradeId || !PLANT_ID || !AOP_YEAR) return
+      try {
+        const valRes =
+          await SteadyStateConsumptionApiService.validateGradeSteadyStateNorms(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+        if (
+          valRes &&
+          (valRes.code === 400 || valRes.status === 400 || valRes.code === 200) &&
+          Array.isArray(valRes.data) &&
+          valRes.data.length > 0
+        ) {
+          setValidationErrors(valRes.data)
+          setValidationErrorDialogOpen(true)
+        }
+      } catch (err) {
+        console.error('Error validating grade steady state norms:', err)
+      }
+    },
+    [PLANT_ID, AOP_YEAR, keycloak],
+  )
+
   // ===================== Initial load & Grade change (same as NormalOpNorms fetchAllData) =====================
 
   useEffect(() => {
@@ -314,13 +348,14 @@ const GradeWiseSteadyStateConsumption = () => {
     Promise.all([fetchGrades(), fetchNormTransactions()])
   }, [PLANT_ID, AOP_YEAR])
 
-  // Re-fetch data when selectedGradeId changes
+  // Re-fetch data & validate when selectedGradeId changes
   useEffect(() => {
     if (selectedGradeId) {
       fetchData(selectedGradeId)
       fetchNormTransactions()
+      validateGradeNorms(selectedGradeId)
     }
-  }, [selectedGradeId, fetchData, fetchNormTransactions])
+  }, [selectedGradeId, fetchData, fetchNormTransactions, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -546,10 +581,11 @@ const GradeWiseSteadyStateConsumption = () => {
       if (
         response &&
         response.code === 400 &&
-        response.message === 'Validation Failed'
+        (response.message === 'Validation Failed' || Array.isArray(response.data))
       ) {
         isWeightedAverageError = true
         errorMsg = response.message || 'Import validation failed.'
+        errorDataList = Array.isArray(response.data) ? response.data : []
       }
 
       if (isWeightedAverageError) {
@@ -661,7 +697,7 @@ const GradeWiseSteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}

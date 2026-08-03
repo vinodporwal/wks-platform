@@ -24,12 +24,16 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
+import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
+import com.wks.caseengine.dto.FeedTypeFlowMappingDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.ExcelConfigurations;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -789,7 +793,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 					dto.setJan(getNumericCellValue(row.getCell(11), dto));
 					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					// col 14 = weightAverage — display/export only, not imported
+					// col 14 = weightAverage � display/export only, not imported
 					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
 					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
 					dto.setTableId(getStringCellValue(row.getCell(17), dto));
@@ -1526,6 +1530,148 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 	}
 
 	@Override
+	@Transactional
+	public AOPMessageVM updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			for (OptimizingVariablesDropdownDTO dto : dtoList) {
+				if (dto.getId() == null || dto.getId().isBlank()) {
+					continue;
+				}
+				if (!UUID_PATTERN.matcher(dto.getId()).matches()) {
+					continue;
+				}
+
+				UUID normParameterFKId = UUID.fromString(dto.getId());
+
+				Optional<NormParameters> optNormParam = normParametersRepository.findById(normParameterFKId);
+				if (!optNormParam.isPresent()) {
+					continue;
+				}
+
+				if (!optNormParam.get().getIsEditable()) {
+					continue;
+				}
+
+				for (int month = 1; month <= 12; month++) {
+					String attributeValue = getOptimizingVariableMonthValue(dto, month);
+					saveOptimizingVariableData(normParameterFKId, month, attributeValue, aopYear);
+				}
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(null);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to update optimizing variables dropdown data", ex);
+		}
+		return aopMessageVM;
+	}
+
+	private String getOptimizingVariableMonthValue(OptimizingVariablesDropdownDTO dto, int month) {
+		switch (month) {
+			case 1: return dto.getJanuary();
+			case 2: return dto.getFebruary();
+			case 3: return dto.getMarch();
+			case 4: return dto.getApril();
+			case 5: return dto.getMay();
+			case 6: return dto.getJune();
+			case 7: return dto.getJuly();
+			case 8: return dto.getAugust();
+			case 9: return dto.getSeptember();
+			case 10: return dto.getOctober();
+			case 11: return dto.getNovember();
+			case 12: return dto.getDecember();
+			default: return null;
+		}
+	}
+
+	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String aopYear) {
+		String newValueStr = attributeValue != null ? attributeValue.trim() : "";
+
+		Optional<NormAttributeTransactions> existingOpt =
+				normAttributeTransactionsRepository
+						.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, aopYear);
+
+		if (existingOpt.isPresent()) {
+			NormAttributeTransactions existing = existingOpt.get();
+			existing.setAttributeValue(newValueStr);
+			existing.setModifiedOn(new Date());
+			existing.setUserName(Utility.getUserName());
+			normAttributeTransactionsRepository.save(existing);
+		} else {
+			NormAttributeTransactions newRecord = new NormAttributeTransactions();
+			newRecord.setCreatedOn(new Date());
+			newRecord.setAttributeValueVersion("V1");
+			newRecord.setUserName(Utility.getUserName());
+			newRecord.setNormParameterFKId(normParameterFKId);
+			newRecord.setAopMonth(month);
+			newRecord.setAuditYear(aopYear);
+			newRecord.setAttributeValue(newValueStr);
+			normAttributeTransactionsRepository.save(newRecord);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getOptimizingVariablesDropdown(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<OptimizingVariablesDropdownDTO> resultList = new ArrayList<>();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetDropDownOptimizingVariablesScrn";
+
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				OptimizingVariablesDropdownDTO dto = OptimizingVariablesDropdownDTO.builder()
+						.id(row[0] != null ? row[0].toString() : null)
+						.name(row[1] != null ? row[1].toString() : null)
+						.displayName(row[2] != null ? row[2].toString() : null)
+						.uom(row[3] != null ? row[3].toString() : null)
+						.normParameterTypeFKId(row[4] != null ? row[4].toString() : null)
+						.isEditable(row[5] != null && (row[5].toString().equals("1") || row[5].toString().equalsIgnoreCase("true")))
+						.isVisible(row[6] != null && (row[6].toString().equals("1") || row[6].toString().equalsIgnoreCase("true")))
+						.displayOrder(row[7] != null ? Integer.parseInt(row[7].toString()) : null)
+						.april(row[8] != null ? row[8].toString() : null)
+						.may(row[9] != null ? row[9].toString() : null)
+						.june(row[10] != null ? row[10].toString() : null)
+						.july(row[11] != null ? row[11].toString() : null)
+						.august(row[12] != null ? row[12].toString() : null)
+						.september(row[13] != null ? row[13].toString() : null)
+						.october(row[14] != null ? row[14].toString() : null)
+						.november(row[15] != null ? row[15].toString() : null)
+						.december(row[16] != null ? row[16].toString() : null)
+						.january(row[17] != null ? row[17].toString() : null)
+						.february(row[18] != null ? row[18].toString() : null)
+						.march(row[19] != null ? row[19].toString() : null)
+						.build();
+				resultList.add(dto);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(resultList);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch optimizing variables dropdown data", ex);
+		}
+		return aopMessageVM;
+	}
+
+	@Override
 	public AOPMessageVM calculateSpyroInputData(String year, String plantId, String Mode, String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();		
 		try {
@@ -1579,4 +1725,203 @@ session.doWork(connection -> {
 		}
 	}
 
+
+	@Override
+	public com.wks.caseengine.message.vm.AOPMessageVM getFeedTypeFlowMappings(String plantId, String aopYear) {
+		com.wks.caseengine.message.vm.AOPMessageVM aopMessageVM = new com.wks.caseengine.message.vm.AOPMessageVM();
+		java.util.List<com.wks.caseengine.dto.FeedTypeFlowMappingDTO> resultList = new java.util.ArrayList<>();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetFeedTypeFlowMappings";
+
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			jakarta.persistence.Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			java.util.List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				com.wks.caseengine.dto.FeedTypeFlowMappingDTO dto = com.wks.caseengine.dto.FeedTypeFlowMappingDTO.builder()
+						.feedType(row[0] != null ? row[0].toString() : null)
+						.monthName(row[1] != null ? row[1].toString() : null)
+						.flowValue(row[2] != null ? Double.parseDouble(row[2].toString()) : null)
+						.build();
+				resultList.add(dto);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Success");
+			aopMessageVM.setData(resultList);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Error retrieving feed type flow mappings: " + ex.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	@Override
+	public AOPMessageVM getSpyroInputMinMax(String plantId, String siteId, String verticalId, String aopYear, String  mode) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+	List<SpyroInputMinMaxDTO> resultList = new ArrayList<>();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetSpyroInputMinMax";
+
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear, @mode = :mode";
+			jakarta.persistence.Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("siteId", siteId);
+			query.setParameter("verticalId", verticalId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("mode", mode);
+
+			List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				SpyroInputMinMaxDTO dto = SpyroInputMinMaxDTO.builder()
+						.displayName(row[0] != null ? row[0].toString() : null)
+						.uom(row[1] != null ? row[1].toString() : null)
+						.idMin(row[2] != null ? row[2].toString() : null)
+						.idMax(row[3] != null ? row[3].toString() : null)
+						.aprMin(row[4] != null ? row[4].toString() : "0.00")
+						.aprMax(row[5] != null ? row[5].toString() : "0.00")
+						.mayMin(row[6] != null ? row[6].toString() : "0.00")
+						.mayMax(row[7] != null ? row[7].toString() : "0.00")
+						.junMin(row[8] != null ? row[8].toString() : "0.00")
+						.junMax(row[9] != null ? row[9].toString() : "0.00")
+						.julMin(row[10] != null ? row[10].toString() : "0.00")
+						.julMax(row[11] != null ? row[11].toString() : "0.00")
+						.augMin(row[12] != null ? row[12].toString() : "0.00")
+						.augMax(row[13] != null ? row[13].toString() : "0.00")
+						.sepMin(row[14] != null ? row[14].toString() : "0.00")
+						.sepMax(row[15] != null ? row[15].toString() : "0.00")
+						.octMin(row[16] != null ? row[16].toString() : "0.00")
+						.octMax(row[17] != null ? row[17].toString() : "0.00")
+						.novMin(row[18] != null ? row[18].toString() : "0.00")
+						.novMax(row[19] != null ? row[19].toString() : "0.00")
+						.decMin(row[20] != null ? row[20].toString() : "0.00")
+						.decMax(row[21] != null ? row[21].toString() : "0.00")
+						.janMin(row[22] != null ? row[22].toString() : "0.00")
+						.janMax(row[23] != null ? row[23].toString() : "0.00")
+						.febMin(row[24] != null ? row[24].toString() : "0.00")
+						.febMax(row[25] != null ? row[25].toString() : "0.00")
+						.marMin(row[26] != null ? row[26].toString() : "0.00")
+						.marMax(row[27] != null ? row[27].toString() : "0.00")
+						.minWeightAverage(row[28] != null ? row[28].toString() : "0.00")
+						.maxWeightAverage(row[29] != null ? row[29].toString() : "0.00")
+						.build();
+				resultList.add(dto);
+			}
+
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "major-furnance-min-max");
+			map.put("resultList", resultList);
+			map.put("aopCalculation", aopCalculation);
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Success");
+			aopMessageVM.setData(map);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Error retrieving feed type flow mappings: " + ex.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			// month number -> [minValue, maxValue] field accessor pairs
+			// Months in financial year order: Apr=4 .. Mar=3
+			int[][] monthIndices = {
+				{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {1}, {2}, {3}
+			};
+
+			for (SpyroInputMinMaxDTO dto : dtoList) {
+				String idMinStr = dto.getIdMin();
+				String idMaxStr = dto.getIdMax();
+
+				if (idMinStr == null || idMaxStr == null) {
+					continue;
+				}
+
+				UUID normParamIdMin = UUID.fromString(idMinStr);
+				UUID normParamIdMax = UUID.fromString(idMaxStr);
+
+				String[][] monthValues = {
+					{dto.getAprMin(), dto.getAprMax()},
+					{dto.getMayMin(), dto.getMayMax()},
+					{dto.getJunMin(), dto.getJunMax()},
+					{dto.getJulMin(), dto.getJulMax()},
+					{dto.getAugMin(), dto.getAugMax()},
+					{dto.getSepMin(), dto.getSepMax()},
+					{dto.getOctMin(), dto.getOctMax()},
+					{dto.getNovMin(), dto.getNovMax()},
+					{dto.getDecMin(), dto.getDecMax()},
+					{dto.getJanMin(), dto.getJanMax()},
+					{dto.getFebMin(), dto.getFebMax()},
+					{dto.getMarMin(), dto.getMarMax()}
+				};
+
+				for (int i = 0; i < monthIndices.length; i++) {
+					int month = monthIndices[i][0];
+					String minVal = monthValues[i][0];
+					String maxVal = monthValues[i][1];
+
+					upsertNormAttributeTransaction(normParamIdMin, month, aopYear, minVal);
+					upsertNormAttributeTransaction(normParamIdMax, month, aopYear, maxVal);
+				}
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SpyroInput Min/Max saved successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Error saving SpyroInput Min/Max: " + ex.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	private void upsertNormAttributeTransaction(UUID normParameterFKId, int month, String aopYear, String value) {
+		Optional<NormAttributeTransactions> existingOpt =
+				normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(
+						normParameterFKId, month, aopYear);
+
+		if (existingOpt.isPresent()) {
+			NormAttributeTransactions existing = existingOpt.get();
+			existing.setAttributeValue(value);
+			existing.setModifiedOn(new Date());
+			existing.setUserName(Utility.getUserName());
+			normAttributeTransactionsRepository.save(existing);
+		} else {
+			NormAttributeTransactions newRecord = NormAttributeTransactions.builder()
+					.normParameterFKId(normParameterFKId)
+					.aopMonth(month)
+					.auditYear(aopYear)
+					.attributeValue(value)
+					.attributeValueVersion("V1")
+					.createdOn(new Date())
+					.userName(Utility.getUserName())
+					.build();
+			normAttributeTransactionsRepository.save(newRecord);
+		}
+	}
 }

@@ -315,6 +315,10 @@ public List<NormBasisDTO> getPIMSThroughput(UUID plantId, String aopYear) {
 
     String procedureName = vertical.getName() + "_GetPIMS_Throughput";
 
+    if(vertical.getName().equalsIgnoreCase("PCG")) {
+        procedureName = "[RIL.AOP.Refinery].[dbo].[" + procedureName + "]";
+    }
+
     return fetchNormBasisFromProcedure(plantId, aopYear, procedureName);
 }
 

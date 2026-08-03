@@ -70,10 +70,11 @@ public interface CPPSRMappingService {
      *   <li>Delete CPP_SR_Mapping_Master WHERE ID = id</li>
      * </ol>
      *
-     * @param id UUID of the CPP_SR_Mapping_Master record to delete.
+     * @param id UUID of the CPP_SR_Mapping_Master record.
+     * @param financialYear Financial year string e.g. "2025-26" — only child data for this year is deleted.
      * @return AOPMessageVM with code 200 on success, 404 if not found, 500 on error.
      */
-    AOPMessageVM deleteSRMapping(UUID id);
+    AOPMessageVM deleteSRMapping(UUID id, String financialYear);
 
     /**
      * Returns Norm Parameters for the given source plant by calling SP

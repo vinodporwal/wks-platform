@@ -37,11 +37,11 @@ const KendoDataGrid = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
@@ -195,7 +195,11 @@ const KendoDataGrid = ({
           style={{
             flex: 1,
             overflow: 'auto',
-            ...(permissions?.isHeight ? { height: 500 } : {}),
+            ...(permissions?.customHeight
+              ? { height: permissions.customHeight }
+              : permissions?.isHeight
+                ? { height: 500 }
+                : {}),
           }}
           data={rows}
           dataItemKey='id'
@@ -208,31 +212,28 @@ const KendoDataGrid = ({
           onFilterChange={(e) => setFilter(e.filter)}
           onItemChange={handleItemChange}
           resizable={true}
-          defaultSkip={0}
-          defaultTake={100}
+          {...(!permissions?.disablePagination && {
+            defaultSkip: 0,
+            defaultTake: 100,
+          })}
           contextMenu={true}
-          pageable={
-            rows?.length > 100
-              ? {
-                  buttonCount: 4,
-                  pageSizes: [10, 50, 100],
-                }
-              : false
-          }
+          {...(!permissions?.disablePagination && rows?.length > 100 && {
+            pageable: {
+              buttonCount: 4,
+              pageSizes: [10, 50, 100],
+            },
+          })}
           defaultGroup={initialGroup}
         >
           {columns?.map((col) => {
             const {
               field,
               title,
-              width,
               cell,
               format,
-              filterType = 'text',
               isRightAlligned,
               hidden,
               widthT,
-              type,
             } = col
 
             if (['endDate', 'startDate', 'dateTime'].includes(field)) {
@@ -245,9 +246,7 @@ const KendoDataGrid = ({
                   width={widthT}
                   cells={{
                     edit: {
-                      date: ['dateTime', 'dateTime', 'mcuDate'].includes(
-                        col.field,
-                      )
+                      date: ['dateTime', 'dateTime', 'mcuDate'].includes(col.field)
                         ? DateOnlyPicker
                         : DateTimePickerEditor,
                     },

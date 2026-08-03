@@ -72,6 +72,10 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
             String procedureName = vertical.getName() + "_" + site.getName() + "_GetProductionRange";
             String sql = "EXEC " + "[" +  procedureName + "]" + " @PlantId = :plantId, @AOPYear = :aopYear";
 
+			if(vertical.getName().equalsIgnoreCase("PCG")) {
+				sql = "EXEC " + "[RIL.AOP.Refinery].[dbo].[" + procedureName + "]" + " @PlantId = :plantId, @AOPYear = :aopYear";
+			}
+
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("plantId", UUID.fromString(plantId));
             query.setParameter("aopYear", aopYear);

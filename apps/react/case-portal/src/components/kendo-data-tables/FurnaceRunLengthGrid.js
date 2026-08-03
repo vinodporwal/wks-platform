@@ -25,6 +25,8 @@ const FurnaceRunLengthGrid = ({
   handleExcelUpload,
   downloadExcelForConfiguration,
   handleCalculate,
+  onInfoClick,
+  infoIconColor,
 }) => {
   return (
     <Box sx={{ mt: 1 }}>
@@ -52,6 +54,8 @@ const FurnaceRunLengthGrid = ({
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleCalculate={handleCalculate}
+        onInfoClick={onInfoClick}
+        infoIconColor={infoIconColor}
       />
     </Box>
   )

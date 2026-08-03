@@ -80,6 +80,7 @@ const ProposedConsumptionNorms = () => {
   const [_plantID, set_PlantID] = useState('')
   const dispatch = useDispatch()
   const [gradeId, setGradeId] = useState(null)
+  const [gradeName, setGradeName] = useState(null)
   const [grades, setGrades] = useState([])
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
@@ -211,14 +212,37 @@ const ProposedConsumptionNorms = () => {
           AOP_YEAR,
         )
 
-      if (response?.code == 200) {
-        setGrades(response?.data)
+      if (response?.code === 200) {
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          gradeId: grade?.gradeId ?? grade?.id,
+          displayName:
+            grade?.displayName ??
+            grade?.DisplayName ??
+            grade?.name ??
+            grade?.Name ??
+            '',
+          name: grade?.name ?? grade?.Name ?? '',
+        }))
+        setGrades(normalized)
+        if (normalized.length > 0) {
+          const firstGrade = normalized[0]
+          const firstId = firstGrade?.gradeId ?? null
+          setGradeId(firstId)
+          setGradeName(firstGrade?.name ?? null)
+          fetchData(firstId)
+        } else {
+          setGradeId(null)
+          setGradeName(null)
+          fetchData(null)
+        }
+      } else {
+        setGrades([])
+        fetchData(null)
       }
-
-      fetchData(response?.data[0]?.gradeId)
     } catch (error) {
       setGrades([])
-      console.error('Error fetching data:', error)
+      console.error('Error fetching grades:', error)
     }
   }
 
@@ -232,26 +256,39 @@ const ProposedConsumptionNorms = () => {
           AOP_YEAR,
         )
 
-      if (response?.code == 200) {
-        setGrades(response?.data)
-      }
-
-      if (response?.data?.length === 0) {
+      if (response?.code === 200) {
+        const normalized = (response?.data || []).map((grade) => ({
+          ...grade,
+          gradeId: grade?.gradeId ?? grade?.id,
+          displayName:
+            grade?.displayName ??
+            grade?.DisplayName ??
+            grade?.name ??
+            grade?.Name ??
+            '',
+          name: grade?.name ?? grade?.Name ?? '',
+        }))
+        setGrades(normalized)
+        if (normalized.length > 0) {
+          const firstGrade = normalized[0]
+          const firstId = firstGrade?.gradeId ?? null
+          setGradeId(firstId)
+          setGradeName(firstGrade?.name ?? null)
+          fetchData(firstId)
+        } else {
+          setGradeId(null)
+          setGradeName(null)
+          fetchData(null)
+        }
+      } else {
+        setGrades([])
         setGradeId(null)
-        await fetchData(null)
-        return
+        setGradeName(null)
+        fetchData(null)
       }
-
-      const firstGrade = response?.data[0]
-      const firstId =
-        firstGrade?.id ?? firstGrade?.gradeId ?? firstGrade?.gradeFkId ?? null
-
-      setGradeId(firstId)
-
-      fetchData(firstId)
     } catch (error) {
       setGrades([])
-      console.error('Error fetching Business Demand data:', error)
+      console.error('Error fetching grades after calculation:', error)
     }
   }
 
@@ -524,9 +561,10 @@ const ProposedConsumptionNorms = () => {
     isOldYear,
   )
 
-  const handleGradeChange = (gradeId) => {
-    setGradeId(gradeId)
-    fetchData(gradeId)
+  const handleGradeChange = (selectedGradeId, displayName, name) => {
+    setGradeId(selectedGradeId)
+    setGradeName(name || displayName || null)
+    fetchData(selectedGradeId)
   }
 
   return (

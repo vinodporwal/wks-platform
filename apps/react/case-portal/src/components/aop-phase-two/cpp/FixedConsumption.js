@@ -634,9 +634,9 @@ const FixedConsumption = () => {
       case 'jmd':
         return <FixedConsumptionJMD />
       case 'dmd':
+      case 'hmd':
+      case 'vmd':
         return <FixedConsumptionDMD />
-      // case 'hmd':
-      //   return <FixedConsumptionHMD />
       case 'nmd':
       default:
         return (

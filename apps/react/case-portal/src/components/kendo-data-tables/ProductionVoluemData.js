@@ -1268,17 +1268,20 @@ const ProductionvolumeData = ({
       showTitleAndInformation:
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
       titleAndInformation:
-        VERTICAL_NAME == 'cracker'
-          ? 'Maximum Ethylene Production achieved in the last 05 years historical data for 05 consecutive days in different furnace mode of operation.'
-          : VERTICAL_NAME == 'vcm'
-            ? `Maximum ${PLANT_NAME_NO_CASE} production achieved in the last five year historical data derived as average of top 10 percent data points.`
-            : '',
+        IS_CRACKER_C2
+          ? 'Computed the month-wise average E+P (Ethylene + Propylene) over the selected historical period, determined the month with the maximum average E+P, and extracted the corresponding Ethylene and Propylene values from that month.'
+          : VERTICAL_NAME == 'cracker'
+            ? 'Maximum Ethylene Production achieved in the last 05 years historical data for 05 consecutive days in different furnace mode of operation.'
+            : VERTICAL_NAME == 'vcm'
+              ? `Maximum ${PLANT_NAME_NO_CASE} production achieved in the last five year historical data derived as average of top 10 percent data points.`
+              : '',
 
       showTitleNameBusiness:
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       downloadExcelBtnFromUI:
-        IS_PE_PP ||
+        IS_CRACKER_C2 ||
+          IS_PE_PP ||
           IS_PET ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
@@ -1417,11 +1420,13 @@ const ProductionvolumeData = ({
       showTitleAndInformation:
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
       titleAndInformation:
-        VERTICAL_NAME == 'cracker'
-          ? 'Design plant capacity for different furnace mode of operation as per licensor provided data.'
-          : VERTICAL_NAME == 'vcm'
-            ? 'Design plant capacity as per licensor provided data.'
-            : '',
+        IS_CRACKER_C2
+          ? 'Design capacity values for Ethylene and Propylene are defined according to standard industry guidelines.'
+          : VERTICAL_NAME == 'cracker'
+            ? 'Design plant capacity for different furnace mode of operation as per licensor provided data.'
+            : VERTICAL_NAME == 'vcm'
+              ? 'Design plant capacity as per licensor provided data.'
+              : '',
 
       showTitleNameBusiness:
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
@@ -1455,7 +1460,7 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
+      saveBtn: IS_CRACKER_C2 || IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
@@ -1465,7 +1470,8 @@ const ProductionvolumeData = ({
           ? true
           : false,
       downloadExcelBtn:
-        IS_PE_PP ||
+        IS_CRACKER_C2 ||
+          IS_PE_PP ||
           IS_PET ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
@@ -1477,7 +1483,8 @@ const ProductionvolumeData = ({
           ? false
           : true,
       uploadExcelBtn:
-        IS_PE_PP ||
+        IS_CRACKER_C2 ||
+          IS_PE_PP ||
           IS_PET ||
           IS_PVC_VMD ||
           IS_PVC_DMD ||
@@ -1495,11 +1502,13 @@ const ProductionvolumeData = ({
 
       //TEXT NOTE CHANGED TO 01 YEARS
       titleAndInformation:
-        VERTICAL_NAME == 'cracker'
-          ? 'Maximum Ethylene Production achieved in the last 01 years historical data for 05 consecutive days in different furnace mode of operation.'
-          : VERTICAL_NAME == 'vcm'
-            ? 'Steady state production operating capacity which is proposed for the AOP FY.'
-            : '',
+        IS_CRACKER_C2
+          ? 'The Ethylene and Propylene values for the proposed operating capacity are sourced from the Optimizer Output – Total Product screen.'
+          : VERTICAL_NAME == 'cracker'
+            ? 'Maximum Ethylene Production achieved in the last 01 years historical data for 05 consecutive days in different furnace mode of operation.'
+            : VERTICAL_NAME == 'vcm'
+              ? 'Steady state production operating capacity which is proposed for the AOP FY.'
+              : '',
 
       showTitleNameBusiness:
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
@@ -1593,12 +1602,11 @@ const ProductionvolumeData = ({
       } else {
         if (gridType === 'design') {
           if (IS_CRACKER_DMD || IS_CRACKER_C2) {
-            await ProductionVolumeDataApiService.getDesignCapacityExcel(
+            await ProductionVolumeDataApiService.getProductionVolExcelCommon(
               keycloak,
               PLANT_ID,
               AOP_YEAR,
               EXCEL_EXPORT_TITLE,
-              'design-capacity',
             )
           } else {
             await ProductionVolumeDataApiService.getDesignCapacityExcel(
@@ -1661,7 +1669,7 @@ const ProductionvolumeData = ({
             AOP_YEAR,
           )
       } else if ((IS_CRACKER_DMD || IS_CRACKER_C2) && gridType === 'design') {
-        response = await ProductionVolumeDataApiService.saveDesignCapacity(
+        response = await ProductionVolumeDataApiService.saveProductionVolDataExcel(
           rawFile,
           keycloak,
           PLANT_ID,
