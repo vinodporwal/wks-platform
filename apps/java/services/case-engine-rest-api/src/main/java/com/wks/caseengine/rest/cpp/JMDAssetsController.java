@@ -149,4 +149,60 @@ public class JMDAssetsController {
         
         return ResponseEntity.ok(response);
     }
+
+    // ========================================
+    // UNIFIED EXPORT / IMPORT (Power, Steam, or All)
+    // ========================================
+
+    @GetMapping("/jmd/assets/operational-hours/export")
+    public ResponseEntity<byte[]> exportOperationalHours(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear,
+            @RequestParam(defaultValue = "All") String assetCategory) {
+
+        logger.info("[GET /jmd/assets/operational-hours/export] plantIds: {}, financialYear: {}, assetCategory: {}",
+                plantIds, financialYear, assetCategory);
+
+        byte[] excelData = jmdAssetsService.exportOperationalHoursExcel(plantIds, financialYear, assetCategory);
+
+        if (excelData == null) {
+            logger.error("[GET /jmd/assets/operational-hours/export] Failed to generate Excel file");
+            return ResponseEntity.internalServerError().build();
+        }
+
+        String fileLabel = "All".equalsIgnoreCase(assetCategory) ? "Combined"
+                : "Power".equalsIgnoreCase(assetCategory) ? "Power"
+                : "Steam".equalsIgnoreCase(assetCategory) ? "Steam"
+                : "Import".equalsIgnoreCase(assetCategory) ? "Import" : "Combined";
+        String fileName = "JMD_" + fileLabel + "_Operational_Hours_" + financialYear + ".xlsx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", fileName);
+
+        logger.info("[GET /jmd/assets/operational-hours/export] Successfully generated Excel: {}", fileName);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    @PostMapping("/jmd/assets/operational-hours/import")
+    public ResponseEntity<AOPMessageVM> importOperationalHours(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear,
+            @RequestParam(defaultValue = "All") String assetCategory,
+            @RequestParam("file") MultipartFile file) {
+
+        logger.info("[POST /jmd/assets/operational-hours/import] plantIds: {}, financialYear: {}, assetCategory: {}",
+                plantIds, financialYear, assetCategory);
+
+        AOPMessageVM response = jmdAssetsService.importOperationalHoursExcel(plantIds, financialYear, assetCategory, file);
+
+        logger.info("[POST /jmd/assets/operational-hours/import] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        return ResponseEntity.ok(response);
+    }
 }
+

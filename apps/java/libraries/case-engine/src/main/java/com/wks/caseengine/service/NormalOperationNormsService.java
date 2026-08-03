@@ -30,5 +30,9 @@ public interface NormalOperationNormsService {
 			UUID fromString, String year, String gradeId, boolean b);
 	public AOPMessageVM getCatChemCalculationData(String plantId, String year);
 	public AOPMessageVM saveCatChemCalculationData(String plantId, String year, List<Map<String, Object>> payload);
+		public AOPMessageVM importExcelPolyester(String year, UUID fromString, String gradeId, MultipartFile file,
+			String mode);
+	public AOPMessageVM checkAllGradeNormsPolyester(UUID fromString, String year, String gradeId);
+
 
 }

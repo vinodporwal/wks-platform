@@ -18,6 +18,7 @@ const SteadyStateConsumptionPCG = () => {
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+  const IS_GASIFIER = plantObject?.name?.toLowerCase() === 'gasifier'
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -32,7 +33,9 @@ const SteadyStateConsumptionPCG = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = customValueFormatterPhaseTwo(5)
+  const DECIMALS = IS_GASIFIER ? 10 : 5
+  const valueFormat = customValueFormatterPhaseTwo(DECIMALS)
+  const monthMinWidth = IS_GASIFIER ? 160 : 120
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
@@ -77,7 +80,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'april',
       title: headerMap[4],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -86,7 +89,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'may',
       title: headerMap[5],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -95,7 +98,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'june',
       title: headerMap[6],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -104,7 +107,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'july',
       title: headerMap[7],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -113,7 +116,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'august',
       title: headerMap[8],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -122,7 +125,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'september',
       title: headerMap[9],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -131,7 +134,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'october',
       title: headerMap[10],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -140,7 +143,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'november',
       title: headerMap[11],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -149,7 +152,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'december',
       title: headerMap[12],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -158,7 +161,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'january',
       title: headerMap[1],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -167,7 +170,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'february',
       title: headerMap[2],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -176,7 +179,7 @@ const SteadyStateConsumptionPCG = () => {
       field: 'march',
       title: headerMap[3],
       // widthT: 100,
-      minWidth: 120,
+      minWidth: monthMinWidth,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -312,7 +315,7 @@ const SteadyStateConsumptionPCG = () => {
 
     try {
       const response =
-        await SteadyStateConsumptionApiService.calculateSteadyStateConsumption(
+        await SteadyStateConsumptionApiService.calculateCommonSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -444,7 +447,7 @@ const SteadyStateConsumptionPCG = () => {
     titleName: 'Steady State Consumption (Norm/Quantity)',
     showDropdown: false,
     remarksEditable: true,
-    dropdownCell: true,
+    // dropdownCell: true,
   }
 
   return (
@@ -482,6 +485,7 @@ const SteadyStateConsumptionPCG = () => {
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 100,
         }}
+        convertScientificValue={true}
       />
     </Box>
   )

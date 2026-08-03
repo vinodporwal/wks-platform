@@ -213,7 +213,10 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 						.orElseThrow(() -> new RuntimeException("Site not found")).getName();
 				String procedureName = verticalName + "_" + siteName + "_GetProposedAOP";
 
-				AOPMessageVM gradesVM = aopConsumptionNormService.getConsumptionAOPGrades(aopYear, plantId.toString());
+			//	AOPMessageVM gradesVM = aopConsumptionNormService.getConsumptionAOPGrades(aopYear, plantId.toString());
+
+			AOPMessageVM gradesVM = aopConsumptionNormService.getConsumptionAOPGrades(aopYear, plantId.toString());
+
 				@SuppressWarnings("unchecked")
 				List<Map<String, Object>> gradeList = (List<Map<String, Object>>) gradesVM.getData();
 
@@ -240,6 +243,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 	private void writeProposedAOPSheet(Workbook workbook, String sheetName,
 			List<ProposedAOPDTO> dtoList, boolean isAfterSave) {
 
+		boolean isAllGrade = "All Grade".equals(sheetName);
 		Sheet sheet = workbook.createSheet(sheetName);
 		int currentRow = 0;
 
@@ -258,6 +262,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		CellStyle lockedStyle   = Utility.createBorderedLockedStyle(workbook);
 		CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
 		CellStyle wrapUnlocked  = Utility.createBorderedWrapUnlockedStyle(workbook);
+		CellStyle wrapLocked  = Utility.createBorderedWrapLockedStyle(workbook);
 
 		Row headerRow = sheet.createRow(currentRow++);
 		for (int col = 0; col < headerNames.size(); col++) {
@@ -287,11 +292,11 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 
 			Cell proposedCell = row.createCell(4);
 			if (dto.getProposed() != null) proposedCell.setCellValue(dto.getProposed());
-			proposedCell.setCellStyle(unlockedStyle);
+			proposedCell.setCellStyle(isAllGrade ? lockedStyle : unlockedStyle);
 
 			Cell remarksCell = row.createCell(5);
 			remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
-			remarksCell.setCellStyle(wrapUnlocked);
+			remarksCell.setCellStyle(isAllGrade ? wrapLocked : wrapUnlocked);
 
 			Cell normParamCell = row.createCell(6);
 			normParamCell.setCellValue(dto.getNormParameterId() != null ? dto.getNormParameterId().toString() : "");
@@ -485,11 +490,39 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			List<ProposedAOPDTO> data = readProposedAOPExcel(file.getInputStream());
 			List<ProposedAOPDTO> failedRecords = new ArrayList<>();
 
+			// Cache grades per (plantId_aopYear) to avoid redundant DB calls
+			Map<String, List<Map<String, Object>>> gradesCache = new HashMap<>();
+
 			for (ProposedAOPDTO dto : data) {
 				if ("Failed".equals(dto.getSaveStatus())) {
 					failedRecords.add(dto);
 					continue;
 				}
+
+				// Skip rows belonging to an "All Grade" grade silently
+				if (dto.getPlantId() != null && dto.getAopYear() != null && dto.getGradeId() != null) {
+					String plantIdStr = dto.getPlantId().toString();
+					String aopYearStr = dto.getAopYear();
+					String cacheKey = plantIdStr + "_" + aopYearStr;
+
+					List<Map<String, Object>> grades = gradesCache.computeIfAbsent(cacheKey, k -> {
+						AOPMessageVM gradesVM = aopConsumptionNormService.getProposedAOPGrades(aopYearStr, plantIdStr);
+						@SuppressWarnings("unchecked")
+						List<Map<String, Object>> list = (List<Map<String, Object>>) gradesVM.getData();
+						return list != null ? list : new ArrayList<>();
+					});
+
+					boolean isAllGrade = grades.stream()
+							.anyMatch(g -> g.get("gradeId") != null
+									&& g.get("gradeId").toString().equalsIgnoreCase(dto.getGradeId().toString())
+									&& g.get("DisplayName") != null
+									&& "All Grade".equalsIgnoreCase(g.get("DisplayName").toString()));
+
+					if (isAllGrade) {
+						continue; 
+					}
+				}
+
 				try {
 					saveProposedAOP(Collections.singletonList(dto));
 				} catch (IllegalArgumentException e) {

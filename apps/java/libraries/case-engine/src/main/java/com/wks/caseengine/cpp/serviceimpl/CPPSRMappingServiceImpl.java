@@ -533,7 +533,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 return response;
             }
 
-            int processed = 0;
+            int createdCount = 0;       // completely new SR mapping + child records created
+            int childInsertedCount = 0; // existing SR mapping, child records added for new year
+            int alreadyExistCount = 0;  // existing SR mapping, child records already present for year
             Set<UUID> uniquePlantIds = new LinkedHashSet<>();
             for (SRMappingDTO dto : dtoList) {
 
@@ -575,80 +577,124 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         2
                 );
 
-                // ── Step 5: Insert or Update CPP_SR_Mapping_Master ──────────────────────────
-                // If id is null/empty → INSERT new record; otherwise → UPDATE existing record.
-                // The resulting UUID (srMappingId) is forwarded to Step 6.
-                UUID srMappingId;
-                if (dto.getId() == null) {
-                    // INSERT – generate a new UUID and persist
-                    srMappingId = UUID.randomUUID();
-                    String insertSql = "INSERT INTO CPP_SR_Mapping_Master " +
-                            "(ID, CPP_Plant_FK_Id, Utility_NormParameter_FK_Id, Utility_CostCenter_FK_Id, " +
-                            " Generation_NormParameter_FK_Id, Generation_CostCenter_FK_Id, Remarks, IsActive, CreatedDate, UpdatedDate) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, 1, GETDATE(), GETDATE())";
-                    db1JdbcTemplate.update(insertSql,
-                            srMappingId.toString(),
-                            dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                            resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                            dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
-                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
-                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
-                            dto.getRemarks()
-                    );
-                    logger.info("updateSRMappingsByPlant: inserted new CPP_SR_Mapping_Master ID={}", srMappingId);
+                // ── Step 5: Check if CPP_SR_Mapping_Master already exists with same NormParameter IDs ─
+                // If both resolved NormParameter IDs match an existing master record, reuse it and skip
+                // INSERT/UPDATE of the master entirely — only child-table data will be handled.
+                UUID srMappingId = null;
+                boolean existingMasterFound = false;
 
-                } else {
-                    // UPDATE – use existing ID
-                    srMappingId = dto.getId();
-                    String updateSql = "UPDATE CPP_SR_Mapping_Master SET " +
-                            "CPP_Plant_FK_Id = ?, " +
-                            "Utility_NormParameter_FK_Id = ?, " +
-                            "Utility_CostCenter_FK_Id = ?, " +
-                            "Generation_NormParameter_FK_Id = ?, " +
-                            "Generation_CostCenter_FK_Id = ?, " +
-                            "Remarks = ?, " +
-                            "UpdatedDate = GETDATE() " +
-                            "WHERE ID = ?";
-                    db1JdbcTemplate.update(updateSql,
-                            dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                            resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                            dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
-                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
-                            dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
-                            dto.getRemarks(),
-                            srMappingId.toString()
-                    );
-                    logger.info("updateSRMappingsByPlant: updated CPP_SR_Mapping_Master ID={}", srMappingId);
+                if (resolvedSenderUtilityId != null && resolvedReceiverUtilityId != null) {
+                    List<String> existingMaster = db1JdbcTemplate.queryForList(
+                            "SELECT TOP 1 ID FROM CPP_SR_Mapping_Master WITH(NOLOCK) " +
+                            "WHERE Utility_NormParameter_FK_Id = ? AND Generation_NormParameter_FK_Id = ?",
+                            String.class,
+                            resolvedSenderUtilityId.toString(),
+                            resolvedReceiverUtilityId.toString());
+                    if (!existingMaster.isEmpty()) {
+                        srMappingId = UUID.fromString(existingMaster.get(0));
+                        existingMasterFound = true;
+                        logger.info("updateSRMappingsByPlant: found existing CPP_SR_Mapping_Master ID={} for NormParameter combination — skipping master insert/update", srMappingId);
+                    }
                 }
 
-                // ── Step 6: Sync NormsHeader (only for NMD sites) ────────────────────────────
-                // Check whether cppPlantId resolves to a site whose Name = 'NMD'.
-                // If a NEW NormsHeader row was inserted, its ID is returned for Step 7.
+                if (!existingMasterFound) {
+                    // ── Original INSERT or UPDATE of CPP_SR_Mapping_Master ──────────────────────
+                    if (dto.getId() == null) {
+                        // INSERT – generate a new UUID and persist
+                        srMappingId = UUID.randomUUID();
+                        String insertSql = "INSERT INTO CPP_SR_Mapping_Master " +
+                                "(ID, CPP_Plant_FK_Id, Utility_NormParameter_FK_Id, Utility_CostCenter_FK_Id, " +
+                                " Generation_NormParameter_FK_Id, Generation_CostCenter_FK_Id, Remarks, IsActive, CreatedDate, UpdatedDate) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, GETDATE(), GETDATE())";
+                        db1JdbcTemplate.update(insertSql,
+                                srMappingId.toString(),
+                                dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
+                                resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
+                                dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
+                                resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                                dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
+                                dto.getRemarks()
+                        );
+                        logger.info("updateSRMappingsByPlant: inserted new CPP_SR_Mapping_Master ID={}", srMappingId);
+
+                    } else {
+                        // UPDATE – use existing ID
+                        srMappingId = dto.getId();
+                        String updateSql = "UPDATE CPP_SR_Mapping_Master SET " +
+                                "CPP_Plant_FK_Id = ?, " +
+                                "Utility_NormParameter_FK_Id = ?, " +
+                                "Utility_CostCenter_FK_Id = ?, " +
+                                "Generation_NormParameter_FK_Id = ?, " +
+                                "Generation_CostCenter_FK_Id = ?, " +
+                                "Remarks = ?, " +
+                                "UpdatedDate = GETDATE() " +
+                                "WHERE ID = ?";
+                        db1JdbcTemplate.update(updateSql,
+                                dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
+                                resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
+                                dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
+                                resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                                dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
+                                dto.getRemarks(),
+                                srMappingId.toString()
+                        );
+                        logger.info("updateSRMappingsByPlant: updated CPP_SR_Mapping_Master ID={}", srMappingId);
+                    }
+                }
+
+                // ── Step 6: Sync NormsHeader and child tables (only for NMD sites) ────────────
                 if (isNmdSite(dto.getCppPlantId())) {
-                    UUID newNormsHeaderId = resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
-
-                    // ── Step 7: Insert NormsMonthDetail (12 months) for new NormsHeader ───────
-                    // Only triggered when a new NormsHeader was created (not on update).
-                    if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
-                        insertNormsMonthDetails(newNormsHeaderId, financialYear);
-
-                        // ── Step 8: Insert CPPNorms default row for new NormsHeader ─────────────
-                        insertCppNorms(newNormsHeaderId, financialYear);
-
-                        // ── Step 9: Insert CPPMonthWisePrice default row for new NormsHeader ───
-                        insertCppMonthWisePrice(newNormsHeaderId, financialYear);
+                    if (existingMasterFound) {
+                        // Existing master found — locate its NormsHeader, then check/insert child records
+                        List<String> normsHeaderList = db1JdbcTemplate.queryForList(
+                                "SELECT TOP 1 Id FROM NormsHeader WITH(NOLOCK) WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                                String.class, srMappingId.toString());
+                        if (!normsHeaderList.isEmpty()) {
+                            UUID normsHeaderId = UUID.fromString(normsHeaderList.get(0));
+                            String result = insertChildRecordsIfAbsent(normsHeaderId, financialYear);
+                            if ("ALREADY_EXISTS".equals(result)) {
+                                alreadyExistCount++;
+                            } else {
+                                childInsertedCount++;
+                                // Update Remarks and UpdatedDate on the existing master record
+                                db1JdbcTemplate.update(
+                                        "UPDATE CPP_SR_Mapping_Master SET Remarks = ?, UpdatedDate = GETDATE() WHERE ID = ?",
+                                        dto.getRemarks(), srMappingId.toString());
+                                logger.info("updateSRMappingsByPlant: updated Remarks+UpdatedDate on CPP_SR_Mapping_Master ID={} after child insert", srMappingId);
+                            }
+                        } else {
+                            // No NormsHeader yet on this existing master — create one, then insert child records
+                            logger.warn("updateSRMappingsByPlant: existing SR Mapping ID={} has no NormsHeader — creating one", srMappingId);
+                            UUID newNormsHeaderId = resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
+                            if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
+                                insertChildRecordsIfAbsent(newNormsHeaderId, financialYear);
+                                childInsertedCount++;
+                                // Update Remarks and UpdatedDate on the existing master record
+                                db1JdbcTemplate.update(
+                                        "UPDATE CPP_SR_Mapping_Master SET Remarks = ?, UpdatedDate = GETDATE() WHERE ID = ?",
+                                        dto.getRemarks(), srMappingId.toString());
+                                logger.info("updateSRMappingsByPlant: updated Remarks+UpdatedDate on CPP_SR_Mapping_Master ID={} after NormsHeader+child insert", srMappingId);
+                            }
+                        }
+                    } else {
+                        // New or updated master — original NormsHeader + child-table flow
+                        UUID newNormsHeaderId = resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
+                        if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
+                            insertChildRecordsIfAbsent(newNormsHeaderId, financialYear);
+                        }
+                        createdCount++;
                     }
                 } else {
                     logger.info("updateSRMappingsByPlant: skipping NormsHeader – cppPlantId={} is not an NMD site", dto.getCppPlantId());
+                    createdCount++;
                 }
 
-                processed++;
                 // Collect unique cppPlantId values for AopCalculation flag update
                 if (dto.getCppPlantId() != null) {
                     uniquePlantIds.add(dto.getCppPlantId());
                 }
             }
-            if (processed > 0 && !uniquePlantIds.isEmpty()) {
+            if ((createdCount + childInsertedCount + alreadyExistCount) > 0 && !uniquePlantIds.isEmpty()) {
                 List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("cpp-sr-mapping");
                 for (UUID plantUUID : uniquePlantIds) {
                     for (ScreenMapping screenMapping : screenMappingList) {
@@ -663,8 +709,23 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 }
             }
 
+            // Build response message based on per-record outcomes
+            List<String> msgParts = new ArrayList<>();
+            if (createdCount > 0) {
+                msgParts.add(createdCount + " record(s) created successfully.");
+            }
+            if (childInsertedCount > 0) {
+                msgParts.add(childInsertedCount + " record(s) created for financial year " + financialYear + ".");
+            }
+            if (alreadyExistCount > 0) {
+                msgParts.add(alreadyExistCount + " record(s) already exist for financial year " + financialYear + ".");
+            }
+            String msg = msgParts.isEmpty()
+                    ? "No records were processed."
+                    : String.join(" ", msgParts);
+
             response.setCode(200);
-            response.setMessage(processed + " record(s) processed successfully.");
+            response.setMessage(msg);
             response.setData(null);
 
         } catch (Exception e) {
@@ -679,13 +740,18 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
     @Override
     @Transactional
-    public AOPMessageVM deleteSRMapping(UUID id) {
-        logger.info("deleteSRMapping: id={}", id);
+    public AOPMessageVM deleteSRMapping(UUID id, String financialYear) {
+        logger.info("deleteSRMapping: id={}, financialYear={}", id, financialYear);
         AOPMessageVM response = new AOPMessageVM();
         try {
             if (id == null) {
                 response.setCode(400);
                 response.setMessage("Id must not be null.");
+                return response;
+            }
+            if (financialYear == null || financialYear.trim().isEmpty()) {
+                response.setCode(400);
+                response.setMessage("FinancialYear must not be null or empty.");
                 return response;
             }
 
@@ -709,45 +775,65 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             logger.info("deleteSRMapping: found {} NormsHeader record(s) linked to id={}", normsHeaderIds.size(), id);
 
             if (!normsHeaderIds.isEmpty()) {
-                // Build an IN-clause placeholder string: ?,?,?...
+                // Build IN-clause: ?,?,?...
                 String inClause = normsHeaderIds.stream()
                         .map(h -> "?")
                         .collect(java.util.stream.Collectors.joining(","));
                 Object[] headerIdArgs = normsHeaderIds.toArray();
 
-                // ── Step 3: Delete NormsMonthDetail (child of NormsHeader) ──────────────
+                // ── Step 3: Delete NormsMonthDetail filtered by financialYear via FinancialYearMonth ──
+                // Parse "2025-26" → startYear=2025, endYear=2026
+                // FinancialYear months: Apr-Dec of startYear + Jan-Mar of endYear
+                int startYear;
+                int endYear;
+                try {
+                    String[] parts = financialYear.split("-");
+                    startYear = Integer.parseInt(parts[0].trim());
+                    endYear = startYear + 1;
+                } catch (Exception e) {
+                    logger.error("deleteSRMapping: could not parse financialYear='{}'", financialYear);
+                    response.setCode(400);
+                    response.setMessage("Invalid financialYear format. Expected 'YYYY-YY' e.g. '2025-26'.");
+                    return response;
+                }
+
+                // Build args: headerIds... + startYear + endYear
+                Object[] monthDetailArgs = new Object[normsHeaderIds.size() + 2];
+                System.arraycopy(headerIdArgs, 0, monthDetailArgs, 0, normsHeaderIds.size());
+                monthDetailArgs[normsHeaderIds.size()] = startYear;
+                monthDetailArgs[normsHeaderIds.size() + 1] = endYear;
+
                 int deletedMonthDetail = db1JdbcTemplate.update(
-                        "DELETE FROM NormsMonthDetail WHERE NormsHeader_FK_Id IN (" + inClause + ")",
-                        headerIdArgs);
-                logger.info("deleteSRMapping: deleted {} NormsMonthDetail row(s)", deletedMonthDetail);
+                        "DELETE nmd FROM NormsMonthDetail nmd " +
+                        "INNER JOIN FinancialYearMonth fym WITH(NOLOCK) ON nmd.FinancialYearMonth_FK_Id = fym.Id " +
+                        "WHERE nmd.NormsHeader_FK_Id IN (" + inClause + ") " +
+                        "AND ((fym.Year = ? AND fym.Month >= 4) OR (fym.Year = ? AND fym.Month <= 3))",
+                        monthDetailArgs);
+                logger.info("deleteSRMapping: deleted {} NormsMonthDetail row(s) for financialYear={}", deletedMonthDetail, financialYear);
 
-                // ── Step 4: Delete CPPNorms (child of NormsHeader) ──────────────────────
+                // ── Step 4: Delete CPPNorms filtered by financialYear ──────────────────────
+                // Build args: headerIds... + financialYear
+                Object[] normsArgs = new Object[normsHeaderIds.size() + 1];
+                System.arraycopy(headerIdArgs, 0, normsArgs, 0, normsHeaderIds.size());
+                normsArgs[normsHeaderIds.size()] = financialYear;
+
                 int deletedNorms = db1JdbcTemplate.update(
-                        "DELETE FROM CPPNorms WHERE NormsHeader_FK_Id IN (" + inClause + ")",
-                        headerIdArgs);
-                logger.info("deleteSRMapping: deleted {} CPPNorms row(s)", deletedNorms);
+                        "DELETE FROM CPPNorms WHERE NormsHeader_FK_Id IN (" + inClause + ") AND FinancialYear = ?",
+                        normsArgs);
+                logger.info("deleteSRMapping: deleted {} CPPNorms row(s) for financialYear={}", deletedNorms, financialYear);
 
-                // ── Step 5: Delete CPPMonthWisePrice (child of NormsHeader) ────────────
+                // ── Step 5: Delete CPPMonthWisePrice filtered by financialYear ────────────
                 int deletedMonthWisePrice = db1JdbcTemplate.update(
-                        "DELETE FROM CPPMonthWisePrice WHERE NormsHeader_FK_Id IN (" + inClause + ")",
-                        headerIdArgs);
-                logger.info("deleteSRMapping: deleted {} CPPMonthWisePrice row(s)", deletedMonthWisePrice);
+                        "DELETE FROM CPPMonthWisePrice WHERE NormsHeader_FK_Id IN (" + inClause + ") AND FinancialYear = ?",
+                        normsArgs);
+                logger.info("deleteSRMapping: deleted {} CPPMonthWisePrice row(s) for financialYear={}", deletedMonthWisePrice, financialYear);
 
-                // ── Step 6: Delete NormsHeader rows ─────────────────────────────────────
-                int deletedHeaders = db1JdbcTemplate.update(
-                        "DELETE FROM NormsHeader WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
-                        id.toString());
-                logger.info("deleteSRMapping: deleted {} NormsHeader row(s)", deletedHeaders);
+                // NOTE: NormsHeader and CPP_SR_Mapping_Master are intentionally NOT deleted —
+                // only child/transaction data is cleared.
             }
 
-            // ── Step 7: Delete CPP_SR_Mapping_Master ────────────────────────────────────
-            int deletedMaster = db1JdbcTemplate.update(
-                    "DELETE FROM CPP_SR_Mapping_Master WHERE ID = ?",
-                    id.toString());
-            logger.info("deleteSRMapping: deleted {} CPP_SR_Mapping_Master row(s) for id={}", deletedMaster, id);
-
             response.setCode(200);
-            response.setMessage("SR Mapping record deleted successfully.");
+            response.setMessage("SR Mapping child data cleared successfully for financialYear: " + financialYear);
             response.setData(null);
 
         } catch (Exception e) {
@@ -1081,6 +1167,48 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
         } catch (Exception e) {
             logger.error("insertCppMonthWisePrice error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Checks whether child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice) already exist
+     * for the given NormsHeader and financial year.
+     * <ul>
+     *   <li>If records are already present → logs a skip message and returns "ALREADY_EXISTS".</li>
+     *   <li>If no records for that year → inserts all 3 child tables and returns "INSERTED".</li>
+     * </ul>
+     *
+     * @param normsHeaderId UUID of the NormsHeader row
+     * @param financialYear financial year string, e.g. "2025-26"
+     * @return "ALREADY_EXISTS", "INSERTED", "SKIPPED", or "ERROR"
+     */
+    private String insertChildRecordsIfAbsent(UUID normsHeaderId, String financialYear) {
+        if (normsHeaderId == null || financialYear == null || financialYear.isBlank()) {
+            logger.warn("insertChildRecordsIfAbsent: skipped – normsHeaderId={}, financialYear={}", normsHeaderId, financialYear);
+            return "SKIPPED";
+        }
+        try {
+            // Check CPPNorms for existing records for this NormsHeader + financialYear
+            List<String> existing = db1JdbcTemplate.queryForList(
+                    "SELECT TOP 1 Id FROM CPPNorms WITH(NOLOCK) WHERE NormsHeader_FK_Id = ? AND FinancialYear = ?",
+                    String.class, normsHeaderId.toString(), financialYear);
+
+            if (!existing.isEmpty()) {
+                logger.info("insertChildRecordsIfAbsent: child records already present for NormsHeader={}, financialYear={} — skipping insert",
+                        normsHeaderId, financialYear);
+                return "ALREADY_EXISTS";
+            }
+
+            // No records for this year — insert all 3 child tables
+            insertNormsMonthDetails(normsHeaderId, financialYear);
+            insertCppNorms(normsHeaderId, financialYear);
+            insertCppMonthWisePrice(normsHeaderId, financialYear);
+            logger.info("insertChildRecordsIfAbsent: inserted child records for NormsHeader={}, financialYear={}", normsHeaderId, financialYear);
+            return "INSERTED";
+
+        } catch (Exception e) {
+            logger.error("insertChildRecordsIfAbsent error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
+            return "ERROR";
         }
     }
 

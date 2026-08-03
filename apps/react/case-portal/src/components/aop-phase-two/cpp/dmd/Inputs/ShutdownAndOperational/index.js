@@ -1,73 +1,56 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { Box, Stack } from '@mui/material'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { useMemo } from 'react'
 import HoursGrid from './HoursGrid'
 import PowerGrid from './PowerGrid'
 import STGGrid from './STGGrid'
+import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 
 const ShutdownAndOperational = () => {
+  const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { year, jmdSelectedPlants, plantObject } = dataGridStore
+  const AOP_YEAR = year?.selectedYear
+
+  const PLANT_ID_LIST = plantObject?.id
+
+  // useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+  //   [jmdSelectedPlants],
+  // )
+
   const [hoursRows, setHoursRows] = useState([])
   const [powerData, setPowerData] = useState([])
   const [steamData, setSteamData] = useState([])
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({
-    message: '',
-    severity: '',
-  })
-  const [loading, setLoading] = useState(false)
+  const [dataLoading, setDataLoading] = useState(false)
 
-  const keycloak = useSession()
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, jmdSelectedPlants } = dataGridStore
-  const PLANT_ID = plantObject?.id
-  const AOP_YEAR = year?.selectedYear
-
+  // Single shared fetch — called once on load and after any save/import in either grid
   const fetchData = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) {
-      setPowerData([])
-      setSteamData([])
-      return
-    }
-
+    if (!PLANT_ID_LIST?.length || !AOP_YEAR) return
+    setDataLoading(true)
     try {
       const res = await InputApiService.getOperationHoursData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
-
-      setPowerData(res?.data?.PowerOperationalHours || [])
+      setPowerData([
+        ...(res?.data?.PowerOperationalHours || []),
+        ...(res?.data?.ImportOperationalHours || []),
+      ])
       setSteamData(res?.data?.SteamOperationalHours || [])
-      if (!res || res?.data?.PowerOperationalHours?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      if (!res || res?.data?.SteamOperationalHours?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
     } catch (error) {
-      console.error('Error fetching shutdown and operational data:', error)
-      setPowerData([])
-      setSteamData([])
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+      console.error('Error fetching operational hours data:', error)
+    } finally {
+      setDataLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
   useEffect(() => {
-    if (AOP_YEAR && PLANT_ID && hoursRows.length) {
-      fetchData()
-    }
-  }, [AOP_YEAR, PLANT_ID, hoursRows, fetchData])
+    fetchData()
+  }, [fetchData])
 
   return (
     <Box>
@@ -77,27 +60,17 @@ const ShutdownAndOperational = () => {
       <Stack sx={{ mb: 2 }}>
         <PowerGrid
           hoursRows={hoursRows}
-          powerData={powerData}
-          refreshData={fetchData}
-          snackbarOpen={snackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          loading={loading}
-          setLoading={setLoading}
+          apiData={powerData}
+          dataLoading={dataLoading}
+          onRefresh={fetchData}
         />
       </Stack>
       <Stack>
         <STGGrid
           hoursRows={hoursRows}
-          steamData={steamData}
-          refreshData={fetchData}
-          snackbarOpen={snackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          loading={loading}
-          setLoading={setLoading}
+          apiData={steamData}
+          dataLoading={dataLoading}
+          onRefresh={fetchData}
         />
       </Stack>
     </Box>

@@ -1,6 +1,7 @@
 package com.wks.caseengine.vgoht.serviceimpl;
 
 import com.wks.caseengine.dto.AOPConsumptionNormDTO;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -294,7 +295,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			throw new RuntimeException("Error saving yearly values", e);
 		}
 	}
-	private void saveYearlyValue(String normParameterId, String year, Double value, String remarks) {
+	private void saveYearlyValue(String normParameterId, String year, String value, String remarks) {
 		String sql = """
 			MERGE INTO NormAttributeTransactions AS target
 			USING (SELECT :normParameterId AS NormParameter_FK_Id,
@@ -354,7 +355,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				if (row == null) continue;
 
 				String parameterName = getCellString(getCell(row, headerMap, "parameter"));
-				Double value = getCellDouble(getCell(row, headerMap, "value"));
+				String value = getCellString(getCell(row, headerMap, "value"));
 				String remarks = getCellString(getCell(row, headerMap, "remarks"));
 
 				if (parameterName.isEmpty()) continue;
@@ -814,17 +815,15 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
 				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 				dto.setProductName(row[1] != null ? row[1].toString() : "");
-				// dto.setValue(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
-				if (row[2] != null) {
-					String value = row[2].toString().trim();
-
+					if (row[2] != null) {
+					String rawValue = row[2].toString().trim();
 					try {
-						dto.setValue(Double.parseDouble(value));
+						dto.setValue(new BigDecimal(rawValue).toPlainString());
 					} catch (NumberFormatException e) {
-						dto.setValue(0.0); // or 0.0 based on business need
+						dto.setValue(rawValue);
 					}
 				} else {
-					dto.setValue(0.0);
+					dto.setValue("");
 				}
 				dto.setRemarks(row[3] != null ? row[3].toString() : "");
 				dto.setUOM(row[4] != null ? row[4].toString() : "");

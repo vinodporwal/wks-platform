@@ -14,6 +14,10 @@ export const InputApiService = {
   exportSteamResponseExcel,
   saveSteamResponseExcel,
 
+  // Unified APIs (Power + Steam combined)
+  exportOperationalHoursExcel,
+  saveOperationalHoursExcel,
+
   // Used in: Inputs/ImportPower.js
   getImportPowerCapacity,
   saveImportPowerCapacity,
@@ -35,6 +39,9 @@ export const InputApiService = {
   // Steam-specific export/import
   exportSteamAssetCapacityExcel,
   importSteamAssetCapacityExcel,
+  // Unified export/import (Power, Steam, or All)
+  exportAssetCapacityExcelUnified,
+  importAssetCapacityExcelUnified,
 
   // Used in: Inputs/HeatRate/GTHeatRate.js
   getPlantList,
@@ -71,6 +78,9 @@ export const InputApiService = {
   getFuelMaster,
   getFuelPriorityData,
   saveFuelPriorityData,
+  getPlantFuelAvailabilityMonthly,
+  savePlantFuelAvailabilityMonthly,
+  deletePlantFuelAvailabilityMonthly,
   importFuelPriorityExcel,
   exportFuelPriorityExcel,
 
@@ -94,6 +104,12 @@ export const InputApiService = {
   deleteProcessUnitAllocation,
   exportProcessUnitAllocationsExcel,
   saveProcessUnitAllocationsExcel,
+
+  // Used in: Inputs/Margin/index.js
+  getMarginData,
+  saveMarginData,
+  exportMarginExcel,
+  saveMarginExcel,
 }
 
 // ===================== ||Shutdown and Operational hrs APIs || ===================== //
@@ -225,6 +241,74 @@ async function exportSteamResponseExcel(
     fileName: EXCEL_NAME,
     method: 'GET',
   })
+}
+
+// ===================== || UNIFIED OPERATIONAL HOURS APIs || ===================== //
+// These APIs handle both Power and Steam assets in a single call
+// assetCategory: 'Power', 'Steam', or 'All' (for both)
+
+/**
+ * Unified Excel Export for Operational Hours (Power, Steam, or All)
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Array|string} PLANT_ID_LIST - Single or multiple plant IDs
+ * @param {string} AOP_YEAR - Financial year
+ * @param {string} assetCategory - 'Power', 'Steam', or 'All' (default: 'All')
+ * @param {string} EXCEL_NAME - Downloaded file name
+ * @returns {Promise} Excel file download
+ */
+async function exportOperationalHoursExcel(
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  assetCategory = 'All',
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/assets/operational-hours/export',
+    queryParams: {
+      plantIds: plantIdArray.join(','),
+      financialYear: AOP_YEAR,
+      assetCategory: assetCategory,
+    },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+/**
+ * Unified Excel Import for Operational Hours (Power, Steam, or All)
+ * @param {File} file - Excel file to import
+ * @param {Object} keycloak - Keycloak session object
+ * @param {Array|string} PLANT_ID_LIST - Single or multiple plant IDs
+ * @param {string} AOP_YEAR - Financial year
+ * @param {string} assetCategory - 'Power', 'Steam', or 'All' (default: 'All')
+ * @returns {Promise} API response with import status
+ */
+async function saveOperationalHoursExcel(
+  file,
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  assetCategory = 'All',
+) {
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
+  return saveExcelData(
+    file,
+    keycloak,
+    'jmd/assets/operational-hours/import',
+    PLANT_ID_LIST,
+    AOP_YEAR,
+    {
+      plantIds: plantIdArray.join(','),
+      financialYear: AOP_YEAR,
+      assetCategory: assetCategory,
+    },
+  )
 }
 
 // ========================|| Import Power APIs ||=====================================//
@@ -925,6 +1009,52 @@ async function importSteamAssetCapacityExcel(
   )
 }
 
+// ── UNIFIED Asset Capacity export/import (Power, Steam, or All) ─────────────
+
+// GET /task/jmd/asset/capacity/export?plantIds=...&aopYear=...&assetCategory=All
+async function exportAssetCapacityExcelUnified(
+  keycloak,
+  plantIds,
+  aopYear,
+  assetCategory = 'All',
+  fileName,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/asset/capacity/export',
+    queryParams: {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+      assetCategory,
+    },
+    fileName,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/asset/capacity/import?plantIds=...&aopYear=...&assetCategory=All (multipart)
+async function importAssetCapacityExcelUnified(
+  file,
+  keycloak,
+  plantIds,
+  aopYear,
+  assetCategory = 'All',
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(
+    file,
+    keycloak,
+    'jmd/asset/capacity/import',
+    null,
+    null,
+    {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+      assetCategory,
+    },
+  )
+}
+
 // Heat Rate Excel Import (GT Heat Rate)
 async function saveHeatRateExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/heat-rate/import`
@@ -1313,6 +1443,79 @@ async function saveFuelPriorityData(
   }
 }
 
+async function getPlantFuelAvailabilityMonthly(
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  const queryParams = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+  const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability-monthly/${queryParams}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result
+  } catch (e) {
+    console.error('Error fetching plant fuel availability monthly data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function savePlantFuelAvailabilityMonthly(keycloak, payload) {
+  const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability-monthly`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving plant fuel availability monthly data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function deletePlantFuelAvailabilityMonthly(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability-monthly/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error deleting plant fuel availability monthly record:', e)
+    return await Promise.reject(e)
+  }
+}
+
 async function importFuelPriorityExcel(
   file,
   keycloak,
@@ -1504,7 +1707,12 @@ async function exportProcessUnitAllocationsExcel(
 }
 
 // POST /task/process-unit-allocation/import?plantIds=UUID,UUID&aopYear=2026-27
-async function saveProcessUnitAllocationsExcel(file, keycloak, plantIds, aopYear) {
+async function saveProcessUnitAllocationsExcel(
+  file,
+  keycloak,
+  plantIds,
+  aopYear,
+) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   return saveExcelData(
     file,
@@ -1538,4 +1746,77 @@ async function deleteProcessUnitAllocation(keycloak, id) {
     console.error('Error deleting process unit allocation:', e)
     return await Promise.reject(e)
   }
+}
+
+// ========================|| Margin APIs ||=====================================//
+
+// GET /task/jmd/margin?plantIds=...&aopYear=...
+async function getMarginData(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/jmd/spinning-margin?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching margin data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/margin?plantIds=...&aopYear=...
+async function saveMarginData(keycloak, plantIds, aopYear, payload) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/jmd/spinning-margin?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving margin data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/margin/export?plantIds=...&aopYear=...
+async function exportMarginExcel(keycloak, plantIds, aopYear, EXCEL_NAME) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/spinning-margin/export',
+    queryParams: { plantIds: plantIdArray.join(','), aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/margin/import?plantIds=...&aopYear=... (multipart)
+async function saveMarginExcel(file, keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(
+    file,
+    keycloak,
+    'jmd/spinning-margin/import',
+    null,
+    null,
+    {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+    },
+  )
 }

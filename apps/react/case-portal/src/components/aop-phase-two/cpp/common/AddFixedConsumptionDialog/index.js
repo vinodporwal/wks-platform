@@ -36,7 +36,13 @@ const INITIAL_FORM_ERROR = {
   remarks: { isError: false, errorMessage: '' },
 }
 
-const REQUIRED_FIELDS = ['parentPlantId', 'recieverPlantId', 'costCenterId', 'senderPlantId', 'cppUtilityId']
+const REQUIRED_FIELDS = [
+  'parentPlantId',
+  'recieverPlantId',
+  'costCenterId',
+  'senderPlantId',
+  'cppUtilityId',
+]
 
 const FIELD_LABELS = {
   parentPlantId: 'CPP Plant',
@@ -73,11 +79,17 @@ const AddFixedConsumptionDialog = ({
     return allUtilities.filter((u) => u.plantFkId === formData.senderPlantId)
   }, [allUtilities, formData.senderPlantId])
 
-  const { jmdSelectedPlants, year, oldYear, isReleased ,plantObject,siteObject } = useSelector(
-    (state) => state.dataGridStore,
-  )
+  const {
+    jmdSelectedPlants,
+    year,
+    oldYear,
+    isReleased,
+    plantObject,
+    siteObject,
+  } = useSelector((state) => state.dataGridStore)
 
-  const selectedPlant = siteObject?.name?.toLowerCase()=='jmd' ? jmdSelectedPlants : [plantObject];
+  const selectedPlant =
+    siteObject?.name?.toLowerCase() == 'jmd' ? jmdSelectedPlants : [plantObject]
 
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
@@ -137,7 +149,9 @@ const AddFixedConsumptionDialog = ({
 
       try {
         const [plantsResponse, costCentersResponse] = await Promise.all([
-          UtilityPlantApiServiceV2.getSRMappingPlants(keycloak, [parentPlantId]),
+          UtilityPlantApiServiceV2.getSRMappingPlants(keycloak, [
+            parentPlantId,
+          ]),
           UtilityPlantApiServiceV2.getSRMappingCostCenters(keycloak, [
             parentPlantId,
           ]),
@@ -243,7 +257,7 @@ const AddFixedConsumptionDialog = ({
     }
   }
 
-  console.log('formData',formData)
+  console.log('formData', formData)
   const validateForm = () => {
     let isValid = true
     const newErrors = { ...INITIAL_FORM_ERROR }
@@ -322,7 +336,9 @@ const AddFixedConsumptionDialog = ({
       if (onSuccess) onSuccess()
     } catch (error) {
       console.error(
-        isEditMode ? 'Error updating fixed consumption row:' : 'Error adding fixed consumption row:',
+        isEditMode
+          ? 'Error updating fixed consumption row:'
+          : 'Error adding fixed consumption row:',
         error,
       )
     } finally {
@@ -351,7 +367,9 @@ const AddFixedConsumptionDialog = ({
                 fullWidth
                 label={FIELD_LABELS.parentPlantId}
                 value={formData.parentPlantId}
-                onChange={(e) => handleFieldChange('parentPlantId', e.target.value)}
+                onChange={(e) =>
+                  handleFieldChange('parentPlantId', e.target.value)
+                }
                 error={formError.parentPlantId.isError}
                 helperText={formError.parentPlantId.errorMessage}
                 required
@@ -373,7 +391,9 @@ const AddFixedConsumptionDialog = ({
                 fullWidth
                 label={FIELD_LABELS.recieverPlantId}
                 value={formData.recieverPlantId}
-                onChange={(e) => handleFieldChange('recieverPlantId', e.target.value)}
+                onChange={(e) =>
+                  handleFieldChange('recieverPlantId', e.target.value)
+                }
                 error={formError.recieverPlantId.isError}
                 helperText={formError.recieverPlantId.errorMessage}
                 required
@@ -431,7 +451,9 @@ const AddFixedConsumptionDialog = ({
                 fullWidth
                 label={FIELD_LABELS.senderPlantId}
                 value={formData.senderPlantId}
-                onChange={(e) => handleFieldChange('senderPlantId', e.target.value)}
+                onChange={(e) =>
+                  handleFieldChange('senderPlantId', e.target.value)
+                }
                 error={formError.senderPlantId.isError}
                 helperText={formError.senderPlantId.errorMessage}
                 required

@@ -14,7 +14,9 @@ import '../../css/advance-kendo-table.css'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { handleTabKeyNavigation, applyDateCalculations } from './utility'
+import { useFilterChips } from '../hooks/useFilterChips'
 import RemarkDialog from './components/RemarkDialog'
+import FilterChips from './components/FilterChips'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
@@ -37,7 +39,8 @@ import {
 } from '../utilities/RadioCellEditor'
 import {
   Box,
-  Button, Typography
+  Button,
+  Typography,
 } from '../../../../../node_modules/@mui/material/index'
 import { keyframes } from '@mui/material/styles'
 import {
@@ -67,6 +70,7 @@ import {
   calculateMonthDuration,
   getMonthStartEndDate,
 } from '../utilities/durationHelpers'
+import { convertFromScientificNotation } from '../commonUtilityFunctions'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -184,7 +188,7 @@ export const dateFields = [
   'ibrDueDate',
   'exclusionStartDate',
   'exclusionEndDate',
-  'dateOfCommencement'
+  'dateOfCommencement',
 ]
 export const monthMap = {
   january: 1,
@@ -253,6 +257,9 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  defaultGridExpanded = true,
+  showFilters = false,
+  convertScientificValue = false,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -271,7 +278,7 @@ const AdvanceKendoTable = ({
   const gridContainerRef = useRef(null)
   const activeCellRef = useRef({ rowId: null, field: null })
   const _export = useRef(null)
-  const [gridExpanded, setGridExpanded] = useState(true)
+  const [gridExpanded, setGridExpanded] = useState(defaultGridExpanded)
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -303,7 +310,7 @@ const AdvanceKendoTable = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))
@@ -592,7 +599,7 @@ const AdvanceKendoTable = ({
       }
 
       const isDropdownSiteplant = columns?.some(
-        (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant'
+        (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant',
       )
 
       // First update modifiedCells to accumulate all changes
@@ -780,6 +787,7 @@ const AdvanceKendoTable = ({
             'remarks',
             'remark',
             'Remark',
+            'Remarks',
             'purpose',
             'reasons',
             'majorJobs',
@@ -1075,7 +1083,11 @@ const AdvanceKendoTable = ({
       return (
         <td
           {...tdProps}
-          title={value}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
           style={{
             ...tdProps?.style,
           }}
@@ -1104,7 +1116,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
@@ -1143,7 +1157,14 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={
+            convertScientificValue
+              ? convertFromScientificNotation(value)
+              : value
+          }
+        >
           {formattedValue}
         </td>
       )
@@ -1212,7 +1233,9 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={value}
+        title={
+          convertScientificValue ? convertFromScientificNotation(value) : value
+        }
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
           color:
@@ -1337,6 +1360,13 @@ const AdvanceKendoTable = ({
     HeaderWithSubtitle.displayName = `HeaderWithSubtitle(${subtitle})`
     return HeaderWithSubtitle
   }
+
+  const {
+    activeFilters,
+    getColumnTitle,
+    handleRemoveFilter,
+    handleClearAllFilters,
+  } = useFilterChips(filter, setFilter, columns)
 
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
 
@@ -2095,7 +2125,9 @@ const AdvanceKendoTable = ({
                     }))
                   } else {
                     const selectedSiteName = cellProps.dataItem.siteName
-                    const site = siteDropdown.find((s) => s.name === selectedSiteName)
+                    const site = siteDropdown.find(
+                      (s) => s.name === selectedSiteName,
+                    )
                     const plants = site?.plants || []
                     options = plants.map((p) => ({
                       label: p.displayName || p.name,
@@ -2124,7 +2156,9 @@ const AdvanceKendoTable = ({
                   }))
                 } else {
                   const selectedSiteName = props.dataItem.siteName
-                  const site = siteDropdown.find((s) => s.name === selectedSiteName)
+                  const site = siteDropdown.find(
+                    (s) => s.name === selectedSiteName,
+                  )
                   const plants = site?.plants || []
                   options = plants.map((p) => ({
                     label: p.displayName || p.name,
@@ -2173,6 +2207,7 @@ const AdvanceKendoTable = ({
                       placeholder='Select...'
                       searchable={col.searchable || false}
                       showClearOption={col.showClearOption || false}
+                      returnFullObject={col.returnFullObject || false}
                     />
                   )
                 },
@@ -2293,13 +2328,19 @@ const AdvanceKendoTable = ({
                 text: (cellProps) => {
                   const { dataItem, field, onChange } = cellProps
                   const checked = !!dataItem[field]
+                  const isCellDisabled =
+                    !isEditable || dataItem?.isEditable === false
                   return (
                     <td style={{ textAlign: 'center', padding: '6px 2px' }}>
                       <Checkbox
                         checked={checked}
+                        disabled={isCellDisabled}
                         onChange={(e) => {
+                          if (isCellDisabled) return
                           const newVal =
-                            e.value ?? e.target?.checked ?? !checked
+                            typeof e.value === 'boolean'
+                              ? e.value
+                              : e.target?.checked ?? !checked
                           onChange({ dataItem, field, value: newVal })
                         }}
                         size='medium'
@@ -2310,19 +2351,15 @@ const AdvanceKendoTable = ({
               },
               data: (cellProps) => {
                 const { dataItem, field, tdProps } = cellProps
-                const rowId = dataItem.id
-                const isEdited = Object.prototype.hasOwnProperty.call(
-                  customModifiedCells?.[rowId] || {},
-                  field,
-                )
                 const checked = !!dataItem[field]
+                const isCellDisabled =
+                  !isEditable || dataItem?.isEditable === false
                 return (
                   <td
                     {...tdProps}
                     style={{
                       textAlign: 'center',
                       ...tdProps?.style,
-                      outline: isEdited ? '2px solid orange' : undefined,
                     }}
                     // Prevent the row-click from propagating so the grid
                     // doesn't enter full row-edit mode on checkbox click
@@ -2330,11 +2367,13 @@ const AdvanceKendoTable = ({
                   >
                     <Checkbox
                       checked={checked}
+                      disabled={isCellDisabled}
                       onChange={(e) => {
-                        if (!isEditable) return
+                        if (isCellDisabled) return
                         const newVal =
-                          e.value ?? e.target?.checked ?? !checked
-                        // Call itemChange directly — it's in closure scope
+                          typeof e.value === 'boolean'
+                            ? e.value
+                            : e.target?.checked ?? !checked
                         itemChange({ dataItem, field, value: newVal })
                       }}
                       size='medium'
@@ -2480,6 +2519,30 @@ const AdvanceKendoTable = ({
             columnMenu={ColumnMenuCheckboxFilter}
             className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Custom Action Cell Handler — always render column, pass editable to cell
+      if (col.type === 'customAction' && col.cell) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={false}
+            filterable={false}
+            className={col.className || 'k-text-center'}
+            headerClassName={col.headerClassName || 'k-text-center'}
+            cells={{
+              data: col.cell,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            width={setWidth(col?.minWidth || col?.widthT || 80)}
           />
         )
       }
@@ -2702,7 +2765,11 @@ const AdvanceKendoTable = ({
                   className='btn-add'
                   startIcon={<AddIcon />}
                   onClick={handleAddRow}
-                  disabled={isButtonDisabled || READ_ONLY}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    permissions?.disableActionButtons
+                  }
                 >
                   {permissions?.addBtnName || 'Add Item'}
                 </Button>
@@ -2789,6 +2856,7 @@ const AdvanceKendoTable = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
+                    permissions?.disableActionButtons ||
                     Object.keys(modifiedCells).length === 0
                   }
                 >
@@ -2852,6 +2920,15 @@ const AdvanceKendoTable = ({
             </Box>
           </Box>
         </Box>
+      )}
+
+      {(showFilters || IS_CPP) && (
+        <FilterChips
+          activeFilters={activeFilters}
+          getColumnTitle={getColumnTitle}
+          handleRemoveFilter={handleRemoveFilter}
+          handleClearAllFilters={handleClearAllFilters}
+        />
       )}
 
       <Collapse in={gridExpanded}>

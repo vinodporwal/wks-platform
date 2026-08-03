@@ -39,7 +39,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetMonthDTO;
-import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetResponseDTO;
 import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetSummaryPeriodDTO;
 import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetSummaryResponseDTO;
 import com.wks.caseengine.cpp.dto.norm.NormsMonthUpdateRequestDTO;
@@ -49,7 +48,6 @@ import com.wks.caseengine.cpp.dto.norm.OutputNormsUtilityBudgetResponseDTO;
 import com.wks.caseengine.cpp.entity.NormsMonthDetail;
 import com.wks.caseengine.cpp.repository.NormsMonthDetailRepository;
 import com.wks.caseengine.cpp.service.JMDNormBasedUtilityBudgetService;
-import com.wks.caseengine.cpp.service.NormBasedUtilityBudgetService;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -104,31 +102,33 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     }
 
     @Override
-    public AOPMessageVM getNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear) {
+    public AOPMessageVM getNormBasedUtilityBudgetSummary(String cppPlantIds, String financialYear) {
 
         log.info("=== Starting getNormBasedUtilityBudgetSummary ===");
-        log.info("CPPPlantId: {}, FinancialYear: {}", cppPlantId, financialYear);
+        log.info("CPPPlantId: {}, FinancialYear: {}", cppPlantIds, financialYear);
 
         AOPMessageVM vm = new AOPMessageVM();
 
         try {
-            if (cppPlantId == null) {
-                log.error("CPPPlantId is null");
+            if (cppPlantIds == null || cppPlantIds.trim().isEmpty()) {
+                log.error("CPPPlantIds is null or empty");
                 vm.setCode(400);
-                vm.setMessage("CPPPlantId cannot be null");
+                vm.setMessage("CPPPlantIds cannot be null or empty");
                 vm.setData(new ArrayList<>());
                 return vm;
             }
 
             StoredProcedureQuery sp = entityManager
-                    .createStoredProcedureQuery("dbo.CPP_NMD_GetNormBasedUtilityBudget_Summary")
+                    .createStoredProcedureQuery("dbo.CPP_Common_GetNormBasedUtilityBudget_Summary")
                     .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
                     .registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
 
-            sp.setParameter(1, cppPlantId.toString());
+            log.info("CPPPlantIds: {}, FinancialYear: {}", cppPlantIds, financialYear);
+
+            sp.setParameter(1, cppPlantIds);
             sp.setParameter(2, financialYear);
 
-            log.info("Executing stored procedure dbo.CPP_NMD_GetNormBasedUtilityBudget_Summary ...");
+            log.info("Executing stored procedure dbo.CPP_Common_GetNormBasedUtilityBudget_Summary ...");
             sp.execute();
 
             @SuppressWarnings("unchecked")
@@ -185,7 +185,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         }
     }
 
-    private void setMonthDetailedCellValues(Row row, int startCol, NormBasedUtilityBudgetMonthDTO monthDTO, CellStyle dataStyle) {
+    private void setMonthDetailedCellValues(Row row, int startCol, OutputNormsUtilityBudgetMonthDTO monthDTO, CellStyle dataStyle) {
         if (monthDTO != null) {
             setDoubleCellValue(row.createCell(startCol), monthDTO.getQty(), dataStyle);
             setDoubleCellValue(row.createCell(startCol + 1), monthDTO.getNorms(), dataStyle);
@@ -459,6 +459,8 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             dto.setQ3(parseSummaryJson(getString(r[i++]), "q3", rowIndex));
             dto.setQ4(parseSummaryJson(getString(r[i++]), "q4", rowIndex));
             dto.setAnnual(parseSummaryJson(getString(r[i++]), "annual", rowIndex));
+            dto.setCppPlantId(getString(r[i++]));
+            dto.setCppPlantName(getString(r[i++]));
 
             return dto;
 
@@ -1221,12 +1223,12 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     public byte[] exportNormBasedUtilityBudgetDetailed(List<UUID> cppPlantIds, String financialYear) {
         try {
             AOPMessageVM result = getNormBasedUtilityBudget(cppPlantIds, financialYear);
-            List<NormBasedUtilityBudgetResponseDTO> dtoList = new ArrayList<>();
+            List<OutputNormsUtilityBudgetResponseDTO> dtoList = new ArrayList<>();
             Object data = result.getData();
             if (data instanceof List) {
                 @SuppressWarnings("unchecked")
-                List<NormBasedUtilityBudgetResponseDTO> dataList =
-                        (List<NormBasedUtilityBudgetResponseDTO>) data;
+                List<OutputNormsUtilityBudgetResponseDTO> dataList =
+                        (List<OutputNormsUtilityBudgetResponseDTO>) data;
                 dtoList = dataList;
             } else if (data instanceof Map) {
                 @SuppressWarnings("unchecked")
@@ -1234,13 +1236,13 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 Object listObj = map.get("list");
                 if (listObj instanceof List) {
                     @SuppressWarnings("unchecked")
-                    List<NormBasedUtilityBudgetResponseDTO> dataList = (List<NormBasedUtilityBudgetResponseDTO>) listObj;
+                    List<OutputNormsUtilityBudgetResponseDTO> dataList = (List<OutputNormsUtilityBudgetResponseDTO>) listObj;
                     dtoList = dataList;
                 }
             }
 
             Workbook workbook = new XSSFWorkbook();
-            Sheet sheet = workbook.createSheet("Norm Based Utility Budget Detailed");
+            Sheet sheet = workbook.createSheet("Norm Based Utility Budget Detail");
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
             CellStyle remarksStyle = createRemarksStyle(workbook);
@@ -1254,7 +1256,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             col = 0;
 
             String[] staticColNames = {
-                "Generating Plant", "Utility", "Utility ID", "UOM",
+                "CPP Plant", "Generating Plant", "Utility", "Utility ID", "UOM",
                 "Account", "Material", "SAP Code", "Issuing Plant", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
@@ -1344,11 +1346,14 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 log.warn("exportNormBasedUtilityBudgetDetailed: no data available to export for plant {} year {}", cppPlantIds, financialYear);
             }
 
-            for (NormBasedUtilityBudgetResponseDTO dto : dtoList) {
+            for (OutputNormsUtilityBudgetResponseDTO dto : dtoList) {
                 Row row = sheet.createRow(currentRow++);
                 col = 0;
 
                 Cell cell = row.createCell(col++);
+                cell.setCellValue(dto.getCppPlantName() != null ? dto.getCppPlantName() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getGeneratingPlantName() != null ? dto.getGeneratingPlantName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
@@ -1437,9 +1442,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
     }
 
     @Override
-    public byte[] exportNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear) {
+    public byte[] exportNormBasedUtilityBudgetSummary(String cppPlantIds, String financialYear) {
         try {
-            AOPMessageVM result = getNormBasedUtilityBudgetSummary(cppPlantId, financialYear);
+            AOPMessageVM result = getNormBasedUtilityBudgetSummary(cppPlantIds, financialYear);
             List<NormBasedUtilityBudgetSummaryResponseDTO> dtoList = new ArrayList<>();
             if (result.getData() instanceof List) {
                 @SuppressWarnings("unchecked")
@@ -1460,7 +1465,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             col = 0;
 
             String[] staticColNames = {
-                "Generating Plant", "Utility", "Utility ID", "UOM",
+                "CPP Plant", "Generating Plant", "Utility", "Utility ID", "UOM",
                 "Account", "Material", "SAP Code", "Issuing Plant", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
@@ -1536,6 +1541,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 col = 0;
 
                 Cell cell = row.createCell(col++);
+                cell.setCellValue(dto.getCppPlantName() != null ? dto.getCppPlantName() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getGeneratingPlantName() != null ? dto.getGeneratingPlantName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);

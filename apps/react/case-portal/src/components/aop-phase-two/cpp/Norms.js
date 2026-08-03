@@ -663,6 +663,7 @@ const Norms = () => {
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
+      getIsReleased()
       fetchNormsData()
       setModifiedCells({})
     }
@@ -683,15 +684,13 @@ const Norms = () => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.data?.list
-        ?.filter((item) => item?.accountName !== 'Stores & Spares')
-        .map((item, index) => {
-          return {
-            ...item,
-            id: item.id || index + 1,
-            remarks: item.remarks || '',
-          }
-        })
+      let tempRes = res?.data?.list?.map((item, index) => {
+        return {
+          ...item,
+          id: item.id || index + 1,
+          remarks: item.remarks || '',
+        }
+      })
 
       setRows(tempRes)
       setCalculateBtnEnabled(res?.data?.aopCalculation?.length > 0)
@@ -753,9 +752,6 @@ const Norms = () => {
       console.error('Error fetching release status:', error)
     }
   }
-  useEffect(() => {
-    getIsReleased()
-  }, [keycloak, AOP_YEAR, PLANT_ID])
 
   const handleRelease = () => {
     setOpenReleaseDialogBox(true)
@@ -1054,9 +1050,9 @@ const Norms = () => {
         return <NormsJMD />
 
       case 'dmd':
+      case 'hmd':
+      case 'vmd':
         return <NormsDMD />
-      // case 'hmd':
-      //   return <NormsHMD />
       case 'nmd':
       default:
         return (

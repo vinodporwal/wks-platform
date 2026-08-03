@@ -82,7 +82,6 @@ import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
 import ProposedAOP from 'components/kendo-data-tables/ProposedAOP'
 import Summary from 'components/aop-phase-two/cpp/Summary/index'
-import SenderReceiverMapping from 'components/aop-phase-two/cpp/SenderReceiverMapping'
 import ProductionNormsBasis from 'components/aop-phase-two/vgoht/production-norms-basis/index'
 import ShutdownActivities from 'components/aop-phase-two/vgoht/shutdown-activities/index'
 import SlowdownActivities from 'components/aop-phase-two/vgoht/slowdown-activities/index'
@@ -161,6 +160,11 @@ import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
 import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
 import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
+import NetProductionHoursPCG from 'components/aop-phase-two/pcg/net-production-hours/index'
+import MonthwiseProductionPlanPCG from 'components/aop-phase-two/pcg/monthwise-production-plan/index'
+import ShutdownActivitiesPCG from 'components/aop-phase-two/pcg/shutdown-activities/index'
+import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consumption/index'
+
 // PCG Ended
 
 // Vertical Refinery Utility
@@ -176,11 +180,13 @@ import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/ov
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
 import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
 import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
-import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUpload'
 import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
 import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
 import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
 import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
+import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
+import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
+import Outputs from 'components/aop-phase-two/cpp/Outputs'
 
 // Naphthasplitter Ended
 
@@ -1027,6 +1033,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'material-grouped-selection-polyester',
+            element: (
+              <PrivateRoute routeId='material-grouped-selection-polyester'>
+                <MaterialGroupedSelectionPolyester />
+              </PrivateRoute>
+            ),
+          },
           //Vertical STAPLE (Polyester) Ended ****************************
 
           //Vertical MEROX Started
@@ -1081,6 +1095,39 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'shutdown-activities-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-activities-pcg'>
+                <ShutdownActivitiesPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-pcg',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-pcg'>
+                <NetProductionHoursPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-pcg',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-pcg'>
+                <MonthwiseProductionPlanPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-pcg'>
+                <ShutdownConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical PCG Ended
           //Vertical Refinery utility Started
           {
@@ -1385,10 +1432,10 @@ export const MainRoutes = (
             ),
           },
           {
-            path: 'sender-receiverMapping',
+            path: 'outputs',
             element: (
-              <PrivateRoute routeId='sender-receiverMapping'>
-                <SenderReceiverMapping />
+              <PrivateRoute routeId='outputs'>
+                <Outputs />
               </PrivateRoute>
             ),
           },

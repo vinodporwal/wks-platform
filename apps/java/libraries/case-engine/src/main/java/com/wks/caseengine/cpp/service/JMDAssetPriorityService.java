@@ -35,4 +35,16 @@ public interface JMDAssetPriorityService {
             List<UUID> plantIds,
             String aopYear,
             MultipartFile file);
+
+    // ── UNIFIED export/import (Power, Steam, or All) ──────────────────────────
+    byte[] exportAssetPriorityExcel(
+            List<UUID> plantIds,
+            String aopYear,
+            String assetCategory);
+
+    AOPMessageVM importAssetPriorityExcel(
+            List<UUID> plantIds,
+            String aopYear,
+            String assetCategory,
+            MultipartFile file);
 }

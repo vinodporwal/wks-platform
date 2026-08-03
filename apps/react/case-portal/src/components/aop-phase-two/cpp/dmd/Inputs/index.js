@@ -2,19 +2,21 @@ import { useEffect, useState, useCallback } from 'react'
 import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ImportPower from './ImportPower'
 import AssetCapacity from './AssetCapacity/index'
 import ShutdownAndOperational from './ShutdownAndOperational/index'
 import { generateMockData } from './InputUtility'
 import ExportAvailability from './ExportAvailability'
 import HeatRate from './HeatRate/index'
-import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
 import Prices from '../../Inputs/Prices/index'
+import FuelPriority from './FuelPriority/index'
+import ImportPower from '../../dmd/Inputs/ImportPowerMain/index'
+import InputNorms from './InputNorms/index'
+import SpinningMargin from '../../common/SpinningMargin/index'
 
 const InputsDMD = () => {
   const keycloak = useSession()
@@ -41,6 +43,8 @@ const InputsDMD = () => {
 
     switch (siteObject?.name?.toLowerCase()) {
       case 'dmd':
+      case 'hmd':
+      case 'vmd':
         tabs = [
           {
             id: 'aop-design-basis',
@@ -73,49 +77,43 @@ const InputsDMD = () => {
             displaySequence: 4,
           },
           {
+            id: 'spinning-margin',
+            name: 'spinningMargin',
+            displayName: 'Spinning Margin',
+            displaySequence: 5,
+          },
+          {
             id: 'heat-rate',
             name: 'heatRate',
             displayName: 'Heat Rate',
-            displaySequence: 5,
+            displaySequence: 6,
+          },
+          {
+            id: 'sr-mapping',
+            name: 'srMapping',
+            displayName: 'SR Mapping',
+            displaySequence: 7,
           },
           {
             id: 'fixed-norms',
             name: 'Norms',
             displayName: 'Norms',
-            displaySequence: 6,
+            displaySequence: 8,
           },
           {
             id: 'fuel-availability',
             name: 'fuelAvailability',
             displayName: 'Fuel Availability',
-            displaySequence: 7,
+            displaySequence: 9,
           },
-          {
-            id: 'prices',
-            name: 'prices',
-            displayName: 'Prices',
-            displaySequence: 8,
-          },
+          // {
+          //   id: 'fuel-priority',
+          //   name: 'fuelPriority',
+          //   displayName: 'Fuel Priority',
+          //   displaySequence: 10,
+          // },
         ]
         break
-
-      case 'hmd':
-        tabs = [
-          {
-            id: 'aop-design-basis',
-            name: 'aopDesignBasis',
-            displayName: 'AOP Design Basis',
-            displaySequence: 0,
-          },
-          {
-            id: 'purchase-power',
-            name: 'purchasePowerInput',
-            displayName: 'Purchase Power Input',
-            displaySequence: 1,
-          },
-        ]
-        break
-
       default:
         tabs = []
         break
@@ -191,12 +189,16 @@ const InputsDMD = () => {
         return <ShutdownAndOperational />
       case 'export-availability':
         return <ExportAvailability />
+      case 'spinning-margin':
+        return <SpinningMargin />
       case 'heat-rate':
         return <HeatRate />
       case 'fixed-norms':
-        return <FixedNorms />
+        return <InputNorms />
       case 'fuel-availability':
         return <Fuel />
+      case 'fuel-priority':
+        return <FuelPriority />
       case 'prices':
         return <Prices />
       default:

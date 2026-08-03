@@ -514,11 +514,22 @@ public class HeatRateService {
     }
 
     public List<STGHeatRateDTO> getSTGHeatRate(String financialYear) {
+        return getSTGHeatRate(financialYear, null);
+    }
+
+    public List<STGHeatRateDTO> getSTGHeatRate(String financialYear, String assetId) {
         logger.info("========== SERVICE: getSTGHeatRate ==========");
-        logger.info("Input Parameters - financialYear: {}", financialYear);
+        logger.info("Input Parameters - financialYear: {}, assetId: {}", financialYear, assetId);
 
         String previousFinancialYear = calculatePreviousFinancialYear(financialYear);
-        List<STGHeatRateProjection> projections = heatRateRepository.findStgHeatRateByFinancialYear(financialYear, previousFinancialYear);
+        List<STGHeatRateProjection> projections;
+
+        if (assetId != null && !assetId.trim().isEmpty()) {
+            projections = heatRateRepository.findStgHeatRateByAssetIdAndFinancialYear(
+                    UUID.fromString(assetId), financialYear, previousFinancialYear);
+        } else {
+            projections = heatRateRepository.findStgHeatRateByFinancialYear(financialYear, previousFinancialYear);
+        }
 
         List<STGHeatRateDTO> result = projections.stream()
                 .map(projection -> {
@@ -542,14 +553,17 @@ public class HeatRateService {
         return result;
     }
 
-    public List<STGHeatRateDTO> getSTGHeatRateWithProposed(String financialYear, String startDate, String endDate) {
+    public List<STGHeatRateDTO> getSTGHeatRateWithProposed(String financialYear, String startDate, String endDate,
+            String assetId, List<String> plantIds) {
         logger.info("========== SERVICE: getSTGHeatRateWithProposed ==========");
-        logger.info("Input Parameters - financialYear: {}, startDate: {}, endDate: {}", financialYear, startDate, endDate);
+        logger.info("Input Parameters - financialYear: {}, startDate: {}, endDate: {}, assetId: {}, plantIds: {}",
+                financialYear, startDate, endDate, assetId, plantIds);
 
-        List<STGHeatRateDTO> stgHeatRateDTOs = getSTGHeatRate(financialYear);
+        List<STGHeatRateDTO> stgHeatRateDTOs = getSTGHeatRate(financialYear, assetId);
 
         if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
-            java.util.Map<Double, Double> proposedHeatRateMap = calculateProposedSTGHeatRates(startDate, endDate);
+            java.util.Map<Double, Double> proposedHeatRateMap = calculateProposedSTGHeatRates(
+                    startDate, endDate, assetId, plantIds, financialYear);
 
             for (STGHeatRateDTO dto : stgHeatRateDTOs) {
                 Double proposedHeatRate = proposedHeatRateMap.get(dto.getStgLoad());
@@ -566,11 +580,19 @@ public class HeatRateService {
         return stgHeatRateDTOs;
     }
 
-    private java.util.Map<Double, Double> calculateProposedSTGHeatRates(String startDate, String endDate) {
+    private java.util.Map<Double, Double> calculateProposedSTGHeatRates(
+            String startDate, String endDate, String assetId, List<String> plantIds, String financialYear) {
         logger.info("========== calculateProposedSTGHeatRates START ==========");
-        logger.info("Calculating proposed STG heat rates for dateRange: {} to {}", startDate, endDate);
+        logger.info("Calculating proposed STG heat rates for dateRange: {} to {}, assetId: {}, plantIds: {}, financialYear: {}",
+                startDate, endDate, assetId, plantIds, financialYear);
 
-        String sql = "EXEC CPP_CalculateSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?";
+        // Build comma-separated plant IDs string
+        String plantIdsStr = "";
+        if (plantIds != null && !plantIds.isEmpty()) {
+            plantIdsStr = String.join(",", plantIds);
+        }
+
+        String sql = "EXEC CPP_CalculateSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?, @AssetId = ?, @PlantIds = ?, @FinancialYear = ?";
         java.util.Map<Double, Double> proposedHeatRateMap = new java.util.HashMap<>();
 
         try {
@@ -582,7 +604,7 @@ public class HeatRateService {
                         proposedHeatRateMap.put(stgLoad, heatRate);
                     }
                 },
-                startDate, endDate
+                startDate, endDate, assetId, plantIdsStr, financialYear
             );
         } catch (Exception e) {
             logger.error("Error calling STG stored procedure: {}", e.getMessage(), e);
@@ -1009,11 +1031,12 @@ public byte[] exportHeatRate(String assetId, String financialYear, String startD
     return outputStream.toByteArray();
 }
 
-public byte[] exportSTGHeatRate(String financialYear, String startDate, String endDate) throws IOException {
+public byte[] exportSTGHeatRate(String financialYear, String startDate, String endDate,
+        String assetId, List<String> plantIds) throws IOException {
     List<STGHeatRateDTO> data;
 
     if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
-        data = getSTGHeatRateWithProposed(financialYear, startDate, endDate);
+        data = getSTGHeatRateWithProposed(financialYear, startDate, endDate, assetId, plantIds);
     } else {
         data = getSTGHeatRate(financialYear);
     }

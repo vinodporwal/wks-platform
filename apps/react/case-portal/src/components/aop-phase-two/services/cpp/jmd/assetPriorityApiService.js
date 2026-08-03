@@ -10,6 +10,8 @@ export const AssetPriorityApiService = {
   exportSteamAssetPriority,
   importPowerAssetPriority,
   importSteamAssetPriority,
+  exportAssetPriorityExcelUnified,
+  importAssetPriorityExcelUnified,
 }
 
 // ========================|| Asset Priority APIs ||=====================================//
@@ -357,6 +359,107 @@ async function importSteamAssetPriority(
     return responseData
   } catch (e) {
     console.error(`Error importing Steam Asset Priority Excel:`, e)
+    return Promise.reject(e)
+  }
+}
+
+// ── UNIFIED Asset Priority Excel Export (Power, Steam, or All) ────────────────
+async function exportAssetPriorityExcelUnified(
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  assetCategory = 'Power',
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
+  const queryParams = plantIdArray.map((id) => id).join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/assets/priority/export?plantIds=${queryParams}&aopYear=${AOP_YEAR}&assetCategory=${assetCategory}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error(`Error exporting unified Asset Priority Excel:`, e)
+    return Promise.reject(e)
+  }
+}
+
+// ── UNIFIED Asset Priority Excel Import (Power, Steam, or All) ────────────────
+async function importAssetPriorityExcelUnified(
+  file,
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  assetCategory = 'Power',
+) {
+  const plantIdArray = Array.isArray(PLANT_ID_LIST)
+    ? PLANT_ID_LIST
+    : [PLANT_ID_LIST]
+  const queryParams = plantIdArray.map((id) => id).join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/assets/priority/import?plantIds=${queryParams}&aopYear=${AOP_YEAR}&assetCategory=${assetCategory}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const responseData = await json(keycloak, resp)
+
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    return responseData
+  } catch (e) {
+    console.error(`Error importing unified Asset Priority Excel:`, e)
     return Promise.reject(e)
   }
 }

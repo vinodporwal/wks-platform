@@ -80,6 +80,13 @@ const SteadyStateConsumption = () => {
       hidden: true,
     },
     {
+      field: 'sapCode',
+      title: 'Sap Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'UOM',
       title: 'UOM',
       minWidth: 100,
@@ -191,44 +198,39 @@ const SteadyStateConsumption = () => {
     },
   ]
 
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
 
+    setLoading(true)
+    setRows([])
+    try {
+      let response =
+        await SteadyStateConsumptionApiService.getSteadyStateConsumptionByGrade(
+          keycloak,
+          null,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
-  const fetchData = useCallback(
-    async () => {
-      if (!PLANT_ID || !AOP_YEAR) return
+      setCalculationObject(response?.data?.aopCalculation || [])
 
-      setLoading(true)
-      setRows([])
-      try {
-        let response =
-          await SteadyStateConsumptionApiService.getSteadyStateConsumptionByGrade(
-            keycloak,
-            null,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+      const mappedData = response?.data?.mcuNormsValueDTOList || []
+      const formattedData = mappedData.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: `${index}`,
+        originalRemark: item.remarks,
+        Particulars: item.normParameterTypeDisplayName,
+      }))
 
-        setCalculationObject(response?.data?.aopCalculation || [])
-
-        const mappedData = response?.data?.mcuNormsValueDTOList || []
-        const formattedData = mappedData.map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: `${index}`,
-          originalRemark: item.remarks,
-          Particulars: item.normParameterTypeDisplayName,
-        }))
-
-        setRows(formattedData)
-        setOriginalRows(formattedData)
-      } catch (error) {
-        console.error('Error fetching steady state consumption data:', error)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [PLANT_ID, AOP_YEAR, keycloak],
-  )
+      setRows(formattedData)
+      setOriginalRows(formattedData)
+    } catch (error) {
+      console.error('Error fetching steady state consumption data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -341,13 +343,7 @@ const SteadyStateConsumption = () => {
     } finally {
       setLoading(false)
     }
-  }, [
-    modifiedCells,
-    PLANT_ID,
-    AOP_YEAR,
-    keycloak,
-    fetchData,
-  ])
+  }, [modifiedCells, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
   // ===================== Calculate (PE uses site + vertical — same as NormalOpNorms handleCalculateNormalOperationNormsPe) =====================
 
@@ -524,7 +520,7 @@ const SteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}

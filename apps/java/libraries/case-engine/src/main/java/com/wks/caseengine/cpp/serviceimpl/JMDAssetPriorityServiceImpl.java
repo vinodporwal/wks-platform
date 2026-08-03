@@ -1181,4 +1181,170 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         }
         return null;
     }
+
+    // ── UNIFIED export ─────────────────────────────────────────────────────────
+    @Override
+    public byte[] exportAssetPriorityExcel(List<UUID> plantIds, String aopYear, String assetCategory) {
+        logger.info("[Export Unified Priority] assetCategory={}, plantIds={}, aopYear={}", assetCategory, plantIds, aopYear);
+
+        try {
+            AOPMessageVM response = getAssetPrioritiesForPlants(plantIds, aopYear);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) response.getData();
+
+            @SuppressWarnings("unchecked")
+            List<CPPAssetPriorityResponseDto> powerData =
+                    (List<CPPAssetPriorityResponseDto>) data.get("PowerAssetPriorities");
+
+            @SuppressWarnings("unchecked")
+            List<CPPAssetPriorityResponseDto> steamData =
+                    (List<CPPAssetPriorityResponseDto>) data.get("SteamAssetPriorities");
+
+            List<CPPAssetPriorityResponseDto> combined = new ArrayList<>();
+
+            if ("Power".equalsIgnoreCase(assetCategory)) {
+                if (powerData != null) combined.addAll(powerData);
+                logger.info("[Export Unified Priority] Exporting {} Power rows", combined.size());
+            } else if ("Steam".equalsIgnoreCase(assetCategory)) {
+                if (steamData != null) combined.addAll(steamData);
+                logger.info("[Export Unified Priority] Exporting {} Steam rows", combined.size());
+            } else {
+                if (powerData != null) combined.addAll(powerData);
+                if (steamData != null) combined.addAll(steamData);
+                logger.info("[Export Unified Priority] Exporting {} combined rows (Power + Steam)", combined.size());
+            }
+
+            String sheetLabel = "Power".equalsIgnoreCase(assetCategory)
+                    ? "Power Asset Priority"
+                    : "Steam".equalsIgnoreCase(assetCategory)
+                            ? "Steam Asset Priority"
+                            : "Asset Priority";
+
+            return generatePriorityExcel(combined, sheetLabel, aopYear);
+
+        } catch (Exception e) {
+            logger.error("[Export Unified Priority] Error: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    // ── UNIFIED import ─────────────────────────────────────────────────────────
+    @Override
+    public AOPMessageVM importAssetPriorityExcel(List<UUID> plantIds, String aopYear,
+                                                  String assetCategory, MultipartFile file) {
+        logger.info("[Import Unified Priority] assetCategory={}, plantIds={}, aopYear={}", assetCategory, plantIds, aopYear);
+
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            List<CPPAssetPriorityResponseDto> excelData =
+                    readAssetPriorityExcel(file.getInputStream(), aopYear);
+            logger.info("[Import Unified Priority] Read {} records from Excel", excelData.size());
+
+            List<CPPAssetPriorityResponseDto> validPower = new ArrayList<>();
+            List<CPPAssetPriorityResponseDto> validSteam = new ArrayList<>();
+            List<CPPAssetPriorityResponseDto> failedRecords = new ArrayList<>();
+            List<String> failureReasons = new ArrayList<>();
+            int skippedCount = 0;
+
+            for (CPPAssetPriorityResponseDto dto : excelData) {
+
+                String rowCategory = dto.getAssetCategory();
+                if ("Power".equalsIgnoreCase(assetCategory) && !"Power".equalsIgnoreCase(rowCategory)) {
+                    skippedCount++;
+                    continue;
+                }
+                if ("Steam".equalsIgnoreCase(assetCategory) && !"Steam".equalsIgnoreCase(rowCategory)) {
+                    skippedCount++;
+                    continue;
+                }
+
+                boolean isPower = "Steam".equalsIgnoreCase(rowCategory) ? false : true;
+                if (!isPriorityRecordModifiedForImport(dto, isPower)) {
+                    skippedCount++;
+                    logger.debug("[Import Unified Priority] Skipping unchanged record: {}", dto.getAssetName());
+                    continue;
+                }
+
+                String validationError = validateAssetPriorityData(dto, isPower);
+                if (validationError != null) {
+                    failedRecords.add(dto);
+                    failureReasons.add(validationError);
+                    logger.warn("[Import Unified Priority] Invalid record - {}: {}", dto.getAssetName(), validationError);
+                } else {
+                    if ("Steam".equalsIgnoreCase(rowCategory)) {
+                        validSteam.add(dto);
+                    } else {
+                        validPower.add(dto);
+                    }
+                }
+            }
+
+            logger.info("[Import Unified Priority] Skipped: {}, validPower: {}, validSteam: {}, failed: {}",
+                    skippedCount, validPower.size(), validSteam.size(), failedRecords.size());
+
+            // Save Power records
+            if (!validPower.isEmpty()) {
+                try {
+                    AssetPriorityRequestDTO payload = new AssetPriorityRequestDTO();
+                    payload.setPowerResponse(validPower);
+                    saveAssetPriorities(plantIds, aopYear, payload);
+                    logger.info("[Import Unified Priority] Saved {} Power records", validPower.size());
+                } catch (Exception e) {
+                    logger.error("[Import Unified Priority] Error saving Power records: {}", e.getMessage(), e);
+                    for (CPPAssetPriorityResponseDto fd : validPower) {
+                        failedRecords.add(fd);
+                        failureReasons.add("Save failed: " + e.getMessage());
+                    }
+                }
+            }
+
+            // Save Steam records
+            if (!validSteam.isEmpty()) {
+                try {
+                    AssetPriorityRequestDTO payload = new AssetPriorityRequestDTO();
+                    payload.setSteamResponse(validSteam);
+                    saveAssetPriorities(plantIds, aopYear, payload);
+                    logger.info("[Import Unified Priority] Saved {} Steam records", validSteam.size());
+                } catch (Exception e) {
+                    logger.error("[Import Unified Priority] Error saving Steam records: {}", e.getMessage(), e);
+                    for (CPPAssetPriorityResponseDto fd : validSteam) {
+                        failedRecords.add(fd);
+                        failureReasons.add("Save failed: " + e.getMessage());
+                    }
+                }
+            }
+
+            int totalSaved = validPower.size() + validSteam.size();
+
+            if (failedRecords.isEmpty()) {
+                response.setCode(200);
+                if (totalSaved == 0 && skippedCount > 0) {
+                    response.setMessage("No changes detected. All " + skippedCount + " records unchanged.");
+                } else {
+                    response.setMessage("Import successful. " + totalSaved + " records updated, " + skippedCount + " unchanged.");
+                }
+            } else {
+                String sheetLabel = "Power".equalsIgnoreCase(assetCategory)
+                        ? "Power Asset Priority"
+                        : "Steam".equalsIgnoreCase(assetCategory)
+                                ? "Steam Asset Priority"
+                                : "Asset Priority";
+                byte[] failedFile = generateExcelWithErrors(failedRecords, failureReasons, sheetLabel, aopYear);
+                String base64File = java.util.Base64.getEncoder().encodeToString(failedFile);
+                response.setCode(400);
+                response.setMessage("Partial import: " + totalSaved + " saved, "
+                        + failedRecords.size() + " failed, " + skippedCount + " unchanged. Download file for details.");
+                response.setData(base64File);
+            }
+
+            logger.info("[Import Unified Priority] Done – saved: {}, failed: {}, skipped: {}", totalSaved, failedRecords.size(), skippedCount);
+
+        } catch (Exception e) {
+            logger.error("[Import Unified Priority] Error during import: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to import asset priority: " + e.getMessage());
+        }
+        return response;
+    }
 }

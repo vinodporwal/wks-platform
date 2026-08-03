@@ -112,9 +112,11 @@ public class CPPSRMappingController {
      * @param id UUID of the CPP_SR_Mapping_Master record to delete.
      */
     @DeleteMapping("/sr-mapping/{id}")
-    public ResponseEntity<AOPMessageVM> deleteSRMapping(@PathVariable UUID id) {
+    public ResponseEntity<AOPMessageVM> deleteSRMapping(
+            @PathVariable UUID id,
+            @RequestParam String financialYear) {
 
-        AOPMessageVM response = service.deleteSRMapping(id);
+        AOPMessageVM response = service.deleteSRMapping(id, financialYear);
         int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
         return ResponseEntity.status(httpStatus).body(response);
     }

@@ -97,6 +97,13 @@ const OverallAopConsumption = () => {
       minWidth: 200,
     },
     {
+      field: 'sapCode',
+      title: 'Sap Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'UOM',
       title: 'UOM',
       editable: false,

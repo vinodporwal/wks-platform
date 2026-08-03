@@ -10,7 +10,7 @@ const ProductionRange = () => {
       <ProductionRangeGrid />
 
       {/* Grid 2: Production Range LIMIT */}
-      <ProductionRangeGridLimit />
+      {/* <ProductionRangeGridLimit /> */}
     </Box>
   )
 }

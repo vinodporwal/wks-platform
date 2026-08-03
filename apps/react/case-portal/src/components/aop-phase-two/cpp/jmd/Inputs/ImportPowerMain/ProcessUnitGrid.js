@@ -547,19 +547,19 @@ const ProcessUnitGrid = ({ importData }) => {
       setLoading(false)
       return
     }
-       // Validate remarks
-        const validationErrorRemark = validateRowDataWithRemarks(
-          modifiedData,
-          originalRows,
-          MONTH_FIELDS,
-          'processUnit',
-        )
-        if (validationErrorRemark) {
-          setSnackbarOpen(true)
-          setSnackbarData({ message: validationErrorRemark, severity: 'error' })
-          setLoading(false)
-          return
-        }
+    // Validate remarks
+    const validationErrorRemark = validateRowDataWithRemarks(
+      modifiedData,
+      originalRows,
+      MONTH_FIELDS,
+      'processUnit',
+    )
+    if (validationErrorRemark) {
+      setSnackbarOpen(true)
+      setSnackbarData({ message: validationErrorRemark, severity: 'error' })
+      setLoading(false)
+      return
+    }
 
     const validationError = validateAllocations()
     if (validationError) {
