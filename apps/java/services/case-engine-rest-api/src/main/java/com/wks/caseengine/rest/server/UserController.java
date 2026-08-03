@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.wks.caseengine.dto.BulkRoleAssignmentRequest;
 import com.wks.caseengine.dto.RoleCreateRequest;
+import com.wks.caseengine.dto.UsersByRolesRequest;
 import com.wks.caseengine.service.KeycloakUserService;
 
 import java.util.List;
@@ -30,6 +31,16 @@ public class UserController {
 	public List<UserRepresentation> getUsersWithRole(@PathVariable String roleName) throws Exception {
 
 		return userService.getUsersWithRole(roleName);
+	}
+
+	/**
+	 * List users that hold any of the given realm roles (union), with pagination.
+	 * POST /task/users/by-roles
+	 * Body: { "roles": ["cts_head", "plant_manager"], "page": 1, "size": 20 }
+	 */
+	@PostMapping("/by-roles")
+	public Map<String, Object> getUsersByRoles(@RequestBody UsersByRolesRequest request) throws Exception {
+		return userService.getUsersByRoles(request.getRoles(), request.getPage(), request.getSize());
 	}
 
 	@PutMapping("/revoke-access/{userId}")

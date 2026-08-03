@@ -117,6 +117,102 @@ public class KeycloakUserService {
 		
 	}
 
+	/**
+	 * Returns users that hold any of the given realm roles, with pagination.
+	 * Users are de-duplicated; each entry includes which of the requested roles they matched.
+	 * {@code page} is 1-based (default 1). {@code size} defaults to 20 (max 100).
+	 */
+	public Map<String, Object> getUsersByRoles(List<String> roleNames, Integer page, Integer size) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (roleNames == null || roleNames.isEmpty()) {
+			throw new IllegalArgumentException("roles must not be null or empty.");
+		}
+
+		List<String> distinctRoles = roleNames.stream()
+				.filter(r -> r != null && !r.isBlank())
+				.map(String::trim)
+				.distinct()
+				.collect(Collectors.toList());
+
+		if (distinctRoles.isEmpty()) {
+			throw new IllegalArgumentException("roles must contain at least one non-blank role name.");
+		}
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			List<String> unresolvedRoles = new ArrayList<>();
+			// userId -> matched requested roles
+			Map<String, Set<String>> userMatchedRoles = new HashMap<>();
+			Map<String, UserRepresentation> usersById = new HashMap<>();
+
+			for (String roleName : distinctRoles) {
+				try {
+					List<UserRepresentation> members = keycloak.realm(keycloakRealmName)
+							.roles()
+							.get(roleName)
+							.getUserMembers();
+
+					if (members == null) {
+						continue;
+					}
+
+					for (UserRepresentation member : members) {
+						if (member == null || member.getId() == null) {
+							continue;
+						}
+						usersById.putIfAbsent(member.getId(), member);
+						userMatchedRoles
+								.computeIfAbsent(member.getId(), id -> new HashSet<>())
+								.add(roleName);
+					}
+				} catch (Exception ex) {
+					unresolvedRoles.add(roleName);
+				}
+			}
+
+			if (!unresolvedRoles.isEmpty()) {
+				throw new IllegalArgumentException("Unknown realm roles: " + unresolvedRoles);
+			}
+
+			List<Map<String, Object>> allUsers = usersById.entrySet().stream()
+					.sorted(Map.Entry.comparingByKey())
+					.map(entry -> {
+						String userId = entry.getKey();
+						UserRepresentation user = entry.getValue();
+						Map<String, Object> userMap = new HashMap<>();
+						userMap.put("user", user);
+						userMap.put("matchedRoles", new ArrayList<>(userMatchedRoles.getOrDefault(userId, Set.of())));
+						return userMap;
+					})
+					.collect(Collectors.toList());
+
+			int pageNumber = (page == null || page < 1) ? 1 : page;
+			int pageSize = (size == null || size < 1) ? 20 : Math.min(size, 100);
+			int total = allUsers.size();
+			int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / pageSize);
+			int fromIndex = Math.min((pageNumber - 1) * pageSize, total);
+			int toIndex = Math.min(fromIndex + pageSize, total);
+			List<Map<String, Object>> pageData = allUsers.subList(fromIndex, toIndex);
+
+			result.put("status", 200);
+			result.put("message", "Users fetched successfully for the given roles.");
+			result.put("roles", distinctRoles);
+			result.put("data", pageData);
+			result.put("page", pageNumber);
+			result.put("size", pageSize);
+			result.put("total", total);
+			result.put("totalPages", totalPages);
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to fetch users by roles: " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
 
 
 
