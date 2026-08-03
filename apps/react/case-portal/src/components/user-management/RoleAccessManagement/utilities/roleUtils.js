@@ -49,8 +49,7 @@ export const filterRoles = (rolesList = [], query = '') => {
     const nameStr = typeof r === 'string' ? r : r.name || r.code || ''
     const descStr = typeof r === 'string' ? '' : r.description || ''
     return (
-      nameStr.toLowerCase().includes(q) ||
-      descStr.toLowerCase().includes(q)
+      nameStr.toLowerCase().includes(q) || descStr.toLowerCase().includes(q)
     )
   })
 }
@@ -97,7 +96,7 @@ export const getRoleCatalogColumns = ({ onAssign, onDelete }) => [
     renderCell: (params) => (
       <Chip
         label={params.value}
-        size="small"
+        size='small'
         sx={{
           fontWeight: 700,
           backgroundColor: '#e0f2fe',
@@ -115,10 +114,7 @@ export const getRoleCatalogColumns = ({ onAssign, onDelete }) => [
     flex: 2,
     minWidth: 260,
     renderCell: (params) => (
-      <Typography
-        variant="body2"
-        sx={{ color: '#475569', fontSize: '0.8rem' }}
-      >
+      <Typography variant='body2' sx={{ color: '#475569', fontSize: '0.8rem' }}>
         {params.value}
       </Typography>
     ),
@@ -135,9 +131,9 @@ export const getRoleCatalogColumns = ({ onAssign, onDelete }) => [
       return (
         <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
           <Button
-            size="small"
-            variant="outlined"
-            color="primary"
+            size='small'
+            variant='outlined'
+            color='primary'
             startIcon={<PersonAddIcon style={{ fontSize: 14 }} />}
             onClick={() => onAssign(params.row.rawRole, rName)}
             sx={{
@@ -153,9 +149,9 @@ export const getRoleCatalogColumns = ({ onAssign, onDelete }) => [
             Assign
           </Button>
           <Button
-            size="small"
-            variant="outlined"
-            color="error"
+            size='small'
+            variant='outlined'
+            color='error'
             startIcon={<DeleteOutlineIcon style={{ fontSize: 14 }} />}
             onClick={() => onDelete(rName)}
             sx={{

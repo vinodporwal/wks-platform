@@ -55,18 +55,18 @@ const UserRoleInspectorPanel = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ManageAccountsIcon sx={{ color: '#0284c7', fontSize: 20 }} />
           <Typography
-            variant="subtitle2"
+            variant='subtitle2'
             sx={{ fontWeight: 800, color: '#0f172a', fontSize: '0.875rem' }}
           >
             User Role Inspector
           </Typography>
           <Tooltip
-            title="Inspect active assigned roles for a specific user and unassign roles if needed."
+            title='Inspect active assigned roles for a specific user and unassign roles if needed.'
             arrow
-            placement="top"
+            placement='top'
           >
             <IconButton
-              size="small"
+              size='small'
               onClick={(e) => e.stopPropagation()}
               sx={{ p: 0.2, color: '#0284c7', '&:hover': { color: '#0369a1' } }}
             >
@@ -76,7 +76,7 @@ const UserRoleInspectorPanel = ({
         </Box>
 
         <IconButton
-          size="small"
+          size='small'
           onClick={(e) => {
             e.stopPropagation()
             setExpanded(!expanded)
@@ -96,7 +96,7 @@ const UserRoleInspectorPanel = ({
       </Box>
 
       {/* Collapsible Body Content */}
-      <Collapse in={expanded} timeout="auto" unmountOnExit={false}>
+      <Collapse in={expanded} timeout='auto' unmountOnExit={false}>
         <Box sx={{ pt: 1.5 }}>
           <Box
             sx={{
@@ -110,7 +110,7 @@ const UserRoleInspectorPanel = ({
             <Autocomplete
               options={lookupUserOptions}
               value={lookupUser}
-              size="small"
+              size='small'
               filterOptions={(options) => options}
               getOptionLabel={(option) =>
                 typeof option === 'string' ? option : option?.username || ''
@@ -133,9 +133,9 @@ const UserRoleInspectorPanel = ({
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Select User to Inspect"
-                  placeholder="Search username..."
-                  size="small"
+                  label='Select User to Inspect'
+                  placeholder='Search username...'
+                  size='small'
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '8px',
@@ -144,7 +144,10 @@ const UserRoleInspectorPanel = ({
                       '&:hover fieldset': { borderColor: '#94a3b8' },
                       '&.Mui-focused': {
                         backgroundColor: '#ffffff',
-                        '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+                        '& fieldset': {
+                          borderColor: '#0284c7',
+                          borderWidth: '1.5px',
+                        },
                         boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
                       },
                     },
@@ -167,9 +170,9 @@ const UserRoleInspectorPanel = ({
             />
             {lookupUser && (
               <Button
-                variant="outlined"
-                color="primary"
-                size="small"
+                variant='outlined'
+                color='primary'
+                size='small'
                 onClick={() => handleRetrieveUserRoles(lookupUser)}
                 disabled={retrievingRoles}
                 startIcon={<RefreshIcon style={{ fontSize: 14 }} />}
@@ -188,7 +191,7 @@ const UserRoleInspectorPanel = ({
 
           {lookupUser ? (
             <Paper
-              variant="outlined"
+              variant='outlined'
               sx={{
                 padding: '12px 14px',
                 borderRadius: '6px',
@@ -197,8 +200,13 @@ const UserRoleInspectorPanel = ({
               }}
             >
               <Typography
-                variant="body2"
-                sx={{ fontWeight: 700, color: '#0f172a', marginBottom: '8px', fontSize: '0.8rem' }}
+                variant='body2'
+                sx={{
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  marginBottom: '8px',
+                  fontSize: '0.8rem',
+                }}
               >
                 Assigned Roles for{' '}
                 <span style={{ color: '#0284c7', fontWeight: 800 }}>
@@ -209,18 +217,27 @@ const UserRoleInspectorPanel = ({
 
               {retrievingRoles ? (
                 <Box
-                  sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    py: 0.5,
+                  }}
                 >
                   <CircularProgress size={14} />
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant='caption' sx={{ color: '#64748b' }}>
                     Fetching roles...
                   </Typography>
                 </Box>
               ) : !Array.isArray(retrievedUserRoles) ||
                 retrievedUserRoles.length === 0 ? (
                 <Typography
-                  variant="caption"
-                  sx={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}
+                  variant='caption'
+                  sx={{
+                    color: '#94a3b8',
+                    fontStyle: 'italic',
+                    fontSize: '0.75rem',
+                  }}
                 >
                   No active roles assigned to this user.
                 </Typography>
@@ -242,7 +259,7 @@ const UserRoleInspectorPanel = ({
                       <Chip
                         key={idx}
                         label={rName}
-                        size="small"
+                        size='small'
                         onDelete={() => handleOpenUnassignDialog(rName)}
                         sx={{
                           fontWeight: 700,
@@ -268,8 +285,12 @@ const UserRoleInspectorPanel = ({
             </Paper>
           ) : (
             <Typography
-              variant="caption"
-              sx={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}
+              variant='caption'
+              sx={{
+                color: '#94a3b8',
+                fontStyle: 'italic',
+                fontSize: '0.75rem',
+              }}
             >
               Select a user above to inspect their active assigned roles.
             </Typography>

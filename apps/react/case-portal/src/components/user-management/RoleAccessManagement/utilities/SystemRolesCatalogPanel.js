@@ -55,7 +55,10 @@ const SystemRolesCatalogPanel = ({
   // Active Popover State: { field: string, anchorEl: HTMLElement } | null
   const [filterPopover, setFilterPopover] = useState(null)
 
-  const rows = useMemo(() => formatGridRows(filteredRolesList), [filteredRolesList])
+  const rows = useMemo(
+    () => formatGridRows(filteredRolesList),
+    [filteredRolesList],
+  )
 
   // Extract unique distinct values for each column
   const uniqueColumnValues = useMemo(() => {
@@ -179,18 +182,18 @@ const SystemRolesCatalogPanel = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <SecurityIcon sx={{ color: '#0284c7', fontSize: 20 }} />
           <Typography
-            variant="subtitle2"
+            variant='subtitle2'
             sx={{ fontWeight: 800, color: '#0f172a', fontSize: '0.875rem' }}
           >
             System Roles Catalog
           </Typography>
           <Tooltip
-            title="View, search, filter, sort, and manage all existing system roles in the catalog."
+            title='View, search, filter, sort, and manage all existing system roles in the catalog.'
             arrow
-            placement="top"
+            placement='top'
           >
             <IconButton
-              size="small"
+              size='small'
               onClick={(e) => e.stopPropagation()}
               sx={{ p: 0.2, color: '#0284c7', '&:hover': { color: '#0369a1' } }}
             >
@@ -199,7 +202,7 @@ const SystemRolesCatalogPanel = ({
           </Tooltip>
           <Chip
             label={filteredAndSortedRows.length}
-            size="small"
+            size='small'
             sx={{
               backgroundColor: '#0284c7',
               color: '#ffffff',
@@ -213,7 +216,7 @@ const SystemRolesCatalogPanel = ({
           {/* Active Filters Clear Badge Button */}
           {hasActiveColumnFilters && (
             <Button
-              size="small"
+              size='small'
               onClick={(e) => {
                 e.stopPropagation()
                 handleClearAllColumnFilters()
@@ -240,13 +243,15 @@ const SystemRolesCatalogPanel = ({
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Box onClick={(e) => e.stopPropagation()}>
             <TextField
-              size="small"
-              placeholder="Filter roles..."
+              size='small'
+              placeholder='Filter roles...'
               value={roleSearchQuery}
               onChange={(e) => setRoleSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
-                  <SearchIcon sx={{ color: '#94a3b8', mr: 0.8, fontSize: 16 }} />
+                  <SearchIcon
+                    sx={{ color: '#94a3b8', mr: 0.8, fontSize: 16 }}
+                  />
                 ),
               }}
               sx={{
@@ -258,7 +263,10 @@ const SystemRolesCatalogPanel = ({
                   '&:hover fieldset': { borderColor: '#94a3b8' },
                   '&.Mui-focused': {
                     backgroundColor: '#ffffff',
-                    '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+                    '& fieldset': {
+                      borderColor: '#0284c7',
+                      borderWidth: '1.5px',
+                    },
                     boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
                   },
                 },
@@ -276,9 +284,9 @@ const SystemRolesCatalogPanel = ({
             />
           </Box>
           <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
+            variant='outlined'
+            color='inherit'
+            size='small'
             startIcon={<RefreshIcon style={{ fontSize: 14 }} />}
             onClick={(e) => {
               e.stopPropagation()
@@ -299,7 +307,7 @@ const SystemRolesCatalogPanel = ({
           </Button>
 
           <IconButton
-            size="small"
+            size='small'
             onClick={(e) => {
               e.stopPropagation()
               setExpanded(!expanded)
@@ -320,7 +328,7 @@ const SystemRolesCatalogPanel = ({
       </Box>
 
       {/* CUSTOM MODERN DATA TABLE WITH STICKY HEADER, MULTI-COLUMN FILTERS & SCROLL */}
-      <Collapse in={expanded} timeout="auto" unmountOnExit={false}>
+      <Collapse in={expanded} timeout='auto' unmountOnExit={false}>
         <TableContainer
           sx={{
             maxHeight: 380,
@@ -365,20 +373,25 @@ const SystemRolesCatalogPanel = ({
               }}
             >
               <CircularProgress size={22} sx={{ color: '#0284c7' }} />
-              <Typography variant="body2" sx={{ fontWeight: 700, color: '#0284c7', fontSize: '0.8rem' }}>
+              <Typography
+                variant='body2'
+                sx={{ fontWeight: 700, color: '#0284c7', fontSize: '0.8rem' }}
+              >
                 Loading roles...
               </Typography>
             </Box>
           )}
 
-          <Table size="small" stickyHeader sx={{ minWidth: 600 }}>
+          <Table size='small' stickyHeader sx={{ minWidth: 600 }}>
             {/* Table Header - Frozen/Sticky on scroll with Column Filter Funnels */}
             <TableHead>
               <TableRow>
                 {/* Role Name Header */}
                 {(() => {
                   const isFiltered = Boolean(columnFilters.name)
-                  const filterCount = columnFilters.name ? columnFilters.name.length : 0
+                  const filterCount = columnFilters.name
+                    ? columnFilters.name.length
+                    : 0
                   return (
                     <TableCell
                       sx={{
@@ -391,20 +404,30 @@ const SystemRolesCatalogPanel = ({
                         fontSize: '0.8rem',
                         py: 1.2,
                         px: 2,
-                        borderBottom: isFiltered ? '2px solid #0284c7' : '2px solid #0284c7',
+                        borderBottom: isFiltered
+                          ? '2px solid #0284c7'
+                          : '2px solid #0284c7',
                         borderRight: '1px solid #cbd5e1',
                         width: '35%',
                         transition: 'background-color 0.2s ease',
                       }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
                         <TableSortLabel
                           active={orderBy === 'name'}
                           direction={orderBy === 'name' ? order : 'asc'}
                           onClick={() => handleRequestSort('name')}
                           sx={{
                             fontWeight: 800,
-                            color: isFiltered ? '#0369a1 !important' : '#0f172a !important',
+                            color: isFiltered
+                              ? '#0369a1 !important'
+                              : '#0f172a !important',
                             '& .MuiTableSortLabel-icon': {
                               color: '#0284c7 !important',
                             },
@@ -415,12 +438,14 @@ const SystemRolesCatalogPanel = ({
 
                         {/* Filter Funnel Icon with Badge */}
                         <IconButton
-                          size="small"
+                          size='small'
                           onClick={(e) => handleOpenFilterPopover(e, 'name')}
                           sx={{
                             p: 0.4,
                             color: isFiltered ? '#0284c7' : '#94a3b8',
-                            backgroundColor: isFiltered ? '#bae6fd' : 'transparent',
+                            backgroundColor: isFiltered
+                              ? '#bae6fd'
+                              : 'transparent',
                             '&:hover': {
                               color: '#0284c7',
                               backgroundColor: '#e0f2fe',
@@ -429,7 +454,7 @@ const SystemRolesCatalogPanel = ({
                         >
                           <Badge
                             badgeContent={isFiltered ? filterCount : 0}
-                            color="primary"
+                            color='primary'
                             sx={{
                               '& .MuiBadge-badge': {
                                 fontSize: '0.65rem',
@@ -450,7 +475,9 @@ const SystemRolesCatalogPanel = ({
                 {/* Description Header */}
                 {(() => {
                   const isFiltered = Boolean(columnFilters.description)
-                  const filterCount = columnFilters.description ? columnFilters.description.length : 0
+                  const filterCount = columnFilters.description
+                    ? columnFilters.description.length
+                    : 0
                   return (
                     <TableCell
                       sx={{
@@ -463,20 +490,30 @@ const SystemRolesCatalogPanel = ({
                         fontSize: '0.8rem',
                         py: 1.2,
                         px: 2,
-                        borderBottom: isFiltered ? '2px solid #0284c7' : '2px solid #0284c7',
+                        borderBottom: isFiltered
+                          ? '2px solid #0284c7'
+                          : '2px solid #0284c7',
                         borderRight: '1px solid #cbd5e1',
                         width: '45%',
                         transition: 'background-color 0.2s ease',
                       }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
                         <TableSortLabel
                           active={orderBy === 'description'}
                           direction={orderBy === 'description' ? order : 'asc'}
                           onClick={() => handleRequestSort('description')}
                           sx={{
                             fontWeight: 800,
-                            color: isFiltered ? '#0369a1 !important' : '#0f172a !important',
+                            color: isFiltered
+                              ? '#0369a1 !important'
+                              : '#0f172a !important',
                             '& .MuiTableSortLabel-icon': {
                               color: '#0284c7 !important',
                             },
@@ -487,12 +524,16 @@ const SystemRolesCatalogPanel = ({
 
                         {/* Filter Funnel Icon with Badge */}
                         <IconButton
-                          size="small"
-                          onClick={(e) => handleOpenFilterPopover(e, 'description')}
+                          size='small'
+                          onClick={(e) =>
+                            handleOpenFilterPopover(e, 'description')
+                          }
                           sx={{
                             p: 0.4,
                             color: isFiltered ? '#0284c7' : '#94a3b8',
-                            backgroundColor: isFiltered ? '#bae6fd' : 'transparent',
+                            backgroundColor: isFiltered
+                              ? '#bae6fd'
+                              : 'transparent',
                             '&:hover': {
                               color: '#0284c7',
                               backgroundColor: '#e0f2fe',
@@ -501,7 +542,7 @@ const SystemRolesCatalogPanel = ({
                         >
                           <Badge
                             badgeContent={isFiltered ? filterCount : 0}
-                            color="primary"
+                            color='primary'
                             sx={{
                               '& .MuiBadge-badge': {
                                 fontSize: '0.65rem',
@@ -521,7 +562,7 @@ const SystemRolesCatalogPanel = ({
 
                 {/* Actions Header */}
                 <TableCell
-                  align="center"
+                  align='center'
                   sx={{
                     position: 'sticky',
                     top: 0,
@@ -545,10 +586,14 @@ const SystemRolesCatalogPanel = ({
             <TableBody>
               {filteredAndSortedRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={3} align='center' sx={{ py: 4 }}>
                     <Typography
-                      variant="body2"
-                      sx={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.82rem' }}
+                      variant='body2'
+                      sx={{
+                        color: '#94a3b8',
+                        fontStyle: 'italic',
+                        fontSize: '0.82rem',
+                      }}
                     >
                       {hasActiveColumnFilters
                         ? 'No roles match the selected column filters.'
@@ -581,11 +626,19 @@ const SystemRolesCatalogPanel = ({
                           borderBottom: '1px solid #e2e8f0',
                         }}
                       >
-                        <Tooltip title={`System Role: ${row.name}`} arrow placement="top">
+                        <Tooltip
+                          title={`System Role: ${row.name}`}
+                          arrow
+                          placement='top'
+                        >
                           <Chip
                             label={row.name}
-                            size="small"
-                            icon={<SecurityIcon style={{ fontSize: 13, color: '#0369a1' }} />}
+                            size='small'
+                            icon={
+                              <SecurityIcon
+                                style={{ fontSize: 13, color: '#0369a1' }}
+                              />
+                            }
                             sx={{
                               fontWeight: 700,
                               backgroundColor: '#e0f2fe',
@@ -609,9 +662,13 @@ const SystemRolesCatalogPanel = ({
                           borderBottom: '1px solid #e2e8f0',
                         }}
                       >
-                        <Tooltip title={row.description || 'System Realm Role'} arrow placement="top">
+                        <Tooltip
+                          title={row.description || 'System Realm Role'}
+                          arrow
+                          placement='top'
+                        >
                           <Typography
-                            variant="body2"
+                            variant='body2'
                             sx={{
                               color: '#475569',
                               fontSize: '0.8rem',
@@ -630,21 +687,36 @@ const SystemRolesCatalogPanel = ({
 
                       {/* Actions Cell with Tooltips */}
                       <TableCell
-                        align="center"
+                        align='center'
                         sx={{
                           py: 0.9,
                           px: 1.5,
                           borderBottom: '1px solid #e2e8f0',
                         }}
                       >
-                        <Box sx={{ display: 'flex', gap: 0.8, justifyContent: 'center', alignItems: 'center' }}>
-                          <Tooltip title={`Select "${row.name}" for assignment`} arrow placement="top">
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: 0.8,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Tooltip
+                            title={`Select "${row.name}" for assignment`}
+                            arrow
+                            placement='top'
+                          >
                             <Button
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                              startIcon={<PersonAddIcon style={{ fontSize: 13 }} />}
-                              onClick={() => handleAssignClick(row.rawRole, row.name)}
+                              size='small'
+                              variant='outlined'
+                              color='primary'
+                              startIcon={
+                                <PersonAddIcon style={{ fontSize: 13 }} />
+                              }
+                              onClick={() =>
+                                handleAssignClick(row.rawRole, row.name)
+                              }
                               sx={{
                                 textTransform: 'none',
                                 fontWeight: 700,
@@ -666,12 +738,18 @@ const SystemRolesCatalogPanel = ({
                             </Button>
                           </Tooltip>
 
-                          <Tooltip title={`Delete "${row.name}" role from catalog`} arrow placement="top">
+                          <Tooltip
+                            title={`Delete "${row.name}" role from catalog`}
+                            arrow
+                            placement='top'
+                          >
                             <Button
-                              size="small"
-                              variant="outlined"
-                              color="error"
-                              startIcon={<DeleteOutlineIcon style={{ fontSize: 13 }} />}
+                              size='small'
+                              variant='outlined'
+                              color='error'
+                              startIcon={
+                                <DeleteOutlineIcon style={{ fontSize: 13 }} />
+                              }
                               onClick={() => handleDeleteClick(row.name)}
                               sx={{
                                 textTransform: 'none',
@@ -709,10 +787,14 @@ const SystemRolesCatalogPanel = ({
         <ColumnFilterPopover
           anchorEl={filterPopover.anchorEl}
           onClose={handleCloseFilterPopover}
-          columnTitle={filterPopover.field === 'name' ? 'Role Name' : 'Description'}
+          columnTitle={
+            filterPopover.field === 'name' ? 'Role Name' : 'Description'
+          }
           allValues={uniqueColumnValues[filterPopover.field] || []}
           selectedValues={columnFilters[filterPopover.field] || null}
-          onApplyFilter={(vals) => handleApplyColumnFilter(filterPopover.field, vals)}
+          onApplyFilter={(vals) =>
+            handleApplyColumnFilter(filterPopover.field, vals)
+          }
           onClearFilter={() => handleClearColumnFilter(filterPopover.field)}
         />
       )}

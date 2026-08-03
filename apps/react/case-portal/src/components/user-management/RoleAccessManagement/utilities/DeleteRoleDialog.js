@@ -19,7 +19,7 @@ const DeleteRoleDialog = ({
     <Dialog
       open={deleteDialogOpen}
       onClose={() => setDeleteDialogOpen(false)}
-      maxWidth="xs"
+      maxWidth='xs'
       fullWidth
       PaperProps={{
         sx: {
@@ -34,7 +34,10 @@ const DeleteRoleDialog = ({
         Confirm Role Deletion
       </DialogTitle>
       <DialogContent dividers>
-        <Typography variant="body2" sx={{ color: '#334155', fontSize: '0.85rem' }}>
+        <Typography
+          variant='body2'
+          sx={{ color: '#334155', fontSize: '0.85rem' }}
+        >
           Are you sure you want to delete role{' '}
           <strong style={{ color: '#ef4444' }}>
             &quot;{roleToDelete}&quot;
@@ -45,16 +48,16 @@ const DeleteRoleDialog = ({
       <DialogActions sx={{ p: 1.5 }}>
         <Button
           onClick={() => setDeleteDialogOpen(false)}
-          color="inherit"
-          size="small"
+          color='inherit'
+          size='small'
           sx={{ textTransform: 'none' }}
         >
           Cancel
         </Button>
         <Button
-          variant="contained"
-          color="error"
-          size="small"
+          variant='contained'
+          color='error'
+          size='small'
           disabled={deletingRole}
           onClick={handleDeleteRole}
           sx={{ fontWeight: 700, textTransform: 'none' }}

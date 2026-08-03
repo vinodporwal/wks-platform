@@ -111,7 +111,8 @@ const ColumnFilterPopover = ({
         sx: {
           width: 250,
           borderRadius: '8px',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2), 0 8px 10px -6px rgba(15, 23, 42, 0.1)',
+          boxShadow:
+            '0 10px 25px -5px rgba(15, 23, 42, 0.2), 0 8px 10px -6px rgba(15, 23, 42, 0.1)',
           border: '1px solid #94a3b8',
           p: 0,
           overflow: 'hidden',
@@ -138,13 +139,17 @@ const ColumnFilterPopover = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterAltIcon sx={{ color: '#0284c7', fontSize: 18 }} />
           <Typography
-            variant="subtitle2"
+            variant='subtitle2'
             sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.875rem' }}
           >
             Filter
           </Typography>
         </Box>
-        <IconButton size="small" onClick={onClose} sx={{ p: 0.3, color: '#0284c7' }}>
+        <IconButton
+          size='small'
+          onClick={onClose}
+          sx={{ p: 0.3, color: '#0284c7' }}
+        >
           <KeyboardArrowUpIcon sx={{ fontSize: 20 }} />
         </IconButton>
       </Box>
@@ -152,21 +157,21 @@ const ColumnFilterPopover = ({
       <Box sx={{ p: 1.5 }}>
         {/* 2. Search Input Box */}
         <TextField
-          size="small"
-          placeholder="Search"
+          size='small'
+          placeholder='Search'
           value={filterSearchQuery}
           onChange={(e) => setFilterSearchQuery(e.target.value)}
           fullWidth
           InputProps={{
             startAdornment: (
-              <InputAdornment position="start" sx={{ mr: 0.5 }}>
+              <InputAdornment position='start' sx={{ mr: 0.5 }}>
                 <SearchIcon sx={{ color: '#0284c7', fontSize: 18 }} />
               </InputAdornment>
             ),
             endAdornment: filterSearchQuery ? (
-              <InputAdornment position="end">
+              <InputAdornment position='end'>
                 <IconButton
-                  size="small"
+                  size='small'
                   onClick={() => setFilterSearchQuery('')}
                   sx={{ p: 0.2 }}
                 >
@@ -183,7 +188,10 @@ const ColumnFilterPopover = ({
               height: '34px',
               '& fieldset': { borderColor: '#64748b' },
               '&:hover fieldset': { borderColor: '#334155' },
-              '&.Mui-focused fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+              '&.Mui-focused fieldset': {
+                borderColor: '#0284c7',
+                borderWidth: '1.5px',
+              },
             },
             '& .MuiInputBase-input': {
               fontSize: '0.8rem',
@@ -206,14 +214,17 @@ const ColumnFilterPopover = ({
             mb: 1.2,
             backgroundColor: '#ffffff',
             '&::-webkit-scrollbar': { width: '5px' },
-            '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '3px' },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#cbd5e1',
+              borderRadius: '3px',
+            },
           }}
         >
           {/* Check All item */}
           <FormControlLabel
             control={
               <Checkbox
-                size="small"
+                size='small'
                 checked={isCheckAllChecked}
                 onChange={handleToggleCheckAll}
                 sx={{
@@ -225,7 +236,9 @@ const ColumnFilterPopover = ({
               />
             }
             label={
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a' }}>
+              <Typography
+                sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a' }}
+              >
                 Check All
               </Typography>
             }
@@ -240,7 +253,7 @@ const ColumnFilterPopover = ({
                 key={idx}
                 control={
                   <Checkbox
-                    size="small"
+                    size='small'
                     checked={isChecked}
                     onChange={() => handleToggleItem(val)}
                     sx={{
@@ -270,8 +283,13 @@ const ColumnFilterPopover = ({
 
           {matchingValues.length === 0 && (
             <Typography
-              variant="caption"
-              sx={{ color: '#94a3b8', p: 1, display: 'block', fontStyle: 'italic' }}
+              variant='caption'
+              sx={{
+                color: '#94a3b8',
+                p: 1,
+                display: 'block',
+                fontStyle: 'italic',
+              }}
             >
               No matching values.
             </Typography>
@@ -280,7 +298,7 @@ const ColumnFilterPopover = ({
 
         {/* 4. Selection Count Indicator */}
         <Typography
-          variant="body2"
+          variant='body2'
           sx={{
             fontSize: '0.78rem',
             fontWeight: 700,
@@ -294,8 +312,8 @@ const ColumnFilterPopover = ({
         {/* 5. Action Buttons (Filter & Clear) */}
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            variant="contained"
-            size="small"
+            variant='contained'
+            size='small'
             fullWidth
             onClick={handleApply}
             sx={{
@@ -314,8 +332,8 @@ const ColumnFilterPopover = ({
           </Button>
 
           <Button
-            variant="outlined"
-            size="small"
+            variant='outlined'
+            size='small'
             fullWidth
             onClick={handleClear}
             sx={{

@@ -52,18 +52,18 @@ const CreateRolePanel = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AddCircleOutlineIcon sx={{ color: '#0284c7', fontSize: 20 }} />
           <Typography
-            variant="subtitle2"
+            variant='subtitle2'
             sx={{ fontWeight: 800, color: '#0f172a', fontSize: '0.875rem' }}
           >
             Create New Role
           </Typography>
           <Tooltip
-            title="Create and add a new custom role with an optional description to the system catalog."
+            title='Create and add a new custom role with an optional description to the system catalog.'
             arrow
-            placement="top"
+            placement='top'
           >
             <IconButton
-              size="small"
+              size='small'
               onClick={(e) => e.stopPropagation()}
               sx={{ p: 0.2, color: '#0284c7', '&:hover': { color: '#0369a1' } }}
             >
@@ -73,7 +73,7 @@ const CreateRolePanel = ({
         </Box>
 
         <IconButton
-          size="small"
+          size='small'
           onClick={(e) => {
             e.stopPropagation()
             setExpanded(!expanded)
@@ -93,12 +93,20 @@ const CreateRolePanel = ({
       </Box>
 
       {/* Collapsible Body Content */}
-      <Collapse in={expanded} timeout="auto" unmountOnExit={false}>
-        <Box sx={{ pt: 1.5, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+      <Collapse in={expanded} timeout='auto' unmountOnExit={false}>
+        <Box
+          sx={{
+            pt: 1.5,
+            display: 'flex',
+            gap: 1.5,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           <TextField
-            label="Role Name *"
-            placeholder="e.g. gms_business_head"
-            size="small"
+            label='Role Name *'
+            placeholder='e.g. gms_business_head'
+            size='small'
             value={roleName}
             onChange={(e) => setRoleName(e.target.value)}
             sx={{
@@ -142,9 +150,9 @@ const CreateRolePanel = ({
             }}
           />
           <TextField
-            label="Description"
-            placeholder="Optional role description"
-            size="small"
+            label='Description'
+            placeholder='Optional role description'
+            size='small'
             value={roleDescription}
             onChange={(e) => setRoleDescription(e.target.value)}
             sx={{
@@ -188,14 +196,14 @@ const CreateRolePanel = ({
             }}
           />
           <Button
-            variant="contained"
-            color="primary"
-            size="small"
+            variant='contained'
+            color='primary'
+            size='small'
             disabled={!roleName.trim() || creatingRole}
             onClick={handleCreateRole}
             startIcon={
               creatingRole ? (
-                <CircularProgress size={14} color="inherit" />
+                <CircularProgress size={14} color='inherit' />
               ) : (
                 <AddIcon style={{ fontSize: 16 }} />
               )
@@ -218,9 +226,9 @@ const CreateRolePanel = ({
           </Button>
           {(roleName || roleDescription) && (
             <Button
-              variant="outlined"
-              color="inherit"
-              size="small"
+              variant='outlined'
+              color='inherit'
+              size='small'
               onClick={() => {
                 setRoleName('')
                 setRoleDescription('')

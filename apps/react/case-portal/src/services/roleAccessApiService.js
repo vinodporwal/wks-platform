@@ -168,7 +168,10 @@ export const roleAccessApiService = {
       const resp = await fetch(url, { method: 'DELETE', headers })
       return await handleResponse(keycloak, resp)
     } catch (e) {
-      console.error(`API Error in unassignRoleFromUser for ${userId} - ${roleName}:`, e)
+      console.error(
+        `API Error in unassignRoleFromUser for ${userId} - ${roleName}:`,
+        e,
+      )
       return Promise.reject(e)
     }
   },

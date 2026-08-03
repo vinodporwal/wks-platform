@@ -295,7 +295,11 @@ const RoleAccessManagement = ({ keycloak }) => {
     setUnassignDialogOpen(false)
     setRetrievingRoles(true)
     try {
-      await roleAccessApiService.unassignRoleFromUser(keycloak, lookupUser.id, roleToUnassign)
+      await roleAccessApiService.unassignRoleFromUser(
+        keycloak,
+        lookupUser.id,
+        roleToUnassign,
+      )
       showNotification(
         `Role "${roleToUnassign}" unassigned from ${lookupUser?.username || lookupUser.id} successfully!`,
         'success',
@@ -412,7 +416,7 @@ const RoleAccessManagement = ({ keycloak }) => {
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          variant="filled"
+          variant='filled'
           sx={{ width: '100%', fontWeight: 700, boxShadow: 3 }}
         >
           {snackbar.message}

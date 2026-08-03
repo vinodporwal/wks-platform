@@ -25,7 +25,7 @@ const UnassignRoleDialog = ({
     <Dialog
       open={unassignDialogOpen}
       onClose={handleClose}
-      maxWidth="xs"
+      maxWidth='xs'
       fullWidth
       PaperProps={{
         sx: {
@@ -40,7 +40,10 @@ const UnassignRoleDialog = ({
         Confirm Role Removal
       </DialogTitle>
       <DialogContent dividers>
-        <Typography variant="body2" sx={{ color: '#334155', fontSize: '0.85rem' }}>
+        <Typography
+          variant='body2'
+          sx={{ color: '#334155', fontSize: '0.85rem' }}
+        >
           Are you sure you want to remove role{' '}
           <strong style={{ color: '#0284c7' }}>
             &quot;{roleToUnassign}&quot;
@@ -55,16 +58,16 @@ const UnassignRoleDialog = ({
       <DialogActions sx={{ p: 1.5 }}>
         <Button
           onClick={handleClose}
-          color="inherit"
-          size="small"
+          color='inherit'
+          size='small'
           sx={{ textTransform: 'none' }}
         >
           Cancel
         </Button>
         <Button
-          variant="contained"
-          color="warning"
-          size="small"
+          variant='contained'
+          color='warning'
+          size='small'
           onClick={handleConfirmUnassignRole}
           sx={{ fontWeight: 700, textTransform: 'none' }}
         >
