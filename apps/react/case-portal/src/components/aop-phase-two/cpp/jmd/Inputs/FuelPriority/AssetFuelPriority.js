@@ -89,27 +89,14 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Memoized so it doesn't change reference unless plantFuelMap or fuelOptions change
-  const getOptions = useCallback(
-    (dataItem) => {
-      const plantFuels = plantFuelMap[dataItem?.plantName]
-      return plantFuels?.length ? plantFuels : fuelOptions
+  // Create a per-month getOptions function that returns only fuels available
+  // for that plant in that specific month
+  const getOptionsForMonth = useCallback(
+    (mon) => (dataItem) => {
+      const plantMonthFuels = plantFuelMap[dataItem?.plantName]?.[mon]
+      return plantMonthFuels?.length ? plantMonthFuels : fuelOptions
     },
     [plantFuelMap, fuelOptions],
-  )
-
-  // Memoize fuelSelectBaseConfig so column objects stay stable
-  const fuelSelectBaseConfig = useMemo(
-    () => ({
-      widthT: 120,
-      minWidth: 120,
-      type: 'select',
-      dynamicOptions: true,
-      getOptions,
-      displayMode: 'label',
-      editable: true,
-    }),
-    [getOptions],
   )
 
   // Generate month columns dynamically — memoized so grid doesn't remount on every render
@@ -120,12 +107,19 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
         field: mon,
         title: headerMap[MONTH_TO_INDEX[mon]],
         children: FUEL_PRIORITY_FIELDS.map(({ field, title }) => ({
-          ...fuelSelectBaseConfig,
-          field: `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}`,
+          widthT: 120,
+          minWidth: 120,
+          type: 'select',
+          dynamicOptions: true,
+          getOptions: getOptionsForMonth(mon),
+          displayMode: 'label',
+          editable: true,
+          returnFullObject: true,
+          field: `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}FuelName`,
           title,
         })),
       })),
-    [fuelSelectBaseConfig, headerMap],
+    [getOptionsForMonth, headerMap],
   )
 
   // Column definitions — memoized so AdvanceKendoTable doesn't rebuild on unrelated renders
@@ -182,12 +176,31 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
         return
       }
 
-      // API DTO already returns camelCase fields matching column names (aprPrimary, aprSecondary, etc.)
-      const rowsWithEditableFlag = rawList.map((row, index) => ({
-        ...row,
-        id: row.id || index + 1,
-        remarks: row.remarks || '',
-      }))
+      // API returns UUIDs in fuel fields (aprPrimary, aprSecondary, etc.)
+      // Add FuelName fields with labels for display, keep UUID fields as-is for saving
+      const rowsWithEditableFlag = rawList.map((row, index) => {
+        const transformed = {
+          ...row,
+          id: row.id || index + 1,
+          remarks: row.remarks || '',
+        }
+        MONTH_FIELDS.forEach((mon) => {
+          FUEL_PRIORITY_FIELDS.forEach(({ field }) => {
+            const fieldName = `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}`
+            const fuelNameField = `${fieldName}FuelName`
+            const uuid = row[fieldName]
+            if (uuid) {
+              const option = fuelOptions.find(
+                (o) => String(o.value) === String(uuid),
+              )
+              transformed[fuelNameField] = option ? option.label : ''
+            } else {
+              transformed[fuelNameField] = ''
+            }
+          })
+        })
+        return transformed
+      })
 
       setRows(rowsWithEditableFlag)
       setOriginalRows(rowsWithEditableFlag)
@@ -198,7 +211,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, fuelOptions])
 
   useDebounce(
     () => {
@@ -256,12 +269,12 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     // Validate no duplicate fuels within the same month for any modified row
     for (const row of data) {
       for (const mon of MONTH_FIELDS) {
-        const primary = row[`${mon}Primary`]
-        const secondary = row[`${mon}Secondary`]
-        const tertiary = row[`${mon}Tertiary`]
+        const primary = row[`${mon}PrimaryFuelName`]
+        const secondary = row[`${mon}SecondaryFuelName`]
+        const tertiary = row[`${mon}TertiaryFuelName`]
 
         const selectedFuels = [primary, secondary, tertiary].filter(
-          (val) => val && val.trim() !== '',
+          (val) => val && String(val).trim() !== '',
         )
         const uniqueFuels = new Set(selectedFuels)
 
@@ -279,7 +292,12 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     }
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = MONTH_FIELDS
+    const fieldsToCheck = MONTH_FIELDS.map((mon) =>
+      FUEL_PRIORITY_FIELDS.map(
+        ({ field }) =>
+          `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}FuelName`,
+      ),
+    ).flat()
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
@@ -300,7 +318,15 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     try {
       const payload = modifiedData.map((item) => {
         const { inEdit, ...rest } = item
-        return rest
+        // Remove FuelName display fields, keep UUID fields for backend
+        const cleanedItem = { ...rest }
+        MONTH_FIELDS.forEach((mon) => {
+          FUEL_PRIORITY_FIELDS.forEach(({ field }) => {
+            const fuelNameField = `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}FuelName`
+            delete cleanedItem[fuelNameField]
+          })
+        })
+        return cleanedItem
       })
 
       // Call PUT /task/asset-fuel-priority to save all modified rows
@@ -325,13 +351,46 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     }
   }
 
+  // Custom item change handler — follows PlantFuelAvailability pattern
+  // field is the FuelName field (e.g. aprPrimaryFuelName)
+  // Store label in FuelName field for display, UUID in the original field for saving
+  const handleCustomItemChange = useCallback(({ dataItem, field, value }) => {
+    const updates = { [field]: value }
+    // If field ends with FuelName, also update the UUID field
+    if (field.endsWith('FuelName')) {
+      const uuidField = field.replace('FuelName', '')
+      if (value && typeof value === 'object') {
+        updates[uuidField] = value.value // UUID for saving
+        updates[field] = value.label // name for display
+      } else {
+        updates[uuidField] = null
+        updates[field] = value || ''
+      }
+    }
+
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === dataItem.id ? { ...row, ...updates, inEdit: true } : row,
+      ),
+    )
+    setModifiedCells((prev) => ({
+      ...prev,
+      [dataItem.id]: {
+        ...prev[dataItem.id],
+        ...dataItem,
+        ...updates,
+        inEdit: true,
+      },
+    }))
+  }, [])
+
   // Handle remark cell click
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-
+  console.log('rows', rows)
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -343,6 +402,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
         setModifiedCells={setModifiedCells}
         title='Asset Wise Fuel Priority'
         permissions={permissions}
+        customItemChange={handleCustomItemChange}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
