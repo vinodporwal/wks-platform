@@ -77,13 +77,13 @@ public class OtherFurnanceDetailsServiceImpl implements OtherFurnanceDetailsServ
         String updateSql = """
     UPDATE [RIL.AOP].[dbo].[NormAttributeTransactions]
     SET AttributeValue = ?, Remarks = ?
-    WHERE NormParameter_FK_Id = ? AND AuditYear = ?
+    WHERE NormParameter_FK_Id = ? AND AuditYear = ?  And AOPMonth = ?
     """;
 
 String insertSql = """
     INSERT INTO [RIL.AOP].[dbo].[NormAttributeTransactions]
-        (Id, NormParameter_FK_Id, AuditYear, AttributeValue, Remarks)
-    VALUES (NEWID(), ?, ?, ?, ?)
+        (Id, NormParameter_FK_Id, AuditYear, AOPMonth, AttributeValue, Remarks)
+    VALUES (NEWID(), ?, ?, ?, ?, ?)
     """;
 
         for (OtherFurnanceDetailsDTO dto : otherFurnanceDetailsDTOs) { 
@@ -93,13 +93,15 @@ String insertSql = """
             dto.getAttributeValue(),
             dto.getRemarks(),
             dto.getId(),
-            aopYear);
+            aopYear,
+            '4');
 
     if (rowsUpdated == 0) {
         jdbcTemplate.update(
                 insertSql,
                 dto.getId(),
                 aopYear,
+                '4',
                 dto.getAttributeValue(),
                 dto.getRemarks());
     }
