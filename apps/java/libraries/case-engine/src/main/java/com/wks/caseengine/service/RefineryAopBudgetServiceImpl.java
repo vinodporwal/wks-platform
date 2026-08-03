@@ -37,13 +37,16 @@ import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.PlantsDTO;
+import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
+import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -66,6 +69,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
     @Autowired
     private SiteRepository sitesRepository;
+
+    @Autowired
+    private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
 
     @Override
     @Transactional
@@ -1704,6 +1710,124 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch UOM dropdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getProfitCenterData(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_ProfitCenter @siteId = ?, @aopyear = ?";
+            List<ProfitCenterDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                ProfitCenterDTO.builder()
+                    .id(rs.getString("Id"))
+                    .siteId(rs.getString("SiteId"))
+                    .unit(rs.getString("Unit"))
+                    .uom(rs.getString("UOM"))
+                    .jan(rs.getString("Jan"))
+                    .feb(rs.getString("Feb"))
+                    .mar(rs.getString("Mar"))
+                    .apr(rs.getString("Apr"))
+                    .may(rs.getString("May"))
+                    .jun(rs.getString("Jun"))
+                    .jul(rs.getString("Jul"))
+                    .aug(rs.getString("Aug"))
+                    .sep(rs.getString("Sep"))
+                    .oct(rs.getString("Oct"))
+                    .nov(rs.getString("Nov"))
+                    .dec(rs.getString("Dec"))
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch profit center data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<ProfitCenterDTO> failedRecords = new ArrayList<>();
+
+        Map<Integer, java.util.function.Function<ProfitCenterDTO, String>> monthValueGetters = new java.util.LinkedHashMap<>();
+        monthValueGetters.put(1,  ProfitCenterDTO::getJan);
+        monthValueGetters.put(2,  ProfitCenterDTO::getFeb);
+        monthValueGetters.put(3,  ProfitCenterDTO::getMar);
+        monthValueGetters.put(4,  ProfitCenterDTO::getApr);
+        monthValueGetters.put(5,  ProfitCenterDTO::getMay);
+        monthValueGetters.put(6,  ProfitCenterDTO::getJun);
+        monthValueGetters.put(7,  ProfitCenterDTO::getJul);
+        monthValueGetters.put(8,  ProfitCenterDTO::getAug);
+        monthValueGetters.put(9,  ProfitCenterDTO::getSep);
+        monthValueGetters.put(10, ProfitCenterDTO::getOct);
+        monthValueGetters.put(11, ProfitCenterDTO::getNov);
+        monthValueGetters.put(12, ProfitCenterDTO::getDec);
+
+        for (ProfitCenterDTO dto : profitCenterDTOs) {
+            try {
+                UUID normParameterFKId = UUID.fromString(dto.getId());
+                String auditYear = aopYear;
+
+                for (Map.Entry<Integer, java.util.function.Function<ProfitCenterDTO, String>> entry : monthValueGetters.entrySet()) {
+                    int month = entry.getKey();
+                    String value = entry.getValue().apply(dto);
+
+                    if (value == null) {
+                        continue;
+                    }
+
+                    java.util.Optional<NormAttributeTransactions> existing =
+                        normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(
+                            normParameterFKId, month, auditYear);
+
+                    if (existing.isPresent()) {
+                        NormAttributeTransactions entity = existing.get();
+                        entity.setAttributeValue(value);
+                        entity.setModifiedOn(new Date());
+                        entity.setUserName(updatedBy);
+                        normAttributeTransactionsRepository.save(entity);
+                    } else {
+                        NormAttributeTransactions newRecord = NormAttributeTransactions.builder()
+                            .normParameterFKId(normParameterFKId)
+                            .attributeValue(value)
+                            .aopMonth(month)
+                            .auditYear(auditYear)
+                            .createdOn(new Date())
+                            .modifiedOn(new Date())
+                            .userName(updatedBy)
+                            .attributeValueVersion("V1")
+                            .build();
+                        normAttributeTransactionsRepository.save(newRecord);
+                    }
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+
+        return failedRecords;
+    }
+
+    @Override
+    public AOPMessageVM getProfitCenterUomDropdown(String siteId) {
+        try {
+            String sql = "EXEC Sp_GetProfitCenterUomDropdown @siteId = ?";
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, siteId);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch profit center UOM dropdown data", e);
         }
     }
 

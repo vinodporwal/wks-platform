@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
+import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
@@ -177,5 +178,25 @@ public class RefineryAopBudgetController {
     @GetMapping("/refinery-budget-uom-dropdown")
     public AOPMessageVM getRefineryBudgetUomDropdown(@RequestParam String plantId) {
         return refineryAopBudgetService.getRefineryBudgetUomDropdown(plantId);
+    }
+
+    @GetMapping("/profit-center-data")
+    public AOPMessageVM getProfitCenterData(@RequestParam String siteId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.getProfitCenterData(siteId, aopYear);
+    }
+
+    @PostMapping("/profit-center-data")
+    public AOPMessageVM saveProfitCenterData(@RequestBody List<ProfitCenterDTO> profitCenterDTOs, @RequestParam String aopYear) {
+        List<ProfitCenterDTO> failedRecords = refineryAopBudgetService.saveProfitCenterData(profitCenterDTOs, aopYear);
+        if (failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "All data has been saved", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
+        }
+    }
+
+    @GetMapping("/profit-center-uom-dropdown")
+    public AOPMessageVM getProfitCenterUomDropdown(@RequestParam String siteId) {
+        return refineryAopBudgetService.getProfitCenterUomDropdown(siteId);
     }
 }
