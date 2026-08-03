@@ -5,6 +5,7 @@ export const JswBudgetSourceAPIService = {
      getJswBudgetSourceData,
      saveJswBudgetSourceData,
      getDropdownUnit,
+     deleteJwBudgetData,
 
 }
 
@@ -66,4 +67,27 @@ async function getDropdownUnit(keycloak, SITE_ID) {
           console.log(e)
           return await Promise.reject(e)
      }
+}
+
+async function deleteJwBudgetData(keycloak, id, year) {
+  const url = `${Config.CaseEngineUrl}/task/profit-center-data?id=${encodeURIComponent(id)}&aopYear=${year}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting profit center data:', e)
+    return Promise.reject(e)
+  }
 }

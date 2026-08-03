@@ -78,6 +78,7 @@ const JwBudgetScreen = () => {
                minWidth: 120,
                type: 'text',
                editable: false,
+               locked:true,
           },
           {
                field: 'apr',
@@ -386,7 +387,7 @@ const JwBudgetScreen = () => {
                isFetchedRef.current = false
                await fetchData()
           } catch (error) {
-               
+
                console.error('Error saving jw budget data:', error)
                setSnackbarOpen(true)
                setSnackbarData({
@@ -403,6 +404,46 @@ const JwBudgetScreen = () => {
           setCurrentRowId(row.id)
           setRemarkDialogOpen(true)
      }
+
+     const deleteRowData = async (dataItem) => {
+          if (!dataItem) return
+          if (dataItem.isNew || String(dataItem.id).startsWith('new_row_')) {
+               setRows((prev) => prev.filter((r) => r.id !== dataItem.id))
+               setModifiedCells((prev) => {
+                    const copy = { ...prev }
+                    delete copy[dataItem.id]
+                    return copy
+               })
+               setSnackbarOpen(true)
+               setSnackbarData({
+                    message: 'Record deleted successfully!',
+                    severity: 'success',
+               })
+               return
+          }
+
+          setLoading(true)
+          try {
+               await JswBudgetSourceAPIService.deleteJwBudgetData(keycloak, dataItem.id, AOP_YEAR)
+               setSnackbarOpen(true)
+               setSnackbarData({
+                    message: 'Record deleted successfully!',
+                    severity: 'success',
+               })
+               isFetchedRef.current = false
+               await fetchData()
+          } catch (error) {
+               console.error('Error deleting record:', error)
+               setSnackbarOpen(true)
+               setSnackbarData({
+                    message: 'Failed to delete record. Please try again.',
+                    severity: 'error',
+               })
+          } finally {
+               setLoading(false)
+          }
+     }
+     
 
      const permissions = {
           showAction: true,
@@ -432,6 +473,7 @@ const JwBudgetScreen = () => {
                     setRows={setRows}
                     modifiedCells={modifiedCells}
                     setModifiedCells={setModifiedCells}
+                    deleteRowData={deleteRowData}
                     customItemChange={handleCustomItemChange}
                     title={permissions.showTitle ? permissions.titleName : ''}
                     permissions={permissions}
