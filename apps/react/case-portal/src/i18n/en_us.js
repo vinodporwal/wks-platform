@@ -119,6 +119,8 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
+    jsBudget: 'Js Budget',   
+    jwBudgetSource: 'JW Budget Source',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -358,6 +360,7 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
+        jwBudgetSource: 'JW Budget Source',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
