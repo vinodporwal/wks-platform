@@ -954,7 +954,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
 				"budget-operating-hours");
                 
-		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("budget-operating-hours");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("gradewise-hours-allocation");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			AopCalculation aopCalculation = new AopCalculation();
 			aopCalculation.setAopYear(aopYear);
