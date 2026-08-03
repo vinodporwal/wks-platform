@@ -152,6 +152,26 @@ export const roleAccessApiService = {
       return Promise.reject(e)
     }
   },
+
+  /**
+   * 6. Unassign Role from User API
+   * DELETE /task/users/{userId}/roles/{roleName}
+   */
+  unassignRoleFromUser: async (keycloak, userId, roleName) => {
+    const url = `${Config.CaseEngineUrl}/task/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleName)}`
+    const headers = {
+      Accept: 'application/json',
+      Authorization: keycloak?.token ? `Bearer ${keycloak.token}` : '',
+    }
+
+    try {
+      const resp = await fetch(url, { method: 'DELETE', headers })
+      return await handleResponse(keycloak, resp)
+    } catch (e) {
+      console.error(`API Error in unassignRoleFromUser for ${userId} - ${roleName}:`, e)
+      return Promise.reject(e)
+    }
+  },
 }
 
 export default roleAccessApiService

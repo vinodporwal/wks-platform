@@ -102,6 +102,19 @@ public class UserController {
 	public Map<String, Object> getUserRoles(@PathVariable String userId) throws Exception {
 		return userService.getUserRoles(userId);
 	}
+
+	/**
+	 * Unassign a role from a specific user.
+	 * DELETE /task/users/{userId}/roles/{roleName}
+	 */
+	@DeleteMapping("/{userId}/roles/{roleName}")
+	public ResponseEntity<Map<String, Object>> unassignRoleFromUser(
+			@PathVariable String userId,
+			@PathVariable String roleName) throws Exception {
+		Map<String, Object> result = userService.unassignRoleFromUser(userId, roleName);
+		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 200;
+		return ResponseEntity.status(status).body(result);
+	}
 	
 	@GetMapping("/groups")
     public Map<String, Object> getUserGroups() throws Exception {

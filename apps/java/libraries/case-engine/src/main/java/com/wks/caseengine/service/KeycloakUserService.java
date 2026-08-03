@@ -578,6 +578,35 @@ public class KeycloakUserService {
 		return result;
 	}
 
+	/**
+	 * Unassign / Remove a specific realm role from a specific user in Keycloak.
+	 * DELETE /task/users/{userId}/roles/{roleName}
+	 */
+	public Map<String, Object> unassignRoleFromUser(String userId, String roleName) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (userId == null || userId.isBlank() || roleName == null || roleName.isBlank()) {
+			throw new IllegalArgumentException("userId and roleName must not be null or blank.");
+		}
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+			RoleRepresentation roleRepresentation = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+
+			userResource.roles().realmLevel().remove(Collections.singletonList(roleRepresentation));
+
+			result.put("status", 200);
+			result.put("message", "Role '" + roleName + "' unassigned from user successfully.");
+			result.put("data", Map.of("userId", userId, "role", roleName));
+		} catch (Exception ex) {
+			throw new Exception("Failed to unassign role '" + roleName + "' from user '" + userId + "': " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
 	public Map<String, Object> getAllGroups() throws Exception {
 		Map<String, Object> result = new HashMap<String, Object>();
 		Keycloak keycloak = keycloakAdminClient.getInstance();

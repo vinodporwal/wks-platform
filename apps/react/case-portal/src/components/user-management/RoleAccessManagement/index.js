@@ -13,23 +13,19 @@ import {
   Snackbar,
   Alert,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   Grid,
   CircularProgress,
-  IconButton,
+  Tabs,
+  Tab,
+  Checkbox,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import SearchIcon from '@mui/icons-material/Search'
-import ShieldIcon from '@mui/icons-material/Shield'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
+import { DataGrid } from '@mui/x-data-grid'
 import { DataService } from 'services/DataService'
 import { roleAccessApiService } from 'services/roleAccessApiService'
 
@@ -38,16 +34,14 @@ const RoleAccessManagement = ({ keycloak }) => {
   const [rolesList, setRolesList] = useState([])
   const [rolesLoading, setRolesLoading] = useState(false)
   const [roleSearchQuery, setRoleSearchQuery] = useState('')
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
 
-  // 2. Role Creation Dialog State
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  // 2. Create Role State (Inline Form & Layout Tabs)
+  const [createRoleLayoutTab, setCreateRoleLayoutTab] = useState(0)
   const [roleName, setRoleName] = useState('')
   const [roleDescription, setRoleDescription] = useState('')
   const [creatingRole, setCreatingRole] = useState(false)
 
-  // 3. Role Assignment State (Multi-User, Multi-Role)
+  // 3. Role Assignment State (Multi-User, Multi-Role Studio)
   const [selectedUsers, setSelectedUsers] = useState([])
   const [selectedRoles, setSelectedRoles] = useState([])
   const [userSearchOptions, setUserSearchOptions] = useState([])
@@ -73,13 +67,13 @@ const RoleAccessManagement = ({ keycloak }) => {
     severity: 'success',
   })
 
-  const showNotification = (message, severity = 'success') => {
+  const showNotification = useCallback((message, severity = 'success') => {
     setSnackbar({
       open: true,
       message,
       severity,
     })
-  }
+  }, [])
 
   const handleCloseSnackbar = (event, reason) => {
     if (reason === 'clickaway') return
@@ -119,7 +113,7 @@ const RoleAccessManagement = ({ keycloak }) => {
         setRolesLoading(false)
       }
     },
-    [keycloak],
+    [keycloak, showNotification],
   )
 
   useEffect(() => {
@@ -145,7 +139,6 @@ const RoleAccessManagement = ({ keycloak }) => {
       )
       setRoleName('')
       setRoleDescription('')
-      setCreateDialogOpen(false)
       fetchRoles()
     } catch (err) {
       console.error('Error creating role:', err)
@@ -176,7 +169,7 @@ const RoleAccessManagement = ({ keycloak }) => {
     }
   }
 
-  // Dynamic User Search for Assignment (100k+ Records)
+  // Dynamic User Search for Assignment
   const handleUserSearchForAssign = async (searchText) => {
     if (searchText && searchText.length >= 2) {
       setUserSearchLoading(true)
@@ -317,6 +310,27 @@ const RoleAccessManagement = ({ keycloak }) => {
     }
   }
 
+  // Unassign Role Handler
+  const handleUnassignRoleFromUser = async (userId, roleName) => {
+    if (!userId || !roleName) return
+    setRetrievingRoles(true)
+    try {
+      await roleAccessApiService.unassignRoleFromUser(keycloak, userId, roleName)
+      showNotification(
+        `Role "${roleName}" unassigned from ${lookupUser?.username || userId} successfully!`,
+        'success',
+      )
+      handleRetrieveUserRoles(lookupUser)
+    } catch (err) {
+      console.error('Error unassigning role:', err)
+      showNotification(
+        err.message || `Failed to unassign role "${roleName}"`,
+        'error',
+      )
+      setRetrievingRoles(false)
+    }
+  }
+
   // Filtered Roles list based on search query
   const filteredRolesList = rolesList.filter((r) => {
     const nameStr = typeof r === 'string' ? r : r.name || r.code || ''
@@ -327,106 +341,302 @@ const RoleAccessManagement = ({ keycloak }) => {
     )
   })
 
-  // Pagination handlers for Table
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage)
-  }
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10))
-    setPage(0)
-  }
-
-  const paginatedRoles = filteredRolesList.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage,
-  )
-
+  // Format roles for Autocomplete selection
   const rolesFormattedForSelect = rolesList.map((r) =>
     typeof r === 'string'
       ? { id: r, name: r }
       : { id: r.name || r.id, name: r.name || r.code },
   )
 
+  // Map data for MUI DataGrid
+  const gridRows = filteredRolesList.map((r, index) => {
+    const nameStr = typeof r === 'string' ? r : r.name || r.code || '-'
+    const descStr =
+      typeof r === 'string'
+        ? 'System Realm Role'
+        : r.description || 'System Realm Role'
+    return {
+      id: typeof r === 'string' ? r : r.id || r.name || index,
+      name: nameStr,
+      description: descStr,
+      rawRole: r,
+    }
+  })
+
+  const columns = [
+    {
+      field: 'name',
+      headerName: 'Role Name',
+      flex: 1,
+      minWidth: 180,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          sx={{
+            fontWeight: 700,
+            backgroundColor: '#e0f2fe',
+            color: '#0369a1',
+            borderRadius: '4px',
+            fontSize: '0.75rem',
+            height: '22px',
+          }}
+        />
+      ),
+    },
+    {
+      field: 'description',
+      headerName: 'Description',
+      flex: 2,
+      minWidth: 260,
+      renderCell: (params) => (
+        <Typography
+          variant="body2"
+          sx={{ color: '#475569', fontSize: '0.8rem' }}
+        >
+          {params.value}
+        </Typography>
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1,
+      minWidth: 180,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        const rName = params.row.name
+        return (
+          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              startIcon={<PersonAddIcon style={{ fontSize: 14 }} />}
+              onClick={() => {
+                setSelectedRoles([params.row.rawRole])
+                showNotification(
+                  `Role "${rName}" selected for assignment below.`,
+                  'info',
+                )
+              }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: '4px',
+                fontSize: '0.7rem',
+                py: 0.2,
+                px: 1,
+                minWidth: 'auto',
+              }}
+            >
+              Assign
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteOutlineIcon style={{ fontSize: 14 }} />}
+              onClick={() => {
+                setRoleToDelete(rName)
+                setDeleteDialogOpen(true)
+              }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: '4px',
+                fontSize: '0.7rem',
+                py: 0.2,
+                px: 1,
+                minWidth: 'auto',
+              }}
+            >
+              Delete
+            </Button>
+          </Box>
+        )
+      },
+    },
+  ]
+
   return (
-    <Box sx={{ width: '100%', pb: 4, fontFamily: 'inherit' }}>
-      {/* 1. HERO WORKBENCH HEADER */}
+    <Box sx={{ width: '100%', pl: 0, ml: 0, pr: 3, pb: 2, fontFamily: 'inherit' }}>
+      {/* 1. CREATE NEW ROLE INLINE CELL PANEL (MODERN CONSTRAINED TEXTFIELDS) */}
       <Paper
-        elevation={3}
+        elevation={0}
         sx={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-          borderRadius: '16px',
-          padding: '24px 28px',
-          color: '#ffffff',
-          marginBottom: '24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          border: '1px solid #e2e8f0',
+          backgroundColor: '#ffffff',
+          marginBottom: '12px',
+          maxWidth: '920px',
         }}
       >
-        <Box>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '6px',
-            }}
-          >
-            <ShieldIcon sx={{ fontSize: 28, color: '#38bdf8' }} />
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: 800, letterSpacing: '-0.3px' }}
-            >
-              Role Access Management
-            </Typography>
-            <Chip
-              label={`${rolesList.length} Active System Roles`}
-              variant="outlined"
-              sx={{
-                fontWeight: 700,
-                borderColor: '#38bdf8',
-                color: '#38bdf8',
-                height: 28,
-              }}
-            />
-          </Box>
-          <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
-            High-performance enterprise role management powered by Material-UI
-            Data Table, Autocomplete & Dialogs.
-          </Typography>
-        </Box>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.875rem', mb: 1.5 }}
+        >
+          Create New Role
+        </Typography>
 
-        <Box sx={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <TextField
+            label="Role Name *"
+            placeholder="e.g. gms_business_head"
+            size="small"
+            value={roleName}
+            onChange={(e) => setRoleName(e.target.value)}
+            sx={{
+              width: 250,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '8px',
+                backgroundColor: '#f8fafc',
+                transition: 'all 0.2s ease-in-out',
+                '& fieldset': {
+                  borderColor: '#cbd5e1',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#94a3b8',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: '#ffffff',
+                  '& fieldset': {
+                    borderColor: '#0284c7',
+                    borderWidth: '1.5px',
+                  },
+                  boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                },
+              },
+              '& .MuiInputBase-input': {
+                fontSize: '0.8rem',
+                py: 0.9,
+                fontWeight: 600,
+                color: '#0f172a !important',
+                '&::placeholder': {
+                  color: '#64748b',
+                  opacity: 1,
+                },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: '0.8rem',
+                '&.Mui-focused': {
+                  color: '#0284c7',
+                  fontWeight: 700,
+                },
+              },
+            }}
+          />
+          <TextField
+            label="Description"
+            placeholder="Optional role description"
+            size="small"
+            value={roleDescription}
+            onChange={(e) => setRoleDescription(e.target.value)}
+            sx={{
+              width: 330,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '8px',
+                backgroundColor: '#f8fafc',
+                transition: 'all 0.2s ease-in-out',
+                '& fieldset': {
+                  borderColor: '#cbd5e1',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#94a3b8',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: '#ffffff',
+                  '& fieldset': {
+                    borderColor: '#0284c7',
+                    borderWidth: '1.5px',
+                  },
+                  boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                },
+              },
+              '& .MuiInputBase-input': {
+                fontSize: '0.8rem',
+                py: 0.9,
+                fontWeight: 600,
+                color: '#0f172a !important',
+                '&::placeholder': {
+                  color: '#64748b',
+                  opacity: 1,
+                },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: '0.8rem',
+                '&.Mui-focused': {
+                  color: '#0284c7',
+                  fontWeight: 700,
+                },
+              },
+            }}
+          />
           <Button
             variant="contained"
             color="primary"
-            size="large"
-            startIcon={<AddIcon />}
+            size="small"
+            disabled={!roleName.trim() || creatingRole}
+            onClick={handleCreateRole}
+            startIcon={
+              creatingRole ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <AddIcon style={{ fontSize: 16 }} />
+              )
+            }
             sx={{
-              fontWeight: 800,
-              padding: '10px 20px',
-              borderRadius: '10px',
+              fontWeight: 700,
+              borderRadius: '8px',
               textTransform: 'none',
-              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
+              px: 2.5,
+              height: '38px',
+              fontSize: '0.78rem',
+              boxShadow: 'none',
+              backgroundColor: '#0284c7',
+              '&:hover': {
+                backgroundColor: '#0369a1',
+              },
             }}
-            onClick={() => setCreateDialogOpen(true)}
           >
-            Create New Role
+            {creatingRole ? 'Creating...' : 'Create Role'}
           </Button>
+          {(roleName || roleDescription) && (
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              onClick={() => {
+                setRoleName('')
+                setRoleDescription('')
+              }}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                height: '38px',
+                fontSize: '0.78rem',
+                color: '#64748b',
+                borderColor: '#cbd5e1',
+              }}
+            >
+              Clear
+            </Button>
+          )}
         </Box>
       </Paper>
 
-      {/* 2. SECTION 1: SYSTEM ROLES CATALOG DATA TABLE */}
+      {/* 2. SYSTEM ROLES CATALOG CELL DATA GRID (COLORED HEADERS, ALTERNATE ROWS, VERTICAL SEPARATORS) */}
       <Paper
-        elevation={1}
+        elevation={0}
         sx={{
-          borderRadius: '16px',
-          padding: '24px',
+          borderRadius: '8px',
+          padding: '14px 16px',
           border: '1px solid #e2e8f0',
-          marginBottom: '24px',
+          backgroundColor: '#ffffff',
+          marginBottom: '12px',
+          maxWidth: '920px',
         }}
       >
         <Box
@@ -434,180 +644,194 @@ const RoleAccessManagement = ({ keycloak }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '16px',
+            marginBottom: '12px',
             flexWrap: 'wrap',
-            gap: '12px',
+            gap: '8px',
           }}
         >
-          <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography
-              variant="h6"
-              sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem' }}
+              variant="subtitle2"
+              sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.875rem' }}
             >
-              System Roles Catalog ({filteredRolesList.length})
+              System Roles Catalog
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b' }}>
-              Interactive table with searching, pagination, and role actions.
-            </Typography>
+            <Chip
+              label={filteredRolesList.length}
+              size="small"
+              sx={{
+                backgroundColor: '#0284c7',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: '0.72rem',
+                height: '20px',
+                px: 0.5,
+              }}
+            />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <TextField
               size="small"
-              placeholder="Filter catalog roles..."
+              placeholder="Filter roles..."
               value={roleSearchQuery}
               onChange={(e) => setRoleSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
-                  <SearchIcon sx={{ color: '#94a3b8', mr: 1, fontSize: 20 }} />
+                  <SearchIcon sx={{ color: '#94a3b8', mr: 0.8, fontSize: 16 }} />
                 ),
               }}
-              sx={{ width: 240, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+              sx={{
+                width: 200,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '6px',
+                  backgroundColor: '#f8fafc',
+                  '& fieldset': { borderColor: '#cbd5e1' },
+                  '&:hover fieldset': { borderColor: '#94a3b8' },
+                  '&.Mui-focused': {
+                    backgroundColor: '#ffffff',
+                    '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+                    boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                  },
+                },
+                '& .MuiInputBase-input': {
+                  fontSize: '0.78rem',
+                  py: 0.7,
+                  color: '#0f172a !important',
+                  fontWeight: 600,
+                  '&::placeholder': {
+                    color: '#64748b',
+                    opacity: 1,
+                  },
+                },
+              }}
             />
             <Button
               variant="outlined"
               color="inherit"
               size="small"
-              startIcon={<RefreshIcon />}
+              startIcon={<RefreshIcon style={{ fontSize: 14 }} />}
               onClick={() => fetchRoles(roleSearchQuery)}
-              sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 600 }}
+              sx={{
+                textTransform: 'none',
+                borderRadius: '6px',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                color: '#475569',
+                borderColor: '#cbd5e1',
+                height: '32px',
+                '&:hover': { backgroundColor: '#f1f5f9' },
+              }}
             >
               Refresh
             </Button>
           </Box>
         </Box>
 
-        {/* MUI TABLE */}
-        <TableContainer sx={{ border: '1px solid #e2e8f0', borderRadius: '10px', maxHeight: 400 }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow sx={{ '& th': { fontWeight: 800, backgroundColor: '#f8fafc', color: '#334155' } }}>
-                <TableCell width="240">Role Name</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell width="220" align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rolesLoading ? (
-                <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                    <CircularProgress size={28} />
-                    <Typography variant="body2" sx={{ mt: 1, color: '#64748b' }}>
-                      Loading system roles...
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : paginatedRoles.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 4, color: '#94a3b8' }}>
-                    No roles found matching criteria.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedRoles.map((r, index) => {
-                  const rName = typeof r === 'string' ? r : r.name || r.code || '-'
-                  const rDesc = typeof r === 'string' ? 'System Realm Role' : r.description || 'System Realm Role'
-                  return (
-                    <TableRow key={index} hover>
-                      <TableCell>
-                        <Chip
-                          label={rName}
-                          color="primary"
-                          variant="soft"
-                          size="small"
-                          sx={{
-                            fontWeight: 700,
-                            backgroundColor: '#e0f2fe',
-                            color: '#0369a1',
-                            borderRadius: '6px',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: '#475569', fontSize: '0.875rem' }}>{rDesc}</TableCell>
-                      <TableCell align="center">
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="primary"
-                          startIcon={<PersonAddIcon fontSize="small" />}
-                          onClick={() => {
-                            setSelectedRoles([r])
-                            showNotification(
-                              `Role "${rName}" selected for assignment below.`,
-                              'info',
-                            )
-                          }}
-                          sx={{ textTransform: 'none', fontWeight: 700, mr: 1 }}
-                        >
-                          Assign
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="error"
-                          startIcon={<DeleteOutlineIcon fontSize="small" />}
-                          onClick={() => {
-                            setRoleToDelete(rName)
-                            setDeleteDialogOpen(true)
-                          }}
-                          sx={{ textTransform: 'none', fontWeight: 700 }}
-                        >
-                          Delete
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={filteredRolesList.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+        {/* ENHANCED MUI DATAGRID */}
+        <Box sx={{ height: 350, width: '100%' }}>
+          <DataGrid
+            rows={gridRows}
+            columns={columns}
+            loading={rolesLoading}
+            density="compact"
+            rowHeight={38}
+            columnHeaderHeight={36}
+            disableRowSelectionOnClick
+            hideFooterPagination
+            getRowClassName={(params) =>
+              params.indexRelativeToCurrentPage % 2 === 0 ? 'even-row' : 'odd-row'
+            }
+            sx={{
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              overflow: 'hidden',
+
+              // Light Column Headers (#f1f5f9 light slate blue header)
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#f1f5f9',
+                color: '#0f172a',
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                borderBottom: '2px solid #0284c7',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                borderRight: '1px solid #cbd5e1', // Header vertical separator
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                fontWeight: 800,
+                color: '#0f172a',
+                letterSpacing: '0.3px',
+              },
+              '& .MuiDataGrid-iconSeparator': {
+                color: '#94a3b8',
+              },
+              '& .MuiDataGrid-sortIcon': {
+                color: '#64748b',
+              },
+
+              // Alternate Row Background Colors & Vertical Separators
+              '& .even-row': {
+                backgroundColor: '#ffffff',
+              },
+              '& .odd-row': {
+                backgroundColor: '#f8fafc',
+              },
+              '& .MuiDataGrid-row': {
+                marginTop: '2px',
+                marginBottom: '2px',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: '#e0f2fe !important', // Soft blue row hover
+                },
+              },
+
+              // Vertical Column Cell Separators
+              '& .MuiDataGrid-cell': {
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '0.8rem',
+                borderRight: '1px solid #e2e8f0', // Vertical separator between cells
+                borderBottom: '1px solid #e2e8f0',
+              },
+            }}
+          />
+        </Box>
       </Paper>
 
-      {/* 3. SECTION 2: BATCH ROLE ASSIGNMENT STUDIO (MUI AUTOCOMPLETE MULTISELECT) */}
+      {/* 3. ASSIGN ROLES TO USERS CELL PANEL (CONSTRAINED 920px WIDTH, MODERN AUTOCOMPLETE, INSTANT API SEARCH) */}
       <Paper
-        elevation={1}
+        elevation={0}
         sx={{
-          borderRadius: '16px',
-          padding: '24px',
+          borderRadius: '8px',
+          padding: '14px 16px',
           border: '1px solid #e2e8f0',
-          borderLeft: '6px solid #0284c7',
-          marginBottom: '24px',
+          backgroundColor: '#ffffff',
+          marginBottom: '12px',
+          maxWidth: '920px',
         }}
       >
-        <Box sx={{ marginBottom: '16px' }}>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem', mb: 0.5 }}
-          >
-            Assign Roles to Users (Many-to-Many Batch Studio)
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#64748b' }}>
-            Dynamic search & fetch supporting 100k+ user records paired with
-            multi-role assignment.
-          </Typography>
-        </Box>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.875rem', mb: 1.5 }}
+        >
+          Assign Roles to Users
+        </Typography>
 
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          {/* Target Users MUI Autocomplete */}
+        <Grid container spacing={2} sx={{ mb: 1.5 }}>
+          {/* Target Users Autocomplete */}
           <Grid item xs={12} md={6}>
             <Autocomplete
               multiple
+              disableCloseOnSelect
+              size="small"
               options={userSearchOptions}
               value={selectedUsers}
               onChange={(event, newValue) => setSelectedUsers(newValue)}
               onInputChange={(event, newInputValue) =>
                 handleUserSearchForAssign(newInputValue)
               }
+              filterOptions={(options) => options} // Render API search results instantly without local filtering lag
               getOptionLabel={(option) =>
                 typeof option === 'string'
                   ? option
@@ -619,18 +843,80 @@ const RoleAccessManagement = ({ keycloak }) => {
                 option.id === value.id || option.username === value.username
               }
               loading={userSearchLoading}
+              renderOption={(props, option, { selected }) => (
+                <li {...props} style={{ padding: '6px 10px', cursor: 'pointer' }}>
+                  <Checkbox
+                    size="small"
+                    checked={selected}
+                    sx={{
+                      mr: 1,
+                      color: '#94a3b8',
+                      p: 0.5,
+                      '&.Mui-checked': {
+                        color: '#0284c7',
+                      },
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '0.8rem',
+                        fontWeight: selected ? 700 : 600,
+                        color: selected ? '#0284c7' : '#0f172a',
+                      }}
+                    >
+                      {typeof option === 'string' ? option : option.username}
+                    </Typography>
+                    {option.email && (
+                      <Typography
+                        variant="caption"
+                        sx={{ fontSize: '0.72rem', color: '#64748b' }}
+                      >
+                        {option.email}
+                      </Typography>
+                    )}
+                  </Box>
+                </li>
+              )}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="1. Target Users (100k+ Search)"
-                  placeholder="Type username or email..."
+                  label="Select Users"
+                  placeholder="Type username to search..."
                   size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      backgroundColor: '#f8fafc',
+                      '& fieldset': { borderColor: '#cbd5e1' },
+                      '&:hover fieldset': { borderColor: '#94a3b8' },
+                      '&.Mui-focused': {
+                        backgroundColor: '#ffffff',
+                        '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+                        boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                      },
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: '0.8rem',
+                      color: '#0f172a !important',
+                      fontWeight: 600,
+                      '&::placeholder': {
+                        color: '#64748b',
+                        opacity: 1,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.8rem',
+                      '&.Mui-focused': { color: '#0284c7', fontWeight: 700 },
+                    },
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     endAdornment: (
                       <React.Fragment>
                         {userSearchLoading ? (
-                          <CircularProgress color="inherit" size={18} />
+                          <CircularProgress color="inherit" size={14} />
                         ) : null}
                         {params.InputProps.endAdornment}
                       </React.Fragment>
@@ -642,19 +928,34 @@ const RoleAccessManagement = ({ keycloak }) => {
                 value.map((option, index) => (
                   <Chip
                     size="small"
-                    label={typeof option === 'string' ? option : option.username}
+                    variant="outlined"
+                    color="primary"
+                    label={
+                      typeof option === 'string' ? option : option.username
+                    }
                     {...getTagProps({ index })}
                     key={index}
+                    sx={{
+                      borderRadius: '4px',
+                      fontWeight: 700,
+                      fontSize: '0.72rem',
+                      height: '22px',
+                      backgroundColor: '#e0f2fe',
+                      borderColor: '#0284c7',
+                      color: '#0369a1',
+                    }}
                   />
                 ))
               }
             />
           </Grid>
 
-          {/* Target Roles MUI Autocomplete */}
+          {/* Target Roles Autocomplete with Stylish Checkboxes */}
           <Grid item xs={12} md={6}>
             <Autocomplete
               multiple
+              disableCloseOnSelect
+              size="small"
               options={rolesFormattedForSelect}
               value={selectedRoles}
               onChange={(event, newValue) => setSelectedRoles(newValue)}
@@ -665,22 +966,83 @@ const RoleAccessManagement = ({ keycloak }) => {
                 (option.id && value.id && option.id === value.id) ||
                 option.name === value.name
               }
+              renderOption={(props, option, { selected }) => (
+                <li {...props} style={{ padding: '4px 10px', cursor: 'pointer' }}>
+                  <Checkbox
+                    size="small"
+                    checked={selected}
+                    sx={{
+                      mr: 1,
+                      color: '#94a3b8',
+                      p: 0.5,
+                      '&.Mui-checked': {
+                        color: '#0284c7',
+                      },
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.8rem',
+                      fontWeight: selected ? 700 : 500,
+                      color: selected ? '#0284c7' : '#1e293b',
+                    }}
+                  >
+                    {typeof option === 'string' ? option : option.name}
+                  </Typography>
+                </li>
+              )}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="2. Target Roles"
-                  placeholder="Choose roles to assign..."
+                  label="Select Roles"
+                  placeholder="Choose roles..."
                   size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      backgroundColor: '#f8fafc',
+                      '& fieldset': { borderColor: '#cbd5e1' },
+                      '&:hover fieldset': { borderColor: '#94a3b8' },
+                      '&.Mui-focused': {
+                        backgroundColor: '#ffffff',
+                        '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+                        boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                      },
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: '0.8rem',
+                      color: '#0f172a !important',
+                      fontWeight: 600,
+                      '&::placeholder': {
+                        color: '#64748b',
+                        opacity: 1,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.8rem',
+                      '&.Mui-focused': { color: '#0284c7', fontWeight: 700 },
+                    },
+                  }}
                 />
               )}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
                   <Chip
                     size="small"
-                    color="primary"
+                    color="info"
+                    variant="soft"
                     label={typeof option === 'string' ? option : option.name}
                     {...getTagProps({ index })}
                     key={index}
+                    sx={{
+                      borderRadius: '4px',
+                      fontWeight: 700,
+                      backgroundColor: '#e0f2fe',
+                      color: '#0369a1',
+                      fontSize: '0.72rem',
+                      height: '22px',
+                    }}
                   />
                 ))
               }
@@ -692,61 +1054,67 @@ const RoleAccessManagement = ({ keycloak }) => {
           <Button
             variant="contained"
             color="primary"
-            size="large"
+            size="small"
             disabled={
               selectedUsers.length === 0 ||
               selectedRoles.length === 0 ||
               assigningRoles
             }
             onClick={handleAssignRoles}
+            startIcon={
+              assigningRoles ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <PersonAddIcon style={{ fontSize: 16 }} />
+              )
+            }
             sx={{
-              fontWeight: 800,
-              padding: '10px 24px',
+              fontWeight: 700,
+              padding: '6px 18px',
               borderRadius: '8px',
               textTransform: 'none',
+              fontSize: '0.78rem',
+              boxShadow: 'none',
+              backgroundColor: '#0284c7',
+              '&:hover': { backgroundColor: '#0369a1' },
             }}
           >
-            {assigningRoles
-              ? 'Assigning Roles...'
-              : `Assign Roles (${selectedUsers.length} Users × ${selectedRoles.length} Roles)`}
+            {assigningRoles ? 'Assigning...' : 'Assign Selected Roles'}
           </Button>
         </Box>
       </Paper>
 
-      {/* 4. SECTION 3: USER ROLE INSPECTOR (MUI AUTOCOMPLETE & CHIPS) */}
+      {/* 4. USER ROLE INSPECTOR CELL PANEL (CONSTRAINED 920px WIDTH) */}
       <Paper
-        elevation={1}
+        elevation={0}
         sx={{
-          borderRadius: '16px',
-          padding: '24px',
+          borderRadius: '8px',
+          padding: '14px 16px',
           border: '1px solid #e2e8f0',
-          borderLeft: '6px solid #10b981',
+          backgroundColor: '#ffffff',
+          maxWidth: '920px',
         }}
       >
-        <Box sx={{ marginBottom: '16px' }}>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem', mb: 0.5 }}
-          >
-            User Role Inspector (Active Permissions)
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#64748b' }}>
-            Lookup any user to fetch their active role assignments via GET
-            /task/users/&#123;userId&#125;/roles.
-          </Typography>
-        </Box>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.875rem', mb: 1.5 }}
+        >
+          User Role Inspector
+        </Typography>
 
         <Box
           sx={{
             display: 'flex',
-            gap: '12px',
+            gap: '10px',
             alignItems: 'center',
-            marginBottom: '16px',
-            maxWidth: '550px',
+            marginBottom: '12px',
+            maxWidth: '500px',
           }}
         >
           <Autocomplete
             options={lookupUserOptions}
+            size="small"
+            filterOptions={(options) => options} // Render API search results instantly without local filtering lag
             getOptionLabel={(option) =>
               typeof option === 'string' ? option : option.username
             }
@@ -763,19 +1131,53 @@ const RoleAccessManagement = ({ keycloak }) => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Search User to Inspect"
-                placeholder="Type username..."
+                label="Select User to Inspect"
+                placeholder="Search username..."
                 size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    backgroundColor: '#f8fafc',
+                    '& fieldset': { borderColor: '#cbd5e1' },
+                    '&:hover fieldset': { borderColor: '#94a3b8' },
+                    '&.Mui-focused': {
+                      backgroundColor: '#ffffff',
+                      '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+                      boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    fontSize: '0.8rem',
+                    color: '#0f172a !important',
+                    fontWeight: 600,
+                    '&::placeholder': {
+                      color: '#64748b',
+                      opacity: 1,
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: '0.8rem',
+                    '&.Mui-focused': { color: '#0284c7', fontWeight: 700 },
+                  },
+                }}
               />
             )}
           />
           {lookupUser && (
             <Button
               variant="outlined"
-              color="success"
+              color="primary"
+              size="small"
               onClick={() => handleRetrieveUserRoles(lookupUser)}
               disabled={retrievingRoles}
-              sx={{ textTransform: 'none', fontWeight: 700 }}
+              startIcon={<RefreshIcon style={{ fontSize: 14 }} />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '6px',
+                height: '36px',
+                fontSize: '0.78rem',
+              }}
             >
               Refresh
             </Button>
@@ -786,47 +1188,76 @@ const RoleAccessManagement = ({ keycloak }) => {
           <Paper
             variant="outlined"
             sx={{
-              padding: '16px',
-              borderRadius: '10px',
+              padding: '12px 14px',
+              borderRadius: '6px',
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
             }}
           >
             <Typography
               variant="body2"
-              sx={{ fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}
+              sx={{ fontWeight: 700, color: '#0f172a', marginBottom: '8px', fontSize: '0.8rem' }}
             >
               Assigned Roles for{' '}
-              <span style={{ color: '#059669', fontWeight: 800 }}>
+              <span style={{ color: '#0284c7', fontWeight: 800 }}>
                 {lookupUser.username}
-              </span>{' '}
-              (ID: {lookupUser.id}):
+              </span>
+              :
             </Typography>
 
             {retrievingRoles ? (
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
-                Fetching user roles...
-              </Typography>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}
+              >
+                <CircularProgress size={14} />
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Fetching roles...
+                </Typography>
+              </Box>
             ) : !Array.isArray(retrievedUserRoles) ||
               retrievedUserRoles.length === 0 ? (
               <Typography
                 variant="caption"
-                sx={{ color: '#94a3b8', fontStyle: 'italic' }}
+                sx={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}
               >
                 No active roles assigned to this user.
               </Typography>
             ) : (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '6px',
+                  alignItems: 'center',
+                }}
+              >
                 {retrievedUserRoles.map((r, idx) => {
                   const rName =
-                    typeof r === 'string' ? r : r?.name || r?.code || String(r)
+                    typeof r === 'string'
+                      ? r
+                      : r?.name || r?.code || String(r)
                   return (
                     <Chip
                       key={idx}
                       label={rName}
-                      color="success"
                       size="small"
-                      sx={{ fontWeight: 700 }}
+                      onDelete={() => handleUnassignRoleFromUser(lookupUser.id, rName)}
+                      sx={{
+                        fontWeight: 700,
+                        backgroundColor: '#e0f2fe',
+                        color: '#0369a1',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        height: '24px',
+                        border: '1px solid #bae6fd',
+                        '& .MuiChip-deleteIcon': {
+                          color: '#0284c7',
+                          fontSize: 14,
+                          '&:hover': {
+                            color: '#ef4444',
+                          },
+                        },
+                      }}
                     />
                   )
                 })}
@@ -836,71 +1267,25 @@ const RoleAccessManagement = ({ keycloak }) => {
         ) : (
           <Typography
             variant="caption"
-            sx={{ color: '#94a3b8', fontStyle: 'italic' }}
+            sx={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}
           >
-            Select a user above to inspect their assigned roles.
+            Select a user above to inspect their active assigned roles.
           </Typography>
         )}
       </Paper>
 
-      {/* 5. MUI CREATE ROLE DIALOG */}
-      <Dialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle sx={{ fontWeight: 800 }}>Create New System Role</DialogTitle>
-        <DialogContent dividers>
-          <TextField
-            label="Role Name *"
-            placeholder="e.g., gms_business_head"
-            fullWidth
-            margin="normal"
-            size="small"
-            value={roleName}
-            onChange={(e) => setRoleName(e.target.value)}
-          />
-          <TextField
-            label="Description"
-            placeholder="Optional role scope description"
-            fullWidth
-            multiline
-            rows={3}
-            margin="normal"
-            size="small"
-            value={roleDescription}
-            onChange={(e) => setRoleDescription(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setCreateDialogOpen(false)} color="inherit">
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={!roleName.trim() || creatingRole}
-            onClick={handleCreateRole}
-            sx={{ fontWeight: 700 }}
-          >
-            {creatingRole ? 'Creating...' : 'Create Role'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 6. MUI DELETE ROLE DIALOG */}
+      {/* 5. MUI DELETE ROLE DIALOG */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle sx={{ fontWeight: 800, color: '#ef4444' }}>
+        <DialogTitle sx={{ fontWeight: 800, color: '#ef4444', fontSize: '1rem' }}>
           Confirm Role Deletion
         </DialogTitle>
         <DialogContent dividers>
-          <Typography variant="body2" sx={{ color: '#334155' }}>
+          <Typography variant="body2" sx={{ color: '#334155', fontSize: '0.85rem' }}>
             Are you sure you want to delete role{' '}
             <strong style={{ color: '#ef4444' }}>
               &quot;{roleToDelete}&quot;
@@ -908,23 +1293,24 @@ const RoleAccessManagement = ({ keycloak }) => {
             ? This action will permanently remove the role from the system.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
+        <DialogActions sx={{ p: 1.5 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit" size="small" sx={{ textTransform: 'none' }}>
             Cancel
           </Button>
           <Button
             variant="contained"
             color="error"
+            size="small"
             disabled={deletingRole}
             onClick={handleDeleteRole}
-            sx={{ fontWeight: 700 }}
+            sx={{ fontWeight: 700, textTransform: 'none' }}
           >
             {deletingRole ? 'Deleting...' : 'Delete Role'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* 7. MUI SNACKBAR NOTIFICATIONS */}
+      {/* 6. MUI SNACKBAR NOTIFICATIONS */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4500}
@@ -946,3 +1332,5 @@ const RoleAccessManagement = ({ keycloak }) => {
 }
 
 export default RoleAccessManagement
+
+
