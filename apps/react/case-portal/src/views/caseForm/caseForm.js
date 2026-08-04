@@ -1290,8 +1290,8 @@ console.log('*****  taskId:  ', taskId);
   }
 
   // Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
-  const formatDataGrid = (dataGrid, getLabel) => {
-    if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>'
+  const formatDataGrid = (dataGrid, getLabel, isAssetGrid = false) => {
+    if (!dataGrid || dataGrid.length === 0) return '<p class="print-empty">No data available</p>'
 
     const fieldsToSkip = [
       // 'textField1',
@@ -1305,17 +1305,15 @@ console.log('*****  taskId:  ', taskId);
     return dataGrid
       .map((item) => {
         return `
-      <div style="display: flex; flex-wrap: wrap; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
+      <div class="print-grid-row${isAssetGrid ? ' print-asset-record' : ''}">
         ${Object.entries(item)
           .map(([key, value]) =>
             fieldsToSkip.includes(key)
               ? ''
               : `
-            <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
-              <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
-              <p style="margin: 0;">
-                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || ''}
-              </p>
+            <div class="print-grid-cell">
+              <p class="print-grid-label">${getLabel(key)}</p>
+              <p class="print-grid-value">${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || (isAssetGrid ? '-' : '')}</p>
             </div>
         `,
           )
@@ -1326,52 +1324,108 @@ console.log('*****  taskId:  ', taskId);
       .join('')
   }
 
-  const generatePrintContent = (aCase, structure) => {
+  const storageDownloadUrl = (file) => {
+    const storageBaseUrl = String(Config.StorageUrl || '').replace(/\/+$/, '')
+    const storageApiUrl = /\/storage$/i.test(storageBaseUrl)
+      ? storageBaseUrl
+      : `${storageBaseUrl}/storage`
+    const directory = String(file?.dir || 'cases')
+      .split('/')
+      .filter(Boolean)
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')
+
+    return `${storageApiUrl}/files1/${directory}/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
+  }
+
+  const blobAsDataUrl = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = () => reject(new Error('Image conversion failed.'))
+      reader.readAsDataURL(blob)
+    })
+
+  const fetchImageAsDataUrl = async (file) => {
+    const response = await fetch(storageDownloadUrl(file), {
+      headers: {
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+    })
+    if (!response.ok) {
+      throw new Error(`Image download failed with status ${response.status}.`)
+    }
+    return blobAsDataUrl(await response.blob())
+  }
+
+  const waitForPrintImages = (printWindow) =>
+    Promise.all(
+      Array.from(printWindow.document.images || []).map((image) => {
+        if (image.complete) {
+          return Promise.resolve()
+        }
+        return new Promise((resolve) => {
+          image.onload = resolve
+          image.onerror = resolve
+        })
+      }),
+    )
+
+  const generatePrintContent = (aCase, structure, preparedImages = []) => {
     const containerData = JSON.parse(
       aCase.attributes.find((attr) => attr.name === 'container').value,
     )
     const labelMap = createLabelMapFromStructure(structure)
     console.log('labelMap', labelMap)
     const getLabel = (key) => labelMap[key] || key || ''
+    const escapePrintText = (value) =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
 
     const uploadedFiles = aCase.documents || []
 
     let content = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
-      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">Case Management System</h2>
-      </div>
+    <main class="print-container">
+      <header class="print-title">
+        <h1>Case Management System</h1>
+      </header>
 
       <!-- Case Information Panel -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
-        <div style="padding: 10px;">
+      <section class="print-section print-section--compact">
+        <h2 class="print-section-title">Case Information</h2>
+        <div class="print-fields">
           <p><strong>${getLabel('caseNo')}</strong>: ${aCase.businessKey}</p>
           <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
           <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
           <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
-          <p><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
+          <p class="print-field--full"><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
         </div>
-      </div>
+      </section>
 
       <!-- Case Details -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
-        <div style="padding: 10px;">
+      <section class="print-section print-section--compact">
+        <h2 class="print-section-title">Case Details</h2>
+        <div class="print-fields">
           <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
           <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
           <p><strong>${getLabel('endDate')}</strong>: ${containerData?.endDate || 'N/A'}</p>
           <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
-          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
+          <p class="print-field--full"><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
         </div>
-      </div>
+      </section>
 
       <!-- Associated Faults -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
-        <p style="padding: 10px; margin: 0;"><strong>Main Asset</strong>: ${containerData.mainAsset || containerData.textField1 || 'N/A' }</p>
-        ${formatDataGrid(containerData.dataGrid2, getLabel)}
-      </div>
+      <section class="print-section print-section--large">
+        <h2 class="print-section-title">Associated Faults</h2>
+        <p class="print-summary"><strong>Main Asset</strong>: ${containerData.mainAsset || containerData.textField1 || 'N/A' }</p>
+        <div class="print-asset-grid">
+          ${formatDataGrid(containerData.dataGrid2, getLabel, true)}
+        </div>
+      </section>
   `
 
     // Conditional display based on RecommendationsRadio value
@@ -1383,74 +1437,88 @@ console.log('*****  taskId:  ', taskId);
         containerData.caseCauseDescription,
         containerData.caseCauseCategory,
       )
-      const files = containerData.file;
+      const files = Array.isArray(containerData.file) ? containerData.file : [];
       content += `
       <!-- Analysis -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
-        <div style="padding: 10px;">
+      <section class="print-section print-section--large">
+        <h2 class="print-section-title">Analysis</h2>
+        <div class="print-fields">
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
           <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
-          <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
+          <p class="print-field--full"><strong>${getLabel('analysisDesc')}</strong>: <span class="print-pre-wrap">${escapePrintText(containerData.analysisDesc)}</span></p>
+          <p class="print-field--full"><strong>${getLabel('diagnosis')}</strong>: <span class="print-pre-wrap">${escapePrintText(containerData.diagnosis)}</span></p>
         </div>`
     if (files.length > 0) {
       content += `
-          <ul style="list-style: none; padding: 0; margin: 0;">
-            ${files
-              .map(
-                (file, index) => `
-                  <li style="margin-bottom: 16px;">
-                    <img 
-                      src="${Config.StorageUrl}/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
-                      alt="${file.name}"
-                      style="max-width: 100%; height: auto;"
-                    />
-                  </li>
-    `
-              )
-              .join('')}
-          </ul>
+          <div class="print-image-section">
+            <ul class="print-files">
+              ${files
+                .map(
+                  (file, index) => {
+                    const preparedImage = preparedImages[index]
+                    const fileName = escapePrintText(file?.name)
+                    const imageAlt = fileName || 'Uploaded image'
+                    return `
+                    <li class="print-file${index === 0 ? ' print-file--first-image' : ''}">
+                      ${index === 0
+                        ? `<h3 class="print-image-header">${getLabel('file')}</h3>`
+                        : ''}
+                      <p class="print-image-filename">${fileName}</p>
+                      ${preparedImage?.dataUrl
+                        ? `<img
+                        src="${preparedImage.dataUrl}"
+                        alt="${imageAlt}"
+                        class="print-image"
+                      />`
+                        : '<p class="print-image-unavailable">Image unavailable</p>'}
+                    </li>
+      `
+                  }
+                )
+                .join('')}
+            </ul>
+          </div>
       `;
     }
-    content +=`</div>`
+    content +=`</section>`
     if (containerData.RecommendationsRadio === 'yes') {
       content += `
       <!-- Data Grid 1 -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
+      <section class="print-section print-section--large print-page-break">
+        <h2 class="print-section-title">${getLabel('dataGrid1')}</h2>
         ${formatDataGrid(containerData.dataGrid1, getLabel)}
-      </div>
+      </section>
     `
     }
 
     // Value Realization section
     content += `
       <!-- Value Realization -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
-        <div style="padding: 10px;">
+      <section class="print-section print-section--compact">
+        <h2 class="print-section-title">Value Realization</h2>
+        <div class="print-fields">
           <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
           <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss || ''}</p>
           <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost || ''}</p>
           <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost || ''}</p>
           <p><strong>${getLabel('totalValueCaptured')}</strong>: ${containerData.totalValueCaptured}</p>
-          <p><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
+          <p class="print-field--full"><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
         </div>
-      </div>
+      </section>
   `
 
     // Append uploaded files section at the bottom
     if (uploadedFiles.length > 0) {
       content += `
-      <div style="border: 1px solid #333; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-      <h3 style="margin-bottom: 10px;">Uploaded Files</h3>
-      <ul style="list-style: none; padding: 0; margin: 0;">
+      <section class="print-section print-section--compact">
+      <h2 class="print-section-title">Uploaded Files</h2>
+      <ul class="print-files print-file-links">
         ${uploadedFiles
           .map(
             (file, index) => `
-                  <li style="margin-bottom: 16px;">
+                  <li class="print-file">
                     <a 
-                      href="${Config.StorageUrl}/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      href="${storageDownloadUrl(file)}"
                       alt="${file.name}"
                       target="_blank"
                     >${file.name}</a>
@@ -1459,39 +1527,302 @@ console.log('*****  taskId:  ', taskId);
           )
           .join('')}
       </ul>
-      </div>
+      </section>
       `;
     } else {
       content += `<p>No files uploaded.</p>`;
     }
 
-    return content
+    return `${content}</main>`
   }
 
   // Print function
-  const printCaseDetails = () => {
-    const printContent = generatePrintContent(aCase, formStructure);
-
-    // Open a new window and print the generated content
+  const printCaseDetails = async () => {
     const printWindow = window.open('', '_blank');
-    if (printWindow) {
+    if (!printWindow) {
+      console.error('Failed to open the print window.');
+      return
+    }
+
+    const containerAttribute = aCase.attributes.find(
+      (attribute) => attribute.name === 'container',
+    )
+    const containerData = containerAttribute
+      ? JSON.parse(containerAttribute.value)
+      : {}
+    const imageFiles = Array.isArray(containerData.file)
+      ? containerData.file
+      : []
+    const preparedImages = await Promise.all(
+      imageFiles.map(async (file) => {
+        try {
+          return { dataUrl: await fetchImageAsDataUrl(file) }
+        } catch (error) {
+          console.error('Unable to prepare an uploaded image for printing.')
+          return { dataUrl: null }
+        }
+      }),
+    )
+    const printContent = generatePrintContent(
+      aCase,
+      formStructure,
+      preparedImages,
+    );
+
     printWindow.document.write(`
     <html>
       <head>
         <title>Print Case Details</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+
+          * {
+            box-sizing: border-box;
+          }
+
+          html,
+          body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #1f1f1f;
+            font-family: Arial, sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.3;
+          }
+
+          .print-container {
+            width: 100%;
+            max-width: 100%;
+            overflow: visible;
+          }
+
+          .print-title {
+            margin: 0 0 7px;
+            text-align: center;
+          }
+
+          .print-title h1 {
+            margin: 0;
+            font-size: 14pt;
+            line-height: 1.2;
+          }
+
+          .print-section {
+            width: 100%;
+            margin: 0 0 7px;
+            border: 0.7px solid #333;
+            border-radius: 2px;
+            overflow: visible;
+          }
+
+          .print-section--compact {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .print-section-title {
+            margin: 0;
+            padding: 4px 6px;
+            background: #333;
+            color: #fff;
+            font-size: 10pt;
+            line-height: 1.2;
+            break-after: avoid;
+            page-break-after: avoid;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .print-fields {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            column-gap: 10px;
+            padding: 3px 6px;
+          }
+
+          .print-fields p,
+          .print-summary,
+          .print-empty {
+            min-width: 0;
+            margin: 0;
+            padding: 2px 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            white-space: pre-wrap;
+          }
+
+          .print-field--full {
+            grid-column: 1 / -1;
+          }
+
+          .print-summary,
+          .print-empty {
+            padding: 5px 6px;
+          }
+
+          .print-grid-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            margin: 4px 5px;
+            border: 0.7px solid #aaa;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .print-grid-cell {
+            min-width: 0;
+            padding: 3px 5px;
+            border-right: 0.7px solid #ccc;
+            border-bottom: 0.7px solid #ccc;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+          }
+
+          .print-grid-cell:nth-child(even) {
+            border-right: 0;
+          }
+
+          .print-grid-label,
+          .print-grid-value {
+            margin: 0;
+            white-space: pre-wrap;
+          }
+
+          .print-grid-label {
+            font-weight: 700;
+          }
+
+          .print-asset-grid {
+            width: 100%;
+            padding: 0 5px 1px;
+          }
+
+          .print-asset-record {
+            width: 100%;
+            margin: 4px 0;
+            grid-auto-rows: auto;
+            align-items: start;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .print-asset-record .print-grid-cell {
+            height: auto;
+            min-height: 0;
+            margin: 0;
+            padding: 3px 5px;
+            align-self: start;
+            text-align: left;
+            vertical-align: top;
+          }
+
+          .print-asset-record .print-grid-label,
+          .print-asset-record .print-grid-value {
+            height: auto;
+            min-height: 0;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            line-height: 1.25;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+          }
+
+          .print-asset-record .print-grid-value {
+            margin-top: 1px;
+          }
+
+          .print-files {
+            margin: 0;
+            padding: 5px 6px;
+            list-style: none;
+          }
+
+          .print-pre-wrap {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+          }
+
+          .print-image-section {
+            margin-top: 6px;
+          }
+
+          .print-image-header {
+            margin: 0 0 6px;
+            font-size: 10pt;
+            line-height: 1.2;
+            font-weight: 600;
+            color: #1f1f1f;
+          }
+
+          .print-image-filename {
+            margin: 0 0 4px;
+            font-size: 8.5pt;
+            line-height: 1.2;
+            color: #555;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+          }
+
+          .print-image-unavailable {
+            margin: 4px 0;
+            font-size: 9pt;
+          }
+
+          .print-file,
+          .print-file--first-image {
+            margin: 0 0 5px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            overflow-wrap: anywhere;
+          }
+
+          .print-file:last-child {
+            margin-bottom: 0;
+          }
+
+          .print-image {
+            display: block;
+            max-width: 100%;
+            max-height: 240mm;
+            height: auto;
+            object-fit: contain;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .print-file-links a {
+            color: #0000EE;
+            text-decoration: underline;
+          }
+
+          .print-page-break {
+            break-before: page;
+            page-break-before: always;
+          }
+
+          @media print {
+            html,
+            body {
+              width: 100%;
+            }
+          }
+        </style>
       </head>
       <body>
         ${printContent}
       </body>
     </html>
       `);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 500); // 500ms delay (you can adjust this if needed)
-    } else {
-      console.error('Failed to open the print window.');
-    }
+    printWindow.document.close();
+    await waitForPrintImages(printWindow)
+    printWindow.print();
   }
 
   return (
