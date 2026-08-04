@@ -592,10 +592,12 @@ async function exportManualEntryExcel(keycloak, plantId, year, fileName) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} aopYear - AOP Year
  * @param {string} plantId - Plant ID
+ * @param {string} periodFrom - Start date
+ * @param {string} periodTo - End date
  * @returns {Promise} Manual entry data
  */
-async function getHistoricalMonths(keycloak, aopYear, plantId) {
-  const url = `${Config.CaseEngineUrl}/task/historical-pigging-status?aopYear=${aopYear}&plantId=${plantId}`
+async function getHistoricalMonths(keycloak, aopYear, plantId, periodFrom, periodTo) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/manual-production?aopYear=${aopYear}&plantId=${plantId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -617,12 +619,14 @@ async function getHistoricalMonths(keycloak, aopYear, plantId) {
  * Save Historical Months data for Production Norms
  * @param {Object} keycloak - Keycloak session
  * @param {string} year - AOP Year
- * @param {string} plantFKId - Plant ID
- * @param {Array} payload - Data to save (list of ConfigurationDTO)
+ * @param {string} plantId - Plant ID
+ * @param {string} periodFrom - Start date
+ * @param {string} periodTo - End date
+ * @param {Array} payload - Data to save
  * @returns {Promise} Save response
  */
-async function saveHistoricalMonths(keycloak, year, plantId, payload) {
-  const url = `${Config.CaseEngineUrl}/task/historical-pigging-status?aopYear=${year}&plantId=${plantId}`
+async function saveHistoricalMonths(keycloak, year, plantId, periodFrom, periodTo, payload) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/manual-production?aopYear=${year}&plantId=${plantId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
