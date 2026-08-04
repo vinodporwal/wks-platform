@@ -1814,6 +1814,16 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
         return failedRecords;
     }
+@Override
+    public AOPMessageVM deleteProfitCenterData(String id, String aopYear) { 
+
+        String sql = "DELETE FROM NormAttributeTransactions WHERE Normparameter_FK_Id = ? AND aopYear = ?";
+        jdbcTemplate.update(sql, id, aopYear);
+        AOPMessageVM response = new AOPMessageVM();
+        response.setCode(200);
+        response.setMessage("Data deleted successfully");
+        return response;
+    }
 
     @Override
     public AOPMessageVM getProfitCenterUomDropdown(String siteId) {

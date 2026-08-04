@@ -33,4 +33,5 @@ public interface RefineryAopBudgetService {
     public AOPMessageVM getProfitCenterData(String siteId, String aopYear);
     public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear);
     public AOPMessageVM getProfitCenterUomDropdown(String siteId);
+    public AOPMessageVM deleteProfitCenterData(String id, String aopYear);
 }

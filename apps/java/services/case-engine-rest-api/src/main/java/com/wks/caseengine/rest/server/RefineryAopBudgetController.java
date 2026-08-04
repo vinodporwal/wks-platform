@@ -199,4 +199,9 @@ public class RefineryAopBudgetController {
     public AOPMessageVM getProfitCenterUomDropdown(@RequestParam String siteId) {
         return refineryAopBudgetService.getProfitCenterUomDropdown(siteId);
     }
+
+    @DeleteMapping("/profit-center-data")
+    public AOPMessageVM deleteProfitCenterData(@RequestParam String id, @RequestParam String aopYear) {
+        return refineryAopBudgetService.deleteProfitCenterData(id, aopYear);
+    }
 }
