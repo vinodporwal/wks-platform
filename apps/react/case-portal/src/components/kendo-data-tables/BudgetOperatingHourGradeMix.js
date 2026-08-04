@@ -609,6 +609,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         })
         setModifiedCellsSubGrade({})
         fetchDataSubGradeAllocation()
+        fetchData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
