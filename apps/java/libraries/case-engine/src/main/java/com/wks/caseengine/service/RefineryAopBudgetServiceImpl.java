@@ -1817,7 +1817,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 @Override
     public AOPMessageVM deleteProfitCenterData(String id, String aopYear) { 
 
-        String sql = "DELETE FROM NormAttributeTransactions WHERE Normparameter_FK_Id = ? AND aopYear = ?";
+        String sql = "DELETE FROM NormAttributeTransactions WHERE Normparameter_FK_Id = ? AND AuditYear = ?";
         jdbcTemplate.update(sql, id, aopYear);
         AOPMessageVM response = new AOPMessageVM();
         response.setCode(200);
