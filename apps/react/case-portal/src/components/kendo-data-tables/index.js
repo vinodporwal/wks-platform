@@ -392,6 +392,7 @@ const KendoDataTables = ({
     'VA Stream to BZ',
     'PYROLYSIS GASOLINE',
     'Benzene Content in feed for PyGas',
+    'NRS of BZ to NCP',
   ].map((n) => n.trim().toLowerCase())
 
   const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_NP = [
