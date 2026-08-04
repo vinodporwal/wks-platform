@@ -5,9 +5,16 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +23,9 @@ import com.wks.caseengine.entity.UserScreenMapping;
 import com.wks.caseengine.repository.UserScreenMappingRepository;
 import com.wks.caseengine.utility.KeycloakAdminClient;
 
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -496,6 +505,214 @@ public class KeycloakUserService {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Updates realm roles from an Excel sheet (replace, not additive).
+	 * Expected columns (header row, case-insensitive): username, roles
+	 * Roles cell may list multiple roles separated by commas.
+	 * Each user's direct realm roles are replaced with the roles in the sheet.
+	 */
+	public Map<String, Object> assignRolesFromExcel(MultipartFile file) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("Excel file is required.");
+		}
+
+		String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+		if (!filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+			throw new IllegalArgumentException("Only .xlsx or .xls Excel files are supported.");
+		}
+
+		List<Map<String, Object>> rowResults = new ArrayList<>();
+		List<String> failedUsernames = new ArrayList<>();
+		int successCount = 0;
+		int failureCount = 0;
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+		DataFormatter formatter = new DataFormatter();
+
+		try (InputStream inputStream = file.getInputStream(); Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			if (sheet == null) {
+				throw new IllegalArgumentException("Excel file has no sheets.");
+			}
+
+			Row headerRow = sheet.getRow(sheet.getFirstRowNum());
+			if (headerRow == null) {
+				throw new IllegalArgumentException("Excel file is missing a header row.");
+			}
+
+			int usernameCol = -1;
+			int rolesCol = -1;
+			for (Cell cell : headerRow) {
+				String header = formatter.formatCellValue(cell).trim().toLowerCase().replace(" ", "");
+				if ("username".equals(header) || "user".equals(header) || "userid".equals(header)) {
+					usernameCol = cell.getColumnIndex();
+				} else if ("roles".equals(header) || "role".equals(header)) {
+					rolesCol = cell.getColumnIndex();
+				}
+			}
+
+			if (usernameCol < 0 || rolesCol < 0) {
+				throw new IllegalArgumentException(
+						"Excel must include 'username' and 'roles' columns (header row).");
+			}
+
+			Map<String, RoleRepresentation> roleCache = new HashMap<>();
+
+			for (int i = sheet.getFirstRowNum() + 1; i <= sheet.getLastRowNum(); i++) {
+				Row row = sheet.getRow(i);
+				if (row == null || isExcelRowEmpty(row, formatter)) {
+					continue;
+				}
+
+				int excelRowNumber = i + 1; // 1-based for human-readable reporting
+				String username = formatter.formatCellValue(row.getCell(usernameCol)).trim();
+				String rolesRaw = formatter.formatCellValue(row.getCell(rolesCol)).trim();
+
+				Map<String, Object> rowResult = new HashMap<>();
+				rowResult.put("row", excelRowNumber);
+				rowResult.put("username", username);
+
+				if (username.isBlank()) {
+					rowResult.put("status", "failed");
+					rowResult.put("error", "Username is blank.");
+					failedUsernames.add("");
+					failureCount++;
+					rowResults.add(rowResult);
+					continue;
+				}
+
+				List<String> roleNames = Arrays.stream(rolesRaw.split("[,;|]"))
+						.map(String::trim)
+						.filter(r -> !r.isBlank())
+						.distinct()
+						.collect(Collectors.toList());
+
+				rowResult.put("requestedRoles", roleNames);
+
+				if (roleNames.isEmpty()) {
+					rowResult.put("status", "failed");
+					rowResult.put("error", "No roles specified.");
+					failedUsernames.add(username);
+					failureCount++;
+					rowResults.add(rowResult);
+					continue;
+				}
+
+				try {
+					UserRepresentation user = findUserByUsername(keycloak, username);
+					if (user == null) {
+						rowResult.put("status", "failed");
+						rowResult.put("error", "User not found: " + username);
+						failedUsernames.add(username);
+						failureCount++;
+						rowResults.add(rowResult);
+						continue;
+					}
+
+					List<String> missingRoles = new ArrayList<>();
+					List<RoleRepresentation> rolesToSet = new ArrayList<>();
+					for (String roleName : roleNames) {
+						RoleRepresentation role = roleCache.get(roleName);
+						if (role == null) {
+							try {
+								role = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+								roleCache.put(roleName, role);
+							} catch (Exception ex) {
+								missingRoles.add(roleName);
+								continue;
+							}
+						}
+						rolesToSet.add(role);
+					}
+
+					if (!missingRoles.isEmpty()) {
+						rowResult.put("status", "failed");
+						rowResult.put("error", "Unknown realm roles: " + missingRoles);
+						failedUsernames.add(username);
+						failureCount++;
+						rowResults.add(rowResult);
+						continue;
+					}
+
+					UserResource userResource = keycloak.realm(keycloakRealmName).users().get(user.getId());
+
+					// Replace: remove all current direct realm roles, then set from Excel
+					List<RoleRepresentation> currentRoles = userResource.roles().realmLevel().listEffective(false);
+					if (currentRoles != null && !currentRoles.isEmpty()) {
+						userResource.roles().realmLevel().remove(currentRoles);
+					}
+					userResource.roles().realmLevel().add(rolesToSet);
+
+					List<String> updatedRoles = userResource.roles().realmLevel().listEffective(false).stream()
+							.map(RoleRepresentation::getName)
+							.collect(Collectors.toList());
+
+					rowResult.put("status", "success");
+					rowResult.put("userId", user.getId());
+					rowResult.put("updatedRoles", updatedRoles);
+					successCount++;
+				} catch (Exception ex) {
+					rowResult.put("status", "failed");
+					rowResult.put("error", ex.getMessage());
+					failedUsernames.add(username);
+					failureCount++;
+				}
+
+				rowResults.add(rowResult);
+			}
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to process role update Excel: " + ex.getMessage(), ex);
+		}
+
+		if (rowResults.isEmpty()) {
+			throw new IllegalArgumentException("No data rows found in Excel. Expected columns: username, roles.");
+		}
+
+		result.put("status", failureCount == 0 ? 200 : (successCount == 0 ? 400 : 207));
+		result.put("message", failureCount == 0
+				? "Roles updated successfully from Excel."
+				: (successCount == 0
+						? "Role update from Excel failed for all rows."
+						: "Roles updated from Excel with partial failures."));
+		result.put("successCount", successCount);
+		result.put("failureCount", failureCount);
+		result.put("data", rowResults);
+		if (!failedUsernames.isEmpty()) {
+			result.put("failedUsernames", failedUsernames);
+		}
+
+		return result;
+	}
+
+	private UserRepresentation findUserByUsername(Keycloak keycloak, String username) {
+		List<UserRepresentation> candidates = keycloak.realm(keycloakRealmName)
+				.users()
+				.search(username, 0, 50);
+		if (candidates == null || candidates.isEmpty()) {
+			return null;
+		}
+		return candidates.stream()
+				.filter(u -> u.getUsername() != null && u.getUsername().equalsIgnoreCase(username))
+				.findFirst()
+				.orElse(null);
+	}
+
+	private boolean isExcelRowEmpty(Row row, DataFormatter formatter) {
+		if (row == null) {
+			return true;
+		}
+		for (Cell cell : row) {
+			if (cell != null && !formatter.formatCellValue(cell).trim().isEmpty()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**

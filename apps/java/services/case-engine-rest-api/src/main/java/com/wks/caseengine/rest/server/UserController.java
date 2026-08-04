@@ -2,8 +2,10 @@ package com.wks.caseengine.rest.server;
 
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.BulkRoleAssignmentRequest;
 import com.wks.caseengine.dto.RoleCreateRequest;
 import com.wks.caseengine.dto.UsersByRolesRequest;
@@ -63,6 +65,23 @@ public class UserController {
 		Map<String, Object> result = userService.assignRolesToUsers(request.getAssignments());
 		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 200;
 		return ResponseEntity.status(status == 207 ? HttpStatus.MULTI_STATUS : HttpStatus.OK).body(result);
+	}
+
+	/**
+	 * Update realm roles from an Excel file (replace user's direct realm roles).
+	 * POST /task/users/roles/assign-excel
+	 * multipart form field "file" (.xlsx)
+	 * Columns: username | roles  (roles comma-separated)
+	 */
+	@PostMapping(value = "/roles/assign-excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Map<String, Object>> assignRolesFromExcel(@RequestParam("file") MultipartFile file)
+			throws Exception {
+		Map<String, Object> result = userService.assignRolesFromExcel(file);
+		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 200;
+		HttpStatus httpStatus = status == 207 ? HttpStatus.MULTI_STATUS
+				: status == 400 ? HttpStatus.BAD_REQUEST
+				: HttpStatus.OK;
+		return ResponseEntity.status(httpStatus).body(result);
 	}
 
 	/**
@@ -137,4 +156,3 @@ public class UserController {
 		return userService.searchUsers(search);
 	}
 }
-
