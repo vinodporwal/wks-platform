@@ -96,15 +96,21 @@ const InputsDMD = () => {
           },
           {
             id: 'fixed-norms',
+            name: 'Norms & Quantity',
+            displayName: 'Norms & Quantity',
+            displaySequence: 8,
+          },
+          {
+            id: 'fixed-norms',
             name: 'Norms',
             displayName: 'Norms',
-            displaySequence: 8,
+            displaySequence: 9,
           },
           {
             id: 'fuel-availability',
             name: 'fuelAvailability',
             displayName: 'Fuel Availability',
-            displaySequence: 9,
+            displaySequence: 10,
           },
           // {
           //   id: 'fuel-priority',

@@ -92,8 +92,8 @@ const InputsJMD = () => {
       },
       {
         id: 'fixed-norms',
-        name: 'Norms',
-        displayName: 'Norms',
+        name: 'Norms & Quantity',
+        displayName: 'Norms & Quantity',
         displaySequence: 8,
       },
       {
