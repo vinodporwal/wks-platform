@@ -502,6 +502,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           severity: 'success',
         })
         fetchData()
+        fetchDataSubGradeAllocation()
         setRefreshSignal((prev) => prev + 1)
       } else {
         setSnackbarOpen(true)

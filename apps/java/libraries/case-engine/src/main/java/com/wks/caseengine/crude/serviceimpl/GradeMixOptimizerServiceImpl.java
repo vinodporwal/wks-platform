@@ -432,6 +432,17 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             // String procedureName = verticalName + "_" + siteName + "_SaveGradeWiseMonthWiseBudgetOperatingHours";
             // executeBudgetOperationHoursCalculationSP(plantId.toString(), aopYear, procedureName);
 
+            List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("gradewise-hours-allocation");
+            for (ScreenMapping screenMapping : screenMappingList) {
+                AopCalculation aopCalculation = new AopCalculation();
+                aopCalculation.setAopYear(aopYear);
+                aopCalculation.setIsChanged(true);
+                aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+                aopCalculation.setPlantId(plantId);
+                aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+                aopCalculationRepository.save(aopCalculation);
+            }
+
             AOPMessageVM vm = new AOPMessageVM();
             vm.setCode(200);
             vm.setMessage("Budgeted operating hours data saved successfully");
