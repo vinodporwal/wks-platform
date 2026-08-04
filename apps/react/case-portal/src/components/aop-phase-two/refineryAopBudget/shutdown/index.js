@@ -186,6 +186,32 @@ const Shutdown = ({ permissions }) => {
         })
         return
       }
+
+      if (row.dateOfCommencement && row.sdTotalDurationDays) {
+        const date = new Date(row.dateOfCommencement)
+        const year = date.getFullYear()
+        const month = date.getMonth()
+        const daysInMonth = new Date(year, month + 1, 0).getDate()
+        const currentDay = date.getDate()
+        const remainingDays = daysInMonth - currentDay + 1
+
+        if (Number(row.sdTotalDurationDays) > remainingDays) {
+          const rowIndex = rows.findIndex((r) => r.id === row.id)
+          const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+          const displayName = row.plantName
+            ? `${row.plantName} (${rowNumLabel})`
+            : row.siteName
+              ? `${row.siteName} (${rowNumLabel})`
+              : rowNumLabel
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `For ${displayName}, SD Total Duration Days (${row.sdTotalDurationDays}) cannot exceed the remaining days in the selected month (${remainingDays} days).`,
+            severity: 'error',
+          })
+          return
+        }
+      }
     }
 
     // Create unique display name for standard validation to handle duplicate plants clearly

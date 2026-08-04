@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -35,13 +37,16 @@ import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.PlantsDTO;
+import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
+import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -64,6 +69,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
     @Autowired
     private SiteRepository sitesRepository;
+
+    @Autowired
+    private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
 
     @Override
     @Transactional
@@ -107,6 +115,12 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             List<PlantCapacitiesTranscationDTO> failedRecords = new ArrayList<>();
 
             for (PlantCapacitiesTranscationDTO dto : plantCapacitiesTranscationDTOs) {
+                minMaxValidation(dto);
+                // skip records with failed validations
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
                 if (dto.getTransactionId() == null) {
                     String insertSql = "INSERT INTO PlantCapacityTransaction (id, masterId, min, max, remarks, plantId, aopYear, modifiedBy, modifiedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
@@ -127,7 +141,6 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     throw new RuntimeException("Record not found");
                 }
                 validateRemarkChangeForPlantCapacities(existing, dto);
-                minMaxValidation(dto);
 
                 // skip records with failed validations
                 if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
@@ -842,15 +855,27 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
 
-                // Skip completely empty rows (check visible columns 0-4)
+                // Skip completely empty rows (check visible columns 0-4).
+                // Col 3 (Date of Commencement) is intentionally checked without converting its
+                // type so that Excel-native NUMERIC date cells are not corrupted before the
+                // field-level handler below can read them properly.
                 boolean isEmpty = true;
                 for (int col = 0; col <= 4; col++) {
                     Cell cell = row.getCell(col);
                     if (cell != null) {
-                        cell.setCellType(CellType.STRING);
-                        if (!cell.getStringCellValue().trim().isEmpty()) {
-                            isEmpty = false;
-                            break;
+                        if (col == 3) {
+                            CellType ct = cell.getCellType();
+                            if (ct == CellType.NUMERIC
+                                    || (ct == CellType.STRING && !cell.getStringCellValue().trim().isEmpty())) {
+                                isEmpty = false;
+                                break;
+                            }
+                        } else {
+                            cell.setCellType(CellType.STRING);
+                            if (!cell.getStringCellValue().trim().isEmpty()) {
+                                isEmpty = false;
+                                break;
+                            }
                         }
                     }
                 }
@@ -896,20 +921,72 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     }
 
                     // Col 3 – Date of Commencement
+                    
                     Cell dateCell = row.getCell(3);
                     if (dateCell != null) {
-                        dateCell.setCellType(CellType.STRING);
-                        String dateStr = dateCell.getStringCellValue().trim();
-                        if(dateStr.isEmpty()) {  
-                            dto.setSaveStatus("Failed");
-                            dto.setErrorMessage("Date of Commencement is required");
+                        Date parsedDate = null;
+                        String dateError = null;
+
+                        if (dateCell.getCellType() == CellType.NUMERIC
+                                && DateUtil.isCellDateFormatted(dateCell)) {
+                            // Native Excel date cell – read directly, no string conversion needed.
+                            parsedDate = dateCell.getDateCellValue();
                         } else {
-                            try {
-                                dto.setDateOfCommencement(sdf.parse(dateStr));
-                            } catch (ParseException e) {
-                                dto.setSaveStatus("Failed");
-                                dto.setErrorMessage("Date of Commencement must be a valid date");
+                            // Text cell (Google Sheets export or manually typed value).
+                            // Try the canonical format first, then common alternatives that Excel
+                            // may produce when the user re-saves the sheet.
+                            dateCell.setCellType(CellType.STRING);
+                            String dateStr = dateCell.getStringCellValue().trim();
+                            if (dateStr.isEmpty()) {
+                                dateError = "Date of Commencement is required";
+                            } else {
+                                for (String pattern : Arrays.asList(
+                                        "dd-MM-yyyy",
+                                        "dd/MM/yyyy",
+                                        "M/d/yyyy",
+                                        "MM/dd/yyyy",
+                                        "d-M-yyyy",
+                                        "yyyy-MM-dd")) {
+                                    SimpleDateFormat fmt = new SimpleDateFormat(pattern);
+                                    fmt.setLenient(false);
+                                    try {
+                                        parsedDate = fmt.parse(dateStr);
+                                        break;
+                                    } catch (ParseException ignored) {
+                                        // try next format
+                                    }
+                                }
+                                if (parsedDate == null) {
+                                    dateError = "Date of Commencement must be a valid date";
+                                }
                             }
+                        }
+
+                        if (parsedDate != null) {
+                            dto.setDateOfCommencement(parsedDate);
+                        } else {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage(dateError != null ? dateError : "Date of Commencement is required");
+                        }
+                    }
+
+                    // Cross-field validation: SD Total Duration Days must not exceed the
+                    // remaining days in the month of the Date of Commencement.
+                    // Remaining Days = Total Days in Month - Day of Month
+                    if (dto.getDateOfCommencement() != null
+                            && dto.getSdTotalDurationDays() != null
+                            && !"Failed".equals(dto.getSaveStatus())) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(dto.getDateOfCommencement());
+                        int dayOfMonth   = cal.get(Calendar.DAY_OF_MONTH);
+                        int daysInMonth  = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+                        int remainingDays = daysInMonth - dayOfMonth;
+                        if (dto.getSdTotalDurationDays() > remainingDays) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage(
+                                "SD Total Duration Days (" + dto.getSdTotalDurationDays()
+                                + ") exceeds the remaining days in the commencement month ("
+                                + remainingDays + " days remaining)");
                         }
                     }
 
@@ -1030,8 +1107,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .plantFkId(rs.getString("plantFkId"))
                     .plantName(rs.getString("plantName"))
                     .tentativeDurationDays(rs.getInt("tentativeDurationDays"))
-                    .throughputDuringTheSlowdown(rs.getDouble("throughputDuringTheSlowdown"))
-                    .throughputUom(rs.getString("throughputUom"))
+                    .throughputDuringTheSlowdown(
+                        rs.getObject("throughputDuringTheSlowdown", Double.class)
+                    )                    .throughputUom(rs.getString("throughputUom"))
                     .tentativeMonth(rs.getInt("tentativeMonth"))
                     .remark(rs.getString("remark"))
                     .plantId(rs.getString("plantId"))
@@ -1390,14 +1468,13 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         }
                     }
 
-                    // Col 3 – Throughput during the Slowdown
+                    // Col 3 – Throughput during the Slowdown (optional)
                     Cell throughputCell = row.getCell(3);
                     if (throughputCell != null) {
                         throughputCell.setCellType(CellType.STRING);
                         String throughputStr = throughputCell.getStringCellValue().trim();
-                        if(throughputStr.isEmpty()) {
-                            dto.setSaveStatus("Failed");
-                            dto.setErrorMessage("Throughput during the Slowdown is required");
+                        if (throughputStr.isEmpty()) {
+                            dto.setThroughputDuringTheSlowdown(null);
                         } else {
                             try {
                                 dto.setThroughputDuringTheSlowdown(Double.parseDouble(throughputStr));
@@ -1406,24 +1483,25 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                                 dto.setErrorMessage("Throughput during the Slowdown must be a valid number");
                             }
                         }
+                    } else {
+                        dto.setThroughputDuringTheSlowdown(null);
                     }
 
-                    // Col 4 – Throughput UOM
+                    // Col 4 – Throughput UOM (optional)
                     Cell uomCell = row.getCell(4);
                     if (uomCell != null) {
                         uomCell.setCellType(CellType.STRING);
                         String uomStr = uomCell.getStringCellValue().trim();
                         if (uomStr.isEmpty()) {
-                            dto.setSaveStatus("Failed");
-                            dto.setErrorMessage("Throughput UOM is required");
-                        } 
-                       else if (!validUomNames.contains(uomStr)) {
+                            dto.setThroughputUom(null);
+                        } else if (!validUomNames.contains(uomStr)) {
                             dto.setSaveStatus("Failed");
                             dto.setErrorMessage("Throughput UOM '" + uomStr + "' is not a valid UOM value");
-                        } 
-                       
-                            dto.setThroughputUom(uomStr.isEmpty() ? null : uomStr);
-                        
+                        } else {
+                            dto.setThroughputUom(uomStr);
+                        }
+                    } else {
+                        dto.setThroughputUom(null);
                     }
 
                     // Col 5 – Tentative Month
@@ -1632,6 +1710,134 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch UOM dropdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getProfitCenterData(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_ProfitCenter @siteId = ?, @aopyear = ?";
+            List<ProfitCenterDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                ProfitCenterDTO.builder()
+                    .id(rs.getString("Id"))
+                    .siteId(rs.getString("SiteId"))
+                    .unit(rs.getString("Unit"))
+                    .uom(rs.getString("UOM"))
+                    .jan(rs.getString("Jan"))
+                    .feb(rs.getString("Feb"))
+                    .mar(rs.getString("Mar"))
+                    .apr(rs.getString("Apr"))
+                    .may(rs.getString("May"))
+                    .jun(rs.getString("Jun"))
+                    .jul(rs.getString("Jul"))
+                    .aug(rs.getString("Aug"))
+                    .sep(rs.getString("Sep"))
+                    .oct(rs.getString("Oct"))
+                    .nov(rs.getString("Nov"))
+                    .dec(rs.getString("Dec"))
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch profit center data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<ProfitCenterDTO> failedRecords = new ArrayList<>();
+
+        Map<Integer, java.util.function.Function<ProfitCenterDTO, String>> monthValueGetters = new java.util.LinkedHashMap<>();
+        monthValueGetters.put(1,  ProfitCenterDTO::getJan);
+        monthValueGetters.put(2,  ProfitCenterDTO::getFeb);
+        monthValueGetters.put(3,  ProfitCenterDTO::getMar);
+        monthValueGetters.put(4,  ProfitCenterDTO::getApr);
+        monthValueGetters.put(5,  ProfitCenterDTO::getMay);
+        monthValueGetters.put(6,  ProfitCenterDTO::getJun);
+        monthValueGetters.put(7,  ProfitCenterDTO::getJul);
+        monthValueGetters.put(8,  ProfitCenterDTO::getAug);
+        monthValueGetters.put(9,  ProfitCenterDTO::getSep);
+        monthValueGetters.put(10, ProfitCenterDTO::getOct);
+        monthValueGetters.put(11, ProfitCenterDTO::getNov);
+        monthValueGetters.put(12, ProfitCenterDTO::getDec);
+
+        for (ProfitCenterDTO dto : profitCenterDTOs) {
+            try {
+                UUID normParameterFKId = UUID.fromString(dto.getId());
+                String auditYear = aopYear;
+
+                for (Map.Entry<Integer, java.util.function.Function<ProfitCenterDTO, String>> entry : monthValueGetters.entrySet()) {
+                    int month = entry.getKey();
+                    String value = entry.getValue().apply(dto);
+
+                    if (value == null) {
+                        continue;
+                    }
+
+                    java.util.Optional<NormAttributeTransactions> existing =
+                        normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(
+                            normParameterFKId, month, auditYear);
+
+                    if (existing.isPresent()) {
+                        NormAttributeTransactions entity = existing.get();
+                        entity.setAttributeValue(value);
+                        entity.setModifiedOn(new Date());
+                        entity.setUserName(updatedBy);
+                        normAttributeTransactionsRepository.save(entity);
+                    } else {
+                        NormAttributeTransactions newRecord = NormAttributeTransactions.builder()
+                            .normParameterFKId(normParameterFKId)
+                            .attributeValue(value)
+                            .aopMonth(month)
+                            .auditYear(auditYear)
+                            .createdOn(new Date())
+                            .modifiedOn(new Date())
+                            .userName(updatedBy)
+                            .attributeValueVersion("V1")
+                            .build();
+                        normAttributeTransactionsRepository.save(newRecord);
+                    }
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+
+        return failedRecords;
+    }
+@Override
+    public AOPMessageVM deleteProfitCenterData(String id, String aopYear) { 
+
+        String sql = "DELETE FROM NormAttributeTransactions WHERE Normparameter_FK_Id = ? AND AuditYear = ?";
+        jdbcTemplate.update(sql, id, aopYear);
+        AOPMessageVM response = new AOPMessageVM();
+        response.setCode(200);
+        response.setMessage("Data deleted successfully");
+        return response;
+    }
+
+    @Override
+    public AOPMessageVM getProfitCenterUomDropdown(String siteId) {
+        try {
+            String sql = "EXEC Sp_GetProfitCenterUomDropdown @siteId = ?";
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, siteId);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch profit center UOM dropdown data", e);
         }
     }
 
