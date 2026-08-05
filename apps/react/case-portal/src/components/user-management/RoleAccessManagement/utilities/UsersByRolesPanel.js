@@ -211,7 +211,7 @@ const UsersByRolesPanel = ({
         padding: '16px 18px',
         border: '1px solid #e2e8f0',
         backgroundColor: '#ffffff',
-        maxWidth: '920px',
+        width: '100%',
         mt: '14px',
         mb: '14px',
       }}
@@ -462,7 +462,7 @@ const UsersByRolesPanel = ({
           >
             <TableContainer
               sx={{
-                maxHeight: 380,
+                maxHeight: 'calc(100vh - 350px)',
                 overflowY: 'auto',
                 position: 'relative',
                 '&::-webkit-scrollbar': {

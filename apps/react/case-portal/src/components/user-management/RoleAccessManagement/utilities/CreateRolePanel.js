@@ -35,7 +35,7 @@ const CreateRolePanel = ({
         border: '1px solid #e2e8f0',
         backgroundColor: '#ffffff',
         marginBottom: '14px',
-        maxWidth: '920px',
+        width: '100%',
       }}
     >
       {/* Header Bar with Front Icon, Info Tooltip & Expand/Collapse Controls */}

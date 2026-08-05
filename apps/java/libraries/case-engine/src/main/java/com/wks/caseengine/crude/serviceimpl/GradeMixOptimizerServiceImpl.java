@@ -429,8 +429,19 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
             String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
 
-            String procedureName = verticalName + "_" + siteName + "_SaveGradeWiseMonthWiseBudgetOperatingHours";
-            executeBudgetOperationHoursCalculationSP(plantId.toString(), aopYear, procedureName);
+            // String procedureName = verticalName + "_" + siteName + "_SaveGradeWiseMonthWiseBudgetOperatingHours";
+            // executeBudgetOperationHoursCalculationSP(plantId.toString(), aopYear, procedureName);
+
+            List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("gradewise-hours-allocation");
+            for (ScreenMapping screenMapping : screenMappingList) {
+                AopCalculation aopCalculation = new AopCalculation();
+                aopCalculation.setAopYear(aopYear);
+                aopCalculation.setIsChanged(true);
+                aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+                aopCalculation.setPlantId(plantId);
+                aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+                aopCalculationRepository.save(aopCalculation);
+            }
 
             AOPMessageVM vm = new AOPMessageVM();
             vm.setCode(200);
@@ -952,9 +963,9 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
 		aopMessageVM.setData(result);
 		
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
-				"budget-operating-hours");
+                "gradewise-hours-allocation");
                 
-		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("budget-operating-hours");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("gradewise-hours-allocation");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			AopCalculation aopCalculation = new AopCalculation();
 			aopCalculation.setAopYear(aopYear);

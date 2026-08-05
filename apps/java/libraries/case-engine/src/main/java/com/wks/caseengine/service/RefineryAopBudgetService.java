@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
+import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
@@ -29,4 +30,8 @@ public interface RefineryAopBudgetService {
     public AOPMessageVM importRefinerySlowdownExcel(String plantId, String aopYear, MultipartFile file);
     public AOPMessageVM deleteRefinerySlowdownData(String id);
     public AOPMessageVM getRefineryBudgetUomDropdown(String plantId);
+    public AOPMessageVM getProfitCenterData(String siteId, String aopYear);
+    public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear);
+    public AOPMessageVM getProfitCenterUomDropdown(String siteId);
+    public AOPMessageVM deleteProfitCenterData(String id, String aopYear);
 }

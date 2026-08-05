@@ -32,11 +32,7 @@ async function saveCatChemChemGradeData(keycloak, plantId, aopYear, payload) {
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    })
+    const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
@@ -44,12 +40,7 @@ async function saveCatChemChemGradeData(keycloak, plantId, aopYear, payload) {
   }
 }
 
-async function exportCatChemChemGradeExcel(
-  keycloak,
-  plantId,
-  aopYear,
-  fileName,
-) {
+async function exportCatChemChemGradeExcel(keycloak, plantId, aopYear, fileName) {
   const url = `${Config.CaseEngineUrl}/task/chem-grade-export?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/octet-stream',

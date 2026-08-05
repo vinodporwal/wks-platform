@@ -64,7 +64,7 @@ export const roleAccessApiService = {
    */
   getRoles: async (keycloak, { q = '', page = 1, size = 20 } = {}) => {
     const params = new URLSearchParams()
-    if (q) params.append('q', q)
+    if (typeof q === 'string' && q.trim()) params.append('q', q.trim())
     if (page) params.append('page', page)
     if (size) params.append('size', size)
 
@@ -207,6 +207,35 @@ export const roleAccessApiService = {
       return Promise.reject(e)
     }
   },
+
+  /**
+   * 8. Update realm roles from an Excel file (replace user's direct realm roles)
+   * POST /task/users/roles/assign-excel
+   * Multipart Form Data: file (.xlsx)
+   */
+  assignRolesFromExcel: async (keycloak, file) => {
+    const url = `${Config.CaseEngineUrl}/task/users/roles/assign-excel`
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const headers = {
+      Accept: 'application/json',
+      Authorization: keycloak?.token ? `Bearer ${keycloak.token}` : '',
+    }
+
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      })
+      return await handleResponse(keycloak, resp)
+    } catch (e) {
+      console.error('API Error in assignRolesFromExcel:', e)
+      return Promise.reject(e)
+    }
+  },
 }
 
 export default roleAccessApiService
+

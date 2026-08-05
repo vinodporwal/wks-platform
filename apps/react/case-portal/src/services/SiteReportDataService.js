@@ -28,6 +28,8 @@ export const SiteReportDataService = {
   saveMCUCapacityUtilization,
   getSitesafetyPerformance,
   saveSitesafetyPerformance,
+  getConversionVariableCost,
+  saveConversionVariableCost,
 }
 export async function getSiteTeamDetails(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/site-team-transaction?siteId=${SITE_ID}&year=${AOP_YEAR}`
@@ -522,6 +524,40 @@ export async function saveSitesafetyPerformance(keycloak, data) {
     return await resp.json()
   } catch (e) {
     console.error('Error saving MCU Capacity Utilization data:', e)
+    return Promise.reject(e)
+  }
+}
+export async function getConversionVariableCost(keycloak, SITE_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/conversion-variable-cost?siteId=${SITE_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error fetching Conversion Variable Cost data:', e)
+    return Promise.reject(e)
+  }
+}
+export async function saveConversionVariableCost(keycloak, SITE_ID, AOP_YEAR, data) {
+  const url = `${Config.CaseEngineUrl}/task/conversion-variable-cost`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error saving Conversion Variable Cost data:', e)
     return Promise.reject(e)
   }
 }

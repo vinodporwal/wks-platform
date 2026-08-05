@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Box, Snackbar, Alert } from '@mui/material'
+import { Box, Tabs, Tab, Paper, Snackbar, Alert } from '@mui/material'
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
+import SecurityIcon from '@mui/icons-material/Security'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import PersonSearchIcon from '@mui/icons-material/PersonSearch'
+import PeopleIcon from '@mui/icons-material/People'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
 
 import { DataService } from 'services/DataService'
 import { roleAccessApiService } from 'services/roleAccessApiService'
@@ -11,11 +17,12 @@ import {
   formatRolesForSelect,
 } from './utilities/roleUtils'
 
-import CreateRolePanel from './utilities/CreateRolePanel'
-import SystemRolesCatalogPanel from './utilities/SystemRolesCatalogPanel'
-import AssignRolesPanel from './utilities/AssignRolesPanel'
-import UserRoleInspectorPanel from './utilities/UserRoleInspectorPanel'
-import UsersByRolesPanel from './utilities/UsersByRolesPanel'
+import CreateRolePage from './pages/CreateRolePage'
+import SystemRolesCatalogPage from './pages/SystemRolesCatalogPage'
+import AssignRolesPage from './pages/AssignRolesPage'
+import UserRoleInspectorPage from './pages/UserRoleInspectorPage'
+import UsersByRolesPage from './pages/UsersByRolesPage'
+import AssignRolesExcelPage from './pages/AssignRolesExcelPage'
 import DeleteRoleDialog from './utilities/DeleteRoleDialog'
 import UnassignRoleDialog from './utilities/UnassignRoleDialog'
 
@@ -52,7 +59,11 @@ const RoleAccessManagement = ({ keycloak }) => {
   const [usersByRolesSize, setUsersByRolesSize] = useState(20)
   const [usersByRolesTotal, setUsersByRolesTotal] = useState(0)
 
-  // 5. Delete Role Dialog State
+  // 6. Excel Bulk Role Assignment State
+  const [excelAssigning, setExcelAssigning] = useState(false)
+  const [excelResult, setExcelResult] = useState(null)
+
+  // 7. Delete Role Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [roleToDelete, setRoleToDelete] = useState('')
   const [deletingRole, setDeletingRole] = useState(false)
@@ -60,6 +71,13 @@ const RoleAccessManagement = ({ keycloak }) => {
   // 6. Unassign Role Confirmation Dialog State
   const [unassignDialogOpen, setUnassignDialogOpen] = useState(false)
   const [roleToUnassign, setRoleToUnassign] = useState('')
+
+  // Active Tab State (0: Roles Catalog, 1: Assign Roles, 2: User Inspector, 3: Users Directory, 4: Excel Bulk Assign)
+  const [activeTab, setActiveTab] = useState(0)
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue)
+  }
 
   // MUI Notification Toast State
   const [snackbar, setSnackbar] = useState({
@@ -86,8 +104,9 @@ const RoleAccessManagement = ({ keycloak }) => {
     async (query = '') => {
       setRolesLoading(true)
       try {
+        const searchQuery = typeof query === 'string' ? query : ''
         const res = await roleAccessApiService.getRoles(keycloak, {
-          q: query,
+          q: searchQuery,
           page: 1,
           size: 100,
         })
@@ -372,6 +391,38 @@ const RoleAccessManagement = ({ keycloak }) => {
     setUsersByRolesPage(1)
   }, [])
 
+  // Excel Role Assignment Handler (POST /task/users/roles/assign-excel)
+  const handleAssignRolesFromExcel = async (file) => {
+    if (!file) {
+      showNotification('Please select an Excel file (.xlsx) to upload', 'warning')
+      return
+    }
+
+    setExcelAssigning(true)
+    setExcelResult(null)
+    try {
+      const res = await roleAccessApiService.assignRolesFromExcel(keycloak, file)
+      setExcelResult(res)
+      const status = res?.status || 200
+      const msg = res?.message || 'Excel roles assigned successfully.'
+      if (status === 207) {
+        showNotification(`Partial Success (207): ${msg}`, 'warning')
+      } else {
+        showNotification(msg, 'success')
+      }
+      fetchRoles()
+    } catch (err) {
+      console.error('Error assigning roles from Excel:', err)
+      showNotification(err.message || 'Failed to assign roles from Excel', 'error')
+    } finally {
+      setExcelAssigning(false)
+    }
+  }
+
+  const handleResetExcelResult = () => {
+    setExcelResult(null)
+  }
+
   // Filtered Roles list based on search query
   const filteredRolesList = filterRoles(rolesList, roleSearchQuery)
 
@@ -382,82 +433,156 @@ const RoleAccessManagement = ({ keycloak }) => {
     <Box
       sx={{
         width: '100%',
+        height: '100%',
+        minHeight: 'calc(100vh - 120px)',
+        display: 'flex',
+        flexDirection: 'column',
         pl: 0,
         ml: 0,
-        pr: 3,
-        pb: 2,
+        pr: 0,
+        pb: 0,
         fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
         '& *': {
           fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
         },
       }}
     >
-      {/* 1. CREATE NEW ROLE INLINE CELL PANEL */}
-      <CreateRolePanel
-        roleName={roleName}
-        setRoleName={setRoleName}
-        roleDescription={roleDescription}
-        setRoleDescription={setRoleDescription}
-        creatingRole={creatingRole}
-        handleCreateRole={handleCreateRole}
-      />
+      {/* NAVIGATION TABS HEADER BAR */}
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 2,
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0',
+          backgroundColor: '#ffffff',
+          overflow: 'hidden',
+          width: '100%',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        }}
+      >
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            minHeight: '48px',
+            px: 1,
+            backgroundColor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              minHeight: '48px',
+              color: '#64748b',
+              py: 1,
+              px: 2,
+              '&.Mui-selected': {
+                color: '#0284c7',
+                fontWeight: 700,
+              },
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: '#0284c7',
+              height: '3px',
+              borderRadius: '3px 3px 0 0',
+            },
+          }}
+        >
+          <Tab icon={<AddCircleOutlineIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Create Role" />
+          <Tab icon={<SecurityIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="System Roles Catalog" />
+          <Tab icon={<PersonAddIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Assign Roles" />
+          <Tab icon={<PersonSearchIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="User Inspector" />
+          <Tab icon={<PeopleIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Users Directory" />
+          <Tab icon={<UploadFileIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Excel Bulk Assign" />
+        </Tabs>
+      </Paper>
 
-      {/* 2. SYSTEM ROLES CATALOG CELL DATA GRID */}
-      <SystemRolesCatalogPanel
-        filteredRolesList={filteredRolesList}
-        roleSearchQuery={roleSearchQuery}
-        setRoleSearchQuery={setRoleSearchQuery}
-        fetchRoles={fetchRoles}
-        rolesLoading={rolesLoading}
-        setSelectedRoles={setSelectedRoles}
-        showNotification={showNotification}
-        setRoleToDelete={setRoleToDelete}
-        setDeleteDialogOpen={setDeleteDialogOpen}
-      />
+      {/* RENDER ACTIVE TAB PAGE SECTION */}
+      {activeTab === 0 && (
+        <CreateRolePage
+          roleName={roleName}
+          setRoleName={setRoleName}
+          roleDescription={roleDescription}
+          setRoleDescription={setRoleDescription}
+          creatingRole={creatingRole}
+          handleCreateRole={handleCreateRole}
+        />
+      )}
 
-      {/* 3. ASSIGN ROLES TO USERS CELL PANEL */}
-      <AssignRolesPanel
-        userSearchOptions={userSearchOptions}
-        selectedUsers={selectedUsers}
-        setSelectedUsers={setSelectedUsers}
-        handleUserSearchForAssign={handleUserSearchForAssign}
-        userSearchLoading={userSearchLoading}
-        rolesFormattedForSelect={rolesFormattedForSelect}
-        selectedRoles={selectedRoles}
-        setSelectedRoles={setSelectedRoles}
-        assigningRoles={assigningRoles}
-        handleAssignRoles={handleAssignRoles}
-      />
+      {activeTab === 1 && (
+        <SystemRolesCatalogPage
+          filteredRolesList={filteredRolesList}
+          roleSearchQuery={roleSearchQuery}
+          setRoleSearchQuery={setRoleSearchQuery}
+          fetchRoles={fetchRoles}
+          rolesLoading={rolesLoading}
+          setSelectedRoles={setSelectedRoles}
+          showNotification={showNotification}
+          setRoleToDelete={setRoleToDelete}
+          setDeleteDialogOpen={setDeleteDialogOpen}
+        />
+      )}
 
-      {/* 4. USER ROLE INSPECTOR CELL PANEL */}
-      <UserRoleInspectorPanel
-        lookupUser={lookupUser}
-        lookupUserOptions={lookupUserOptions}
-        handleUserSearchForLookup={handleUserSearchForLookup}
-        lookupUserLoading={lookupUserLoading}
-        handleRetrieveUserRoles={handleRetrieveUserRoles}
-        retrievedUserRoles={retrievedUserRoles}
-        retrievingRoles={retrievingRoles}
-        handleOpenUnassignDialog={handleOpenUnassignDialog}
-      />
+      {activeTab === 2 && (
+        <AssignRolesPage
+          userSearchOptions={userSearchOptions}
+          selectedUsers={selectedUsers}
+          setSelectedUsers={setSelectedUsers}
+          handleUserSearchForAssign={handleUserSearchForAssign}
+          userSearchLoading={userSearchLoading}
+          rolesFormattedForSelect={rolesFormattedForSelect}
+          selectedRoles={selectedRoles}
+          setSelectedRoles={setSelectedRoles}
+          assigningRoles={assigningRoles}
+          handleAssignRoles={handleAssignRoles}
+        />
+      )}
 
-      {/* 5. USERS BY ROLES DIRECTORY CELL PANEL */}
-      <UsersByRolesPanel
-        rolesFormattedForSelect={rolesFormattedForSelect}
-        selectedRoles={usersByRolesSelected}
-        setSelectedRoles={setUsersByRolesSelected}
-        onFetchUsers={(roles, page, size) => handleFetchUsersByRoles(roles, page, size)}
-        onClearUsers={handleClearUsersByRoles}
-        usersData={usersByRolesData}
-        loading={usersByRolesLoading}
-        totalUsers={usersByRolesTotal}
-        page={usersByRolesPage}
-        pageSize={usersByRolesSize}
-        onPageChange={(newPage) => handleFetchUsersByRoles(usersByRolesSelected, newPage, usersByRolesSize)}
-        onPageSizeChange={(newSize) => handleFetchUsersByRoles(usersByRolesSelected, 1, newSize)}
-      />
+      {activeTab === 3 && (
+        <UserRoleInspectorPage
+          lookupUser={lookupUser}
+          lookupUserOptions={lookupUserOptions}
+          handleUserSearchForLookup={handleUserSearchForLookup}
+          lookupUserLoading={lookupUserLoading}
+          handleRetrieveUserRoles={handleRetrieveUserRoles}
+          retrievedUserRoles={retrievedUserRoles}
+          retrievingRoles={retrievingRoles}
+          handleOpenUnassignDialog={handleOpenUnassignDialog}
+          rolesFormattedForSelect={rolesFormattedForSelect}
+          showNotification={showNotification}
+          keycloak={keycloak}
+        />
+      )}
 
-      {/* 6. MUI DELETE ROLE DIALOG */}
+      {activeTab === 4 && (
+        <UsersByRolesPage
+          rolesFormattedForSelect={rolesFormattedForSelect}
+          selectedRoles={usersByRolesSelected}
+          setSelectedRoles={setUsersByRolesSelected}
+          onFetchUsers={(roles, page, size) => handleFetchUsersByRoles(roles, page, size)}
+          onClearUsers={handleClearUsersByRoles}
+          usersData={usersByRolesData}
+          loading={usersByRolesLoading}
+          totalUsers={usersByRolesTotal}
+          page={usersByRolesPage}
+          pageSize={usersByRolesSize}
+          onPageChange={(newPage) => handleFetchUsersByRoles(usersByRolesSelected, newPage, usersByRolesSize)}
+          onPageSizeChange={(newSize) => handleFetchUsersByRoles(usersByRolesSelected, 1, newSize)}
+        />
+      )}
+
+      {activeTab === 5 && (
+        <AssignRolesExcelPage
+          onUploadExcel={handleAssignRolesFromExcel}
+          loading={excelAssigning}
+          result={excelResult}
+          onResetResult={handleResetExcelResult}
+        />
+      )}
+
+      {/* MUI DELETE ROLE DIALOG */}
       <DeleteRoleDialog
         deleteDialogOpen={deleteDialogOpen}
         setDeleteDialogOpen={setDeleteDialogOpen}
@@ -466,7 +591,7 @@ const RoleAccessManagement = ({ keycloak }) => {
         handleDeleteRole={handleDeleteRole}
       />
 
-      {/* 7. UNASSIGN ROLE CONFIRMATION DIALOG */}
+      {/* UNASSIGN ROLE CONFIRMATION DIALOG */}
       <UnassignRoleDialog
         unassignDialogOpen={unassignDialogOpen}
         setUnassignDialogOpen={setUnassignDialogOpen}
@@ -476,7 +601,7 @@ const RoleAccessManagement = ({ keycloak }) => {
         handleConfirmUnassignRole={handleConfirmUnassignRole}
       />
 
-      {/* 8. MUI SNACKBAR NOTIFICATIONS */}
+      {/* MUI SNACKBAR NOTIFICATIONS */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4500}

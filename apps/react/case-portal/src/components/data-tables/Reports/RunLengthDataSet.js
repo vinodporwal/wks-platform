@@ -42,6 +42,7 @@ const RunLengthDataSet = () => {
     plantObject,
     siteObject,
     verticalObject,
+    verticalChange,
     year,
   } = dataGridStore
   const timeoutIdsRef = useRef([])
@@ -52,6 +53,11 @@ const RunLengthDataSet = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name.toLowerCase()
+
+  const IS_CRACKER_C2 =
+    lowerVertName === 'cracker' && lowerSiteName === 'c2'
 
   useEffect(() => {
     return () => {
@@ -80,7 +86,7 @@ const RunLengthDataSet = () => {
           filterable: true,
           filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
           align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: '{0:0.000}' } : {}),
+          ...(isNumberCol ? { format: IS_CRACKER_C2 ? '{0:0.0}' : '{0:0.000}' } : {}),
           editable: false,
           isRightAlligned: isNumberCol ? 'numeric' : undefined,
         }

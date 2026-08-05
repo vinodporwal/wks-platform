@@ -11,47 +11,24 @@ import {
   CircularProgress,
   Checkbox,
   InputAdornment,
+  IconButton,
+  Tooltip,
+  Collapse,
+  Avatar,
   Divider,
-  Popper,
 } from '@mui/material'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import SearchIcon from '@mui/icons-material/Search'
 import SecurityIcon from '@mui/icons-material/Security'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import FilterListIcon from '@mui/icons-material/FilterList'
 import SelectAllIcon from '@mui/icons-material/SelectAll'
 import ClearIcon from '@mui/icons-material/Clear'
-
 import GroupAddIcon from '@mui/icons-material/GroupAdd'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import { Collapse, IconButton, Tooltip } from '@mui/material'
-
-// Custom Popper component to give the dropdown a modern, sleek floating card look
-const CustomPopper = (props) => {
-  return (
-    <Popper
-      {...props}
-      sx={{
-        zIndex: 1400,
-        pt: 0.5,
-        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-        '& *': {
-          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
-        },
-        '& .MuiPaper-root': {
-          borderRadius: '12px',
-          boxShadow:
-            '0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)',
-          border: '1px solid #cbd5e1',
-          overflow: 'hidden',
-          backgroundColor: '#ffffff',
-        },
-      }}
-    />
-  )
-}
+import PersonIcon from '@mui/icons-material/Person'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
 const AssignRolesPanel = ({
   userSearchOptions,
@@ -68,18 +45,50 @@ const AssignRolesPanel = ({
   const [expanded, setExpanded] = useState(true)
   const [roleSearchText, setRoleSearchText] = useState('')
 
-  // Handle Select All / Deselect All roles helper
-  const handleSelectAllRoles = () => {
-    if (selectedRoles.length === rolesFormattedForSelect.length) {
+  // Filter available roles by roleSearchText
+  const filteredRoles = rolesFormattedForSelect.filter((r) => {
+    const rName = typeof r === 'string' ? r : r.name || r.id || ''
+    return rName.toLowerCase().includes(roleSearchText.trim().toLowerCase())
+  })
+
+  // Select all / Clear all roles handlers
+  const isAllRolesSelected =
+    rolesFormattedForSelect.length > 0 &&
+    selectedRoles.length === rolesFormattedForSelect.length
+
+  const handleToggleSelectAllRoles = () => {
+    if (isAllRolesSelected) {
       setSelectedRoles([])
     } else {
       setSelectedRoles([...rolesFormattedForSelect])
     }
   }
 
-  const isAllRolesSelected =
-    rolesFormattedForSelect.length > 0 &&
-    selectedRoles.length === rolesFormattedForSelect.length
+  const handleRemoveUser = (userToRemove) => {
+    setSelectedUsers(
+      selectedUsers.filter(
+        (u) =>
+          (u.id && userToRemove.id ? u.id !== userToRemove.id : u.username !== userToRemove.username),
+      ),
+    )
+  }
+
+  const handleToggleRole = (roleObj) => {
+    const roleName = typeof roleObj === 'string' ? roleObj : roleObj.name || roleObj.id
+    const isSelected = selectedRoles.some(
+      (r) => (typeof r === 'string' ? r : r.name || r.id) === roleName,
+    )
+
+    if (isSelected) {
+      setSelectedRoles(
+        selectedRoles.filter(
+          (r) => (typeof r === 'string' ? r : r.name || r.id) !== roleName,
+        ),
+      )
+    } else {
+      setSelectedRoles([...selectedRoles, roleObj])
+    }
+  }
 
   return (
     <Paper
@@ -89,11 +98,13 @@ const AssignRolesPanel = ({
         padding: '16px 18px',
         border: '1px solid #e2e8f0',
         backgroundColor: '#ffffff',
-        marginBottom: '14px',
-        maxWidth: '920px',
+        marginBottom: 0,
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      {/* Header Bar with Front Icon & Expand/Collapse Controls */}
+      {/* Header Bar */}
       <Box
         onClick={() => setExpanded(!expanded)}
         sx={{
@@ -102,6 +113,8 @@ const AssignRolesPanel = ({
           alignItems: 'center',
           cursor: 'pointer',
           userSelect: 'none',
+          pb: expanded ? 1.5 : 0,
+          borderBottom: expanded ? '1px solid #f1f5f9' : 'none',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -113,7 +126,7 @@ const AssignRolesPanel = ({
             Assign Roles to Users
           </Typography>
           <Tooltip
-            title='Search for target users and select one or multiple roles to assign to them simultaneously.'
+            title='Search for target users and select security roles to assign to them.'
             arrow
             placement='top'
           >
@@ -147,452 +160,451 @@ const AssignRolesPanel = ({
         </IconButton>
       </Box>
 
-      {/* Collapsible Body Content */}
-      <Collapse in={expanded} timeout='auto' unmountOnExit={false}>
-        <Box sx={{ pt: 1.5 }}>
-          <Grid container spacing={2.5} sx={{ mb: 1.5 }}>
-            {/* Target Users Autocomplete */}
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                multiple
-                disableCloseOnSelect
-                size='small'
-                PopperComponent={CustomPopper}
-                options={userSearchOptions}
-                value={selectedUsers}
-                onChange={(event, newValue) => setSelectedUsers(newValue)}
-                onInputChange={(event, newInputValue) =>
-                  handleUserSearchForAssign(newInputValue)
-                }
-                filterOptions={(options) => options}
-                getOptionLabel={(option) =>
-                  typeof option === 'string'
-                    ? option
-                    : option.email
-                      ? `${option.username} (${option.email})`
-                      : option.username
-                }
-                isOptionEqualToValue={(option, value) =>
-                  option.id === value.id || option.username === value.username
-                }
-                loading={userSearchLoading}
-                renderOption={(props, option, { selected }) => (
-                  <li
-                    {...props}
-                    style={{ padding: '6px 12px', cursor: 'pointer' }}
-                  >
-                    <Checkbox
-                      size='small'
-                      checked={selected}
-                      sx={{
-                        mr: 1,
-                        color: '#94a3b8',
-                        p: 0.5,
-                        '&.Mui-checked': {
-                          color: '#0284c7',
-                        },
-                      }}
-                    />
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          fontSize: '0.8rem',
-                          fontWeight: selected ? 700 : 600,
-                          color: selected ? '#0284c7' : '#0f172a',
-                        }}
-                      >
-                        {typeof option === 'string' ? option : option.username}
-                      </Typography>
-                      {option.email && (
-                        <Typography
-                          variant='caption'
-                          sx={{ fontSize: '0.72rem', color: '#64748b' }}
-                        >
-                          {option.email}
-                        </Typography>
-                      )}
-                    </Box>
-                  </li>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label='Select Users'
-                    placeholder={
-                      selectedUsers.length > 0
-                        ? ''
-                        : 'Type username to search...'
-                    }
-                    size='small'
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '8px',
-                        backgroundColor: '#f8fafc',
-                        transition: 'all 0.2s ease-in-out',
-                        '& fieldset': { borderColor: '#cbd5e1' },
-                        '&:hover fieldset': { borderColor: '#94a3b8' },
-                        '&.Mui-focused': {
-                          backgroundColor: '#ffffff',
-                          '& fieldset': {
-                            borderColor: '#0284c7',
-                            borderWidth: '1.5px',
-                          },
-                          boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
-                        },
-                      },
-                      '& .MuiInputBase-input': {
-                        fontSize: '0.8rem',
-                        color: '#0f172a !important',
-                        fontWeight: 600,
-                        '&::placeholder': {
-                          color: '#64748b',
-                          opacity: 1,
-                        },
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontSize: '0.8rem',
-                        '&.Mui-focused': { color: '#0284c7', fontWeight: 700 },
-                      },
-                    }}
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <React.Fragment>
-                          {userSearchLoading ? (
-                            <CircularProgress color='inherit' size={14} />
-                          ) : null}
-                          {params.InputProps.endAdornment}
-                        </React.Fragment>
-                      ),
-                    }}
-                  />
-                )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      size='small'
-                      variant='outlined'
-                      color='primary'
-                      label={
-                        typeof option === 'string' ? option : option.username
-                      }
-                      {...getTagProps({ index })}
-                      key={index}
-                      sx={{
-                        borderRadius: '5px',
-                        fontWeight: 700,
-                        fontSize: '0.72rem',
-                        height: '22px',
-                        backgroundColor: '#e0f2fe',
-                        borderColor: '#0284c7',
-                        color: '#0369a1',
-                      }}
-                    />
-                  ))
-                }
-              />
-            </Grid>
-
-            {/* Target Roles Autocomplete - ENHANCED SEARCH & BEAUTIFUL UI */}
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                multiple
-                disableCloseOnSelect
-                size='small'
-                PopperComponent={CustomPopper}
-                options={rolesFormattedForSelect}
-                value={selectedRoles}
-                inputValue={roleSearchText}
-                onInputChange={(event, newInputValue) => {
-                  setRoleSearchText(newInputValue)
+      {/* Collapsible Full Vertical Body */}
+      <Collapse in={expanded} timeout='auto' unmountOnExit={false} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ pt: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Grid container spacing={2.5}>
+            
+            {/* LEFT COLUMN: TARGET USERS WORKBENCH */}
+            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Paper
+                variant='outlined'
+                sx={{
+                  p: 2,
+                  borderRadius: '8px',
+                  borderColor: '#cbd5e1',
+                  backgroundColor: '#ffffff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  height: '100%',
                 }}
-                onChange={(event, newValue) => setSelectedRoles(newValue)}
-                getOptionLabel={(option) =>
-                  typeof option === 'string'
-                    ? option
-                    : option.name || option.id || ''
-                }
-                isOptionEqualToValue={(option, value) =>
-                  (option.id && value.id && option.id === value.id) ||
-                  option.name === value.name
-                }
-                filterOptions={(options, state) => {
-                  const query = state.inputValue.trim().toLowerCase()
-                  if (!query) return options
-                  return options.filter((opt) => {
-                    const nameStr =
-                      typeof opt === 'string' ? opt : opt.name || opt.id || ''
-                    return nameStr.toLowerCase().includes(query)
-                  })
-                }}
-                PaperComponent={({ children }) => (
-                  <Paper>
-                    {/* Search Bar & Header Action Controls inside Dropdown Menu */}
-                    <Box
-                      sx={{
-                        p: '8px 12px',
-                        backgroundColor: '#f8fafc',
-                        borderBottom: '1px solid #e2e8f0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}
-                      >
-                        <SecurityIcon sx={{ color: '#0284c7', fontSize: 16 }} />
-                        <Typography
-                          variant='caption'
-                          sx={{
-                            fontWeight: 800,
-                            color: '#0f172a',
-                            fontSize: '0.75rem',
-                          }}
-                        >
-                          Available Roles ({rolesFormattedForSelect.length})
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <Button
-                          size='small'
-                          onClick={handleSelectAllRoles}
-                          startIcon={
-                            isAllRolesSelected ? (
-                              <ClearIcon style={{ fontSize: 12 }} />
-                            ) : (
-                              <SelectAllIcon style={{ fontSize: 12 }} />
-                            )
-                          }
-                          sx={{
-                            fontSize: '0.68rem',
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            py: 0.2,
-                            px: 0.8,
-                            borderRadius: '4px',
-                            color: isAllRolesSelected ? '#ef4444' : '#0284c7',
-                            backgroundColor: isAllRolesSelected
-                              ? '#fef2f2'
-                              : '#f0f9ff',
-                            '&:hover': {
-                              backgroundColor: isAllRolesSelected
-                                ? '#fee2e2'
-                                : '#e0f2fe',
-                            },
-                          }}
-                        >
-                          {isAllRolesSelected ? 'Clear All' : 'Select All'}
-                        </Button>
-                      </Box>
-                    </Box>
-
-                    {children}
-
-                    {/* Dropdown Footer Status Indicator */}
-                    {selectedRoles.length > 0 && (
-                      <Box
-                        sx={{
-                          p: '6px 12px',
-                          backgroundColor: '#f0f9ff',
-                          borderTop: '1px solid #bae6fd',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <Typography
-                          variant='caption'
-                          sx={{
-                            fontWeight: 700,
-                            color: '#0369a1',
-                            fontSize: '0.72rem',
-                          }}
-                        >
-                          {selectedRoles.length} role(s) selected
-                        </Typography>
-                        <Button
-                          size='small'
-                          onClick={() => setSelectedRoles([])}
-                          sx={{
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            p: 0,
-                            minWidth: 'auto',
-                            color: '#0284c7',
-                            '&:hover': { textDecoration: 'underline' },
-                          }}
-                        >
-                          Deselect
-                        </Button>
-                      </Box>
-                    )}
-                  </Paper>
-                )}
-                renderOption={(props, option, { selected }) => {
-                  const rName =
-                    typeof option === 'string' ? option : option.name
-                  return (
-                    <li
-                      {...props}
-                      style={{
-                        padding: '6px 12px',
-                        cursor: 'pointer',
-                        backgroundColor: selected ? '#f0f9ff' : 'transparent',
-                        transition: 'background-color 0.15s ease',
-                      }}
-                    >
+              >
+                {/* User Search Autocomplete */}
+                <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#0f172a', mb: 1, fontSize: '0.8rem' }}>
+                  1. Search & Add Target Users
+                </Typography>
+                <Autocomplete
+                  multiple
+                  disableCloseOnSelect
+                  size='small'
+                  options={userSearchOptions}
+                  value={selectedUsers}
+                  onChange={(event, newValue) => setSelectedUsers(newValue)}
+                  onInputChange={(event, newInputValue) =>
+                    handleUserSearchForAssign(newInputValue)
+                  }
+                  filterOptions={(options) => options}
+                  getOptionLabel={(option) =>
+                    typeof option === 'string'
+                      ? option
+                      : option.email
+                        ? `${option.username} (${option.email})`
+                        : option.username
+                  }
+                  isOptionEqualToValue={(option, value) =>
+                    option.id === value.id || option.username === value.username
+                  }
+                  loading={userSearchLoading}
+                  renderOption={(props, option, { selected }) => (
+                    <li {...props} style={{ padding: '6px 12px', cursor: 'pointer' }}>
                       <Checkbox
                         size='small'
                         checked={selected}
-                        sx={{
-                          mr: 1,
-                          color: '#94a3b8',
-                          p: 0.3,
-                          '&.Mui-checked': {
-                            color: '#0284c7',
-                          },
-                        }}
+                        sx={{ mr: 1, color: '#94a3b8', p: 0.3, '&.Mui-checked': { color: '#0284c7' } }}
                       />
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <SecurityIcon
-                            sx={{
-                              fontSize: 14,
-                              color: selected ? '#0284c7' : '#94a3b8',
-                            }}
-                          />
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              fontSize: '0.8rem',
-                              fontWeight: selected ? 700 : 600,
-                              color: selected ? '#0284c7' : '#1e293b',
-                            }}
-                          >
-                            {rName}
+                      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant='body2' sx={{ fontSize: '0.8rem', fontWeight: selected ? 700 : 600, color: selected ? '#0284c7' : '#0f172a' }}>
+                          {typeof option === 'string' ? option : option.username}
+                        </Typography>
+                        {option.email && (
+                          <Typography variant='caption' sx={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            {option.email}
                           </Typography>
-                        </Box>
-
-                        {selected && (
-                          <CheckCircleIcon
-                            sx={{ fontSize: 14, color: '#0284c7', ml: 1 }}
-                          />
                         )}
                       </Box>
                     </li>
-                  )
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder='Type username or email to search...'
+                      size='small'
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '8px',
+                          backgroundColor: '#f8fafc',
+                          '& fieldset': { borderColor: '#cbd5e1' },
+                          '&:hover fieldset': { borderColor: '#94a3b8' },
+                          '&.Mui-focused': {
+                            backgroundColor: '#ffffff',
+                            '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
+                            boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                          },
+                        },
+                        '& .MuiInputBase-input': { fontSize: '0.8rem', fontWeight: 600, color: '#0f172a !important' },
+                      }}
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <InputAdornment position='start'>
+                            <SearchIcon sx={{ color: '#0284c7', fontSize: 18 }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <React.Fragment>
+                            {userSearchLoading ? <CircularProgress color='inherit' size={14} /> : null}
+                            {params.InputProps.endAdornment}
+                          </React.Fragment>
+                        ),
+                      }}
+                    />
+                  )}
+                  renderTags={() => null} // Hide inline tag input; rendered below in vertical workbench
+                />
+
+                {/* Selected Users Header Badge & Clear Button */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PersonIcon sx={{ color: '#0284c7', fontSize: 18 }} />
+                    <Typography variant='caption' sx={{ fontWeight: 800, color: '#334155', fontSize: '0.78rem' }}>
+                      Selected Users
+                    </Typography>
+                    <Chip
+                      label={selectedUsers.length}
+                      size='small'
+                      sx={{
+                        backgroundColor: '#0284c7',
+                        color: '#ffffff',
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
+                        height: '20px',
+                      }}
+                    />
+                  </Box>
+                  {selectedUsers.length > 0 && (
+                    <Button
+                      size='small'
+                      onClick={() => setSelectedUsers([])}
+                      startIcon={<ClearIcon style={{ fontSize: 12 }} />}
+                      sx={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        color: '#ef4444',
+                        textTransform: 'none',
+                        p: 0,
+                        minWidth: 'auto',
+                        '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
+                      }}
+                    >
+                      Clear All
+                    </Button>
+                  )}
+                </Box>
+
+                {/* Scrollable Selected Users List View */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: 'calc(100vh - 540px)',
+                    minHeight: '180px',
+                    maxHeight: '320px',
+                    overflowY: 'auto',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8fafc',
+                    p: 1,
+                    '&::-webkit-scrollbar': { width: '5px' },
+                    '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px' },
+                  }}
+                >
+                  {selectedUsers.length === 0 ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', py: 4, color: '#94a3b8' }}>
+                      <PersonIcon sx={{ fontSize: 36, mb: 1, opacity: 0.5 }} />
+                      <Typography variant='body2' sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                        No users selected yet
+                      </Typography>
+                      <Typography variant='caption' sx={{ fontSize: '0.72rem', color: '#94a3b8', textAlign: 'center', mt: 0.5 }}>
+                        Search and select users above to add them to assignment queue
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Grid container spacing={1}>
+                      {selectedUsers.map((user, idx) => {
+                        const uName = typeof user === 'string' ? user : user.username
+                        const uEmail = typeof user === 'object' ? user.email : ''
+                        return (
+                          <Grid item xs={12} key={user.id || uName || idx}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                border: '1px solid #bae6fd',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '6px',
+                                '&:hover': { border: '1px solid #0284c7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                                <Avatar sx={{ width: 28, height: 28, backgroundColor: '#0284c7', fontSize: '0.75rem', fontWeight: 800 }}>
+                                  {uName.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <Box>
+                                  <Typography variant='body2' sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.8rem' }}>
+                                    {uName}
+                                  </Typography>
+                                  {uEmail && (
+                                    <Typography variant='caption' sx={{ color: '#64748b', fontSize: '0.72rem', display: 'block' }}>
+                                      {uEmail}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Box>
+                              <IconButton
+                                size='small'
+                                onClick={() => handleRemoveUser(user)}
+                                sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444', backgroundColor: '#fef2f2' } }}
+                              >
+                                <ClearIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Paper>
+                          </Grid>
+                        )
+                      })}
+                    </Grid>
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* RIGHT COLUMN: SECURITY ROLES SELECTION WORKBENCH */}
+            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Paper
+                variant='outlined'
+                sx={{
+                  p: 2,
+                  borderRadius: '8px',
+                  borderColor: '#cbd5e1',
+                  backgroundColor: '#ffffff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  height: '100%',
                 }}
-                renderInput={(params) => (
+              >
+                {/* Roles Search & Header */}
+                <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#0f172a', mb: 1, fontSize: '0.8rem' }}>
+                  2. Select Roles to Assign
+                </Typography>
+                
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <TextField
-                    {...params}
-                    label='Select Roles'
-                    placeholder={
-                      selectedRoles.length > 0
-                        ? `${selectedRoles.length} selected...`
-                        : 'Search & select roles...'
-                    }
                     size='small'
+                    fullWidth
+                    placeholder='Filter roles...'
+                    value={roleSearchText}
+                    onChange={(e) => setRoleSearchText(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position='start'>
+                          <SearchIcon sx={{ color: '#0284c7', fontSize: 18 }} />
+                        </InputAdornment>
+                      ),
+                    }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: '8px',
                         backgroundColor: '#f8fafc',
-                        transition: 'all 0.2s ease-in-out',
                         '& fieldset': { borderColor: '#cbd5e1' },
                         '&:hover fieldset': { borderColor: '#94a3b8' },
                         '&.Mui-focused': {
                           backgroundColor: '#ffffff',
-                          '& fieldset': {
-                            borderColor: '#0284c7',
-                            borderWidth: '1.5px',
-                          },
-                          boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
+                          '& fieldset': { borderColor: '#0284c7', borderWidth: '1.5px' },
                         },
                       },
-                      '& .MuiInputBase-input': {
-                        fontSize: '0.8rem',
-                        color: '#0f172a !important',
-                        fontWeight: 600,
-                        '&::placeholder': {
-                          color: '#64748b',
-                          opacity: 1,
-                        },
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontSize: '0.8rem',
-                        '&.Mui-focused': { color: '#0284c7', fontWeight: 700 },
-                      },
-                    }}
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: (
-                        <React.Fragment>
-                          <InputAdornment position='start' sx={{ mr: 0.5 }}>
-                            <SearchIcon
-                              sx={{ color: '#0284c7', fontSize: 18 }}
-                            />
-                          </InputAdornment>
-                          {params.InputProps.startAdornment}
-                        </React.Fragment>
-                      ),
+                      '& .MuiInputBase-input': { fontSize: '0.8rem', fontWeight: 600, color: '#0f172a !important' },
                     }}
                   />
-                )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => {
-                    const rName =
-                      typeof option === 'string' ? option : option.name
-                    return (
-                      <Chip
-                        size='small'
-                        color='info'
-                        variant='soft'
-                        label={rName}
-                        icon={
-                          <SecurityIcon
-                            style={{ fontSize: 12, color: '#0284c7' }}
-                          />
-                        }
-                        {...getTagProps({ index })}
-                        key={index}
-                        sx={{
-                          borderRadius: '5px',
-                          fontWeight: 700,
-                          backgroundColor: '#e0f2fe',
-                          borderColor: '#bae6fd',
-                          border: '1px solid #bae6fd',
-                          color: '#0369a1',
-                          fontSize: '0.72rem',
-                          height: '22px',
-                          '& .MuiChip-deleteIcon': {
-                            color: '#0284c7',
-                            fontSize: 13,
-                            '&:hover': {
-                              color: '#ef4444',
-                            },
-                          },
-                        }}
-                      />
-                    )
-                  })
-                }
-              />
+                  <Button
+                    size='small'
+                    onClick={handleToggleSelectAllRoles}
+                    startIcon={isAllRolesSelected ? <ClearIcon style={{ fontSize: 14 }} /> : <SelectAllIcon style={{ fontSize: 14 }} />}
+                    sx={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      px: 1.5,
+                      height: '38px',
+                      borderRadius: '8px',
+                      color: isAllRolesSelected ? '#ef4444' : '#0284c7',
+                      backgroundColor: isAllRolesSelected ? '#fef2f2' : '#f0f9ff',
+                      border: isAllRolesSelected ? '1px solid #fca5a5' : '1px solid #bae6fd',
+                      '&:hover': { backgroundColor: isAllRolesSelected ? '#fee2e2' : '#e0f2fe' },
+                    }}
+                  >
+                    {isAllRolesSelected ? 'Clear All' : 'Select All'}
+                  </Button>
+                </Box>
+
+                {/* Selected Roles Count Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <SecurityIcon sx={{ color: '#0284c7', fontSize: 18 }} />
+                    <Typography variant='caption' sx={{ fontWeight: 800, color: '#334155', fontSize: '0.78rem' }}>
+                      Available Roles ({filteredRoles.length})
+                    </Typography>
+                    <Chip
+                      label={`${selectedRoles.length} selected`}
+                      size='small'
+                      sx={{
+                        backgroundColor: '#0284c7',
+                        color: '#ffffff',
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
+                        height: '20px',
+                      }}
+                    />
+                  </Box>
+                  {selectedRoles.length > 0 && (
+                    <Button
+                      size='small'
+                      onClick={() => setSelectedRoles([])}
+                      startIcon={<ClearIcon style={{ fontSize: 12 }} />}
+                      sx={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        color: '#ef4444',
+                        textTransform: 'none',
+                        p: 0,
+                        minWidth: 'auto',
+                        '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
+                      }}
+                    >
+                      Deselect
+                    </Button>
+                  )}
+                </Box>
+
+                {/* Scrollable Roles Checklist */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: 'calc(100vh - 540px)',
+                    minHeight: '180px',
+                    maxHeight: '320px',
+                    overflowY: 'auto',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    backgroundColor: '#ffffff',
+                    p: 1,
+                    '&::-webkit-scrollbar': { width: '5px' },
+                    '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px' },
+                  }}
+                >
+                  {filteredRoles.length === 0 ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', py: 4, color: '#94a3b8' }}>
+                      <Typography variant='body2' sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                        No matching roles found
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Grid container spacing={0.8}>
+                      {filteredRoles.map((roleObj, idx) => {
+                        const rName = typeof roleObj === 'string' ? roleObj : roleObj.name || roleObj.id
+                        const rDesc = typeof roleObj === 'object' ? roleObj.description : ''
+                        const isSelected = selectedRoles.some(
+                          (r) => (typeof r === 'string' ? r : r.name || r.id) === rName,
+                        )
+                        return (
+                          <Grid item xs={12} key={rName || idx}>
+                            <Paper
+                              elevation={0}
+                              onClick={() => handleToggleRole(roleObj)}
+                              sx={{
+                                p: 1,
+                                px: 1.2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                cursor: 'pointer',
+                                border: isSelected ? '1px solid #0284c7' : '1px solid #e2e8f0',
+                                backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',
+                                borderRadius: '6px',
+                                transition: 'all 0.15s ease',
+                                '&:hover': { border: '1px solid #0284c7', backgroundColor: '#f8fafc' },
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Checkbox
+                                  size='small'
+                                  checked={isSelected}
+                                  sx={{ p: 0.2, color: '#94a3b8', '&.Mui-checked': { color: '#0284c7' } }}
+                                />
+                                <SecurityIcon sx={{ fontSize: 16, color: isSelected ? '#0284c7' : '#64748b' }} />
+                                <Box>
+                                  <Typography variant='body2' sx={{ fontWeight: isSelected ? 700 : 600, color: isSelected ? '#0284c7' : '#0f172a', fontSize: '0.8rem' }}>
+                                    {rName}
+                                  </Typography>
+                                  {rDesc && (
+                                    <Typography variant='caption' sx={{ color: '#64748b', fontSize: '0.7rem', display: 'block' }}>
+                                      {rDesc}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Box>
+
+                              {isSelected && <CheckCircleIcon sx={{ fontSize: 16, color: '#0284c7' }} />}
+                            </Paper>
+                          </Grid>
+                        )
+                      })}
+                    </Grid>
+                  )}
+                </Box>
+              </Paper>
             </Grid>
           </Grid>
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+          {/* BOTTOM SUMMARY & ASSIGN ACTION FOOTER BAR */}
+          <Paper
+            elevation={0}
+            sx={{
+              mt: 2,
+              p: 1.5,
+              px: 2,
+              borderRadius: '8px',
+              border: '1px solid #bae6fd',
+              backgroundColor: '#f0f9ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 1.5,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant='body2' sx={{ fontWeight: 700, color: '#0369a1', fontSize: '0.825rem' }}>
+                Summary:
+              </Typography>
+              <Chip
+                label={`${selectedUsers.length} user(s)`}
+                size='small'
+                sx={{ fontWeight: 700, backgroundColor: selectedUsers.length > 0 ? '#0284c7' : '#cbd5e1', color: '#ffffff', fontSize: '0.72rem' }}
+              />
+              <Typography variant='body2' sx={{ color: '#64748b', fontWeight: 700 }}>
+                ➔
+              </Typography>
+              <Chip
+                label={`${selectedRoles.length} role(s)`}
+                size='small'
+                sx={{ fontWeight: 700, backgroundColor: selectedRoles.length > 0 ? '#0284c7' : '#cbd5e1', color: '#ffffff', fontSize: '0.72rem' }}
+              />
+            </Box>
+
             <Button
               variant='contained'
               color='primary'
@@ -612,18 +624,20 @@ const AssignRolesPanel = ({
               }
               sx={{
                 fontWeight: 700,
-                padding: '6px 18px',
+                px: 2.5,
+                py: 0.8,
                 borderRadius: '8px',
                 textTransform: 'none',
-                fontSize: '0.78rem',
-                boxShadow: 'none',
+                fontSize: '0.8rem',
+                boxShadow: '0 2px 4px rgba(2, 132, 199, 0.25)',
                 backgroundColor: '#0284c7',
                 '&:hover': { backgroundColor: '#0369a1' },
+                '&:disabled': { backgroundColor: '#cbd5e1' },
               }}
             >
-              {assigningRoles ? 'Assigning...' : 'Assign Selected Roles'}
+              {assigningRoles ? 'Assigning Roles...' : 'Assign Selected Roles'}
             </Button>
-          </Box>
+          </Paper>
         </Box>
       </Collapse>
     </Paper>

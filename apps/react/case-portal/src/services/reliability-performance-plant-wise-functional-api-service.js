@@ -8,12 +8,7 @@ export const ReliabilityPerformancePlantWiseFunctionalApiService = {
   importReliabilityPerformanceExcelPlantWise,
 }
 
-async function getReliabilityPerformancePlantWise(
-  keycloak,
-  plantId,
-  year,
-  type,
-) {
+async function getReliabilityPerformancePlantWise(keycloak, plantId, year, type) {
   const baseUrl = `${Config.CaseEngineUrl}/task/reliability-performance-plant-wise`
   const queryParams = new URLSearchParams({
     plantId,

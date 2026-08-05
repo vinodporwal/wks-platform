@@ -274,10 +274,7 @@ const ShutdownPlan = () => {
             (startDate && !isNaN(startDate.getTime())
               ? CALENDAR_MONTH_NAMES[startDate.getMonth()]
               : ''),
-          remark:
-            item?.remark === 'null' || item?.remark === 'NULL'
-              ? ''
-              : item?.remark || '',
+          remark: item?.remark === 'null' || item?.remark === 'NULL' ? '' : (item?.remark || ''),
         }
       })
 
@@ -682,7 +679,7 @@ const ShutdownPlan = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         // Actions
         saveChanges={saveChanges}
         deleteRowData={deleteRowData}
