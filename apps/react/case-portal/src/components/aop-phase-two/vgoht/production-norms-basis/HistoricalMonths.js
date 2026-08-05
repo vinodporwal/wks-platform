@@ -226,26 +226,26 @@ const HistoricalMonths = ({ startDate, endDate, refreshData }) => {
     const monthKeys = dynamicColumns.map((col) => col.field)
 
     // Validate all column and row values are not empty
-    // let validationError = ''
-    // for (const row of rows) {
-    //   for (const key of monthKeys) {
-    //     if (row[key] === undefined || row[key] === null || String(row[key]).trim() === '') {
-    //       validationError = `Value is required for ${row.Particulars} in ${key}`
-    //       break
-    //     }
-    //   }
-    //   if (validationError) break
-    // }
+    let validationError = ''
+    for (const row of rows) {
+      for (const key of monthKeys) {
+        if (row[key] === undefined || row[key] === null || String(row[key]).trim() === '') {
+          validationError = `Value is required for all records`
+          break
+        }
+      }
+      if (validationError) break
+    }
 
-    // if (validationError) {
-    //   setSnackbarOpen(true)
-    //   setSnackbarData({
-    //     message: validationError,
-    //     severity: 'error',
-    //   })
-    //   setLoading(false)
-    //   return
-    // }
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
 
     const convertedData = rows.map((row) => {
       const rowData = {
