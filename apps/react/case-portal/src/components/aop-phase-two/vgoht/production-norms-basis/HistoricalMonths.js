@@ -20,7 +20,7 @@ const parseDate = (d) => {
 const getMonthsBetweenDates = (startVal, endVal, aopYear) => {
   let start = parseDate(startVal)
   let end = parseDate(endVal)
-
+  
   if (!start || !end) {
     if (aopYear) {
       const yr = parseInt(aopYear, 10)
@@ -35,20 +35,7 @@ const getMonthsBetweenDates = (startVal, endVal, aopYear) => {
   let current = new Date(start.getFullYear(), start.getMonth(), 1)
   const stop = new Date(end.getFullYear(), end.getMonth(), 1)
   while (current <= stop) {
-    const monthNames = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ]
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const monthStr = monthNames[current.getMonth()]
     const yearStr = String(current.getFullYear()).slice(-2)
     const formatted = `${monthStr}-${yearStr}`
@@ -141,7 +128,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       // )
 
       // Extract data from response - API returns { data: [...], code: 200, message: '...' }
-      const manualEntryData = []
+      const manualEntryData =  []
 
       // Generate month column keys dynamically based on startDate and endDate
       const monthKeys = getMonthsBetweenDates(startDate, endDate, AOP_YEAR)
@@ -155,21 +142,13 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       setDynamicColumns(generatedMonthCols)
 
       const apiEorSorRow = manualEntryData.find(
-        (r) =>
-          r.Particulars?.toLowerCase() === 'eor/sor' ||
-          r.productName?.toLowerCase() === 'eor/sor',
+        (r) => r.Particulars?.toLowerCase() === 'eor/sor' || r.productName?.toLowerCase() === 'eor/sor'
       )
       const apiCatalystRow = manualEntryData.find(
-        (r) =>
-          r.Particulars?.toLowerCase() === 'type of catalyst' ||
-          r.productName?.toLowerCase() === 'type of catalyst',
+        (r) => r.Particulars?.toLowerCase() === 'type of catalyst' || r.productName?.toLowerCase() === 'type of catalyst'
       )
       const apiRemarkRow = manualEntryData.find(
-        (r) =>
-          r.Particulars?.toLowerCase() === 'remark' ||
-          r.productName?.toLowerCase() === 'remark' ||
-          r.Particulars?.toLowerCase() === 'remarks' ||
-          r.productName?.toLowerCase() === 'remarks',
+        (r) => r.Particulars?.toLowerCase() === 'remark' || r.productName?.toLowerCase() === 'remark' || r.Particulars?.toLowerCase() === 'remarks' || r.productName?.toLowerCase() === 'remarks'
       )
 
       // Initialize the three rows with default dummy data
@@ -204,39 +183,27 @@ const HistoricalMonths = ({ startDate, endDate }) => {
         inEdit: false,
       }
 
-      monthKeys.forEach((key, i) => {
+      monthKeys.forEach((key,i) => {
         // Fallbacks from API row if key exists, otherwise dummy value
         // Row 1: EOR/SOR
-        if (
-          apiEorSorRow &&
-          apiEorSorRow[key] !== undefined &&
-          apiEorSorRow[key] !== null
-        ) {
+        if (apiEorSorRow && apiEorSorRow[key] !== undefined && apiEorSorRow[key] !== null) {
           eorSorRow[key] = apiEorSorRow[key]
         } else {
-          eorSorRow[key] = i % 2 == 0 ? 'EOR' : 'SOR'
+          eorSorRow[key] = i%2 == 0 ?'EOR':'SOR'
         }
 
         // Row 2: Type of catalyst
-        if (
-          apiCatalystRow &&
-          apiCatalystRow[key] !== undefined &&
-          apiCatalystRow[key] !== null
-        ) {
+        if (apiCatalystRow && apiCatalystRow[key] !== undefined && apiCatalystRow[key] !== null) {
           catalystRow[key] = apiCatalystRow[key]
         } else {
-          catalystRow[key] = i % 2 == 0 ? 'A' : 'B'
+          catalystRow[key] = i%2 == 0 ?'A':'B'
         }
 
         // Row 3: Remark
-        if (
-          apiRemarkRow &&
-          apiRemarkRow[key] !== undefined &&
-          apiRemarkRow[key] !== null
-        ) {
+        if (apiRemarkRow && apiRemarkRow[key] !== undefined && apiRemarkRow[key] !== null) {
           remarkRow[key] = apiRemarkRow[key]
         } else {
-          remarkRow[key] = i % 2 == 0 ? `Test${i}` : `Test${i + 1}`
+          remarkRow[key] = i%2 == 0 ? `Test${i}` : `Test${i+1}`
         }
       })
 
@@ -282,7 +249,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       originalRows,
       fieldsToCheck,
       'productName',
-      'productName',
+      'productName'
     )
     if (validationError) {
       setSnackbarOpen(true)
@@ -353,12 +320,11 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     })
 
     try {
-      const response =
-        await ProductionNormsApiService.calculateHistoricalMonths(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+      const response = await ProductionNormsApiService.calculateHistoricalMonths(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (response?.code === 422) {
         setTimeout(() => {

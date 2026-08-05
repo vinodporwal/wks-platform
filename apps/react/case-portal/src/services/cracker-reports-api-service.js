@@ -388,14 +388,7 @@ async function spyroInputReport(
     return Promise.reject(e)
   }
 }
-async function getSpyroInputMinMaxData(
-  keycloak,
-  VERTICAL_ID,
-  SITE_ID,
-  PLANT_ID,
-  AOP_YEAR,
-  mode,
-) {
+async function getSpyroInputMinMaxData(keycloak, VERTICAL_ID, SITE_ID, PLANT_ID, AOP_YEAR, mode) {
   let url = `${Config.CaseEngineUrl}/task/spyro-input-min-max?verticalId=${VERTICAL_ID}&siteId=${SITE_ID}&plantId=${PLANT_ID}&aopYear=${AOP_YEAR}&mode=${mode}`
 
   const headers = {

@@ -5,17 +5,27 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wks.caseengine.dto.BulkRoleAssignmentRequest;
 import com.wks.caseengine.entity.UserScreenMapping;
 import com.wks.caseengine.repository.UserScreenMappingRepository;
 import com.wks.caseengine.utility.KeycloakAdminClient;
 
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -114,6 +124,102 @@ public class KeycloakUserService {
 		
 
 		
+	}
+
+	/**
+	 * Returns users that hold any of the given realm roles, with pagination.
+	 * Users are de-duplicated; each entry includes which of the requested roles they matched.
+	 * {@code page} is 1-based (default 1). {@code size} defaults to 20 (max 100).
+	 */
+	public Map<String, Object> getUsersByRoles(List<String> roleNames, Integer page, Integer size) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (roleNames == null || roleNames.isEmpty()) {
+			throw new IllegalArgumentException("roles must not be null or empty.");
+		}
+
+		List<String> distinctRoles = roleNames.stream()
+				.filter(r -> r != null && !r.isBlank())
+				.map(String::trim)
+				.distinct()
+				.collect(Collectors.toList());
+
+		if (distinctRoles.isEmpty()) {
+			throw new IllegalArgumentException("roles must contain at least one non-blank role name.");
+		}
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			List<String> unresolvedRoles = new ArrayList<>();
+			// userId -> matched requested roles
+			Map<String, Set<String>> userMatchedRoles = new HashMap<>();
+			Map<String, UserRepresentation> usersById = new HashMap<>();
+
+			for (String roleName : distinctRoles) {
+				try {
+					List<UserRepresentation> members = keycloak.realm(keycloakRealmName)
+							.roles()
+							.get(roleName)
+							.getUserMembers();
+
+					if (members == null) {
+						continue;
+					}
+
+					for (UserRepresentation member : members) {
+						if (member == null || member.getId() == null) {
+							continue;
+						}
+						usersById.putIfAbsent(member.getId(), member);
+						userMatchedRoles
+								.computeIfAbsent(member.getId(), id -> new HashSet<>())
+								.add(roleName);
+					}
+				} catch (Exception ex) {
+					unresolvedRoles.add(roleName);
+				}
+			}
+
+			if (!unresolvedRoles.isEmpty()) {
+				throw new IllegalArgumentException("Unknown realm roles: " + unresolvedRoles);
+			}
+
+			List<Map<String, Object>> allUsers = usersById.entrySet().stream()
+					.sorted(Map.Entry.comparingByKey())
+					.map(entry -> {
+						String userId = entry.getKey();
+						UserRepresentation user = entry.getValue();
+						Map<String, Object> userMap = new HashMap<>();
+						userMap.put("user", user);
+						userMap.put("matchedRoles", new ArrayList<>(userMatchedRoles.getOrDefault(userId, Set.of())));
+						return userMap;
+					})
+					.collect(Collectors.toList());
+
+			int pageNumber = (page == null || page < 1) ? 1 : page;
+			int pageSize = (size == null || size < 1) ? 20 : Math.min(size, 100);
+			int total = allUsers.size();
+			int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / pageSize);
+			int fromIndex = Math.min((pageNumber - 1) * pageSize, total);
+			int toIndex = Math.min(fromIndex + pageSize, total);
+			List<Map<String, Object>> pageData = allUsers.subList(fromIndex, toIndex);
+
+			result.put("status", 200);
+			result.put("message", "Users fetched successfully for the given roles.");
+			result.put("roles", distinctRoles);
+			result.put("data", pageData);
+			result.put("page", pageNumber);
+			result.put("size", pageSize);
+			result.put("total", total);
+			result.put("totalPages", totalPages);
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to fetch users by roles: " + ex.getMessage(), ex);
+		}
+
+		return result;
 	}
 
 
@@ -294,18 +400,521 @@ public class KeycloakUserService {
 		return result;
 	}
 
-	public Map<String, Object> getRealmRoles() throws Exception {
+	/**
+	 * Assigns realm roles to users in Keycloak. Each user can have a different set of roles.
+	 * Roles are added additively (existing roles are not removed).
+	 */
+	public Map<String, Object> assignRolesToUsers(List<BulkRoleAssignmentRequest.UserRoleAssignment> assignments)
+			throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (assignments == null || assignments.isEmpty()) {
+			throw new IllegalArgumentException("assignments must not be null or empty.");
+		}
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			// Collect all unique role names across assignments for a single lookup pass
+			Set<String> allRoleNames = new HashSet<>();
+			for (BulkRoleAssignmentRequest.UserRoleAssignment assignment : assignments) {
+				if (assignment.getUserId() == null || assignment.getUserId().isBlank()) {
+					throw new IllegalArgumentException("Each assignment must include a non-blank userId.");
+				}
+				if (assignment.getRoles() == null || assignment.getRoles().isEmpty()) {
+					throw new IllegalArgumentException(
+							"Assignment for userId " + assignment.getUserId() + " must include at least one role.");
+				}
+				assignment.getRoles().stream()
+						.filter(r -> r != null && !r.isBlank())
+						.forEach(allRoleNames::add);
+			}
+
+			if (allRoleNames.isEmpty()) {
+				throw new IllegalArgumentException("At least one non-blank role name is required.");
+			}
+
+			Map<String, RoleRepresentation> roleCache = new HashMap<>();
+			List<String> unresolvedRoles = new ArrayList<>();
+
+			for (String roleName : allRoleNames) {
+				try {
+					RoleRepresentation role = keycloak.realm(keycloakRealmName)
+							.roles()
+							.get(roleName)
+							.toRepresentation();
+					roleCache.put(roleName, role);
+				} catch (Exception ex) {
+					unresolvedRoles.add(roleName);
+				}
+			}
+
+			if (!unresolvedRoles.isEmpty()) {
+				throw new IllegalArgumentException("Unknown realm roles: " + unresolvedRoles);
+			}
+
+			List<Map<String, Object>> assignmentResults = new ArrayList<>();
+			List<String> failedUserIds = new ArrayList<>();
+
+			for (BulkRoleAssignmentRequest.UserRoleAssignment assignment : assignments) {
+				String userId = assignment.getUserId();
+				List<String> roleNames = assignment.getRoles().stream()
+						.filter(r -> r != null && !r.isBlank())
+						.distinct()
+						.collect(Collectors.toList());
+
+				Map<String, Object> userResult = new HashMap<>();
+				userResult.put("userId", userId);
+				userResult.put("requestedRoles", roleNames);
+
+				try {
+					List<RoleRepresentation> rolesToAdd = roleNames.stream()
+							.map(roleCache::get)
+							.collect(Collectors.toList());
+
+					UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+					userResource.toRepresentation();
+					userResource.roles().realmLevel().add(rolesToAdd);
+
+					List<String> currentRoles = userResource.roles().realmLevel().listEffective(false).stream()
+							.map(RoleRepresentation::getName)
+							.collect(Collectors.toList());
+
+					userResult.put("status", "success");
+					userResult.put("assignedRoles", currentRoles);
+				} catch (Exception ex) {
+					failedUserIds.add(userId);
+					userResult.put("status", "failed");
+					userResult.put("error", ex.getMessage());
+				}
+				assignmentResults.add(userResult);
+			}
+
+			result.put("status", failedUserIds.isEmpty() ? 200 : 207);
+			result.put("message", failedUserIds.isEmpty()
+					? "Roles assigned successfully to all users."
+					: "Roles assigned with partial failures.");
+			result.put("data", assignmentResults);
+			if (!failedUserIds.isEmpty()) {
+				result.put("failedUserIds", failedUserIds);
+			}
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to assign roles to users: " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Updates realm roles from an Excel sheet (replace, not additive).
+	 * Expected columns (header row, case-insensitive): username, roles
+	 * Roles cell may list multiple roles separated by commas.
+	 * Each user's direct realm roles are replaced with the roles in the sheet.
+	 */
+	public Map<String, Object> assignRolesFromExcel(MultipartFile file) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("Excel file is required.");
+		}
+
+		String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+		if (!filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+			throw new IllegalArgumentException("Only .xlsx or .xls Excel files are supported.");
+		}
+
+		List<Map<String, Object>> rowResults = new ArrayList<>();
+		List<String> failedUsernames = new ArrayList<>();
+		int successCount = 0;
+		int failureCount = 0;
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+		DataFormatter formatter = new DataFormatter();
+
+		try (InputStream inputStream = file.getInputStream(); Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			if (sheet == null) {
+				throw new IllegalArgumentException("Excel file has no sheets.");
+			}
+
+			Row headerRow = sheet.getRow(sheet.getFirstRowNum());
+			if (headerRow == null) {
+				throw new IllegalArgumentException("Excel file is missing a header row.");
+			}
+
+			int usernameCol = -1;
+			int rolesCol = -1;
+			for (Cell cell : headerRow) {
+				String header = formatter.formatCellValue(cell).trim().toLowerCase().replace(" ", "");
+				if ("username".equals(header) || "user".equals(header) || "userid".equals(header)) {
+					usernameCol = cell.getColumnIndex();
+				} else if ("roles".equals(header) || "role".equals(header)) {
+					rolesCol = cell.getColumnIndex();
+				}
+			}
+
+			if (usernameCol < 0 || rolesCol < 0) {
+				throw new IllegalArgumentException(
+						"Excel must include 'username' and 'roles' columns (header row).");
+			}
+
+			Map<String, RoleRepresentation> roleCache = new HashMap<>();
+
+			for (int i = sheet.getFirstRowNum() + 1; i <= sheet.getLastRowNum(); i++) {
+				Row row = sheet.getRow(i);
+				if (row == null || isExcelRowEmpty(row, formatter)) {
+					continue;
+				}
+
+				int excelRowNumber = i + 1; // 1-based for human-readable reporting
+				String username = formatter.formatCellValue(row.getCell(usernameCol)).trim();
+				String rolesRaw = formatter.formatCellValue(row.getCell(rolesCol)).trim();
+
+				Map<String, Object> rowResult = new HashMap<>();
+				rowResult.put("row", excelRowNumber);
+				rowResult.put("username", username);
+
+				if (username.isBlank()) {
+					rowResult.put("status", "failed");
+					rowResult.put("error", "Username is blank.");
+					failedUsernames.add("");
+					failureCount++;
+					rowResults.add(rowResult);
+					continue;
+				}
+
+				List<String> roleNames = Arrays.stream(rolesRaw.split("[,;|]"))
+						.map(String::trim)
+						.filter(r -> !r.isBlank())
+						.distinct()
+						.collect(Collectors.toList());
+
+				rowResult.put("requestedRoles", roleNames);
+
+				if (roleNames.isEmpty()) {
+					rowResult.put("status", "failed");
+					rowResult.put("error", "No roles specified.");
+					failedUsernames.add(username);
+					failureCount++;
+					rowResults.add(rowResult);
+					continue;
+				}
+
+				try {
+					UserRepresentation user = findUserByUsername(keycloak, username);
+					if (user == null) {
+						rowResult.put("status", "failed");
+						rowResult.put("error", "User not found: " + username);
+						failedUsernames.add(username);
+						failureCount++;
+						rowResults.add(rowResult);
+						continue;
+					}
+
+					List<String> missingRoles = new ArrayList<>();
+					List<RoleRepresentation> rolesToSet = new ArrayList<>();
+					for (String roleName : roleNames) {
+						RoleRepresentation role = roleCache.get(roleName);
+						if (role == null) {
+							try {
+								role = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+								roleCache.put(roleName, role);
+							} catch (Exception ex) {
+								missingRoles.add(roleName);
+								continue;
+							}
+						}
+						rolesToSet.add(role);
+					}
+
+					if (!missingRoles.isEmpty()) {
+						rowResult.put("status", "failed");
+						rowResult.put("error", "Unknown realm roles: " + missingRoles);
+						failedUsernames.add(username);
+						failureCount++;
+						rowResults.add(rowResult);
+						continue;
+					}
+
+					UserResource userResource = keycloak.realm(keycloakRealmName).users().get(user.getId());
+
+					// Replace: remove all current direct realm roles, then set from Excel
+					List<RoleRepresentation> currentRoles = userResource.roles().realmLevel().listEffective(false);
+					if (currentRoles != null && !currentRoles.isEmpty()) {
+						userResource.roles().realmLevel().remove(currentRoles);
+					}
+					userResource.roles().realmLevel().add(rolesToSet);
+
+					List<String> updatedRoles = userResource.roles().realmLevel().listEffective(false).stream()
+							.map(RoleRepresentation::getName)
+							.collect(Collectors.toList());
+
+					rowResult.put("status", "success");
+					rowResult.put("userId", user.getId());
+					rowResult.put("updatedRoles", updatedRoles);
+					successCount++;
+				} catch (Exception ex) {
+					rowResult.put("status", "failed");
+					rowResult.put("error", ex.getMessage());
+					failedUsernames.add(username);
+					failureCount++;
+				}
+
+				rowResults.add(rowResult);
+			}
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to process role update Excel: " + ex.getMessage(), ex);
+		}
+
+		if (rowResults.isEmpty()) {
+			throw new IllegalArgumentException("No data rows found in Excel. Expected columns: username, roles.");
+		}
+
+		result.put("status", failureCount == 0 ? 200 : (successCount == 0 ? 400 : 207));
+		result.put("message", failureCount == 0
+				? "Roles updated successfully from Excel."
+				: (successCount == 0
+						? "Role update from Excel failed for all rows."
+						: "Roles updated from Excel with partial failures."));
+		result.put("successCount", successCount);
+		result.put("failureCount", failureCount);
+		result.put("data", rowResults);
+		if (!failedUsernames.isEmpty()) {
+			result.put("failedUsernames", failedUsernames);
+		}
+
+		return result;
+	}
+
+	private UserRepresentation findUserByUsername(Keycloak keycloak, String username) {
+		List<UserRepresentation> candidates = keycloak.realm(keycloakRealmName)
+				.users()
+				.search(username, 0, 50);
+		if (candidates == null || candidates.isEmpty()) {
+			return null;
+		}
+		return candidates.stream()
+				.filter(u -> u.getUsername() != null && u.getUsername().equalsIgnoreCase(username))
+				.findFirst()
+				.orElse(null);
+	}
+
+	private boolean isExcelRowEmpty(Row row, DataFormatter formatter) {
+		if (row == null) {
+			return true;
+		}
+		for (Cell cell : row) {
+			if (cell != null && !formatter.formatCellValue(cell).trim().isEmpty()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Lists realm roles with optional search and pagination.
+	 * {@code q} filters by role name or description (case-insensitive contains).
+	 * {@code page} is 1-based (default 1). {@code size} defaults to 20 (max 100).
+	 */
+	public Map<String, Object> getRealmRoles(String q, Integer page, Integer size) throws Exception {
 		Map<String, Object> result = new HashMap<String, Object>();
 		Keycloak keycloak = keycloakAdminClient.getInstance();
 
 		try {
 			List<RoleRepresentation> realmRoles = keycloak.realm(keycloakRealmName).roles().list();
 
+			if (q != null && !q.isBlank()) {
+				String needle = q.trim().toLowerCase();
+				realmRoles = realmRoles.stream()
+						.filter(role -> {
+							String name = role.getName() != null ? role.getName().toLowerCase() : "";
+							String description = role.getDescription() != null
+									? role.getDescription().toLowerCase()
+									: "";
+							return name.contains(needle) || description.contains(needle);
+						})
+						.collect(Collectors.toList());
+				result.put("q", q.trim());
+			}
+
+			int pageNumber = (page == null || page < 1) ? 1 : page;
+			int pageSize = (size == null || size < 1) ? 20 : Math.min(size, 100);
+			int total = realmRoles.size();
+			int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / pageSize);
+			int fromIndex = Math.min((pageNumber - 1) * pageSize, total);
+			int toIndex = Math.min(fromIndex + pageSize, total);
+			List<RoleRepresentation> pageData = realmRoles.subList(fromIndex, toIndex);
+
 			result.put("status", 200);
 			result.put("message", "User roles fetched successfully.");
-			result.put("data", realmRoles);
+			result.put("data", pageData);
+			result.put("page", pageNumber);
+			result.put("size", pageSize);
+			result.put("total", total);
+			result.put("totalPages", totalPages);
 		} catch (Exception ex) {
 			throw new Exception("Failed to fetch user roles:" + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	public Map<String, Object> getRealmRoles(String q) throws Exception {
+		return getRealmRoles(q, null, null);
+	}
+
+	public Map<String, Object> getRealmRoles() throws Exception {
+		return getRealmRoles(null, null, null);
+	}
+
+	/**
+	 * Creates a new realm role in Keycloak.
+	 */
+	public Map<String, Object> createRealmRole(String name, String description) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (name == null || name.isBlank()) {
+			throw new IllegalArgumentException("Role name must not be null or blank.");
+		}
+
+		String roleName = name.trim();
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			try {
+				keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+				result.put("status", 409);
+				result.put("message", "Role already exists: " + roleName);
+				return result;
+			} catch (Exception ignored) {
+				// Role does not exist — proceed with creation
+			}
+
+			RoleRepresentation role = new RoleRepresentation();
+			role.setName(roleName);
+			if (description != null && !description.isBlank()) {
+				role.setDescription(description.trim());
+			}
+
+			keycloak.realm(keycloakRealmName).roles().create(role);
+
+			RoleRepresentation created = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+
+			result.put("status", 201);
+			result.put("message", "Role created successfully.");
+			result.put("data", created);
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to create role: " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Deletes a realm role from Keycloak.
+	 */
+	public Map<String, Object> deleteRealmRole(String name) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (name == null || name.isBlank()) {
+			throw new IllegalArgumentException("Role name must not be null or blank.");
+		}
+
+		String roleName = name.trim();
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			try {
+				keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+			} catch (Exception ex) {
+				result.put("status", 404);
+				result.put("message", "Role not found: " + roleName);
+				return result;
+			}
+
+			keycloak.realm(keycloakRealmName).roles().deleteRole(roleName);
+
+			result.put("status", 200);
+			result.put("message", "Role deleted successfully.");
+			result.put("data", Map.of("name", roleName));
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to delete role: " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Fetches direct realm roles assigned to a specific user.
+	 */
+	public Map<String, Object> getUserRoles(String userId) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (userId == null || userId.isBlank()) {
+			throw new IllegalArgumentException("userId must not be null or blank.");
+		}
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+			UserRepresentation user = userResource.toRepresentation();
+
+			List<RoleRepresentation> directRoles = userResource.roles().realmLevel().listEffective(false);
+			List<String> roleNames = directRoles.stream()
+					.map(RoleRepresentation::getName)
+					.collect(Collectors.toList());
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("userId", user.getId());
+			data.put("username", user.getUsername());
+			data.put("roles", roleNames);
+			data.put("roleDetails", directRoles);
+
+			result.put("status", 200);
+			result.put("message", "Roles fetched successfully for user.");
+			result.put("data", data);
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to fetch roles for user " + userId + ": " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Unassign / Remove a specific realm role from a specific user in Keycloak.
+	 * DELETE /task/users/{userId}/roles/{roleName}
+	 */
+	public Map<String, Object> unassignRoleFromUser(String userId, String roleName) throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (userId == null || userId.isBlank() || roleName == null || roleName.isBlank()) {
+			throw new IllegalArgumentException("userId and roleName must not be null or blank.");
+		}
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+			RoleRepresentation roleRepresentation = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+
+			userResource.roles().realmLevel().remove(Collections.singletonList(roleRepresentation));
+
+			result.put("status", 200);
+			result.put("message", "Role '" + roleName + "' unassigned from user successfully.");
+			result.put("data", Map.of("userId", userId, "role", roleName));
+		} catch (Exception ex) {
+			throw new Exception("Failed to unassign role '" + roleName + "' from user '" + userId + "': " + ex.getMessage(), ex);
 		}
 
 		return result;

@@ -37,6 +37,7 @@ spring.data.mongodb.database.min-pool-size: 0
 spring.data.mongodb.database.max-pool-size: 5
 spring.data.mongodb.database.max-connection-idle-time: 3000
 spring.data.mongodb.database.max-connection-life-time: 3000
+server.max-http-request-header-size: 65536
 
 opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
 keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
@@ -44,6 +45,10 @@ keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
 management.health.mongo.enabled: false
 management.health.reds.enabled: false
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   datasource:
     # Configuration for Database 1
     db1:
@@ -94,3 +99,10 @@ pp.budget.calculator.url: ${PP_BUDGET_CALCULATOR_URL:http://pp-budget-calculator
 
 # camuda process Id for TCS Output Workflow
 camunda.process.id.tcs.output.workflow: ${CAMUNDA_PROCESS_ID_TCS_OUTPUT_WORKFLOW:TCS_APPROVAL_PROCESS}
+
+# Deploy BPMN/DMN from c7-client (classpath:camunda7/*) on API startup — no demo-data-loader required.
+# Set CAMUNDA7_DATA_IMPORT_FOLDER to override with a filesystem directory.
+camunda7.data.import.enabled: ${CAMUNDA7_DATA_IMPORT_ENABLED:true}
+camunda7.data.import.url: ${CAMUNDA_BASE_URL:http://localhost:8080/engine-rest}
+camunda7.data.import.folder: ${CAMUNDA7_DATA_IMPORT_FOLDER:}
+camunda7.data.import.tenant: ${CAMUNDA7_DATA_IMPORT_TENANT:localhost}

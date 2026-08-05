@@ -188,6 +188,7 @@ import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdow
 import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
 import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
+import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
 
 // Naphthasplitter Ended
 
@@ -398,6 +399,25 @@ export const MainRoutes = (
         ],
         // REFINERY AOP BUDGET Ended],
       },
+      {
+        path: 'jw-budget',
+        children: [
+          //TCS Started
+          {
+            path: 'jw-budget-source',
+            element: (
+              <PrivateRoute routeId='jw-budget-source'>
+                <JwBudgetScreen />
+              </PrivateRoute>
+            ),
+          },
+
+
+
+        ],
+        // REFINERY AOP BUDGET Ended],
+      },
+
 
       {
         path: 'production-norms-plan',

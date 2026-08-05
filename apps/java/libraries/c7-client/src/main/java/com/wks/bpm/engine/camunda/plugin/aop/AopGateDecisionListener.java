@@ -10,10 +10,10 @@ import org.camunda.bpm.engine.RuntimeService;
  * downstream exclusive gateway routes on.
  *
  * <p>Runs INSIDE the standalone Camunda server (referenced from the BPMN via
- * {@code camunda:class}), the same way {@code NotifyAssigneeTaskListener} does —
- * because Spring beans in case-engine-rest-api are not reachable from the
- * engine. It uses only the engine's own {@link RuntimeService}, no Spring / no
- * DB.</p>
+ * {@code camunda:class}). Packaged in the {@code c7-client} jar and mounted into
+ * Camunda's {@code userlib/}. Spring beans in case-engine-rest-api are not
+ * reachable from the engine; this uses only the engine's own
+ * {@link RuntimeService}, no Spring / no DB.</p>
  *
  * <p>Policy = ALL must approve to advance; <b>any single REVERTED exits early</b>:</p>
  * <ul>

@@ -30,10 +30,7 @@ const PIMSThroughput = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const EXCEL_NAME = generateExcelName(
-    dataGridStore,
-    'Production_Norms_Basis_PIMS_Throughput',
-  )
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_PIMS_Throughput')
   const { plantObject, year } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear

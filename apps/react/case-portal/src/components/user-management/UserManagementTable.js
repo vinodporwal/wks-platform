@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { DataService } from 'services/DataService'
 import { useLocation } from '../../../node_modules/react-router-dom/dist/index'
 import AopTabs from 'components/AopTabs'
+import RoleAccessManagement from './RoleAccessManagement'
 
 const UserManagementTable = ({ keycloak }) => {
   const navigate = useNavigate()
@@ -278,7 +279,7 @@ const UserManagementTable = ({ keycloak }) => {
       <AopTabs
         tabIndex={tabIndex}
         setTabIndex={setTabIndex}
-        tabs={['Grant Access', 'Revoke Access']}
+        tabs={['Grant Access', 'Revoke Access', 'Role Management']}
       />
 
       {tabIndex === 0 && (
@@ -428,6 +429,7 @@ const UserManagementTable = ({ keycloak }) => {
           </Button>
         </Box>
       )}
+      {tabIndex === 2 && <RoleAccessManagement keycloak={keycloak} />}
       {/* <Button
                   variant='contained'
                   // style={{marginBottom:'-80%', marginLeft:'90%'}}

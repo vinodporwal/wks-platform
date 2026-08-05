@@ -110,11 +110,7 @@ const PlantCapacities = ({ permissions }) => {
     setModifiedCells({})
     setLoading(true)
     try {
-      const resp = await PlantsCapacitiesApiService.getPlantsCapacitiesData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const resp = await PlantsCapacitiesApiService.getPlantsCapacitiesData(keycloak, PLANT_ID, AOP_YEAR)
       const rawData = Array.isArray(resp?.data)
         ? resp.data
         : Array.isArray(resp?.data?.data)
@@ -129,7 +125,7 @@ const PlantCapacities = ({ permissions }) => {
           transactionId: item.transactionId,
           masterId: item.masterId,
           Particulars: item.normParameterTypeDispla || item.Particulars,
-          isEditable: item.isEditable,
+          isEditable: item.isEditable
         }
       })
       setRows(dataRows)
@@ -167,14 +163,8 @@ const PlantCapacities = ({ permissions }) => {
     }
     // Check if max is greater than min
     const invalidMinMaxRows = modifiedData.filter((row) => {
-      const minVal =
-        row.min !== undefined && row.min !== null && row.min !== ''
-          ? Number(row.min)
-          : null
-      const maxVal =
-        row.max !== undefined && row.max !== null && row.max !== ''
-          ? Number(row.max)
-          : null
+      const minVal = row.min !== undefined && row.min !== null && row.min !== '' ? Number(row.min) : null
+      const maxVal = row.max !== undefined && row.max !== null && row.max !== '' ? Number(row.max) : null
       return minVal !== null && maxVal !== null && maxVal <= minVal
     })
 
@@ -231,7 +221,14 @@ const PlantCapacities = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, originalRows, PLANT_ID, AOP_YEAR, keycloak, fetchData])
+  }, [
+    modifiedCells,
+    originalRows,
+    PLANT_ID,
+    AOP_YEAR,
+    keycloak,
+    fetchData,
+  ])
 
   useEffect(() => {
     fetchData()
@@ -268,13 +265,12 @@ const PlantCapacities = ({ permissions }) => {
       if (!file) return
       setLoading(true)
       try {
-        const response =
-          await PlantsCapacitiesApiService.importPlantsCapacities(
-            file,
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+        const response = await PlantsCapacitiesApiService.importPlantsCapacities(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
         if (response?.code === 200) {
           setSnackbarOpen(true)

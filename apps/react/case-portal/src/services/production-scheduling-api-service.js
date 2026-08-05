@@ -66,11 +66,7 @@ async function getProductionSchedulingTransactionData(
     return await Promise.reject(e)
   }
 }
-async function handleCalculateProductionSchedulingData(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
+async function handleCalculateProductionSchedulingData(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/calculate-prod-scheduling?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',

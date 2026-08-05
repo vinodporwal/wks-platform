@@ -44,8 +44,7 @@ const defs = {
     shutdownNorms: 'Shutdown Consumption (Quantity)',
     slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
     normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-    normalOpNormsGradeWise:
-      'Grade Wise Steady State Consumption (Norm/Quantity)',
+    normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
     slowdownPlan: 'Slowdown Activities',
     taPlan: 'Turnaround Activities',
     feedStock: 'Feed Stock Availability',
@@ -120,6 +119,8 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
+    jsBudget: 'Js Budget',   
+    jwBudgetSource: 'JW Budget Source',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -146,7 +147,7 @@ const defs = {
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
-    configurationOtherCost: 'Other Cost',
+    configurationOtherCost: 'Other Cost'
   },
   pages: {
     dashboard: {
@@ -291,8 +292,7 @@ const defs = {
         shutdownPlan: 'Shutdown Activities',
         shutdownNorms: 'Shutdown Consumption (Quantity)',
         normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-        normalOpNormsGradeWise:
-          'Grade Wise Steady State Consumption (Norm/Quantity)',
+        normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
         slowdownPlan: 'Slowdown Activities',
         taPlan: 'Turnaround Activities',
         productionNormsOutput: 'Production Norms (Output)',
@@ -360,6 +360,7 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
+        jwBudgetSource: 'JW Budget Source',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',

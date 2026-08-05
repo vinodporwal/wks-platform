@@ -11,10 +11,7 @@ import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from 'components/aop-phase-two/services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
-import {
-  downloadBase64Excel,
-  downloadBlobExcel,
-} from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
+import { downloadBase64Excel, downloadBlobExcel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -385,7 +382,10 @@ const SteadyStateConsumption = () => {
           PLANT_ID,
           AOP_YEAR,
         )
-      downloadBlobExcel(blob, EXCEL_NAME)
+      downloadBlobExcel(
+          blob,
+          EXCEL_NAME,
+        )
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -496,7 +496,7 @@ const SteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}
