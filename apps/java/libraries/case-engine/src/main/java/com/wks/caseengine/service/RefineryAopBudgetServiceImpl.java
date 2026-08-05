@@ -38,6 +38,8 @@ import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.PlantsDTO;
 import com.wks.caseengine.dto.ProfitCenterDTO;
+import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
+import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
@@ -1841,5 +1843,140 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
- 
+
+    @Override
+    public AOPMessageVM getThroughputNorms(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_GetThroughputNorms @SiteId = ?, @AOPYear = ?";
+
+            List<ThroughputNormsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                ThroughputNormsDTO.builder()
+                    .id(rs.getString("Id"))
+                    .unit(rs.getString("Unit"))
+                    .unitId(rs.getString("UnitId"))
+                    .materialCode(rs.getString("MaterialCode"))
+                    .materialCodeDecription(rs.getString("MaterialCodeDecription"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+                    .apr(rs.getString("Apr"))
+                    .may(rs.getString("May"))
+                    .jun(rs.getString("Jun"))
+                    .jul(rs.getString("Jul"))
+                    .aug(rs.getString("Aug"))
+                    .sep(rs.getString("Sep"))
+                    .oct(rs.getString("Oct"))
+                    .nov(rs.getString("Nov"))
+                    .dec(rs.getString("Dec"))
+                    .jan(rs.getString("Jan"))
+                    .feb(rs.getString("Feb"))
+                    .mar(rs.getString("Mar"))
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch throughput norms data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<ThroughputNormsDTO> saveThroughputNorms(List<ThroughputNormsDTO> throughputNormsDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<ThroughputNormsDTO> failedRecords = new ArrayList<>();
+
+        Map<Integer, java.util.function.Function<ThroughputNormsDTO, String>> monthValueGetters = new java.util.LinkedHashMap<>();
+        monthValueGetters.put(4,  ThroughputNormsDTO::getApr);
+        monthValueGetters.put(5,  ThroughputNormsDTO::getMay);
+        monthValueGetters.put(6,  ThroughputNormsDTO::getJun);
+        monthValueGetters.put(7,  ThroughputNormsDTO::getJul);
+        monthValueGetters.put(8,  ThroughputNormsDTO::getAug);
+        monthValueGetters.put(9,  ThroughputNormsDTO::getSep);
+        monthValueGetters.put(10, ThroughputNormsDTO::getOct);
+        monthValueGetters.put(11, ThroughputNormsDTO::getNov);
+        monthValueGetters.put(12, ThroughputNormsDTO::getDec);
+        monthValueGetters.put(1,  ThroughputNormsDTO::getJan);
+        monthValueGetters.put(2,  ThroughputNormsDTO::getFeb);
+        monthValueGetters.put(3,  ThroughputNormsDTO::getMar);
+
+        for (ThroughputNormsDTO dto : throughputNormsDTOs) {
+            try {
+                String materialId = dto.getId();
+                String unitId = dto.getUnitId();
+
+                for (Map.Entry<Integer, java.util.function.Function<ThroughputNormsDTO, String>> entry : monthValueGetters.entrySet()) {
+                    int month = entry.getKey();
+                    String value = entry.getValue().apply(dto);
+
+                    if (value == null) {
+                        continue;
+                    }
+
+                    String checkSql = "SELECT COUNT(1) FROM ThroughputNormsTransaction " +
+                                      "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                    int count = jdbcTemplate.queryForObject(checkSql, Integer.class, materialId, month, aopYear, unitId);
+
+                    if (count > 0) {
+                        String updateSql = "UPDATE ThroughputNormsTransaction " +
+                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                        jdbcTemplate.update(updateSql,
+                            new java.math.BigDecimal(value),
+                            updatedBy,
+                            materialId,
+                            month,
+                            aopYear,
+                            unitId);
+                    } else {
+                        String insertSql = "INSERT INTO ThroughputNormsTransaction " +
+                                           "(Id, Material_Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
+                                           "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                        jdbcTemplate.update(insertSql,
+                            materialId,
+                            unitId,
+                            month,
+                            aopYear,
+                            new java.math.BigDecimal(value),
+                            updatedBy);
+                    }
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+
+        return failedRecords;
+    }
+
+    @Override
+    public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId) {
+        try {
+            String sql = "EXEC Sp_GetNormsMaterialDropdown @siteId = ?, @profitId = ?";
+
+            List<NormsMaterialDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                NormsMaterialDropdownDTO.builder()
+                    .id(rs.getString("Id"))
+                    .unit(rs.getString("Unit"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+                    .build(),
+                siteId, profitId);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch norms material dropdown data", e);
+        }
+    }
+
 }
