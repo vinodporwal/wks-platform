@@ -19,6 +19,8 @@ public interface SlowdownPlanService {
 			List<ShutDownPlanDTO> mapForExcel);
 	byte[] slowdownExportLine(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
 			List<ShutDownPlanDTO> mapForExcel);
+	byte[] slowdownExportLineQuantity(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
+			List<ShutDownPlanDTO> mapForExcel);
 	byte[] slowdownRateExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
 			List<ShutDownPlanDTO> mapForExcel);
 	byte[] nonProductSlowdownExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
@@ -27,6 +29,7 @@ public interface SlowdownPlanService {
 			List<ShutDownPlanDTO> mapForExcel);
 	public AOPMessageVM importSlowdownExcel(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importSlowdownLineExcel(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
+	public AOPMessageVM importSlowdownLineQuantityExcel(String year, UUID plantId, String maintenanceTypeName, MultipartFile file);
 	public AOPMessageVM importSlowdownRateExcel(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importNonProductSlowdownDMD(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importNonProductSlowdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);

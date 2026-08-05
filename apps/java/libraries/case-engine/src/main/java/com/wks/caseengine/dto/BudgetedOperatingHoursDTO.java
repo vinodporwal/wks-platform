@@ -42,4 +42,5 @@ public class BudgetedOperatingHoursDTO {
     private String saveStatus;
     private String errDescription;
     private String lineName;
+    private String type;
 }

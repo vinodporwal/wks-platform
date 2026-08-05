@@ -468,6 +468,7 @@ const KendoDataTablesReports = ({
       <td
         {...tdProps}
         className='remark-cell'
+        title={rawValue || 'Add remark'}
         style={{
           color: rawValue ? 'inherit' : 'gray',
           background: isDisabled ? '#f1f5f9' : undefined,

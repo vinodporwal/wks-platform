@@ -2425,6 +2425,13 @@ if (!isValidTable) {
 	    try {
 	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 	                .orElseThrow(() -> new RuntimeException("Plant not found"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+					boolean pvcDmd = vertical.getName().equalsIgnoreCase("Pvc") && site.getName().equalsIgnoreCase("dmd");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2537,7 +2544,11 @@ if (!isValidTable) {
 
 	            	combinedStructure.put(uniqueSheetName, clonedSheetData);
 	            }
-
+            if(pvcDmd) {
+				String verticalSite = vertical.getName()  + site.getName();
+				// seperate method to disable grids
+                return excelUtilityService.generateFlexibleExcelGridDisable(combinedStructure, data, verticalSite);
+            }
 	            return excelUtilityService.generateFlexibleExcel(combinedStructure, data);
 	        }
 	    } catch (Exception e) {

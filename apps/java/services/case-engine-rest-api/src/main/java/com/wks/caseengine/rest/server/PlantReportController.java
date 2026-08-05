@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wks.caseengine.dto.ConversionVariableCostDTO;
 import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
 import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
@@ -89,5 +90,15 @@ public class PlantReportController {
     @PostMapping(value = "/site-safety-performance")
     public AOPMessageVM saveSiteSafetyPerformanceTargets(@RequestBody List<SiteSafetyPerformanceTargetsDTO> siteSafetyPerformanceTargetsDTOs) {
         return plantReportService.saveSiteSafetyPerformanceTargets(siteSafetyPerformanceTargetsDTOs);
+    }
+
+    @GetMapping(value = "/conversion-variable-cost")
+    public AOPMessageVM getConversionVariableCostData(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.getConversionVariableCostData(siteId, aopYear);
+    }
+
+    @PostMapping(value = "/conversion-variable-cost")
+    public AOPMessageVM saveConversionVariableCostData(@RequestBody List<ConversionVariableCostDTO> conversionVariableCostDTOs) {
+        return plantReportService.saveConversionVariableCostData(conversionVariableCostDTOs);
     }
 }

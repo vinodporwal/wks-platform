@@ -141,6 +141,10 @@ const DecokingConfig = () => {
   const maxDutyPilotRef = useRef(maxDutyPilot)
   const maxDutyMainRef = useRef(maxDutyMain)
 
+  const sadDurationRowRef = useRef(sadDurationRow)
+  const maxDutyPilotRowRef = useRef(maxDutyPilotRow)
+  const maxDutyMainRowRef = useRef(maxDutyMainRow)
+
   useEffect(() => {
     sadDurationRef.current = sadDuration
   }, [sadDuration])
@@ -152,6 +156,18 @@ const DecokingConfig = () => {
   useEffect(() => {
     maxDutyMainRef.current = maxDutyMain
   }, [maxDutyMain])
+
+  useEffect(() => {
+    sadDurationRowRef.current = sadDurationRow
+  }, [sadDurationRow])
+
+  useEffect(() => {
+    maxDutyPilotRowRef.current = maxDutyPilotRow
+  }, [maxDutyPilotRow])
+
+  useEffect(() => {
+    maxDutyMainRowRef.current = maxDutyMainRow
+  }, [maxDutyMainRow])
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -273,6 +289,9 @@ const DecokingConfig = () => {
         setSadDurationRow(sadRow || null)
         setMaxDutyPilotRow(pilotRow || null)
         setMaxDutyMainRow(mainRow || null)
+        sadDurationRowRef.current = sadRow || null
+        maxDutyPilotRowRef.current = pilotRow || null
+        maxDutyMainRowRef.current = mainRow || null
         const formatTwoDecimals = (val) => {
           if (val === null || val === undefined || val === '') return ''
           const num = parseFloat(val)
@@ -640,24 +659,28 @@ const DecokingConfig = () => {
       }
     }
 
+    const sadRow = sadDurationRowRef.current || sadDurationRow
+    const pilotRow = maxDutyPilotRowRef.current || maxDutyPilotRow
+    const mainRow = maxDutyMainRowRef.current || maxDutyMainRow
+
     const payload = [
       {
-        id: sadDurationRow?.id || null,
+        id: sadRow?.id || sadRow?.Id || null,
         displayName: 'SAD Duration',
         attributeValue: currentSad,
-        remarks: sadDurationRow?.remarks || null,
+        remarks: sadRow?.remarks || null,
       },
       {
-        id: maxDutyPilotRow?.id || null,
+        id: pilotRow?.id || pilotRow?.Id || null,
         displayName: 'Max Duty For Pilot Furnace',
         attributeValue: currentPilot,
-        remarks: maxDutyPilotRow?.remarks || null,
+        remarks: pilotRow?.remarks || null,
       },
       {
-        id: maxDutyMainRow?.id || null,
+        id: mainRow?.id || mainRow?.Id || null,
         displayName: 'Max Duty For Main Furnaces',
         attributeValue: currentMain,
-        remarks: maxDutyMainRow?.remarks || null,
+        remarks: mainRow?.remarks || null,
       },
     ]
 
@@ -1854,7 +1877,7 @@ const DecokingConfig = () => {
 
       // itemChange in index-cracker calls setRows as a functional updater:
       // setRows((prev) => prev.map(...))
-      // So `data` may be a function � handle both forms.
+      // So `data` may be a function ? handle both forms.
       if (typeof data === 'function') {
         setIbrScreen2Rows((prev) => applyCalc(data(prev)))
       } else {
