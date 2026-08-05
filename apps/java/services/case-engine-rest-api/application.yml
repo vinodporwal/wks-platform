@@ -100,7 +100,7 @@ pp.budget.calculator.url: ${PP_BUDGET_CALCULATOR_URL:http://pp-budget-calculator
 # camuda process Id for TCS Output Workflow
 camunda.process.id.tcs.output.workflow: ${CAMUNDA_PROCESS_ID_TCS_OUTPUT_WORKFLOW:TCS_APPROVAL_PROCESS}
 
-# Deploy BPMN/DMN from c7-client (classpath:camunda7/*) on API startup — no demo-data-loader required.
+# Deploy BPMN/DMN from c7-client (classpath:camunda7/*) on API startup - no demo-data-loader required.
 # Set CAMUNDA7_DATA_IMPORT_FOLDER to override with a filesystem directory.
 camunda7.data.import.enabled: ${CAMUNDA7_DATA_IMPORT_ENABLED:true}
 camunda7.data.import.url: ${CAMUNDA_BASE_URL:http://localhost:8080/engine-rest}
