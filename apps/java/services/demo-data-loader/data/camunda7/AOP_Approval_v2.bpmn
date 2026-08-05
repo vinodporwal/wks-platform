@@ -17,7 +17,7 @@
     gate5        APPROVED -> Approved (Release / BPC-Board)
 
   Runtime wiring (Camunda 7 runs standalone; Spring beans in case-engine are NOT
-  reachable from the engine, so in-engine logic is a plain c7-plugins class and
+  reachable from the engine, so in-engine logic is a plain c7-client class and
   everything else is driven service-side):
     - Gate aggregation (IN-ENGINE): com.wks.bpm.engine.camunda.plugin.aop.
       AopGateDecisionListener (camunda:class task listener on each gate).
@@ -66,7 +66,7 @@
     <bpmn:userTask id="gate1" name="Gate 1 - Plant Manager"
                    camunda:assignee="${role}" camunda:formKey="approval-form">
       <bpmn:extensionElements>
-        <!-- In-engine (c7-plugins) aggregation of this gate's multi-instance
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
         <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
         <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
@@ -97,7 +97,7 @@
     <bpmn:userTask id="gate2" name="Gate 2 - Functional Heads"
                    camunda:assignee="${role}" camunda:formKey="approval-form">
       <bpmn:extensionElements>
-        <!-- In-engine (c7-plugins) aggregation of this gate's multi-instance
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
         <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
         <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
@@ -125,7 +125,7 @@
     <bpmn:userTask id="gate3" name="Gate 3 - Site Head"
                    camunda:assignee="${role}" camunda:formKey="approval-form">
       <bpmn:extensionElements>
-        <!-- In-engine (c7-plugins) aggregation of this gate's multi-instance
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
         <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
         <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
@@ -154,7 +154,7 @@
     <bpmn:userTask id="gate4" name="Gate 4 - GMS Business Head"
                    camunda:assignee="${role}" camunda:formKey="approval-form">
       <bpmn:extensionElements>
-        <!-- In-engine (c7-plugins) aggregation of this gate's multi-instance
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
         <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
         <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
@@ -182,7 +182,7 @@
     <bpmn:userTask id="gate5" name="Gate 5 - GMS Head"
                    camunda:assignee="${role}" camunda:formKey="approval-form">
       <bpmn:extensionElements>
-        <!-- In-engine (c7-plugins) aggregation of this gate's multi-instance
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
         <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
         <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />

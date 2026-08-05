@@ -3,9 +3,9 @@ echo "==================================================="
 echo "  FAST RESTART: Rebuilding Case Engine API Only"
 echo "==================================================="
 
-# 1. Build c7-plugins library
+# 1. Build c7-client (AOP listeners for Camunda userlib) + c7-plugins (notify)
 cd "$(dirname "$0")"/../../apps/java
-mvn compile package -pl libraries/c7-plugins -DskipTests
+mvn compile package -pl libraries/c7-client,libraries/c7-plugins -DskipTests
 
 # 2. Incremental build of case-engine-rest-api only (no clean, no tests)
 mvn compile package -pl services/case-engine-rest-api -am -DskipTests
