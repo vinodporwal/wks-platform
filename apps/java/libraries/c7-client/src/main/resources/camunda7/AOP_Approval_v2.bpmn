@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AOP Approval Workflow (v2) — 5-gate approve/revert flow.
+
+  Isolated from the TCS workflow (TCS_APPROVAL_PROCESS): new process key,
+  new tables, new delegates. Nothing here touches TCS.
+
+  Gates are fixed; the ONLY per-gate configuration is the approver role set,
+  loaded at runtime from WorkflowStepRoles into the collection variables
+  gate1Roles..gate5Roles / prepareRoles. Each gate is a parallel multi-instance
+  user task over its role set (1..N roles, uniform for every gate), so adding a
+  role to a gate needs no BPMN change.
+
+  Routing:
+    gate1..gate4 REVERTED -> prepareRework (CTS Lead / Production Manager) -> gate1
+    gate5        REVERTED -> gate3 (Site Head)
+    gate5        APPROVED -> Approved (Release / BPC-Board)
+
+  Runtime wiring (Camunda 7 runs standalone; Spring beans in case-engine are NOT
+  reachable from the engine, so in-engine logic is a plain c7-client class and
+  everything else is driven service-side):
+    - Gate aggregation (IN-ENGINE): com.wks.bpm.engine.camunda.plugin.aop.
+      AopGateDecisionListener (camunda:class task listener on each gate).
+      create=reset prior visit; complete=fold each approver's ${decision} into
+      ${<gate>Result} with REVERTED-wins (APPROVED only if ALL roles approve).
+      Each gate's multi-instance completionCondition exits early on REVERTED so
+      sibling tasks are cancelled and the gateway can route immediately.
+    - Role collections gate1Roles..gate5Roles / prepareRoles: injected as process
+      variables at start by the case-engine service (from WorkflowStepRoles).
+    - Stage email + audit trail: written service-side in case-engine on submit and
+      on each task completion (resolves role->emails via Keycloak, scope via the
+      Plants master). Not modelled in the BPMN.
+
+  Layout (BPMNDI) is included so the process renders in Camunda Cockpit/Modeler.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_AOP_Approval_v2"
+                  targetNamespace="http://wks.com/aop">
+
+  <bpmn:process id="AOP_Approval_v2" name="AOP Approval v2" isExecutable="true"
+                camunda:historyTimeToLive="180">
+
+    <!-- Role collections gate1Roles..gate5Roles / prepareRoles are injected as
+         comma-delimited String process variables at start by the case-engine
+         service, read from WorkflowStepRoles. AopRoleCollectionListener expands
+         each into a real List (gate1RoleList, ...) that the multi-instance loop
+         characteristics below reference by name. The split cannot be done inline in
+         the collection expression, because String.split returns an array and the
+         engine requires a Collection. -->
+    <bpmn:extensionElements>
+      <camunda:executionListener event="start"
+          class="com.wks.bpm.engine.camunda.plugin.aop.AopRoleCollectionListener" />
+    </bpmn:extensionElements>
+
+    <bpmn:startEvent id="StartEvent_aop" name="AOP submitted for approval">
+      <bpmn:outgoing>Flow_start_gate1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_start_gate1" sourceRef="StartEvent_aop" targetRef="gate1" />
+
+    <!-- ===================== Gate 1 : Plant Manager ===================== -->
+    <bpmn:userTask id="gate1" name="Gate 1 - Plant Manager"
+                   camunda:assignee="${role}" camunda:formKey="approval-form">
+      <bpmn:extensionElements>
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
+             decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_start_gate1</bpmn:incoming>
+      <bpmn:incoming>Flow_rework_gate1</bpmn:incoming>
+      <bpmn:outgoing>Flow_gate1_gw1</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false"
+          camunda:collection="gate1RoleList" camunda:elementVariable="role">
+        <!-- Any REVERTED cancels remaining slots and leaves the gate immediately.
+             Approve still requires every role to complete. -->
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate1Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_gate1_gw1" sourceRef="gate1" targetRef="gw1" />
+
+    <bpmn:exclusiveGateway id="gw1" name="Gate 1 decision" default="Flow_gw1_revert">
+      <bpmn:incoming>Flow_gate1_gw1</bpmn:incoming>
+      <bpmn:outgoing>Flow_gw1_approve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_gw1_revert</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_gw1_approve" sourceRef="gw1" targetRef="gate2">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate1Result == 'APPROVED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_gw1_revert" sourceRef="gw1" targetRef="prepareRework" />
+
+    <!-- ===================== Gate 2 : Functional Heads ===================== -->
+    <bpmn:userTask id="gate2" name="Gate 2 - Functional Heads"
+                   camunda:assignee="${role}" camunda:formKey="approval-form">
+      <bpmn:extensionElements>
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
+             decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_gw1_approve</bpmn:incoming>
+      <bpmn:outgoing>Flow_gate2_gw2</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false"
+          camunda:collection="gate2RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate2Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_gate2_gw2" sourceRef="gate2" targetRef="gw2" />
+
+    <bpmn:exclusiveGateway id="gw2" name="Gate 2 decision" default="Flow_gw2_revert">
+      <bpmn:incoming>Flow_gate2_gw2</bpmn:incoming>
+      <bpmn:outgoing>Flow_gw2_approve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_gw2_revert</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_gw2_approve" sourceRef="gw2" targetRef="gate3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate2Result == 'APPROVED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_gw2_revert" sourceRef="gw2" targetRef="prepareRework" />
+
+    <!-- ===================== Gate 3 : Site Head ===================== -->
+    <bpmn:userTask id="gate3" name="Gate 3 - Site Head"
+                   camunda:assignee="${role}" camunda:formKey="approval-form">
+      <bpmn:extensionElements>
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
+             decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_gw2_approve</bpmn:incoming>
+      <bpmn:incoming>Flow_gw5_revert</bpmn:incoming>
+      <bpmn:outgoing>Flow_gate3_gw3</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false"
+          camunda:collection="gate3RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate3Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_gate3_gw3" sourceRef="gate3" targetRef="gw3" />
+
+    <bpmn:exclusiveGateway id="gw3" name="Gate 3 decision" default="Flow_gw3_revert">
+      <bpmn:incoming>Flow_gate3_gw3</bpmn:incoming>
+      <bpmn:outgoing>Flow_gw3_approve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_gw3_revert</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_gw3_approve" sourceRef="gw3" targetRef="gate4">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate3Result == 'APPROVED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_gw3_revert" sourceRef="gw3" targetRef="prepareRework" />
+
+    <!-- ===================== Gate 4 : GMS Business Head ===================== -->
+    <bpmn:userTask id="gate4" name="Gate 4 - GMS Business Head"
+                   camunda:assignee="${role}" camunda:formKey="approval-form">
+      <bpmn:extensionElements>
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
+             decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_gw3_approve</bpmn:incoming>
+      <bpmn:outgoing>Flow_gate4_gw4</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false"
+          camunda:collection="gate4RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate4Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_gate4_gw4" sourceRef="gate4" targetRef="gw4" />
+
+    <bpmn:exclusiveGateway id="gw4" name="Gate 4 decision" default="Flow_gw4_revert">
+      <bpmn:incoming>Flow_gate4_gw4</bpmn:incoming>
+      <bpmn:outgoing>Flow_gw4_approve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_gw4_revert</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_gw4_approve" sourceRef="gw4" targetRef="gate5">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate4Result == 'APPROVED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_gw4_revert" sourceRef="gw4" targetRef="prepareRework" />
+
+    <!-- ===================== Gate 5 : GMS Head ===================== -->
+    <bpmn:userTask id="gate5" name="Gate 5 - GMS Head"
+                   camunda:assignee="${role}" camunda:formKey="approval-form">
+      <bpmn:extensionElements>
+        <!-- In-engine (c7-client) aggregation of this gate's multi-instance
+             decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_gw4_approve</bpmn:incoming>
+      <bpmn:outgoing>Flow_gate5_gw5</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false"
+          camunda:collection="gate5RoleList" camunda:elementVariable="role">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${gate5Result == 'REVERTED' || nrOfCompletedInstances == nrOfInstances}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_gate5_gw5" sourceRef="gate5" targetRef="gw5" />
+
+    <bpmn:exclusiveGateway id="gw5" name="Gate 5 decision" default="Flow_gw5_revert">
+      <bpmn:incoming>Flow_gate5_gw5</bpmn:incoming>
+      <bpmn:outgoing>Flow_gw5_approve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_gw5_revert</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <!-- Gate 5 approve -> Approved Plan; Gate 5 revert -> Gate 3 (Site Head). -->
+    <bpmn:sequenceFlow id="Flow_gw5_approve" sourceRef="gw5" targetRef="Event_aop_approved">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate5Result == 'APPROVED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_gw5_revert" sourceRef="gw5" targetRef="gate3" />
+
+    <!-- ===================== Rework (Preparer) ===================== -->
+    <!-- Rework has a single outgoing flow (back to gate1), so it needs no gate
+         decision aggregation. Each gate resets its own result on (re-)entry. -->
+    <bpmn:userTask id="prepareRework" name="Prepare - Update / Improve (CTS Lead / Production Manager)"
+                   camunda:assignee="${role}" camunda:formKey="approval-form">
+      <bpmn:incoming>Flow_gw1_revert</bpmn:incoming>
+      <bpmn:incoming>Flow_gw2_revert</bpmn:incoming>
+      <bpmn:incoming>Flow_gw3_revert</bpmn:incoming>
+      <bpmn:incoming>Flow_gw4_revert</bpmn:incoming>
+      <bpmn:outgoing>Flow_rework_gate1</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false"
+          camunda:collection="prepareRoleList" camunda:elementVariable="role" />
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_rework_gate1" sourceRef="prepareRework" targetRef="gate1" />
+
+    <!-- ===================== Approved / End ===================== -->
+    <bpmn:endEvent id="Event_aop_approved" name="AOP Approved (Release - BPC / Board)">
+      <bpmn:incoming>Flow_gw5_approve</bpmn:incoming>
+    </bpmn:endEvent>
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="AOP_Approval_v2">
+      <!-- nodes: main gate lane (y=278/293/300, centred on y=318); rework sits above -->
+      <bpmndi:BPMNShape id="StartEvent_aop_di" bpmnElement="StartEvent_aop">
+        <dc:Bounds x="152" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate1_di" bpmnElement="gate1">
+        <dc:Bounds x="240" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw1_di" bpmnElement="gw1" isMarkerVisible="true">
+        <dc:Bounds x="390" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate2_di" bpmnElement="gate2">
+        <dc:Bounds x="490" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw2_di" bpmnElement="gw2" isMarkerVisible="true">
+        <dc:Bounds x="640" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate3_di" bpmnElement="gate3">
+        <dc:Bounds x="740" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw3_di" bpmnElement="gw3" isMarkerVisible="true">
+        <dc:Bounds x="890" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate4_di" bpmnElement="gate4">
+        <dc:Bounds x="990" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw4_di" bpmnElement="gw4" isMarkerVisible="true">
+        <dc:Bounds x="1140" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gate5_di" bpmnElement="gate5">
+        <dc:Bounds x="1240" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw5_di" bpmnElement="gw5" isMarkerVisible="true">
+        <dc:Bounds x="1390" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_aop_approved_di" bpmnElement="Event_aop_approved">
+        <dc:Bounds x="1502" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="prepareRework_di" bpmnElement="prepareRework">
+        <dc:Bounds x="640" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- forward path -->
+      <bpmndi:BPMNEdge id="Flow_start_gate1_di" bpmnElement="Flow_start_gate1">
+        <di:waypoint x="188" y="318" />
+        <di:waypoint x="240" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate1_gw1_di" bpmnElement="Flow_gate1_gw1">
+        <di:waypoint x="340" y="318" />
+        <di:waypoint x="390" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw1_approve_di" bpmnElement="Flow_gw1_approve">
+        <di:waypoint x="440" y="318" />
+        <di:waypoint x="490" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate2_gw2_di" bpmnElement="Flow_gate2_gw2">
+        <di:waypoint x="590" y="318" />
+        <di:waypoint x="640" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw2_approve_di" bpmnElement="Flow_gw2_approve">
+        <di:waypoint x="690" y="318" />
+        <di:waypoint x="740" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate3_gw3_di" bpmnElement="Flow_gate3_gw3">
+        <di:waypoint x="840" y="318" />
+        <di:waypoint x="890" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw3_approve_di" bpmnElement="Flow_gw3_approve">
+        <di:waypoint x="940" y="318" />
+        <di:waypoint x="990" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate4_gw4_di" bpmnElement="Flow_gate4_gw4">
+        <di:waypoint x="1090" y="318" />
+        <di:waypoint x="1140" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw4_approve_di" bpmnElement="Flow_gw4_approve">
+        <di:waypoint x="1190" y="318" />
+        <di:waypoint x="1240" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gate5_gw5_di" bpmnElement="Flow_gate5_gw5">
+        <di:waypoint x="1340" y="318" />
+        <di:waypoint x="1390" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw5_approve_di" bpmnElement="Flow_gw5_approve">
+        <di:waypoint x="1440" y="318" />
+        <di:waypoint x="1502" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <!-- reverts: gates 1-4 -> prepareRework -->
+      <bpmndi:BPMNEdge id="Flow_gw1_revert_di" bpmnElement="Flow_gw1_revert">
+        <di:waypoint x="415" y="293" />
+        <di:waypoint x="415" y="160" />
+        <di:waypoint x="640" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw2_revert_di" bpmnElement="Flow_gw2_revert">
+        <di:waypoint x="665" y="293" />
+        <di:waypoint x="665" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw3_revert_di" bpmnElement="Flow_gw3_revert">
+        <di:waypoint x="915" y="293" />
+        <di:waypoint x="915" y="160" />
+        <di:waypoint x="740" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw4_revert_di" bpmnElement="Flow_gw4_revert">
+        <di:waypoint x="1165" y="293" />
+        <di:waypoint x="1165" y="90" />
+        <di:waypoint x="715" y="90" />
+        <di:waypoint x="715" y="120" />
+      </bpmndi:BPMNEdge>
+
+      <!-- rework -> gate1 (re-enter), and gate5 revert -> gate3 (Site Head) -->
+      <bpmndi:BPMNEdge id="Flow_rework_gate1_di" bpmnElement="Flow_rework_gate1">
+        <di:waypoint x="690" y="120" />
+        <di:waypoint x="690" y="60" />
+        <di:waypoint x="290" y="60" />
+        <di:waypoint x="290" y="278" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw5_revert_di" bpmnElement="Flow_gw5_revert">
+        <di:waypoint x="1415" y="343" />
+        <di:waypoint x="1415" y="430" />
+        <di:waypoint x="790" y="430" />
+        <di:waypoint x="790" y="358" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
