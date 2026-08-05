@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class NormsMaterialDropdownDTO {
 
-    private String id;
+    private String unitId;
+    private String materialId;
     private String unit;
     private String displayName;
     private String uom;

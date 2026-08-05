@@ -1962,10 +1962,12 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
             List<NormsMaterialDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 NormsMaterialDropdownDTO.builder()
-                    .id(rs.getString("Id"))
+                    .unitId(rs.getString("UnitId"))
+                    .materialId(rs.getString("MaterialId"))
                     .unit(rs.getString("Unit"))
                     .displayName(rs.getString("DisplayName"))
                     .uom(rs.getString("UOM"))
+        
                     .build(),
                 siteId, profitId);
 
