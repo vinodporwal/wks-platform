@@ -1908,6 +1908,10 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 String materialId = dto.getId();
                 String unitId = dto.getUnitId();
 
+                if(materialId == null || unitId == null) {
+                    continue;
+                }
+
                 for (Map.Entry<Integer, java.util.function.Function<ThroughputNormsDTO, String>> entry : monthValueGetters.entrySet()) {
                     int month = entry.getKey();
                     String value = entry.getValue().apply(dto);
