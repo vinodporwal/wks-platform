@@ -19,7 +19,10 @@ import org.springframework.context.annotation.Configuration;
  *
  */
 @Configuration
-@ComponentScan(basePackages = { "com.wks.bpm.engine.camunda.client", "org.camunda.community.rest.client.springboot" })
+@ComponentScan(basePackages = {
+		"com.wks.bpm.engine.camunda.client",
+		"org.camunda.community.rest.client.springboot"
+})
 public class Camunda7ClientScan {
 
 }

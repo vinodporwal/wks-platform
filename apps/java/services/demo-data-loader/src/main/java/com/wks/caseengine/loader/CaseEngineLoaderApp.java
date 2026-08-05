@@ -19,7 +19,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication(exclude = { UserDetailsServiceAutoConfiguration.class, MongoAutoConfiguration.class })
-@ComponentScan
+@ComponentScan(basePackages = {
+		"com.wks.caseengine.loader",
+		"com.wks.bpm.engine.camunda.client.importer"
+})
 public class CaseEngineLoaderApp {
 
 	public static void main(final String[] args) {
