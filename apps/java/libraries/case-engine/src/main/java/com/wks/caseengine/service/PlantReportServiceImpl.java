@@ -232,7 +232,8 @@ public class PlantReportServiceImpl implements PlantReportService {
                 ProfitImprovementInitiativeDTO.builder()
                     .id(UUID.fromString(rs.getString("Id")))
                     .initiativeDescription(rs.getString("InitiativeDescription"))
-                    .outcome(rs.getString("Outcome"))
+                    .cost(rs.getDouble("Cost"))
+                    .outcome(rs.getDouble("Outcome"))
                     .recommendation(rs.getString("Recommendation"))
                     .targetDate(rs.getDate("TargetDate"))
                     .remark(rs.getString("Remark"))
@@ -274,10 +275,11 @@ public class PlantReportServiceImpl implements PlantReportService {
                 if (dto.getId() == null) {
 
                     // insert logic 
-                    String insertSql = "INSERT INTO ProfitImprovementInitiative (Id, InitiativeDescription, Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    String insertSql = "INSERT INTO ProfitImprovementInitiative (Id, InitiativeDescription, Cost,Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
                     UUID.randomUUID().toString(),
                     dto.getInitiativeDescription(),
+                    dto.getCost(),
                     dto.getOutcome(),
                     dto.getRecommendation(),
                     dto.getTargetDate(),
@@ -286,12 +288,13 @@ public class PlantReportServiceImpl implements PlantReportService {
                 }
 
                 String sql = "UPDATE ProfitImprovementInitiative " +
-                         "SET InitiativeDescription = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
+                         "SET InitiativeDescription = ?, Cost = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
                          "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
                          "WHERE Id = ?";
 
                 jdbcTemplate.update(sql,
                     dto.getInitiativeDescription(),
+                    dto.getCost(),
                     dto.getOutcome(),
                     dto.getRecommendation(),
                     dto.getTargetDate(),
@@ -335,7 +338,8 @@ public class PlantReportServiceImpl implements PlantReportService {
                 ReliabilityImprovementDTO.builder()
                     .id(UUID.fromString(rs.getString("Id")))
                     .initiativeDescription(rs.getString("InitiativeDescription"))
-                    .outcome(rs.getString("Outcome"))
+                    .cost(rs.getDouble("Cost"))
+                    .outcome(rs.getDouble("Outcome"))
                     .recommendation(rs.getString("Recommendation"))
                     .targetDate(rs.getDate("TargetDate"))
                     .remark(rs.getString("Remark"))
@@ -376,10 +380,11 @@ public class PlantReportServiceImpl implements PlantReportService {
             for (ReliabilityImprovementDTO dto : reliabilityImprovementDTOs) {
                 if (dto.getId() == null) {
                     // insert logic 
-                    String insertSql = "INSERT INTO ReliabilityImprovementIntiative (Id, InitiativeDescription, Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    String insertSql = "INSERT INTO ReliabilityImprovementIntiative (Id, InitiativeDescription, Cost,Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
                     UUID.randomUUID().toString(),
                     dto.getInitiativeDescription(),
+                    dto.getCost(),
                     dto.getOutcome(),
                     dto.getRecommendation(),
                     dto.getTargetDate(),
@@ -388,12 +393,13 @@ public class PlantReportServiceImpl implements PlantReportService {
                 }
 
                 String sql = "UPDATE ReliabilityImprovementIntiative " +
-                         "SET InitiativeDescription = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
+                         "SET InitiativeDescription = ?, Cost = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
                          "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
                          "WHERE Id = ?";
 
                 jdbcTemplate.update(sql,
                     dto.getInitiativeDescription(),
+                    dto.getCost(),
                     dto.getOutcome(),
                     dto.getRecommendation(),
                     dto.getTargetDate(),

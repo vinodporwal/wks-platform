@@ -1772,8 +1772,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
         for (ProfitCenterDTO dto : profitCenterDTOs) {
             try {
-                UUID normParameterFKId = UUID.fromString(dto.getId());
-                String auditYear = aopYear;
+                String unitId = dto.getId();
+
+                if (unitId == null) {
+                    continue;
+                }
 
                 for (Map.Entry<Integer, java.util.function.Function<ProfitCenterDTO, String>> entry : monthValueGetters.entrySet()) {
                     int month = entry.getKey();
@@ -1783,28 +1786,31 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         continue;
                     }
 
-                    java.util.Optional<NormAttributeTransactions> existing =
-                        normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(
-                            normParameterFKId, month, auditYear);
+                    String checkSql = "SELECT COUNT(1) FROM ThroughputProfitTransaction " +
+                                      "WHERE Unit_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                    int count = jdbcTemplate.queryForObject(checkSql, Integer.class, unitId, month, aopYear);
 
-                    if (existing.isPresent()) {
-                        NormAttributeTransactions entity = existing.get();
-                        entity.setAttributeValue(value);
-                        entity.setModifiedOn(new Date());
-                        entity.setUserName(updatedBy);
-                        normAttributeTransactionsRepository.save(entity);
+                    if (count > 0) {
+                        String updateSql = "UPDATE ThroughputProfitTransaction " +
+                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "WHERE Unit_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                        jdbcTemplate.update(updateSql,
+                            new java.math.BigDecimal(value),
+                            updatedBy,
+                            unitId,
+                            month,
+                            aopYear);
                     } else {
-                        NormAttributeTransactions newRecord = NormAttributeTransactions.builder()
-                            .normParameterFKId(normParameterFKId)
-                            .attributeValue(value)
-                            .aopMonth(month)
-                            .auditYear(auditYear)
-                            .createdOn(new Date())
-                            .modifiedOn(new Date())
-                            .userName(updatedBy)
-                            .attributeValueVersion("V1")
-                            .build();
-                        normAttributeTransactionsRepository.save(newRecord);
+                        String insertSql = "INSERT INTO ThroughputProfitTransaction " +
+                                           "(Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
+                                           "VALUES (NEWID(), ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                        jdbcTemplate.update(insertSql,
+                            unitId,
+                            month,
+                            aopYear,
+                            new java.math.BigDecimal(value),
+                            updatedBy);
                     }
                 }
             } catch (Exception e) {
@@ -1819,7 +1825,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 @Override
     public AOPMessageVM deleteProfitCenterData(String id, String aopYear) { 
 
-        String sql = "DELETE FROM NormAttributeTransactions WHERE Normparameter_FK_Id = ? AND AuditYear = ?";
+        String sql = "DELETE FROM ThroughputProfitTransaction WHERE Unit_Id = ? AND AuditYear = ?";
         jdbcTemplate.update(sql, id, aopYear);
         AOPMessageVM response = new AOPMessageVM();
         response.setCode(200);
@@ -1957,6 +1963,15 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
 
         return failedRecords;
+    }
+
+    public AOPMessageVM deleteThroughputNorms(String materialId, String unitId, String aopYear) {
+        String sql = "DELETE FROM ThroughputNormsTransaction WHERE Material_Id = ? AND Unit_Id = ? AND AuditYear = ?";
+        jdbcTemplate.update(sql, materialId, unitId, aopYear);
+        AOPMessageVM response = new AOPMessageVM();
+        response.setCode(200);
+        response.setMessage("Data deleted successfully");
+        return response;
     }
 
     @Override

@@ -16,7 +16,8 @@ public class ProfitImprovementInitiativeDTO {
     
     private UUID id;
     private String initiativeDescription;
-    private String outcome;
+    private Double cost;
+    private Double outcome;
     private String recommendation;
     private Date targetDate;
     private String remark;
