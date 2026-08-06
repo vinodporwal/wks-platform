@@ -188,6 +188,7 @@ import ProductionScheduling from 'components/kendo-data-tables/ProductionSchedul
 import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
+import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 
 // Naphthasplitter Ended
 
@@ -407,6 +408,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='jw-budget-source'>
                 <JwBudgetScreen />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'throughput-norms',
+            element: (
+              <PrivateRoute routeId='throughput-norms'>
+                <ThroughputNormsScreen />
               </PrivateRoute>
             ),
           },

@@ -8,6 +8,8 @@ import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
+import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
+import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -34,4 +36,7 @@ public interface RefineryAopBudgetService {
     public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear);
     public AOPMessageVM getProfitCenterUomDropdown(String siteId);
     public AOPMessageVM deleteProfitCenterData(String id, String aopYear);
+    public AOPMessageVM getThroughputNorms(String siteId, String aopYear);
+    public List<ThroughputNormsDTO> saveThroughputNorms(List<ThroughputNormsDTO> throughputNormsDTOs, String aopYear);
+    public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId);
 }
