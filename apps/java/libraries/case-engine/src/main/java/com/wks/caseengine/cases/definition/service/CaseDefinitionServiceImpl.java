@@ -419,6 +419,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Override
 	public Case saveCase(Case caseData) {
+		log.info("Case creation started: caseDefinitionId={}, businessKey={}, assetName={}, sourceSystem={}",
+				caseData.getCaseDefinitionId(), caseData.getBusinessKey(), caseData.getAssetName(), caseData.getSourceSystem());
+		log.info("Preparing Case data for persistence: caseDefinitionId={}, businessKey={}",
+				caseData.getCaseDefinitionId(), caseData.getBusinessKey());
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 		LocalDateTime now = LocalDateTime.now();
 		String currentDate = now.format(formatter);
@@ -446,7 +450,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				statusId = rootNode.path("caseStatus").asLong();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Case creation failed during Case attribute mapping: caseDefinitionId={}, businessKey={}",
+					caseData.getCaseDefinitionId(), caseData.getBusinessKey(), e);
 		}
 
 		if (statusId != null) {
@@ -475,12 +480,23 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				rootNode.put("caseNo", caseNo);
 				attribute.setValue(injectMapper.writeValueAsString(rootNode));
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.error("Case creation failed while adding generated case number to attributes: caseNo={}, businessKey={}",
+						caseNo, caseData.getBusinessKey(), e);
 			}
 
 			System.out.println("Saving New Case Details....");
 			caseData.setCreationDate(currentDate);
-			caseDetails = caseRepository.save(caseData);
+			log.info("SQL Server CaseRepository.save started: caseNo={}, businessKey={}, caseDefinitionId={}",
+					caseNo, caseData.getBusinessKey(), caseData.getCaseDefinitionId());
+			try {
+				caseDetails = caseRepository.save(caseData);
+				log.info("SQL Server CaseRepository.save completed successfully: caseNo={}, businessKey={}",
+						caseDetails.getCaseNo(), caseData.getBusinessKey());
+			} catch (RuntimeException e) {
+				log.error("Case creation failed during SQL Server CaseRepository.save: caseNo={}, businessKey={}, caseDefinitionId={}",
+						caseNo, caseData.getBusinessKey(), caseData.getCaseDefinitionId(), e);
+				throw e;
+			}
 
 			List<Long> eventIds = new ArrayList<Long>();
 			for (String eventId : caseData.getEventIds()) {
@@ -488,11 +504,21 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			}
 			System.out.println(eventIds);
 			HashMap<String, String> map = new HashMap<String, String>();
-			for (String eventId : caseData.getEventIds()) {
-				CasesAndEventsMapping mapping = new CasesAndEventsMapping();
-				mapping.setCaseNo(caseDetails.getCaseNo());
-				casesAndEventsMappingRepository.save(mapping);
-				System.out.println("EventId of is: " + eventId + " for case No: " + caseDetails.getCaseNo());
+			log.info("SQL Server CasesAndEventsMappingRepository persistence started: caseNo={}, eventCount={}",
+					caseDetails.getCaseNo(), caseData.getEventIds().size());
+			try {
+				for (String eventId : caseData.getEventIds()) {
+					CasesAndEventsMapping mapping = new CasesAndEventsMapping();
+					mapping.setCaseNo(caseDetails.getCaseNo());
+					casesAndEventsMappingRepository.save(mapping);
+					System.out.println("EventId of is: " + eventId + " for case No: " + caseDetails.getCaseNo());
+				}
+				log.info("SQL Server CasesAndEventsMappingRepository persistence completed successfully: caseNo={}, eventCount={}",
+						caseDetails.getCaseNo(), caseData.getEventIds().size());
+			} catch (RuntimeException e) {
+				log.error("Case creation failed during SQL Server CasesAndEventsMappingRepository.save: caseNo={}, businessKey={}",
+						caseDetails.getCaseNo(), caseData.getBusinessKey(), e);
+				throw e;
 			}
 
 		} else {
@@ -503,7 +529,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			}
 			Case savedCase = caseRepository.getByCaseNo(caseNo);
 			caseData.setCreationDate(savedCase.getCreationDate());
-			caseDetails = caseRepository.save(caseData);
+			log.info("SQL Server existing CaseRepository.save started: caseNo={}, businessKey={}, caseDefinitionId={}",
+					caseNo, caseData.getBusinessKey(), caseData.getCaseDefinitionId());
+			try {
+				caseDetails = caseRepository.save(caseData);
+				log.info("SQL Server existing CaseRepository.save completed successfully: caseNo={}, businessKey={}",
+						caseDetails.getCaseNo(), caseData.getBusinessKey());
+			} catch (RuntimeException e) {
+				log.error("Case creation failed during SQL Server existing CaseRepository.save: caseNo={}, businessKey={}, caseDefinitionId={}",
+						caseNo, caseData.getBusinessKey(), caseData.getCaseDefinitionId(), e);
+				throw e;
+			}
 		}
 
 		// sending Emails part
@@ -564,10 +600,23 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
 
 			caseData.setAttributes(attributes);
-			caseDetails = caseRepository.save(caseData);
+			log.info("SQL Server final CaseRepository.save started: caseNo={}, businessKey={}",
+					caseData.getCaseNo(), caseData.getBusinessKey());
+			try {
+				caseDetails = caseRepository.save(caseData);
+				log.info("SQL Server final CaseRepository.save completed successfully: caseNo={}, businessKey={}",
+						caseDetails.getCaseNo(), caseData.getBusinessKey());
+			} catch (RuntimeException e) {
+				log.error("Case creation failed during SQL Server final CaseRepository.save: caseNo={}, businessKey={}",
+						caseData.getCaseNo(), caseData.getBusinessKey(), e);
+				throw e;
+			}
+			log.info("Case creation completed successfully: caseNo={}, businessKey={}, caseDefinitionId={}",
+					caseDetails.getCaseNo(), caseData.getBusinessKey(), caseData.getCaseDefinitionId());
 			return caseDetails;
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Case creation failed during post-persistence processing: caseNo={}, businessKey={}, caseDefinitionId={}",
+					caseData.getCaseNo(), caseData.getBusinessKey(), caseData.getCaseDefinitionId(), e);
 		}
 		return caseDetails;
 	}

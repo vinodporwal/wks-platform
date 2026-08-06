@@ -997,13 +997,12 @@ function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName
     .then(([data, total]) => {
       const updatedCases = data.map((singleCase) => {
         let caseTitle = ''
-        let caseNumber = ''
+        let caseNumber = singleCase.caseNo
         try {
           const containerValue = singleCase.attributes?.find((attr) => attr.name === 'container')?.value
           if (containerValue) {
             const parsed = JSON.parse(containerValue)
             caseTitle = parsed?.textField5 || parsed?.caseTitle || ''
-            caseNumber = parsed?.textField || parsed?.caseNo || ''
           }
         } catch (e) {
           console.error('Error parsing container value:', e)

@@ -17,6 +17,7 @@ import com.wks.caseengine.command.CommandContext;
 
 import lombok.AllArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author victor.franca
@@ -24,13 +25,24 @@ import lombok.Setter;
  */
 @AllArgsConstructor
 @Setter
+@Slf4j
 public class SaveCaseInstanceWithValuesCmd implements Command<Void> {
 
 	private CaseInstance caseInstance;
 
 	@Override
 	public Void execute(CommandContext commandContext) {
-		commandContext.getCaseInstanceRepository().save(caseInstance);
+		log.info("MongoDB CaseInstance persistence started: businessKey={}, caseDefinitionId={}",
+				caseInstance.getBusinessKey(), caseInstance.getCaseDefinitionId());
+		try {
+			commandContext.getCaseInstanceRepository().save(caseInstance);
+			log.info("MongoDB CaseInstance persistence completed successfully: businessKey={}, caseDefinitionId={}",
+					caseInstance.getBusinessKey(), caseInstance.getCaseDefinitionId());
+		} catch (RuntimeException e) {
+			log.error("Case creation failed during MongoDB CaseInstanceRepository.save: businessKey={}, caseDefinitionId={}",
+					caseInstance.getBusinessKey(), caseInstance.getCaseDefinitionId(), e);
+			throw e;
+		}
 		return null;
 	}
 
