@@ -48,13 +48,18 @@ public class GradeMixOptimizerController {
         return gradeMixOptimizerService.getBudgetedOperatingHoursData(UUID.fromString(plantId), aopYear, UUID.fromString(lineId));
     }
 
-    @PostMapping("/budgeted-operating-hours-data")
+    @GetMapping("/sub-grade-budgeted-data")
+    public AOPMessageVM getSubGradeBudgetedOperatingHoursData(@RequestParam String plantId, @RequestParam String aopYear, @RequestParam String lineId) {
+        return gradeMixOptimizerService.getSubGradeBudgetedOperatingHoursData(UUID.fromString(plantId), aopYear, UUID.fromString(lineId));
+    }
+
+    @PostMapping("/sub-grade-budgeted-data")
     public AOPMessageVM saveBudgetedOperatingHoursData(
             @RequestParam String plantId,
             @RequestParam String aopYear,
             @RequestParam String lineId,
             @RequestBody List<BudgetedOperatingHoursDTO> dtoList) {
-        return gradeMixOptimizerService.saveBudgetedOperatingHoursData(
+        return gradeMixOptimizerService.saveSubGradeBudgetedOperatingHoursData(
             UUID.fromString(plantId), aopYear, UUID.fromString(lineId), dtoList);
     }
 
@@ -78,12 +83,37 @@ public class GradeMixOptimizerController {
         }
     }
 
-    @PostMapping(value = "/budgeted-operating-hours-import-excel", consumes = "multipart/form-data")
+    @GetMapping("/sub-grade-budgeted-export-excel")
+    public ResponseEntity<byte[]> exportSubGradeBudgetedOperatingHoursExcel(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = gradeMixOptimizerService.exportSubGradeBudgetedOperatingHoursExcel(
+                UUID.fromString(plantId), aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("budgeted-operating-hours.xlsx")
+                .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/sub-grade-budgeted-data-import-excel", consumes = "multipart/form-data")
     public AOPMessageVM importBudgetedOperatingHoursExcel(
             @RequestParam String plantId,
             @RequestParam String aopYear,
             @RequestParam("file") MultipartFile file) {
-        return gradeMixOptimizerService.importBudgetedOperatingHoursExcel(
+        return gradeMixOptimizerService.importSubGradeBudgetedOperatingHoursExcel(
             UUID.fromString(plantId), aopYear, file);
+    }
+
+    @GetMapping("/calculate-sub-grade-budget-operation-hours")
+    public AOPMessageVM calculateSubGradeBudgetOperationHours(@RequestParam String plantId, @RequestParam String aopYear) {
+        return gradeMixOptimizerService.calculateSubGradeBudgetOperationHours(UUID.fromString(plantId), aopYear);
     }
 }

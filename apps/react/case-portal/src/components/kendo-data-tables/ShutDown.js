@@ -388,12 +388,38 @@ const ShutDown = ({ permissions }) => {
 
       //3 Track duplicate descriptions
       const duplicateRows = new Set()
-      const allDescriptions = rows.map((r) =>
-        (r.discription || '').trim().toLowerCase(),
-      )
-      const duplicate = allDescriptions.find(
-        (d, i) => d && allDescriptions.indexOf(d) !== i,
-      )
+      let duplicate = null
+      let duplicateLineId = null
+
+      if (IS_PVC_DMD) {
+        const lineGroups = {}
+        for (const r of rows) {
+          const lId = r.lineId ?? 'default'
+          if (!lineGroups[lId]) lineGroups[lId] = []
+          lineGroups[lId].push(r)
+        }
+
+        for (const lId in lineGroups) {
+          const groupDescs = lineGroups[lId].map((r) =>
+            (r.discription || '').trim().toLowerCase(),
+          )
+          const found = groupDescs.find(
+            (d, i) => d && groupDescs.indexOf(d) !== i,
+          )
+          if (found) {
+            duplicate = found
+            duplicateLineId = lId
+            break
+          }
+        }
+      } else {
+        const allDescriptions = rows.map((r) =>
+          (r.discription || '').trim().toLowerCase(),
+        )
+        duplicate = allDescriptions.find(
+          (d, i) => d && allDescriptions.indexOf(d) !== i,
+        )
+      }
 
       if (
         duplicate &&
@@ -402,10 +428,20 @@ const ShutDown = ({ permissions }) => {
         !IS_CHEMICAL_HMD_DROPDOWNDESC
       ) {
         rows.forEach((row) => {
-          if ((row.discription || '').trim().toLowerCase() === duplicate) {
-            row.isError = true
+          const desc = (row.discription || '').trim().toLowerCase()
+          if (IS_PVC_DMD) {
+            const lId = row.lineId ?? 'default'
+            if (desc === duplicate && String(lId) === String(duplicateLineId)) {
+              row.isError = true
+            } else {
+              row.isError = false
+            }
           } else {
-            row.isError = false
+            if (desc === duplicate) {
+              row.isError = true
+            } else {
+              row.isError = false
+            }
           }
         })
         setSnackbarOpen(true)
@@ -427,33 +463,43 @@ const ShutDown = ({ permissions }) => {
         !IS_PP_SEZ &&
         !IS_PP_HMD
       ) {
+        // Date required validation (before checking time order)
+        const dateRequiredRows = new Set()
         for (const record of data) {
-          // Date required validation (before checking time order)
-          const dateRequiredRows = new Set()
-          for (const record of data) {
-            const startMissing = !record.maintStartDateTime
-            const endMissing = !record.maintEndDateTime
+          const startMissing = !record.maintStartDateTime
+          const endMissing = !record.maintEndDateTime
 
-            if (startMissing || endMissing) {
-              record.isError = true
-              dateRequiredRows.add(record.id)
-            }
+          if (startMissing || endMissing) {
+            record.isError = true
+            dateRequiredRows.add(record.id)
           }
+        }
 
-          if (dateRequiredRows.size > 0) {
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: 'Start Date and End Date are required for all records.',
-              severity: 'error',
-            })
-            return
-          }
+        if (dateRequiredRows.size > 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Start Date and End Date are required for all records.',
+            severity: 'error',
+          })
+          return
+        }
+
+        for (const record of data) {
+          const startDate =
+            record.maintStartDateTime instanceof Date
+              ? record.maintStartDateTime
+              : new Date(record.maintStartDateTime)
+          const endDate =
+            record.maintEndDateTime instanceof Date
+              ? record.maintEndDateTime
+              : new Date(record.maintEndDateTime)
 
           if (
-            record.maintStartDateTime &&
-            record.maintEndDateTime &&
-            record.maintStartDateTime.getTime() >=
-              record.maintEndDateTime.getTime()
+            startDate &&
+            endDate &&
+            !isNaN(startDate.getTime()) &&
+            !isNaN(endDate.getTime()) &&
+            startDate.getTime() >= endDate.getTime()
           ) {
             record.isError = true
             setSnackbarOpen(true)
@@ -476,6 +522,7 @@ const ShutDown = ({ permissions }) => {
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
         IS_PVC_VMD ||
+        IS_PVC_DMD ||
         IS_CHEMICAL ||
         lowerVertName === 'aromatics'
       ) {
@@ -487,7 +534,8 @@ const ShutDown = ({ permissions }) => {
           !IS_PTA &&
           !IS_CHEMICAL &&
           !IS_ELASTOMER_JMD_HIIR &&
-          !IS_AROMATICS
+          !IS_AROMATICS &&
+          !IS_PVC_DMD
         ) {
           for (const row of allRecords) {
             const start = new Date(row.maintStartDateTime)
@@ -534,6 +582,7 @@ const ShutDown = ({ permissions }) => {
               const bEnd = new Date(b.maintEndDateTime).getTime()
 
               if (isNaN(bStart) || isNaN(bEnd)) continue
+              if (IS_PVC_DMD && String(a.lineId) !== String(b.lineId)) continue
 
               if (aStart < bEnd && bStart < aEnd) {
                 a.isError = true
@@ -563,7 +612,8 @@ const ShutDown = ({ permissions }) => {
           !IS_ELASTOMER_JMD_HIIR &&
           !IS_PP_DTA &&
           !IS_PE_PP &&
-          !IS_AROMATICS
+          !IS_AROMATICS &&
+          !IS_PVC_DMD
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]

@@ -10,6 +10,7 @@ const PlantAOPReport = ({ permissions }) => {
   const [tabIndex, setTabIndex] = useState(0)
   const defaultTabs = [
     'Plant Team (Size)',
+    'Plant Safety Performance Target',
     'Safety Improvement Initiative',
     'Profit Improvement Initiative',
     'Reliability Improvement Initiative',

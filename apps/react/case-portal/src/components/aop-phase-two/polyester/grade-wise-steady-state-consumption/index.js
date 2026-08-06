@@ -581,10 +581,11 @@ const GradeWiseSteadyStateConsumption = () => {
       if (
         response &&
         response.code === 400 &&
-        response.message === 'Validation Failed'
+        (response.message === 'Validation Failed' || Array.isArray(response.data))
       ) {
         isWeightedAverageError = true
         errorMsg = response.message || 'Import validation failed.'
+        errorDataList = Array.isArray(response.data) ? response.data : []
       }
 
       if (isWeightedAverageError) {

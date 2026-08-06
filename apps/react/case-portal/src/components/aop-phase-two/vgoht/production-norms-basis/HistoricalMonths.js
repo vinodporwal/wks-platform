@@ -20,7 +20,7 @@ const parseDate = (d) => {
 const getMonthsBetweenDates = (startVal, endVal, aopYear) => {
   let start = parseDate(startVal)
   let end = parseDate(endVal)
-  
+
   if (!start || !end) {
     if (aopYear) {
       const yr = parseInt(aopYear, 10)
@@ -35,7 +35,20 @@ const getMonthsBetweenDates = (startVal, endVal, aopYear) => {
   let current = new Date(start.getFullYear(), start.getMonth(), 1)
   const stop = new Date(end.getFullYear(), end.getMonth(), 1)
   while (current <= stop) {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ]
     const monthStr = monthNames[current.getMonth()]
     const yearStr = String(current.getFullYear()).slice(-2)
     const formatted = `${monthStr}-${yearStr}`
@@ -45,7 +58,17 @@ const getMonthsBetweenDates = (startVal, endVal, aopYear) => {
   return months
 }
 
-const HistoricalMonths = ({ startDate, endDate }) => {
+const formatDateForAPI = (date) => {
+  if (!date) return null
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return null
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const HistoricalMonths = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -115,23 +138,32 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, startDate, endDate])
+  }, [PLANT_ID, AOP_YEAR, refreshData])
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      // Fetch manual entry data from backend API
-      // const response = await ProductionNormsApiService.getHistoricalMonths(
-      //   keycloak,
-      //   AOP_YEAR,
-      //   PLANT_ID,
-      // )
+      const formattedFrom = formatDateForAPI(startDate)
+      const formattedTo = formatDateForAPI(endDate)
 
-      // Extract data from response - API returns { data: [...], code: 200, message: '...' }
-      const manualEntryData =  []
+      const response = await ProductionNormsApiService.getHistoricalMonths(
+        keycloak,
+        AOP_YEAR,
+        PLANT_ID,
+        formattedFrom,
+        formattedTo,
+      )
 
-      // Generate month column keys dynamically based on startDate and endDate
-      const monthKeys = getMonthsBetweenDates(startDate, endDate, AOP_YEAR)
+      const apiResponse = response?.data || {}
+      const manualEntryData = apiResponse.data || []
+      const apiColumns = apiResponse.columns || []
+
+      // Generate month column keys dynamically based on startDate and endDate, or API columns
+      const monthKeys =
+        apiColumns.length > 0
+          ? apiColumns.filter((col) => col !== 'Particulars')
+          : getMonthsBetweenDates(startDate, endDate, AOP_YEAR)
+
       const generatedMonthCols = monthKeys.map((key) => ({
         field: key,
         title: key,
@@ -141,73 +173,33 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       }))
       setDynamicColumns(generatedMonthCols)
 
-      const apiEorSorRow = manualEntryData.find(
-        (r) => r.Particulars?.toLowerCase() === 'eor/sor' || r.productName?.toLowerCase() === 'eor/sor'
-      )
-      const apiCatalystRow = manualEntryData.find(
-        (r) => r.Particulars?.toLowerCase() === 'type of catalyst' || r.productName?.toLowerCase() === 'type of catalyst'
-      )
-      const apiRemarkRow = manualEntryData.find(
-        (r) => r.Particulars?.toLowerCase() === 'remark' || r.productName?.toLowerCase() === 'remark' || r.Particulars?.toLowerCase() === 'remarks' || r.productName?.toLowerCase() === 'remarks'
-      )
+      // Generate row objects dynamically based on whatever rows are returned by API
+      const dataWithEditFlag = manualEntryData.map((apiRow, index) => {
+        const particulars = apiRow.Particulars || apiRow.productName || ''
+        const isEorSor = particulars.toLowerCase() === 'eor/sor'
 
-      // Initialize the three rows with default dummy data
-      const eorSorRow = {
-        id: 1,
-        Particulars: 'EOR/SOR',
-        productName: 'EOR/SOR',
-        type: 'select',
-        options: ['EOR', 'SOR'],
-        idFromApi: apiEorSorRow?.id || null,
-        remarks: apiEorSorRow?.Remarks || apiEorSorRow?.remark || '',
-        inEdit: false,
-      }
-
-      const catalystRow = {
-        id: 2,
-        Particulars: 'Type of catalyst',
-        productName: 'Type of catalyst',
-        type: 'text',
-        idFromApi: apiCatalystRow?.id || null,
-        remarks: apiCatalystRow?.Remarks || apiCatalystRow?.remark || '',
-        inEdit: false,
-      }
-
-      const remarkRow = {
-        id: 3,
-        Particulars: 'Remark',
-        productName: 'Remark',
-        type: 'text',
-        idFromApi: apiRemarkRow?.id || null,
-        remarks: apiRemarkRow?.Remarks || apiRemarkRow?.remark || '',
-        inEdit: false,
-      }
-
-      monthKeys.forEach((key,i) => {
-        // Fallbacks from API row if key exists, otherwise dummy value
-        // Row 1: EOR/SOR
-        if (apiEorSorRow && apiEorSorRow[key] !== undefined && apiEorSorRow[key] !== null) {
-          eorSorRow[key] = apiEorSorRow[key]
-        } else {
-          eorSorRow[key] = i%2 == 0 ?'EOR':'SOR'
+        const row = {
+          id: index + 1,
+          Particulars: particulars,
+          productName: particulars,
+          type: isEorSor ? 'select' : 'text',
+          idFromApi: apiRow.id || null,
+          remarks: apiRow.Remarks || apiRow.remark || '',
+          inEdit: false,
         }
 
-        // Row 2: Type of catalyst
-        if (apiCatalystRow && apiCatalystRow[key] !== undefined && apiCatalystRow[key] !== null) {
-          catalystRow[key] = apiCatalystRow[key]
-        } else {
-          catalystRow[key] = i%2 == 0 ?'A':'B'
+        if (isEorSor) {
+          row.options = ['EOR', 'SOR']
         }
 
-        // Row 3: Remark
-        if (apiRemarkRow && apiRemarkRow[key] !== undefined && apiRemarkRow[key] !== null) {
-          remarkRow[key] = apiRemarkRow[key]
-        } else {
-          remarkRow[key] = i%2 == 0 ? `Test${i}` : `Test${i+1}`
-        }
+        monthKeys.forEach((key) => {
+          row[key] =
+            apiRow[key] !== undefined && apiRow[key] !== null ? apiRow[key] : ''
+        })
+
+        return row
       })
 
-      const dataWithEditFlag = [eorSorRow, catalystRow, remarkRow]
       setRows(dataWithEditFlag)
       setOriginalRows(JSON.parse(JSON.stringify(dataWithEditFlag)))
     } catch (error) {
@@ -231,26 +223,20 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       return
     }
 
-    const data = modifiedData.filter((row) => row.inEdit)
-    if (data.length === 0) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'No Records to Save!',
-        severity: 'info',
-      })
-      setLoading(false)
-      return
+    const monthKeys = dynamicColumns.map((col) => col.field)
+
+    // Validate all column and row values are not empty
+    let validationError = ''
+    for (const row of rows) {
+      for (const key of monthKeys) {
+        if (row[key] === undefined || row[key] === null || String(row[key]).trim() === '') {
+          validationError = `Value is required for all records`
+          break
+        }
+      }
+      if (validationError) break
     }
 
-    const monthKeys = dynamicColumns.map((col) => col.field)
-    const fieldsToCheck = monthKeys
-    const validationError = validateRowDataWithRemarks(
-      data,
-      originalRows,
-      fieldsToCheck,
-      'productName',
-      'productName'
-    )
     if (validationError) {
       setSnackbarOpen(true)
       setSnackbarData({
@@ -261,26 +247,27 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       return
     }
 
-    // Build payload dynamically using month keys from API response
-    const convertedData = data.map((row) => {
-      const monthData = {}
-      monthKeys.forEach((key) => {
-        monthData[key] = row[key]
-      })
-      return {
-        ...monthData,
-        id: row.idFromApi || null,
+    const convertedData = rows.map((row) => {
+      const rowData = {
         Particulars: row.Particulars || row.productName,
-        Remarks: row?.remarks,
       }
+      monthKeys.forEach((key) => {
+        rowData[key] = row[key] !== undefined ? row[key] : null
+      })
+      return rowData
     })
 
     try {
+      const formattedFrom = formatDateForAPI(startDate)
+      const formattedTo = formatDateForAPI(endDate)
+
       // Call the API to save manual entry data
       await ProductionNormsApiService.saveHistoricalMonths(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
+        formattedFrom,
+        formattedTo,
         convertedData,
       )
 
@@ -320,11 +307,12 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     })
 
     try {
-      const response = await ProductionNormsApiService.calculateHistoricalMonths(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ProductionNormsApiService.calculateHistoricalMonths(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 422) {
         setTimeout(() => {
@@ -375,7 +363,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     titleName: 'Historical Months',
     showDropdown: false,
     remarksEditable: true,
-    showCalculate: true,
+    showCalculate: false,
   }
 
   return (

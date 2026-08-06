@@ -34,7 +34,7 @@ const Slowdown = ({ permissions }) => {
   const [siteDropdown, setSiteDropdown] = useState([])
   const [plantDropdown, setPlantDropdown] = useState([])
   const [uomDropdown, setUomDropdown] = useState([])
-  const ValueFormat=ValueFormatterProduction()
+  const ValueFormat = ValueFormatterProduction()
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -108,8 +108,8 @@ const Slowdown = ({ permissions }) => {
     {
       field: 'throughputUom',
       title: 'Throughput UOM',
-      type:'select',
-      options:uomDropdown,
+      type: 'select',
+      options: uomDropdown,
       editable: true, // orange - CTS Team
       minWidth: 170,
     },
@@ -133,7 +133,7 @@ const Slowdown = ({ permissions }) => {
     const loadUomDropdownData = async () => {
       try {
         const resp = await ShutdownApiService.getUomDropdownData(keycloak, PLANT_ID)
-        const mapped=resp.data.map(item => ({
+        const mapped = resp.data.map(item => ({
           value: item.name,
           label: item.displayName
         }))
@@ -141,7 +141,7 @@ const Slowdown = ({ permissions }) => {
 
       } catch (error) {
         console.error('Error fetching UOM Dropdown data:', error)
-      } 
+      }
     }
     loadUomDropdownData()
   }, [])
@@ -295,7 +295,7 @@ const Slowdown = ({ permissions }) => {
           siteName: row.siteName,
           plantName: row.plantName,
           tentativeDurationDays: row.tentativeDurationDays,
-          throughputDuringTheSlowdown: row.throughputDuringTheSlowdown,
+          throughputDuringTheSlowdown: row.throughputDuringTheSlowdown || 0,
           throughputUom: row.throughputUom,
           tentativeMonth: row.tentativeMonths !== null && row.tentativeMonths !== undefined ? Number(row.tentativeMonths) : null,
           remark: row.remark,

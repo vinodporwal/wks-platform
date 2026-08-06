@@ -803,7 +803,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear AND Grade_FK_Id = :gradeId";
 			}
-			if(vertical.getName().equalsIgnoreCase("PCG")) {
+			else if(vertical.getName().equalsIgnoreCase("PCG")) {
 				sql = "SELECT * FROM " +  "[RIL.AOP.Refinery].[dbo].[" + viewName + "]" + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear";
 			}
 			else {

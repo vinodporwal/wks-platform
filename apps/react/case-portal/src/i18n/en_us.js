@@ -44,7 +44,8 @@ const defs = {
     shutdownNorms: 'Shutdown Consumption (Quantity)',
     slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
     normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-    normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
+    normalOpNormsGradeWise:
+      'Grade Wise Steady State Consumption (Norm/Quantity)',
     slowdownPlan: 'Slowdown Activities',
     taPlan: 'Turnaround Activities',
     feedStock: 'Feed Stock Availability',
@@ -63,6 +64,7 @@ const defs = {
     norms_qty_cost_report: 'Norms Quantity Cost Report',
     utility_rate: 'Utility Rate',
     inputs: 'Inputs',
+    outputs: 'Outputs',
     summary: 'Summary',
     senderReceiverMapping: 'Sender Receiver Mapping',
     importPower: 'Import Power',
@@ -81,7 +83,7 @@ const defs = {
     userManage: 'User Management',
     valueHistory: 'Value History',
     rawData: 'Steam Norms Basis',
-    runlengthData: 'Others',
+    runlengthData: 'Furnace Run Length ',
     functionalAop: 'CES',
     manufacturingDivision: 'Manufacturing Division',
     reliabilityPerformance: 'Site Reliability Performance',
@@ -119,6 +121,8 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
+    jsBudget: 'Js Budget',   
+    jwBudgetSource: 'JW Budget Source',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -126,7 +130,7 @@ const defs = {
     dashboard: 'AOP Dashboard',
     proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
     proposedAOP: 'Proposed Steady State Consumption',
-    qualitypackaging: 'Quality Parameters Norms',
+    qualitypackaging: 'Quality & Packaging Norms',
     qualityPackagingBasis: 'Quality & Packaging Basis',
     // New Data Sets
     sapBasedRefNorms: 'SAP Based Reference Norms',
@@ -145,7 +149,7 @@ const defs = {
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
-    configurationOtherCost: 'Other Cost'
+    configurationOtherCost: 'Other Cost',
   },
   pages: {
     dashboard: {
@@ -290,7 +294,8 @@ const defs = {
         shutdownPlan: 'Shutdown Activities',
         shutdownNorms: 'Shutdown Consumption (Quantity)',
         normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-        normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
+        normalOpNormsGradeWise:
+          'Grade Wise Steady State Consumption (Norm/Quantity)',
         slowdownPlan: 'Slowdown Activities',
         taPlan: 'Turnaround Activities',
         productionNormsOutput: 'Production Norms (Output)',
@@ -326,7 +331,7 @@ const defs = {
         bestAchievedIndividualBasis: 'Best Achieved (Individual)',
         intermediateValuesDataSet: 'Norms (Expression) Basis',
         rawData: 'Steam Norms Basis',
-        runlengthData: 'Others',
+        runlengthData: 'Furnace Run Length ',
         furnaceModeAndRunLength: 'Furnace Mode And Run Length',
         maintenanceProcess: 'Process',
         utilitiesNormsBasis: 'Utilities Norms Basis',
@@ -349,7 +354,7 @@ const defs = {
         dashboard: 'AOP Dashboard',
         proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
         proposedAOP: 'Proposed Steady State Consumption',
-        qualitypackaging: 'Quality Parameters Norms',
+        qualitypackaging: 'Quality & Packaging Norms',
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',
         sapBasedRefNorms: 'SAP Based Reference Norms',
@@ -358,6 +363,7 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
+        jwBudgetSource: 'JW Budget Source',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
