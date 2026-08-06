@@ -72,6 +72,13 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         minWidth: 100,
       },
       {
+        field: 'cost',
+        title: 'Cost (Rs Cr)',
+        widthT: 80,
+        editable: true,
+        minWidth: 100,
+      },
+      {
         field: 'outcome',
         title: 'Outcome',
         widthT: 80,
@@ -116,6 +123,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
           idFromApi: item?.id,
           sNo: index + 1,
           isEditable: item?.isEditable,
+          cost: item.cost,
           originalRemark: item.remark,
         }))
 
@@ -176,6 +184,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       const payload = data.map((item) => ({
         id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
+        cost: item.cost,
         outcome: item.outcome,
         recommendation: item.recommendation,
         targetDate: toLocalDateString(item.targetDate),
