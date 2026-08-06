@@ -89,8 +89,8 @@ async function getDropdownUnit(keycloak, SITE_ID) {
   }
 }
 
-async function deleteThroughputNormsData(keycloak, id, year) {
-  const url = `${Config.CaseEngineUrl}/task/throughput-norms?id=${encodeURIComponent(id)}&aopYear=${year}`
+async function deleteThroughputNormsData(keycloak, materialId, unitId, year) {
+  const url = `${Config.CaseEngineUrl}/task/throughput-norms?materialId=${encodeURIComponent(materialId || '')}&unitId=${encodeURIComponent(unitId || '')}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,

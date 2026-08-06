@@ -7,6 +7,13 @@ import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { ThroughputNormsApiService } from 'components/aop-phase-two/services/crude/throughputNormsApiService'
+import {
+     formatUnitDropdownOptions,
+     formatMaterialDropdownOptions,
+     getMaterialOptions,
+     formatNormsInitialRows,
+     getUniqueUnitsToFetch,
+} from './helpers'
 
 const ThroughputNormsScreen = () => {
      const keycloak = useSession()
@@ -45,60 +52,49 @@ const ThroughputNormsScreen = () => {
 
      // Fetch Unit dropdown using getDropdownUnit API
      const fetchUnitDropdown = useCallback(async () => {
-          if (!SITE_ID) return
+          if (!SITE_ID) return []
           try {
                const response = await ThroughputNormsApiService.getDropdownUnit(
                     keycloak,
                     SITE_ID,
                )
                const data = response?.data || response?.result || response || []
-               const formattedOptions = Array.isArray(data)
-                    ? data.map((item) => ({
-                         label: item?.Unit || item?.unit || item?.name || item?.displayName || '',
-                         value: item?.Unit || item?.unit || item?.name || item?.id || '',
-                         id: item?.Id || item?.id,
-                         unitId: item?.Id || item?.id,
-                         profitId: item?.Id || item?.id || item?.profitId,
-                         uom: item?.UOM || item?.uom || '',
-                    }))
-                    : []
+               const formattedOptions = formatUnitDropdownOptions(data)
                setUnitDropdown(formattedOptions)
+               return formattedOptions
           } catch (error) {
                console.error('Error fetching unit dropdown options:', error)
+               return []
           }
      }, [keycloak, SITE_ID])
 
-     // Fetch Material dropdown for a specific profitId (unitId) using getNormsMaterialDropdown API
+     // Fetch Material dropdown for a specific profitId (unitId) or unitName using getNormsMaterialDropdown API
      const fetchMaterialDropdownForUnit = useCallback(
-          async (profitId) => {
-               if (!profitId || !SITE_ID) return []
-               if (materialDropdownMapRef.current[profitId]) {
-                    return materialDropdownMapRef.current[profitId]
+          async (profitId, unitName) => {
+               if ((!profitId && !unitName) || !SITE_ID) return []
+               const cacheKey = profitId || unitName
+               if (materialDropdownMapRef.current[cacheKey]) {
+                    return materialDropdownMapRef.current[cacheKey]
                }
                try {
                     const response = await ThroughputNormsApiService.getNormsMaterialDropdown(
                          keycloak,
                          SITE_ID,
-                         profitId,
+                         profitId || '',
                     )
                     const data = response?.data || response?.result || response || []
-                    const formatted = Array.isArray(data)
-                         ? data.map((item) => ({
-                                label: item?.displayName || item?.DisplayName || item?.name || '',
-                                value: item?.displayName || item?.DisplayName || item?.name || '',
-                                id: item?.materialId || item?.MaterialId || item?.id || item?.Id,
-                                materialId: item?.materialId || item?.MaterialId || item?.id || item?.Id,
-                                unitId: item?.unitId || item?.UnitId || profitId,
-                                unit: item?.unit || item?.Unit || '',
-                                uom: item?.uom || item?.UOM || '',
-                           }))
-                         : []
+                    const rawList = Array.isArray(data) ? data : []
 
-                    setMaterialDropdownMap((prev) => ({
-                         ...prev,
-                         [profitId]: formatted,
-                    }))
-                    materialDropdownMapRef.current[profitId] = formatted
+                    const formatted = formatMaterialDropdownOptions(rawList, profitId, unitName)
+
+                    setMaterialDropdownMap((prev) => {
+                         const next = { ...prev }
+                         if (profitId) next[profitId] = formatted
+                         if (unitName) next[unitName] = formatted
+                         return next
+                    })
+                    if (profitId) materialDropdownMapRef.current[profitId] = formatted
+                    if (unitName) materialDropdownMapRef.current[unitName] = formatted
                     return formatted
                } catch (error) {
                     console.error('Error fetching material dropdown for profitId:', profitId, error)
@@ -136,10 +132,8 @@ const ThroughputNormsScreen = () => {
                minWidth: 200,
                type: 'select',
                dynamicOptions: true,
-               getOptions: (dataItem) => {
-                    const profitId = dataItem?.unitId || dataItem?.profitId
-                    return materialDropdownMap[profitId] || []
-               },
+               getOptions: (dataItem) =>
+                    getMaterialOptions(dataItem, materialDropdownMap, materialDropdownMapRef, rows),
                editable: true,
                locked: true,
           },
@@ -286,7 +280,7 @@ const ThroughputNormsScreen = () => {
 
                     // Fetch materials for selected unitId / profitId
                     if (unitIdVal) {
-                         await fetchMaterialDropdownForUnit(unitIdVal)
+                         await fetchMaterialDropdownForUnit(unitIdVal, unitLabel)
                     }
 
                     dataItem.unit = unitLabel
@@ -330,8 +324,12 @@ const ThroughputNormsScreen = () => {
                }
           } else if (field === 'displayName') {
                const valStr = typeof value === 'object' ? (value?.value || value?.label || '') : String(value || '')
-               const profitId = dataItem?.unitId || dataItem?.profitId
-               const options = materialDropdownMapRef.current[profitId] || []
+               const profitId = dataItem?.unitId || dataItem?.profitId || dataItem?.profitCenter_FK_Id || dataItem?.profitCenterFkId
+               const unitName = dataItem?.unit || dataItem?.Unit
+               const options =
+                    materialDropdownMapRef.current[profitId] ||
+                    materialDropdownMapRef.current[unitName] ||
+                    []
 
                const selectedMaterial = options.find(
                     (opt) =>
@@ -411,6 +409,8 @@ const ThroughputNormsScreen = () => {
      const fetchData = async () => {
           setLoading(true)
           try {
+               const unitsList = await fetchUnitDropdown()
+
                const response =
                     await ThroughputNormsApiService.getThroughputNorms(
                          keycloak,
@@ -418,30 +418,13 @@ const ThroughputNormsScreen = () => {
                          AOP_YEAR,
                     )
                const data = response?.data || []
-               const formattedData = data?.map((item, index) => ({
-                    ...item,
-                    id: item?.id || item?.materialId || index + 1,
-                    materialId: item?.materialId || item?.id,
-                    unit: item.unit || item.Unit || '',
-                    unitId: item.unitId || item.UnitId || item.profitId || item.profitFKId || '',
-                    profitId: item.profitId || item.unitId || item.UnitId || '',
-                    displayName: item.displayName || item.DisplayName || '',
-                    uom: item.uom || item.UOM || '',
-                    UOM: item.UOM || item.uom || '',
-                    remarks: item.remarks || '',
-                    isEditable: true,
-               }))
+               const formattedData = formatNormsInitialRows(data, unitsList)
 
-               // Pre-fetch material options for all distinct unit/profitIds in the loaded rows
-               const distinctProfitIds = [
-                    ...new Set(
-                         formattedData
-                              .map((r) => r.unitId || r.profitId)
-                              .filter(Boolean),
-                    ),
-               ]
+               // Pre-fetch material options for all distinct units in the loaded rows
+               const uniqueUnitsToFetch = getUniqueUnitsToFetch(formattedData)
+
                await Promise.all(
-                    distinctProfitIds.map((pId) => fetchMaterialDropdownForUnit(pId)),
+                    uniqueUnitsToFetch.map((u) => fetchMaterialDropdownForUnit(u.profitId, u.unitName)),
                )
 
                setRows(formattedData)
@@ -573,9 +556,17 @@ const ThroughputNormsScreen = () => {
                return
           }
 
+          const materialId = dataItem.materialId || dataItem.id
+          const unitId = dataItem.unitId || dataItem.profitId
+
           setLoading(true)
           try {
-               await ThroughputNormsApiService.deleteThroughputNormsData(keycloak, dataItem.id, AOP_YEAR)
+               await ThroughputNormsApiService.deleteThroughputNormsData(
+                    keycloak,
+                    materialId,
+                    unitId,
+                    AOP_YEAR,
+               )
                setSnackbarOpen(true)
                setSnackbarData({
                     message: 'Record deleted successfully!',

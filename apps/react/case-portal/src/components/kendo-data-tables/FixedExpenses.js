@@ -100,7 +100,7 @@ export default function FixedExpenses() {
       field: 'particular',
       title: 'Particulars',
       widthT: 180,
-      editable: true,
+      editable: false,
     },
     {
       title: `FY ${prevAopYear}`,
