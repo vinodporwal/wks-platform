@@ -121,6 +121,7 @@ const defs = {
     slowdown: 'Slowdown',
     jsBudget: 'Js Budget',   
     jwBudgetSource: 'JW Budget Source',
+    throughputNorms: 'Throughput Norms',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -361,6 +362,7 @@ const defs = {
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
         jwBudgetSource: 'JW Budget Source',
+        throughputNorms: 'Throughput Norms',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
