@@ -74,14 +74,18 @@ public class Camunda7DataImportCommandRunner implements CommandLineRunner {
 	private String tenantId;
 
 	@Override
-	public void run(String... args) throws IOException {
-		log.info("Starting upload model to camunda....");
+	public void run(String... args) {
+		try {
+			log.info("Starting upload model to camunda....");
 
-		createTenant();
+			createTenant();
 
-		importData();
+			importData();
 
-		log.info("Finish upload model to camunda");
+			log.info("Finish upload model to camunda");
+		} catch (Exception e) {
+			log.error("Failed to upload model to Camunda: {}", e.getMessage());
+		}
 	}
 
 	private void createTenant() {
@@ -97,13 +101,17 @@ public class Camunda7DataImportCommandRunner implements CommandLineRunner {
 		try {
 			restTemplate.getForEntity(String.format("%s/tenant/%s", baseUrl, tenantId), String.class);
 		} catch (RestClientException e) {
-			ResponseEntity<String> responseEntity = restTemplate.exchange(String.format("%s/tenant/create", baseUrl),
-					HttpMethod.POST, entity, String.class);
+			try {
+				ResponseEntity<String> responseEntity = restTemplate.exchange(String.format("%s/tenant/create", baseUrl),
+						HttpMethod.POST, entity, String.class);
 
-			if (responseEntity.getStatusCode().is2xxSuccessful()) {
-				log.info("Camunda created tenant {}", tenantId);
-			} else if (responseEntity.getStatusCode().is5xxServerError()) {
-				log.error("Error to create tenant {}. Error: {}", tenantId, responseEntity.toString());
+				if (responseEntity.getStatusCode().is2xxSuccessful()) {
+					log.info("Camunda created tenant {}", tenantId);
+				} else if (responseEntity.getStatusCode().is5xxServerError()) {
+					log.error("Error to create tenant {}. Error: {}", tenantId, responseEntity.toString());
+				}
+			} catch (Exception ex) {
+				log.error("Error creating tenant {} in Camunda at {}: {}", tenantId, baseUrl, ex.getMessage());
 			}
 		}
 	}

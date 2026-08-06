@@ -16,7 +16,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan({ "com.wks.bpm.externaltask", "com.wks.api.security", "com.wks.api.client" })
+// @ComponentScan({ "com.wks.bpm.externaltask", "com.wks.api.security", "com.wks.api.client" })x
+@ComponentScan(
+		// Camunda7ClientScan carries its own @ComponentScan, so this one reference
+		// pulls in the whole c7-client module (com.wks.bpm.engine.camunda.client)
+		// plus the Camunda community REST client (org.camunda.community.rest.client.springboot).
+		basePackageClasses = { com.wks.bpm.engine.camunda.client.config.Camunda7ClientScan.class },
+		basePackages = { "com.wks.bpm.externaltask", "com.wks.api.security", "com.wks.api.client" })
 public class ExternalServiceClientApp {
 
 	public static void main(final String[] args) {
