@@ -38,6 +38,7 @@ const MaterialBalance = ({ permissions }) => {
     PLANT_NAME === 'BUTADIENE'
   const IS_AROMATICS_HMD = lowerVertName === 'aromatics' && SITE_NAME === 'HMD'
   const IS_AROMATICS_HMD_AROMATIC = lowerVertName === 'aromatics' && SITE_NAME === 'HMD' && PLANT_NAME === 'AROMATICS'
+  const IS_AROMATICS_HMD_CYCLOHEXANE = lowerVertName === 'aromatics' && SITE_NAME === 'HMD' && PLANT_NAME === 'CYCLOHEXANE'
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -372,7 +373,7 @@ const MaterialBalance = ({ permissions }) => {
     {
       showAction: permissions?.showAction ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD_AROMATIC ? true : false,
+      saveBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD_AROMATIC || IS_AROMATICS_HMD_CYCLOHEXANE ? true : false,
       allAction: true,
 
       showTitleNameBusiness: true,
