@@ -2270,6 +2270,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			boolean aromaticsHmd = verticalName.equalsIgnoreCase("AROMATICS")
 					&& site.getName().equalsIgnoreCase("HMD");
 
+			boolean aromaticsHmdCyclohexane = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("Cyclohexane");
+
 			String steamLatentName = "";
 
 			if (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("DMD")) {
@@ -2402,8 +2404,8 @@ continue;
 				String procedure=verticalName+"_"+site.getName()+"_svhEquivalent_Calculation";
 				executeProcedure(procedure, plantFKId, year);
 			}
-
-			if (aromaticsHmd) {
+   // exclude sp call for cyclohexane
+			if (aromaticsHmd && !aromaticsHmdCyclohexane) {
 				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 						.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 

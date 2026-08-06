@@ -1959,6 +1959,15 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         return failedRecords;
     }
 
+    public AOPMessageVM deleteThroughputNorms(String materialId, String unitId, String aopYear) {
+        String sql = "DELETE FROM ThroughputNormsTransaction WHERE Material_Id = ? AND Unit_Id = ? AND AuditYear = ?";
+        jdbcTemplate.update(sql, materialId, unitId, aopYear);
+        AOPMessageVM response = new AOPMessageVM();
+        response.setCode(200);
+        response.setMessage("Data deleted successfully");
+        return response;
+    }
+
     @Override
     public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId) {
         try {

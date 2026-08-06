@@ -222,6 +222,11 @@ public class RefineryAopBudgetController {
         }
     }
 
+    @DeleteMapping("/throughput-norms")
+    public AOPMessageVM deleteThroughputNorms(@RequestParam String materialId, @RequestParam String unitId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.deleteThroughputNorms(materialId, unitId, aopYear);
+    }
+
     @GetMapping("/norms-material-dropdown")
     public AOPMessageVM getNormsMaterialDropdown(@RequestParam String siteId, @RequestParam String profitId) {
         return refineryAopBudgetService.getNormsMaterialDropdown(siteId, profitId);

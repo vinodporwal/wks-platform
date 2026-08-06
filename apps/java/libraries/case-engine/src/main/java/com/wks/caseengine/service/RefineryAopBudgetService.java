@@ -38,5 +38,6 @@ public interface RefineryAopBudgetService {
     public AOPMessageVM deleteProfitCenterData(String id, String aopYear);
     public AOPMessageVM getThroughputNorms(String siteId, String aopYear);
     public List<ThroughputNormsDTO> saveThroughputNorms(List<ThroughputNormsDTO> throughputNormsDTOs, String aopYear);
+    public AOPMessageVM deleteThroughputNorms(String materialId, String unitId, String aopYear);
     public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId);
 }
