@@ -140,7 +140,7 @@ jobs:
           platforms: linux/amd64
           file: apps/docker/camunda7/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/camunda:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/camunda:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for c8-external-tasks
         uses: docker/build-push-action@v2
