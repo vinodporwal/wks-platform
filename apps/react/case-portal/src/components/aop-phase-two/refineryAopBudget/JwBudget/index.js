@@ -11,6 +11,7 @@ import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { JswBudgetSourceAPIService } from 'components/aop-phase-two/services/crude/jwBudgetSourceAPIService'
+import { getUnitOptions } from './helpers'
 
 const JwBudgetScreen = () => {
      const keycloak = useSession()
@@ -57,7 +58,8 @@ const JwBudgetScreen = () => {
                widthT: 250,
                minWidth: 200,
                type: 'select',
-               options: unitDropdown,
+               dynamicOptions: true,
+               getOptions: (dataItem) => getUnitOptions(dataItem, unitDropdown, rows),
                editable: true,
                locked: true,
           },

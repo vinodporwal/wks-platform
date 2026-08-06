@@ -61,9 +61,6 @@ const PlantAOPReport = ({ permissions }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
@@ -71,12 +68,6 @@ const PlantAOPReport = ({ permissions }) => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const handleRemarkCellClick = (row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }
   const columns = [
     {
       field: 'id',
@@ -114,8 +105,8 @@ const PlantAOPReport = ({ permissions }) => {
       isVisible: true,
     },
     {
-      field: 'remark',
-      title: 'Remark',
+      field: 'responsibility',
+      title: 'Responsibility',
       editable: true,
       hidden: false,
       isVisible: true,
@@ -187,8 +178,7 @@ const PlantAOPReport = ({ permissions }) => {
           id: index,
           idFromApi: item.id || null,
           isEditable: item?.isEditable,
-          remark: item.remark,
-          originalRemark: item.remark,
+          responsibility: item.remark,
         }))
         setRows(mapped)
       } else {
@@ -228,10 +218,6 @@ const PlantAOPReport = ({ permissions }) => {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
-        'recommendation',
-        'outcome',
-        'targetDate',
-        'remark',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
@@ -251,25 +237,25 @@ const PlantAOPReport = ({ permissions }) => {
         outcome: item.outcome,
         recommendation: item.recommendation,
         targetDate: toLocalDateString(item.targetDate),
-        remark: item.remark,
+        remark: item.responsibility,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable:
           item.isEditable === '' ||
-          item.isEditable === undefined ||
-          item.isEditable === null
+            item.isEditable === undefined ||
+            item.isEditable === null
             ? true
             : !!item.isEditable,
         isVisible:
           item.isVisible === '' ||
-          item.isVisible === undefined ||
-          item.isVisible === null
+            item.isVisible === undefined ||
+            item.isVisible === null
             ? true
             : !!item.isVisible,
         displayOrder:
           item.displayOrder === '' ||
-          item.displayOrder === undefined ||
-          item.displayOrder === null
+            item.displayOrder === undefined ||
+            item.displayOrder === null
             ? 0
             : Number(item.displayOrder),
       }))
@@ -408,12 +394,6 @@ const PlantAOPReport = ({ permissions }) => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
         permissions={adjustedPermissions}
         disableRedHighlight={true}
         screenType='shutdown'

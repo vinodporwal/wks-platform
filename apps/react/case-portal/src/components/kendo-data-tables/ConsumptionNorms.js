@@ -537,7 +537,7 @@ const ConsumptionNorms = () => {
   }
 
   const handleCalculate = () => {
-    if (lowerVertName === 'pe' && lowerSiteName === 'c2') {
+    if (lowerVertName === 'pe' && lowerSiteName === 'c2'&& lowerPlantName=== 'lldpe') {
       setOpenMaterialGroupedSelectionDialog(true)
     } else {
       handleCalculateMeg()

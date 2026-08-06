@@ -29,8 +29,6 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
@@ -72,11 +70,20 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         minWidth: 100,
       },
       {
-        field: 'outcome',
-        title: 'Outcome',
+        field: 'cost',
+        title: 'Cost (Rs/Cr)',
         widthT: 80,
         editable: true,
         minWidth: 100,
+        type: 'number',
+      },
+      {
+        field: 'outcome',
+        title: 'Outcome (Rs/Cr)',
+        widthT: 80,
+        editable: true,
+        minWidth: 100,
+        type: 'number',
       },
       {
         field: 'recommendation',
@@ -91,8 +98,8 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         minWidth: 100,
       },
       {
-        field: 'remark',
-        title: 'Remark',
+        field: 'responsibility',
+        title: 'Responsibility',
         widthT: 60,
         editable: true,
         minWidth: 100,
@@ -116,7 +123,8 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
           idFromApi: item?.id,
           sNo: index + 1,
           isEditable: item?.isEditable,
-          originalRemark: item.remark,
+          cost: item.cost,
+          responsibility: item.remark,
         }))
 
         setRows(mapped)
@@ -156,10 +164,6 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
-        'recommendation',
-        'outcome',
-        'targetDate',
-        'remark',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
@@ -176,10 +180,11 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       const payload = data.map((item) => ({
         id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
+        cost: item.cost,
         outcome: item.outcome,
         recommendation: item.recommendation,
         targetDate: toLocalDateString(item.targetDate),
-        remark: item.remark,
+        remark: item.responsibility,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable:
@@ -278,11 +283,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
 
   const handleCalculate = () => {}
 
-  const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [])
+
 
   const getAdjustedPermissionsC = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -327,17 +328,12 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         title='Reliability Improvement Initiative'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         deleteRowData={deleteRowData}
         handleCalculate={handleCalculate}
-        handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissionsC}
       />
 
