@@ -198,8 +198,8 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
                     }
 
                     /*
-                    * Update existing record.
-                    */
+                     * Update existing record.
+                     */
                     Query query = entityManager.createNativeQuery(
                             "UPDATE dbo.ManualProduction " +
                             "SET StringValue = :stringValue, " +
@@ -216,7 +216,25 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
                     query.setParameter("aopYear", aopYear);
                     query.setParameter("monthYear", columnName);
 
-                    updatedCount += query.executeUpdate();
+                    int rowsUpdated = query.executeUpdate();
+                    if (rowsUpdated == 0) {
+                        /*
+                         * Record does not exist, insert a new record.
+                         */
+                        Query insertQuery = entityManager.createNativeQuery(
+                                "INSERT INTO dbo.ManualProduction (Plant_Id, AOP_Year, Month_Year, StringValue, Type, Remarks) " +
+                                "VALUES (:plantId, :aopYear, :monthYear, :stringValue, :type, :remarks)");
+                        insertQuery.setParameter("plantId", plantIdStr);
+                        insertQuery.setParameter("aopYear", aopYear);
+                        insertQuery.setParameter("monthYear", columnName);
+                        insertQuery.setParameter("stringValue", stringValue);
+                        insertQuery.setParameter("type", catalystType);
+                        insertQuery.setParameter("remarks", remarks);
+                        insertQuery.executeUpdate();
+                        updatedCount++;
+                    } else {
+                        updatedCount += rowsUpdated;
+                    }
                 }
             }
 
