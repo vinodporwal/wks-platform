@@ -77,17 +77,19 @@ export default function ProfitImprovementInitiative({ permissions }) {
       },
       {
         field: 'cost',
-        title: 'Cost (Rs Cr)',
+        title: 'Cost (Rs/Cr)',
         widthT: 80,
         editable: true,
         minWidth: 100,
+        type:'number',
       },
       {
         field: 'outcome',
-        title: 'Outcome (Rs Cr)',
+        title: 'Outcome (Rs/Cr)',
         widthT: 80,
         editable: true,
         minWidth: 100,
+        type:'number'
       },
 
       {
@@ -165,7 +167,6 @@ export default function ProfitImprovementInitiative({ permissions }) {
         'initiativeDescription',
         'recommendation',
         'outcome',
-        'targetDate',
       ]
 
       const validationMessage = validateFields(data, requiredFields)

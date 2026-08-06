@@ -218,9 +218,6 @@ const PlantAOPReport = ({ permissions }) => {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
-        'recommendation',
-        'outcome',
-        'targetDate',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
