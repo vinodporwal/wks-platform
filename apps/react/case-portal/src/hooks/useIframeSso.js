@@ -26,9 +26,15 @@ export function useIframeSso({ onSuccess, onFailure }) {
       if (!event.origin.startsWith(APM_ORIGIN)) return
       if (handledRef.current) return
 
-      const { type, token } = event.data || {}
+      const { type, token, mainAssetInfo } = event.data || {}
 
       if (type === 'SSO_TOKEN') {
+        if (typeof mainAssetInfo === 'string' && mainAssetInfo.trim() !== '') {
+          sessionStorage.setItem('apmMainAssetInfo', mainAssetInfo.trim())
+        } else {
+          sessionStorage.removeItem('apmMainAssetInfo')
+        }
+
         if (!token) {
           onFailure && onFailure('No token received from APM')
           return
