@@ -775,6 +775,11 @@ public class KeycloakUserService {
 	 * Creates a new realm role in Keycloak.
 	 */
 	public Map<String, Object> createRealmRole(String name, String description) throws Exception {
+		return createRealmRole(name, description, null);
+	}
+
+	public Map<String, Object> createRealmRole(String name, String description, List<String> screens)
+			throws Exception {
 		Map<String, Object> result = new HashMap<>();
 
 		if (name == null || name.isBlank()) {
@@ -803,6 +808,23 @@ public class KeycloakUserService {
 			keycloak.realm(keycloakRealmName).roles().create(role);
 
 			RoleRepresentation created = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+
+			if (screens != null) {
+				List<String> normalizedScreens = screens.stream()
+						.filter(s -> s != null && !s.isBlank())
+						.map(String::trim)
+						.distinct()
+						.collect(Collectors.toList());
+
+				Map<String, List<String>> attributes = Optional.ofNullable(created.getAttributes())
+						.map(HashMap::new)
+						.orElseGet(HashMap::new);
+				attributes.put("screens", normalizedScreens);
+				created.setAttributes(attributes);
+				keycloak.realm(keycloakRealmName).roles().get(roleName).update(created);
+
+				created = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+			}
 
 			result.put("status", 201);
 			result.put("message", "Role created successfully.");

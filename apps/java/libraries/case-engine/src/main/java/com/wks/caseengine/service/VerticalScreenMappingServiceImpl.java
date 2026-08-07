@@ -237,4 +237,31 @@ public class VerticalScreenMappingServiceImpl implements VerticalScreenMappingSe
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public Map<String, Object> getVerticalScreensWithMenuValue() throws Exception {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			String sql = "EXEC [dbo].[SP_GetVerticalScreensWithMenuValue]";
+			Query query = entityManager.createNativeQuery(sql);
+
+			@SuppressWarnings("unchecked")
+			List<Object[]> rows = query.getResultList();
+
+			List<Map<String, Object>> screens = rows.stream().map(row -> {
+				Map<String, Object> item = new HashMap<>();
+				item.put("screenCode", row[0] != null ? row[0].toString() : null);
+				item.put("screenDisplayName", row[1] != null ? row[1].toString() : null);
+				item.put("screenValue", row[2] != null ? row[2].toString() : null);
+				return item;
+			}).collect(Collectors.toList());
+
+			result.put("status", 200);
+			result.put("message", "Vertical screens with menu value fetched successfully.");
+			result.put("data", screens);
+		} catch (Exception ex) {
+			throw new Exception("Failed to fetch vertical screens with menu value: " + ex.getMessage(), ex);
+		}
+		return result;
+	}
 }

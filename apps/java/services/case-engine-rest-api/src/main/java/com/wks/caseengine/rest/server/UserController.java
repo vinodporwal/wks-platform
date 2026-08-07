@@ -87,11 +87,12 @@ public class UserController {
 	/**
 	 * Create a new realm role.
 	 * POST /task/users/roles
-	 * Body: { "name": "role_name", "description": "optional" }
+	 * Body: { "name": "role_name", "description": "optional", "screens": ["screen_a", "screen_b"] }
 	 */
 	@PostMapping("/roles")
 	public ResponseEntity<Map<String, Object>> createRole(@RequestBody RoleCreateRequest request) throws Exception {
-		Map<String, Object> result = userService.createRealmRole(request.getName(), request.getDescription());
+		Map<String, Object> result = userService.createRealmRole(
+				request.getName(), request.getDescription(), request.getScreens());
 		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 201;
 		HttpStatus httpStatus = status == 409 ? HttpStatus.CONFLICT
 				: status == 201 ? HttpStatus.CREATED

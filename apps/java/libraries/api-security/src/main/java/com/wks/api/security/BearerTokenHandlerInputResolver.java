@@ -43,8 +43,8 @@ public final class BearerTokenHandlerInputResolver implements HandlerInputResolv
 		input.put("path", path[0]);
 		input.put("host", HttpUtils.getHost(request.getHeader("origin")));
 
-		if (authentication != null && authentication.getCredentials() instanceof Jwt) {
-			Jwt jwt = (Jwt) authentication.getCredentials();
+		Jwt jwt = extractJwt(authentication);
+		if (jwt != null) {
 			input.put("org", jwt.getClaim("org"));
 			input.put("sub", jwt.getClaim("sub"));
 			input.put("allowed_origin", getAllowedOrigin(jwt));
@@ -52,6 +52,23 @@ public final class BearerTokenHandlerInputResolver implements HandlerInputResolv
 		}
 
 		return input;
+	}
+
+	private Jwt extractJwt(Authentication authentication) {
+		if (authentication == null) {
+			return null;
+		}
+		if (authentication.getCredentials() instanceof Jwt) {
+			return (Jwt) authentication.getCredentials();
+		}
+		if (authentication.getPrincipal() instanceof Jwt) {
+			return (Jwt) authentication.getPrincipal();
+		}
+		if (authentication instanceof org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken) {
+			return ((org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken) authentication)
+					.getToken();
+		}
+		return null;
 	}
 
 	@SuppressWarnings("unchecked")
