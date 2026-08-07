@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.BulkRoleAssignmentRequest;
 import com.wks.caseengine.dto.RoleCreateRequest;
+import com.wks.caseengine.dto.RoleUpdateRequest;
 import com.wks.caseengine.dto.UsersByRolesRequest;
 import com.wks.caseengine.service.KeycloakUserService;
 
@@ -97,6 +98,23 @@ public class UserController {
 		HttpStatus httpStatus = status == 409 ? HttpStatus.CONFLICT
 				: status == 201 ? HttpStatus.CREATED
 				: HttpStatus.OK;
+		return ResponseEntity.status(httpStatus).body(result);
+	}
+
+	/**
+	 * Update an existing realm role (description and/or screens attribute).
+	 * PUT /task/users/roles/{roleName}
+	 * Body: { "description": "optional", "screens": ["screen_a", "screen_b"] }
+	 * Omit screens to leave unchanged; send [] to clear screens.
+	 */
+	@PutMapping("/roles/{roleName}")
+	public ResponseEntity<Map<String, Object>> updateRole(
+			@PathVariable String roleName,
+			@RequestBody RoleUpdateRequest request) throws Exception {
+		Map<String, Object> result = userService.updateRealmRole(
+				roleName, request.getDescription(), request.getScreens());
+		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 200;
+		HttpStatus httpStatus = status == 404 ? HttpStatus.NOT_FOUND : HttpStatus.OK;
 		return ResponseEntity.status(httpStatus).body(result);
 	}
 
