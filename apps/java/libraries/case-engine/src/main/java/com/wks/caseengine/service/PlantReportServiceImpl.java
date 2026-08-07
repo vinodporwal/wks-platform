@@ -639,16 +639,13 @@ public class PlantReportServiceImpl implements PlantReportService {
             CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
             CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
 
-            // Columns: S.No(0), KPI(1), UOM(2), BestAchieved(3), FYprev AOP(4),
-            //          FYprev Actual(5), FYcurr Plan(6), Responsibility(7),
-            //          Id(8-hidden), MasterId(9-hidden), AopYear(10-hidden), PlantFkId(11-hidden)
+            // Columns: S.No(0), KPI(1), UOM(2), FYprev AOP(3), FYcurr Plan(4), Responsibility(5),
+            //          Id(6-hidden), MasterId(7-hidden), AopYear(8-hidden), PlantFkId(9-hidden)
             List<String> headerNames = new ArrayList<>(Arrays.asList(
                 "S.No",
                 "KPI",
                 "UOM",
-                "Best Achieved",
                 "FY" + prevYearShort + " AOP",
-                "FY" + prevYearShort + " Actual",
                 "FY" + currYearShort + " Plan",
                 "Responsibility",
                 "Id",
@@ -688,68 +685,58 @@ public class PlantReportServiceImpl implements PlantReportService {
                 uomCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
                 uomCell.setCellStyle(lockedStyle);
 
-                // Col 3 - Best Achieved (editable)
-                Cell bestAchievedCell = row.createCell(3);
-                bestAchievedCell.setCellValue(dto.getBestAchieved() != null ? dto.getBestAchieved() : 0.0);
-                bestAchievedCell.setCellStyle(unlockedStyle);
-
-                // Col 4 - FY{prev} AOP (editable)
-                Cell prevAOPCell = row.createCell(4);
+                // Col 3 - FY{prev} AOP (editable)
+                Cell prevAOPCell = row.createCell(3);
                 prevAOPCell.setCellValue(dto.getPrevAOP() != null ? dto.getPrevAOP() : 0.0);
                 prevAOPCell.setCellStyle(unlockedStyle);
 
-                // Col 5 - FY{prev} Actual (editable)
-                Cell prevActualCell = row.createCell(5);
-                prevActualCell.setCellValue(dto.getPrevActual() != null ? dto.getPrevActual() : 0.0);
-                prevActualCell.setCellStyle(unlockedStyle);
-
-                // Col 6 - FY{curr} Plan (editable)
-                Cell currentPlanCell = row.createCell(6);
+                // Col 4 - FY{curr} Plan (editable)
+                Cell currentPlanCell = row.createCell(4);
                 currentPlanCell.setCellValue(dto.getCurrentPlan() != null ? dto.getCurrentPlan() : 0.0);
                 currentPlanCell.setCellStyle(unlockedStyle);
 
-                // Col 7 - Responsibility (editable)
-                Cell remarkCell = row.createCell(7);
+                // Col 5 - Responsibility (editable)
+                Cell remarkCell = row.createCell(5);
                 remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
                 remarkCell.setCellStyle(unlockedStyle);
 
-                // Col 8 - Id (hidden, required for import update)
-                Cell idCell = row.createCell(8);
+                // Col 6 - Id (hidden, required for import update)
+                Cell idCell = row.createCell(6);
                 idCell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
                 idCell.setCellStyle(lockedStyle);
 
-                // Col 9 - MasterId (hidden, required for import insert)
-                Cell masterIdCell = row.createCell(9);
+                // Col 7 - MasterId (hidden, required for import insert)
+                Cell masterIdCell = row.createCell(7);
                 masterIdCell.setCellValue(dto.getMasterId() != null ? dto.getMasterId().toString() : "");
                 masterIdCell.setCellStyle(lockedStyle);
 
-                // Col 10 - AopYear (hidden)
-                Cell aopYearCell = row.createCell(10);
+                // Col 8 - AopYear (hidden)
+                Cell aopYearCell = row.createCell(8);
                 aopYearCell.setCellValue(dto.getAopYear() != null ? dto.getAopYear() : "");
                 aopYearCell.setCellStyle(lockedStyle);
 
-                // Col 11 - PlantFkId (hidden)
-                Cell plantFkIdCell = row.createCell(11);
+                // Col 9 - PlantFkId (hidden)
+                Cell plantFkIdCell = row.createCell(9);
                 plantFkIdCell.setCellValue(dto.getPlantFkId() != null ? dto.getPlantFkId().toString() : "");
                 plantFkIdCell.setCellStyle(lockedStyle);
 
                 if (isAfterSave) {
-                    Cell statusCell = row.createCell(12);
+                    Cell statusCell = row.createCell(10);
                     statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                     statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-                    Cell errCell = row.createCell(13);
+                    Cell errCell = row.createCell(11);
                     errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
                     errCell.setCellStyle(Utility.createBorderedStyle(workbook));
                 }
             }
 
             // Auto-size visible columns; fixed wider width for Responsibility
-            int totalCols = isAfterSave ? 14 : 12;
+            int totalCols = isAfterSave ? 12 : 10;
             for (int col = 0; col < totalCols; col++) {
-                if (col == 7) {
+                if (col == 5) {
                     sheet.setColumnWidth(col, 8000);
-                } else if (col == 13) {
+                } else if (col == 11) {
                     sheet.setColumnWidth(col, 12000);
                 } else {
                     sheet.autoSizeColumn(col);
@@ -757,10 +744,10 @@ public class PlantReportServiceImpl implements PlantReportService {
             }
 
             // Hide internal columns used by import/save process
+            sheet.setColumnHidden(6, true);
+            sheet.setColumnHidden(7, true);
             sheet.setColumnHidden(8, true);
             sheet.setColumnHidden(9, true);
-            sheet.setColumnHidden(10, true);
-            sheet.setColumnHidden(11, true);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
@@ -802,50 +789,44 @@ public class PlantReportServiceImpl implements PlantReportService {
                         dto.setUom(uomCell.getStringCellValue().trim());
                     }
 
-                    // Col 3 - Best Achieved
-                    dto.setBestAchieved(getPlantReportCellNumericValue(row.getCell(3)));
+                    // Col 3 - FY{prev} AOP
+                    dto.setPrevAOP(getPlantReportCellNumericValue(row.getCell(3)));
 
-                    // Col 4 - FY{prev} AOP
-                    dto.setPrevAOP(getPlantReportCellNumericValue(row.getCell(4)));
+                    // Col 4 - FY{curr} Plan
+                    dto.setCurrentPlan(getPlantReportCellNumericValue(row.getCell(4)));
 
-                    // Col 5 - FY{prev} Actual
-                    dto.setPrevActual(getPlantReportCellNumericValue(row.getCell(5)));
-
-                    // Col 6 - FY{curr} Plan
-                    dto.setCurrentPlan(getPlantReportCellNumericValue(row.getCell(6)));
-
-                    // Col 7 - Responsibility
-                    Cell remarkCell = row.getCell(7);
+                    // Col 5 - Responsibility
+                    Cell remarkCell = row.getCell(5);
                     if (remarkCell != null) {
                         remarkCell.setCellType(CellType.STRING);
                         dto.setRemark(remarkCell.getStringCellValue().trim());
                     }
 
-                    // Col 8 - Id (hidden; present = update, absent = insert)
-                    Cell idCell = row.getCell(8);
+                    // Col 6 - Id (hidden; present = update, absent = insert)
+                    Cell idCell = row.getCell(6);
                     if (idCell != null) {
                         idCell.setCellType(CellType.STRING);
                         String idVal = idCell.getStringCellValue().trim();
                         dto.setId(idVal.isEmpty() ? null : UUID.fromString(idVal));
                     }
 
-                    // Col 9 - MasterId (hidden)
-                    Cell masterIdCell = row.getCell(9);
+                    // Col 7 - MasterId (hidden)
+                    Cell masterIdCell = row.getCell(7);
                     if (masterIdCell != null) {
                         masterIdCell.setCellType(CellType.STRING);
                         String masterIdVal = masterIdCell.getStringCellValue().trim();
                         dto.setMasterId(masterIdVal.isEmpty() ? null : UUID.fromString(masterIdVal));
                     }
 
-                    // Col 10 - AopYear (hidden)
-                    Cell aopYearCell = row.getCell(10);
+                    // Col 8 - AopYear (hidden)
+                    Cell aopYearCell = row.getCell(8);
                     if (aopYearCell != null) {
                         aopYearCell.setCellType(CellType.STRING);
                         dto.setAopYear(aopYearCell.getStringCellValue().trim());
                     }
 
-                    // Col 11 - PlantFkId (hidden)
-                    Cell plantFkIdCell = row.getCell(11);
+                    // Col 9 - PlantFkId (hidden)
+                    Cell plantFkIdCell = row.getCell(9);
                     if (plantFkIdCell != null) {
                         plantFkIdCell.setCellType(CellType.STRING);
                         String plantFkIdVal = plantFkIdCell.getStringCellValue().trim();
@@ -867,7 +848,7 @@ public class PlantReportServiceImpl implements PlantReportService {
 
     private boolean isPlantReportRowEmpty(Row row) {
         if (row == null) return true;
-        for (int col = 1; col <= 7; col++) {
+        for (int col = 1; col <= 5; col++) {
             Cell cell = row.getCell(col);
             if (cell == null || cell.getCellType() == CellType.BLANK) continue;
             if (cell.getCellType() == CellType.STRING && !cell.getStringCellValue().trim().isEmpty()) return false;
