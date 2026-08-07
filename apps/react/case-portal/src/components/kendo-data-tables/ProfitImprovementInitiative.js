@@ -82,6 +82,7 @@ export default function ProfitImprovementInitiative({ permissions }) {
         editable: true,
         minWidth: 100,
         type:'number',
+        format: '{0:0.000}',
       },
       {
         field: 'outcome',
@@ -89,7 +90,8 @@ export default function ProfitImprovementInitiative({ permissions }) {
         widthT: 80,
         editable: true,
         minWidth: 100,
-        type:'number'
+        type:'number',
+        format: '{0:0.000}',
       },
 
       {
