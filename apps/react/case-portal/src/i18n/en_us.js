@@ -99,7 +99,7 @@ const defs = {
     productionTargetBasis: 'Production Target Basis',
     maintenanceSummary: 'Plant Maintenance Summary',
     siteMaintenanceSummary: 'Site Maintenance Summary',
-    siteAOPReport: 'Site AOP Report',
+    siteAOPReport: 'Site AOP Report Inputs',
     plantBudgetSummary: 'Plant Budget Summary',
     siteBudgetSummary: 'Site Budget Summary',
     ethyleneBalance: 'Ethylene Balance',
@@ -119,7 +119,7 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
-    jwBudget: 'Job Work Budget',   
+    jwBudget: 'Job Work Budget',
     jwBudgetSource: 'Job Work Throughput',
     throughputNorms: 'Job Work Norms',
 
@@ -142,7 +142,7 @@ const defs = {
 
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
-    plantAOPReport: 'Plant AOP Report',
+    plantAOPReport: 'Plant AOP Report Inputs',
     gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
     vcmAvailability: 'VCM Availability',
