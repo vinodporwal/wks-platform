@@ -686,9 +686,24 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 					list.add(dto.getJan());
 					list.add(dto.getFeb());
 					list.add(dto.getMarch());
-					list.add(dto.getRemark());
-					list.add(dto.getId());
-					list.add(dto.getNormParameterId());
+					// Row total (sum of all 12 months)
+					double rowTotal = 0.0;
+					rowTotal += (dto.getApril() != null ? dto.getApril() : 0.0);
+					rowTotal += (dto.getMay() != null ? dto.getMay() : 0.0);
+					rowTotal += (dto.getJune() != null ? dto.getJune() : 0.0);
+					rowTotal += (dto.getJuly() != null ? dto.getJuly() : 0.0);
+					rowTotal += (dto.getAug() != null ? dto.getAug() : 0.0);
+					rowTotal += (dto.getSep() != null ? dto.getSep() : 0.0);
+					rowTotal += (dto.getOct() != null ? dto.getOct() : 0.0);
+					rowTotal += (dto.getNov() != null ? dto.getNov() : 0.0);
+					rowTotal += (dto.getDec() != null ? dto.getDec() : 0.0);
+					rowTotal += (dto.getJan() != null ? dto.getJan() : 0.0);
+					rowTotal += (dto.getFeb() != null ? dto.getFeb() : 0.0);
+					rowTotal += (dto.getMarch() != null ? dto.getMarch() : 0.0);
+					list.add(rowTotal); // col 15: Total
+					list.add(dto.getRemark());         // col 16: Remark
+					list.add(dto.getId());             // col 17: Id
+					list.add(dto.getNormParameterId()); // col 18: NormParameterId
 					
 					
 					if (isAfterSave) {
@@ -697,6 +712,35 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 					}
 					rows.add(list);
 				//}
+			}
+
+			// Build Total row (column-wise sums for months + grand total)
+			if (!rows.isEmpty()) {
+				List<Object> totalRow = new ArrayList<>();
+				totalRow.add("Total"); // col 0: Particulars
+				totalRow.add("");      // col 1: Type
+				totalRow.add("");      // col 2: UOM
+				double grandTotal = 0.0;
+				// cols 3-14: monthly sums
+				for (int col = 3; col <= 14; col++) {
+					double sum = 0.0;
+					for (List<Object> r : rows) {
+						if (col < r.size() && r.get(col) instanceof Number) {
+							sum += ((Number) r.get(col)).doubleValue();
+						}
+					}
+					totalRow.add(sum);
+					grandTotal += sum;
+				}
+				totalRow.add(grandTotal); // col 15: Total
+				totalRow.add("");          // col 16: Remark
+				totalRow.add("");          // col 17: Id
+				totalRow.add("");          // col 18: NormParameterId
+				if (isAfterSave) {
+					totalRow.add(""); // Status
+					totalRow.add(""); // Error Description
+				}
+				rows.add(totalRow);
 			}
 
 			List<String> innerHeaders = new ArrayList<>();
@@ -716,6 +760,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 		innerHeaders.add(getMonth( year, 1));
 		innerHeaders.add(getMonth( year, 2));
 		innerHeaders.add(getMonth( year, 3));
+		innerHeaders.add("Total");
 		innerHeaders.add("Remark");
 		innerHeaders.add("Id");
 		innerHeaders.add("NormParameterId");
@@ -752,8 +797,11 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 	lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
 	// Plain bordered style for non-showProductionTarget case
 	CellStyle borderedDataStyle = Utility.createBorderedStyle(workbook);
+	CellStyle totalRowStyle = Utility.createBoldBorderedStyle(workbook);
 
-	for (List<Object> rowData : rows) {
+	for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+		List<Object> rowData = rows.get(rowIndex);
+		boolean isTotalRow = (rowIndex == rows.size() - 1);
 		Row row = sheet.createRow(currentRow++);
 		for (int col = 0; col < rowData.size(); col++) {
 			Cell cell = row.createCell(col);
@@ -769,9 +817,11 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 				cell.setCellValue("");
 			}
 
-			if (showProductionTarget) {
-				// Month columns (3–14) and Remark (15) remain editable; all others locked
-				if ((col >= 3 && col <= 14) || col == 15) {
+			if (isTotalRow) {
+				cell.setCellStyle(totalRowStyle);
+			} else if (showProductionTarget) {
+				// Month columns (3–14) and Remark (col 16) remain editable; Total (col 15) and others locked
+				if ((col >= 3 && col <= 14) || col == 16) {
 					cell.setCellStyle(unlockedBorderedStyle);
 				} else {
 					cell.setCellStyle(lockedBorderedStyle);
@@ -787,13 +837,13 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 			sheet.protectSheet("");
 		}
 
-	// Auto-size all visible columns (0–15)
-	for (int col = 0; col <= 15; col++) {
+	// Auto-size all visible columns (0–16)
+	for (int col = 0; col <= 16; col++) {
 		sheet.autoSizeColumn(col);
 	}
 
-sheet.setColumnHidden(16, true);
 sheet.setColumnHidden(17, true);
+sheet.setColumnHidden(18, true);
 	//sheet.setColumnHidden(18, true);
 	try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 
@@ -1321,6 +1371,8 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 	                BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
 	                try {
                     dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
+                    // Skip the Total summary row added by the export
+                    if ("Total".equalsIgnoreCase(dto.getDisplayName())) continue;
                     // col 1 (Type) is display-only; skip during import
                     dto.setUOM(getStringCellValue(row.getCell(2), dto));
                     dto.setApril(getNumericCellValue(row.getCell(3), dto));
@@ -1336,7 +1388,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
                     dto.setFeb(getNumericCellValue(row.getCell(13), dto));
                     dto.setMarch(getNumericCellValue(row.getCell(14), dto));
                     dto.setPlantId(plantFKId.toString());
-                    String normParameterId = getStringCellValue(row.getCell(17), dto);
+                    String normParameterId = getStringCellValue(row.getCell(18), dto);
 	                    dto.setNormParameterId(normParameterId);
 	                    boolean isProduction = false;
 	                    if (verticalName != null
@@ -1349,12 +1401,12 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 	                    if (isProduction) {
 	                        productionDtos.add(dto);
 	                    }
-                    dto.setRemark(getStringCellValue(row.getCell(15), dto));
+                    dto.setRemark(getStringCellValue(row.getCell(16), dto));
 
-                    dto.setId(getStringCellValue(row.getCell(16), dto));
+                    dto.setId(getStringCellValue(row.getCell(17), dto));
 
                     if (pvcDmd) {
-                        dto.setLineId(getStringCellValue(row.getCell(18), dto));
+                        dto.setLineId(getStringCellValue(row.getCell(19), dto));
                     }
 
 	                    // Check if id is null AND all month values are zero or null
@@ -2212,14 +2264,58 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			list.add(dto.getJan());
 			list.add(dto.getFeb());
 			list.add(dto.getMarch());
-			list.add(dto.getRemark());
-			list.add(dto.getId());
-			list.add(dto.getNormParameterId());
+			// Row total (sum of all 12 months)
+			double rowTotal = 0.0;
+			rowTotal += (dto.getApril() != null ? dto.getApril() : 0.0);
+			rowTotal += (dto.getMay() != null ? dto.getMay() : 0.0);
+			rowTotal += (dto.getJune() != null ? dto.getJune() : 0.0);
+			rowTotal += (dto.getJuly() != null ? dto.getJuly() : 0.0);
+			rowTotal += (dto.getAug() != null ? dto.getAug() : 0.0);
+			rowTotal += (dto.getSep() != null ? dto.getSep() : 0.0);
+			rowTotal += (dto.getOct() != null ? dto.getOct() : 0.0);
+			rowTotal += (dto.getNov() != null ? dto.getNov() : 0.0);
+			rowTotal += (dto.getDec() != null ? dto.getDec() : 0.0);
+			rowTotal += (dto.getJan() != null ? dto.getJan() : 0.0);
+			rowTotal += (dto.getFeb() != null ? dto.getFeb() : 0.0);
+			rowTotal += (dto.getMarch() != null ? dto.getMarch() : 0.0);
+			list.add(rowTotal); // col 15: Total
+			list.add(dto.getRemark());         // col 16: Remark
+			list.add(dto.getId());             // col 17: Id
+			list.add(dto.getNormParameterId()); // col 18: NormParameterId
 			if (isAfterSave) {
 				list.add(dto.getSaveStatus());
 				list.add(dto.getErrDescription());
 			}
 			rows.add(list);
+		}
+
+		// Build Total row (column-wise sums for months + grand total)
+		if (!rows.isEmpty()) {
+			List<Object> totalRow = new ArrayList<>();
+			totalRow.add("Total"); // col 0: Particulars
+			totalRow.add("");      // col 1: Type
+			totalRow.add("");      // col 2: UOM
+			double grandTotal = 0.0;
+			// cols 3-14: monthly sums
+			for (int col = 3; col <= 14; col++) {
+				double sum = 0.0;
+				for (List<Object> r : rows) {
+					if (col < r.size() && r.get(col) instanceof Number) {
+						sum += ((Number) r.get(col)).doubleValue();
+					}
+				}
+				totalRow.add(sum);
+				grandTotal += sum;
+			}
+			totalRow.add(grandTotal); // col 15: Total grand sum
+			totalRow.add("");          // col 16: Remark
+			totalRow.add("");          // col 17: Id
+			totalRow.add("");          // col 18: NormParameterId
+			if (isAfterSave) {
+				totalRow.add(""); // Status
+				totalRow.add(""); // Error Description
+			}
+			rows.add(totalRow);
 		}
 
 		List<String> innerHeaders = new ArrayList<>();
@@ -2238,6 +2334,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 		innerHeaders.add(getMonth(year, 1));
 		innerHeaders.add(getMonth(year, 2));
 		innerHeaders.add(getMonth(year, 3));
+		innerHeaders.add("Total");
 		innerHeaders.add("Remark");
 		innerHeaders.add("Id");
 		innerHeaders.add("NormParameterId");
@@ -2247,7 +2344,8 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 		}
 
 		// Column index and sizing constants for the Remark column
-		final int REMARK_COL = 15;
+		final int REMARK_COL = 16; // shifted right by 1 due to inserted Total column
+		final int TOTAL_COL = 15;
 		final int REMARK_COL_WIDTH_CHARS = 50;
 		final float DEFAULT_ROW_HEIGHT_POINTS = sheet.getDefaultRowHeightInPoints();
 
@@ -2289,7 +2387,10 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 		}
 
 		// Data rows with per-column locking styles
-		for (List<Object> rowData : rows) {
+		CellStyle totalRowStyleV2 = Utility.createBoldBorderedStyle(workbook);
+		for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+			List<Object> rowData = rows.get(rowIndex);
+			boolean isTotalRow = (rowIndex == rows.size() - 1);
 			Row row = sheet.createRow(currentRow++);
 			int remarkLen = 0;
 			for (int col = 0; col < rowData.size(); col++) {
@@ -2315,13 +2416,18 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 					maxColWidths[col] = Math.max(maxColWidths[col], strValue.length());
 				}
 
-				if (col == REMARK_COL) {
+				if (isTotalRow) {
+					cell.setCellStyle(totalRowStyleV2);
+				} else if (col == REMARK_COL) {
 					// Remark column: editable with text wrapping
 					cell.setCellStyle(unlockedRemarkStyle);
 					remarkLen = strValue.length();
 				} else if (col >= 3 && col <= 14) {
 					// Month columns (April through March): editable
 					cell.setCellStyle(unlockedAprilStyle);
+				} else if (col == TOTAL_COL) {
+					// Total column: locked (read-only, calculated)
+					cell.setCellStyle(lockedDefaultStyle);
 				} else {
 					// Remaining columns (Particulars, Type, UOM, Id, NormParameterId, Status...)
 					cell.setCellStyle(lockedDefaultStyle);
@@ -2346,8 +2452,8 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			}
 		}
 
-		sheet.setColumnHidden(16, true);
 		sheet.setColumnHidden(17, true);
+		sheet.setColumnHidden(18, true);
 
 		// Protect the sheet so that locked cells become non-editable
 		sheet.protectSheet("");
@@ -2529,6 +2635,8 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
 				try {
 				dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
+				// Skip the Total summary row added by the export
+				if ("Total".equalsIgnoreCase(dto.getDisplayName())) continue;
 				// col 1 is "Type" (display/export only) — not read or persisted during import
 				dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
@@ -2567,7 +2675,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				}
 
 				dto.setPlantId(plantFKId.toString());
-				String normParameterId = getStringCellValue(row.getCell(17), dto);
+				String normParameterId = getStringCellValue(row.getCell(18), dto);
 				dto.setNormParameterId(normParameterId);
 
 					boolean isProduction = false;
@@ -2583,8 +2691,8 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 						productionDtos.add(dto);
 					}
 
-				dto.setRemark(getStringCellValue(row.getCell(15), dto));
-				dto.setId(getStringCellValue(row.getCell(16), dto));
+				dto.setRemark(getStringCellValue(row.getCell(16), dto));
+				dto.setId(getStringCellValue(row.getCell(17), dto));
 
 					// Skip rows that have no id and all months are zero/null
 					boolean allMonthsZero = (dto.getApril() == null || dto.getApril() == 0.0)
