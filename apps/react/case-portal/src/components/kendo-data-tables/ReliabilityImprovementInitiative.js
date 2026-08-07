@@ -76,6 +76,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         editable: true,
         minWidth: 100,
         type: 'number',
+        format: '{0:0.000}',
       },
       {
         field: 'outcome',
@@ -84,6 +85,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         editable: true,
         minWidth: 100,
         type: 'number',
+        format: '{0:0.000}',
       },
       {
         field: 'recommendation',
@@ -180,11 +182,11 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       const payload = data.map((item) => ({
         id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
-        cost: item.cost,
-        outcome: item.outcome,
-        recommendation: item.recommendation,
-        targetDate: toLocalDateString(item.targetDate),
-        remark: item.responsibility,
+        cost: item.cost != null && item.cost !== '' ? Number(item.cost) : null,
+        outcome: item.outcome != null && item.outcome !== '' ? Number(item.outcome) : null,
+        recommendation: item.recommendation || null,
+        targetDate: toLocalDateString(item.targetDate) || null,
+        remark: item.responsibility || null,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable:

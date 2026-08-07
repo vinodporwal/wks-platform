@@ -8,7 +8,7 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const Constants = ({ startDate, endDate }) => {
+const Constants = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -72,7 +72,7 @@ const Constants = ({ startDate, endDate }) => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConstantsData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, refreshData])
 
   const fetchConstantsData = async () => {
     setLoading(true)

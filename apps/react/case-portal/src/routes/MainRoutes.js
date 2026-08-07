@@ -82,7 +82,6 @@ import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
 import ProposedAOP from 'components/kendo-data-tables/ProposedAOP'
 import Summary from 'components/aop-phase-two/cpp/Summary/index'
-import SenderReceiverMapping from 'components/aop-phase-two/cpp/SenderReceiverMapping'
 import ProductionNormsBasis from 'components/aop-phase-two/vgoht/production-norms-basis/index'
 import ShutdownActivities from 'components/aop-phase-two/vgoht/shutdown-activities/index'
 import SlowdownActivities from 'components/aop-phase-two/vgoht/slowdown-activities/index'
@@ -187,6 +186,7 @@ import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdow
 import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
 import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
+import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 
@@ -1461,10 +1461,10 @@ export const MainRoutes = (
             ),
           },
           {
-            path: 'sender-receiverMapping',
+            path: 'outputs',
             element: (
-              <PrivateRoute routeId='sender-receiverMapping'>
-                <SenderReceiverMapping />
+              <PrivateRoute routeId='outputs'>
+                <Outputs />
               </PrivateRoute>
             ),
           },
