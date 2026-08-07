@@ -119,9 +119,9 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
-    jsBudget: 'Js Budget',   
-    jwBudgetSource: 'Job Works Throughput',
-    throughputNorms: 'Job Works Norms',
+    jwBudget: 'Job Work Budget',   
+    jwBudgetSource: 'Job Work Throughput',
+    throughputNorms: 'Job Work Norms',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -361,8 +361,8 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
-        jwBudgetSource: 'Job Works Throughput',
-        throughputNorms: 'Job Works Norms',
+        jwBudgetSource: 'Job Work Throughput',
+        throughputNorms: 'Job Work Norms',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
