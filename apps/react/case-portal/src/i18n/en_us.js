@@ -44,7 +44,8 @@ const defs = {
     shutdownNorms: 'Shutdown Consumption (Quantity)',
     slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
     normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-    normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
+    normalOpNormsGradeWise:
+      'Grade Wise Steady State Consumption (Norm/Quantity)',
     slowdownPlan: 'Slowdown Activities',
     taPlan: 'Turnaround Activities',
     feedStock: 'Feed Stock Availability',
@@ -63,6 +64,7 @@ const defs = {
     norms_qty_cost_report: 'Norms Quantity Cost Report',
     utility_rate: 'Utility Rate',
     inputs: 'Inputs',
+    outputs: 'Outputs',
     summary: 'Summary',
     senderReceiverMapping: 'Sender Receiver Mapping',
     importPower: 'Import Power',
@@ -99,7 +101,7 @@ const defs = {
     productionTargetBasis: 'Production Target Basis',
     maintenanceSummary: 'Plant Maintenance Summary',
     siteMaintenanceSummary: 'Site Maintenance Summary',
-    siteAOPReport: 'Site AOP Report',
+    siteAOPReport: 'Site AOP Report Inputs',
     plantBudgetSummary: 'Plant Budget Summary',
     siteBudgetSummary: 'Site Budget Summary',
     ethyleneBalance: 'Ethylene Balance',
@@ -119,9 +121,9 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
-    jsBudget: 'Js Budget',   
-    jwBudgetSource: 'Job Works Throughput',
-    throughputNorms: 'Job Works Norms',
+    jwBudget: 'Job Work Budget',
+    jwBudgetSource: 'Job Work Throughput',
+    throughputNorms: 'Job Work Norms',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -142,13 +144,13 @@ const defs = {
 
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
-    plantAOPReport: 'Plant AOP Report',
+    plantAOPReport: 'Plant AOP Report Inputs',
     gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
-    configurationOtherCost: 'Other Cost'
+    configurationOtherCost: 'Other Cost',
   },
   pages: {
     dashboard: {
@@ -293,7 +295,8 @@ const defs = {
         shutdownPlan: 'Shutdown Activities',
         shutdownNorms: 'Shutdown Consumption (Quantity)',
         normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-        normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
+        normalOpNormsGradeWise:
+          'Grade Wise Steady State Consumption (Norm/Quantity)',
         slowdownPlan: 'Slowdown Activities',
         taPlan: 'Turnaround Activities',
         productionNormsOutput: 'Production Norms (Output)',
@@ -361,8 +364,8 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
-        jwBudgetSource: 'Job Works Throughput',
-        throughputNorms: 'Job Works Norms',
+        jwBudgetSource: 'Job Work Throughput',
+        throughputNorms: 'Job Work Norms',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',

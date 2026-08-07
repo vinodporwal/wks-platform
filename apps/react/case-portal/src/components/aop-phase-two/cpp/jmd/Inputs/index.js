@@ -16,6 +16,7 @@ import FuelPriority from './FuelPriority/index'
 import ImportPower from './ImportPowerMain/index'
 import SRMapping from '../../common/SRMapping/index'
 import InputNorms from './InputNorms/index'
+import SpinningMargin from '../../common/SpinningMargin/index'
 
 const InputsJMD = () => {
   const keycloak = useSession()
@@ -72,34 +73,40 @@ const InputsJMD = () => {
         displaySequence: 4,
       },
       {
+        id: 'spinning-margin',
+        name: 'spinningMargin',
+        displayName: 'Spinning Margin',
+        displaySequence: 5,
+      },
+      {
         id: 'heat-rate',
         name: 'heatRate',
         displayName: 'Heat Rate',
-        displaySequence: 5,
+        displaySequence: 6,
       },
       {
         id: 'sr-mapping',
         name: 'srMapping',
         displayName: 'SR Mapping',
-        displaySequence: 6,
+        displaySequence: 7,
       },
       {
         id: 'fixed-norms',
-        name: 'Norms',
-        displayName: 'Norms',
-        displaySequence: 7,
+        name: 'Norms & Quantity',
+        displayName: 'Norms & Quantity',
+        displaySequence: 8,
       },
       {
         id: 'fuel-availability',
         name: 'fuelAvailability',
         displayName: 'Fuel Availability',
-        displaySequence: 8,
+        displaySequence: 9,
       },
       {
         id: 'fuel-priority',
         name: 'fuelPriority',
         displayName: 'Fuel Priority',
-        displaySequence: 9,
+        displaySequence: 10,
       },
       // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
     ]
@@ -169,6 +176,8 @@ const InputsJMD = () => {
         )
       case 'asset-capacity':
         return <AssetCapacity />
+      case 'spinning-margin':
+        return <SpinningMargin />
       case 'shutdown-operational':
         return <ShutdownAndOperational />
       case 'export-availability':

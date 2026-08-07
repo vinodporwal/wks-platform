@@ -82,6 +82,7 @@ export default function ProfitImprovementInitiative({ permissions }) {
         editable: true,
         minWidth: 100,
         type:'number',
+        format: '{0:0.000}',
       },
       {
         field: 'outcome',
@@ -89,7 +90,8 @@ export default function ProfitImprovementInitiative({ permissions }) {
         widthT: 80,
         editable: true,
         minWidth: 100,
-        type:'number'
+        type:'number',
+        format: '{0:0.000}',
       },
 
       {
@@ -165,8 +167,6 @@ export default function ProfitImprovementInitiative({ permissions }) {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
-        'recommendation',
-        'outcome',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
@@ -183,11 +183,11 @@ export default function ProfitImprovementInitiative({ permissions }) {
       const payload = data.map((item) => ({
         id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
-        cost: item.cost,
-        outcome: item.outcome,
-        recommendation: item.recommendation,
-        targetDate: toLocalDateString(item.targetDate),
-        remark: item.responsibility,
+        cost: item.cost != null && item.cost !== '' ? Number(item.cost) : null,
+        outcome: item.outcome != null && item.outcome !== '' ? Number(item.outcome) : null,
+        recommendation: item.recommendation || null,
+        targetDate: toLocalDateString(item.targetDate) || null,
+        remark: item.responsibility || null,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable:

@@ -31,9 +31,6 @@ export default function PlantSafetyPerformanceTarget() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const isOldYear = false
@@ -143,10 +140,10 @@ export default function PlantSafetyPerformanceTarget() {
         minWidth: 100,
       },
       {
-        field: 'remark',
-        title: 'Remark',
+        field: 'responsibility',
+        title: 'Responsibility',
         widthT: 60,
-        editable: false,
+        editable: true,
         minWidth: 100,
       },
     ],
@@ -265,6 +262,7 @@ export default function PlantSafetyPerformanceTarget() {
           prevActual: item.prevActual ?? item.fyActual ?? '',
           currentPlan: item.currentPlan ?? item.fy26Plan ?? '',
           remark: item.remark ?? item.remarks ?? '',
+          responsibility: item.remark ?? item.remarks ?? '',
           originalRemark: item.remark ?? item.remarks ?? '',
           isEditable: item?.isEditable,
         }))
@@ -294,17 +292,6 @@ export default function PlantSafetyPerformanceTarget() {
         return
       }
 
-      const requiredFields = ['remark']
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        return
-      }
-
       const payload = data.map((item) => ({
         id: item.idFromAPI || null,
         masterId: item.masterId,
@@ -314,7 +301,7 @@ export default function PlantSafetyPerformanceTarget() {
         prevAOP: item.prevAOP !== '' && item.prevAOP != null ? Number(item.prevAOP) : null,
         prevActual: item.prevActual !== '' && item.prevActual != null ? Number(item.prevActual) : null,
         currentPlan: item.currentPlan !== '' && item.currentPlan != null ? Number(item.currentPlan) : null,
-        remark: item.remark || item.remarks || '',
+        remark: item.responsibility ?? item.remark ?? item.remarks ?? '',
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable: item.isEditable,
@@ -373,12 +360,6 @@ export default function PlantSafetyPerformanceTarget() {
   const handleCalculate = () => { }
   const handleCalculateP = () => { }
 
-  const handleRemarkCellClick = useCallback((row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || row.remarks || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [READ_ONLY])
 
   const handleRemarkCellClickP = useCallback((row) => {
     setCurrentRemarkP(row.remarks || '')
@@ -516,16 +497,9 @@ export default function PlantSafetyPerformanceTarget() {
         title='Plant Safety Performance & Targets'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         handleCalculate={handleCalculate}
-        handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissionsC}
         // groupBy='Particulars'
         {...commonGridProps}

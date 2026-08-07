@@ -257,7 +257,13 @@ const ProductionNormsBasis = () => {
       case 'Manual Entry':
         return <ManualEntry startDate={startDate} endDate={endDate} />
       case 'Historical Months':
-        return <HistoricalMonths startDate={startDate} endDate={endDate} />
+        return (
+          <HistoricalMonths
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       default:
         return null
     }

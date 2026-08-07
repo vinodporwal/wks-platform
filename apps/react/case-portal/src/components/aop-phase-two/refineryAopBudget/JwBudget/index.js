@@ -80,7 +80,7 @@ const JwBudgetScreen = () => {
                minWidth: 120,
                type: 'text',
                editable: false,
-               locked:true,
+               locked: true,
           },
           {
                field: 'apr',
@@ -190,7 +190,7 @@ const JwBudgetScreen = () => {
                editable: true,
                format: valueFormat,
           },
-          
+
      ]
 
      const dummyRows = []
@@ -343,7 +343,7 @@ const JwBudgetScreen = () => {
                setSnackbarData({
                     message: 'No Records to Save!',
                     severity: 'info',
-                })
+               })
                setLoading(false)
                return
           }
@@ -356,18 +356,18 @@ const JwBudgetScreen = () => {
                     ...row,
                     id: row.id || matched?.unitId || matched?.id,
                     uom: row.uom || row.UOM || matched?.uom || '',
-                    jan:row.jan || 0,
-                    feb:row.feb || 0,
-                    mar:row.mar || 0,
-                    apr:row.apr || 0,
-                    may:row.may || 0,
-                    jun:row.jun || 0,
-                    jul:row.jul || 0,
-                    aug:row.aug || 0,
-                    sep:row.sep || 0,
-                    oct:row.oct || 0,
-                    nov:row.nov || 0,
-                    dec:row.dec || 0,   
+                    jan: row.jan || 0,
+                    feb: row.feb || 0,
+                    mar: row.mar || 0,
+                    apr: row.apr || 0,
+                    may: row.may || 0,
+                    jun: row.jun || 0,
+                    jul: row.jul || 0,
+                    aug: row.aug || 0,
+                    sep: row.sep || 0,
+                    oct: row.oct || 0,
+                    nov: row.nov || 0,
+                    dec: row.dec || 0,
                }
           })
 
@@ -445,7 +445,7 @@ const JwBudgetScreen = () => {
                setLoading(false)
           }
      }
-     
+
 
      const permissions = {
           showAction: true,
@@ -460,7 +460,7 @@ const JwBudgetScreen = () => {
           ExcelName: `JwBudget_${AOP_YEAR}`,
           showTitleNameBusiness: true,
           showTitle: true,
-          titleName: 'Jw Budget',
+          titleName: 'Job Work Budget',
           showDropdown: false,
           remarksEditable: true,
      }
@@ -491,7 +491,7 @@ const JwBudgetScreen = () => {
                     snackbarOpen={snackbarOpen}
                     setSnackbarOpen={setSnackbarOpen}
                     setSnackbarData={setSnackbarData}
-                    //customHeight={70}
+               //customHeight={70}
                />
           </Box>
      )

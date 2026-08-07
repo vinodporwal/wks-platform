@@ -1050,7 +1050,7 @@ const SiteAOPReport = ({ permissions }) => {
               mt: 1,
             }}
           >
-            <Typography className='button-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               Performance Highlights
             </Typography>
 

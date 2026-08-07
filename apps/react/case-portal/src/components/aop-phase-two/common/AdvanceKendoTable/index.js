@@ -257,6 +257,7 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  defaultGridExpanded = true,
   showFilters = false,
   convertScientificValue = false,
 }) => {
@@ -277,7 +278,7 @@ const AdvanceKendoTable = ({
   const gridContainerRef = useRef(null)
   const activeCellRef = useRef({ rowId: null, field: null })
   const _export = useRef(null)
-  const [gridExpanded, setGridExpanded] = useState(true)
+  const [gridExpanded, setGridExpanded] = useState(defaultGridExpanded)
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -2206,6 +2207,7 @@ const AdvanceKendoTable = ({
                       placeholder='Select...'
                       searchable={col.searchable || false}
                       showClearOption={col.showClearOption || false}
+                      returnFullObject={col.returnFullObject || false}
                     />
                   )
                 },

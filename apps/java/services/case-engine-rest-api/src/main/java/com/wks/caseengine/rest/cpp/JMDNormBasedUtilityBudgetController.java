@@ -10,13 +10,14 @@ import com.wks.caseengine.cpp.dto.norm.NormsMonthUpdateRequestDTO;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.cpp.service.JMDNormBasedUtilityBudgetService;
-import com.wks.caseengine.cpp.service.NormBasedUtilityBudgetService;
+
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
 import java.util.HashMap;
@@ -43,35 +44,35 @@ public class JMDNormBasedUtilityBudgetController {
             log.info("=== Controller Received Request ===");
             log.info("CPPPlantIds: {}", cppPlantIds);
             log.info("FinancialYear: {}", financialYear);
-            
+
             AOPMessageVM result = normBasedUtilityBudgetService.getNormBasedUtilityBudget(cppPlantIds, financialYear);
-            
+
             log.info("=== Controller Returning Response ===");
             log.info("Response Code: {}", result.getCode());
-            
+
             return ResponseEntity.ok(result);
-            
+
         } catch (Exception e) {
             log.error("=== CONTROLLER EXCEPTION ===", e);
-            
+
             // Create detailed error response
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("errorType", e.getClass().getName());
             errorResponse.put("errorMessage", e.getMessage());
-            
+
             // Get full stack trace
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             errorResponse.put("stackTrace", sw.toString());
-            
+
             // Get cause if available
             if (e.getCause() != null) {
                 errorResponse.put("causeType", e.getCause().getClass().getName());
                 errorResponse.put("causeMessage", e.getCause().getMessage());
             }
-            
+
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
@@ -246,10 +247,180 @@ public class JMDNormBasedUtilityBudgetController {
     }
 
 
-  
+    // ===================== || QUANTITY APIs (NEW) || ===================== //
 
+    @GetMapping("/jmd/quantity")
+    public ResponseEntity<?> getQuantity(
+            @RequestParam List<UUID> cppPlantIds,
+            @RequestParam String financialYear
+    ) {
+        try {
+            log.info("=== Controller Received Quantity Request ===");
+            log.info("CPPPlantIds: {}", cppPlantIds);
+            log.info("FinancialYear: {}", financialYear);
 
+            AOPMessageVM result = normBasedUtilityBudgetService.getQuantity(cppPlantIds, financialYear);
 
+            log.info("=== Controller Returning Quantity Response ===");
+            log.info("Response Code: {}", result.getCode());
 
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("=== CONTROLLER QUANTITY EXCEPTION ===", e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("errorType", e.getClass().getName());
+            errorResponse.put("errorMessage", e.getMessage());
+
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            errorResponse.put("stackTrace", sw.toString());
+
+            if (e.getCause() != null) {
+                errorResponse.put("causeType", e.getCause().getClass().getName());
+                errorResponse.put("causeMessage", e.getCause().getMessage());
+            }
+
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/jmd-saveOrUpdateQuantityMonths/{financialYear}")
+    public ResponseEntity<?> saveOrUpdateQuantityMonth(
+            @RequestBody List<NormsMonthUpdateRequestDTO> dtoList,
+            @PathVariable String financialYear
+    ) {
+
+        try {
+            log.info("=== saveOrUpdateQuantityMonth BULK Request Received ===");
+
+            if (dtoList == null || dtoList.isEmpty()) {
+                AOPMessageVM errorResponse = new AOPMessageVM();
+                errorResponse.setCode(400);
+                errorResponse.setMessage("Request body cannot be empty");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            log.info("Total records received from frontend: {}", dtoList.size());
+
+            AOPMessageVM response = normBasedUtilityBudgetService.saveOrUpdateQuantityBulk(dtoList, financialYear);
+
+            return ResponseEntity.ok(response);
+
+        } catch (RestInvalidArgumentException e) {
+            log.error("Validation error: {}", e.getMessage());
+
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(400);
+            errorResponse.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+
+        } catch (Exception e) {
+            log.error("=== ERROR in saveOrUpdateQuantityMonth BULK ===");
+            log.error("Type: {}", e.getClass().getName());
+            log.error("Message: {}", e.getMessage());
+            e.printStackTrace();
+
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @GetMapping(value = "/jmd/quantity/export")
+    public ResponseEntity<byte[]> exportQuantity(
+            @RequestParam List<UUID> cppPlantIds,
+            @RequestParam String financialYear) {
+
+        log.info("[GET /jmd/quantity/export] Request received - cppPlantIds: {}, financialYear: {}",
+                cppPlantIds, financialYear);
+
+        try {
+            byte[] excelData = normBasedUtilityBudgetService.exportQuantity(cppPlantIds, financialYear, false, null);
+
+            if (excelData == null || excelData.length == 0) {
+                log.error("[GET /jmd/quantity/export] Failed to generate Excel file");
+                return ResponseEntity.status(500).body(null);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "Quantity_" + financialYear + ".xlsx");
+
+            log.info("[GET /jmd/quantity/export] Successfully generated Excel file, size: {} bytes", excelData.length);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelData);
+
+        } catch (Exception e) {
+            log.error("[GET /jmd/quantity/export] Error exporting Quantity", e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @GetMapping(value = "/jmd/quantity/detailed/export")
+    public ResponseEntity<byte[]> exportQuantityDetailed(
+            @RequestParam List<UUID> cppPlantIds,
+            @RequestParam String financialYear) {
+
+        log.info("[GET /jmd/quantity/detailed/export] Request received - cppPlantIds: {}, financialYear: {}",
+                cppPlantIds, financialYear);
+
+        try {
+            byte[] excelData = normBasedUtilityBudgetService.exportQuantityDetailed(cppPlantIds, financialYear);
+
+            if (excelData == null || excelData.length == 0) {
+                log.error("[GET /jmd/quantity/detailed/export] Failed to generate Excel file");
+                return ResponseEntity.status(500).body(null);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "Quantity_Detailed_" + financialYear + ".xlsx");
+
+            log.info("[GET /jmd/quantity/detailed/export] Successfully generated Excel file, size: {} bytes", excelData.length);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelData);
+
+        } catch (Exception e) {
+            log.error("[GET /jmd/quantity/detailed/export] Error exporting Quantity Detailed", e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @PostMapping(value = "/jmd/quantity/import")
+    public ResponseEntity<AOPMessageVM> importQuantity(
+            @RequestParam List<UUID> cppPlantIds,
+            @RequestParam String financialYear,
+            @RequestParam("file") MultipartFile file) {
+
+        log.info("[POST /jmd/quantity/import] cppPlantIds={}, financialYear={}, file={}",
+                cppPlantIds, financialYear, file != null ? file.getOriginalFilename() : "null");
+
+        if (file == null || file.isEmpty()) {
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(400);
+            errorResponse.setMessage("File cannot be empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+        try {
+            AOPMessageVM result = normBasedUtilityBudgetService.importQuantityExcel(cppPlantIds, financialYear, file);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("[POST /jmd/quantity/import] Error importing Quantity", e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 
 }
