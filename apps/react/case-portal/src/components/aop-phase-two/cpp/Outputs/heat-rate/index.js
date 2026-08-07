@@ -178,6 +178,7 @@ const HeatRate = () => {
         groupBy={['cppPlantName', 'assetType', 'assetName']}
         // paginationConfig={paginationConfig}
         customHeight={65}
+        pagable={false}
       />
     </Box>
   )

@@ -8,6 +8,7 @@ import org.apache.poi.ss.usermodel.Row;
 
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.UUID;
 
@@ -170,6 +171,32 @@ public final class ExcelCells {
     }
 
     /**
+     * Convert a cell to a {@link BigDecimal} value.
+     *
+     * @return the cell value as a BigDecimal, or {@code null} if the cell is missing, blank,
+     *         or cannot be parsed as a number.
+     */
+    public static BigDecimal toBigDecimal(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return BigDecimal.valueOf(cell.getNumericCellValue());
+        }
+        if (cell.getCellType() == CellType.STRING) {
+            try {
+                String val = cell.getStringCellValue().trim();
+                if (!val.isEmpty()) {
+                    return new BigDecimal(val);
+                }
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Read an integer value from the cell at the given column index on the row.
      *
      * @return the cell value as an integer, or {@code null} if the cell is missing, blank,
@@ -304,6 +331,19 @@ public final class ExcelCells {
     public static void setDouble(Cell cell, Double value, CellStyle style) {
         if (value != null) {
             cell.setCellValue(value);
+        } else {
+            cell.setCellValue("");
+        }
+        cell.setCellStyle(style);
+    }
+
+    /**
+     * Write a {@link BigDecimal} value to a cell and apply the given style.
+     * A {@code null} value is written as an empty string so the cell still renders borders.
+     */
+    public static void setBigDecimal(Cell cell, BigDecimal value, CellStyle style) {
+        if (value != null) {
+            cell.setCellValue(value.doubleValue());
         } else {
             cell.setCellValue("");
         }
