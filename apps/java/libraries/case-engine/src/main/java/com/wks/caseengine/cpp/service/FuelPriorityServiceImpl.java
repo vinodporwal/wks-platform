@@ -15,10 +15,14 @@ import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetProjection;
 import com.wks.caseengine.cpp.dto.FuelMasterDto;
 import com.wks.caseengine.cpp.dto.FuelMasterProjection;
+import com.wks.caseengine.cpp.dto.PlantFuelAvailabilityMonthlyDto;
+import com.wks.caseengine.cpp.dto.PlantFuelAvailabilityMonthlyProjection;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityProjection;
 import com.wks.caseengine.cpp.entity.CPPAssetFuelPriority;
+import com.wks.caseengine.cpp.entity.CPPPlantFuelAvailabilityMonthly;
 import com.wks.caseengine.cpp.repository.CPPAssetFuelPriorityRepository;
+import com.wks.caseengine.cpp.repository.CPPPlantFuelAvailabilityMonthlyRepository;
 import com.wks.caseengine.cpp.repository.FuelPriorityRepository;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -32,6 +36,9 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
 
     @Autowired
     private CPPAssetFuelPriorityRepository assetFuelPriorityRepository;
+
+    @Autowired
+    private CPPPlantFuelAvailabilityMonthlyRepository monthlyRepository;
 
     @Override
     public List<FuelMasterDto> getFuelMaster() {
@@ -113,6 +120,169 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
         dto.setRemarks(p.getRemarks());
         dto.setAopYear(p.getAopYear());
         return dto;
+    }
+
+    @Override
+    public List<PlantFuelAvailabilityMonthlyDto> getPlantFuelAvailabilityMonthly(String plantIds, String financialYear) {
+        return monthlyRepository.getPlantFuelAvailabilityMonthly(plantIds, financialYear)
+                .stream().map(this::toMonthlyDto).toList();
+    }
+
+    private PlantFuelAvailabilityMonthlyDto toMonthlyDto(PlantFuelAvailabilityMonthlyProjection p) {
+        PlantFuelAvailabilityMonthlyDto dto = new PlantFuelAvailabilityMonthlyDto();
+        if (p.getId() != null) dto.setId(UUID.fromString(p.getId()));
+        dto.setPlantName(p.getPlantName());
+        if (p.getPlantFkId() != null) dto.setPlantFkId(UUID.fromString(p.getPlantFkId()));
+        if (p.getAprFuelFkId() != null) dto.setAprFuelFkId(UUID.fromString(p.getAprFuelFkId()));
+        dto.setAprFuelName(p.getAprFuelName());
+        dto.setAprPriority(p.getAprPriority());
+        dto.setAprQuantity(p.getAprQuantity());
+        if (p.getMayFuelFkId() != null) dto.setMayFuelFkId(UUID.fromString(p.getMayFuelFkId()));
+        dto.setMayFuelName(p.getMayFuelName());
+        dto.setMayPriority(p.getMayPriority());
+        dto.setMayQuantity(p.getMayQuantity());
+        if (p.getJunFuelFkId() != null) dto.setJunFuelFkId(UUID.fromString(p.getJunFuelFkId()));
+        dto.setJunFuelName(p.getJunFuelName());
+        dto.setJunPriority(p.getJunPriority());
+        dto.setJunQuantity(p.getJunQuantity());
+        if (p.getJulFuelFkId() != null) dto.setJulFuelFkId(UUID.fromString(p.getJulFuelFkId()));
+        dto.setJulFuelName(p.getJulFuelName());
+        dto.setJulPriority(p.getJulPriority());
+        dto.setJulQuantity(p.getJulQuantity());
+        if (p.getAugFuelFkId() != null) dto.setAugFuelFkId(UUID.fromString(p.getAugFuelFkId()));
+        dto.setAugFuelName(p.getAugFuelName());
+        dto.setAugPriority(p.getAugPriority());
+        dto.setAugQuantity(p.getAugQuantity());
+        if (p.getSepFuelFkId() != null) dto.setSepFuelFkId(UUID.fromString(p.getSepFuelFkId()));
+        dto.setSepFuelName(p.getSepFuelName());
+        dto.setSepPriority(p.getSepPriority());
+        dto.setSepQuantity(p.getSepQuantity());
+        if (p.getOctFuelFkId() != null) dto.setOctFuelFkId(UUID.fromString(p.getOctFuelFkId()));
+        dto.setOctFuelName(p.getOctFuelName());
+        dto.setOctPriority(p.getOctPriority());
+        dto.setOctQuantity(p.getOctQuantity());
+        if (p.getNovFuelFkId() != null) dto.setNovFuelFkId(UUID.fromString(p.getNovFuelFkId()));
+        dto.setNovFuelName(p.getNovFuelName());
+        dto.setNovPriority(p.getNovPriority());
+        dto.setNovQuantity(p.getNovQuantity());
+        if (p.getDecFuelFkId() != null) dto.setDecFuelFkId(UUID.fromString(p.getDecFuelFkId()));
+        dto.setDecFuelName(p.getDecFuelName());
+        dto.setDecPriority(p.getDecPriority());
+        dto.setDecQuantity(p.getDecQuantity());
+        if (p.getJanFuelFkId() != null) dto.setJanFuelFkId(UUID.fromString(p.getJanFuelFkId()));
+        dto.setJanFuelName(p.getJanFuelName());
+        dto.setJanPriority(p.getJanPriority());
+        dto.setJanQuantity(p.getJanQuantity());
+        if (p.getFebFuelFkId() != null) dto.setFebFuelFkId(UUID.fromString(p.getFebFuelFkId()));
+        dto.setFebFuelName(p.getFebFuelName());
+        dto.setFebPriority(p.getFebPriority());
+        dto.setFebQuantity(p.getFebQuantity());
+        if (p.getMarFuelFkId() != null) dto.setMarFuelFkId(UUID.fromString(p.getMarFuelFkId()));
+        dto.setMarFuelName(p.getMarFuelName());
+        dto.setMarPriority(p.getMarPriority());
+        dto.setMarQuantity(p.getMarQuantity());
+        dto.setRemarks(p.getRemarks());
+        dto.setAopYear(p.getAopYear());
+        return dto;
+    }
+
+    @Override
+    public AOPMessageVM updatePlantFuelAvailabilityMonthly(List<PlantFuelAvailabilityMonthlyDto> payload) {
+        AOPMessageVM response = new AOPMessageVM();
+        int saved = 0;
+        int skipped = 0;
+
+        if (payload == null || payload.isEmpty()) {
+            response.setCode(400);
+            response.setMessage("Payload is empty");
+            return response;
+        }
+
+        for (PlantFuelAvailabilityMonthlyDto dto : payload) {
+            if (dto.getPlantFkId() == null) {
+                skipped++;
+                continue;
+            }
+
+            CPPPlantFuelAvailabilityMonthly entity;
+            if (dto.getId() != null) {
+                entity = monthlyRepository.findById(dto.getId()).orElse(null);
+                if (entity == null) {
+                    skipped++;
+                    continue;
+                }
+            } else {
+                entity = new CPPPlantFuelAvailabilityMonthly();
+                entity.setCreatedDate(LocalDateTime.now());
+            }
+
+            entity.setPlantFkId(dto.getPlantFkId());
+            entity.setAopYear(dto.getAopYear());
+            entity.setAprFuelFkId(dto.getAprFuelFkId());
+            entity.setAprPriority(dto.getAprPriority());
+            entity.setAprQuantity(dto.getAprQuantity());
+            entity.setMayFuelFkId(dto.getMayFuelFkId());
+            entity.setMayPriority(dto.getMayPriority());
+            entity.setMayQuantity(dto.getMayQuantity());
+            entity.setJunFuelFkId(dto.getJunFuelFkId());
+            entity.setJunPriority(dto.getJunPriority());
+            entity.setJunQuantity(dto.getJunQuantity());
+            entity.setJulFuelFkId(dto.getJulFuelFkId());
+            entity.setJulPriority(dto.getJulPriority());
+            entity.setJulQuantity(dto.getJulQuantity());
+            entity.setAugFuelFkId(dto.getAugFuelFkId());
+            entity.setAugPriority(dto.getAugPriority());
+            entity.setAugQuantity(dto.getAugQuantity());
+            entity.setSepFuelFkId(dto.getSepFuelFkId());
+            entity.setSepPriority(dto.getSepPriority());
+            entity.setSepQuantity(dto.getSepQuantity());
+            entity.setOctFuelFkId(dto.getOctFuelFkId());
+            entity.setOctPriority(dto.getOctPriority());
+            entity.setOctQuantity(dto.getOctQuantity());
+            entity.setNovFuelFkId(dto.getNovFuelFkId());
+            entity.setNovPriority(dto.getNovPriority());
+            entity.setNovQuantity(dto.getNovQuantity());
+            entity.setDecFuelFkId(dto.getDecFuelFkId());
+            entity.setDecPriority(dto.getDecPriority());
+            entity.setDecQuantity(dto.getDecQuantity());
+            entity.setJanFuelFkId(dto.getJanFuelFkId());
+            entity.setJanPriority(dto.getJanPriority());
+            entity.setJanQuantity(dto.getJanQuantity());
+            entity.setFebFuelFkId(dto.getFebFuelFkId());
+            entity.setFebPriority(dto.getFebPriority());
+            entity.setFebQuantity(dto.getFebQuantity());
+            entity.setMarFuelFkId(dto.getMarFuelFkId());
+            entity.setMarPriority(dto.getMarPriority());
+            entity.setMarQuantity(dto.getMarQuantity());
+            entity.setRemarks(dto.getRemarks());
+            entity.setUpdatedDate(LocalDateTime.now());
+
+            monthlyRepository.save(entity);
+            saved++;
+        }
+
+        response.setCode(200);
+        response.setMessage("Plant fuel availability monthly saved. Saved: " + saved + ", Skipped: " + skipped);
+        return response;
+    }
+
+    @Override
+    public AOPMessageVM deletePlantFuelAvailabilityMonthly(UUID id) {
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            if (!monthlyRepository.existsById(id)) {
+                response.setCode(404);
+                response.setMessage("Record not found with id: " + id);
+                return response;
+            }
+            monthlyRepository.deleteById(id);
+            response.setCode(200);
+            response.setMessage("Record deleted successfully");
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Error deleting record: " + e.getMessage());
+        }
+        return response;
     }
 
     @Override
