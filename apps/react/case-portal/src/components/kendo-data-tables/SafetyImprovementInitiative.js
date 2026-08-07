@@ -365,6 +365,7 @@ const PlantAOPReport = ({ permissions }) => {
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'Safety Improvement Initiative',
+      disableColWidth: true,
 
       uploadExcelBtn: false,
     },

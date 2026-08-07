@@ -31,6 +31,8 @@ export default function SpyroInputMinMax() {
      const PLANT_ID = plantObject?.id
      const SITE_ID = siteObject?.id
      const VERTICAL_ID = verticalObject?.id
+     const PLANT_NAME = plantObject?.name
+     const SiteName = siteObject?.name
 
      const SCREEN_NAME = screenTitle?.title
      const AOP_YEAR = year?.selectedYear
@@ -340,6 +342,67 @@ export default function SpyroInputMinMax() {
           setRemarkDialogOpen(true)
      }, [])
 
+     const downloadExcelForConfiguration = async () => {
+          setLoading(true)
+          const EXCEL_NAME = `${vertName}_${SiteName}_${PLANT_NAME}_${AOP_YEAR}_Spyro_Input_Min_Max_Export.xlsx`
+          try {
+               await CrackerReportsApiDataService.exportSpyroInputMinMax(
+                    keycloak,
+                    PLANT_ID,
+                    SITE_ID,
+                    VERTICAL_ID,
+                    AOP_YEAR,
+                    'Furnace',
+                    EXCEL_NAME,
+               )
+
+               setSnackbarData({ message: 'Export started!', severity: 'success' })
+               setSnackbarOpen(true)
+          } catch (err) {
+               setSnackbarData({ message: 'Export failed!', severity: 'error' })
+               setSnackbarOpen(true)
+          } finally {
+               setLoading(false)
+          }
+     }
+
+     const handleExcelUpload = async (file) => {
+          if (!file) return
+          setLoading(true)
+          try {
+               const res = await CrackerReportsApiDataService.importSpyroInputMinMax(
+                    keycloak,
+                    PLANT_ID,
+                    SITE_ID,
+                    VERTICAL_ID,
+                    AOP_YEAR,
+                    'Furnace',
+                    file,
+               )
+
+               if (
+                    res?.code === 200 ||
+                    res?.status === 200 ||
+                    res?.message === 'Success' ||
+                    res?.status === 'success' ||
+                    (res && res.ok !== false && !res.error && res.code !== 500)
+               ) {
+                    setSnackbarData({ message: 'Uploaded Successfully!', severity: 'success' })
+                    setSnackbarOpen(true)
+                    fetchData()
+               } else {
+                    setSnackbarData({ message: res?.message || 'Import failed!', severity: 'error' })
+                    setSnackbarOpen(true)
+               }
+          } catch (err) {
+               console.error('Import error', err)
+               setSnackbarData({ message: 'Import failed!', severity: 'error' })
+               setSnackbarOpen(true)
+          } finally {
+               setLoading(false)
+          }
+     }
+
      const getAdjustedPermissions = (permissions, isOldYear) => {
           if (isOldYear != 1) return permissions
           return {
@@ -351,6 +414,8 @@ export default function SpyroInputMinMax() {
                showUnit: false,
                saveWithRemark: false,
                saveBtn: false,
+               downloadExcelBtn: false,
+               uploadExcelBtn: false,
                isOldYear: isOldYear,
           }
      }
@@ -362,6 +427,8 @@ export default function SpyroInputMinMax() {
                adjustedPermissions: true,
                ExcelName: `${lowerVertName}_Spyro_Input_Min_Max_${AOP_YEAR}`,
                saveBtn: true,
+               downloadExcelBtn: true,
+               uploadExcelBtn: true,
           },
           isOldYear,
      )
@@ -386,6 +453,8 @@ export default function SpyroInputMinMax() {
                     saveChanges={saveChanges}
                     handleRemarkCellClick={handleRemarkCellClick}
                     permissions={adjustedPermissions}
+                    downloadExcelForConfiguration={downloadExcelForConfiguration}
+                    handleExcelUpload={handleExcelUpload}
                />
                <Notification
                     open={snackbarOpen}

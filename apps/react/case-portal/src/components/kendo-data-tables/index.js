@@ -5129,7 +5129,11 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
-                        width={setWidth(col?.minWidth || 150)}
+                        width={
+                          permissions?.disableColWidth
+                            ? col?.width || undefined
+                            : setWidth(col?.minWidth || 150)
+                        }
                         hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
