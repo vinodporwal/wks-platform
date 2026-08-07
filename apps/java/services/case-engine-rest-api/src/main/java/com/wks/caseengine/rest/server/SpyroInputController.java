@@ -112,6 +112,40 @@ public class SpyroInputController {
 		return spyroInputService.getSpyroInputMinMax(plantId, siteId, verticalId, aopYear, mode);
 	}
 
+	@GetMapping(value = "/spyro-input-min-max-export")
+	public ResponseEntity<byte[]> exportSpyroInputMinMax(
+			@RequestParam String plantId,
+			@RequestParam String siteId,
+			@RequestParam String verticalId,
+			@RequestParam String aopYear,
+			@RequestParam String mode) {
+		try {
+			byte[] excelBytes = spyroInputService.createSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, false, null);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("SpyroInputMinMax.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/spyro-input-min-max-import", consumes = "multipart/form-data")
+	public AOPMessageVM importSpyroInputMinMax(
+			@RequestParam String plantId,
+			@RequestParam String siteId,
+			@RequestParam String verticalId,
+			@RequestParam String aopYear,
+			@RequestParam String mode,
+			@RequestParam("file") MultipartFile file) {
+		return spyroInputService.importSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, file);
+	}
 
 }
 
