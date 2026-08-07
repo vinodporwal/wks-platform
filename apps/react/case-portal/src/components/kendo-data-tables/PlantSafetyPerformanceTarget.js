@@ -93,9 +93,9 @@ export default function PlantSafetyPerformanceTarget() {
       {
         field: 'serialNumber',
         title: 'S.No',
-        widthT: 70,
+        width: 100,
         editable: false,
-        minWidth: 70,
+        minWidth: 100,
       },
       {
         field: 'kpiName',
@@ -523,6 +523,7 @@ export default function PlantSafetyPerformanceTarget() {
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Plant Safety Performance & Targets`,
+      disableColWidth: true,
     },
     isOldYear,
   )
