@@ -76,6 +76,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         editable: true,
         minWidth: 100,
         type: 'number',
+        format: '{0:0.000}',
       },
       {
         field: 'outcome',
@@ -84,6 +85,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         editable: true,
         minWidth: 100,
         type: 'number',
+        format: '{0:0.000}',
       },
       {
         field: 'recommendation',
@@ -164,6 +166,11 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
+        'cost',
+        'outcome',
+        'recommendation',
+        'targetDate',
+        'responsibility',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
