@@ -166,11 +166,6 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
-        'cost',
-        'outcome',
-        'recommendation',
-        'targetDate',
-        'responsibility',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
@@ -187,11 +182,11 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       const payload = data.map((item) => ({
         id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
-        cost: item.cost,
-        outcome: item.outcome,
-        recommendation: item.recommendation,
-        targetDate: toLocalDateString(item.targetDate),
-        remark: item.responsibility,
+        cost: item.cost != null && item.cost !== '' ? Number(item.cost) : null,
+        outcome: item.outcome != null && item.outcome !== '' ? Number(item.outcome) : null,
+        recommendation: item.recommendation || null,
+        targetDate: toLocalDateString(item.targetDate) || null,
+        remark: item.responsibility || null,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable:
