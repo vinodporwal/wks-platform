@@ -83,7 +83,7 @@ const defs = {
     userManage: 'User Management',
     valueHistory: 'Value History',
     rawData: 'Steam Norms Basis',
-    runlengthData: 'Others',
+    runlengthData: 'Furnace Run Length ',
     functionalAop: 'CES',
     manufacturingDivision: 'Manufacturing Division',
     reliabilityPerformance: 'Site Reliability Performance',
@@ -121,6 +121,8 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
+    jsBudget: 'Js Budget',   
+    jwBudgetSource: 'JW Budget Source',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -128,7 +130,7 @@ const defs = {
     dashboard: 'AOP Dashboard',
     proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
     proposedAOP: 'Proposed Steady State Consumption',
-    qualitypackaging: 'Quality Parameters Norms',
+    qualitypackaging: 'Quality & Packaging Norms',
     qualityPackagingBasis: 'Quality & Packaging Basis',
     // New Data Sets
     sapBasedRefNorms: 'SAP Based Reference Norms',
@@ -329,7 +331,7 @@ const defs = {
         bestAchievedIndividualBasis: 'Best Achieved (Individual)',
         intermediateValuesDataSet: 'Norms (Expression) Basis',
         rawData: 'Steam Norms Basis',
-        runlengthData: 'Others',
+        runlengthData: 'Furnace Run Length ',
         furnaceModeAndRunLength: 'Furnace Mode And Run Length',
         maintenanceProcess: 'Process',
         utilitiesNormsBasis: 'Utilities Norms Basis',
@@ -352,7 +354,7 @@ const defs = {
         dashboard: 'AOP Dashboard',
         proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
         proposedAOP: 'Proposed Steady State Consumption',
-        qualitypackaging: 'Quality Parameters Norms',
+        qualitypackaging: 'Quality & Packaging Norms',
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',
         sapBasedRefNorms: 'SAP Based Reference Norms',
@@ -361,6 +363,7 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
+        jwBudgetSource: 'JW Budget Source',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',

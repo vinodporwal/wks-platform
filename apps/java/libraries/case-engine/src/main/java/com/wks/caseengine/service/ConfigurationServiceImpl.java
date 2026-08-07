@@ -168,6 +168,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			boolean ischemicalAndVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 			boolean aromaticsDtaAromatics = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("DTA") && plant.getName().equalsIgnoreCase("Aromatics");
 		    String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+			boolean bru = vertical.getName().equalsIgnoreCase("BRU");
 			List<Boolean> isEditable = new ArrayList<>();
 
 			Workbook workbook = new XSSFWorkbook();
@@ -184,7 +185,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 				List<Object> list = new ArrayList<>();
 
-				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc) {
+				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || bru) {
 					if(!isChemical && !ischemicalAndVmd) {
 						list.add(dto.getConfigTypeDisplayName());
 						list.add(dto.getTypeDisplayName());
@@ -223,7 +224,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 
 			List<String> innerHeaders = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) {
+			if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || bru) {
 				if(!isChemical && !ischemicalAndVmd) {
 					innerHeaders.add("Category");
 				}
@@ -298,7 +299,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		boolean hasCategory = (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET")
 				|| verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM")
 				|| verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA")
-				|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc)
+				|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || bru)
 				&& !isChemical && !ischemicalAndVmd;
 		int remarkColIndex = hasCategory ? 16 : 15;
 		int totalCols = innerHeaders.size();
@@ -1102,6 +1103,7 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 
 			boolean isChemicalHmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD");
 			boolean merox = vertical.getName().equalsIgnoreCase("MEROX");
+			boolean bru = vertical.getName().equalsIgnoreCase("BRU");
 
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
@@ -1180,7 +1182,7 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
 					configurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
 					configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
-				}else if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || merox) {
+				}else if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || merox || bru) {
 					configurationDTO.setId(row[14] != null ? row[14].toString() : i + "#");
 
 					configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
@@ -3842,6 +3844,7 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 		boolean isChemical= verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 		boolean ischemicalAndVmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
+		boolean bru = verticalName.equalsIgnoreCase("BRU");
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -3859,7 +3862,7 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 					// we implement version here
 					if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")
 							|| verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA")
-							|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || verticalName.equalsIgnoreCase("PET")) && !isChemical && !ischemicalAndVmd) {
+							|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || verticalName.equalsIgnoreCase("PET") || bru) && !isChemical && !ischemicalAndVmd) {
 						dto.setConfigTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 						dto.setTypeDisplayName(getStringCellValue(row.getCell(1), dto));
 						dto.setProductName(getStringCellValue(row.getCell(2), dto));

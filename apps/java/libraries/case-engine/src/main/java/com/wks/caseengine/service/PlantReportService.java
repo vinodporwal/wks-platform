@@ -2,6 +2,7 @@ package com.wks.caseengine.service;
 
 import java.util.List;
 
+import com.wks.caseengine.dto.ConversionVariableCostDTO;
 import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
 import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
@@ -36,4 +37,8 @@ public interface PlantReportService {
     AOPMessageVM getSiteSafetyPerformanceTargets(String siteId, String aopYear);
 
     AOPMessageVM saveSiteSafetyPerformanceTargets(List<SiteSafetyPerformanceTargetsDTO> siteSafetyPerformanceTargetsDTOs);
+
+    AOPMessageVM getConversionVariableCostData(String siteId, String aopYear);
+
+    AOPMessageVM saveConversionVariableCostData(List<ConversionVariableCostDTO> conversionVariableCostDTOs);
 }
