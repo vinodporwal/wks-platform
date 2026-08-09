@@ -34,6 +34,11 @@ DEFAULT_ALLOWED_ACCOUNTS: Optional[Set[str]] = None
 
 _EXCLUDED_NON_DISPATCHABLE = {"Power_Dis"}
 
+# In the Power_Dis consumption matrix, a negative "Power" quantity means the
+# plant is exporting power to another site (treated as demand), while a
+# positive "Power" quantity means power is being imported from another site.
+_POWER_DIS_OTHER_PLANT_MATERIAL = "Power"
+
 # Constants for reverse MMBTU norm calculation (same as NMD)
 _KCAL_TO_BTU = 3.96567
 _BTU_TO_MMBTU = 1_000_000
@@ -151,7 +156,7 @@ class U4UIterationLoop:
         allowed_accounts: Optional[Set[str]] = None,
         convergence_tolerance: float = CONVERGENCE_TOLERANCE,
         max_iterations: int = MAX_ITERATIONS,
-        external_import_mwh: float = 0.0,
+        import_power: Optional[dict] = None,
         gt_heat_rate_df = None,
         hrsg_heat_rate_df = None,
     ):
@@ -166,7 +171,8 @@ class U4UIterationLoop:
         self.allowed_accounts = allowed_accounts
         self.convergence_tolerance = convergence_tolerance
         self.max_iterations = max_iterations
-        self.external_import_mwh = max(0.0, float(external_import_mwh))
+        self.import_power = import_power or {"success": False, "total_mwh": 0.0, "per_source": []}
+        self.external_import_mwh = max(0.0, float(self.import_power.get("total_mwh", 0.0)))
 
         self.consumption_norms: dict = {}
         self.all_consumption_norms: dict = {}
@@ -403,26 +409,57 @@ class U4UIterationLoop:
                 - self._initial_power_mwh
             )
             key = self._power_ods_material
-            dispatch_demands[key] = dispatch_demands.get(key, 0.0) + power_u4u_increment
+
+            # If ODS records a negative 'Power' quantity for this month, treat the
+            # absolute amount as an additional dispatch demand so GTs generate the
+            # power that is being transferred to another site.
+            power_export_mwh = 0.0
+            bpc_power = self._lookup_bpc_qty(key, _POWER_DIS_OTHER_PLANT_MATERIAL)
+            if bpc_power is not None and bpc_power < 0:
+                power_export_mwh = -float(bpc_power) / 1000.0
+                logger.info(
+                    "  [POWER_DIS] Adding %.2f MWh export to other plant as demand",
+                    power_export_mwh
+                )
+
+            dispatch_demands[key] = (
+                dispatch_demands.get(key, 0.0)
+                + power_u4u_increment
+                + power_export_mwh
+            )
 
             # Store split: process stays as-is; fixed absorbs U4U so dispatch sees full demand.
             # Subtract external import so GTs only generate what isn't already covered externally.
+            # Add the export load here so it is dispatched by the GT assets.
             dispatch_demands["_power_process_mwh"] = float(
                 self._raw_process.get(self._power_ods_material, 0.0)
             )
             dispatch_demands["_power_fixed_mwh"] = (
                 float(self._raw_fixed.get(self._power_ods_material, 0.0))
                 + power_u4u_increment
+                + power_export_mwh
                 - self.external_import_mwh
             )
 
-        # Add U4U increment for each steam grade
+        # Add U4U increment for each steam grade, plus any inter-plant
+        # STEAM(<grade>) export recorded in the ODS as a negative quantity.
         for ods_material, initial_mt in self._initial_steam_mt.items():
+            grade = ods_material.split()[0]
             steam_u4u_increment = (
                 total_demands.get(ods_material, 0.0) - initial_mt
             )
+            steam_export_mt = 0.0
+            bpc_steam = self._lookup_bpc_qty(ods_material, f"STEAM({grade})")
+            if bpc_steam is not None and bpc_steam < 0:
+                steam_export_mt = -float(bpc_steam)
+                logger.info(
+                    "  [STEAM_DIS %s] Adding %.2f MT export as demand",
+                    ods_material, steam_export_mt
+                )
             dispatch_demands[ods_material] = (
-                dispatch_demands.get(ods_material, 0.0) + steam_u4u_increment
+                dispatch_demands.get(ods_material, 0.0)
+                + steam_u4u_increment
+                + steam_export_mt
             )
 
         return dispatch_demands
@@ -463,7 +500,94 @@ class U4UIterationLoop:
             u4u[material] = u4u.get(material, 0.0) + amount
         details.extend(sub_details)
 
+        # Override Power from <Source> material rows with actual DB import.
+        power_dis_gen_mwh = (
+            power_result.get("total_generation_mwh", 0.0) + self.external_import_mwh
+        )
+        self._apply_import_power_overrides(u4u, details, power_dis_gen_mwh)
+
         return u4u, details
+
+    def _apply_import_power_overrides(
+        self, u4u: dict, details: list, power_dis_gen_mwh: float
+    ) -> None:
+        """Override 'Power from <Source>' rows with actual DB import power.
+
+        For each active CPPImportPower source, find the matching material under
+        the Power_Dis producer and replace the ODS-derived quantity with the
+        real source MWh.  The norm is recomputed as
+        source_import_kwh / Power_Dis_generation_kwh so that the
+        NormsMonthDetail row remains consistent.
+        """
+        per_source = self.import_power.get("per_source", [])
+        if not per_source:
+            return
+
+        # Normalized source name -> MWh and original display name
+        source_mwh_by_name: dict = {}
+        source_display_by_name: dict = {}
+        for s in per_source:
+            name = str(s.get("source_name", "")).strip()
+            if not name:
+                continue
+            norm = _normalize_for_match(name)
+            source_mwh_by_name[norm] = float(s.get("mwh", 0.0))
+            source_display_by_name[norm] = name
+
+        if not source_mwh_by_name:
+            return
+
+        power_dis_gen_kwh = power_dis_gen_mwh * 1000.0
+        power_dis_utility = _normalize_for_match(self._power_ods_material or "")
+        if not power_dis_utility:
+            return
+
+        matched: set = set()
+
+        for rec in details:
+            if _normalize_for_match(rec.get("producer_utility", "")) != power_dis_utility:
+                continue
+
+            material = str(rec.get("material", "")).strip()
+            norm_material = _normalize_for_match(material)
+            if not norm_material.startswith("powerfrom"):
+                continue
+
+            # Match either the full normalized source name (e.g. source = "Power from CTU")
+            # or just the suffix (e.g. source = "CTU").
+            if norm_material in source_mwh_by_name:
+                source_key = norm_material
+            else:
+                source_key = norm_material[len("powerfrom"):]
+                if source_key not in source_mwh_by_name:
+                    continue
+
+            source_mwh = source_mwh_by_name[source_key]
+            import_kwh = source_mwh * 1000.0
+            new_norm = import_kwh / power_dis_gen_kwh if power_dis_gen_kwh > 0.0 else 0.0
+
+            old_quantity = float(rec.get("quantity", 0.0))
+            rec["norm"] = new_norm
+            rec["quantity"] = import_kwh
+
+            material_key = rec.get("material", material)
+            u4u[material_key] = u4u.get(material_key, 0.0) + import_kwh - old_quantity
+
+            matched.add(source_key)
+            logger.info(
+                "  [IMPORT] %s: source_mwh=%.2f, import_kwh=%.2f, "
+                "power_dis_gen_kwh=%.2f, norm=%.8f",
+                material, source_mwh, import_kwh, power_dis_gen_kwh, new_norm
+            )
+
+        for source_key in source_mwh_by_name:
+            if source_key not in matched:
+                display = source_display_by_name.get(source_key, source_key)
+                logger.debug(
+                    "  [IMPORT] No 'Power from %s' material row found for plant %s; "
+                    "import handled by Power_Dis reverse-norm table instead",
+                    display, self.plant_id
+                )
 
     def _calculate_u4u_from_power(self, power_result: dict) -> tuple:
         """Calculate U4U from power dispatch using per-asset ODS norms.
@@ -1300,6 +1424,315 @@ class U4UIterationLoop:
         logger.info("  %s", "=" * 78)
         logger.info("")
 
+    def _find_power_dis_consumption(self, material: str) -> Optional[dict]:
+        """Return a Power_Dis consumption entry whose material name matches exactly."""
+        power_dis = self._power_ods_material or (
+            p for p, info in self.consumption_norms.items()
+            if info.get("producer_uom", "").upper() == "KWH"
+        )
+        if not power_dis:
+            return None
+        if not isinstance(power_dis, str):
+            try:
+                power_dis = next(power_dis)
+            except StopIteration:
+                return None
+
+        power_dis_info = self.consumption_norms.get(power_dis)
+        if not power_dis_info:
+            return None
+
+        norm_material = _normalize_for_match(material)
+        for c in power_dis_info.get("consumptions", []):
+            cmat = str(c.get("material", "")).strip()
+            if _normalize_for_match(cmat) == norm_material:
+                return c
+            # "Power from CTU" can also match just the trailing token.
+            if norm_material.startswith("powerfrom"):
+                suffix = norm_material[len("powerfrom"):]
+                if _normalize_for_match(cmat).endswith(suffix):
+                    return c
+        return None
+
+    def _build_power_dis_supply_records(self) -> tuple:
+        """
+        Build reverse-norm records for the Power_Dis supply mix.
+
+        Returns:
+            (supply_records, other_plant_record, total_supply_kwh, other_plant_kwh)
+            - supply_records: list of positive supply rows for the U4U table
+            - other_plant_record: DB detail record for the 'Power' inter-plant row
+              (can be positive inflow or negative export); may be None
+            - total_supply_kwh: sum of positive supply quantities
+            - other_plant_kwh: signed value of the inter-plant exchange
+        """
+        supply_records: list = []
+
+        # 1. Collect actual positive supply quantities.
+        supplies: Dict[str, float] = {}
+
+        # Import sources (per-source MWh from CPPImportPower).
+        for s in self.import_power.get("per_source", []):
+            mwh = float(s.get("mwh", 0.0))
+            if mwh <= 0:
+                continue
+            name = str(s.get("source_name", "")).strip()
+            if not name:
+                continue
+            supplies[name] = supplies.get(name, 0.0) + mwh * 1000.0
+
+        # GT/SGT gross generation from final dispatch.
+        for asset in (self.final_power_result or {}).get("assets", []):
+            name = str(asset.get("asset_name", "")).strip()
+            gross_mwh = float(asset.get("dispatched_mwh", 0.0))
+            if not name or gross_mwh <= 0:
+                continue
+            supplies[name] = supplies.get(name, 0.0) + gross_mwh * 1000.0
+
+        # Inter-plant 'Power' from BPC (positive = inflow, negative = export).
+        bpc_power = self._lookup_bpc_qty("Power_Dis", _POWER_DIS_OTHER_PLANT_MATERIAL)
+        bpc_power = float(bpc_power) if bpc_power is not None else 0.0
+
+        # Merge any import source named exactly 'Power' with the BPC inter-plant
+        # value to get the net other-plant exchange.
+        import_power_named = supplies.pop(_POWER_DIS_OTHER_PLANT_MATERIAL, 0.0)
+        other_plant_kwh = import_power_named + bpc_power
+
+        if other_plant_kwh > 0:
+            supplies[_POWER_DIS_OTHER_PLANT_MATERIAL] = other_plant_kwh
+
+        total_supply_kwh = sum(supplies.values())
+
+        # Net generation is the Power_Dis utility total seen by consumers.  If power
+        # is being transferred to another site (negative 'Power'), it is still
+        # generated by the GTs but not consumed locally, so it reduces the net.
+        net_gen_kwh = total_supply_kwh + min(other_plant_kwh, 0.0)
+        if net_gen_kwh <= 0:
+            net_gen_kwh = 1.0  # avoid division by zero; will be corrected on next iter
+
+        # 2. Locate the Power_Dis consumption block and build a pool of generic
+        #    POWERGEN rows for assets that don't have an exact ODS/DB entry.
+        power_dis = self._power_ods_material
+        power_dis_info = self.consumption_norms.get(power_dis) if power_dis else None
+        powergen_pool: list = []
+        if power_dis_info:
+            for c in power_dis_info.get("consumptions", []):
+                if _normalize_for_match(str(c.get("material", ""))) == "powergen":
+                    powergen_pool.append(c)
+
+        used_powergen: set = set()
+
+        # 3. Build supply records for U4U table (positive only).
+        #    Process named import/transfer rows first so they grab exact matches.
+        for material in sorted(supplies.keys(),
+                               key=lambda m: (0 if m == _POWER_DIS_OTHER_PLANT_MATERIAL else
+                                              1 if m.startswith("Power from") else 2)):
+            qty_kwh = supplies[material]
+            if qty_kwh <= 0:
+                continue
+
+            c = self._find_power_dis_consumption(material)
+            if not c and powergen_pool:
+                # Take the next unused POWERGEN row from the pool.
+                for i, pc in enumerate(powergen_pool):
+                    if id(pc) not in used_powergen:
+                        c = pc
+                        used_powergen.add(id(pc))
+                        break
+
+            if not c:
+                # No matching DB/ODS row — still show the source in the U4U table
+                # so the log/Excel is complete, but it cannot be saved to NMD.
+                logger.info(
+                    "  [POWER_DIS] '%s' has no NormsMonthDetail row; "
+                    "including in U4U table only", material
+                )
+
+            norm = qty_kwh / net_gen_kwh
+            # For display, show the actual source name (asset/import name)
+            # even if DB stores material as generic "POWERGEN".
+            display_material = material
+            if c:
+                # For the inter-plant 'Power' row, use the ODS BPC QTY directly
+                # because c["quantity"] is the DB Quantity (QTY * rate), not the QTY.
+                if display_material == _POWER_DIS_OTHER_PLANT_MATERIAL:
+                    bpc_quantity = bpc_power
+                else:
+                    bpc_quantity = c.get("quantity")
+                    # If the DB row does not carry a quantity, fall back to ODS BPC lookup
+                    if bpc_quantity is None:
+                        bpc_quantity = self._lookup_bpc_qty("Power_Dis", display_material)
+                account = c.get("account", "Utilities")
+                material_uom = c.get("material_uom", "KWH")
+                norms_header_id = c.get("norms_header_id")
+                norms_month_detail_id = c.get("norms_month_detail_id")
+            else:
+                bpc_quantity = 0.0
+                account = "Utilities"
+                material_uom = "KWH"
+                norms_header_id = None
+                norms_month_detail_id = None
+
+            supply_records.append({
+                "producer": "Power_Dis",
+                "producer_utility": "Power_Dis",
+                "producer_uom": "KWH",
+                "generation": net_gen_kwh,
+                "account": account,
+                "material": display_material,
+                "material_uom": material_uom,
+                "norm": norm,
+                "quantity": qty_kwh,
+                "bpc_quantity": bpc_quantity,
+                "norms_header_id": norms_header_id,
+                "norms_month_detail_id": norms_month_detail_id,
+            })
+
+        # 4. Other-plant export record (negative Power) shown as a U4U row.
+        other_plant_record = None
+        c_power = self._find_power_dis_consumption(_POWER_DIS_OTHER_PLANT_MATERIAL)
+        if c_power and other_plant_kwh < 0:
+            other_plant_record = {
+                "producer": "Power_Dis",
+                "producer_utility": "Power_Dis",
+                "producer_uom": "KWH",
+                "generation": net_gen_kwh,
+                "account": c_power.get("account", "Utilities"),
+                "material": c_power.get("material", _POWER_DIS_OTHER_PLANT_MATERIAL),
+                "material_uom": c_power.get("material_uom", "KWH"),
+                "norm": other_plant_kwh / net_gen_kwh,
+                "quantity": other_plant_kwh,
+                "bpc_quantity": bpc_power,
+                "norms_header_id": c_power.get("norms_header_id"),
+                "norms_month_detail_id": c_power.get("norms_month_detail_id"),
+            }
+            # Show the export row first in the U4U table, matching the ODS layout.
+            supply_records.insert(0, other_plant_record)
+
+        return supply_records, other_plant_record, total_supply_kwh, other_plant_kwh
+
+    def _build_steam_dis_supply_records(self, utility: str) -> tuple:
+        """
+        Build reverse-norm supply records for a *_Steam_Dis utility.
+
+        Sources are the dispatch output for assets of that grade, the PRDS
+        letdown generation from the cascade, and any STEAM(<grade>) inter-plant
+        exchange.  The layout mirrors _build_power_dis_supply_records.
+        """
+        if utility not in self.consumption_norms:
+            return [], None, 0.0, 0.0
+
+        utility_info = self.consumption_norms[utility]
+        grade = utility.split()[0]
+        other_material = f"STEAM({grade})"
+        prds_material = f"{grade} Steam PRDS"
+
+        supplies: Dict[str, float] = {}
+
+        # 1. Actual dispatch output for assets of this grade.
+        suffix = f"_{grade} STEAM"
+        for asset in (self.final_steam_result or {}).get("assets", []):
+            aname = str(asset.get("asset_name", "")).strip()
+            total_mt = float(asset.get("total_output_mt", 0.0))
+            if total_mt <= 0 or not aname or not aname.upper().endswith(suffix):
+                continue
+            supplies[aname] = supplies.get(aname, 0.0) + total_mt
+
+        # 2. PRDS / letdown generation from the steam cascade.
+        dd = (self.final_steam_result or {}).get("demand_detail") or {}
+        letdown_mt = float(dd.get(f"{grade.lower()}_letdown", 0.0))
+        if letdown_mt > 0:
+            supplies[prds_material] = supplies.get(prds_material, 0.0) + letdown_mt
+
+        # 3. Inter-plant STEAM(<grade>) from ODS BPC (positive = import, negative = export).
+        bpc_other = self._lookup_bpc_qty(utility, other_material)
+        bpc_other = float(bpc_other) if bpc_other is not None else 0.0
+        other_plant_mt = 0.0
+        if bpc_other > 0:
+            supplies[other_material] = supplies.get(other_material, 0.0) + bpc_other
+        elif bpc_other < 0:
+            other_plant_mt = bpc_other
+
+        total_supply_mt = sum(supplies.values())
+        net_gen_mt = total_supply_mt + min(other_plant_mt, 0.0)
+        if net_gen_mt <= 0:
+            net_gen_mt = 1.0
+
+        def _find_consumption(mat: str) -> Optional[dict]:
+            norm_mat = _normalize_for_match(mat)
+            for c in utility_info.get("consumptions", []):
+                if _normalize_for_match(str(c.get("material", ""))) == norm_mat:
+                    return c
+            return None
+
+        supply_records: list = []
+        # Order: inter-plant import / PRDS first, then dispatch assets.
+        for source in sorted(supplies.keys(),
+                             key=lambda s: (0 if s == other_material else
+                                            1 if s == prds_material else 2)):
+            qty_mt = supplies[source]
+            if qty_mt <= 0:
+                continue
+
+            c = _find_consumption(source)
+            if not c:
+                logger.info(
+                    "  [STEAM_DIS %s] '%s' has no DB row; including in U4U table only",
+                    utility, source
+                )
+
+            norm = qty_mt / net_gen_mt
+            if c:
+                bpc_quantity = self._lookup_bpc_qty(utility, source)
+                if bpc_quantity is None or bpc_quantity == 0:
+                    bpc_quantity = c.get("quantity", 0.0)
+                account = c.get("account", "Utilities")
+                material_uom = c.get("material_uom", "MT")
+                norms_header_id = c.get("norms_header_id")
+                norms_month_detail_id = c.get("norms_month_detail_id")
+            else:
+                bpc_quantity = 0.0
+                account = "Utilities"
+                material_uom = utility_info.get("producer_uom", "MT")
+                norms_header_id = None
+                norms_month_detail_id = None
+
+            supply_records.append({
+                "producer": utility,
+                "producer_utility": utility,
+                "producer_uom": utility_info.get("producer_uom", "MT"),
+                "generation": net_gen_mt,
+                "account": account,
+                "material": source,
+                "material_uom": material_uom,
+                "norm": norm,
+                "quantity": qty_mt,
+                "bpc_quantity": bpc_quantity,
+                "norms_header_id": norms_header_id,
+                "norms_month_detail_id": norms_month_detail_id,
+            })
+
+        other_plant_record = None
+        c_other = _find_consumption(other_material)
+        if c_other and other_plant_mt < 0:
+            other_plant_record = {
+                "producer": utility,
+                "producer_utility": utility,
+                "producer_uom": utility_info.get("producer_uom", "MT"),
+                "generation": net_gen_mt,
+                "account": c_other.get("account", "Utilities"),
+                "material": c_other.get("material", other_material),
+                "material_uom": c_other.get("material_uom", "MT"),
+                "norm": other_plant_mt / net_gen_mt,
+                "quantity": other_plant_mt,
+                "bpc_quantity": bpc_other,
+                "norms_header_id": c_other.get("norms_header_id"),
+                "norms_month_detail_id": c_other.get("norms_month_detail_id"),
+            }
+            supply_records.insert(0, other_plant_record)
+
+        return supply_records, other_plant_record, total_supply_mt, other_plant_mt
+
     def _build_dynamic_u4u_table(self) -> list:
         """Build a dynamic U4U consumption table from all ODS producers.
 
@@ -1484,6 +1917,47 @@ class U4UIterationLoop:
                         "quantity": quantity,
                     })
 
+        # Replace the Power_Dis rows with the reverse-norm supply table.
+        # All other producers keep their original records.
+        power_dis_records, other_plant_record, total_supply, other_plant = \
+            self._build_power_dis_supply_records()
+
+        records = [r for r in records if r.get("producer_utility") != "Power_Dis"]
+        records.extend(power_dis_records)
+
+        self.final_dynamic_table = records
+
+        # Also update final_detail_records so save_calculated_norms persists
+        # the new Power_Dis source values (including the inter-plant record).
+        if getattr(self, "final_detail_records", None) is None:
+            self.final_detail_records = []
+        self.final_detail_records = [
+            r for r in self.final_detail_records
+            if r.get("producer_utility") != "Power_Dis"
+        ]
+        # power_dis_records now includes the negative 'Power' export row as well.
+        self.final_detail_records.extend(power_dis_records)
+
+        # Replace *_Steam_Dis rows with reverse-norm supply tables for each grade.
+        for utility in list(self.all_consumption_norms.keys()):
+            if not utility.endswith(" Steam_Dis") or utility == "Ret Condensate_Dis":
+                continue
+            steam_records, _, _, _ = self._build_steam_dis_supply_records(utility)
+            if not steam_records:
+                continue
+            records = [r for r in records if r.get("producer_utility") != utility]
+            records.extend(steam_records)
+            self.final_detail_records = [
+                r for r in self.final_detail_records
+                if r.get("producer_utility") != utility
+            ]
+            self.final_detail_records.extend(steam_records)
+
+        self.final_dynamic_table = records
+
+        # Stash the inter-plant value so the final summary can log it.
+        self._power_dis_other_plant_kwh = other_plant
+
         return records
 
     def _log_final_summary(self):
@@ -1517,6 +1991,13 @@ class U4UIterationLoop:
         # Build dynamic U4U consumption table (all ODS producers, including zero gen)
         dynamic_table = self._build_dynamic_u4u_table()
         self.final_dynamic_table = dynamic_table
+
+        # Part 1b: Power_Dis inter-plant exchange (export/import)
+        other = getattr(self, "_power_dis_other_plant_kwh", 0.0)
+        if other < 0:
+            logger.info("  Power_Dis export to other plant: %.2f KWH", -other)
+        elif other > 0:
+            logger.info("  Power_Dis import from other plant: %.2f KWH", other)
 
         # Part 2: Detailed U4U consumption table
         logger.info("  U4U CONSUMPTION TABLE (final iteration)")

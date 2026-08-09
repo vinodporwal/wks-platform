@@ -1711,95 +1711,93 @@ def fetch_import_power_sources(plant_id: str, financial_year: str) -> list:
 
 def fetch_import_power(plant_id: str, month: int, year: int) -> dict:
     """
-    Fetch total import power (MWh) aggregated across all sources for a plant/month.
+    Fetch total import power (MWh) for a plant/month.
 
-    Workflow:
-        1. Get all active sources for the plant (CPPImportPowerSourceMapping)
-        2. Get capacity MW per source (CPPImportPowerCapacity)
-        3. Get operational hours per source (CPPImportPowerOperationalHours)
-        4. MWh = Capacity × Hours per source, then SUM
+    Combines the same tables as the two UI endpoints:
+      - imported-power-plans   -> CPPImportPower.<month> (MW capacity)
+      - assets/operational-hours -> CPPPowerSourceOperationHours.<month> (hours)
 
-    Returns:
-        {
-            "success":          bool,
-            "total_mwh":        float,
-            "source_count":     int,
-            "per_source": [
-                {
-                    "source_name":  str,
-                    "capacity_mw":  float,
-                    "hours":        float,
-                    "mwh":          float,
-                }, ...
-            ],
-            "message": str,
-        }
+    MWh = CPPImportPower.<month> (MW) × CPPPowerSourceOperationHours.<month> (hours).
+    The source name is derived from NormParameters.Name after the first '-' so it
+    matches the 'Power from <Source>' U4U material row (e.g. 'Power from CTU').
     """
     fy_start = year if month >= 4 else year - 1
     fy_end   = str(fy_start + 1)[-2:]
     fy       = f"{fy_start}-{fy_end}"
     mcol     = _MONTH_COL_TITLE.get(month, "Jan")
 
-    sources = fetch_import_power_sources(plant_id, fy)
-    if not sources:
-        return {
-            "success": True, "total_mwh": 0.0, "source_count": 0,
-            "per_source": [], "message": "No import power sources found",
-        }
-
-    source_ids   = [s["id"] for s in sources]
-    placeholders = ",".join(["?"] * len(source_ids))
-
     conn = get_connection()
     cur  = conn.cursor()
     try:
-        # Capacity
-        cur.execute(
-            f"""
-            SELECT ImportPowerSource_FK_Id, [{mcol}]
-            FROM {T.CPP_IMPORT_POWER_CAPACITY}
-            WHERE ImportPowerSource_FK_Id IN ({placeholders})
-              AND FinancialYear = ?
-            """,
-            source_ids + [fy],
-        )
-        cap_map = {str(r[0]): float(r[1]) if r[1] else 0.0 for r in cur.fetchall()}
+        query = f"""
+        SELECT
+            psoh.Id AS id,
+            psoh.PowerSource_FK_Id AS asset_fk_id,
+            ip.[{mcol}] AS capacity_mw,
+            psoh.[{mcol}] AS hours,
+            importPlant.DisplayName AS import_plant_name,
+            pl.DisplayName AS plant_name,
+            np.Name AS norm_name,
+            np.SAPMaterialCode AS sap_material_code
+        FROM dbo.CPPPowerSourceOperationHours psoh WITH (NOLOCK)
+        INNER JOIN dbo.CPPImportPower ip WITH (NOLOCK)
+            ON ip.Id = psoh.PowerSource_FK_Id
+           AND ip.AOPYear = psoh.AOPYear
+        INNER JOIN dbo.NormParameters np WITH (NOLOCK)
+            ON np.Id = ip.NormParameter_FK_Id
+        LEFT JOIN dbo.Plants importPlant WITH (NOLOCK)
+            ON importPlant.Id = ip.ImportPlantFK_ID
+        LEFT JOIN dbo.Plants pl WITH (NOLOCK)
+            ON pl.Id = psoh.Plant_FK_Id
+        WHERE psoh.Plant_FK_Id = ?
+          AND psoh.AOPYear = ?
+        ORDER BY importPlant.DisplayName, np.Name
+        """
 
-        # Hours
-        cur.execute(
-            f"""
-            SELECT ImportPowerSource_FK_Id, [{mcol}]
-            FROM {T.CPP_IMPORT_POWER_OPERATIONAL_HOURS}
-            WHERE ImportPowerSource_FK_Id IN ({placeholders})
-              AND FinancialYear = ?
-            """,
-            source_ids + [fy],
-        )
-        hrs_map = {str(r[0]): float(r[1]) if r[1] else 0.0 for r in cur.fetchall()}
+        cur.execute(query, (plant_id, fy))
+        rows = cur.fetchall()
 
         per_source = []
         total_mwh  = 0.0
-        for s in sources:
-            sid  = s["id"]
-            cap  = cap_map.get(sid, 0.0)
-            hrs  = hrs_map.get(sid, 0.0)
-            mwh  = cap * hrs
+        for row in rows:
+            (
+                _id, asset_fk_id, capacity_mw, hours,
+                import_plant_name, plant_name, norm_name, sap_material_code
+            ) = row
+
+            if norm_name and "-" in norm_name:
+                # "POWER_CTU - Power from CTU" -> "Power from CTU"
+                source_name = norm_name.split("-", 1)[1].strip()
+            else:
+                source_name = norm_name or import_plant_name or "Import"
+
+            capacity = float(capacity_mw) if capacity_mw is not None else 0.0
+            hrs      = float(hours)       if hours       is not None else 0.0
+            mwh      = capacity * hrs
+
             total_mwh += mwh
             per_source.append({
-                "source_name": s["source_name"],
-                "capacity_mw": round(cap, 4),
+                "source_name": str(source_name),
+                "capacity_mw": round(capacity, 4),
                 "hours":       round(hrs, 4),
                 "mwh":         round(mwh, 4),
             })
 
+        if not per_source:
+            return {
+                "success": True, "total_mwh": 0.0, "source_count": 0,
+                "per_source": [], "message": "No import power sources found",
+            }
+
         return {
             "success":      True,
             "total_mwh":    round(total_mwh, 4),
-            "source_count": len(sources),
+            "source_count": len(per_source),
             "per_source":   per_source,
-            "message":      f"Calculated import power from {len(sources)} source(s)",
+            "message":      f"Calculated import power from {len(per_source)} source(s)",
         }
     except Exception as e:
+        logger.error("  [IMPORT] Error fetching import power: %s", e)
         return {
             "success": False, "total_mwh": 0.0, "source_count": 0,
             "per_source": [], "message": str(e),
