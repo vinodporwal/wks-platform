@@ -1,5 +1,6 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -15,11 +16,19 @@ import java.util.stream.Collectors;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,6 +103,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 	@Autowired
 	private BusinessDemandDataService businessDemandDataService;
+
+	@Autowired
+	private ConfigurationService configurationService;
 
 	private static final Pattern UUID_PATTERN = 
 		    Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
@@ -1845,9 +1857,9 @@ session.doWork(connection -> {
 
 	@Override
 	@Transactional
-	public AOPMessageVM saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		try {
+	public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear) {
+		List<SpyroInputMinMaxDTO> failedList = new ArrayList<>();
+		
 			// month number -> [minValue, maxValue] field accessor pairs
 			// Months in financial year order: Apr=4 .. Mar=3
 			int[][] monthIndices = {
@@ -1890,13 +1902,364 @@ session.doWork(connection -> {
 				}
 			}
 
-			aopMessageVM.setCode(200);
-			aopMessageVM.setMessage("SpyroInput Min/Max saved successfully");
+				return failedList;
+		
+	}
+
+	// --- SpyroInput MinMax Export -------------------------------------------------
+
+	@Override
+	public byte[] createSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear,
+			String mode, boolean isAfterSave, List<SpyroInputMinMaxDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getSpyroInputMinMax(plantId, siteId, verticalId, aopYear, mode);
+				@SuppressWarnings("unchecked")
+				Map<String, Object> dataMap = (Map<String, Object>) result.getData();
+				dtoList = (List<SpyroInputMinMaxDTO>) dataMap.get("resultList");
+			}
+
+			// Derive short-year suffix from aopYear e.g. "2026-27" ? "26", "27"
+			String[] yearParts = aopYear.split("-");
+			String startYearShort = yearParts[0].substring(2);
+			String endYearShort = yearParts[1];
+
+			String[] monthLabels = {
+				"Apr-" + startYearShort, "May-" + startYearShort, "Jun-" + startYearShort,
+				"Jul-" + startYearShort, "Aug-" + startYearShort, "Sep-" + startYearShort,
+				"Oct-" + startYearShort, "Nov-" + startYearShort, "Dec-" + startYearShort,
+				"Jan-" + endYearShort,   "Feb-" + endYearShort,   "Mar-" + endYearShort
+			};
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("SpyroInputMinMax");
+
+			// Bold + centered style for top-level merged headers (unlocked so sheet
+			// protection only locks the Weighted Average columns)
+			CellStyle boldCenteredStyle = workbook.createCellStyle();
+			Font boldFont = workbook.createFont();
+			boldFont.setBold(true);
+			boldCenteredStyle.setFont(boldFont);
+			boldCenteredStyle.setAlignment(HorizontalAlignment.CENTER);
+			boldCenteredStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+			boldCenteredStyle.setBorderBottom(BorderStyle.THIN);
+			boldCenteredStyle.setBorderTop(BorderStyle.THIN);
+			boldCenteredStyle.setBorderLeft(BorderStyle.THIN);
+			boldCenteredStyle.setBorderRight(BorderStyle.THIN);
+			boldCenteredStyle.setLocked(false);
+
+			CellStyle subHeaderStyle = Utility.createBoldBorderedStyle(workbook);
+			subHeaderStyle.setLocked(false);
+			CellStyle dataStyle      = Utility.createBorderedStyle(workbook);
+			dataStyle.setLocked(false);
+
+			// -- Grey locked styles for Weighted Average columns -------------------
+			// Header row: bold, centred, grey fill, locked
+			CellStyle greyBoldCenteredStyle = workbook.createCellStyle();
+			Font greyBoldFont = workbook.createFont();
+			greyBoldFont.setBold(true);
+			greyBoldCenteredStyle.setFont(greyBoldFont);
+			greyBoldCenteredStyle.setAlignment(HorizontalAlignment.CENTER);
+			greyBoldCenteredStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+			greyBoldCenteredStyle.setBorderBottom(BorderStyle.THIN);
+			greyBoldCenteredStyle.setBorderTop(BorderStyle.THIN);
+			greyBoldCenteredStyle.setBorderLeft(BorderStyle.THIN);
+			greyBoldCenteredStyle.setBorderRight(BorderStyle.THIN);
+			greyBoldCenteredStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			greyBoldCenteredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			greyBoldCenteredStyle.setLocked(true);
+
+			// Sub-header row: bold, bordered, grey fill, locked
+			CellStyle greySubHeaderStyle = workbook.createCellStyle();
+			Font greySubHeaderFont = workbook.createFont();
+			greySubHeaderFont.setBold(true);
+			greySubHeaderStyle.setFont(greySubHeaderFont);
+			greySubHeaderStyle.setAlignment(HorizontalAlignment.CENTER);
+			greySubHeaderStyle.setBorderBottom(BorderStyle.THIN);
+			greySubHeaderStyle.setBorderTop(BorderStyle.THIN);
+			greySubHeaderStyle.setBorderLeft(BorderStyle.THIN);
+			greySubHeaderStyle.setBorderRight(BorderStyle.THIN);
+			greySubHeaderStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			greySubHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			greySubHeaderStyle.setLocked(true);
+
+			// Data cells: bordered, grey fill, locked (non-editable)
+			CellStyle greyDataStyle = workbook.createCellStyle();
+			greyDataStyle.setBorderBottom(BorderStyle.THIN);
+			greyDataStyle.setBorderTop(BorderStyle.THIN);
+			greyDataStyle.setBorderLeft(BorderStyle.THIN);
+			greyDataStyle.setBorderRight(BorderStyle.THIN);
+			greyDataStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			greyDataStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			greyDataStyle.setLocked(true);
+
+			// -- Row 0: top-level merged headers ----------------------------------
+			Row headerRow0 = sheet.createRow(0);
+
+			Cell particularsCell = headerRow0.createCell(0);
+			particularsCell.setCellValue("Particulars");
+			particularsCell.setCellStyle(boldCenteredStyle);
+			sheet.addMergedRegion(new CellRangeAddress(0, 1, 0, 0));
+
+			Cell uomCell = headerRow0.createCell(1);
+			uomCell.setCellValue("UOM");
+			uomCell.setCellStyle(boldCenteredStyle);
+			sheet.addMergedRegion(new CellRangeAddress(0, 1, 1, 1));
+
+			for (int m = 0; m < 12; m++) {
+				int colStart = 2 + m * 2;
+				Cell monthCell = headerRow0.createCell(colStart);
+				monthCell.setCellValue(monthLabels[m]);
+				monthCell.setCellStyle(boldCenteredStyle);
+				sheet.addMergedRegion(new CellRangeAddress(0, 0, colStart, colStart + 1));
+			}
+
+			Cell waCell = headerRow0.createCell(26);
+			waCell.setCellValue("Weighted Average");
+			waCell.setCellStyle(greyBoldCenteredStyle);
+			sheet.addMergedRegion(new CellRangeAddress(0, 0, 26, 27));
+
+			// -- Row 1: sub-headers (Min/Max) --------------------------------------
+			Row headerRow1 = sheet.createRow(1);
+
+			for (int m = 0; m < 12; m++) {
+				int colStart = 2 + m * 2;
+				Cell minHdr = headerRow1.createCell(colStart);
+				minHdr.setCellValue("Min");
+				minHdr.setCellStyle(subHeaderStyle);
+				Cell maxHdr = headerRow1.createCell(colStart + 1);
+				maxHdr.setCellValue("Max");
+				maxHdr.setCellStyle(subHeaderStyle);
+			}
+
+			Cell waMinHdr = headerRow1.createCell(26);
+			waMinHdr.setCellValue("min");
+			waMinHdr.setCellStyle(greySubHeaderStyle);
+			Cell waMaxHdr = headerRow1.createCell(27);
+			waMaxHdr.setCellValue("max");
+			waMaxHdr.setCellStyle(greySubHeaderStyle);
+
+			// Hidden column headers
+			Cell idMinHdr = headerRow1.createCell(28);
+			idMinHdr.setCellValue("idMin");
+			idMinHdr.setCellStyle(subHeaderStyle);
+			Cell idMaxHdr = headerRow1.createCell(29);
+			idMaxHdr.setCellValue("idMax");
+			idMaxHdr.setCellStyle(subHeaderStyle);
+
+			if (isAfterSave) {
+				Cell statusHdr = headerRow1.createCell(30);
+				statusHdr.setCellValue("Status");
+				statusHdr.setCellStyle(subHeaderStyle);
+				Cell errHdr = headerRow1.createCell(31);
+				errHdr.setCellValue("Error Description");
+				errHdr.setCellStyle(subHeaderStyle);
+			}
+
+			// -- Data rows ---------------------------------------------------------
+			int currentRow = 2;
+			for (SpyroInputMinMaxDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+
+				String[][] monthMinMax = {
+					{dto.getAprMin(), dto.getAprMax()},
+					{dto.getMayMin(), dto.getMayMax()},
+					{dto.getJunMin(), dto.getJunMax()},
+					{dto.getJulMin(), dto.getJulMax()},
+					{dto.getAugMin(), dto.getAugMax()},
+					{dto.getSepMin(), dto.getSepMax()},
+					{dto.getOctMin(), dto.getOctMax()},
+					{dto.getNovMin(), dto.getNovMax()},
+					{dto.getDecMin(), dto.getDecMax()},
+					{dto.getJanMin(), dto.getJanMax()},
+					{dto.getFebMin(), dto.getFebMax()},
+					{dto.getMarMin(), dto.getMarMax()}
+				};
+
+				Cell nameCell = row.createCell(0);
+				nameCell.setCellValue(dto.getDisplayName() != null ? dto.getDisplayName() : "");
+				nameCell.setCellStyle(dataStyle);
+
+				Cell uomDataCell = row.createCell(1);
+				uomDataCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+				uomDataCell.setCellStyle(dataStyle);
+
+				for (int m = 0; m < 12; m++) {
+					int colStart = 2 + m * 2;
+					Cell minCell = row.createCell(colStart);
+					minCell.setCellValue(monthMinMax[m][0] != null ? monthMinMax[m][0] : "");
+					minCell.setCellStyle(dataStyle);
+					Cell maxCell = row.createCell(colStart + 1);
+					maxCell.setCellValue(monthMinMax[m][1] != null ? monthMinMax[m][1] : "");
+					maxCell.setCellStyle(dataStyle);
+				}
+
+				Cell waMinCell = row.createCell(26);
+				waMinCell.setCellValue(dto.getMinWeightAverage() != null ? dto.getMinWeightAverage() : "");
+				waMinCell.setCellStyle(greyDataStyle);
+
+				Cell waMaxCell = row.createCell(27);
+				waMaxCell.setCellValue(dto.getMaxWeightAverage() != null ? dto.getMaxWeightAverage() : "");
+				waMaxCell.setCellStyle(greyDataStyle);
+
+				Cell idMinCell = row.createCell(28);
+				idMinCell.setCellValue(dto.getIdMin() != null ? dto.getIdMin() : "");
+				idMinCell.setCellStyle(dataStyle);
+
+				Cell idMaxCell = row.createCell(29);
+				idMaxCell.setCellValue(dto.getIdMax() != null ? dto.getIdMax() : "");
+				idMaxCell.setCellStyle(dataStyle);
+
+				if (isAfterSave) {
+					Cell statusCell = row.createCell(30);
+					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					statusCell.setCellStyle(dataStyle);
+					Cell errCell = row.createCell(31);
+					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+					errCell.setCellStyle(dataStyle);
+				}
+			}
+
+			// -- Column widths & hidden columns ------------------------------------
+			int totalCols = isAfterSave ? 32 : 30;
+			for (int col = 0; col < totalCols; col++) {
+				sheet.autoSizeColumn(col);
+			}
+			sheet.setColumnHidden(28, true);
+			sheet.setColumnHidden(29, true);
+
+			// Protect the sheet so locked cells (Weighted Average columns) are
+			// non-editable; all other cells were explicitly unlocked above.
+			sheet.protectSheet("");
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// --- SpyroInput MinMax Excel Reader (helper) ----------------------------------
+
+	private List<SpyroInputMinMaxDTO> readSpyroInputMinMaxExcel(InputStream inputStream) {
+		List<SpyroInputMinMaxDTO> resultList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			// Skip the 2 header rows
+			if (rowIterator.hasNext()) rowIterator.next();
+			if (rowIterator.hasNext()) rowIterator.next();
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+
+				// Ignore completely empty rows
+				boolean allEmpty = true;
+				for (int c = 0; c <= 29; c++) {
+					Cell cell = row.getCell(c);
+					if (cell != null && cell.getCellType() != CellType.BLANK) {
+						cell.setCellType(CellType.STRING);
+						if (!cell.getStringCellValue().trim().isEmpty()) {
+							allEmpty = false;
+							break;
+						}
+					}
+				}
+				if (allEmpty) continue;
+
+				SpyroInputMinMaxDTO dto = new SpyroInputMinMaxDTO();
+				try {
+					dto.setDisplayName(getCellStringValue(row.getCell(0)));
+					dto.setUom(getCellStringValue(row.getCell(1)));
+
+					dto.setAprMin(getCellStringValue(row.getCell(2)));
+					dto.setAprMax(getCellStringValue(row.getCell(3)));
+					dto.setMayMin(getCellStringValue(row.getCell(4)));
+					dto.setMayMax(getCellStringValue(row.getCell(5)));
+					dto.setJunMin(getCellStringValue(row.getCell(6)));
+					dto.setJunMax(getCellStringValue(row.getCell(7)));
+					dto.setJulMin(getCellStringValue(row.getCell(8)));
+					dto.setJulMax(getCellStringValue(row.getCell(9)));
+					dto.setAugMin(getCellStringValue(row.getCell(10)));
+					dto.setAugMax(getCellStringValue(row.getCell(11)));
+					dto.setSepMin(getCellStringValue(row.getCell(12)));
+					dto.setSepMax(getCellStringValue(row.getCell(13)));
+					dto.setOctMin(getCellStringValue(row.getCell(14)));
+					dto.setOctMax(getCellStringValue(row.getCell(15)));
+					dto.setNovMin(getCellStringValue(row.getCell(16)));
+					dto.setNovMax(getCellStringValue(row.getCell(17)));
+					dto.setDecMin(getCellStringValue(row.getCell(18)));
+					dto.setDecMax(getCellStringValue(row.getCell(19)));
+					dto.setJanMin(getCellStringValue(row.getCell(20)));
+					dto.setJanMax(getCellStringValue(row.getCell(21)));
+					dto.setFebMin(getCellStringValue(row.getCell(22)));
+					dto.setFebMax(getCellStringValue(row.getCell(23)));
+					dto.setMarMin(getCellStringValue(row.getCell(24)));
+					dto.setMarMax(getCellStringValue(row.getCell(25)));
+					dto.setMinWeightAverage(getCellStringValue(row.getCell(26)));
+					dto.setMaxWeightAverage(getCellStringValue(row.getCell(27)));
+
+					String idMin = getCellStringValue(row.getCell(28));
+					dto.setIdMin(idMin.isEmpty() ? null : idMin);
+					String idMax = getCellStringValue(row.getCell(29));
+					dto.setIdMax(idMax.isEmpty() ? null : idMax);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+				}
+				resultList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read SpyroInputMinMax Excel", e);
+		}
+		return resultList;
+	}
+
+	private String getCellStringValue(Cell cell) {
+		if (cell == null) return "";
+		cell.setCellType(CellType.STRING);
+		String val = cell.getStringCellValue();
+		return val != null ? val.trim() : "";
+	}
+
+	// --- SpyroInput MinMax Import -------------------------------------------------
+
+	@Override
+	@Transactional
+	public AOPMessageVM importSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear,
+			String mode, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<SpyroInputMinMaxDTO> data = readSpyroInputMinMaxExcel(file.getInputStream());
+
+			List<SpyroInputMinMaxDTO> failedRecords = configurationService.saveSpyroInputMinMax(aopYear, plantId, data);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = createSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
 			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
 		} catch (Exception ex) {
-			aopMessageVM.setCode(500);
-			aopMessageVM.setMessage("Error saving SpyroInput Min/Max: " + ex.getMessage());
-			return aopMessageVM;
+			throw new RuntimeException("Failed to import SpyroInputMinMax data", ex);
 		}
 	}
 

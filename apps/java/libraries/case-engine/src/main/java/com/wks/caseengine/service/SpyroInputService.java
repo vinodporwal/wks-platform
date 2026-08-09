@@ -35,6 +35,12 @@ public interface SpyroInputService {
 
 	AOPMessageVM getSpyroInputMinMax(String plantId, String siteId, String verticalId, String aopYear, String  mode);
 
-	AOPMessageVM saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear);
+	List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear);
+
+	byte[] createSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear, String mode,
+			boolean isAfterSave, List<SpyroInputMinMaxDTO> dtoList);
+
+	AOPMessageVM importSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear,
+			String mode, MultipartFile file);
 
 }
