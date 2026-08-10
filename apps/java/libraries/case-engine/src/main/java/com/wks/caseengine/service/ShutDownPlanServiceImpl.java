@@ -3141,7 +3141,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		);
 		boolean chemicalHmdHtpb = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("HTPB");
 		boolean aromaticsHmd = verticalName.equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("HMD");
-		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd;
+		boolean ptaPmd = verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
+		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd;
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));

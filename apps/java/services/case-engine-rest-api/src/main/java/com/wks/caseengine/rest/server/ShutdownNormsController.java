@@ -60,9 +60,10 @@ public class ShutdownNormsController {
 			boolean vcmDmd = vertical.getName().equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("DMD");
 			boolean chemicalDmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD");
 			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+			boolean ptaPmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
 			byte[] excelBytes=null;
 			 
-			if(vcmDmd || chemicalDmd || meg) {
+			if(vcmDmd || chemicalDmd || meg || ptaPmd) {
 				// seperate export method to enable months as per shutdown months
 				  excelBytes = shutdownNormsService.exportDMDShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 
 			}else {
