@@ -1058,18 +1058,18 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 	            if (existingEntity != null) {
 	                boolean monthChanged = false;
-	                if (!Objects.equals(existingEntity.getApril(), dto.getApril())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getMay(), dto.getMay())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getJune(), dto.getJune())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getJuly(), dto.getJuly())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getAugust(), dto.getAugust())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getSeptember(), dto.getSeptember())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getOctober(), dto.getOctober())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getNovember(), dto.getNovember())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getDecember(), dto.getDecember())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getJanuary(), dto.getJanuary())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getFebruary(), dto.getFebruary())) monthChanged = true;
-	                if (!Objects.equals(existingEntity.getMarch(), dto.getMarch())) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getApril()).orElse(0.0), Optional.ofNullable(dto.getApril()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getMay()).orElse(0.0), Optional.ofNullable(dto.getMay()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getJune()).orElse(0.0), Optional.ofNullable(dto.getJune()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getJuly()).orElse(0.0), Optional.ofNullable(dto.getJuly()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getAugust()).orElse(0.0), Optional.ofNullable(dto.getAugust()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getSeptember()).orElse(0.0), Optional.ofNullable(dto.getSeptember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getOctober()).orElse(0.0), Optional.ofNullable(dto.getOctober()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getNovember()).orElse(0.0), Optional.ofNullable(dto.getNovember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getDecember()).orElse(0.0), Optional.ofNullable(dto.getDecember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getJanuary()).orElse(0.0), Optional.ofNullable(dto.getJanuary()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getFebruary()).orElse(0.0), Optional.ofNullable(dto.getFebruary()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(Optional.ofNullable(existingEntity.getMarch()).orElse(0.0), Optional.ofNullable(dto.getMarch()).orElse(0.0))) monthChanged = true;
 
 	                boolean remarkChanged = !Objects.equals(existingEntity.getRemarks(), dto.getRemarks());
 
