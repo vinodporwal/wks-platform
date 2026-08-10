@@ -719,13 +719,15 @@ public class KeycloakUserService {
 	 * Lists realm roles with optional search and pagination.
 	 * {@code q} filters by role name or description (case-insensitive contains).
 	 * {@code page} is 1-based (default 1). {@code size} defaults to 20 (max 100).
+	 * Each role includes {@code screens} (from the Keycloak role attribute) when present.
 	 */
 	public Map<String, Object> getRealmRoles(String q, Integer page, Integer size) throws Exception {
 		Map<String, Object> result = new HashMap<String, Object>();
 		Keycloak keycloak = keycloakAdminClient.getInstance();
 
 		try {
-			List<RoleRepresentation> realmRoles = keycloak.realm(keycloakRealmName).roles().list();
+			// briefRepresentation=false so role attributes (including screens) are returned
+			List<RoleRepresentation> realmRoles = keycloak.realm(keycloakRealmName).roles().list(false);
 
 			if (q != null && !q.isBlank()) {
 				String needle = q.trim().toLowerCase();
@@ -747,7 +749,10 @@ public class KeycloakUserService {
 			int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / pageSize);
 			int fromIndex = Math.min((pageNumber - 1) * pageSize, total);
 			int toIndex = Math.min(fromIndex + pageSize, total);
-			List<RoleRepresentation> pageData = realmRoles.subList(fromIndex, toIndex);
+
+			List<Map<String, Object>> pageData = realmRoles.subList(fromIndex, toIndex).stream()
+					.map(this::toRoleListItem)
+					.collect(Collectors.toList());
 
 			result.put("status", 200);
 			result.put("message", "User roles fetched successfully.");
@@ -763,6 +768,26 @@ public class KeycloakUserService {
 		return result;
 	}
 
+	private Map<String, Object> toRoleListItem(RoleRepresentation role) {
+		Map<String, Object> item = new HashMap<>();
+		item.put("id", role.getId());
+		item.put("name", role.getName());
+		item.put("description", role.getDescription());
+		item.put("composite", role.isComposite());
+		item.put("clientRole", role.getClientRole());
+		item.put("containerId", role.getContainerId());
+
+		Map<String, List<String>> attributes = role.getAttributes() != null
+				? role.getAttributes()
+				: Collections.emptyMap();
+		item.put("attributes", attributes);
+
+		List<String> screens = attributes.getOrDefault("screens", Collections.emptyList());
+		item.put("screens", screens != null ? screens : Collections.emptyList());
+
+		return item;
+	}
+
 	public Map<String, Object> getRealmRoles(String q) throws Exception {
 		return getRealmRoles(q, null, null);
 	}
@@ -775,6 +800,11 @@ public class KeycloakUserService {
 	 * Creates a new realm role in Keycloak.
 	 */
 	public Map<String, Object> createRealmRole(String name, String description) throws Exception {
+		return createRealmRole(name, description, null);
+	}
+
+	public Map<String, Object> createRealmRole(String name, String description, List<String> screens)
+			throws Exception {
 		Map<String, Object> result = new HashMap<>();
 
 		if (name == null || name.isBlank()) {
@@ -804,6 +834,23 @@ public class KeycloakUserService {
 
 			RoleRepresentation created = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
 
+			if (screens != null) {
+				List<String> normalizedScreens = screens.stream()
+						.filter(s -> s != null && !s.isBlank())
+						.map(String::trim)
+						.distinct()
+						.collect(Collectors.toList());
+
+				Map<String, List<String>> attributes = Optional.ofNullable(created.getAttributes())
+						.map(HashMap::new)
+						.orElseGet(HashMap::new);
+				attributes.put("screens", normalizedScreens);
+				created.setAttributes(attributes);
+				keycloak.realm(keycloakRealmName).roles().get(roleName).update(created);
+
+				created = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+			}
+
 			result.put("status", 201);
 			result.put("message", "Role created successfully.");
 			result.put("data", created);
@@ -811,6 +858,65 @@ public class KeycloakUserService {
 			throw ex;
 		} catch (Exception ex) {
 			throw new Exception("Failed to create role: " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Updates an existing realm role in Keycloak (description and/or screens attribute).
+	 * Pass screens as null to leave the attribute unchanged; pass an empty list to clear it.
+	 */
+	public Map<String, Object> updateRealmRole(String name, String description, List<String> screens)
+			throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (name == null || name.isBlank()) {
+			throw new IllegalArgumentException("Role name must not be null or blank.");
+		}
+
+		String roleName = name.trim();
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			RoleRepresentation existing;
+			try {
+				existing = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+			} catch (Exception ex) {
+				result.put("status", 404);
+				result.put("message", "Role not found: " + roleName);
+				return result;
+			}
+
+			if (description != null) {
+				existing.setDescription(description.trim());
+			}
+
+			if (screens != null) {
+				List<String> normalizedScreens = screens.stream()
+						.filter(s -> s != null && !s.isBlank())
+						.map(String::trim)
+						.distinct()
+						.collect(Collectors.toList());
+
+				Map<String, List<String>> attributes = Optional.ofNullable(existing.getAttributes())
+						.map(HashMap::new)
+						.orElseGet(HashMap::new);
+				attributes.put("screens", normalizedScreens);
+				existing.setAttributes(attributes);
+			}
+
+			keycloak.realm(keycloakRealmName).roles().get(roleName).update(existing);
+
+			RoleRepresentation updated = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+
+			result.put("status", 200);
+			result.put("message", "Role updated successfully.");
+			result.put("data", updated);
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to update role: " + ex.getMessage(), ex);
 		}
 
 		return result;

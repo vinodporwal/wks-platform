@@ -11,8 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Data
-public class RoleCreateRequest {
-	private String name;
+public class RoleUpdateRequest {
 	private String description;
 	private List<String> screens;
 }

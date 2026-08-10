@@ -85,14 +85,21 @@ public final class OpenPolicyAuthzEnforcer implements AccessDecisionVoter<Object
 		Map<String, Object> input = config.getHandler().resolver(request, authentication);
 
 		HttpEntity<?> body = new HttpEntity<>(new OpenPolicyRequest(input));
-		OpenPolicyResponse response = restTemplate.postForObject(this.config.getOpaAuthURL(), body,
-				OpenPolicyResponse.class);
+		OpenPolicyResponse response;
+		try {
+			response = restTemplate.postForObject(this.config.getOpaAuthURL(), body, OpenPolicyResponse.class);
+		} catch (Exception e) {
+			log.warn("OPA authz call failed for {} {} -> {}: {}", input.get("method"), input.get("path"),
+					this.config.getOpaAuthURL(), e.toString());
+			return ACCESS_DENIED;
+		}
 		if (response == null) {
-			throw new RuntimeException("Error connecting to OPA Server");
+			log.warn("OPA authz returned null for Input -> {}", input);
+			return ACCESS_DENIED;
 		}
 
 		if (!response.getResult()) {
-			log.debug("Denied with Input -> {}", input);
+			log.warn("Denied with Input -> {}", input);
 			return ACCESS_DENIED;
 		}
 

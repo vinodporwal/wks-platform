@@ -26,5 +26,15 @@ public class VerticalScreenMappingController {
 			return verticalScreenMappingService.getPlantScreenMapping(plantId, aopYear);
 	}
 
+	/**
+	 * Fetches distinct vertical screens with resolved menu display values.
+	 * GET /task/screen-mapping/vertical-screens-with-menu-value
+	 * Source: SP_GetVerticalScreensWithMenuValue
+	 */
+	@GetMapping(value = "/vertical-screens-with-menu-value")
+	public Map<String, Object> getVerticalScreensWithMenuValue() throws Exception {
+		return verticalScreenMappingService.getVerticalScreensWithMenuValue();
+	}
+
 }
 
