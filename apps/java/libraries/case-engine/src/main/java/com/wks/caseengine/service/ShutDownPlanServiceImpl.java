@@ -3428,6 +3428,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
 						if (plantMaintenance.isPresent()) {
 							PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
+							entityManager.detach(plantMaintenanceTransaction);
 							plantMaintenanceTransaction.setPlantId(plantId);
 							if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown || filament || staple) {
 				            	if(shutDownPlanDTO.getMonth()!=null) {
