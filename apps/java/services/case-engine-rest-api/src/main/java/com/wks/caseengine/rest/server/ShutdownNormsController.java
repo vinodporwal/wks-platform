@@ -94,6 +94,16 @@ public class ShutdownNormsController {
 			return	shutdownNormsService.importShutdownConsumption(year,UUID.fromString(plantId),gradeId, file); 
 	}
 
+	@PostMapping(value = "/import-shutdown-consumption-by-material-id", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelByMaterialId(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+            @RequestParam(required = false) String gradeId,
+			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
+	        ) {
+			return	shutdownNormsService.importShutdownConsumptionByMaterialId(year,UUID.fromString(plantId),gradeId, file); 
+	}
+
 	@GetMapping(value = "/shutdown-consumption-export")
 	public ResponseEntity<byte[]> exportShutdownNorms(
 			@RequestParam("plantId") String plantId,

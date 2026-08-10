@@ -1028,6 +1028,122 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	        throw new RuntimeException("Failed to save data", ex);
 	    }
 	}
+
+
+	public Map<String, Object> saveShutdownNormsDataByMaterialId(List<ShutdownNormsValueDTO> shutdownNormsValueDTOList) {
+	    String year = null;
+	    UUID plantId = null;
+	    List<ShutdownNormsValue> shutdownNormsValueList = new ArrayList<>();
+	    List<ShutdownNormsValueDTO> failedList = new ArrayList<>();
+	    
+	    try {
+	        for (ShutdownNormsValueDTO dto : shutdownNormsValueDTOList) {
+	            if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+	                failedList.add(dto);
+	                continue;
+	            }
+
+	            year = dto.getFinancialYear();
+	            plantId = UUID.fromString(dto.getPlantFkId());
+	            ShutdownNormsValue existingEntity = null;
+
+	                UUID siteId = dto.getSiteFkId() != null ? UUID.fromString(dto.getSiteFkId()) : null;
+	                UUID verticalId = dto.getVerticalFkId() != null ? UUID.fromString(dto.getVerticalFkId()) : null;
+	                UUID materialId = dto.getMaterialFkId() != null ? UUID.fromString(dto.getMaterialFkId()) : null;
+	                UUID foundId = shutdownNormsRepository.findIdByFilters(plantId, siteId, verticalId, materialId, year);
+	                if (foundId != null) {
+	                    existingEntity = shutdownNormsRepository.findById(foundId).orElse(null);
+	                }
+	            
+
+	            if (existingEntity != null) {
+	                boolean monthChanged = false;
+	                if (!Objects.equals(existingEntity.getApril(), Optional.ofNullable(dto.getApril()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getMay(), Optional.ofNullable(dto.getMay()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getJune(), Optional.ofNullable(dto.getJune()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getJuly(), Optional.ofNullable(dto.getJuly()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getAugust(), Optional.ofNullable(dto.getAugust()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getSeptember(), Optional.ofNullable(dto.getSeptember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getOctober(), Optional.ofNullable(dto.getOctober()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getNovember(), Optional.ofNullable(dto.getNovember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getDecember(), Optional.ofNullable(dto.getDecember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getJanuary(), Optional.ofNullable(dto.getJanuary()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getFebruary(), Optional.ofNullable(dto.getFebruary()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getMarch(), Optional.ofNullable(dto.getMarch()).orElse(0.0))) monthChanged = true;
+
+	                boolean remarkChanged = !Objects.equals(existingEntity.getRemarks(), dto.getRemarks());
+
+	                if (monthChanged && !remarkChanged) {
+	                    dto.setSaveStatus("Failed");
+	                    dto.setErrDescription("Please update remark");
+	                    failedList.add(dto);
+	                    continue; 
+	                }
+	            }
+
+	            ShutdownNormsValue shutdownNormsValue = (existingEntity != null) ? existingEntity : new ShutdownNormsValue();
+	            
+	            try {
+	                shutdownNormsValue.setApril(Optional.ofNullable(dto.getApril()).orElse(0.0));
+	                shutdownNormsValue.setMay(Optional.ofNullable(dto.getMay()).orElse(0.0));
+	                shutdownNormsValue.setJune(Optional.ofNullable(dto.getJune()).orElse(0.0));
+	                shutdownNormsValue.setJuly(Optional.ofNullable(dto.getJuly()).orElse(0.0));
+	                shutdownNormsValue.setAugust(Optional.ofNullable(dto.getAugust()).orElse(0.0));
+	                shutdownNormsValue.setSeptember(Optional.ofNullable(dto.getSeptember()).orElse(0.0));
+	                shutdownNormsValue.setOctober(Optional.ofNullable(dto.getOctober()).orElse(0.0));
+	                shutdownNormsValue.setNovember(Optional.ofNullable(dto.getNovember()).orElse(0.0));
+	                shutdownNormsValue.setDecember(Optional.ofNullable(dto.getDecember()).orElse(0.0));
+	                shutdownNormsValue.setJanuary(Optional.ofNullable(dto.getJanuary()).orElse(0.0));
+	                shutdownNormsValue.setFebruary(Optional.ofNullable(dto.getFebruary()).orElse(0.0));
+	                shutdownNormsValue.setMarch(Optional.ofNullable(dto.getMarch()).orElse(0.0));
+	            } catch (Exception e) {
+	                dto.setSaveStatus("Failed");
+	                dto.setErrDescription("Please enter numeric values");
+	                failedList.add(dto);
+	                continue;
+	            }
+	            if (existingEntity != null) {
+	                shutdownNormsValue.setModifiedOn(new Date());
+	            } else {
+	                shutdownNormsValue.setCreatedOn(new Date());
+	                if (dto.getSiteFkId() != null) shutdownNormsValue.setSiteFkId(UUID.fromString(dto.getSiteFkId()));
+	                if (dto.getPlantFkId() != null) shutdownNormsValue.setPlantFkId(UUID.fromString(dto.getPlantFkId()));
+	                if (dto.getVerticalFkId() != null) shutdownNormsValue.setVerticalFkId(UUID.fromString(dto.getVerticalFkId()));
+	                if (dto.getMaterialFkId() != null) shutdownNormsValue.setMaterialFkId(UUID.fromString(dto.getMaterialFkId()));
+	                if (dto.getNormParameterTypeId() != null) {
+	                    shutdownNormsValue.setNormParameterTypeFkId(UUID.fromString(dto.getNormParameterTypeId()));
+	                }
+	            }
+
+	            shutdownNormsValue.setFinancialYear(year);
+	            shutdownNormsValue.setRemarks(dto.getRemarks());
+	            shutdownNormsValue.setMcuVersion("V1");
+	            shutdownNormsValue.setUpdatedBy(Utility.getUserName());
+
+	            shutdownNormsValueList.add(shutdownNormsRepository.save(shutdownNormsValue));
+	            System.out.println("Data Saved Successfully");
+	        }
+
+	        List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("shutdown-norms");
+	        for (ScreenMapping screenMapping : screenMappingList) {
+	            AopCalculation aopCalculation = new AopCalculation();
+	            aopCalculation.setAopYear(year);
+	            aopCalculation.setIsChanged(true);
+	            aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+	            aopCalculation.setPlantId(plantId);
+	            aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+	            aopCalculationRepository.save(aopCalculation);
+	        }
+
+	        Map<String, Object> map = new HashMap<>();
+	        map.put("data", failedList);
+	        return map;
+
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	        throw new RuntimeException("Failed to save data", ex);
+	    }
+	}
 		
 	
 	public Map<String,Object> savePPShutdownNormsData(List<ShutdownNormsValueDTO> shutdownNormsValueDTOList) {
@@ -1966,6 +2082,53 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				data = readShutdownConsumptions(file.getInputStream(), plantFKId, year);
 			}
 				Map<String,Object> map = saveShutdownNormsData(data);
+				List<ShutdownNormsValueDTO> retrievedList = (List<ShutdownNormsValueDTO>) map.get("data");
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (retrievedList != null && retrievedList.size() > 0) {
+				byte[] fileByteArray =null;
+				if((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && site.getName().equalsIgnoreCase("DMD")) {
+					 fileByteArray = exportDMDShutdownConsumption(year, plantFKId, true, retrievedList,gradeId);
+				}else {
+					 fileByteArray = exportShutdownConsumption(year, plantFKId, true, retrievedList,gradeId);
+				}
+				
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				// aopMessageVM.setData();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			// return ResponseEntity.ok(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// return ResponseEntity.internalServerError().build();
+		}
+		return null;
+	}
+
+	@Override
+	public AOPMessageVM importShutdownConsumptionByMaterialId(String year, UUID plantFKId, String gradeId, MultipartFile file) {
+		
+		try {
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			List<ShutdownNormsValueDTO> data=null;
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			boolean ptaDmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD");
+			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
+			if(ptaDmd || staple) {
+				data = readDMDShutdownConsumptions(file.getInputStream(), plantFKId, year);
+			}else {
+				// sepearate method to ignore non active months
+				data = readShutdownConsumptions(file.getInputStream(), plantFKId, year);
+			}
+				Map<String,Object> map = saveShutdownNormsDataByMaterialId(data);
 				List<ShutdownNormsValueDTO> retrievedList = (List<ShutdownNormsValueDTO>) map.get("data");
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
