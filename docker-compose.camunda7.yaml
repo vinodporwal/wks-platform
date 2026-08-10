@@ -9,7 +9,7 @@ services:
             - 8080:8080
         volumes:
             # Required for AOP_Approval_v2 (AopRoleCollectionListener + AopGateDecisionListener)
-            - ./apps/java/libraries/c7-client/target/c7-client-1.0-SNAPSHOT.jar:/camunda/configuration/userlib/c7-client-1.0-SNAPSHOT.jar
+            - ./apps/java/services/c7-external-tasks/target/c7-external-tasks-1.0-SNAPSHOT-aop-plugin.jar:/camunda/configuration/userlib/c7-external-tasks-1.0-SNAPSHOT-aop-plugin.jar
         healthcheck:
             test: curl --fail http://localhost:8080/engine-rest/version || exit 1
             interval: 10s
