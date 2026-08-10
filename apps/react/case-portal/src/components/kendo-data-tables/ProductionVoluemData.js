@@ -511,71 +511,19 @@ const ProductionvolumeData = ({
         })
         return
       }
-
-      const invalidRows = data.filter((row) => {
-        if (IS_PTA_PMD_PIA) {
-          const value = row['april']
-          if (
-            value === 0 ||
-            value === null ||
-            (typeof value === 'string' && !value.toString().trim())
-          ) {
-            return true
-          }
-        } else {
-          const months = [
-            'april',
-            'may',
-            'june',
-            'july',
-            'august',
-            'september',
-            'october',
-            'november',
-            'december',
-            'january',
-            'february',
-            'march',
-          ]
-          for (const month of months) {
-            const value = row[month]
-            if (
-              value === 0 ||
-              value === null ||
-              (typeof value === 'string' && !value.toString().trim())
-            ) {
-              return true
-            }
-          }
-        }
-
-        const remarkValue = row.remark || row.remarks
-        const originalRemarkValue =
-          row.originalRemark || row.originalRemarks || ''
-
-        if (
-          !remarkValue ||
-          (typeof remarkValue === 'string' && !remarkValue.trim()) ||
-          remarkValue.trim() === originalRemarkValue.trim()
-        ) {
-          return true
-        }
-
-        return false
-      })
-
-      if (invalidRows.length > 0) {
+      const requiredFields = ['remarks']
+      
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
         setSnackbarData({
-          message: IS_PTA_PMD_PIA
-            ? 'Please fill April and Remark in edited row!'
-            : 'Please fill all fields in edited row and update the Remark!',
+          message: validationMessage,
           severity: 'error',
         })
-        setSnackbarOpen(true)
+        setLoading(false)
         return
-      } else {
-        editMaxCapacityData(data)
       }
+      editMaxCapacityData(data)
       setEnableSaveAddBtnMaxCapacity(false)
     } catch (error) {
       console.log('Facing issue at saving data', error)
