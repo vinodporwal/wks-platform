@@ -191,7 +191,7 @@ async function filterCase(keycloak, caseDefId, status, cursor) {
   }
 }
 
-async function filterCaseByAssetName(keycloak, caseDefId, status, cursor, assetName, eventIds) {
+async function filterCaseByAssetName(keycloak, caseDefId, status, cursor, assetName, eventIds, limit = 10, offset = 0) {
   // let url = `${Config.CaseEngineUrl}/case/asset-name?`
   // url = url + (assetName ? `assetName=${assetName}` : '')
   // url = url + (status ? `status=${status}` : '')
@@ -210,10 +210,9 @@ if (status) params.append('status', status)
 if (caseDefId) params.append('caseDefinitionId', caseDefId)
 if (eventIds) params.append('eventIds', eventIds)
 
-params.append('before', cursor.before || '')
-params.append('after', cursor.after || '')
-params.append('sort', cursor.sort || 'DESC')
-params.append('limit', cursor.limit || 10)
+  params.append('sort', cursor?.sort || 'DESC')
+  params.append('limit', limit)
+  params.append('offset', offset)
 
 const url = `${Config.CaseEngineUrl}/case-definition/cases-to-link?${params.toString()}`
 
@@ -224,7 +223,7 @@ const url = `${Config.CaseEngineUrl}/case-definition/cases-to-link?${params.toSt
   try {
     const resp = await fetch(url, { headers })
     const data = await json(keycloak, resp)
-    return mapperToCase(data)
+    return Array.isArray(data) ? data : (data?.data || [])
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)

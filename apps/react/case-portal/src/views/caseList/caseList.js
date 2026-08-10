@@ -81,6 +81,10 @@ export const CaseList = ({ status, caseDefId }) => {
   const [snackOpen, setSnackOpen] = useState(false)
   const [linkSnackOpen, setLinkSnackOpen] = useState(false)
   const [linkSnackMessage, setLinkSnackMessage] = useState('')
+
+  const [linkedAssetName, setLinkedAssetName] = useState('')  
+  const [linkedEventIds, setLinkedEventIds] = useState('')  
+  
   const keycloak = useSession()
   const [caseDefs, setCaseDefs] = useState([])
   const [fetching, setFetching] = useState(false)
@@ -727,7 +731,7 @@ export const CaseList = ({ status, caseDefId }) => {
   const handleCloseCaseForm = () => {
 
     console.log("In CaseList handleCloseCaseForm........");
-   
+    setOpenCaseForm(false);
     if (isLinkCaseUrl) {
       const assetName = searchParams.get("assetName");
       const eventIds = searchParams.get("eventIds");
@@ -744,17 +748,26 @@ export const CaseList = ({ status, caseDefId }) => {
         },
         { replace: true }
       );
-    }
- else {
-    // Remove all URL parameters
-    // navigate(location.pathname, { replace: true });
- }
 
-   
-   
-    setOpenCaseForm(false);
-    const { assetName, hierarchyName } = getUrlParams()
+    // Re-fetch cases for link page
+    setFetching(true);
+    CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter,assetName, eventIds, rowsPerPage, page * rowsPerPage)
+    .then((data) => {
+      const updatedCases = Array.isArray(data) ? data : (data?.data || []);
+      setCases(updatedCases);
+    })
+    .catch((err) => {
+      console.error('Error re-fetching link cases after close:', err);
+    })
+    .finally(() => {
+      setFetching(false);
+    });
+
+  } else {
+    // Normal case list page re-fetch
+    const { assetName, hierarchyName } = getUrlParams();
     fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
+  }
   }
 
   const handleCloseNewCaseForm = () => {
@@ -868,6 +881,10 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
 
     // clean url parameters
     const urlParams = new URLSearchParams(window.location.search);
+    const savedAssetName = urlParams.get('assetName');    
+    const savedEventIds = urlParams.get('eventIds');      
+    setLinkedAssetName(savedAssetName || '');            
+    setLinkedEventIds(savedEventIds || '');               
     urlParams.delete('eventIds');
     urlParams.delete('assetName');
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
@@ -958,17 +975,27 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
 let request;
 
   if(isLinkCaseUrl) {  
-
+  const nextPage = page + 1;
+  setPage(nextPage);
     const urlParams = new URLSearchParams(window.location.search);
     const mainAssetName = urlParams.get('assetName');
     const eventIds = urlParams.get('eventIds');  
 
-    request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, next, mainAssetName, eventIds)
-    
+    request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, next, mainAssetName, eventIds, rowsPerPage, nextPage * rowsPerPage)
+    .then((data) => ({
+      data: Array.isArray(data) ? data : (data?.data || []),
+      paging: { cursors: {}, hasPrevious: false, hasNext: false }
+    }));
   }
 
   else {
-    request = CaseService.filterCase(keycloak, caseDefId, status, next)
+    const nextPage = page + 1
+    const { assetName, hierarchyName } = getUrlParams()
+    request = CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, nextPage * rowsPerPage)
+     .then((data) => ({
+      data, paging: { cursors: {}, hasPrevious: false, hasNext: false }
+    }))
+    setPage(nextPage)   // remember the page
   }
  
       request.then((resp) => {
@@ -998,13 +1025,25 @@ let request;
     }
 let request;
 if(isLinkCaseUrl) {
+  const prevPage = Math.max(page - 1, 0);
+  setPage(prevPage);
   const urlParams = new URLSearchParams(window.location.search);
   const mainAssetName = urlParams.get('assetName');
   const eventIds = urlParams.get('eventIds');  
-  request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, prior, mainAssetName, eventIds)
+  request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, prior, mainAssetName, eventIds, rowsPerPage, prevPage * rowsPerPage)
+    .then((data) => ({
+      data: Array.isArray(data) ? data : (data?.data || []),
+      paging: { cursors: {}, hasPrevious: false, hasNext: false }
+    }));
 }
 else {
-  request = CaseService.filterCase(keycloak, caseDefId, status, prior)
+    const prevPage = Math.max(page - 1, 0)   // don't go negative
+    const { assetName, hierarchyName } = getUrlParams()
+  request = CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, prevPage * rowsPerPage)
+    .then((data) => ({
+      data, paging: { cursors: {}, hasPrevious: false, hasNext: false }
+    }))
+    setPage(prevPage)
 }
     
       request.then((resp) => {
@@ -1042,7 +1081,7 @@ else {
       <Box sx={{ flexShrink: 0, ml: 2.5 }}>
         <IconButton
           onClick={handleBackButtonClick}
-          disabled={!hasPrevious}
+          disabled={hasPrevious}
           aria-label='previous page'
         >
           {theme.direction === 'rtl' ? (
@@ -1053,7 +1092,7 @@ else {
         </IconButton>
         <IconButton
           onClick={handleNextButtonClick}
-          disabled={!hasNext}
+          disabled={hasNext}
           aria-label='next page'
         >
           {theme.direction === 'rtl' ? (
@@ -1077,7 +1116,7 @@ else {
           labelRowsPerPage={
             <span style={{ paddingTop: 15 }}>Rows per page:</span>
           }
-          rowsPerPage={filter.limit}
+          rowsPerPage={rowsPerPage}
           rowsPerPageOptions={[5, 10, 25, 50]}
           getItemAriaLabel={() => ''}
           labelDisplayedRows={() => ''}
@@ -1091,6 +1130,9 @@ else {
           }}
           onRowsPerPageChange={(e) => {
             setFetching(true)
+              const newLimit = Number(e.target.value)
+              setRowsPerPage(newLimit)
+              setPage(0)   // reset page whenever the page size changes
 
             let request;
 
@@ -1100,13 +1142,19 @@ else {
             const mainAssetName = urlParams.get('assetName');
             const eventIds = urlParams.get('eventIds');  
             request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, {
-              limit: e.target.value,
-            }, mainAssetName, eventIds)
+              limit: newLimit,
+            }, mainAssetName, eventIds, newLimit, 0)
+    .then((data) => ({
+      data: Array.isArray(data) ? data : (data?.data || []),
+      paging: { cursors: {}, hasPrevious: false, hasNext: false }
+    }));
           }
           else {
-            request = CaseService.filterCase(keycloak, caseDefId, status, {
-              limit: e.target.value,
-            })
+            const { assetName, hierarchyName } = getUrlParams()
+            request = CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, searchText, caseStatusFilter, newLimit, 0)
+              .then((data) => ({
+             data, paging: { cursors: {}, hasPrevious: false, hasNext: false }
+            }))
           }
               request.then((resp) => {
                 const { data, paging } = resp;
@@ -1117,7 +1165,7 @@ else {
                 setCases(data);
                 setFilter({
                   ...filter,
-                  limit: e.target.value,
+                  limit: newLimit,
                   cursors: paging.cursors,
                   hasPrevious: paging.hasPrevious,
                   hasNext: paging.hasNext,
@@ -1573,6 +1621,11 @@ else
 }
 
 function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, search, caseStatus, limit, offset, setTotalCount, setACase, setOpenCaseForm) {
+  // Guard: skip fetch if caseDefId is missing — prevents /cases/undefined/filter call
+  if (!caseDefId || caseDefId === 'undefined') {
+    setFetching(false)
+    return
+  }
   setFetching(true)
   Promise.all([
     CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus, limit, offset),

@@ -192,19 +192,18 @@ public class CaseDefinitionController {
 			@RequestParam(required = false, name = "before") String before,
 			@RequestParam(required = false, name = "after") String after,
 			@RequestParam(required = false, name = "sort") String sort,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size,
-			@RequestParam(required = false, name = "limit") String limit) {
-		int pageSize = (limit != null && !limit.isEmpty()) ? Integer.parseInt(limit) : size;
-		List<Case> cases = caseDefinitionService.getCaseDetails(assetName, hierarchyName != null ? hierarchyName : "", page, pageSize);
+			@RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        int page = (limit > 0) ? offset / limit : 0;
+		List<Case> cases = caseDefinitionService.getCaseDetails(assetName,hierarchyName != null ? hierarchyName : "", page, limit);
 		long total = com.wks.caseengine.cases.definition.service.CaseDefinitionServiceImpl.totalHolder.get();
 		com.wks.caseengine.cases.definition.service.CaseDefinitionServiceImpl.totalHolder.remove();
-		boolean hasNext = (long)(page + 1) * pageSize < total;
+		boolean hasNext = (long) (page + 1) * limit < total;
 		boolean hasPrevious = page > 0;
 		PageResult<Case> result = new PageResult<>(cases, hasNext, hasPrevious,
 				hasNext ? page + 1 : null,
 				hasPrevious ? page - 1 : null,
-				org.springframework.data.domain.Sort.Direction.DESC, pageSize);
+				org.springframework.data.domain.Sort.Direction.DESC, limit);
 		return ResponseEntity.ok(result.toJson());
 	}
 
