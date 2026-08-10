@@ -8,6 +8,8 @@ const SystemRolesCatalogPage = ({
   setRoleSearchQuery,
   fetchRoles,
   rolesLoading,
+  availableScreens = [],
+  handleUpdateRole,
   setSelectedRoles,
   showNotification,
   setRoleToDelete,
@@ -21,6 +23,8 @@ const SystemRolesCatalogPage = ({
         setRoleSearchQuery={setRoleSearchQuery}
         fetchRoles={fetchRoles}
         rolesLoading={rolesLoading}
+        availableScreens={availableScreens}
+        handleUpdateRole={handleUpdateRole}
         setSelectedRoles={setSelectedRoles}
         showNotification={showNotification}
         setRoleToDelete={setRoleToDelete}

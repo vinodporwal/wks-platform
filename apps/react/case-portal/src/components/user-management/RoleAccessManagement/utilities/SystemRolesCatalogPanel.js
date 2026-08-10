@@ -18,16 +18,28 @@ import {
   Badge,
   Collapse,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Autocomplete,
+  Checkbox,
 } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import SearchIcon from '@mui/icons-material/Search'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import EditIcon from '@mui/icons-material/Edit'
 import SecurityIcon from '@mui/icons-material/Security'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import DesktopWindowsIcon from '@mui/icons-material/DesktopWindows'
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank'
+import CheckBoxIcon from '@mui/icons-material/CheckBox'
+import SelectAllIcon from '@mui/icons-material/SelectAll'
+import DeselectIcon from '@mui/icons-material/Deselect'
 import { formatGridRows } from './roleUtils'
 import ColumnFilterPopover from './ColumnFilterPopover'
 
@@ -37,6 +49,8 @@ const SystemRolesCatalogPanel = ({
   setRoleSearchQuery,
   fetchRoles,
   rolesLoading,
+  availableScreens = [],
+  handleUpdateRole,
   setSelectedRoles,
   showNotification,
   setRoleToDelete,
@@ -54,10 +68,32 @@ const SystemRolesCatalogPanel = ({
   // Active Popover State: { field: string, anchorEl: HTMLElement } | null
   const [filterPopover, setFilterPopover] = useState(null)
 
+  // Edit Role & Screens Modal State
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingRoleName, setEditingRoleName] = useState('')
+  const [editingDescription, setEditingDescription] = useState('')
+  const [editingScreens, setEditingScreens] = useState([])
+  const [updatingRole, setUpdatingRole] = useState(false)
+
   const rows = useMemo(
     () => formatGridRows(filteredRolesList),
     [filteredRolesList],
   )
+
+  // Screen display name resolver lookup (returns screenValue for display)
+  const getScreenDisplayName = (screenCode) => {
+    const found = availableScreens.find(
+      (s) =>
+        (typeof s === 'string' ? s : s.screenCode) === screenCode ||
+        (typeof s !== 'string' && s.screenValue === screenCode),
+    )
+    if (found) {
+      return typeof found === 'string'
+        ? found
+        : found.screenValue || found.screenDisplayName || found.screenCode
+    }
+    return screenCode
+  }
 
   // Extract unique distinct values for each column for popovers
   const uniqueColumnValues = useMemo(() => {
@@ -157,6 +193,31 @@ const SystemRolesCatalogPanel = ({
     setDeleteDialogOpen(true)
   }
 
+  const handleEditClick = (row) => {
+    setEditingRoleName(row.name)
+    setEditingDescription(
+      row.description === 'System Realm Role' ? '' : row.description || '',
+    )
+    setEditingScreens(Array.isArray(row.screens) ? row.screens : [])
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveEditRole = async () => {
+    if (!editingRoleName || typeof handleUpdateRole !== 'function') return
+    setUpdatingRole(true)
+    try {
+      await handleUpdateRole(editingRoleName, {
+        description: editingDescription.trim(),
+        screens: editingScreens,
+      })
+      setEditDialogOpen(false)
+    } catch (err) {
+      console.error('Failed to update role:', err)
+    } finally {
+      setUpdatingRole(false)
+    }
+  }
+
   return (
     <Paper
       elevation={0}
@@ -191,7 +252,7 @@ const SystemRolesCatalogPanel = ({
             System Roles Catalog
           </Typography>
           <Tooltip
-            title='View, filter, sort, and manage system roles.'
+            title='View, filter, sort, and manage system roles and their assigned screen permissions.'
             arrow
             placement='top'
           >
@@ -413,7 +474,7 @@ const SystemRolesCatalogPanel = ({
               },
             }}
           >
-            <Table size='small' stickyHeader sx={{ minWidth: 600 }}>
+            <Table size='small' stickyHeader sx={{ minWidth: 700 }}>
               {/* Frozen Sticky Table Header */}
               <TableHead>
                 <TableRow>
@@ -437,7 +498,7 @@ const SystemRolesCatalogPanel = ({
                           px: 2,
                           borderBottom: '2px solid #0284c7',
                           borderRight: '1px solid #cbd5e1',
-                          width: '35%',
+                          width: '25%',
                           transition: 'background-color 0.2s ease',
                         }}
                       >
@@ -521,7 +582,7 @@ const SystemRolesCatalogPanel = ({
                           px: 2,
                           borderBottom: '2px solid #0284c7',
                           borderRight: '1px solid #cbd5e1',
-                          width: '50%',
+                          width: '35%',
                           transition: 'background-color 0.2s ease',
                         }}
                       >
@@ -587,6 +648,31 @@ const SystemRolesCatalogPanel = ({
                     )
                   })()}
 
+                  {/* Assigned Screens Header */}
+                  <TableCell
+                    sx={{
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 10,
+                      backgroundColor: '#f1f5f9',
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      fontSize: '0.8rem',
+                      py: 1.2,
+                      px: 2,
+                      borderBottom: '2px solid #0284c7',
+                      borderRight: '1px solid #cbd5e1',
+                      width: '25%',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                      <DesktopWindowsIcon sx={{ color: '#0284c7', fontSize: 16 }} />
+                      <Typography variant='caption' sx={{ fontWeight: 800, color: '#0f172a', fontSize: '0.8rem' }}>
+                        Assigned Screens
+                      </Typography>
+                    </Box>
+                  </TableCell>
+
                   {/* Actions Header */}
                   <TableCell
                     align='center'
@@ -613,7 +699,7 @@ const SystemRolesCatalogPanel = ({
               <TableBody>
                 {rolesLoading ? (
                   <TableRow>
-                    <TableCell colSpan={3} align='center' sx={{ py: 6 }}>
+                    <TableCell colSpan={4} align='center' sx={{ py: 6 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
                         <CircularProgress size={20} sx={{ color: '#0284c7' }} />
                         <Typography variant='body2' sx={{ fontWeight: 700, color: '#0284c7', fontSize: '0.825rem' }}>
@@ -624,7 +710,7 @@ const SystemRolesCatalogPanel = ({
                   </TableRow>
                 ) : filteredAndSortedRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} align='center' sx={{ py: 4 }}>
+                    <TableCell colSpan={4} align='center' sx={{ py: 4 }}>
                       <Typography
                         variant='body2'
                         sx={{
@@ -644,6 +730,7 @@ const SystemRolesCatalogPanel = ({
                 ) : (
                   filteredAndSortedRows.map((row, index) => {
                     const isEven = index % 2 === 0
+                    const screensList = Array.isArray(row.screens) ? row.screens : []
                     return (
                       <TableRow
                         key={row.id || index}
@@ -722,7 +809,69 @@ const SystemRolesCatalogPanel = ({
                           </Tooltip>
                         </TableCell>
 
-                        {/* Actions Cell (Delete Only) */}
+                        {/* Assigned Screens Cell */}
+                        <TableCell
+                          sx={{
+                            py: 0.9,
+                            px: 1.5,
+                            borderRight: '1px solid #e2e8f0',
+                            borderBottom: '1px solid #e2e8f0',
+                          }}
+                        >
+                          {screensList.length === 0 ? (
+                            <Typography
+                              variant='caption'
+                              sx={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.72rem' }}
+                            >
+                              No screens assigned
+                            </Typography>
+                          ) : (
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {screensList.slice(0, 3).map((screenVal) => (
+                                <Chip
+                                  key={screenVal}
+                                  label={getScreenDisplayName(screenVal)}
+                                  size='small'
+                                  sx={{
+                                    fontSize: '0.68rem',
+                                    fontWeight: 600,
+                                    height: '20px',
+                                    backgroundColor: '#f1f5f9',
+                                    color: '#334155',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                  }}
+                                />
+                              ))}
+                              {screensList.length > 3 && (
+                                <Tooltip
+                                  title={`Assigned screens (${screensList.length}): ${screensList
+                                    .map(getScreenDisplayName)
+                                    .join(', ')}`}
+                                  arrow
+                                  placement='top'
+                                >
+                                  <Chip
+                                    label={`+${screensList.length - 3} more`}
+                                    size='small'
+                                    sx={{
+                                      fontSize: '0.68rem',
+                                      fontWeight: 700,
+                                      height: '20px',
+                                      backgroundColor: '#e0f2fe',
+                                      color: '#0369a1',
+                                      border: '1px solid #bae6fd',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer',
+                                    }}
+                                  />
+                                </Tooltip>
+                              )}
+                            </Box>
+                          )}
+                        </TableCell>
+
+                        {/* Actions Cell (Edit & Delete) */}
                         <TableCell
                           align='center'
                           sx={{
@@ -736,8 +885,43 @@ const SystemRolesCatalogPanel = ({
                               display: 'flex',
                               justifyContent: 'center',
                               alignItems: 'center',
+                              gap: 0.8,
                             }}
                           >
+                            <Tooltip
+                              title={`Edit description & assigned screens for "${row.name}"`}
+                              arrow
+                              placement='top'
+                            >
+                              <Button
+                                size='small'
+                                variant='outlined'
+                                color='primary'
+                                startIcon={
+                                  <EditIcon style={{ fontSize: 13 }} />
+                                }
+                                onClick={() => handleEditClick(row)}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  borderRadius: '5px',
+                                  fontSize: '0.7rem',
+                                  py: 0.3,
+                                  px: 1,
+                                  minWidth: 'auto',
+                                  borderColor: '#bae6fd',
+                                  color: '#0284c7',
+                                  backgroundColor: '#f0f9ff',
+                                  '&:hover': {
+                                    backgroundColor: '#e0f2fe',
+                                    borderColor: '#0284c7',
+                                  },
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            </Tooltip>
+
                             <Tooltip
                               title={`Delete "${row.name}" role from catalog`}
                               arrow
@@ -757,7 +941,7 @@ const SystemRolesCatalogPanel = ({
                                   borderRadius: '5px',
                                   fontSize: '0.7rem',
                                   py: 0.3,
-                                  px: 1.2,
+                                  px: 1,
                                   minWidth: 'auto',
                                   borderColor: '#fca5a5',
                                   color: '#ef4444',
@@ -799,6 +983,235 @@ const SystemRolesCatalogPanel = ({
           onClearFilter={() => handleClearColumnFilter(filterPopover.field)}
         />
       )}
+
+      {/* Edit Role & Screens Modal Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => !updatingRole && setEditDialogOpen(false)}
+        maxWidth='sm'
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: '12px', padding: '8px' },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1rem', pb: 1 }}>
+          Edit Role: <span style={{ color: '#0284c7' }}>{editingRoleName}</span>
+        </DialogTitle>
+
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}>
+          <TextField
+            label='Role Description'
+            placeholder='Optional description'
+            size='small'
+            fullWidth
+            value={editingDescription}
+            onChange={(e) => setEditingDescription(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '8px',
+                backgroundColor: '#f8fafc',
+                '& fieldset': { borderColor: '#cbd5e1' },
+                '&:hover fieldset': { borderColor: '#94a3b8' },
+                '&.Mui-focused fieldset': { borderColor: '#0284c7' },
+              },
+            }}
+          />
+
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              backgroundColor: '#f8fafc',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Typography variant='caption' sx={{ fontWeight: 700, color: '#0f172a' }}>
+                Assigned Accessible Screens ({editingScreens.length})
+              </Typography>
+              {availableScreens.length > 0 && (
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    size='small'
+                    onClick={() => {
+                      const allCodes = availableScreens.map((s) =>
+                        typeof s === 'string' ? s : s.screenCode || s.screenValue,
+                      )
+                      setEditingScreens(allCodes)
+                    }}
+                    startIcon={<SelectAllIcon sx={{ fontSize: 14 }} />}
+                    sx={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'none', color: '#0284c7' }}
+                  >
+                    Select All
+                  </Button>
+                  {editingScreens.length > 0 && (
+                    <Button
+                      size='small'
+                      onClick={() => setEditingScreens([])}
+                      startIcon={<DeselectIcon sx={{ fontSize: 14 }} />}
+                      sx={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'none', color: '#64748b' }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </Box>
+              )}
+            </Box>
+
+            <Autocomplete
+              multiple
+              disableCloseOnSelect
+              size='small'
+              options={availableScreens}
+              getOptionLabel={(option) => {
+                if (typeof option === 'string') {
+                  const found = availableScreens.find(
+                    (s) => s.screenCode === option || s.screenValue === option,
+                  )
+                  return found
+                    ? found.screenValue || found.screenDisplayName || option
+                    : option
+                }
+                return option.screenValue || option.screenDisplayName || ''
+              }}
+              isOptionEqualToValue={(option, val) => {
+                const optCode =
+                  typeof option === 'string'
+                    ? option
+                    : option.screenCode || option.screenValue
+                const valCode =
+                  typeof val === 'string'
+                    ? val
+                    : val.screenCode || val.screenValue
+                return optCode === valCode
+              }}
+              value={availableScreens.filter((s) => {
+                const code =
+                  typeof s === 'string' ? s : s.screenCode || s.screenValue
+                return editingScreens.includes(code)
+              })}
+              onChange={(event, newValue) => {
+                const selectedCodes = newValue.map((item) =>
+                  typeof item === 'string'
+                    ? item
+                    : item.screenCode || item.screenValue,
+                )
+                setEditingScreens(selectedCodes)
+              }}
+              renderOption={(props, option, { selected }) => {
+                const displayLabel =
+                  typeof option === 'string'
+                    ? availableScreens.find((s) => s.screenCode === option)
+                        ?.screenValue || option
+                    : option.screenValue || option.screenDisplayName
+                return (
+                  <li
+                    {...props}
+                    key={
+                      typeof option === 'string'
+                        ? option
+                        : option.screenCode || option.screenValue
+                    }
+                  >
+                    <Checkbox
+                      icon={<CheckBoxOutlineBlankIcon fontSize='small' />}
+                      checkedIcon={<CheckBoxIcon fontSize='small' />}
+                      style={{ marginRight: 8 }}
+                      checked={selected}
+                    />
+                    <Typography
+                      variant='body2'
+                      sx={{ fontWeight: 600, fontSize: '0.8rem', color: '#0f172a' }}
+                    >
+                      {displayLabel}
+                    </Typography>
+                  </li>
+                )
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const label =
+                    typeof option === 'string'
+                      ? availableScreens.find((s) => s.screenCode === option)
+                          ?.screenValue || option
+                      : option.screenValue || option.screenDisplayName
+                  const key =
+                    typeof option === 'string'
+                      ? option
+                      : option.screenCode || option.screenValue
+                  return (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={key}
+                      label={label}
+                      size='small'
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.72rem',
+                        backgroundColor: '#e0f2fe',
+                        color: '#0369a1',
+                        borderRadius: '6px',
+                        border: '1px solid #bae6fd',
+                        height: '24px',
+                      }}
+                    />
+                  )
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder={editingScreens.length === 0 ? 'Select screens...' : ''}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      backgroundColor: '#ffffff',
+                      '& fieldset': { borderColor: '#cbd5e1' },
+                    },
+                  }}
+                />
+              )}
+              sx={{ width: '100%' }}
+            />
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            size='small'
+            onClick={() => setEditDialogOpen(false)}
+            disabled={updatingRole}
+            sx={{ textTransform: 'none', color: '#64748b', fontWeight: 600 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            size='small'
+            variant='contained'
+            onClick={handleSaveEditRole}
+            disabled={updatingRole}
+            startIcon={updatingRole ? <CircularProgress size={14} color='inherit' /> : null}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: '8px',
+              backgroundColor: '#0284c7',
+              '&:hover': { backgroundColor: '#0369a1' },
+            }}
+          >
+            {updatingRole ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   )
 }

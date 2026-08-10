@@ -7,6 +7,10 @@ const CreateRolePage = ({
   setRoleName,
   roleDescription,
   setRoleDescription,
+  availableScreens = [],
+  screensLoading = false,
+  selectedScreens = [],
+  setSelectedScreens,
   creatingRole,
   handleCreateRole,
 }) => {
@@ -17,6 +21,10 @@ const CreateRolePage = ({
         setRoleName={setRoleName}
         roleDescription={roleDescription}
         setRoleDescription={setRoleDescription}
+        availableScreens={availableScreens}
+        screensLoading={screensLoading}
+        selectedScreens={selectedScreens}
+        setSelectedScreens={setSelectedScreens}
         creatingRole={creatingRole}
         handleCreateRole={handleCreateRole}
       />

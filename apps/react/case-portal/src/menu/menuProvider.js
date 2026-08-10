@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { userScreenMappingApiService } from 'services/userScreenMappingApiService'
 import { useSession } from '../SessionStoreContext'
 import plan from './plan'
 
@@ -19,6 +20,11 @@ const MenuContext = createContext()
 const STATIC_MENU_DEFAULT = [plan, workspace]
 const STATIC_MENU_CRACKER = [planCracker]
 const USE_STATIC_MENU = false
+
+// Flag to toggle screen fetching mode:
+// true  -> Fetch screens dynamically based on user's Keycloak roles (GET /task/user/screen/screen-by-role)
+// false -> Fetch screens using older legacy user mapping (GET /task/user/screen)
+const USE_ROLE_BASED_SCREENS = true
 
 export function MenuProvider({ children }) {
   // const navigate = useNavigate()
@@ -117,11 +123,17 @@ export function MenuProvider({ children }) {
       }
 
       try {
-        const res = await DataService.getScreenbyPlant(
-          { token: currentToken },
-          vId,
-          pId,
-        )
+        const res = USE_ROLE_BASED_SCREENS
+          ? await userScreenMappingApiService.getUserScreenMappingByRole(
+              { token: currentToken },
+              vId,
+              pId,
+            )
+          : await DataService.getScreenbyPlant(
+              { token: currentToken },
+              vId,
+              pId,
+            )
 
         if (!res?.data || !Array.isArray(res.data) || res.data.length === 0) {
           menuCache.set(cacheKey, staticMenu)

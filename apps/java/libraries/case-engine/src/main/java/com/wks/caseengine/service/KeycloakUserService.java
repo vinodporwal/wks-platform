@@ -36,8 +36,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class KeycloakUserService {
+
+	private static final Logger log = LoggerFactory.getLogger(KeycloakUserService.class);
 
 	@Value("${keycloak.realm.name}")
 	private String keycloakRealmName;
@@ -1186,9 +1191,60 @@ public class KeycloakUserService {
 	            siteEntries.add(Map.of(siteId, plantIds));
 	        }
 
-	        plantMapping.add(Map.of(verticalId, siteEntries));
+	    plantMapping.add(Map.of(verticalId, siteEntries));
 	    }
 	    return plantMapping;
+	}
+
+	/**
+	 * Fetches all screen codes/values assigned to the effective realm roles of a specific user.
+	 */
+	public List<String> getUserScreensFromRoles(String userIdOrUsername) throws Exception {
+		if (userIdOrUsername == null || userIdOrUsername.isBlank()) {
+			return Collections.emptyList();
+		}
+
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+		Set<String> screens = new java.util.LinkedHashSet<>();
+
+		try {
+			UserResource userResource = null;
+			try {
+				UserRepresentation rep = keycloak.realm(keycloakRealmName).users().get(userIdOrUsername).toRepresentation();
+				if (rep != null) {
+					userResource = keycloak.realm(keycloakRealmName).users().get(rep.getId());
+				}
+			} catch (Exception ex) {
+				List<UserRepresentation> matched = keycloak.realm(keycloakRealmName).users().search(userIdOrUsername, true);
+				if (matched != null && !matched.isEmpty()) {
+					userResource = keycloak.realm(keycloakRealmName).users().get(matched.get(0).getId());
+				}
+			}
+
+			if (userResource == null) {
+				return Collections.emptyList();
+			}
+
+			List<RoleRepresentation> effectiveRoles = userResource.roles().realmLevel().listEffective();
+
+			for (RoleRepresentation role : effectiveRoles) {
+				RoleRepresentation fullRole = keycloak.realm(keycloakRealmName).roles().get(role.getName()).toRepresentation();
+				if (fullRole.getAttributes() != null && fullRole.getAttributes().containsKey("screens")) {
+					List<String> roleScreens = fullRole.getAttributes().get("screens");
+					if (roleScreens != null) {
+						for (String s : roleScreens) {
+							if (s != null && !s.isBlank()) {
+								screens.add(s.trim());
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception ex) {
+			log.warn("Failed to fetch user screens from Keycloak roles for user {}: {}", userIdOrUsername, ex.getMessage());
+		}
+
+		return new ArrayList<>(screens);
 	}
 
 }

@@ -30,9 +30,9 @@ export const roleAccessApiService = {
   /**
    * 1. Create a New Role
    * POST /task/users/roles
-   * Body: { name, description }
+   * Body: { name, description, screens }
    */
-  createRole: async (keycloak, { name, description }) => {
+  createRole: async (keycloak, { name, description, screens }) => {
     const url = `${Config.CaseEngineUrl}/task/users/roles`
     const headers = {
       Accept: 'application/json',
@@ -43,6 +43,7 @@ export const roleAccessApiService = {
     const payload = {
       name: name,
       description: description || '',
+      screens: Array.isArray(screens) ? screens : [],
     }
 
     try {
@@ -232,6 +233,56 @@ export const roleAccessApiService = {
       return await handleResponse(keycloak, resp)
     } catch (e) {
       console.error('API Error in assignRolesFromExcel:', e)
+      return Promise.reject(e)
+    }
+  },
+
+  /**
+   * 9. Update Role (Description and/or Screens)
+   * PUT /task/users/roles/{roleName}
+   * Body: { description, screens }
+   */
+  updateRole: async (keycloak, roleName, { description, screens }) => {
+    const url = `${Config.CaseEngineUrl}/task/users/roles/${encodeURIComponent(roleName)}`
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: keycloak?.token ? `Bearer ${keycloak.token}` : '',
+    }
+
+    const payload = {}
+    if (description !== undefined) payload.description = description
+    if (screens !== undefined) payload.screens = Array.isArray(screens) ? screens : []
+
+    try {
+      const resp = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload),
+      })
+      return await handleResponse(keycloak, resp)
+    } catch (e) {
+      console.error(`API Error in updateRole for ${roleName}:`, e)
+      return Promise.reject(e)
+    }
+  },
+
+  /**
+   * 10. Get vertical screens with resolved menu display values
+   * GET /task/screen-mapping/vertical-screens-with-menu-value
+   */
+  getVerticalScreensWithMenuValue: async (keycloak) => {
+    const url = `${Config.CaseEngineUrl}/task/screen-mapping/vertical-screens-with-menu-value`
+    const headers = {
+      Accept: 'application/json',
+      Authorization: keycloak?.token ? `Bearer ${keycloak.token}` : '',
+    }
+
+    try {
+      const resp = await fetch(url, { method: 'GET', headers })
+      return await handleResponse(keycloak, resp)
+    } catch (e) {
+      console.error('API Error in getVerticalScreensWithMenuValue:', e)
       return Promise.reject(e)
     }
   },

@@ -35,7 +35,12 @@ const RoleAccessManagement = ({ keycloak }) => {
   // 2. Create Role State
   const [roleName, setRoleName] = useState('')
   const [roleDescription, setRoleDescription] = useState('')
+  const [selectedScreens, setSelectedScreens] = useState([])
   const [creatingRole, setCreatingRole] = useState(false)
+
+  // 2b. Vertical Screens State
+  const [availableScreens, setAvailableScreens] = useState([])
+  const [screensLoading, setScreensLoading] = useState(false)
 
   // 3. Role Assignment State
   const [selectedUsers, setSelectedUsers] = useState([])
@@ -129,6 +134,24 @@ const RoleAccessManagement = ({ keycloak }) => {
     fetchRoles()
   }, [fetchRoles])
 
+  // Fetch Vertical Screens List (GET /task/screen-mapping/vertical-screens-with-menu-value)
+  const fetchScreens = useCallback(async () => {
+    setScreensLoading(true)
+    try {
+      const res = await roleAccessApiService.getVerticalScreensWithMenuValue(keycloak)
+      const screensData = res?.data || (Array.isArray(res) ? res : [])
+      setAvailableScreens(screensData)
+    } catch (err) {
+      console.error('Error fetching vertical screens:', err)
+    } finally {
+      setScreensLoading(false)
+    }
+  }, [keycloak])
+
+  useEffect(() => {
+    fetchScreens()
+  }, [fetchScreens])
+
   // Role Creation Handler (POST /task/users/roles)
   const handleCreateRole = async () => {
     if (!roleName.trim()) {
@@ -141,6 +164,7 @@ const RoleAccessManagement = ({ keycloak }) => {
       await roleAccessApiService.createRole(keycloak, {
         name: roleName.trim(),
         description: roleDescription.trim(),
+        screens: selectedScreens,
       })
       showNotification(
         `Role "${roleName.trim()}" created successfully!`,
@@ -148,12 +172,29 @@ const RoleAccessManagement = ({ keycloak }) => {
       )
       setRoleName('')
       setRoleDescription('')
+      setSelectedScreens([])
       fetchRoles()
     } catch (err) {
       console.error('Error creating role:', err)
       showNotification(err.message || 'Failed to create role', 'error')
     } finally {
       setCreatingRole(false)
+    }
+  }
+
+  // Role Update Handler (PUT /task/users/roles/{roleName})
+  const handleUpdateRole = async (targetRoleName, { description, screens }) => {
+    try {
+      await roleAccessApiService.updateRole(keycloak, targetRoleName, {
+        description,
+        screens,
+      })
+      showNotification(`Role "${targetRoleName}" updated successfully!`, 'success')
+      fetchRoles()
+    } catch (err) {
+      console.error('Error updating role:', err)
+      showNotification(err.message || 'Failed to update role', 'error')
+      throw err
     }
   }
 
@@ -506,6 +547,10 @@ const RoleAccessManagement = ({ keycloak }) => {
           setRoleName={setRoleName}
           roleDescription={roleDescription}
           setRoleDescription={setRoleDescription}
+          availableScreens={availableScreens}
+          screensLoading={screensLoading}
+          selectedScreens={selectedScreens}
+          setSelectedScreens={setSelectedScreens}
           creatingRole={creatingRole}
           handleCreateRole={handleCreateRole}
         />
@@ -518,6 +563,8 @@ const RoleAccessManagement = ({ keycloak }) => {
           setRoleSearchQuery={setRoleSearchQuery}
           fetchRoles={fetchRoles}
           rolesLoading={rolesLoading}
+          availableScreens={availableScreens}
+          handleUpdateRole={handleUpdateRole}
           setSelectedRoles={setSelectedRoles}
           showNotification={showNotification}
           setRoleToDelete={setRoleToDelete}

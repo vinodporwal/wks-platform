@@ -33,5 +33,19 @@ public class UserScreenMappingController {
 					
 	}
 
+	@GetMapping("/screen-by-role")
+	public Map<String, Object> getUserScreenMappingByRoles(@RequestParam String verticalId, @RequestParam String plantId,@RequestParam(value = "userId", required = false) String userId) throws Exception{
+		
+		if(userId!=null) {
+			System.out.println("UserId " + userId);
+		}else {
+			 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			 userId = authentication.getName(); 
+			 System.out.println("UserId " + userId);	 
+		}
+		return userScreenMappingService.getUserScreenMappingByRoles(verticalId,plantId, userId);
+					
+	}
+
 }
 

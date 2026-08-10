@@ -75,10 +75,15 @@ export const formatGridRows = (filteredRolesList = []) => {
       typeof r === 'string'
         ? 'System Realm Role'
         : r.description || 'System Realm Role'
+    const screensArr =
+      typeof r === 'string'
+        ? []
+        : r.screens || r.attributes?.screens || []
     return {
       id: typeof r === 'string' ? r : r.id || r.name || index,
       name: nameStr,
       description: descStr,
+      screens: Array.isArray(screensArr) ? screensArr : [],
       rawRole: r,
     }
   })
