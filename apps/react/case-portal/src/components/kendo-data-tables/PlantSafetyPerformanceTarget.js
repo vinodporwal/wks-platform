@@ -93,9 +93,9 @@ export default function PlantSafetyPerformanceTarget() {
       {
         field: 'serialNumber',
         title: 'S.No',
-        widthT: 70,
+        width: 100,
         editable: false,
-        minWidth: 70,
+        minWidth: 100,
       },
       {
         field: 'kpiName',
@@ -112,22 +112,8 @@ export default function PlantSafetyPerformanceTarget() {
         minWidth: 100,
       },
       {
-        field: 'bestAchieved',
-        title: 'Best Achieved',
-        editable: true,
-        type: 'number',
-        minWidth: 100,
-      },
-      {
         field: 'prevAOP',
         title: `FY${prev} AOP`,
-        editable: true,
-        type: 'number',
-        minWidth: 100,
-      },
-      {
-        field: 'prevActual',
-        title: `FY${prev} Actual`,
         editable: true,
         type: 'number',
         minWidth: 100,
@@ -453,6 +439,62 @@ export default function PlantSafetyPerformanceTarget() {
     },
     isOldYear,
   )
+  const downloadExcelForConfiguration = async () => {
+    setLoading(true)
+    const EXCEL_NAME = `${lowerVertName}_Plant_Safety_Performance_Targets_${AOP_YEAR}.xlsx`
+    try {
+      await PlantAopReportApiService.exportPlantReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_NAME,
+      )
+
+      setSnackbarData({ message: 'Export started!', severity: 'success' })
+      setSnackbarOpen(true)
+    } catch (err) {
+      console.error('Export error', err)
+      setSnackbarData({ message: 'Export failed!', severity: 'error' })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = async (file) => {
+    if (!file) return
+    setLoading(true)
+    try {
+      const res = await PlantAopReportApiService.importPlantReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        file,
+      )
+
+      if (
+        res?.code === 200 ||
+        res?.status === 200 ||
+        res?.message === 'Success' ||
+        res?.status === 'success' ||
+        (res && res.ok !== false && !res.error && res.code !== 500)
+      ) {
+        setSnackbarData({ message: 'Uploaded Successfully!', severity: 'success' })
+        setSnackbarOpen(true)
+        fetchData()
+      } else {
+        setSnackbarData({ message: res?.message || 'Import failed!', severity: 'error' })
+        setSnackbarOpen(true)
+      }
+    } catch (err) {
+      console.error('Import error', err)
+      setSnackbarData({ message: 'Import failed!', severity: 'error' })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissionsC = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -464,6 +506,8 @@ export default function PlantSafetyPerformanceTarget() {
       showUnit: false,
       saveWithRemark: false,
       saveBtn: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
       isOldYear: isOldYear,
     }
   }
@@ -479,6 +523,7 @@ export default function PlantSafetyPerformanceTarget() {
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Plant Safety Performance & Targets`,
+      disableColWidth: true,
     },
     isOldYear,
   )
@@ -501,6 +546,8 @@ export default function PlantSafetyPerformanceTarget() {
         saveChanges={saveChanges}
         handleCalculate={handleCalculate}
         permissions={adjustedPermissionsC}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
         // groupBy='Particulars'
         {...commonGridProps}
       />

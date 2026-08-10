@@ -57,9 +57,9 @@ export default function ProfitImprovementInitiative({ permissions }) {
       {
         field: 'sNo',
         title: 'S.No',
-        widthT: 70,
+        width: 100,
         editable: false,
-        minWidth: 70,
+        minWidth: 100,
       },
       {
         field: 'initiativeDescription',
@@ -308,6 +308,7 @@ export default function ProfitImprovementInitiative({ permissions }) {
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       ExcelName: `${lowerVertName}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Plant_AOP_Report_Profit_Improvement_Initiative`,
+      disableColWidth: true,
     },
     isOldYear,
   )

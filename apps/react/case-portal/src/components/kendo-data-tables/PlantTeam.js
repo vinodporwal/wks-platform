@@ -73,8 +73,8 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
         field: 'serialNumber',
         title: 'S.No.',
         editable: false,
-        type: 'number',
-        minWidth: 80,
+        width: 100,
+        minWidth: 100,
       },
       {
         field: 'function',
@@ -125,8 +125,8 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
       field: 'serialNumber',
       title: 'S.No.',
       editable: false,
-      type: 'number',
-      minWidth: 80,
+      width: 100,
+      minWidth: 100,
     },
     {
       field: 'initiative',
@@ -562,6 +562,7 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
       ExcelName: `${lowerVertName}_Plant_Team`,
       addButton: true,
       deleteButton: true,
+      disableColWidth: true,
     },
     isOldYear,
   )
@@ -591,6 +592,7 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
     ExcelName: `${lowerVertName}_People_Initiative`,
     addButton: true,
     deleteButton: true,
+    disableColWidth: true,
   })
 
   const commonGridProps = {
