@@ -395,7 +395,7 @@ Object oneDayShutdown = dataRow.get("OneDayShutdown");
 
 					ConfigurationDTO dto = new ConfigurationDTO();
 					try {
-						// Col 0: Particular (DisplayName) — display only, stored for error reporting
+						// Col 0: Particular (DisplayName) - display only, stored for error reporting
 						dto.setProductName(readStringCell(row.getCell(0), dto));
 						// Col 1: UOM
 						dto.setUOM(readStringCell(row.getCell(1), dto));

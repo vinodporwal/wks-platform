@@ -217,7 +217,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		}
 	}
 
-	// --- Proposed AOP Export – Excel Builder -------------------------------------
+	// --- Proposed AOP Export - Excel Builder -------------------------------------
 
 	@Override
 	public byte[] createProposedAOPExcel(UUID plantId, String aopYear, boolean isAfterSave,
@@ -387,7 +387,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		sheet.protectSheet("");
 	}
 
-	// --- Proposed AOP Import – Excel Reader --------------------------------------
+	// --- Proposed AOP Import - Excel Reader --------------------------------------
 
 	public List<ProposedAOPDTO> readProposedAOPExcel(InputStream inputStream) {
 		List<ProposedAOPDTO> resultList = new ArrayList<>();
@@ -522,7 +522,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		return resultList;
 	}
 
-	// --- Proposed AOP Import – API
+	// --- Proposed AOP Import - API
 	// ------------------------------------------------
 
 	@Override

@@ -477,12 +477,12 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	int remarkColIndex = vertical.getName().equalsIgnoreCase("PTA") ? 3 : 4;
 	int totalCols = innerHeaders.size();
 
-	// Wrap style for remark column — top-aligned with text wrapping enabled
+	// Wrap style for remark column - top-aligned with text wrapping enabled
 	CellStyle wrapStyle = Utility.createBorderedStyle(workbook);
 	wrapStyle.setWrapText(true);
 	wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
 
-		// Fixed preferred width for remark column (~50 characters × 256 units)
+		// Fixed preferred width for remark column (~50 characters * 256 units)
 		final int REMARK_CHARS = 50;
 		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
 
@@ -3266,9 +3266,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
     int actualYear;
     if (month.getValue() >= Month.APRIL.getValue()) {
-        actualYear = startYear; // Apr–Dec ? 2026
+        actualYear = startYear; // Apr-Dec ? 2026
     } else {
-        actualYear = endYear;   // Jan–Mar ? 2027
+        actualYear = endYear;   // Jan-Mar ? 2027
     }
 
     YearMonth yearMonth = YearMonth.of(actualYear, month);

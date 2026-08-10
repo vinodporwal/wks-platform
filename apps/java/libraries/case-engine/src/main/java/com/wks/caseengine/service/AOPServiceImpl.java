@@ -969,7 +969,7 @@ public class AOPServiceImpl implements AOPService {
 
 	        int currentRow = 0;
 
-	        // Section 1 — Month Wise Production Plan
+	        // Section 1 - Month Wise Production Plan
 	        Row titleRow1 = sheet.createRow(currentRow++);
 	        Cell titleCell1 = titleRow1.createCell(0);
 	        titleCell1.setCellValue("Month Wise Production Plan");
@@ -987,7 +987,7 @@ public class AOPServiceImpl implements AOPService {
 	        // Two blank rows for readability
 	        currentRow += 2;
 
-	        // Section 2 — By Products
+	        // Section 2 - By Products
 	        Row titleRow2 = sheet.createRow(currentRow++);
 	        Cell titleCell2 = titleRow2.createCell(0);
 	        titleCell2.setCellValue("By Products");

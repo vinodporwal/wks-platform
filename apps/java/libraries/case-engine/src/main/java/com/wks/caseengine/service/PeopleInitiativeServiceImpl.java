@@ -271,7 +271,6 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 				peopleInitiative.setPlantId(plantId);
 				peopleInitiative.setRemark(peopleInitiativeDTO.getRemark());
 				peopleInitiative.setTargetDate(peopleInitiativeDTO.getTargetDate());
-				peopleInitiative.setModifiedOn(new Date());
 				peopleInitiativeRepository.save(peopleInitiative);
 			}
 			

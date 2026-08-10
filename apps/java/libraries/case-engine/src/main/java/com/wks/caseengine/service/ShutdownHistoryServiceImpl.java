@@ -1057,7 +1057,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		}
 	}
 
-	// --- Shutdown History Config – Export Excel -----------------------------------
+	// --- Shutdown History Config - Export Excel -----------------------------------
 
 	@Override
 	public byte[] createShutdownHistoryConfigExcel(String plantId, String year) {
@@ -1089,37 +1089,37 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 				for (Map<String, Object> item : dataList) {
 					Row row = sheet.createRow(rowIdx++);
 
-					// Col 0 – Shutdown Type
+					// Col 0 - Shutdown Type
 					Cell c0 = row.createCell(0);
 					c0.setCellValue(item.get("ShutdownType") != null ? item.get("ShutdownType").toString() : "");
 					c0.setCellStyle(borderStyle);
 
-					// Col 1 – SD - From
+					// Col 1 - SD - From
 					Cell c1 = row.createCell(1);
 					c1.setCellValue(formatShutdownConfigDate(item.get("FromDate"), sdf));
 					c1.setCellStyle(borderStyle);
 
-					// Col 2 – SD - To
+					// Col 2 - SD - To
 					Cell c2 = row.createCell(2);
 					c2.setCellValue(formatShutdownConfigDate(item.get("ToDate"), sdf));
 					c2.setCellStyle(borderStyle);
 
-					// Col 3 – Remark
+					// Col 3 - Remark
 					Cell c3 = row.createCell(3);
 					c3.setCellValue(item.get("Remarks") != null ? item.get("Remarks").toString() : "");
 					c3.setCellStyle(borderStyle);
 
-					// Col 4 – Id (hidden, used during import for updates)
+					// Col 4 - Id (hidden, used during import for updates)
 					Cell c4 = row.createCell(4);
 					c4.setCellValue(item.get("Id") != null ? item.get("Id").toString() : "");
 					c4.setCellStyle(borderStyle);
 
-					// Col 5 – AopYear (hidden)
+					// Col 5 - AopYear (hidden)
 					Cell c5 = row.createCell(5);
 					c5.setCellValue(item.get("AopYear") != null ? item.get("AopYear").toString() : "");
 					c5.setCellStyle(borderStyle);
 
-					// Col 6 – Plant_FK_Id (hidden)
+					// Col 6 - Plant_FK_Id (hidden)
 					Cell c6 = row.createCell(6);
 					c6.setCellValue(item.get("Plant_FK_Id") != null ? item.get("Plant_FK_Id").toString() : "");
 					c6.setCellStyle(borderStyle);
@@ -1149,7 +1149,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		return dateVal.toString();
 	}
 
-	// --- Shutdown History Config – Import Excel -----------------------------------
+	// --- Shutdown History Config - Import Excel -----------------------------------
 
 	@Override
 	@Transactional
@@ -1455,7 +1455,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 				sheet.autoSizeColumn(i);
 				sheet.setColumnHidden(i, true);
 			}
-			// errDescription column – always visible
+			// errDescription column - always visible
 			sheet.autoSizeColumn(headers.size());
 
 			workbook.write(baos);

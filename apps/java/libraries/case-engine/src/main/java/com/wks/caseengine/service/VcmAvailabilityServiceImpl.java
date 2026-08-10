@@ -191,7 +191,7 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
     /**
      * Generates an Excel file for VCM Trade data.
      * Columns: Particulars, [months Apr-Mar], Remarks, NormParameterId (hidden), Id (hidden).
-     * When isAfterSave is true, two additional columns — Status and Error Description — are appended.
+     * When isAfterSave is true, two additional columns - Status and Error Description - are appended.
      */
     private byte[] createVcmTradeExcel(String year, boolean isAfterSave, List<ConfigurationDTO> dtoList) {
         try (Workbook workbook = new XSSFWorkbook()) {
