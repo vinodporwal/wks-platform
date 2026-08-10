@@ -225,7 +225,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             throw new IllegalStateException("Failed to start Camunda process '" + PROCESS_KEY
                     + "' for businessKey " + businessKey
                     + ". Check that the process is deployed under the configured tenant and that the"
-                    + " c7-external-tasks aop-plugin jar (AopGateDecisionListener) is on the engine classpath;"
+                    + " c7-plugins jar (AopGateDecisionListener) is on the engine classpath;"
                     + " the engine error is logged by C7EngineClient as 'Error starting process'.");
         }
         return id;
