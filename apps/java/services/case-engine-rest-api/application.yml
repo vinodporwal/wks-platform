@@ -105,4 +105,6 @@ camunda.process.id.tcs.output.workflow: ${CAMUNDA_PROCESS_ID_TCS_OUTPUT_WORKFLOW
 camunda7.data.import.enabled: ${CAMUNDA7_DATA_IMPORT_ENABLED:true}
 camunda7.data.import.url: ${CAMUNDA_BASE_URL:http://localhost:8080/engine-rest}
 camunda7.data.import.folder: ${CAMUNDA7_DATA_IMPORT_FOLDER:}
-camunda7.data.import.tenant: ${CAMUNDA7_DATA_IMPORT_TENANT:localhost}
+#camunda7.data.import.tenant: ${CAMUNDA7_DATA_IMPORT_TENANT:localhost}
+camunda7.data.import.tenant: ${CAMUNDA7_DATA_IMPORT_TENANT:digitalaop}
+
