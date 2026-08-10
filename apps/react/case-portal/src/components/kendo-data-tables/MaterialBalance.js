@@ -382,7 +382,7 @@ const MaterialBalance = ({ permissions }) => {
       downloadExcelBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD || IS_AROMATICS_HMD ? true : false,
       uploadExcelBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD ? true : false,
       showCalculate:
-        IS_CRACKER_HMD || IS_CRACKER_C2 || IS_CHEMICAL_VMD_BUTADIENE,
+        IS_CRACKER_HMD || IS_CRACKER_C2 || IS_CHEMICAL_VMD_BUTADIENE || IS_CHEMICAL_HMD,
       showCalculateVisibility: true,
     },
     isOldYear,

@@ -73,6 +73,10 @@ const SlowdownNorms = () => {
     VERTICAL_NAME_LOWERCASE === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'sez' &&
     PLANT_NAME_LOWERCASE === 'px4'
+  const IS_PTA_PMD_PIA =
+    VERTICAL_NAME_LOWERCASE === 'pta' &&
+    SITE_NAME_LOWERCASE === 'pmd' &&
+    PLANT_NAME_LOWERCASE === 'pia'
 
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
@@ -726,7 +730,7 @@ const SlowdownNorms = () => {
           ? `Slowdown Consumption (Norms/Quantity)`
           : IS_PE_PP_VERTICAL_NMD_LLDPE
             ? 'Total Loss'
-            : `${SCREEN_NAME}`,
+            :IS_PTA_PMD_PIA?`Slowdown Consumption`:`${SCREEN_NAME}`,
     },
     isOldYear,
   )

@@ -123,6 +123,12 @@ const NormalOpNormsScreen = () => {
     lowerSiteName === 'hmd' &&
     lowerPlantName === 'vcm'
 
+  const IS_PTA_PMD_PIA =
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'pmd' &&
+    lowerPlantName === 'pia'
+
+
   const keycloak = useSession()
 
   const { isReleased } = dataGridStore
@@ -782,8 +788,9 @@ const NormalOpNormsScreen = () => {
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
       showTitleNameBusiness: true,
-      titleName:
-        !isPEPP || !isPET || !IS_PVC_VMD || !IS_PVC_DMD || !IS_PVC_HMD
+      titleName: IS_PTA_PMD_PIA
+        ? 'Steady State Consumption'
+        : !isPEPP || !isPET || !IS_PVC_VMD || !IS_PVC_DMD || !IS_PVC_HMD
           ? SCREEN_NAME
           : 'Steady State Consumption (Norm)',
       downloadExcelBtn: true,
