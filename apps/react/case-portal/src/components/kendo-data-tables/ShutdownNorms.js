@@ -164,6 +164,12 @@ const ShutdownNorms = () => {
     (SITE_NAME_LOWERCASE === 'c2' ||
       SITE_NAME_LOWERCASE === 'dmd' ||
       SITE_NAME_LOWERCASE === 'hmd')
+
+  const IS_PTA_PMD_PIA =
+    lowerVertName === 'pta' &&
+    SITE_NAME_LOWERCASE === 'pmd' &&
+    PLANT_NAME_LOWERCASE === 'pia'
+
   const textNote =
     ((IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2) ||
       IS_PVC_HMD
@@ -855,6 +861,7 @@ const ShutdownNorms = () => {
     if (IS_PET_VERTICAL || IS_PVC_VMD) return `Shutdown Consumption (Norms)`
 
     if (IS_ELASTOMER_HMD_PBR3) return `Shutdown Consumption (Yearly Norms)`
+    if(IS_PTA_PMD_PIA) return `Shutdown Consumption`
     if (lowerVertName === 'elastomer' || lowerVertName === 'pta' || IS_CHEMICAL)
       return `Shutdown Consumption (Norms/Quantity)`
     if (lowerVertName === 'meg') return `${SCREEN_NAME}-UOM Per Day Basis`
