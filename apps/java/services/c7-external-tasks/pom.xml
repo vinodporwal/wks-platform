@@ -48,6 +48,14 @@
 			<artifactId>camunda-bpm-spring-boot-starter-external-task-client</artifactId>
 			<version>${camunda7.version}</version>
 		</dependency>
+		<!-- Provided by Camunda Run when the aop-plugin classifier jar is mounted
+		     into userlib/ (AopGateDecisionListener / AopRoleCollectionListener). -->
+		<dependency>
+			<groupId>org.camunda.bpm</groupId>
+			<artifactId>camunda-engine</artifactId>
+			<version>${camunda7.version}</version>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 		    <groupId>javax.xml.bind</groupId>
 		    <artifactId>jaxb-api</artifactId>
@@ -69,6 +77,29 @@
 						<goals>
 							<goal>repackage</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Thin jar with only in-engine AOP listeners for Camunda userlib/.
+			     Do not mount the Spring Boot fat jar into Camunda. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>aop-plugin</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>aop-plugin</classifier>
+							<includes>
+								<include>com/wks/bpm/externaltask/plugin/**</include>
+								<!-- Compatibility aliases for already-deployed BPMN FQCNs -->
+								<include>com/wks/bpm/engine/camunda/plugin/aop/**</include>
+							</includes>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

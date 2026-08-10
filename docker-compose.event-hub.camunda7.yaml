@@ -6,7 +6,7 @@ services:
           - kafka
       volumes:
           # AOP listeners (AopRoleCollectionListener + AopGateDecisionListener)
-          - ./apps/java/libraries/c7-client/target/c7-client-1.0-SNAPSHOT.jar:/camunda/configuration/userlib/c7-client-1.0-SNAPSHOT.jar
+          - ./apps/java/services/c7-external-tasks/target/c7-external-tasks-1.0-SNAPSHOT-aop-plugin.jar:/camunda/configuration/userlib/c7-external-tasks-1.0-SNAPSHOT-aop-plugin.jar
           # NotifyAssigneeTaskListener + parse listeners
           - ./apps/java/libraries/c7-plugins/target/c7-plugins-1.0-SNAPSHOT.jar:/camunda/configuration/userlib/c7-plugins-1.0-SNAPSHOT.jar
           - ./configs/camunda/kafka-clients-3.4.1.jar:/camunda/configuration/userlib/kafka-clients-3.4.1.jar

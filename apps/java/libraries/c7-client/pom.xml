@@ -44,16 +44,6 @@
 			<version>${camunda7.version}</version>
 		</dependency>
 
-		<!-- Provided by Camunda Run when this jar is mounted into userlib/
-		     (AopGateDecisionListener / AopRoleCollectionListener). Not bundled
-		     into case-engine-rest-api. -->
-		<dependency>
-			<groupId>org.camunda.bpm</groupId>
-			<artifactId>camunda-engine</artifactId>
-			<version>${camunda7.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

@@ -129,7 +129,7 @@ jobs:
           # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c7-external-tasks:${{ steps.extract_tag.outputs.tag }}"
           tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c7-external-tasks:${{ env.TAG  }}-${{ github.run_number }}"
 
-      # Camunda engine image with the AOP in-engine task listeners (c7-client jar)
+      # Camunda engine image with the AOP in-engine task listeners (c7-external-tasks aop-plugin jar)
       # baked into userlib. The jar is produced by the `mvn -B package` step above;
       # context must be the repo root so the Dockerfile can COPY from the Maven target.
       # amd64 only: the stock camunda Run base image is not published for arm64.
