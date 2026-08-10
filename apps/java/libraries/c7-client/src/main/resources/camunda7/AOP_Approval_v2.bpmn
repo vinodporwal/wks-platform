@@ -17,9 +17,9 @@
     gate5        APPROVED -> Approved (Release / BPC-Board)
 
   Runtime wiring (Camunda 7 runs standalone; Spring beans in case-engine are NOT
-  reachable from the engine, so in-engine logic is a plain aop-plugin class and
+  reachable from the engine, so in-engine logic is a plain c7-plugins class and
   everything else is driven service-side):
-    - Gate aggregation (IN-ENGINE): com.wks.bpm.externaltask.plugin.
+    - Gate aggregation (IN-ENGINE): com.wks.bpm.engine.camunda.plugin.aop.
       AopGateDecisionListener (camunda:class task listener on each gate).
       create=reset prior visit; complete=fold each approver's ${decision} into
       ${<gate>Result} with REVERTED-wins (APPROVED only if ALL roles approve).
@@ -54,7 +54,7 @@
          engine requires a Collection. -->
     <bpmn:extensionElements>
       <camunda:executionListener event="start"
-          class="com.wks.bpm.externaltask.plugin.AopRoleCollectionListener" />
+          class="com.wks.bpm.engine.camunda.plugin.aop.AopRoleCollectionListener" />
     </bpmn:extensionElements>
 
     <bpmn:startEvent id="StartEvent_aop" name="AOP submitted for approval">
@@ -68,8 +68,8 @@
       <bpmn:extensionElements>
         <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
-        <camunda:taskListener event="create" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
-        <camunda:taskListener event="complete" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_start_gate1</bpmn:incoming>
       <bpmn:incoming>Flow_rework_gate1</bpmn:incoming>
@@ -99,8 +99,8 @@
       <bpmn:extensionElements>
         <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
-        <camunda:taskListener event="create" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
-        <camunda:taskListener event="complete" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_gw1_approve</bpmn:incoming>
       <bpmn:outgoing>Flow_gate2_gw2</bpmn:outgoing>
@@ -127,8 +127,8 @@
       <bpmn:extensionElements>
         <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
-        <camunda:taskListener event="create" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
-        <camunda:taskListener event="complete" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_gw2_approve</bpmn:incoming>
       <bpmn:incoming>Flow_gw5_revert</bpmn:incoming>
@@ -156,8 +156,8 @@
       <bpmn:extensionElements>
         <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
-        <camunda:taskListener event="create" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
-        <camunda:taskListener event="complete" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_gw3_approve</bpmn:incoming>
       <bpmn:outgoing>Flow_gate4_gw4</bpmn:outgoing>
@@ -184,8 +184,8 @@
       <bpmn:extensionElements>
         <!-- In-engine (c7-client) aggregation of this gate's multi-instance
              decisions into ${<gate>Result}. create=reset prior visit, complete=fold in. -->
-        <camunda:taskListener event="create" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
-        <camunda:taskListener event="complete" class="com.wks.bpm.externaltask.plugin.AopGateDecisionListener" />
+        <camunda:taskListener event="create" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
+        <camunda:taskListener event="complete" class="com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_gw4_approve</bpmn:incoming>
       <bpmn:outgoing>Flow_gate5_gw5</bpmn:outgoing>
