@@ -523,6 +523,11 @@ const FixedNorms = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+
+      // Refresh data after save to reflect server-calculated values (e.g. actualNorm)
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+      await fetchNormsData(formattedStartDate, formattedEndDate)
     } catch (error) {
       console.error('Error saving plant requirement data:', error)
       setSnackbarOpen(true)

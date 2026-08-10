@@ -64,7 +64,7 @@ const defs = {
     norms_qty_cost_report: 'Norms Quantity Cost Report',
     utility_rate: 'Utility Rate',
     inputs: 'Inputs',
-    outputs: 'Outputs',
+    outputs: 'Reports',
     summary: 'Summary',
     senderReceiverMapping: 'Sender Receiver Mapping',
     importPower: 'Import Power',

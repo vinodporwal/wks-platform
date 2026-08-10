@@ -225,16 +225,33 @@ const HistoricalMonths = ({ startDate, endDate, refreshData }) => {
 
     const monthKeys = dynamicColumns.map((col) => col.field)
 
-    // Validate all column and row values are not empty
-    let validationError = ''
+    // Identify which month columns have been edited
+    const editedMonths = new Set()
     for (const row of rows) {
-      for (const key of monthKeys) {
-        if (row[key] === undefined || row[key] === null || String(row[key]).trim() === '') {
-          validationError = `Value is required for all records`
-          break
+      const originalRow = originalRows.find((orig) => orig.id === row.id)
+      if (originalRow) {
+        for (const key of monthKeys) {
+          const val1 = row[key] === undefined || row[key] === null ? '' : String(row[key]).trim()
+          const val2 = originalRow[key] === undefined || originalRow[key] === null ? '' : String(originalRow[key]).trim()
+          if (val1 !== val2) {
+            editedMonths.add(key)
+          }
         }
       }
-      if (validationError) break
+    }
+
+    // Validate only edited month columns
+    let validationError = ''
+    if (editedMonths.size > 0) {
+      for (const row of rows) {
+        for (const key of editedMonths) {
+          if (row[key] === undefined || row[key] === null || String(row[key]).trim() === '') {
+            validationError = `${row.Particulars || row.productName} value is required for ${key}`
+            break
+          }
+        }
+        if (validationError) break
+      }
     }
 
     if (validationError) {
