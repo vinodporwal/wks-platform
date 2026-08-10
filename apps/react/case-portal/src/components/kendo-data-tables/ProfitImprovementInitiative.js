@@ -19,6 +19,7 @@ export default function ProfitImprovementInitiative({ permissions }) {
     oldYear,
     plantObject,
     siteObject,
+    verticalObject,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -277,6 +278,109 @@ export default function ProfitImprovementInitiative({ permissions }) {
     }
   }
 
+  const getExcelExportTitle = useCallback(
+    () =>
+      [
+        verticalObject?.name?.toUpperCase() || vertName?.toUpperCase(),
+        siteObject?.name?.toUpperCase(),
+        plantObject?.name?.toUpperCase(),
+        'Profit_Improvement',
+        AOP_YEAR,
+      ]
+        .filter(Boolean)
+        .join('_'),
+    [verticalObject, siteObject, plantObject, vertName, AOP_YEAR],
+  )
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+    try {
+      const excelTitle = getExcelExportTitle()
+      await PlantAopReportApiService.exportProfitImprovementInitiative(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        excelTitle,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response =
+        await PlantAopReportApiService.importProfitImprovementInitiative(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Profit Improvement.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleCalculate = () => { }
 
 
@@ -304,10 +408,9 @@ export default function ProfitImprovementInitiative({ permissions }) {
       showTitleNameBusiness: true,
       titleName: 'Profit Improvement and Operability Improvement Initiative',
       adjustedPermissions: true,
-      // downloadExcelBtnFromUI: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
-      ExcelName: `${lowerVertName}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Plant_AOP_Report_Profit_Improvement_Initiative`,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
+      ExcelName: getExcelExportTitle(),
       disableColWidth: true,
     },
     isOldYear,
@@ -329,6 +432,8 @@ export default function ProfitImprovementInitiative({ permissions }) {
         deleteRowData={deleteRowData}
         handleCalculate={handleCalculate}
         permissions={adjustedPermissionsC}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
       />
 
       <Notification
