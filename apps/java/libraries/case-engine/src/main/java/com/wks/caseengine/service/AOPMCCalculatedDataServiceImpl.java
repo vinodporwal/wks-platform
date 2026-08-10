@@ -2279,18 +2279,18 @@ if (!isValidTable) {
 					aopMessageVM.setMessage("No record found with id = "+aopMCCalculatedDataDTO.getId());
 					return aopMessageVM;
 				}
-				mcuMaxCapacity.setApril(aopMCCalculatedDataDTO.getApril());
-				mcuMaxCapacity.setMay(aopMCCalculatedDataDTO.getMay());
-				mcuMaxCapacity.setJune(aopMCCalculatedDataDTO.getJune());
-				mcuMaxCapacity.setJuly(aopMCCalculatedDataDTO.getJuly());
-				mcuMaxCapacity.setAugust(aopMCCalculatedDataDTO.getAugust());
-				mcuMaxCapacity.setSeptember(aopMCCalculatedDataDTO.getSeptember());
-				mcuMaxCapacity.setOctober(aopMCCalculatedDataDTO.getOctober());
-				mcuMaxCapacity.setNovember(aopMCCalculatedDataDTO.getNovember());
-				mcuMaxCapacity.setDecember(aopMCCalculatedDataDTO.getDecember());
-				mcuMaxCapacity.setJanuary(aopMCCalculatedDataDTO.getJanuary());
-				mcuMaxCapacity.setFebruary(aopMCCalculatedDataDTO.getFebruary());
-				mcuMaxCapacity.setMarch(aopMCCalculatedDataDTO.getMarch());
+				mcuMaxCapacity.setApril(aopMCCalculatedDataDTO.getApril() != null ? aopMCCalculatedDataDTO.getApril() : 0.0);
+				mcuMaxCapacity.setMay(aopMCCalculatedDataDTO.getMay() != null ? aopMCCalculatedDataDTO.getMay() : 0.0);
+				mcuMaxCapacity.setJune(aopMCCalculatedDataDTO.getJune() != null ? aopMCCalculatedDataDTO.getJune() : 0.0);
+				mcuMaxCapacity.setJuly(aopMCCalculatedDataDTO.getJuly() != null ? aopMCCalculatedDataDTO.getJuly() : 0.0);
+				mcuMaxCapacity.setAugust(aopMCCalculatedDataDTO.getAugust() != null ? aopMCCalculatedDataDTO.getAugust() : 0.0);
+				mcuMaxCapacity.setSeptember(aopMCCalculatedDataDTO.getSeptember() != null ? aopMCCalculatedDataDTO.getSeptember() : 0.0);
+				mcuMaxCapacity.setOctober(aopMCCalculatedDataDTO.getOctober() != null ? aopMCCalculatedDataDTO.getOctober() : 0.0);
+				mcuMaxCapacity.setNovember(aopMCCalculatedDataDTO.getNovember() != null ? aopMCCalculatedDataDTO.getNovember() : 0.0);
+				mcuMaxCapacity.setDecember(aopMCCalculatedDataDTO.getDecember() != null ? aopMCCalculatedDataDTO.getDecember() : 0.0);
+				mcuMaxCapacity.setJanuary(aopMCCalculatedDataDTO.getJanuary() != null ? aopMCCalculatedDataDTO.getJanuary() : 0.0);
+				mcuMaxCapacity.setFebruary(aopMCCalculatedDataDTO.getFebruary() != null ? aopMCCalculatedDataDTO.getFebruary() : 0.0);
+				mcuMaxCapacity.setMarch(aopMCCalculatedDataDTO.getMarch() != null ? aopMCCalculatedDataDTO.getMarch() : 0.0);
 				mcuMaxCapacity.setRemarks(aopMCCalculatedDataDTO.getRemarks());
 				mcuMaxCapacities.add(mcuMaxCapacityRepository.save(mcuMaxCapacity));
 			}

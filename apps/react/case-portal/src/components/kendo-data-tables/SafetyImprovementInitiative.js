@@ -333,6 +333,109 @@ const PlantAOPReport = ({ permissions }) => {
     }
   }
 
+  const getExcelExportTitle = useCallback(
+    () =>
+      [
+        VERTICAL_NAME_NO_CASE || vertName?.toUpperCase(),
+        SITE_NAME_NO_CASE,
+        PLANT_NAME_NO_CASE,
+        'Safety_Improvement',
+        AOP_YEAR,
+      ]
+        .filter(Boolean)
+        .join('_'),
+    [VERTICAL_NAME_NO_CASE, SITE_NAME_NO_CASE, PLANT_NAME_NO_CASE, vertName, AOP_YEAR],
+  )
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+    try {
+      const excelTitle = getExcelExportTitle()
+      await PlantAopReportApiService.exportPlantSafetyImprovement(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        excelTitle,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response =
+        await PlantAopReportApiService.importPlantSafetyImprovement(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Safety Improvement.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -361,13 +464,13 @@ const PlantAOPReport = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
+      ExcelName: getExcelExportTitle(),
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'Safety Improvement Initiative',
       disableColWidth: true,
-
-      uploadExcelBtn: false,
     },
     isOldYear,
   )
@@ -396,6 +499,8 @@ const PlantAOPReport = ({ permissions }) => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         permissions={adjustedPermissions}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
         disableRedHighlight={true}
         screenType='shutdown'
       />
