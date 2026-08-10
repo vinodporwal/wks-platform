@@ -740,10 +740,18 @@ const ShutdownNorms = () => {
     setLoading(true)
     try {
       let response
-
-      if (
-        lowerVertName === 'vcm' ||
-        lowerVertName === 'pta' ||
+      if(lowerVertName === 'vcm' ||
+        lowerVertName === 'pta'){
+          response =
+          await NormalOperationNormsApiService.saveShutdownNormsExcelImport(  
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+      }
+      else if (
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
         IS_AROMATICS_DTA ||
