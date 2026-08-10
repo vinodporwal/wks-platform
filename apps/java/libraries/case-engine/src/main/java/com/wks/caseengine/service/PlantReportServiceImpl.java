@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -188,6 +189,9 @@ public class PlantReportServiceImpl implements PlantReportService {
                          "WHERE Id = ?";
 
             for (PlantSafetyImprovementDTO dto : plantSafetyImprovementDTOs) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    continue;
+                }
                 if (dto.getId() == null) {
                     // insert logic 
                     String insertSql = "INSERT INTO PlantSafetyImprovementInitiatives (Id, InitiativeDescription, Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -286,6 +290,9 @@ public class PlantReportServiceImpl implements PlantReportService {
             
 
             for (ProfitImprovementInitiativeDTO dto : profitImprovementInitiativeDTOs) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    continue;
+                }
                 if (dto.getId() == null) {
 
                     // insert logic 
@@ -392,6 +399,9 @@ public class PlantReportServiceImpl implements PlantReportService {
             
 
             for (ReliabilityImprovementDTO dto : reliabilityImprovementDTOs) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    continue;
+                }
                 if (dto.getId() == null) {
                     // insert logic 
                     String insertSql = "INSERT INTO ReliabilityImprovementIntiative (Id, InitiativeDescription, Cost,Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -608,7 +618,7 @@ public class PlantReportServiceImpl implements PlantReportService {
         }
     }
 
-    // ─── Plant Report Export ──────────────────────────────────────────────────────
+    // --- Plant Report Export ------------------------------------------------------
 
     @Override
     public byte[] createPlantReportExcel(String plantId, String aopYear, boolean isAfterSave,
@@ -760,7 +770,7 @@ public class PlantReportServiceImpl implements PlantReportService {
         }
     }
 
-    // ─── Plant Report Import – Excel Reader ──────────────────────────────────────
+    // --- Plant Report Import  Excel Reader --------------------------------------
 
     private List<PlantReportDTO> readPlantReportExcel(InputStream inputStream) {
         List<PlantReportDTO> resultList = new ArrayList<>();
@@ -866,7 +876,7 @@ public class PlantReportServiceImpl implements PlantReportService {
         return Double.parseDouble(val);
     }
 
-    // ─── Plant Report Import – API ────────────────────────────────────────────────
+    // --- Plant Report Import  API ------------------------------------------------
 
     @Override
     @Transactional
@@ -913,6 +923,727 @@ public class PlantReportServiceImpl implements PlantReportService {
         } catch (Exception ex) {
             throw new RuntimeException("Failed to import PlantReport data", ex);
         }
+    }
+
+    @Override
+    public byte[] exportPlantSafetyImprovement(String plantId, String aopYear, boolean isAfterSave, List<PlantSafetyImprovementDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM response = getPlantSafetyImprovement(plantId, aopYear);
+                if (response != null && response.getData() instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) response.getData();
+                    if (map != null && map.containsKey("Data")) {
+                        dtoList = (List<PlantSafetyImprovementDTO>) map.get("Data");
+                    }
+                }
+            }
+
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Sheet1");
+            int currentRow = 0;
+
+            List<String> innerHeaders = new ArrayList<>();
+            innerHeaders.add("Initiative Description");
+            innerHeaders.add("Category");
+            innerHeaders.add("Outcome");
+            innerHeaders.add("Target Date");
+            innerHeaders.add("Responsibility");
+            innerHeaders.add("Id");
+            if (isAfterSave) {
+                innerHeaders.add("Status");
+                innerHeaders.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(innerHeaders.get(col));
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            int dataRowCount = dtoList.size();
+            for (int i = 0; i < dataRowCount; i++) {
+                PlantSafetyImprovementDTO dto = dtoList.get(i);
+                Row row = sheet.createRow(currentRow++);
+                List<Object> rowData = new ArrayList<>();
+                rowData.add(dto.getInitiativeDescription());
+                rowData.add(dto.getRecommendation());
+                rowData.add(dto.getOutcome());
+                rowData.add(dto.getTargetDate() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(dto.getTargetDate()) : "");
+                rowData.add(dto.getRemark());
+                rowData.add(dto.getId() != null ? dto.getId().toString() : "");
+                if (isAfterSave) {
+                    rowData.add(dto.getSaveStatus());
+                    rowData.add(dto.getErrDescription());
+                }
+
+                for (int col = 0; col < rowData.size(); col++) {
+                    Cell cell = row.createCell(col);
+                    Object value = rowData.get(col);
+                    if (value instanceof Number) {
+                        cell.setCellValue(((Number) value).doubleValue());
+                    } else if (value instanceof Boolean) {
+                        cell.setCellValue((Boolean) value);
+                    } else if (value != null) {
+                        cell.setCellValue(value.toString());
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+            }
+
+            sheet.setColumnHidden(5, true);
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                if (col != 5) {
+                    sheet.autoSizeColumn(col);
+                    sheet.setColumnWidth(col, Math.max(sheet.getColumnWidth(col) + 1200, 6000));
+                }
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public AOPMessageVM importPlantSafetyImprovementExcel(String plantId, String aopYear, MultipartFile file) {
+        try {
+            List<PlantSafetyImprovementDTO> data = readPlantSafetyImprovement(file.getInputStream(), UUID.fromString(plantId), aopYear);
+            AOPMessageVM saveResponse = savePlantSafetyImprovement(data);
+
+            List<PlantSafetyImprovementDTO> failedList = new ArrayList<>();
+            for (PlantSafetyImprovementDTO dto : data) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    failedList.add(dto);
+                }
+            }
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedList.isEmpty()) {
+                byte[] fileByteArray = exportPlantSafetyImprovement(plantId, aopYear, true, failedList);
+                String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to import Plant Safety Improvement data", e);
+        }
+    }
+
+    private List<PlantSafetyImprovementDTO> readPlantSafetyImprovement(InputStream inputStream, UUID plantId, String aopYear) {
+        List<PlantSafetyImprovementDTO> list = new ArrayList<>();
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) {
+                rowIterator.next(); // Skip header row
+            }
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                PlantSafetyImprovementDTO dto = new PlantSafetyImprovementDTO();
+                try {
+                    String initiativeDescription = getStringCellValue(row.getCell(0), dto);
+                    String recommendation = getStringCellValue(row.getCell(1), dto);
+                    String outcome = getStringCellValue(row.getCell(2), dto);
+                    Date targetDate = getDateCellValue(row.getCell(3), dto);
+                    String remark = getStringCellValue(row.getCell(4), dto);
+                    String idStr = getStringCellValue(row.getCell(5), dto);
+
+                    // Skip row if all cells are null/blank
+                    if (initiativeDescription == null && recommendation == null && outcome == null && targetDate == null && remark == null && idStr == null) {
+                        continue;
+                    }
+
+                    // Initiative Description is mandatory
+                    if (initiativeDescription == null || initiativeDescription.trim().isEmpty()) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Initiative Description is mandatory");
+                    }
+
+                    dto.setInitiativeDescription(initiativeDescription);
+                    dto.setRecommendation(recommendation);
+                    dto.setOutcome(outcome);
+                    dto.setTargetDate(targetDate);
+                    dto.setRemark(remark);
+                    if (idStr != null && !idStr.trim().isEmpty()) {
+                        try {
+                            dto.setId(UUID.fromString(idStr.trim()));
+                        } catch (Exception ex) {
+                            // ignore if new record
+                        }
+                    }
+                    dto.setPlantFkId(plantId);
+                    dto.setAopYear(aopYear);
+                    dto.setEditable(true);
+                    dto.setVisible(true);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    dto.setErrDescription(e.getMessage());
+                    dto.setSaveStatus("Failed");
+                }
+                list.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    private static String getStringCellValue(Cell cell, PlantSafetyImprovementDTO dto) {
+        try {
+            if (cell == null || cell.getCellType() == CellType.BLANK) {
+                return null;
+            }
+            cell.setCellType(CellType.STRING);
+            String val = cell.getStringCellValue().trim();
+            return val.isEmpty() ? null : val;
+        } catch (Exception e) {
+            dto.setSaveStatus("Failed");
+            dto.setErrDescription("Please enter correct values");
+        }
+        return null;
+    }
+
+    private static Date getDateCellValue(Cell cell, PlantSafetyImprovementDTO dto) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            if (DateUtil.isCellDateFormatted(cell)) {
+                return cell.getDateCellValue();
+            } else {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Invalid date format in cell");
+            }
+        } else if (cell.getCellType() == CellType.STRING) {
+            String val = cell.getStringCellValue().trim();
+            if (val.isEmpty()) {
+                return null;
+            }
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                return sdf.parse(val);
+            } catch (java.text.ParseException e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Please enter date in correct format (yyyy-MM-dd)");
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] exportProfitImprovementInitiative(String plantId, String aopYear, boolean isAfterSave, List<ProfitImprovementInitiativeDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM response = getProfitImprovementInitiative(plantId, aopYear);
+                if (response != null && response.getData() instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) response.getData();
+                    if (map != null && map.containsKey("Data")) {
+                        dtoList = (List<ProfitImprovementInitiativeDTO>) map.get("Data");
+                    }
+                }
+            }
+
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Sheet1");
+            int currentRow = 0;
+
+            List<String> innerHeaders = new ArrayList<>();
+            innerHeaders.add("Initiative");
+            innerHeaders.add("Category");
+            innerHeaders.add("Cost (Rs/Cr)");
+            innerHeaders.add("Outcome (Rs/Cr)");
+            innerHeaders.add("Target Date");
+            innerHeaders.add("Responsibility");
+            innerHeaders.add("Id");
+            if (isAfterSave) {
+                innerHeaders.add("Status");
+                innerHeaders.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(innerHeaders.get(col));
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            int dataRowCount = dtoList.size();
+            for (int i = 0; i < dataRowCount; i++) {
+                ProfitImprovementInitiativeDTO dto = dtoList.get(i);
+                Row row = sheet.createRow(currentRow++);
+                List<Object> rowData = new ArrayList<>();
+                rowData.add(dto.getInitiativeDescription());
+                rowData.add(dto.getRecommendation());
+                rowData.add(dto.getCost());
+                rowData.add(dto.getOutcome());
+                rowData.add(dto.getTargetDate() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(dto.getTargetDate()) : "");
+                rowData.add(dto.getRemark());
+                rowData.add(dto.getId() != null ? dto.getId().toString() : "");
+                if (isAfterSave) {
+                    rowData.add(dto.getSaveStatus());
+                    rowData.add(dto.getErrDescription());
+                }
+
+                for (int col = 0; col < rowData.size(); col++) {
+                    Cell cell = row.createCell(col);
+                    Object value = rowData.get(col);
+                    if (value instanceof Number) {
+                        cell.setCellValue(((Number) value).doubleValue());
+                    } else if (value instanceof Boolean) {
+                        cell.setCellValue((Boolean) value);
+                    } else if (value != null) {
+                        cell.setCellValue(value.toString());
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+            }
+
+            sheet.setColumnHidden(6, true);
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                if (col != 6) {
+                    sheet.autoSizeColumn(col);
+                    sheet.setColumnWidth(col, Math.max(sheet.getColumnWidth(col) + 1200, 6000));
+                }
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public AOPMessageVM importProfitImprovementInitiativeExcel(String plantId, String aopYear, MultipartFile file) {
+        try {
+            List<ProfitImprovementInitiativeDTO> data = readProfitImprovementInitiative(file.getInputStream(), UUID.fromString(plantId), aopYear);
+            AOPMessageVM saveResponse = saveProfitImprovementInitiative(data);
+
+            List<ProfitImprovementInitiativeDTO> failedList = new ArrayList<>();
+            for (ProfitImprovementInitiativeDTO dto : data) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    failedList.add(dto);
+                }
+            }
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedList.isEmpty()) {
+                byte[] fileByteArray = exportProfitImprovementInitiative(plantId, aopYear, true, failedList);
+                String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to import Profit Improvement Initiative data", e);
+        }
+    }
+
+    private List<ProfitImprovementInitiativeDTO> readProfitImprovementInitiative(InputStream inputStream, UUID plantId, String aopYear) {
+        List<ProfitImprovementInitiativeDTO> list = new ArrayList<>();
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) {
+                rowIterator.next();
+            }
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                ProfitImprovementInitiativeDTO dto = new ProfitImprovementInitiativeDTO();
+                try {
+                    String initiativeDescription = getStringCellValueProfit(row.getCell(0), dto);
+                    String recommendation = getStringCellValueProfit(row.getCell(1), dto);
+                    Double cost = getNumericCellValueProfit(row.getCell(2), dto);
+                    Double outcome = getNumericCellValueProfit(row.getCell(3), dto);
+                    Date targetDate = getDateCellValueProfit(row.getCell(4), dto);
+                    String remark = getStringCellValueProfit(row.getCell(5), dto);
+                    String idStr = getStringCellValueProfit(row.getCell(6), dto);
+
+                    if (initiativeDescription == null && recommendation == null && cost == null && outcome == null && targetDate == null && remark == null && idStr == null) {
+                        continue;
+                    }
+
+                    if (initiativeDescription == null || initiativeDescription.trim().isEmpty()) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Initiative Description is mandatory");
+                    }
+
+                    dto.setInitiativeDescription(initiativeDescription);
+                    dto.setRecommendation(recommendation);
+                    dto.setCost(cost);
+                    dto.setOutcome(outcome);
+                    dto.setTargetDate(targetDate);
+                    dto.setRemark(remark);
+                    if (idStr != null && !idStr.trim().isEmpty()) {
+                        try {
+                            dto.setId(UUID.fromString(idStr.trim()));
+                        } catch (Exception ex) {
+                        }
+                    }
+                    dto.setPlantFkId(plantId);
+                    dto.setAopYear(aopYear);
+                    dto.setEditable(true);
+                    dto.setVisible(true);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    dto.setErrDescription(e.getMessage());
+                    dto.setSaveStatus("Failed");
+                }
+                list.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public byte[] exportReliabilityImprovement(String plantId, String aopYear, boolean isAfterSave, List<ReliabilityImprovementDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM response = getReliabilityImprovement(plantId, aopYear);
+                if (response != null && response.getData() instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) response.getData();
+                    if (map != null && map.containsKey("Data")) {
+                        dtoList = (List<ReliabilityImprovementDTO>) map.get("Data");
+                    }
+                }
+            }
+
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Sheet1");
+            int currentRow = 0;
+
+            List<String> innerHeaders = new ArrayList<>();
+            innerHeaders.add("Initiative");
+            innerHeaders.add("Cost (Rs/Cr)");
+            innerHeaders.add("Outcome (Rs/Cr)");
+            innerHeaders.add("Recommendation");
+            innerHeaders.add("Target Date");
+            innerHeaders.add("Responsibility");
+            innerHeaders.add("Id");
+            if (isAfterSave) {
+                innerHeaders.add("Status");
+                innerHeaders.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(innerHeaders.get(col));
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            int dataRowCount = dtoList.size();
+            for (int i = 0; i < dataRowCount; i++) {
+                ReliabilityImprovementDTO dto = dtoList.get(i);
+                Row row = sheet.createRow(currentRow++);
+                List<Object> rowData = new ArrayList<>();
+                rowData.add(dto.getInitiativeDescription());
+                rowData.add(dto.getCost());
+                rowData.add(dto.getOutcome());
+                rowData.add(dto.getRecommendation());
+                rowData.add(dto.getTargetDate() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(dto.getTargetDate()) : "");
+                rowData.add(dto.getRemark());
+                rowData.add(dto.getId() != null ? dto.getId().toString() : "");
+                if (isAfterSave) {
+                    rowData.add(dto.getSaveStatus());
+                    rowData.add(dto.getErrDescription());
+                }
+
+                for (int col = 0; col < rowData.size(); col++) {
+                    Cell cell = row.createCell(col);
+                    Object value = rowData.get(col);
+                    if (value instanceof Number) {
+                        cell.setCellValue(((Number) value).doubleValue());
+                    } else if (value instanceof Boolean) {
+                        cell.setCellValue((Boolean) value);
+                    } else if (value != null) {
+                        cell.setCellValue(value.toString());
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+            }
+
+            sheet.setColumnHidden(6, true);
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                if (col != 6) {
+                    sheet.autoSizeColumn(col);
+                    sheet.setColumnWidth(col, Math.max(sheet.getColumnWidth(col) + 1200, 6000));
+                }
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public AOPMessageVM importReliabilityImprovementExcel(String plantId, String aopYear, MultipartFile file) {
+        try {
+            List<ReliabilityImprovementDTO> data = readReliabilityImprovement(file.getInputStream(), UUID.fromString(plantId), aopYear);
+            AOPMessageVM saveResponse = saveReliabilityImprovement(data);
+
+            List<ReliabilityImprovementDTO> failedList = new ArrayList<>();
+            for (ReliabilityImprovementDTO dto : data) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    failedList.add(dto);
+                }
+            }
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedList.isEmpty()) {
+                byte[] fileByteArray = exportReliabilityImprovement(plantId, aopYear, true, failedList);
+                String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to import Reliability Improvement data", e);
+        }
+    }
+
+    private List<ReliabilityImprovementDTO> readReliabilityImprovement(InputStream inputStream, UUID plantId, String aopYear) {
+        List<ReliabilityImprovementDTO> list = new ArrayList<>();
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) {
+                rowIterator.next();
+            }
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                ReliabilityImprovementDTO dto = new ReliabilityImprovementDTO();
+                try {
+                    String initiativeDescription = getStringCellValueReliability(row.getCell(0), dto);
+                    Double cost = getNumericCellValueReliability(row.getCell(1), dto);
+                    Double outcome = getNumericCellValueReliability(row.getCell(2), dto);
+                    String recommendation = getStringCellValueReliability(row.getCell(3), dto);
+                    Date targetDate = getDateCellValueReliability(row.getCell(4), dto);
+                    String remark = getStringCellValueReliability(row.getCell(5), dto);
+                    String idStr = getStringCellValueReliability(row.getCell(6), dto);
+
+                    if (initiativeDescription == null && recommendation == null && cost == null && outcome == null && targetDate == null && remark == null && idStr == null) {
+                        continue;
+                    }
+
+                    if (initiativeDescription == null || initiativeDescription.trim().isEmpty()) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Initiative Description is mandatory");
+                    }
+
+                    dto.setInitiativeDescription(initiativeDescription);
+                    dto.setCost(cost);
+                    dto.setOutcome(outcome);
+                    dto.setRecommendation(recommendation);
+                    dto.setTargetDate(targetDate);
+                    dto.setRemark(remark);
+                    if (idStr != null && !idStr.trim().isEmpty()) {
+                        try {
+                            dto.setId(UUID.fromString(idStr.trim()));
+                        } catch (Exception ex) {
+                        }
+                    }
+                    dto.setPlantFkId(plantId);
+                    dto.setAopYear(aopYear);
+                    dto.setEditable(true);
+                    dto.setVisible(true);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    dto.setErrDescription(e.getMessage());
+                    dto.setSaveStatus("Failed");
+                }
+                list.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    private static String getStringCellValueProfit(Cell cell, ProfitImprovementInitiativeDTO dto) {
+        try {
+            if (cell == null || cell.getCellType() == CellType.BLANK) {
+                return null;
+            }
+            cell.setCellType(CellType.STRING);
+            String val = cell.getStringCellValue().trim();
+            return val.isEmpty() ? null : val;
+        } catch (Exception e) {
+            dto.setSaveStatus("Failed");
+            dto.setErrDescription("Please enter correct values");
+        }
+        return null;
+    }
+
+    private static Double getNumericCellValueProfit(Cell cell, ProfitImprovementInitiativeDTO dto) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return cell.getNumericCellValue();
+        }
+        if (cell.getCellType() == CellType.STRING) {
+            String val = cell.getStringCellValue().trim();
+            if (val.isEmpty()) {
+                return null;
+            }
+            try {
+                return Double.parseDouble(val);
+            } catch (NumberFormatException e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Please enter numeric values");
+            }
+        }
+        return null;
+    }
+
+    private static Date getDateCellValueProfit(Cell cell, ProfitImprovementInitiativeDTO dto) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            if (DateUtil.isCellDateFormatted(cell)) {
+                return cell.getDateCellValue();
+            } else {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Invalid date format in cell");
+            }
+        } else if (cell.getCellType() == CellType.STRING) {
+            String val = cell.getStringCellValue().trim();
+            if (val.isEmpty()) {
+                return null;
+            }
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                return sdf.parse(val);
+            } catch (java.text.ParseException e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Please enter date in correct format (yyyy-MM-dd)");
+            }
+        }
+        return null;
+    }
+
+    private static String getStringCellValueReliability(Cell cell, ReliabilityImprovementDTO dto) {
+        try {
+            if (cell == null || cell.getCellType() == CellType.BLANK) {
+                return null;
+            }
+            cell.setCellType(CellType.STRING);
+            String val = cell.getStringCellValue().trim();
+            return val.isEmpty() ? null : val;
+        } catch (Exception e) {
+            dto.setSaveStatus("Failed");
+            dto.setErrDescription("Please enter correct values");
+        }
+        return null;
+    }
+
+    private static Double getNumericCellValueReliability(Cell cell, ReliabilityImprovementDTO dto) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return cell.getNumericCellValue();
+        }
+        if (cell.getCellType() == CellType.STRING) {
+            String val = cell.getStringCellValue().trim();
+            if (val.isEmpty()) {
+                return null;
+            }
+            try {
+                return Double.parseDouble(val);
+            } catch (NumberFormatException e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Please enter numeric values");
+            }
+        }
+        return null;
+    }
+
+    private static Date getDateCellValueReliability(Cell cell, ReliabilityImprovementDTO dto) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            if (DateUtil.isCellDateFormatted(cell)) {
+                return cell.getDateCellValue();
+            } else {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Invalid date format in cell");
+            }
+        } else if (cell.getCellType() == CellType.STRING) {
+            String val = cell.getStringCellValue().trim();
+            if (val.isEmpty()) {
+                return null;
+            }
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                return sdf.parse(val);
+            } catch (java.text.ParseException e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription("Please enter date in correct format (yyyy-MM-dd)");
+            }
+        }
+        return null;
     }
 
 }

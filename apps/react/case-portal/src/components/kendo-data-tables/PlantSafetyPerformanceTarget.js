@@ -107,9 +107,9 @@ export default function PlantSafetyPerformanceTarget() {
       {
         field: 'uom',
         title: 'UOM',
-        widthT: 80,
+        width: 80,
+        minWidth: 60,
         editable: false,
-        minWidth: 100,
       },
       {
         field: 'prevAOP',

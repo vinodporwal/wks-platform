@@ -30,4 +30,6 @@ public class ReliabilityImprovementDTO {
     private boolean isEditable;
     private boolean isVisible;
     private int displayOrder;
+    private String saveStatus;
+    private String errDescription;
 }

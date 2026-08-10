@@ -47,4 +47,16 @@ public interface PlantReportService {
     byte[] createPlantReportExcel(String plantId, String aopYear, boolean isAfterSave, List<PlantReportDTO> dtoList);
 
     AOPMessageVM importPlantReportExcel(String plantId, String aopYear, MultipartFile file);
+
+    byte[] exportPlantSafetyImprovement(String plantId, String aopYear, boolean isAfterSave, List<PlantSafetyImprovementDTO> dtoList);
+
+    AOPMessageVM importPlantSafetyImprovementExcel(String plantId, String aopYear, MultipartFile file);
+
+    byte[] exportProfitImprovementInitiative(String plantId, String aopYear, boolean isAfterSave, List<ProfitImprovementInitiativeDTO> dtoList);
+
+    AOPMessageVM importProfitImprovementInitiativeExcel(String plantId, String aopYear, MultipartFile file);
+
+    byte[] exportReliabilityImprovement(String plantId, String aopYear, boolean isAfterSave, List<ReliabilityImprovementDTO> dtoList);
+
+    AOPMessageVM importReliabilityImprovementExcel(String plantId, String aopYear, MultipartFile file);
 }
