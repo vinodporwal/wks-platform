@@ -1,4 +1,4 @@
-package com.wks.bpm.engine.camunda.client.aop;
+package com.wks.caseengine.aop;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,8 @@ import org.camunda.bpm.engine.delegate.ExecutionListener;
  * through a gate reuse them without re-running this listener.</p>
  *
  * <p>Plain Java on purpose — Camunda runs standalone here, so Spring
- * {@code ${delegateExpression}} beans are not reachable from the engine.</p>
+ * {@code ${delegateExpression}} beans are not reachable from the engine. The same
+ * class is packaged in the {@code c7-plugins} jar for the engine classpath.</p>
  */
 public class AopRoleCollectionListener implements ExecutionListener {
 

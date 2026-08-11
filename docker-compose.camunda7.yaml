@@ -8,7 +8,10 @@ services:
         ports:
             - 8080:8080
         volumes:
-            # Required for AOP_Approval_v2 (AopRoleCollectionListener + AopGateDecisionListener)
+            # AOP_Approval_v2 needs AopRoleCollectionListener + AopGateDecisionListener on the
+            # engine classpath. Without this jar Camunda returns ENGINE-09017 / ClassNotFound.
+            # Build first: mvn -pl libraries/c7-plugins -am package -DskipTests (from apps/java).
+            # Server/prod: use apps/docker/camunda7/Dockerfile which bakes the jar into the image.
             - ./apps/java/libraries/c7-plugins/target/c7-plugins-1.0-SNAPSHOT.jar:/camunda/configuration/userlib/c7-plugins-1.0-SNAPSHOT.jar
         healthcheck:
             test: curl --fail http://localhost:8080/engine-rest/version || exit 1

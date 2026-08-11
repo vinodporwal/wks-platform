@@ -71,6 +71,14 @@
 			<artifactId>bpm-engine-client</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
+
+		<!-- Provided: AOP camunda:class listeners (also shipped via c7-plugins userlib) -->
+		<dependency>
+			<groupId>org.camunda.bpm</groupId>
+			<artifactId>camunda-engine</artifactId>
+			<version>${camunda7.version}</version>
+			<scope>provided</scope>
+		</dependency>
 		
 		<dependency>
 			<groupId>com.wks</groupId>
