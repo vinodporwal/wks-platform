@@ -19,24 +19,23 @@ const Outputs = () => {
   const IS_CPP = lowerVertName === 'cpp'
 
   // Tab management via custom hook (type = 'OutputReport')
-  const { filteredTabs, loading } = useConfigurationTabs('OutputReport')
+  const { tabs, filteredTabs, loading } = useConfigurationTabs('OutputReport')
 
   const [tabIndex, setTabIndex] = useState(0)
 
-  // Reset tabIndex when tabs change
   useEffect(() => {
     if (filteredTabs.length > 0) {
       setTabIndex(0)
     } else {
       setTabIndex(null)
     }
-  }, [filteredTabs])
+  }, [tabs])
+
+  // Get current tab display name
+  const currentTabName = filteredTabs[tabIndex]?.name
 
   // Render tab content based on display name
   const renderTabContent = () => {
-    if (!filteredTabs.length) return null
-
-    const currentTabName = filteredTabs[tabIndex]?.name
     if (!currentTabName) return null
 
     switch (currentTabName) {
