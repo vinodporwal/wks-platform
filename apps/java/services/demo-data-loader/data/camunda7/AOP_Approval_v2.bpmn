@@ -54,7 +54,7 @@
          engine requires a Collection. -->
     <bpmn:extensionElements>
       <camunda:executionListener event="start"
-          class="com.wks.bpm.engine.camunda.plugin.client.AopRoleCollectionListener" />
+          class="com.wks.bpm.engine.camunda.client.aop.AopRoleCollectionListener" />
     </bpmn:extensionElements>
 
     <bpmn:startEvent id="StartEvent_aop" name="AOP submitted for approval">
