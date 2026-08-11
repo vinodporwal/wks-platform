@@ -26,7 +26,7 @@ export const validateFields = (data, requiredFields) => {
     name: 'Name',
     age: 'Age',
     teamSize: 'Team Size',
-    initiative: 'Initiative',
+    initiative: 'Initiative Description',
     initiativeDescription: 'Initiative Description',
     outcome: 'Outcome',
     cost: 'Cost',

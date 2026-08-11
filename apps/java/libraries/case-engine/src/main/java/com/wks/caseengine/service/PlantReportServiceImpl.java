@@ -1181,7 +1181,7 @@ public class PlantReportServiceImpl implements PlantReportService {
             int currentRow = 0;
 
             List<String> innerHeaders = new ArrayList<>();
-            innerHeaders.add("Initiative");
+            innerHeaders.add("Initiative Description");
             innerHeaders.add("Category");
             innerHeaders.add("Cost (Rs/Cr)");
             innerHeaders.add("Outcome (Rs/Cr)");

@@ -64,7 +64,7 @@ export default function ProfitImprovementInitiative({ permissions }) {
       },
       {
         field: 'initiativeDescription',
-        title: 'Initiative',
+        title: 'Initiative Description',
         editable: true,
         widthT: 300,
         minWidth: 100,
