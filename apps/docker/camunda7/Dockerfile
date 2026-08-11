@@ -2,8 +2,8 @@
 #
 # The stock camunda/camunda-bpm-platform:run image has none of our classes on its
 # classpath. AOP_Approval_v2.bpmn references two listeners via `camunda:class`:
-#   - com.wks.bpm.engine.camunda.plugin.aop.AopRoleCollectionListener
-#   - com.wks.bpm.engine.camunda.plugin.aop.AopGateDecisionListener
+#   - com.wks.bpm.engine.camunda.client.aop.AopRoleCollectionListener
+#   - com.wks.bpm.engine.camunda.client.aop.AopGateDecisionListener
 # These are instantiated INSIDE the engine when the process starts, so the
 # c7-plugins jar must live on the engine's classpath
 # (Camunda Run scans configuration/userlib/).
