@@ -1,4 +1,4 @@
-package com.wks.bpm.engine.camunda.client.aop;
+package com.wks.caseengine.aop;
 
 import org.camunda.bpm.engine.delegate.DelegateTask;
 import org.camunda.bpm.engine.delegate.TaskListener;
@@ -11,9 +11,8 @@ import org.camunda.bpm.engine.RuntimeService;
  *
  * <p>Runs INSIDE the standalone Camunda server (referenced from the BPMN via
  * {@code camunda:class}). Packaged in the {@code c7-plugins} jar and mounted into
- * Camunda's {@code userlib/}. Spring beans in case-engine-rest-api are not
- * reachable from the engine; this uses only the engine's own
- * {@link RuntimeService}, no Spring / no DB.</p>
+ * Camunda's {@code userlib/}. Canonical source lives in {@code case-engine}; this
+ * copy is kept in sync so the engine classpath stays self-contained.</p>
  *
  * <p>Policy = ALL must approve to advance; <b>any single REVERTED exits early</b>:</p>
  * <ul>
