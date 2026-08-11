@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Box, Tooltip, IconButton } from '@mui/material'
+import { Box, Tooltip, IconButton, Stack } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
@@ -16,6 +16,7 @@ import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import AddFixedConsumptionDialog from 'components/aop-phase-two/cpp/common/AddFixedConsumptionDialog/index'
+import IntersiteSteamTransfer from './Inputs/components/IntersiteSteamTransfer'
 
 const FixedConsumptionJMD = () => {
   const keycloak = useSession()
@@ -543,41 +544,46 @@ const FixedConsumptionJMD = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <AdvanceKendoTable
-        columns={columns}
-        rows={rows}
-        setRows={setRows}
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        title={permissions.showTitle ? permissions.titleName : ''}
-        permissions={permissions}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
-        saveChanges={saveChanges}
-        handleExcelUpload={handleExcelUpload}
-        handleExport={handleExport}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        customHeight={80}
-        paginationConfig={{
-          threshold: 100, // Show pagination if > 50 rows
-          buttonCount: 5,
-          pageSizes: [10, 20, 50, 100],
-          defaultPageSize: 100,
-        }}
-        groupBy={'plant'}
-        customAddRow={() => {
-          setEditRowData(null)
-          setAddRowDialogOpen(true)
-        }}
-      />
+      <Stack>
+        <AdvanceKendoTable
+          columns={columns}
+          rows={rows}
+          setRows={setRows}
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          title={permissions.showTitle ? permissions.titleName : ''}
+          permissions={permissions}
+          handleRemarkCellClick={handleRemarkCellClick}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          setCurrentRowId={() => {}}
+          saveChanges={saveChanges}
+          handleExcelUpload={handleExcelUpload}
+          handleExport={handleExport}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          customHeight={80}
+          paginationConfig={{
+            threshold: 100, // Show pagination if > 50 rows
+            buttonCount: 5,
+            pageSizes: [10, 20, 50, 100],
+            defaultPageSize: 100,
+          }}
+          groupBy={'plant'}
+          customAddRow={() => {
+            setEditRowData(null)
+            setAddRowDialogOpen(true)
+          }}
+        />
+      </Stack>
+      <Stack>
+        <IntersiteSteamTransfer />
+      </Stack>
 
       <AddFixedConsumptionDialog
         open={addRowDialogOpen}

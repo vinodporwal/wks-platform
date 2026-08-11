@@ -63,6 +63,19 @@ public final class ExcelStyles {
     }
 
     /**
+     * Numeric style: data style with a custom number format applied.
+     *
+     * @param workbook    the workbook to create the style on
+     * @param numberFormat the POI number format string (e.g. {@code "#,##0.0000"})
+     * @return a cell style with thin borders and the specified number format
+     */
+    public static CellStyle createNumericStyle(Workbook workbook, String numberFormat) {
+        CellStyle style = createDataStyle(workbook);
+        style.setDataFormat(workbook.createDataFormat().getFormat(numberFormat));
+        return style;
+    }
+
+    /**
      * Error style: data style with red bold font and text wrapping.
      * Used in error/after-save Excel exports to highlight failed rows.
      */
