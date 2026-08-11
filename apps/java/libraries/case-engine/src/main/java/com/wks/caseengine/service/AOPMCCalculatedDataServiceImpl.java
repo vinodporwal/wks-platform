@@ -1655,12 +1655,15 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
         List<AOPMCCalculatedDataDTO> allFailedRecords = new ArrayList<>();
         Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel = new HashMap<>();
         for (String key : map.keySet()) {
-            List<AOPMCCalculatedDataDTO> failedList;
+            List<AOPMCCalculatedDataDTO> failedList = new ArrayList<>();
             if ("DesignCapacity".equalsIgnoreCase(key)) {
                 failedList = updateDesignCapacity(plantFKId, year, map.get(key));
-            } else {
+            } else if("ProposedOperatingCapacity".equalsIgnoreCase(key)) {
                 failedList = editAOPMCCalculatedData(map.get(key), true, year, plantFKId);
             }
+			else if("MaxAchievedCapacity".equalsIgnoreCase(key)) { 
+				failedList = updateMaxAchievedCapacity(plantFKId, year, map.get(key));
+			}
             
             if (failedList != null && !failedList.isEmpty()) {
                 allFailedRecords.addAll(failedList);
@@ -1901,6 +1904,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 				boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 				boolean crackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
+				boolean ptaPmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs = new ArrayList<>();
@@ -1925,7 +1929,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			String tableId = tableIdCell.toString();
 boolean isValidTable = false;
 
-// for meg, process ProposedOperatingCapacity and DesignCapacity for other only process ProposedOperatingCapacity.
+// code to determine which grid should be processed for given vertical.
    if(meg) {
 	isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity")
 	|| tableId.equalsIgnoreCase("DesignCapacity");
@@ -1933,6 +1937,11 @@ boolean isValidTable = false;
 
    else if(crackerC2) {
 	isValidTable = tableId.equalsIgnoreCase("DesignCapacity");
+   }
+   else if(ptaPmd) {
+	isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity")
+	|| tableId.equalsIgnoreCase("DesignCapacity")
+	|| tableId.equalsIgnoreCase("MaxAchievedCapacity");
    }
         else {
 			isValidTable = tableId.equalsIgnoreCase("ProposedOperatingCapacity");
@@ -2256,9 +2265,9 @@ if (!isValidTable) {
 	}
 
 	@Override
-	public AOPMessageVM updateMaxAchievedCapacity(String plantId, String year,
+	public List<AOPMCCalculatedDataDTO> updateMaxAchievedCapacity(String plantId, String year,
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<AOPMCCalculatedDataDTO> failedRecords = new ArrayList<>();
 		List<MCUMaxCapacity> mcuMaxCapacities = new ArrayList<MCUMaxCapacity>();
 		try {
 			for(AOPMCCalculatedDataDTO aopMCCalculatedDataDTO: aopMCCalculatedDataDTOs) {
@@ -2274,10 +2283,10 @@ if (!isValidTable) {
 				if(mcuMaxCapacityOpt.isPresent()) {
 					mcuMaxCapacity=mcuMaxCapacityOpt.get();
 				}else {
-					aopMessageVM.setCode(201);
-					aopMessageVM.setData(aopMCCalculatedDataDTOs);
-					aopMessageVM.setMessage("No record found with id = "+aopMCCalculatedDataDTO.getId());
-					return aopMessageVM;
+					aopMCCalculatedDataDTO.setSaveStatus("Failed");
+					aopMCCalculatedDataDTO.setErrDescription("No record found with id = "+aopMCCalculatedDataDTO.getId());
+					failedRecords.add(aopMCCalculatedDataDTO);
+					continue;	
 				}
 				mcuMaxCapacity.setApril(aopMCCalculatedDataDTO.getApril() != null ? aopMCCalculatedDataDTO.getApril() : 0.0);
 				mcuMaxCapacity.setMay(aopMCCalculatedDataDTO.getMay() != null ? aopMCCalculatedDataDTO.getMay() : 0.0);
@@ -2298,10 +2307,8 @@ if (!isValidTable) {
 			e.printStackTrace();
 		}
 		
-		aopMessageVM.setCode(200);
-		aopMessageVM.setData(mcuMaxCapacities);
-		aopMessageVM.setMessage("Data updated successfully");
-		return aopMessageVM;
+		
+		return failedRecords;
 	}
 	
 	public byte[] exportProductionTarget(String year, String plantId, boolean isAfterSave,
@@ -2317,6 +2324,7 @@ if (!isValidTable) {
 			boolean pe = vertical.getName().equalsIgnoreCase("PE");
 			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+            boolean ptaPmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2391,7 +2399,7 @@ if (!isValidTable) {
 	                }
 	            }
 				// seperate export method to handle grid specific locking
-	            if(pe || meg || crackerC2) {
+	            if(pe || meg || crackerC2 || ptaPmd) {
 					List<String> editableGrids = new ArrayList<>();
 					if(pe) {
 						editableGrids.add("proposedoperatingcapacity"); 
@@ -2403,6 +2411,10 @@ if (!isValidTable) {
 
 					if(crackerC2) {
 						editableGrids.addAll(Arrays.asList("DesignCapacity")); 
+					}
+
+					if(ptaPmd) {
+						editableGrids.addAll(Arrays.asList("DesignCapacity", "ProposedOperatingCapacity", "MaxAchievedCapacity")); 
 					}
 					// seperate exoport method to disable grid based on editableGrids
 	            	return excelUtilityService.generateFlexibleExcelPP(structure, data, editableGrids);

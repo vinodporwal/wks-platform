@@ -302,22 +302,29 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	     	int currentRow = 0;
 
 	        List<String> innerHeaders = new ArrayList<>();
-	        innerHeaders.add("Initiative");
-	        innerHeaders.add("Outcome");
+	        innerHeaders.add("Initiative Description");
+	        innerHeaders.add("Expected Outcome");
 	        innerHeaders.add("Recommendation");
 	        innerHeaders.add("Target Date");
-	        innerHeaders.add("Resp.");
+	        innerHeaders.add("Responsibilities");
 	        innerHeaders.add("Id");
 	        if (isAfterSave) {
 	            innerHeaders.add("Status");
 	            innerHeaders.add("Error Description");
 	        }
+
+	        int numCols = innerHeaders.size();
+	        int[] maxColWidths = new int[numCols];
+
 	        Row headerRow = sheet.createRow(currentRow++);
-	        for (int col = 0; col < innerHeaders.size(); col++) {
+	        for (int col = 0; col < numCols; col++) {
 	            Cell cell = headerRow.createCell(col);
 	            cell.setCellValue(innerHeaders.get(col));
 	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            maxColWidths[col] = innerHeaders.get(col).length();
 	        }
+
+	        CellStyle dataStyle = Utility.createBorderedStyle(workbook);
 
 	        int dataRowCount = dtoList.size();
 	        for (int i = 0; i < dataRowCount; i++) {
@@ -338,17 +345,32 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
+	                String cellText;
 	                if (value instanceof Number) {
 	                    cell.setCellValue(((Number) value).doubleValue());
+	                    cellText = value.toString();
 	                } else if (value instanceof Boolean) {
 	                    cell.setCellValue((Boolean) value);
+	                    cellText = value.toString();
 	                } else if (value != null) {
-	                    cell.setCellValue(value.toString());
+	                    cellText = value.toString();
+	                    cell.setCellValue(cellText);
 	                } else {
 	                    cell.setCellValue("");
+	                    cellText = "";
+	                }
+	                cell.setCellStyle(dataStyle);
+	                if (cellText != null && cellText.length() > maxColWidths[col]) {
+	                    maxColWidths[col] = cellText.length();
 	                }
 	            }
 	        }
+
+	        for (int col = 0; col < numCols; col++) {
+	            int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
+	            sheet.setColumnWidth(col, width);
+	        }
+
 	        sheet.setColumnHidden(5, true);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
@@ -420,6 +442,12 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	                dto.setErrDescription(e.getMessage());
 	                dto.setSaveStatus("Failed");
 	            }
+				// Initiative Description validation 
+				if(dto.getInitiative() == null || dto.getInitiative().isEmpty()) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription("Initiative Description is required");
+				}
+				
 	            peopleInitiatives.add(dto);
 	        }
 

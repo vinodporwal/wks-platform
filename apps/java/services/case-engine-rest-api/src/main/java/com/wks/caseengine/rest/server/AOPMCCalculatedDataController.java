@@ -81,7 +81,17 @@ public class AOPMCCalculatedDataController {
 	
 	@PostMapping(value = "/max-achieved-capacity")
 	public AOPMessageVM updateMaxAchievedCapacity(@RequestParam String plantId, @RequestParam String year,@RequestBody List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs) {
-		return aOPMCCalculatedDataService.updateMaxAchievedCapacity(plantId, year,aopMCCalculatedDataDTOs);
+		List<AOPMCCalculatedDataDTO> failedRecords = aOPMCCalculatedDataService.updateMaxAchievedCapacity(plantId, year,aopMCCalculatedDataDTOs);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		if (failedRecords != null && !failedRecords.isEmpty()) {
+			aopMessageVM.setCode(400);
+			aopMessageVM.setData(failedRecords);
+			aopMessageVM.setMessage("Partial data has been saved");
+		} else {
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data Updated Successfully");
+		}
+		return aopMessageVM;
 	}
 	
 	@GetMapping(value = "/design-capacity")
@@ -213,8 +223,9 @@ public class AOPMCCalculatedDataController {
         boolean aromatics=vertical.getName().equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("SEZ") && plant.getName().equalsIgnoreCase("PX4");
 		boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+		boolean ptaPmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
 
-        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || aromatics || meg || crackerC2 ) {
+        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || aromatics || meg || crackerC2 || ptaPmd ) {
         	return aOPMCCalculatedDataService.importExcelPE(year, plantId, file);
         }else {
         	return aOPMCCalculatedDataService.importExcel(year, plantId, file);

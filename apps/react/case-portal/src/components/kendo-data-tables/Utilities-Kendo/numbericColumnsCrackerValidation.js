@@ -113,7 +113,14 @@ export const NoSpinnerNumericEditorCrackerValidation = ({
 
     const isMonthDayField = range && monthDayFields.has(field)
 
-    const allowedRegex = isMonthDayField ? /^\d*$/ : /^\d*(\.\d*)?$/
+    const isSingleDecimalField =
+      field === 'FunShtdwnDuration'
+
+    const allowedRegex = isMonthDayField
+      ? /^\d*$/
+      : isSingleDecimalField
+        ? /^\d*(\.\d{0,1})?$/
+        : /^\d*(\.\d*)?$/
 
     if (val === '' || allowedRegex.test(val)) {
       if (range && val !== '') {

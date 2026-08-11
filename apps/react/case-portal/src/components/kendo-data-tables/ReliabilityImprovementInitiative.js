@@ -65,9 +65,15 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       },
       {
         field: 'initiativeDescription',
-        title: 'Initiative',
+        title: 'Initiative Description',
         editable: true,
         widthT: 300,
+        minWidth: 100,
+      },
+      {
+        field: 'recommendation',
+        title: 'Category',
+        editable: true,
         minWidth: 100,
       },
       {
@@ -81,18 +87,12 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       },
       {
         field: 'outcome',
-        title: 'Outcome (Rs/Cr)',
+        title: 'Expected Outcome',
         widthT: 80,
         editable: true,
         minWidth: 100,
         type: 'number',
         format: '{0:0.000}',
-      },
-      {
-        field: 'recommendation',
-        title: 'Recommendation',
-        editable: true,
-        minWidth: 100,
       },
       {
         field: 'targetDate',
@@ -102,7 +102,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       },
       {
         field: 'responsibility',
-        title: 'Responsibility',
+        title: 'Responsibilities',
         widthT: 60,
         editable: true,
         minWidth: 100,
@@ -192,20 +192,20 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         plantFkId: PLANT_ID,
         isEditable:
           item.isEditable === '' ||
-          item.isEditable === undefined ||
-          item.isEditable === null
+            item.isEditable === undefined ||
+            item.isEditable === null
             ? true
             : !!item.isEditable,
         isVisible:
           item.isVisible === '' ||
-          item.isVisible === undefined ||
-          item.isVisible === null
+            item.isVisible === undefined ||
+            item.isVisible === null
             ? true
             : !!item.isVisible,
         displayOrder:
           item.displayOrder === '' ||
-          item.displayOrder === undefined ||
-          item.displayOrder === null
+            item.displayOrder === undefined ||
+            item.displayOrder === null
             ? 0
             : Number(item.displayOrder),
       }))
@@ -387,7 +387,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
     }
   }
 
-  const handleCalculate = () => {}
+  const handleCalculate = () => { }
 
   const getAdjustedPermissionsC = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions

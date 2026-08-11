@@ -130,22 +130,22 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
     },
     {
       field: 'initiative',
-      title: 'Initiative',
+      title: 'Initiative Description',
       editable: true,
       minWidth: 200,
     },
     {
       field: 'outcome',
-      title: 'Outcome',
+      title: 'Expected Outcome',
       editable: true,
       minWidth: 200,
     },
-    {
-      field: 'recommendation',
-      title: 'Recommendation',
-      editable: true,
-      minWidth: 240,
-    },
+    // {
+    //   field: 'recommendation',
+    //   title: 'Recommendation',
+    //   editable: true,
+    //   minWidth: 240,
+    // },
     {
       field: 'targetDate',
       title: 'Target Date',
@@ -155,7 +155,7 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
     },
     {
       field: 'responsible',
-      title: 'Resp.',
+      title: 'Responsibilities',
       editable: true,
       minWidth: 150,
     },

@@ -649,15 +649,16 @@ public class PlantReportServiceImpl implements PlantReportService {
             CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
             CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
 
-            // Columns: S.No(0), KPI(1), UOM(2), FYprev AOP(3), FYcurr Plan(4), Responsibility(5),
-            //          Id(6-hidden), MasterId(7-hidden), AopYear(8-hidden), PlantFkId(9-hidden)
+            // Columns: S.No(0), KPI(1), UOM(2), FYprev AOP(3), FYprev ACT(4), FYcurr Plan(5), Remarks(6),
+            //          Id(7-hidden), MasterId(8-hidden), AopYear(9-hidden), PlantFkId(10-hidden)
             List<String> headerNames = new ArrayList<>(Arrays.asList(
                 "S.No",
                 "KPI",
                 "UOM",
                 "FY" + prevYearShort + " AOP",
+                "FY" + prevYearShort + " ACT",
                 "FY" + currYearShort + " Plan",
-                "Responsibility",
+                "Remarks",
                 "Id",
                 "MasterId",
                 "AopYear",
@@ -700,53 +701,58 @@ public class PlantReportServiceImpl implements PlantReportService {
                 prevAOPCell.setCellValue(dto.getPrevAOP() != null ? dto.getPrevAOP() : 0.0);
                 prevAOPCell.setCellStyle(unlockedStyle);
 
-                // Col 4 - FY{curr} Plan (editable)
-                Cell currentPlanCell = row.createCell(4);
+                // Col 4 - FY{prev} ACT (editable)
+                Cell prevActualCell = row.createCell(4);
+                prevActualCell.setCellValue(dto.getPrevActual() != null ? dto.getPrevActual() : 0.0);
+                prevActualCell.setCellStyle(unlockedStyle);
+
+                // Col 5 - FY{curr} Plan (editable)
+                Cell currentPlanCell = row.createCell(5);
                 currentPlanCell.setCellValue(dto.getCurrentPlan() != null ? dto.getCurrentPlan() : 0.0);
                 currentPlanCell.setCellStyle(unlockedStyle);
 
-                // Col 5 - Responsibility (editable)
-                Cell remarkCell = row.createCell(5);
+                // Col 6 - Remarks (editable)
+                Cell remarkCell = row.createCell(6);
                 remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
                 remarkCell.setCellStyle(unlockedStyle);
 
-                // Col 6 - Id (hidden, required for import update)
-                Cell idCell = row.createCell(6);
+                // Col 7 - Id (hidden, required for import update)
+                Cell idCell = row.createCell(7);
                 idCell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
                 idCell.setCellStyle(lockedStyle);
 
-                // Col 7 - MasterId (hidden, required for import insert)
-                Cell masterIdCell = row.createCell(7);
+                // Col 8 - MasterId (hidden, required for import insert)
+                Cell masterIdCell = row.createCell(8);
                 masterIdCell.setCellValue(dto.getMasterId() != null ? dto.getMasterId().toString() : "");
                 masterIdCell.setCellStyle(lockedStyle);
 
-                // Col 8 - AopYear (hidden)
-                Cell aopYearCell = row.createCell(8);
+                // Col 9 - AopYear (hidden)
+                Cell aopYearCell = row.createCell(9);
                 aopYearCell.setCellValue(dto.getAopYear() != null ? dto.getAopYear() : "");
                 aopYearCell.setCellStyle(lockedStyle);
 
-                // Col 9 - PlantFkId (hidden)
-                Cell plantFkIdCell = row.createCell(9);
+                // Col 10 - PlantFkId (hidden)
+                Cell plantFkIdCell = row.createCell(10);
                 plantFkIdCell.setCellValue(dto.getPlantFkId() != null ? dto.getPlantFkId().toString() : "");
                 plantFkIdCell.setCellStyle(lockedStyle);
 
                 if (isAfterSave) {
-                    Cell statusCell = row.createCell(10);
+                    Cell statusCell = row.createCell(11);
                     statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                     statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-                    Cell errCell = row.createCell(11);
+                    Cell errCell = row.createCell(12);
                     errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
                     errCell.setCellStyle(Utility.createBorderedStyle(workbook));
                 }
             }
 
-            // Auto-size visible columns; fixed wider width for Responsibility
-            int totalCols = isAfterSave ? 12 : 10;
+            // Auto-size visible columns; fixed wider width for Remarks and Error Description
+            int totalCols = isAfterSave ? 13 : 11;
             for (int col = 0; col < totalCols; col++) {
-                if (col == 5) {
+                if (col == 6) {
                     sheet.setColumnWidth(col, 8000);
-                } else if (col == 11) {
+                } else if (col == 12) {
                     sheet.setColumnWidth(col, 12000);
                 } else {
                     sheet.autoSizeColumn(col);
@@ -754,10 +760,10 @@ public class PlantReportServiceImpl implements PlantReportService {
             }
 
             // Hide internal columns used by import/save process
-            sheet.setColumnHidden(6, true);
             sheet.setColumnHidden(7, true);
             sheet.setColumnHidden(8, true);
             sheet.setColumnHidden(9, true);
+            sheet.setColumnHidden(10, true);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
@@ -802,41 +808,44 @@ public class PlantReportServiceImpl implements PlantReportService {
                     // Col 3 - FY{prev} AOP
                     dto.setPrevAOP(getPlantReportCellNumericValue(row.getCell(3)));
 
-                    // Col 4 - FY{curr} Plan
-                    dto.setCurrentPlan(getPlantReportCellNumericValue(row.getCell(4)));
+                    // Col 4 - FY{prev} ACT
+                    dto.setPrevActual(getPlantReportCellNumericValue(row.getCell(4)));
 
-                    // Col 5 - Responsibility
-                    Cell remarkCell = row.getCell(5);
+                    // Col 5 - FY{curr} Plan
+                    dto.setCurrentPlan(getPlantReportCellNumericValue(row.getCell(5)));
+
+                    // Col 6 - Remarks
+                    Cell remarkCell = row.getCell(6);
                     if (remarkCell != null) {
                         remarkCell.setCellType(CellType.STRING);
                         dto.setRemark(remarkCell.getStringCellValue().trim());
                     }
 
-                    // Col 6 - Id (hidden; present = update, absent = insert)
-                    Cell idCell = row.getCell(6);
+                    // Col 7 - Id (hidden; present = update, absent = insert)
+                    Cell idCell = row.getCell(7);
                     if (idCell != null) {
                         idCell.setCellType(CellType.STRING);
                         String idVal = idCell.getStringCellValue().trim();
                         dto.setId(idVal.isEmpty() ? null : UUID.fromString(idVal));
                     }
 
-                    // Col 7 - MasterId (hidden)
-                    Cell masterIdCell = row.getCell(7);
+                    // Col 8 - MasterId (hidden)
+                    Cell masterIdCell = row.getCell(8);
                     if (masterIdCell != null) {
                         masterIdCell.setCellType(CellType.STRING);
                         String masterIdVal = masterIdCell.getStringCellValue().trim();
                         dto.setMasterId(masterIdVal.isEmpty() ? null : UUID.fromString(masterIdVal));
                     }
 
-                    // Col 8 - AopYear (hidden)
-                    Cell aopYearCell = row.getCell(8);
+                    // Col 9 - AopYear (hidden)
+                    Cell aopYearCell = row.getCell(9);
                     if (aopYearCell != null) {
                         aopYearCell.setCellType(CellType.STRING);
                         dto.setAopYear(aopYearCell.getStringCellValue().trim());
                     }
 
-                    // Col 9 - PlantFkId (hidden)
-                    Cell plantFkIdCell = row.getCell(9);
+                    // Col 10 - PlantFkId (hidden)
+                    Cell plantFkIdCell = row.getCell(10);
                     if (plantFkIdCell != null) {
                         plantFkIdCell.setCellType(CellType.STRING);
                         String plantFkIdVal = plantFkIdCell.getStringCellValue().trim();
@@ -858,7 +867,7 @@ public class PlantReportServiceImpl implements PlantReportService {
 
     private boolean isPlantReportRowEmpty(Row row) {
         if (row == null) return true;
-        for (int col = 1; col <= 5; col++) {
+        for (int col = 1; col <= 6; col++) {
             Cell cell = row.getCell(col);
             if (cell == null || cell.getCellType() == CellType.BLANK) continue;
             if (cell.getCellType() == CellType.STRING && !cell.getStringCellValue().trim().isEmpty()) return false;
@@ -1172,7 +1181,7 @@ public class PlantReportServiceImpl implements PlantReportService {
             int currentRow = 0;
 
             List<String> innerHeaders = new ArrayList<>();
-            innerHeaders.add("Initiative");
+            innerHeaders.add("Initiative Description");
             innerHeaders.add("Category");
             innerHeaders.add("Cost (Rs/Cr)");
             innerHeaders.add("Outcome (Rs/Cr)");
@@ -1356,12 +1365,13 @@ public class PlantReportServiceImpl implements PlantReportService {
             int currentRow = 0;
 
             List<String> innerHeaders = new ArrayList<>();
-            innerHeaders.add("Initiative");
+            innerHeaders.add("S.No");
+            innerHeaders.add("Initiative Description");
+            innerHeaders.add("Category");
             innerHeaders.add("Cost (Rs/Cr)");
-            innerHeaders.add("Outcome (Rs/Cr)");
-            innerHeaders.add("Recommendation");
+            innerHeaders.add("Expected Outcome");
             innerHeaders.add("Target Date");
-            innerHeaders.add("Responsibility");
+            innerHeaders.add("Responsibilities");
             innerHeaders.add("Id");
             if (isAfterSave) {
                 innerHeaders.add("Status");
@@ -1375,15 +1385,18 @@ public class PlantReportServiceImpl implements PlantReportService {
                 cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
             }
 
+            CellStyle dataCellStyle = Utility.createBorderedStyle(workbook);
+
             int dataRowCount = dtoList.size();
             for (int i = 0; i < dataRowCount; i++) {
                 ReliabilityImprovementDTO dto = dtoList.get(i);
                 Row row = sheet.createRow(currentRow++);
                 List<Object> rowData = new ArrayList<>();
+                rowData.add(i + 1);
                 rowData.add(dto.getInitiativeDescription());
+                rowData.add(dto.getRecommendation());
                 rowData.add(dto.getCost());
                 rowData.add(dto.getOutcome());
-                rowData.add(dto.getRecommendation());
                 rowData.add(dto.getTargetDate() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(dto.getTargetDate()) : "");
                 rowData.add(dto.getRemark());
                 rowData.add(dto.getId() != null ? dto.getId().toString() : "");
@@ -1394,6 +1407,7 @@ public class PlantReportServiceImpl implements PlantReportService {
 
                 for (int col = 0; col < rowData.size(); col++) {
                     Cell cell = row.createCell(col);
+                    cell.setCellStyle(dataCellStyle);
                     Object value = rowData.get(col);
                     if (value instanceof Number) {
                         cell.setCellValue(((Number) value).doubleValue());
@@ -1407,9 +1421,9 @@ public class PlantReportServiceImpl implements PlantReportService {
                 }
             }
 
-            sheet.setColumnHidden(6, true);
+            sheet.setColumnHidden(7, true);
             for (int col = 0; col < innerHeaders.size(); col++) {
-                if (col != 6) {
+                if (col != 7) {
                     sheet.autoSizeColumn(col);
                     sheet.setColumnWidth(col, Math.max(sheet.getColumnWidth(col) + 1200, 6000));
                 }
@@ -1471,13 +1485,14 @@ public class PlantReportServiceImpl implements PlantReportService {
                 Row row = rowIterator.next();
                 ReliabilityImprovementDTO dto = new ReliabilityImprovementDTO();
                 try {
-                    String initiativeDescription = getStringCellValueReliability(row.getCell(0), dto);
-                    Double cost = getNumericCellValueReliability(row.getCell(1), dto);
-                    Double outcome = getNumericCellValueReliability(row.getCell(2), dto);
-                    String recommendation = getStringCellValueReliability(row.getCell(3), dto);
-                    Date targetDate = getDateCellValueReliability(row.getCell(4), dto);
-                    String remark = getStringCellValueReliability(row.getCell(5), dto);
-                    String idStr = getStringCellValueReliability(row.getCell(6), dto);
+                    // col 0: S.No (skip)
+                    String initiativeDescription = getStringCellValueReliability(row.getCell(1), dto);
+                    String recommendation = getStringCellValueReliability(row.getCell(2), dto);
+                    Double cost = getNumericCellValueReliability(row.getCell(3), dto);
+                    Double outcome = getNumericCellValueReliability(row.getCell(4), dto);
+                    Date targetDate = getDateCellValueReliability(row.getCell(5), dto);
+                    String remark = getStringCellValueReliability(row.getCell(6), dto);
+                    String idStr = getStringCellValueReliability(row.getCell(7), dto);
 
                     if (initiativeDescription == null && recommendation == null && cost == null && outcome == null && targetDate == null && remark == null && idStr == null) {
                         continue;

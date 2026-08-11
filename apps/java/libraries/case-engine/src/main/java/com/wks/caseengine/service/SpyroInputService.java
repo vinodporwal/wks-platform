@@ -22,6 +22,11 @@ public interface SpyroInputService {
 			Map<String, List<SpyroInputDTO>> mapForExcel);
 
 	AOPMessageVM importExcel(String year, String plantFKId, String mode, MultipartFile file);
+
+	byte[] createExcelV2(String year, String plantId, String mode, boolean isAfterSave,
+			Map<String, List<SpyroInputDTO>> mapForExcel);
+
+	AOPMessageVM importExcelV2(String year, String plantFKId, String mode, MultipartFile file);
 	
 	AOPMessageVM calculateSpyroInputData(String year, String plantId, String Mode, String type);
 
