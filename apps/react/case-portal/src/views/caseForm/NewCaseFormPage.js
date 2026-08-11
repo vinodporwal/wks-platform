@@ -213,6 +213,8 @@ const createApmUrlBasedOnSelectedEvent = () => {
   }, [])
 
   useEffect(() => {
+    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(keycloak.idTokenParsed.email || ''))
+
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
         setCaseDef(data)
