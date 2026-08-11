@@ -228,7 +228,7 @@ const TabAccess = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, allTabs, hierarchy]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [keycloak, allTabs, hierarchy])
 
   const fetchAllTabs = useCallback(async () => {
     try {
