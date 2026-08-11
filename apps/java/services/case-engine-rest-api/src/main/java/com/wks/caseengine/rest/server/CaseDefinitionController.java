@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -53,6 +55,9 @@ import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.UserDTO;
+import com.wks.caseengine.rest.honeywell.HoneywellCaseSecurityService;
+import com.wks.caseengine.rest.honeywell.HoneywellSecurityNotConfiguredException;
+import com.wks.integration.honeywell.SecurityManagementException;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpHeaders;
@@ -62,9 +67,14 @@ import org.springframework.http.MediaType;
 @RequestMapping("case-definition")
 @Tag(name = "Case Definition", description = "A Case Definition is the 'template' for the creation of new Cases Instances. If defines which attributes, stages and processes definitions will be used by Cases Instances created from it")
 public class CaseDefinitionController {
+	private static final Logger LOG = LoggerFactory.getLogger(CaseDefinitionController.class);
+	private static final String HONEYWELL_OPERATION = "GetUserAssignedOperationsByScope";
 
 	@Autowired
 	private CaseDefinitionService caseDefinitionService;
+
+	@Autowired
+	private HoneywellCaseSecurityService honeywellCaseSecurityService;
 
 	@GetMapping
 	public ResponseEntity<List<CaseDefinition>> find(@RequestParam(required = false) Boolean deployed) {
@@ -181,6 +191,7 @@ public class CaseDefinitionController {
 			@RequestParam(defaultValue = "0") int offset) {
 		List<Case> cases = caseDefinitionService
 				.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, limit, offset);
+		attemptOptionalHoneywellSecurityCall();
 		return ResponseEntity.ok(cases);
 	}
 
@@ -193,6 +204,34 @@ public class CaseDefinitionController {
 			@RequestParam(required = false) String caseStatus) {
 		long count = caseDefinitionService.countCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus);
 		return ResponseEntity.ok(count);
+	}
+
+	private void attemptOptionalHoneywellSecurityCall() {
+		try {
+			honeywellCaseSecurityService.getCurrentUserOperations();
+		} catch (HoneywellSecurityNotConfiguredException e) {
+			LOG.warn("Honeywell stage=HONEYWELL_SECURITY_CALL_FAILED operation={} category=NOT_CONFIGURED "
+					+ "caseResponseUnaffected=true causeType={} causeMessage={}",
+					HONEYWELL_OPERATION, e.getClass().getSimpleName(), e.getMessage());
+		} catch (SecurityManagementException e) {
+			Throwable root = rootCause(e);
+			LOG.warn("Honeywell stage=HONEYWELL_SECURITY_CALL_FAILED operation={} category={} "
+					+ "caseResponseUnaffected=true causeType={} causeMessage={}",
+					HONEYWELL_OPERATION, e.getCategory(), root.getClass().getSimpleName(), root.getMessage(), e);
+		} catch (RuntimeException e) {
+			Throwable root = rootCause(e);
+			LOG.warn("Honeywell stage=HONEYWELL_SECURITY_CALL_FAILED operation={} category=UNEXPECTED "
+					+ "caseResponseUnaffected=true causeType={} causeMessage={}",
+					HONEYWELL_OPERATION, root.getClass().getSimpleName(), root.getMessage(), e);
+		}
+	}
+
+	private static Throwable rootCause(Throwable error) {
+		Throwable root = error;
+		while (root.getCause() != null) {
+			root = root.getCause();
+		}
+		return root;
 	}
 	
 	@GetMapping("/cases")

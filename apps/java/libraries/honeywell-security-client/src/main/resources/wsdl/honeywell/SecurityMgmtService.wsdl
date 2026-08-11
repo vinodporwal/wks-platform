@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:i0="http://Honeywell.MES.Core.Service.SecurityConfig" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsp:Policy wsu:Id="BasicHttpBinding_SecurityMgmtContract_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <http:NegotiateAuthentication xmlns:http="http://schemas.microsoft.com/ws/06/2004/policy/http" />
+        <sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <wsp:Policy>
+            <sp:TransportToken>
+              <wsp:Policy>
+                <sp:HttpsToken RequireClientCertificate="false" />
+              </wsp:Policy>
+            </sp:TransportToken>
+            <sp:AlgorithmSuite>
+              <wsp:Policy>
+                <sp:Basic256 />
+              </wsp:Policy>
+            </sp:AlgorithmSuite>
+            <sp:Layout>
+              <wsp:Policy>
+                <sp:Strict />
+              </wsp:Policy>
+            </sp:Layout>
+          </wsp:Policy>
+        </sp:TransportBinding>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <!-- Localized only to break the supplied circular metadata import; the imported contract is otherwise unchanged. -->
+  <wsdl:import namespace="http://Honeywell.MES.Core.Service.SecurityConfig" location="SecurityMgmtContract.wsdl" />
+  <wsdl:types />
+  <wsdl:binding name="BasicHttpBinding_SecurityMgmtContract" type="i0:SecurityMgmtContract">
+    <!-- The supplied Negotiate policy is retained above as source metadata but is not activated here;
+         final authentication is intentionally delegated to HoneywellTransportConfigurer. HTTPS is enforced in configuration. -->
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetRoles">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetRoles" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetRolesResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRoleMembers">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetRoleMembers" style="document" />
+      <wsdl:input name="GetRoleMembersRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetRoleMembersResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateRole">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateRole" style="document" />
+      <wsdl:input name="CreateRoleRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CreateRoleResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateRole">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateRole" style="document" />
+      <wsdl:input name="UpdateRoleRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateRoleResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRoleDefinition">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetRoleDefinition" style="document" />
+      <wsdl:input name="GetRoleDefinitionRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetRoleDefinitionResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="AddRoleMembers">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/AddRoleMembers" style="document" />
+      <wsdl:input name="AddRoleMembersRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="AddRoleMembersResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RemoveRoleMembers">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/RemoveRoleMembers" style="document" />
+      <wsdl:input name="RemoveRoleMembersRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="RemoveRoleMembersResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteRole">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteRole" style="document" />
+      <wsdl:input name="DeleteRoleRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="DeleteRoleResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetTasks">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetTasks" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetTasksResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteTask">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteTask" style="document" />
+      <wsdl:input name="DeleteTaskRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="DeleteTaskResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateTask">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateTask" style="document" />
+      <wsdl:input name="UpdateTaskRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateTaskResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateTask">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateTask" style="document" />
+      <wsdl:input name="CreateTaskRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CreateTaskResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPolicies">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetPolicies" style="document" />
+      <wsdl:input name="GetPoliciesRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetPoliciesResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdatePolicies">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdatePolicies" style="document" />
+      <wsdl:input name="UpdatePoliciesRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdatePoliciesResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateRoleDefinition">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateRoleDefinition" style="document" />
+      <wsdl:input name="UpdateRoleDefinitionRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateRoleDefinitionResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetOperations">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetOperations" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetOperationsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateTaskDefinition">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateTaskDefinition" style="document" />
+      <wsdl:input name="UpdateTaskDefinitionRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateTaskDefinitionResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateOperation">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateOperation" style="document" />
+      <wsdl:input name="CreateOperationRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CreateOperationResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteOperation">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteOperation" style="document" />
+      <wsdl:input name="DeleteOperationRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="DeleteOperationResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetForUserOrGroup">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetForUserOrGroup" style="document" />
+      <wsdl:input name="GetForUserOrGroupRequestMessage">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetForUserOrGroupResponseMessage">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateOperation">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateOperation" style="document" />
+      <wsdl:input name="UpdateOperationRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateOperationResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUserAssignedOperations">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserAssignedOperations" style="document" />
+      <wsdl:input name="GetUserAssignedOperationsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetUserAssignedOperationsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="USOFaultContractFault">
+        <soap:fault use="literal" name="USOFaultContractFault" namespace="" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="ModifyTasks">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ModifyTasks" style="document" />
+      <wsdl:input name="ModifyTasksRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="ModifyTasksResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetSecurityInfo">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetSecurityInfo" style="document" />
+      <wsdl:input name="GetSecurityInfoRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetSecurityInfoResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUserAssociatedOperations">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserAssociatedOperations" style="document" />
+      <wsdl:input name="UserAssociatedOperationsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UserAssociatedOperationsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="USOFaultContractFault">
+        <soap:fault use="literal" name="USOFaultContractFault" namespace="" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateVersionInfo">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateVersionInfo" style="document" />
+      <wsdl:input name="UpdateVersionInfoRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateVersionInfoResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUserDetails">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserDetails" style="document" />
+      <wsdl:input name="GetUserDetailsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetUserDetailsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeTypes">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeTypes" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetScopeTypesResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ModifyScope">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ModifyScope" style="document" />
+      <wsdl:input name="ModifyScopeRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="ModifyScopeResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetScopes">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopes" style="document" />
+      <wsdl:input name="GetScopesRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetScopesResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ModifyScopeRoleMembers">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ModifyScopeRoleMembers" style="document" />
+      <wsdl:input name="ModifyScopeRoleMembersRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="ModifyScopeRoleMembersResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUserAssignedOperationsByScope">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserAssignedOperationsByScope" style="document" />
+      <wsdl:input name="GetUserAssignedOperationsByScopeRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetUserAssignedOperationsByScopeResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="USOFaultContractFault">
+        <soap:fault use="literal" name="USOFaultContractFault" namespace="" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeRoleMembers">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeRoleMembers" style="document" />
+      <wsdl:input name="GetScopeRoleMembersRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetScopeRoleMembersResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RemoveVersionInfo">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/RemoveVersionInfo" style="document" />
+      <wsdl:input name="RemoveVersionInfoRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="RemoveVersionInfoResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetVersionInfo">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetVersionInfo" style="document" />
+      <wsdl:input name="GetVersionInfoRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetVersionInfoResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUserInfo">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserInfo" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetUserInfoResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAuditLogs">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAuditLogs" style="document" />
+      <wsdl:input name="GetAuditLogsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetAuditLogsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAllRoleMembers">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAllRoleMembers" style="document" />
+      <wsdl:input name="GetRoleMembersRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetRoleMembersResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateOperations">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateOperations" style="document" />
+      <wsdl:input name="CreateOperationsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CreateOperationsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateTasks">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateTasks" style="document" />
+      <wsdl:input name="CreateTasksRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CreateTasksResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateTasks">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateTasks" style="document" />
+      <wsdl:input name="UpdateTasksRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateTasksResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteTasks">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteTasks" style="document" />
+      <wsdl:input name="DeleteTasksRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="DeleteTasksResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteOperations">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteOperations" style="document" />
+      <wsdl:input name="DeleteOperationsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="DeleteOperationsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateOperations">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateOperations" style="document" />
+      <wsdl:input name="UpdateOperationsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UpdateOperationsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUsersDetail">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUsersDetail" style="document" />
+      <wsdl:input name="GetUsersDetailRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetUsersDetailResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckAccessForUsers">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckAccessForUsers" style="document" />
+      <wsdl:input name="CheckAccessForUsersRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CheckAccessForUsersResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckRolesAccessToTask">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckRolesAccessToTask" style="document" />
+      <wsdl:input name="CheckRolesAccessToTaskRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CheckRolesAccessToTaskResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetScopesContextForUser">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopesContextForUser" style="document" />
+      <wsdl:input name="GetScopesContextForUserRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetScopesContextForUserResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeContexts">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeContexts" style="document" />
+      <wsdl:input name="GetScopeContextsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetScopeContextsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckAccessIndependentOfScope">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckAccessIndependentOfScope" style="document" />
+      <wsdl:input name="CheckAccessIndependentOfScopeRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CheckAccessIndependentOfScopeResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="USOFaultContractFault">
+        <soap:fault use="literal" name="USOFaultContractFault" namespace="" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeDetails">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeDetails" style="document" />
+      <wsdl:input name="GetScopeDetailsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetScopeDetailsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAllScopes">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAllScopes" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetAllScopeNamesResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ForceDisconnect">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ForceDisconnect" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="UserMngmtResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="USOFaultContractFault">
+        <soap:fault use="literal" name="USOFaultContractFault" namespace="" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="GetUSOStatus">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUSOStatus" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="USOStatusResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetGroupSearchResult">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetGroupSearchResult" style="document" />
+      <wsdl:input name="GetGroupSearchResultRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetGroupSearchResultResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetForUsersOrGroups">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetForUsersOrGroups" style="document" />
+      <wsdl:input name="GetForUsersOrGroupsRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetForUsersOrGroupsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAllAssociatedGroups">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAllAssociatedGroups" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="GetAllAssociatedGroupsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckUserScopeAccess">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckUserScopeAccess" style="document" />
+      <wsdl:input name="CheckUserScopeAccessRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CheckUserScopeAccessResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckAccessByGroupAndValue">
+      <soap:operation soapAction="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckAccessByGroupAndValue" style="document" />
+      <wsdl:input name="CheckAccessByGroupAndValueRequest">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="CheckAccessByGroupAndValueResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+</wsdl:definitions>

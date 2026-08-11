@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://Honeywell.MES.Core.Service.SecurityConfig"
+                  xmlns:binding="http://tempuri.org/"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  targetNamespace="http://Honeywell.MES.Core.Service.SecurityConfig">
+  <!-- Non-circular runtime entry point. Contract and binding content remain in their original namespaces. -->
+  <wsdl:import namespace="http://tempuri.org/" location="SecurityMgmtService.wsdl" />
+  <wsdl:service name="SecurityMgmt">
+    <wsdl:port name="BasicHttpBinding_SecurityMgmtContract" binding="binding:BasicHttpBinding_SecurityMgmtContract">
+      <soap:address location="http://localhost/Services/SecurityMgmt.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

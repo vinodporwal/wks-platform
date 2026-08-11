@@ -26,6 +26,7 @@
 		<snakeyaml.version>2.0</snakeyaml.version>
 		<spring.shell.version>2.0.1.RELEASE</spring.shell.version>
 		<spring.doc.version>2.5.0</spring.doc.version>
+		<cxf.version>4.0.4</cxf.version>
 
 		<camunda7.version>7.20.0</camunda7.version>
 		<camunda8.version>8.4.5</camunda8.version>
@@ -81,6 +82,7 @@
 		<module>libraries/api-security</module>
 		<module>libraries/case-engine-rest-dto</module>
 		<module>libraries/case-engine-rest-client</module>
+		<module>libraries/honeywell-security-client</module>
 
 		<module>libraries/c7-plugins</module>
 		<module>libraries/c7-client</module>

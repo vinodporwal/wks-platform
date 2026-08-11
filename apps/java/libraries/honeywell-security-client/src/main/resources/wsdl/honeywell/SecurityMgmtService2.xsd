@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://honeywell.mes.core.service" elementFormDefault="qualified" targetNamespace="http://honeywell.mes.core.service" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="SecurityMgmtService.xsd" namespace="http://Honeywell.MES.Core.Service.SecurityConfig" />
+  <xs:import schemaLocation="SecurityMgmtService3.xsd" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+  <xs:complexType name="Scopes">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="Scope" nillable="true" type="tns:Scope" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Scopes" nillable="true" type="tns:Scopes" />
+  <xs:complexType name="Scope">
+    <xs:sequence>
+      <xs:element name="Name" nillable="true" type="xs:string" />
+      <xs:element name="TypeName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ScopeContexts" nillable="true" type="tns:ScopeContexts" />
+      <xs:element xmlns:q1="http://Honeywell.MES.Core.Service.SecurityConfig" minOccurs="0" name="RoleAssignments" nillable="true" type="q1:Roles" />
+      <xs:element xmlns:q2="http://Honeywell.MES.Core.Service.SecurityConfig" minOccurs="0" name="Administrators" nillable="true" type="q2:RoleMembers" />
+      <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Scope" nillable="true" type="tns:Scope" />
+  <xs:complexType name="ScopeContexts">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="ScopeContext" nillable="true" type="tns:ScopeContext" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeContexts" nillable="true" type="tns:ScopeContexts" />
+  <xs:complexType name="ScopeContext">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Id" type="xs:int" />
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element name="DataValue" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeContext" nillable="true" type="tns:ScopeContext" />
+  <xs:complexType name="UserDetails">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="UserDetail" nillable="true" type="tns:UserDetail" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserDetails" nillable="true" type="tns:UserDetails" />
+  <xs:complexType name="UserDetail">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Email" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Phone" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserDetail" nillable="true" type="tns:UserDetail" />
+  <xs:complexType name="ScopeTypeDescriptions">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="ScopeTypeDescription" nillable="true" type="tns:ScopeTypeDescription" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeTypeDescriptions" nillable="true" type="tns:ScopeTypeDescriptions" />
+  <xs:complexType name="ScopeTypeDescription">
+    <xs:sequence>
+      <xs:element name="Name" nillable="true" type="xs:string" />
+      <xs:element name="Description" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Contexts" nillable="true" type="tns:ContextDescriptions" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeTypeDescription" nillable="true" type="tns:ScopeTypeDescription" />
+  <xs:complexType name="ContextDescriptions">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="ContextDescription" nillable="true" type="tns:ContextDescription" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ContextDescriptions" nillable="true" type="tns:ContextDescriptions" />
+  <xs:complexType name="ContextDescription">
+    <xs:sequence>
+      <xs:element name="InternalName" nillable="true" type="xs:string" />
+      <xs:element name="DisplayName" nillable="true" type="xs:string" />
+      <xs:element name="Description" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ConfigurationPage" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ContextDescription" nillable="true" type="tns:ContextDescription" />
+  <xs:complexType name="ScopeModify">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Scope" nillable="true" type="tns:Scope" />
+      <xs:element minOccurs="0" name="ScopeModifyOptions" nillable="true" type="tns:ScopeModifyOptions" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeModify" nillable="true" type="tns:ScopeModify" />
+  <xs:complexType name="ScopeModifyOptions">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="SynchComplete" type="xs:boolean" />
+      <xs:element minOccurs="0" name="ModifyContext" nillable="true" type="tns:SaveContext" />
+      <xs:element minOccurs="0" name="ModifyAssociatedRoles" nillable="true" type="tns:SaveRoles" />
+      <xs:element minOccurs="0" name="DeleteComplete" type="xs:boolean" />
+      <xs:element minOccurs="0" name="ModifyAdministrators" nillable="true" type="tns:SaveAdministrators" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeModifyOptions" nillable="true" type="tns:ScopeModifyOptions" />
+  <xs:complexType name="SaveContext">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="SynchComplete" type="xs:boolean" />
+      <xs:element xmlns:q3="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="AddContextNames" nillable="true" type="q3:ArrayOfstring" />
+      <xs:element xmlns:q4="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="DeleteContextNames" nillable="true" type="q4:ArrayOfstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SaveContext" nillable="true" type="tns:SaveContext" />
+  <xs:complexType name="SaveRoles">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="SynchComplete" type="xs:boolean" />
+      <xs:element xmlns:q5="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="AddRoleNames" nillable="true" type="q5:ArrayOfstring" />
+      <xs:element xmlns:q6="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="DeleteRoleNames" nillable="true" type="q6:ArrayOfstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SaveRoles" nillable="true" type="tns:SaveRoles" />
+  <xs:complexType name="SaveAdministrators">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="SynchComplete" type="xs:boolean" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SaveAdministrators" nillable="true" type="tns:SaveAdministrators" />
+  <xs:complexType name="ModifyScopeResult">
+    <xs:sequence>
+      <xs:element name="ExecutionStatus" nillable="true" type="tns:ExecutionStatus" />
+      <xs:element minOccurs="0" name="Scope" nillable="true" type="tns:Scope" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ModifyScopeResult" nillable="true" type="tns:ModifyScopeResult" />
+  <xs:complexType name="ExecutionStatus">
+    <xs:sequence>
+      <xs:element name="Success" type="xs:boolean" />
+      <xs:element xmlns:q7="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="FailureMessages" nillable="true" type="q7:ArrayOfstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ExecutionStatus" nillable="true" type="tns:ExecutionStatus" />
+  <xs:complexType name="QueryScopeChoise">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="All" type="xs:boolean" />
+      <xs:element xmlns:q8="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="ScopeNames" nillable="true" type="q8:ArrayOfstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="QueryScopeChoise" nillable="true" type="tns:QueryScopeChoise" />
+  <xs:complexType name="ScopeRoleMemberModify">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="AddScopeRoleMembers" nillable="true" type="tns:ScopeRoleMembersList" />
+      <xs:element minOccurs="0" name="DeleteScopeRoleMembers" nillable="true" type="tns:ScopeRoleMembersList" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeRoleMemberModify" nillable="true" type="tns:ScopeRoleMemberModify" />
+  <xs:complexType name="ScopeRoleMembersList">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="ScopeRoleMembers" nillable="true" type="tns:ScopeRoleMembers" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeRoleMembersList" nillable="true" type="tns:ScopeRoleMembersList" />
+  <xs:complexType name="ScopeRoleMembers">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="ScopeName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RoleName" nillable="true" type="xs:string" />
+      <xs:element xmlns:q9="http://Honeywell.MES.Core.Service.SecurityConfig" minOccurs="0" name="RoleMembers" nillable="true" type="q9:RoleMembers" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeRoleMembers" nillable="true" type="tns:ScopeRoleMembers" />
+  <xs:complexType name="ModifyRoleMembersResult">
+    <xs:sequence>
+      <xs:element name="ExecutionStatus" nillable="true" type="tns:ExecutionStatus" />
+      <xs:element minOccurs="0" name="ScopeRoleMembersList" nillable="true" type="tns:ScopeRoleMembersList" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ModifyRoleMembersResult" nillable="true" type="tns:ModifyRoleMembersResult" />
+  <xs:complexType name="UserOperationsReqest">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="QueryOperationsChoise" nillable="true" type="tns:QueryOperationsChoise" />
+      <xs:element minOccurs="0" name="SearchScopes" nillable="true" type="tns:ScopeSelections" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserOperationsReqest" nillable="true" type="tns:UserOperationsReqest" />
+  <xs:complexType name="QueryOperationsChoise">
+    <xs:sequence>
+      <xs:element xmlns:q10="http://Honeywell.MES.Core.Service.SecurityConfig" minOccurs="0" name="QueryOperations" nillable="true" type="q10:Operations" />
+      <xs:element xmlns:q11="http://Honeywell.MES.Core.Service.SecurityConfig" minOccurs="0" name="QueryGroupAccessNameStartWith" nillable="true" type="q11:Operation" />
+      <xs:element minOccurs="0" name="QueryGroupAccessValueStartWith" nillable="true" type="tns:QueryGroupAccessValueStartWith" />
+      <xs:element minOccurs="0" name="QueryAll" nillable="true" type="xs:boolean" />
+      <xs:element xmlns:q12="http://Honeywell.MES.Core.Service.SecurityConfig" minOccurs="0" name="QueryGroupAccessValueEquals" nillable="true" type="q12:ArrayOfOperation" />
+      <xs:element xmlns:q13="http://Honeywell.MES.Core.Service.SecurityConfig" minOccurs="0" name="QueryOperationsGroupAccessValueStartWith" nillable="true" type="q13:ArrayOfOperation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="QueryOperationsChoise" nillable="true" type="tns:QueryOperationsChoise" />
+  <xs:complexType name="QueryGroupAccessValueStartWith">
+    <xs:sequence>
+      <xs:element name="OrValueIsAll" type="xs:boolean" />
+      <xs:element xmlns:q14="http://Honeywell.MES.Core.Service.SecurityConfig" name="Query" nillable="true" type="q14:Operation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="QueryGroupAccessValueStartWith" nillable="true" type="tns:QueryGroupAccessValueStartWith" />
+  <xs:complexType name="ScopeSelections">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="ScopeSelection" nillable="true" type="tns:ScopeSelection" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeSelections" nillable="true" type="tns:ScopeSelections" />
+  <xs:complexType name="ScopeSelection">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="ScopeName" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeSelection" nillable="true" type="tns:ScopeSelection" />
+  <xs:complexType name="QueryScopeRoleMembers">
+    <xs:sequence>
+      <xs:element xmlns:q15="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="ScopeNames" nillable="true" type="q15:ArrayOfstring" />
+      <xs:element minOccurs="0" name="AllRoles" type="xs:boolean" />
+      <xs:element xmlns:q16="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="RoleNames" nillable="true" type="q16:ArrayOfstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="QueryScopeRoleMembers" nillable="true" type="tns:QueryScopeRoleMembers" />
+  <xs:complexType name="VersionInfoCollection">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="VersionInfo" nillable="true" type="tns:VersionInfo" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="VersionInfoCollection" nillable="true" type="tns:VersionInfoCollection" />
+  <xs:complexType name="VersionInfo">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="VersionNo" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="VersionInfo" nillable="true" type="tns:VersionInfo" />
+  <xs:complexType name="AuditLogFilter">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="TimeRange" nillable="true" type="tns:TimeRange" />
+      <xs:element minOccurs="0" name="ModifiedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Action" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Entity" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="EntityType" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Privilege" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="PrivilegeType" nillable="true" type="xs:string" />
+      <xs:element name="ActionStatus" type="tns:ActionStatus" />
+      <xs:element minOccurs="0" name="ErrorMessage" nillable="true" type="xs:string" />
+      <xs:element name="SortBy" type="tns:SortBy" />
+      <xs:element minOccurs="0" name="SortOrder" type="tns:SortOrder" />
+      <xs:element minOccurs="0" name="ClientIP" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="AuditLogFilter" nillable="true" type="tns:AuditLogFilter" />
+  <xs:complexType name="TimeRange">
+    <xs:sequence>
+      <xs:element name="StartTime" type="xs:dateTime" />
+      <xs:element name="EndTime" type="xs:dateTime" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="TimeRange" nillable="true" type="tns:TimeRange" />
+  <xs:simpleType name="ActionStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ALL" />
+      <xs:enumeration value="SUCCESS" />
+      <xs:enumeration value="FAILURE" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="ActionStatus" nillable="true" type="tns:ActionStatus" />
+  <xs:simpleType name="SortBy">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="DateTime" />
+      <xs:enumeration value="ModifiedBy" />
+      <xs:enumeration value="Action" />
+      <xs:enumeration value="Entity" />
+      <xs:enumeration value="EntityType" />
+      <xs:enumeration value="Privilege" />
+      <xs:enumeration value="PrivilegeType" />
+      <xs:enumeration value="ActionStatus" />
+      <xs:enumeration value="ErrorMessage" />
+      <xs:enumeration value="ClientIP" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="SortBy" nillable="true" type="tns:SortBy" />
+  <xs:simpleType name="SortOrder">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Descending" />
+      <xs:enumeration value="Ascending" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="SortOrder" nillable="true" type="tns:SortOrder" />
+  <xs:complexType name="ContinuationRequest">
+    <xs:sequence>
+      <xs:element name="StartRow" type="xs:int" />
+      <xs:element name="MaxRows" type="xs:int" />
+      <xs:element name="ReturnTotalRowCount" type="xs:boolean" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ContinuationRequest" nillable="true" type="tns:ContinuationRequest" />
+  <xs:complexType name="AuditLogCollection">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="AuditLog" nillable="true" type="tns:AuditLog" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="AuditLogCollection" nillable="true" type="tns:AuditLogCollection" />
+  <xs:complexType name="AuditLog">
+    <xs:sequence>
+      <xs:element name="DateTime" type="xs:dateTime" />
+      <xs:element name="ModifiedBy" nillable="true" type="xs:string" />
+      <xs:element name="Action" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Entity" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="EntityType" nillable="true" type="xs:string" />
+      <xs:element name="Privilege" nillable="true" type="xs:string" />
+      <xs:element name="PrivilegeType" nillable="true" type="xs:string" />
+      <xs:element name="ActionStatus" type="xs:boolean" />
+      <xs:element name="ErrorMessage" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ClientIP" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="AuditLog" nillable="true" type="tns:AuditLog" />
+  <xs:complexType name="ContinuationResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="HasMoreRecords" type="xs:boolean" />
+      <xs:element minOccurs="0" name="NextContinuationRequest" nillable="true" type="tns:ContinuationRequest" />
+      <xs:element minOccurs="0" name="TotalRows" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ContinuationResponse" nillable="true" type="tns:ContinuationResponse" />
+  <xs:complexType name="Responses">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="Response" nillable="true" type="tns:Response" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Responses" nillable="true" type="tns:Responses" />
+  <xs:complexType name="Response">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      <xs:element minOccurs="0" name="ErrorMessage" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Response" nillable="true" type="tns:Response" />
+  <xs:complexType name="UserScopeOperations">
+    <xs:sequence>
+      <xs:element xmlns:q17="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="Scopes" nillable="true" type="q17:ArrayOfstring" />
+      <xs:element xmlns:q18="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="Users" nillable="true" type="q18:ArrayOfstring" />
+      <xs:element xmlns:q19="http://Honeywell.MES.Core.Service.SecurityConfig" name="Operations" nillable="true" type="q19:ArrayOfOperation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserScopeOperations" nillable="true" type="tns:UserScopeOperations" />
+  <xs:complexType name="ArrayOfUserOperations">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="UserOperations" nillable="true" type="tns:UserOperations" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfUserOperations" nillable="true" type="tns:ArrayOfUserOperations" />
+  <xs:complexType name="UserOperations">
+    <xs:sequence>
+      <xs:element name="User" nillable="true" type="xs:string" />
+      <xs:element xmlns:q20="http://Honeywell.MES.Core.Service.SecurityConfig" name="Operations" nillable="true" type="q20:ArrayOfOperation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserOperations" nillable="true" type="tns:UserOperations" />
+  <xs:complexType name="TaskRoleNames">
+    <xs:sequence>
+      <xs:element name="RoleNames" nillable="true" type="tns:ArrayOfRoleName" />
+      <xs:element name="Task" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="TaskRoleNames" nillable="true" type="tns:TaskRoleNames" />
+  <xs:complexType name="ArrayOfRoleName">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="RoleName" nillable="true" type="tns:RoleName" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfRoleName" nillable="true" type="tns:ArrayOfRoleName" />
+  <xs:complexType name="RoleName">
+    <xs:sequence>
+      <xs:element name="Name" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RoleName" nillable="true" type="tns:RoleName" />
+  <xs:complexType name="ScopeContextRequestOperations">
+    <xs:sequence>
+      <xs:element xmlns:q21="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="OperationValues" nillable="true" type="q21:ArrayOfstring" />
+      <xs:element name="ModelHierarchyName" nillable="true" type="tns:ModelHierarchyName" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeContextRequestOperations" nillable="true" type="tns:ScopeContextRequestOperations" />
+  <xs:complexType name="ModelHierarchyName">
+    <xs:sequence>
+      <xs:element name="ModelName" nillable="true" type="xs:string" />
+      <xs:element name="HierarchyName" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ModelHierarchyName" nillable="true" type="tns:ModelHierarchyName" />
+  <xs:complexType name="ArrayOfScopeContextResponseOperations">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="ScopeContextResponseOperations" nillable="true" type="tns:ScopeContextResponseOperations" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfScopeContextResponseOperations" nillable="true" type="tns:ArrayOfScopeContextResponseOperations" />
+  <xs:complexType name="ScopeContextResponseOperations">
+    <xs:sequence>
+      <xs:element xmlns:q22="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="OperationValues" nillable="true" type="q22:ArrayOfstring" />
+      <xs:element name="ScopeHierarchyLocation" nillable="true" type="tns:ScopeHierarchyLocation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeContextResponseOperations" nillable="true" type="tns:ScopeContextResponseOperations" />
+  <xs:complexType name="ScopeHierarchyLocation">
+    <xs:sequence>
+      <xs:element name="ScopeName" nillable="true" type="xs:string" />
+      <xs:element name="HierarchyLocation" nillable="true" type="xs:string" />
+      <xs:element name="HierarchyExclusionList" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeHierarchyLocation" nillable="true" type="tns:ScopeHierarchyLocation" />
+  <xs:complexType name="ArrayOfScopeContextResponseRoles">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="ScopeContextResponseRoles" nillable="true" type="tns:ScopeContextResponseRoles" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfScopeContextResponseRoles" nillable="true" type="tns:ArrayOfScopeContextResponseRoles" />
+  <xs:complexType name="ScopeContextResponseRoles">
+    <xs:sequence>
+      <xs:element name="RoleNames" nillable="true" type="tns:ArrayOfRoleName" />
+      <xs:element name="ScopeHierarchyLocation" nillable="true" type="tns:ScopeHierarchyLocation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ScopeContextResponseRoles" nillable="true" type="tns:ScopeContextResponseRoles" />
+  <xs:complexType name="ArrayOfSecScopeDetail">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SecScopeDetail" nillable="true" type="tns:SecScopeDetail" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSecScopeDetail" nillable="true" type="tns:ArrayOfSecScopeDetail" />
+  <xs:complexType name="SecScopeDetail">
+    <xs:sequence>
+      <xs:element name="Name" nillable="true" type="xs:string" />
+      <xs:element name="TypeName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SecScopeDetail" nillable="true" type="tns:SecScopeDetail" />
+  <xs:complexType name="GroupSearchDetail">
+    <xs:sequence>
+      <xs:element name="SearchString" nillable="true" type="xs:string" />
+      <xs:element name="SearchGroupName" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="GroupSearchDetail" nillable="true" type="tns:GroupSearchDetail" />
+  <xs:complexType name="GroupSearchResult">
+    <xs:sequence>
+      <xs:element xmlns:q23="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="MatchedUsers" nillable="true" type="q23:ArrayOfstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="GroupSearchResult" nillable="true" type="tns:GroupSearchResult" />
+  <xs:complexType name="UserAssociationDetail">
+    <xs:sequence>
+      <xs:element xmlns:q24="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="RoleMembers" nillable="true" type="q24:ArrayOfstring" />
+      <xs:element xmlns:q25="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="Roles" nillable="true" type="q25:ArrayOfstring" />
+      <xs:element xmlns:q26="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="Tasks" nillable="true" type="q26:ArrayOfstring" />
+      <xs:element xmlns:q27="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="Scopes" nillable="true" type="q27:ArrayOfstring" />
+      <xs:element xmlns:q28="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="Groups" nillable="true" type="q28:ArrayOfstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserAssociationDetail" nillable="true" type="tns:UserAssociationDetail" />
+</xs:schema>
+

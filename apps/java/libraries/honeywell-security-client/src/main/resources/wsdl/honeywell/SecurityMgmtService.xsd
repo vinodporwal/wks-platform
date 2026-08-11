@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://Honeywell.MES.Core.Service.SecurityConfig" elementFormDefault="qualified" targetNamespace="http://Honeywell.MES.Core.Service.SecurityConfig" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="SecurityMgmtService3.xsd" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+  <xs:import schemaLocation="SecurityMgmtService2.xsd" namespace="http://honeywell.mes.core.service" />
+  <xs:import schemaLocation="SecurityMgmtService4.xsd" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:element name="GetRolesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Roles" nillable="true" type="tns:Roles" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="Roles">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="Roles" nillable="true" type="tns:Role" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Roles" nillable="true" type="tns:Roles" />
+  <xs:complexType name="Role">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Role" nillable="true" type="tns:Role" />
+  <xs:element name="Name" nillable="true" type="xs:string" />
+  <xs:complexType name="RoleMembers">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="RoleMembers" nillable="true" type="tns:RoleMember" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RoleMembers" nillable="true" type="tns:RoleMembers" />
+  <xs:complexType name="RoleMember">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SecurityIdentifier" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Type" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DisplayName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Email" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RoleMember" nillable="true" type="tns:RoleMember" />
+  <xs:element name="Members" nillable="true" type="tns:RoleMembers" />
+  <xs:element name="CreateRoleRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="AssignGlobalScope" nillable="true" type="xs:boolean" />
+        <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="CreateRoleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateRoleRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateRoleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetRoleDefinitionResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="RoleDefinition" nillable="true" type="tns:RoleDefinition" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="RoleDefinition">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RoleTasks" nillable="true" type="tns:RoleTasks" />
+      <xs:element minOccurs="0" name="RolePermissions" nillable="true" type="tns:RolePermissions" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RoleDefinition" nillable="true" type="tns:RoleDefinition" />
+  <xs:complexType name="RoleTasks">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="RoleTasks" nillable="true" type="tns:RoleTask" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RoleTasks" nillable="true" type="tns:RoleTasks" />
+  <xs:complexType name="RoleTask">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RoleTask" nillable="true" type="tns:RoleTask" />
+  <xs:complexType name="RolePermissions">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="RolePermissions" nillable="true" type="tns:RolePermission" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RolePermissions" nillable="true" type="tns:RolePermissions" />
+  <xs:complexType name="RolePermission">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="PermissionValue" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Access" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RolePermission" nillable="true" type="tns:RolePermission" />
+  <xs:element name="AddRoleMembersRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="MemberName" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="RoleName" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AddRoleMembersResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RemoveRoleMembersRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="MemberName" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="RoleName" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RemoveRoleMembersResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DeleteRoleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="Tasks">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="Tasks" nillable="true" type="tns:Task" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Tasks" nillable="true" type="tns:Tasks" />
+  <xs:complexType name="Task">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RolePermissions" nillable="true" type="tns:RolePermissions" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Task" nillable="true" type="tns:Task" />
+  <xs:element name="DeleteTaskResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateTaskResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="CreateTaskResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Test" nillable="true" type="xs:string" />
+  <xs:element name="GetPoliciesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="PolicyAdministrators" nillable="true" type="q1:ArrayOfstring" />
+        <xs:element xmlns:q2="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="PolicyReaders" nillable="true" type="q2:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdatePoliciesRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q3="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="PolicyAdministrators" nillable="true" type="q3:ArrayOfstring" />
+        <xs:element xmlns:q4="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="PolicyReaders" nillable="true" type="q4:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdatePoliciesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateRoleDefinitionRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="RoleDefinition" nillable="true" type="tns:RoleDefinition" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateRoleDefinitionResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="Operations">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="Operations" nillable="true" type="tns:Operation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Operations" nillable="true" type="tns:Operations" />
+  <xs:complexType name="Operation">
+    <xs:sequence>
+      <xs:element name="Id" type="xs:int" />
+      <xs:element name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Description" nillable="true" type="xs:string" />
+      <xs:element name="Group" nillable="true" type="xs:string" />
+      <xs:element name="Access" nillable="true" type="xs:string" />
+      <xs:element name="OperationValue" nillable="true" type="xs:string" />
+      <xs:element xmlns:q5="http://honeywell.mes.core.service" minOccurs="0" name="Scopes" nillable="true" type="q5:Scopes" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Operation" nillable="true" type="tns:Operation" />
+  <xs:element name="UpdateTaskDefinitionRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+        <xs:element xmlns:q6="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="Operations" nillable="true" type="q6:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateTaskDefinitionResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="CreateOperationResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="OperationId" type="xs:int" />
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="OperationName" nillable="true" type="xs:string" />
+  <xs:element name="DeleteOperationResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetForUserOrGroupRequestMessage">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ExplorerRequestType" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="UserOrGroupName" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetForUserOrGroupResponseMessage">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Operations" nillable="true" type="tns:Operations" />
+        <xs:element minOccurs="0" name="RoleMembers" nillable="true" type="tns:RoleMembers" />
+        <xs:element minOccurs="0" name="Roles" nillable="true" type="tns:Roles" />
+        <xs:element xmlns:q7="http://honeywell.mes.core.service" minOccurs="0" name="Scopes" nillable="true" type="q7:Scopes" />
+        <xs:element minOccurs="0" name="Tasks" nillable="true" type="tns:Tasks" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateOperationResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Result" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AssignedOperations" nillable="true" type="tns:Operations" />
+  <xs:complexType name="RenameTasks">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="RenameTasks" nillable="true" type="tns:RenameTask" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RenameTasks" nillable="true" type="tns:RenameTasks" />
+  <xs:complexType name="RenameTask">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="OldName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="NewName" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RenameTask" nillable="true" type="tns:RenameTask" />
+  <xs:element name="ModifyTasksResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="RenameTasksStatus" nillable="true" type="tns:RenameTasksStatus" />
+        <xs:element minOccurs="0" name="Success" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="RenameTasksStatus">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="RenameTasksStatus" nillable="true" type="tns:RenameTaskStatus" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RenameTasksStatus" nillable="true" type="tns:RenameTasksStatus" />
+  <xs:complexType name="RenameTaskStatus">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="OldName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="NewName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ErrorMessage" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="RenameTaskStatus" nillable="true" type="tns:RenameTaskStatus" />
+  <xs:element name="scope" nillable="true" type="xs:string" />
+  <xs:element name="GetSecurityInfoResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Operations" nillable="true" type="tns:Operations" />
+        <xs:element minOccurs="0" name="User" nillable="true" type="tns:UserInfo" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="UserInfo">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserInfo" nillable="true" type="tns:UserInfo" />
+  <xs:element name="UserAssociatedOperationsRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="AcessName" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="GroupName" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateVersionInfoRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="Version" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateVersionInfoResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q8="http://schemas.microsoft.com/2003/10/Serialization/" minOccurs="0" name="Id" type="q8:guid" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Filter" nillable="true" type="xs:string" />
+  <xs:element xmlns:q9="http://honeywell.mes.core.service" name="UserDetails" nillable="true" type="q9:UserDetails" />
+  <xs:element xmlns:q10="http://honeywell.mes.core.service" name="ScopeTypes" nillable="true" type="q10:ScopeTypeDescriptions" />
+  <xs:element xmlns:q11="http://honeywell.mes.core.service" name="ModifyScope" nillable="true" type="q11:ScopeModify" />
+  <xs:element xmlns:q12="http://honeywell.mes.core.service" name="ModifyScopeStatus" nillable="true" type="q12:ModifyScopeResult" />
+  <xs:element xmlns:q13="http://honeywell.mes.core.service" name="ScopeQuery" nillable="true" type="q13:QueryScopeChoise" />
+  <xs:element xmlns:q14="http://honeywell.mes.core.service" name="Scopes" nillable="true" type="q14:Scopes" />
+  <xs:element xmlns:q15="http://honeywell.mes.core.service" name="ModifyScopeRoleMembers" nillable="true" type="q15:ScopeRoleMemberModify" />
+  <xs:element xmlns:q16="http://honeywell.mes.core.service" name="ModifyScopeRoleMembersStatus" nillable="true" type="q16:ModifyRoleMembersResult" />
+  <xs:complexType name="ArrayOfOperation">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="Operation" nillable="true" type="tns:Operation" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfOperation" nillable="true" type="tns:ArrayOfOperation" />
+  <xs:element xmlns:q17="http://honeywell.mes.core.service" name="OperationQuery" nillable="true" type="q17:UserOperationsReqest" />
+  <xs:element xmlns:q18="http://honeywell.mes.core.service" name="ScopeRoleMemberQuery" nillable="true" type="q18:QueryScopeRoleMembers" />
+  <xs:element xmlns:q19="http://honeywell.mes.core.service" name="ScopeRoleMembers" nillable="true" type="q19:ScopeRoleMembersList" />
+  <xs:element name="RemoveVersionInfoRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="VersionNo" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Count" type="xs:int" />
+  <xs:element name="GetVersionInfoRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="VersionNo" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element xmlns:q20="http://honeywell.mes.core.service" name="VersionInfoCollection" nillable="true" type="q20:VersionInfoCollection" />
+  <xs:element xmlns:q21="http://honeywell.mes.core.service" name="UserDetail" nillable="true" type="q21:UserDetail" />
+  <xs:element name="GetAuditLogsRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q22="http://honeywell.mes.core.service" minOccurs="0" name="AuditLogsFilter" nillable="true" type="q22:AuditLogFilter" />
+        <xs:element xmlns:q23="http://honeywell.mes.core.service" minOccurs="0" name="ContinuationRequest" nillable="true" type="q23:ContinuationRequest" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAuditLogsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q24="http://honeywell.mes.core.service" minOccurs="0" name="AuditLogCollection" nillable="true" type="q24:AuditLogCollection" />
+        <xs:element xmlns:q25="http://honeywell.mes.core.service" minOccurs="0" name="ContinuationResponse" nillable="true" type="q25:ContinuationResponse" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element xmlns:q26="http://honeywell.mes.core.service" name="Responses" nillable="true" type="q26:Responses" />
+  <xs:element xmlns:q27="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="OperationsName" nillable="true" type="q27:ArrayOfstring" />
+  <xs:element xmlns:q28="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="UserIds" nillable="true" type="q28:ArrayOfstring" />
+  <xs:element xmlns:q29="http://honeywell.mes.core.service" name="UsersDetail" nillable="true" type="q29:UserDetails" />
+  <xs:element xmlns:q30="http://honeywell.mes.core.service" name="UserScopeOperations" nillable="true" type="q30:UserScopeOperations" />
+  <xs:element xmlns:q31="http://honeywell.mes.core.service" name="UserOperations" nillable="true" type="q31:ArrayOfUserOperations" />
+  <xs:element xmlns:q32="http://honeywell.mes.core.service" name="TaskRoleNames" nillable="true" type="q32:TaskRoleNames" />
+  <xs:element xmlns:q33="http://honeywell.mes.core.service" name="RoleNames" nillable="true" type="q33:ArrayOfRoleName" />
+  <xs:element xmlns:q34="http://honeywell.mes.core.service" name="ScopeContextRequestOperations" nillable="true" type="q34:ScopeContextRequestOperations" />
+  <xs:element xmlns:q35="http://honeywell.mes.core.service" name="ScopeContextResponseOperations" nillable="true" type="q35:ArrayOfScopeContextResponseOperations" />
+  <xs:element xmlns:q36="http://honeywell.mes.core.service" name="ModelHierarchyName" nillable="true" type="q36:ModelHierarchyName" />
+  <xs:element xmlns:q37="http://honeywell.mes.core.service" name="ScopeContextResponseRoles" nillable="true" type="q37:ArrayOfScopeContextResponseRoles" />
+  <xs:element name="UserOperationQuery" nillable="true" type="tns:Operation" />
+  <xs:element name="Result" type="xs:boolean" />
+  <xs:element xmlns:q38="http://schemas.microsoft.com/2003/10/Serialization/Arrays" name="ScopeNames" nillable="true" type="q38:ArrayOfstring" />
+  <xs:element xmlns:q39="http://honeywell.mes.core.service" name="SecScope" nillable="true" type="q39:ArrayOfSecScopeDetail" />
+  <xs:element xmlns:q40="http://honeywell.mes.core.service" name="UserMngmtOpResponse" nillable="true" type="q40:Response" />
+  <xs:element name="USOStatus" type="xs:boolean" />
+  <xs:element xmlns:q41="http://honeywell.mes.core.service" name="GroupSearchDetail" nillable="true" type="q41:GroupSearchDetail" />
+  <xs:element xmlns:q42="http://honeywell.mes.core.service" name="GroupSearchResult" nillable="true" type="q42:GroupSearchResult" />
+  <xs:element name="GetForUsersOrGroupsRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q43="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="GroupNames" nillable="true" type="q43:ArrayOfstring" />
+        <xs:element minOccurs="0" name="IsPartialGroupNames" type="xs:boolean" />
+        <xs:element minOccurs="0" name="SearchText" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetForUsersOrGroupsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q44="http://honeywell.mes.core.service" minOccurs="0" name="UserAssociationDetail" nillable="true" type="q44:UserAssociationDetail" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllAssociatedGroupsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q45="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="GroupNames" nillable="true" type="q45:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ScopeName" nillable="true" type="xs:string" />
+  <xs:element name="scopeAssociationExists" type="xs:boolean" />
+  <xs:element name="OperationGroup" nillable="true" type="xs:string" />
+  <xs:element name="OperationValue" nillable="true" type="xs:string" />
+</xs:schema>
+

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.wks</groupId>
+        <artifactId>platform</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <artifactId>honeywell-security-client</artifactId>
+    <name>honeywell-security-client</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxws</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+                <!-- Avoid Windows manifest-classpath root handling for this workspace path. -->
+                <configuration><useSystemClassLoader>false</useSystemClassLoader></configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-codegen-plugin</artifactId>
+                <version>${cxf.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-honeywell-security-client</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>wsdl2java</goal></goals>
+                        <configuration>
+                            <sourceRoot>${project.build.directory}/generated-sources/cxf</sourceRoot>
+                            <wsdlOptions>
+                                <wsdlOption>
+                                    <!-- Local complete entry: service -> SOAP 1.1 binding -> contract, with no circular import. -->
+                                    <wsdl>${project.basedir}/src/main/resources/wsdl/honeywell/SecurityMgmtRuntime.wsdl</wsdl>
+                                    <extraargs>
+                                        <extraarg>-p</extraarg><extraarg>http://Honeywell.MES.Core.Service.SecurityConfig=com.wks.integration.honeywell.generated.security</extraarg>
+                                        <extraarg>-p</extraarg><extraarg>http://tempuri.org/=com.wks.integration.honeywell.generated.service</extraarg>
+                                        <extraarg>-p</extraarg><extraarg>http://Honeywell.MES.ServiceContracts/2008/10=com.wks.integration.honeywell.generated.fault</extraarg>
+                                        <extraarg>-p</extraarg><extraarg>http://honeywell.mes.core.service=com.wks.integration.honeywell.generated.core</extraarg>
+                                        <extraarg>-p</extraarg><extraarg>http://schemas.microsoft.com/2003/10/Serialization/Arrays=com.wks.integration.honeywell.generated.arrays</extraarg>
+                                        <extraarg>-p</extraarg><extraarg>http://schemas.microsoft.com/2003/10/Serialization/=com.wks.integration.honeywell.generated.serialization</extraarg>
+                                    </extraargs>
+                                </wsdlOption>
+                            </wsdlOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:i0="http://tempuri.org/" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://Honeywell.MES.Core.Service.SecurityConfig" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="SecurityMgmt" targetNamespace="http://Honeywell.MES.Core.Service.SecurityConfig" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://Honeywell.MES.Core.Service.SecurityConfig/Imports">
+      <xsd:import schemaLocation="SecurityMgmtService.xsd" namespace="http://Honeywell.MES.Core.Service.SecurityConfig" />
+      <xsd:import schemaLocation="SecurityMgmtService4.xsd" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="SecurityMgmtService3.xsd" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+      <xsd:import schemaLocation="SecurityMgmtService2.xsd" namespace="http://honeywell.mes.core.service" />
+      <xsd:import schemaLocation="SecurityMgmtService1.xsd" namespace="http://Honeywell.MES.ServiceContracts/2008/10" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="SecurityMgmtContract_GetRoles_InputMessage" />
+  <wsdl:message name="GetRolesResponse">
+    <wsdl:part name="parameters" element="tns:GetRolesResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetRoleMembersRequest">
+    <wsdl:part name="Name" element="tns:Name" />
+  </wsdl:message>
+  <wsdl:message name="GetRoleMembersResponse">
+    <wsdl:part name="Members" element="tns:Members" />
+  </wsdl:message>
+  <wsdl:message name="CreateRoleRequest">
+    <wsdl:part name="parameters" element="tns:CreateRoleRequest" />
+  </wsdl:message>
+  <wsdl:message name="CreateRoleResponse">
+    <wsdl:part name="parameters" element="tns:CreateRoleResponse" />
+  </wsdl:message>
+  <wsdl:message name="UpdateRoleRequest">
+    <wsdl:part name="parameters" element="tns:UpdateRoleRequest" />
+  </wsdl:message>
+  <wsdl:message name="UpdateRoleResponse">
+    <wsdl:part name="parameters" element="tns:UpdateRoleResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetRoleDefinitionRequest">
+    <wsdl:part name="Name" element="tns:Name" />
+  </wsdl:message>
+  <wsdl:message name="GetRoleDefinitionResponse">
+    <wsdl:part name="parameters" element="tns:GetRoleDefinitionResponse" />
+  </wsdl:message>
+  <wsdl:message name="AddRoleMembersRequest">
+    <wsdl:part name="parameters" element="tns:AddRoleMembersRequest" />
+  </wsdl:message>
+  <wsdl:message name="AddRoleMembersResponse">
+    <wsdl:part name="parameters" element="tns:AddRoleMembersResponse" />
+  </wsdl:message>
+  <wsdl:message name="RemoveRoleMembersRequest">
+    <wsdl:part name="parameters" element="tns:RemoveRoleMembersRequest" />
+  </wsdl:message>
+  <wsdl:message name="RemoveRoleMembersResponse">
+    <wsdl:part name="parameters" element="tns:RemoveRoleMembersResponse" />
+  </wsdl:message>
+  <wsdl:message name="DeleteRoleRequest">
+    <wsdl:part name="Name" element="tns:Name" />
+  </wsdl:message>
+  <wsdl:message name="DeleteRoleResponse">
+    <wsdl:part name="parameters" element="tns:DeleteRoleResponse" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetTasks_InputMessage" />
+  <wsdl:message name="GetTasksResponse">
+    <wsdl:part name="Tasks" element="tns:Tasks" />
+  </wsdl:message>
+  <wsdl:message name="DeleteTaskRequest">
+    <wsdl:part name="Task" element="tns:Task" />
+  </wsdl:message>
+  <wsdl:message name="DeleteTaskResponse">
+    <wsdl:part name="parameters" element="tns:DeleteTaskResponse" />
+  </wsdl:message>
+  <wsdl:message name="UpdateTaskRequest">
+    <wsdl:part name="Task" element="tns:Task" />
+  </wsdl:message>
+  <wsdl:message name="UpdateTaskResponse">
+    <wsdl:part name="parameters" element="tns:UpdateTaskResponse" />
+  </wsdl:message>
+  <wsdl:message name="CreateTaskRequest">
+    <wsdl:part name="Task" element="tns:Task" />
+  </wsdl:message>
+  <wsdl:message name="CreateTaskResponse">
+    <wsdl:part name="parameters" element="tns:CreateTaskResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetPoliciesRequest">
+    <wsdl:part name="Test" element="tns:Test" />
+  </wsdl:message>
+  <wsdl:message name="GetPoliciesResponse">
+    <wsdl:part name="parameters" element="tns:GetPoliciesResponse" />
+  </wsdl:message>
+  <wsdl:message name="UpdatePoliciesRequest">
+    <wsdl:part name="parameters" element="tns:UpdatePoliciesRequest" />
+  </wsdl:message>
+  <wsdl:message name="UpdatePoliciesResponse">
+    <wsdl:part name="parameters" element="tns:UpdatePoliciesResponse" />
+  </wsdl:message>
+  <wsdl:message name="UpdateRoleDefinitionRequest">
+    <wsdl:part name="parameters" element="tns:UpdateRoleDefinitionRequest" />
+  </wsdl:message>
+  <wsdl:message name="UpdateRoleDefinitionResponse">
+    <wsdl:part name="parameters" element="tns:UpdateRoleDefinitionResponse" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetOperations_InputMessage" />
+  <wsdl:message name="GetOperationsResponse">
+    <wsdl:part name="Operations" element="tns:Operations" />
+  </wsdl:message>
+  <wsdl:message name="UpdateTaskDefinitionRequest">
+    <wsdl:part name="parameters" element="tns:UpdateTaskDefinitionRequest" />
+  </wsdl:message>
+  <wsdl:message name="UpdateTaskDefinitionResponse">
+    <wsdl:part name="parameters" element="tns:UpdateTaskDefinitionResponse" />
+  </wsdl:message>
+  <wsdl:message name="CreateOperationRequest">
+    <wsdl:part name="Operation" element="tns:Operation" />
+  </wsdl:message>
+  <wsdl:message name="CreateOperationResponse">
+    <wsdl:part name="parameters" element="tns:CreateOperationResponse" />
+  </wsdl:message>
+  <wsdl:message name="DeleteOperationRequest">
+    <wsdl:part name="OperationName" element="tns:OperationName" />
+  </wsdl:message>
+  <wsdl:message name="DeleteOperationResponse">
+    <wsdl:part name="parameters" element="tns:DeleteOperationResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetForUserOrGroupRequestMessage">
+    <wsdl:part name="parameters" element="tns:GetForUserOrGroupRequestMessage" />
+  </wsdl:message>
+  <wsdl:message name="GetForUserOrGroupResponseMessage">
+    <wsdl:part name="parameters" element="tns:GetForUserOrGroupResponseMessage" />
+  </wsdl:message>
+  <wsdl:message name="UpdateOperationRequest">
+    <wsdl:part name="Operation" element="tns:Operation" />
+  </wsdl:message>
+  <wsdl:message name="UpdateOperationResponse">
+    <wsdl:part name="parameters" element="tns:UpdateOperationResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetUserAssignedOperationsRequest">
+    <wsdl:part name="Operations" element="tns:Operations" />
+  </wsdl:message>
+  <wsdl:message name="GetUserAssignedOperationsResponse">
+    <wsdl:part name="AssignedOperations" element="tns:AssignedOperations" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetUserAssignedOperations_USOFaultContractFault_FaultMessage">
+    <wsdl:part xmlns:q1="http://Honeywell.MES.ServiceContracts/2008/10" name="detail" element="q1:USOFaultContract" />
+  </wsdl:message>
+  <wsdl:message name="ModifyTasksRequest">
+    <wsdl:part name="RenameTasks" element="tns:RenameTasks" />
+  </wsdl:message>
+  <wsdl:message name="ModifyTasksResponse">
+    <wsdl:part name="parameters" element="tns:ModifyTasksResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetSecurityInfoRequest">
+    <wsdl:part name="scope" element="tns:scope" />
+  </wsdl:message>
+  <wsdl:message name="GetSecurityInfoResponse">
+    <wsdl:part name="parameters" element="tns:GetSecurityInfoResponse" />
+  </wsdl:message>
+  <wsdl:message name="UserAssociatedOperationsRequest">
+    <wsdl:part name="parameters" element="tns:UserAssociatedOperationsRequest" />
+  </wsdl:message>
+  <wsdl:message name="UserAssociatedOperationsResponse">
+    <wsdl:part name="AssignedOperations" element="tns:AssignedOperations" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetUserAssociatedOperations_USOFaultContractFault_FaultMessage">
+    <wsdl:part xmlns:q2="http://Honeywell.MES.ServiceContracts/2008/10" name="detail" element="q2:USOFaultContract" />
+  </wsdl:message>
+  <wsdl:message name="UpdateVersionInfoRequest">
+    <wsdl:part name="parameters" element="tns:UpdateVersionInfoRequest" />
+  </wsdl:message>
+  <wsdl:message name="UpdateVersionInfoResponse">
+    <wsdl:part name="parameters" element="tns:UpdateVersionInfoResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetUserDetailsRequest">
+    <wsdl:part name="Filter" element="tns:Filter" />
+  </wsdl:message>
+  <wsdl:message name="GetUserDetailsResponse">
+    <wsdl:part name="UserDetails" element="tns:UserDetails" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetScopeTypes_InputMessage" />
+  <wsdl:message name="GetScopeTypesResponse">
+    <wsdl:part name="ScopeTypes" element="tns:ScopeTypes" />
+  </wsdl:message>
+  <wsdl:message name="ModifyScopeRequest">
+    <wsdl:part name="ModifyScope" element="tns:ModifyScope" />
+  </wsdl:message>
+  <wsdl:message name="ModifyScopeResponse">
+    <wsdl:part name="ModifyScopeStatus" element="tns:ModifyScopeStatus" />
+  </wsdl:message>
+  <wsdl:message name="GetScopesRequest">
+    <wsdl:part name="ScopeQuery" element="tns:ScopeQuery" />
+  </wsdl:message>
+  <wsdl:message name="GetScopesResponse">
+    <wsdl:part name="Scopes" element="tns:Scopes" />
+  </wsdl:message>
+  <wsdl:message name="ModifyScopeRoleMembersRequest">
+    <wsdl:part name="ModifyScopeRoleMembers" element="tns:ModifyScopeRoleMembers" />
+  </wsdl:message>
+  <wsdl:message name="ModifyScopeRoleMembersResponse">
+    <wsdl:part name="ModifyScopeRoleMembersStatus" element="tns:ModifyScopeRoleMembersStatus" />
+  </wsdl:message>
+  <wsdl:message name="GetUserAssignedOperationsByScopeRequest">
+    <wsdl:part name="OperationQuery" element="tns:OperationQuery" />
+  </wsdl:message>
+  <wsdl:message name="GetUserAssignedOperationsByScopeResponse">
+    <wsdl:part name="AssignedOperations" element="tns:AssignedOperations" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetUserAssignedOperationsByScope_USOFaultContractFault_FaultMessage">
+    <wsdl:part xmlns:q3="http://Honeywell.MES.ServiceContracts/2008/10" name="detail" element="q3:USOFaultContract" />
+  </wsdl:message>
+  <wsdl:message name="GetScopeRoleMembersRequest">
+    <wsdl:part name="ScopeRoleMemberQuery" element="tns:ScopeRoleMemberQuery" />
+  </wsdl:message>
+  <wsdl:message name="GetScopeRoleMembersResponse">
+    <wsdl:part name="ScopeRoleMembers" element="tns:ScopeRoleMembers" />
+  </wsdl:message>
+  <wsdl:message name="RemoveVersionInfoRequest">
+    <wsdl:part name="parameters" element="tns:RemoveVersionInfoRequest" />
+  </wsdl:message>
+  <wsdl:message name="RemoveVersionInfoResponse">
+    <wsdl:part name="Count" element="tns:Count" />
+  </wsdl:message>
+  <wsdl:message name="GetVersionInfoRequest">
+    <wsdl:part name="parameters" element="tns:GetVersionInfoRequest" />
+  </wsdl:message>
+  <wsdl:message name="GetVersionInfoResponse">
+    <wsdl:part name="VersionInfoCollection" element="tns:VersionInfoCollection" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetUserInfo_InputMessage" />
+  <wsdl:message name="GetUserInfoResponse">
+    <wsdl:part name="UserDetail" element="tns:UserDetail" />
+  </wsdl:message>
+  <wsdl:message name="GetAuditLogsRequest">
+    <wsdl:part name="parameters" element="tns:GetAuditLogsRequest" />
+  </wsdl:message>
+  <wsdl:message name="GetAuditLogsResponse">
+    <wsdl:part name="parameters" element="tns:GetAuditLogsResponse" />
+  </wsdl:message>
+  <wsdl:message name="CreateOperationsRequest">
+    <wsdl:part name="Operations" element="tns:Operations" />
+  </wsdl:message>
+  <wsdl:message name="CreateOperationsResponse">
+    <wsdl:part name="Responses" element="tns:Responses" />
+  </wsdl:message>
+  <wsdl:message name="CreateTasksRequest">
+    <wsdl:part name="Tasks" element="tns:Tasks" />
+  </wsdl:message>
+  <wsdl:message name="CreateTasksResponse">
+    <wsdl:part name="Responses" element="tns:Responses" />
+  </wsdl:message>
+  <wsdl:message name="UpdateTasksRequest">
+    <wsdl:part name="Tasks" element="tns:Tasks" />
+  </wsdl:message>
+  <wsdl:message name="UpdateTasksResponse">
+    <wsdl:part name="Responses" element="tns:Responses" />
+  </wsdl:message>
+  <wsdl:message name="DeleteTasksRequest">
+    <wsdl:part name="Tasks" element="tns:Tasks" />
+  </wsdl:message>
+  <wsdl:message name="DeleteTasksResponse">
+    <wsdl:part name="Responses" element="tns:Responses" />
+  </wsdl:message>
+  <wsdl:message name="DeleteOperationsRequest">
+    <wsdl:part name="OperationsName" element="tns:OperationsName" />
+  </wsdl:message>
+  <wsdl:message name="DeleteOperationsResponse">
+    <wsdl:part name="Responses" element="tns:Responses" />
+  </wsdl:message>
+  <wsdl:message name="UpdateOperationsRequest">
+    <wsdl:part name="Operations" element="tns:Operations" />
+  </wsdl:message>
+  <wsdl:message name="UpdateOperationsResponse">
+    <wsdl:part name="Responses" element="tns:Responses" />
+  </wsdl:message>
+  <wsdl:message name="GetUsersDetailRequest">
+    <wsdl:part name="UserIds" element="tns:UserIds" />
+  </wsdl:message>
+  <wsdl:message name="GetUsersDetailResponse">
+    <wsdl:part name="UsersDetail" element="tns:UsersDetail" />
+  </wsdl:message>
+  <wsdl:message name="CheckAccessForUsersRequest">
+    <wsdl:part name="UserScopeOperations" element="tns:UserScopeOperations" />
+  </wsdl:message>
+  <wsdl:message name="CheckAccessForUsersResponse">
+    <wsdl:part name="UserOperations" element="tns:UserOperations" />
+  </wsdl:message>
+  <wsdl:message name="CheckRolesAccessToTaskRequest">
+    <wsdl:part name="TaskRoleNames" element="tns:TaskRoleNames" />
+  </wsdl:message>
+  <wsdl:message name="CheckRolesAccessToTaskResponse">
+    <wsdl:part name="RoleNames" element="tns:RoleNames" />
+  </wsdl:message>
+  <wsdl:message name="GetScopesContextForUserRequest">
+    <wsdl:part name="ScopeContextRequestOperations" element="tns:ScopeContextRequestOperations" />
+  </wsdl:message>
+  <wsdl:message name="GetScopesContextForUserResponse">
+    <wsdl:part name="ScopeContextResponseOperations" element="tns:ScopeContextResponseOperations" />
+  </wsdl:message>
+  <wsdl:message name="GetScopeContextsRequest">
+    <wsdl:part name="ModelHierarchyName" element="tns:ModelHierarchyName" />
+  </wsdl:message>
+  <wsdl:message name="GetScopeContextsResponse">
+    <wsdl:part name="ScopeContextResponseRoles" element="tns:ScopeContextResponseRoles" />
+  </wsdl:message>
+  <wsdl:message name="CheckAccessIndependentOfScopeRequest">
+    <wsdl:part name="UserOperationQuery" element="tns:UserOperationQuery" />
+  </wsdl:message>
+  <wsdl:message name="CheckAccessIndependentOfScopeResponse">
+    <wsdl:part name="Result" element="tns:Result" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_CheckAccessIndependentOfScope_USOFaultContractFault_FaultMessage">
+    <wsdl:part xmlns:q4="http://Honeywell.MES.ServiceContracts/2008/10" name="detail" element="q4:USOFaultContract" />
+  </wsdl:message>
+  <wsdl:message name="GetScopeDetailsRequest">
+    <wsdl:part name="ScopeNames" element="tns:ScopeNames" />
+  </wsdl:message>
+  <wsdl:message name="GetScopeDetailsResponse">
+    <wsdl:part name="Scopes" element="tns:Scopes" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetAllScopes_InputMessage" />
+  <wsdl:message name="GetAllScopeNamesResponse">
+    <wsdl:part name="SecScope" element="tns:SecScope" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_ForceDisconnect_InputMessage" />
+  <wsdl:message name="UserMngmtResponse">
+    <wsdl:part name="UserMngmtOpResponse" element="tns:UserMngmtOpResponse" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_ForceDisconnect_USOFaultContractFault_FaultMessage">
+    <wsdl:part xmlns:q5="http://Honeywell.MES.ServiceContracts/2008/10" name="detail" element="q5:USOFaultContract" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetUSOStatus_InputMessage" />
+  <wsdl:message name="USOStatusResponse">
+    <wsdl:part name="USOStatus" element="tns:USOStatus" />
+  </wsdl:message>
+  <wsdl:message name="GetGroupSearchResultRequest">
+    <wsdl:part name="GroupSearchDetail" element="tns:GroupSearchDetail" />
+  </wsdl:message>
+  <wsdl:message name="GetGroupSearchResultResponse">
+    <wsdl:part name="GroupSearchResult" element="tns:GroupSearchResult" />
+  </wsdl:message>
+  <wsdl:message name="GetForUsersOrGroupsRequest">
+    <wsdl:part name="parameters" element="tns:GetForUsersOrGroupsRequest" />
+  </wsdl:message>
+  <wsdl:message name="GetForUsersOrGroupsResponse">
+    <wsdl:part name="parameters" element="tns:GetForUsersOrGroupsResponse" />
+  </wsdl:message>
+  <wsdl:message name="SecurityMgmtContract_GetAllAssociatedGroups_InputMessage" />
+  <wsdl:message name="GetAllAssociatedGroupsResponse">
+    <wsdl:part name="parameters" element="tns:GetAllAssociatedGroupsResponse" />
+  </wsdl:message>
+  <wsdl:message name="CheckUserScopeAccessRequest">
+    <wsdl:part name="ScopeName" element="tns:ScopeName" />
+  </wsdl:message>
+  <wsdl:message name="CheckUserScopeAccessResponse">
+    <wsdl:part name="scopeAssociationExists" element="tns:scopeAssociationExists" />
+  </wsdl:message>
+  <wsdl:message name="CheckAccessByGroupAndValueRequest">
+    <wsdl:part name="OperationGroup" element="tns:OperationGroup" />
+    <wsdl:part name="OperationValue" element="tns:OperationValue" />
+  </wsdl:message>
+  <wsdl:message name="CheckAccessByGroupAndValueResponse">
+    <wsdl:part name="Result" element="tns:Result" />
+  </wsdl:message>
+  <wsdl:portType name="SecurityMgmtContract">
+    <wsdl:operation name="GetRoles">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetRoles" message="tns:SecurityMgmtContract_GetRoles_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetRolesResponse" name="GetRolesResponse" message="tns:GetRolesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRoleMembers">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetRoleMembers" name="GetRoleMembersRequest" message="tns:GetRoleMembersRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetRoleMembersResponse" name="GetRoleMembersResponse" message="tns:GetRoleMembersResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateRole">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateRole" name="CreateRoleRequest" message="tns:CreateRoleRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CreateRoleResponse" name="CreateRoleResponse" message="tns:CreateRoleResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateRole">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateRole" name="UpdateRoleRequest" message="tns:UpdateRoleRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateRoleResponse" name="UpdateRoleResponse" message="tns:UpdateRoleResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRoleDefinition">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetRoleDefinition" name="GetRoleDefinitionRequest" message="tns:GetRoleDefinitionRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetRoleDefinitionResponse" name="GetRoleDefinitionResponse" message="tns:GetRoleDefinitionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="AddRoleMembers">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/AddRoleMembers" name="AddRoleMembersRequest" message="tns:AddRoleMembersRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/AddRoleMembersResponse" name="AddRoleMembersResponse" message="tns:AddRoleMembersResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="RemoveRoleMembers">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/RemoveRoleMembers" name="RemoveRoleMembersRequest" message="tns:RemoveRoleMembersRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/RemoveRoleMembersResponse" name="RemoveRoleMembersResponse" message="tns:RemoveRoleMembersResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteRole">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteRole" name="DeleteRoleRequest" message="tns:DeleteRoleRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/DeleteRoleResponse" name="DeleteRoleResponse" message="tns:DeleteRoleResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetTasks">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetTasks" message="tns:SecurityMgmtContract_GetTasks_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetTasksResponse" name="GetTasksResponse" message="tns:GetTasksResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteTask">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteTask" name="DeleteTaskRequest" message="tns:DeleteTaskRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/DeleteTaskResponse" name="DeleteTaskResponse" message="tns:DeleteTaskResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateTask">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateTask" name="UpdateTaskRequest" message="tns:UpdateTaskRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateTaskResponse" name="UpdateTaskResponse" message="tns:UpdateTaskResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateTask">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateTask" name="CreateTaskRequest" message="tns:CreateTaskRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CreateTaskResponse" name="CreateTaskResponse" message="tns:CreateTaskResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPolicies">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetPolicies" name="GetPoliciesRequest" message="tns:GetPoliciesRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetPoliciesResponse" name="GetPoliciesResponse" message="tns:GetPoliciesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdatePolicies">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdatePolicies" name="UpdatePoliciesRequest" message="tns:UpdatePoliciesRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdatePoliciesResponse" name="UpdatePoliciesResponse" message="tns:UpdatePoliciesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateRoleDefinition">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateRoleDefinition" name="UpdateRoleDefinitionRequest" message="tns:UpdateRoleDefinitionRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateRoleDefinitionResponse" name="UpdateRoleDefinitionResponse" message="tns:UpdateRoleDefinitionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetOperations">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetOperations" message="tns:SecurityMgmtContract_GetOperations_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetOperationsResponse" name="GetOperationsResponse" message="tns:GetOperationsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateTaskDefinition">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateTaskDefinition" name="UpdateTaskDefinitionRequest" message="tns:UpdateTaskDefinitionRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateTaskDefinitionResponse" name="UpdateTaskDefinitionResponse" message="tns:UpdateTaskDefinitionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateOperation">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateOperation" name="CreateOperationRequest" message="tns:CreateOperationRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CreateOperationResponse" name="CreateOperationResponse" message="tns:CreateOperationResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteOperation">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteOperation" name="DeleteOperationRequest" message="tns:DeleteOperationRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/DeleteOperationResponse" name="DeleteOperationResponse" message="tns:DeleteOperationResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetForUserOrGroup">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetForUserOrGroup" name="GetForUserOrGroupRequestMessage" message="tns:GetForUserOrGroupRequestMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetForUserOrGroupResponse" name="GetForUserOrGroupResponseMessage" message="tns:GetForUserOrGroupResponseMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateOperation">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateOperation" name="UpdateOperationRequest" message="tns:UpdateOperationRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateOperationResponse" name="UpdateOperationResponse" message="tns:UpdateOperationResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUserAssignedOperations">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserAssignedOperations" name="GetUserAssignedOperationsRequest" message="tns:GetUserAssignedOperationsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserAssignedOperationsResponse" name="GetUserAssignedOperationsResponse" message="tns:GetUserAssignedOperationsResponse" />
+      <wsdl:fault wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserAssignedOperationsUSOFaultContractFault" name="USOFaultContractFault" message="tns:SecurityMgmtContract_GetUserAssignedOperations_USOFaultContractFault_FaultMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="ModifyTasks">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ModifyTasks" name="ModifyTasksRequest" message="tns:ModifyTasksRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/ModifyTasksResponse" name="ModifyTasksResponse" message="tns:ModifyTasksResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSecurityInfo">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetSecurityInfo" name="GetSecurityInfoRequest" message="tns:GetSecurityInfoRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetSecurityInfoResponse" name="GetSecurityInfoResponse" message="tns:GetSecurityInfoResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUserAssociatedOperations">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserAssociatedOperations" name="UserAssociatedOperationsRequest" message="tns:UserAssociatedOperationsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserAssociatedOperationsResponse" name="UserAssociatedOperationsResponse" message="tns:UserAssociatedOperationsResponse" />
+      <wsdl:fault wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserAssociatedOperationsUSOFaultContractFault" name="USOFaultContractFault" message="tns:SecurityMgmtContract_GetUserAssociatedOperations_USOFaultContractFault_FaultMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateVersionInfo">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateVersionInfo" name="UpdateVersionInfoRequest" message="tns:UpdateVersionInfoRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateVersionInfoResponse" name="UpdateVersionInfoResponse" message="tns:UpdateVersionInfoResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUserDetails">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserDetails" name="GetUserDetailsRequest" message="tns:GetUserDetailsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserDetailsResponse" name="GetUserDetailsResponse" message="tns:GetUserDetailsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeTypes">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeTypes" message="tns:SecurityMgmtContract_GetScopeTypes_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetScopeTypesResponse" name="GetScopeTypesResponse" message="tns:GetScopeTypesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="ModifyScope">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ModifyScope" name="ModifyScopeRequest" message="tns:ModifyScopeRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/ModifyScopeResponse" name="ModifyScopeResponse" message="tns:ModifyScopeResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetScopes">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopes" name="GetScopesRequest" message="tns:GetScopesRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetScopesResponse" name="GetScopesResponse" message="tns:GetScopesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="ModifyScopeRoleMembers">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ModifyScopeRoleMembers" name="ModifyScopeRoleMembersRequest" message="tns:ModifyScopeRoleMembersRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/ModifyScopeRoleMembersResponse" name="ModifyScopeRoleMembersResponse" message="tns:ModifyScopeRoleMembersResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUserAssignedOperationsByScope">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserAssignedOperationsByScope" name="GetUserAssignedOperationsByScopeRequest" message="tns:GetUserAssignedOperationsByScopeRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserAssignedOperationsByScopeResponse" name="GetUserAssignedOperationsByScopeResponse" message="tns:GetUserAssignedOperationsByScopeResponse" />
+      <wsdl:fault wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserAssignedOperationsByScopeUSOFaultContractFault" name="USOFaultContractFault" message="tns:SecurityMgmtContract_GetUserAssignedOperationsByScope_USOFaultContractFault_FaultMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeRoleMembers">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeRoleMembers" name="GetScopeRoleMembersRequest" message="tns:GetScopeRoleMembersRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetScopeRoleMembersResponse" name="GetScopeRoleMembersResponse" message="tns:GetScopeRoleMembersResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="RemoveVersionInfo">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/RemoveVersionInfo" name="RemoveVersionInfoRequest" message="tns:RemoveVersionInfoRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/RemoveVersionInfoResponse" name="RemoveVersionInfoResponse" message="tns:RemoveVersionInfoResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetVersionInfo">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetVersionInfo" name="GetVersionInfoRequest" message="tns:GetVersionInfoRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetVersionInfoResponse" name="GetVersionInfoResponse" message="tns:GetVersionInfoResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUserInfo">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUserInfo" message="tns:SecurityMgmtContract_GetUserInfo_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUserInfoResponse" name="GetUserInfoResponse" message="tns:GetUserInfoResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAuditLogs">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAuditLogs" name="GetAuditLogsRequest" message="tns:GetAuditLogsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetAuditLogsResponse" name="GetAuditLogsResponse" message="tns:GetAuditLogsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAllRoleMembers">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAllRoleMembers" name="GetRoleMembersRequest" message="tns:GetRoleMembersRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetAllRoleMembersResponse" name="GetRoleMembersResponse" message="tns:GetRoleMembersResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateOperations">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateOperations" name="CreateOperationsRequest" message="tns:CreateOperationsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CreateOperationsResponse" name="CreateOperationsResponse" message="tns:CreateOperationsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateTasks">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CreateTasks" name="CreateTasksRequest" message="tns:CreateTasksRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CreateTasksResponse" name="CreateTasksResponse" message="tns:CreateTasksResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateTasks">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateTasks" name="UpdateTasksRequest" message="tns:UpdateTasksRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateTasksResponse" name="UpdateTasksResponse" message="tns:UpdateTasksResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteTasks">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteTasks" name="DeleteTasksRequest" message="tns:DeleteTasksRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/DeleteTasksResponse" name="DeleteTasksResponse" message="tns:DeleteTasksResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteOperations">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/DeleteOperations" name="DeleteOperationsRequest" message="tns:DeleteOperationsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/DeleteOperationsResponse" name="DeleteOperationsResponse" message="tns:DeleteOperationsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateOperations">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/UpdateOperations" name="UpdateOperationsRequest" message="tns:UpdateOperationsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/UpdateOperationsResponse" name="UpdateOperationsResponse" message="tns:UpdateOperationsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUsersDetail">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUsersDetail" name="GetUsersDetailRequest" message="tns:GetUsersDetailRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUsersDetailResponse" name="GetUsersDetailResponse" message="tns:GetUsersDetailResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckAccessForUsers">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckAccessForUsers" name="CheckAccessForUsersRequest" message="tns:CheckAccessForUsersRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CheckAccessForUsersResponse" name="CheckAccessForUsersResponse" message="tns:CheckAccessForUsersResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckRolesAccessToTask">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckRolesAccessToTask" name="CheckRolesAccessToTaskRequest" message="tns:CheckRolesAccessToTaskRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CheckRolesAccessToTaskResponse" name="CheckRolesAccessToTaskResponse" message="tns:CheckRolesAccessToTaskResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetScopesContextForUser">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopesContextForUser" name="GetScopesContextForUserRequest" message="tns:GetScopesContextForUserRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetScopesContextForUserResponse" name="GetScopesContextForUserResponse" message="tns:GetScopesContextForUserResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeContexts">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeContexts" name="GetScopeContextsRequest" message="tns:GetScopeContextsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetScopeContextsResponse" name="GetScopeContextsResponse" message="tns:GetScopeContextsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckAccessIndependentOfScope">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckAccessIndependentOfScope" name="CheckAccessIndependentOfScopeRequest" message="tns:CheckAccessIndependentOfScopeRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CheckAccessIndependentOfScopeResponse" name="CheckAccessIndependentOfScopeResponse" message="tns:CheckAccessIndependentOfScopeResponse" />
+      <wsdl:fault wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CheckAccessIndependentOfScopeUSOFaultContractFault" name="USOFaultContractFault" message="tns:SecurityMgmtContract_CheckAccessIndependentOfScope_USOFaultContractFault_FaultMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetScopeDetails">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetScopeDetails" name="GetScopeDetailsRequest" message="tns:GetScopeDetailsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetScopeDetailsResponse" name="GetScopeDetailsResponse" message="tns:GetScopeDetailsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAllScopes">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAllScopes" message="tns:SecurityMgmtContract_GetAllScopes_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetAllScopesResponse" name="GetAllScopeNamesResponse" message="tns:GetAllScopeNamesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="ForceDisconnect">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/ForceDisconnect" message="tns:SecurityMgmtContract_ForceDisconnect_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/ForceDisconnectResponse" name="UserMngmtResponse" message="tns:UserMngmtResponse" />
+      <wsdl:fault wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/ForceDisconnectUSOFaultContractFault" name="USOFaultContractFault" message="tns:SecurityMgmtContract_ForceDisconnect_USOFaultContractFault_FaultMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUSOStatus">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetUSOStatus" message="tns:SecurityMgmtContract_GetUSOStatus_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetUSOStatusResponse" name="USOStatusResponse" message="tns:USOStatusResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetGroupSearchResult">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetGroupSearchResult" name="GetGroupSearchResultRequest" message="tns:GetGroupSearchResultRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetGroupSearchResultResponse" name="GetGroupSearchResultResponse" message="tns:GetGroupSearchResultResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetForUsersOrGroups">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetForUsersOrGroups" name="GetForUsersOrGroupsRequest" message="tns:GetForUsersOrGroupsRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetForUsersOrGroupsResponse" name="GetForUsersOrGroupsResponse" message="tns:GetForUsersOrGroupsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAllAssociatedGroups">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/GetAllAssociatedGroups" message="tns:SecurityMgmtContract_GetAllAssociatedGroups_InputMessage" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/GetAllAssociatedGroupsResponse" name="GetAllAssociatedGroupsResponse" message="tns:GetAllAssociatedGroupsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckUserScopeAccess">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckUserScopeAccess" name="CheckUserScopeAccessRequest" message="tns:CheckUserScopeAccessRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CheckUserScopeAccessResponse" name="CheckUserScopeAccessResponse" message="tns:CheckUserScopeAccessResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckAccessByGroupAndValue">
+      <wsdl:input wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/ISecurityMgmtContract/CheckAccessByGroupAndValue" name="CheckAccessByGroupAndValueRequest" message="tns:CheckAccessByGroupAndValueRequest" />
+      <wsdl:output wsaw:Action="http://Honeywell.MES.Core.Service.SecurityConfig/SecurityMgmtContract/CheckAccessByGroupAndValueResponse" name="CheckAccessByGroupAndValueResponse" message="tns:CheckAccessByGroupAndValueResponse" />
+    </wsdl:operation>
+  </wsdl:portType>
+</wsdl:definitions>
+

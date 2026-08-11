@@ -5,6 +5,7 @@ logging:
    level:
       root: INFO
       com.wks: INFO
+      com.wks.integration.honeywell: DEBUG
       com.wks.api.security: DEBUG
       com.wks.caseengine: DEBUG
       com.wks.caseengine.command: INFO
@@ -138,3 +139,8 @@ case.engine.email-to-case-outbound-process: email-to-case-outbound
 
 case.engine.actuator.enabled: true
 case.engine.swagger.enabled: true
+
+honeywell:
+  security-management:
+    endpoint: ${HONEYWELL_SECURITY_MANAGEMENT_ENDPOINT:https://hic044840.global.ds.honeywell.com/MES/Core/Service/SecurityConfig2.0/SecurityMgmtService.svc}
+    authentication-type: ${HONEYWELL_SECURITY_MANAGEMENT_AUTHENTICATION_TYPE:none}

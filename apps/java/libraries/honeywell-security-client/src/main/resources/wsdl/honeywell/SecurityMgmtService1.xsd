@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://Honeywell.MES.ServiceContracts/2008/10" xmlns:ser="http://schemas.microsoft.com/2003/10/Serialization/" elementFormDefault="qualified" targetNamespace="http://Honeywell.MES.ServiceContracts/2008/10" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="SecurityMgmtService4.xsd" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:complexType name="USOFaultContract">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:MESFaultContract">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="IsUSOError" type="xs:boolean" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="USOFaultContract" nillable="true" type="tns:USOFaultContract" />
+  <xs:complexType name="MESFaultContract">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Id" type="ser:guid" />
+      <xs:element minOccurs="0" name="IsPresentable" type="xs:boolean" />
+      <xs:element minOccurs="0" name="Message" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="XmlStack" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="MESFaultContract" nillable="true" type="tns:MESFaultContract" />
+</xs:schema>
+
