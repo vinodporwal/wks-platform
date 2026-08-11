@@ -104,3 +104,136 @@ export const getMonthStartEndDate = (monthName, fiscalYear) => {
 
   return [start, end]
 }
+
+// ─── Field-name constants shared by calcEndDateFromDuration & calcDurationFromDates ───
+export const DURATION_FIELDS = ['Duration', 'duration', 'may']
+export const START_DATE_FIELDS = ['startDate', 'StartDate', 'apr']
+export const END_DATE_FIELDS = ['endDate', 'EndDate']
+
+/**
+ * Calculates End Date when Start Date or Duration changes.
+ *
+ * @param {object}   params
+ * @param {string}   params.field               - The field that just changed.
+ * @param {*}        params.value               - The new value of that field.
+ * @param {object}   params.currentRow          - The current row data.
+ * @param {object}   params.dataItem            - The Kendo dataItem (UOM fallback).
+ * @param {function} params.parseDateFn         - parseDateRobust injected to avoid circular deps.
+ * @param {function} [params.onMissingStartDate] - Called when Start Date is absent and Duration changed.
+ * @returns {{ calculatedEndDate: string|null, shouldCalculateEndDate: boolean }}
+ */
+export const calcEndDateFromDuration = ({
+  field,
+  value,
+  currentRow,
+  dataItem,
+  parseDateFn,
+  onMissingStartDate,
+}) => {
+  const shouldCalculateEndDate =
+    DURATION_FIELDS.includes(field) || START_DATE_FIELDS.includes(field)
+
+  if (!shouldCalculateEndDate) {
+    return { calculatedEndDate: null, shouldCalculateEndDate: false }
+  }
+
+  const rawDuration = DURATION_FIELDS.includes(field)
+    ? value
+    : currentRow?.Duration ??
+      currentRow?.duration ??
+      currentRow?.ConstantValue ??
+      currentRow?.constantValue ??
+      currentRow?.may
+
+  const rawStartDate = START_DATE_FIELDS.includes(field)
+    ? value
+    : currentRow?.startDate ?? currentRow?.StartDate ?? currentRow?.apr
+
+  const isDurationValid =
+    rawDuration !== null &&
+    rawDuration !== undefined &&
+    String(rawDuration).trim() !== '' &&
+    !isNaN(Number(rawDuration))
+
+  if (!isDurationValid) {
+    return { calculatedEndDate: null, shouldCalculateEndDate: true }
+  }
+
+  const durationVal = Number(rawDuration)
+  const startDateObj = parseDateFn(rawStartDate)
+
+  if (!startDateObj || isNaN(startDateObj.getTime())) {
+    if (DURATION_FIELDS.includes(field) && typeof onMissingStartDate === 'function') {
+      onMissingStartDate()
+    }
+    return { calculatedEndDate: null, shouldCalculateEndDate: true }
+  }
+
+  const uom = (currentRow?.UOM || dataItem?.UOM || '').trim().toLowerCase()
+  const isMonthUom = uom === 'month' || uom === 'months'
+
+  let endDateObj
+  if (isMonthUom) {
+    endDateObj = new Date(startDateObj)
+    endDateObj.setMonth(endDateObj.getMonth() + durationVal)
+  } else {
+    endDateObj = new Date(
+      startDateObj.getTime() + durationVal * 24 * 60 * 60 * 1000,
+    )
+  }
+
+  const dd = String(endDateObj.getDate()).padStart(2, '0')
+  const mm = String(endDateObj.getMonth() + 1).padStart(2, '0')
+  const yyyy = endDateObj.getFullYear()
+
+  return { calculatedEndDate: `${dd}-${mm}-${yyyy}`, shouldCalculateEndDate: true }
+}
+
+/**
+ * Calculates Duration when End Date changes.
+ *
+ * @param {object}   params
+ * @param {string}   params.field       - The field that just changed.
+ * @param {*}        params.value       - The new value of that field.
+ * @param {object}   params.currentRow  - The current row data.
+ * @param {object}   params.dataItem    - The Kendo dataItem (UOM fallback).
+ * @param {function} params.parseDateFn - parseDateRobust injected to avoid circular deps.
+ * @returns {string|null} Duration string, or null when inputs are invalid.
+ */
+export const calcDurationFromDates = ({
+  field,
+  value,
+  currentRow,
+  dataItem,
+  parseDateFn,
+}) => {
+  if (!END_DATE_FIELDS.includes(field)) return null
+
+  const rawEndDate = value
+  const rawStartDate =
+    currentRow?.startDate ?? currentRow?.StartDate ?? currentRow?.apr
+
+  const startDateObj = parseDateFn(rawStartDate)
+  const endDateObj = parseDateFn(rawEndDate)
+
+  if (
+    !startDateObj || isNaN(startDateObj.getTime()) ||
+    !endDateObj   || isNaN(endDateObj.getTime())
+  ) {
+    return null
+  }
+
+  const uom = (currentRow?.UOM || dataItem?.UOM || '').trim().toLowerCase()
+  const isMonthUom = uom === 'month' || uom === 'months'
+
+  if (isMonthUom) {
+    const months =
+      (endDateObj.getFullYear() - startDateObj.getFullYear()) * 12 +
+      (endDateObj.getMonth() - startDateObj.getMonth())
+    return months >= 0 ? String(months) : '0'
+  }
+
+  const diffMs = endDateObj.getTime() - startDateObj.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  return diffDays >= 0 ? String(diffDays) : '0'
+}

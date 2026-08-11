@@ -564,6 +564,7 @@ const CrakcerProductionConst = () => {
           plantID={PLANT_ID}
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}
+          enableDateDurationCalculation={true}
         />
       </Box>
       <Notification

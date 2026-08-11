@@ -119,6 +119,14 @@ export default function PlantSafetyPerformanceTarget() {
         minWidth: 100,
       },
       {
+        field: 'prevActual',
+        title: `FY${prev} ACT`,
+        editable: true,
+        type: 'number',
+        minWidth: 100,
+      },
+
+      {
         field: 'currentPlan',
         title: `FY${next} Plan`,
         editable: true,
@@ -127,7 +135,7 @@ export default function PlantSafetyPerformanceTarget() {
       },
       {
         field: 'responsibility',
-        title: 'Responsibility',
+        title: 'Remarks',
         widthT: 60,
         editable: true,
         minWidth: 100,
