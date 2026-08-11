@@ -1413,6 +1413,7 @@ const ProductionvolumeData = ({
           IS_PVC_DMD ||
           IS_AROMATICS_SEZ_PX4 ||
           IS_PVC_HMD ||
+          IS_PTA_PMD_PIA ||
           VERTICAL_NAME === 'meg'
           ? false
           : true,
@@ -1448,6 +1449,7 @@ const ProductionvolumeData = ({
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
       IS_PVC_HMD ||
+      IS_PTA_PMD_PIA ||
       VERTICAL_NAME === 'meg'
     ) {
       return true
@@ -1464,6 +1466,7 @@ const ProductionvolumeData = ({
     IS_CRACKER_DMD,
     IS_PVC_DMD,
     IS_PVC_HMD,
+    IS_PTA_PMD_PIA,
     IS_CRACKER_C2,
     VERTICAL_NAME,
   ])
@@ -1488,6 +1491,7 @@ const ProductionvolumeData = ({
       IS_PVC_DMD ||
       IS_PVC_HMD ||
       IS_CRACKER_C2 ||
+      IS_PTA_PMD_PIA ||
       VERTICAL_NAME === 'meg'
     ) {
       return true
@@ -1504,6 +1508,7 @@ const ProductionvolumeData = ({
     IS_CRACKER_DMD,
     IS_PVC_DMD,
     IS_PVC_HMD,
+    IS_PTA_PMD_PIA,
     IS_CRACKER_C2,
     VERTICAL_NAME === 'meg',
   ])
@@ -1536,6 +1541,7 @@ const ProductionvolumeData = ({
           IS_PVC_DMD ||
           IS_PVC_HMD ||
           IS_CRACKER_C2 ||
+          IS_PTA_PMD_PIA ||
           VERTICAL_NAME === 'meg'
           ? false
           : true,
@@ -1604,6 +1610,7 @@ const ProductionvolumeData = ({
           IS_AROMATICS_SEZ_PX4 ||
           IS_PVC_HMD ||
           IS_PVC_VMD ||
+          IS_PTA_PMD_PIA ||
           permissions?.hideDownloadExcel ||
           VERTICAL_NAME === 'meg'
           ? false
@@ -1618,6 +1625,7 @@ const ProductionvolumeData = ({
           IS_PVC_HMD ||
           IS_PVC_VMD ||
           IS_VCM_DMD_EDC ||
+          IS_PTA_PMD_PIA ||
           permissions?.hideDownloadExcel ||
           VERTICAL_NAME === 'meg'
           ? false
@@ -1727,7 +1735,7 @@ const ProductionvolumeData = ({
         )
       } else {
         if (gridType === 'design') {
-          if (IS_CRACKER_DMD || IS_CRACKER_C2) {
+          if (IS_CRACKER_DMD || IS_CRACKER_C2 || IS_PTA_PMD_PIA) {
             await ProductionVolumeDataApiService.getProductionVolExcelCommon(
               keycloak,
               PLANT_ID,
