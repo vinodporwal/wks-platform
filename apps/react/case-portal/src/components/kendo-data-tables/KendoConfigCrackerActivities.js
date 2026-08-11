@@ -278,12 +278,20 @@ const DecokingConfig = () => {
       )
       if (resp?.code === 200 && resp?.data) {
         const rows = resp.data
-        const sadRow = rows.find((r) => r.displayName === 'SAD Duration')
+        const sadRow = rows.find(
+          (r) => r.displayName === 'SAD Duration' || r.displayName === 'SAD Duration(Days)' || r.displayName?.toLowerCase().includes('sad duration'),
+        )
         const pilotRow = rows.find(
-          (r) => r.displayName === 'Max Duty For Pilot Furnace',
+          (r) =>
+            r.displayName === 'Max Duty For Pilot Furnace' ||
+            r.displayName === 'Max Duty For Pilot Furnace(Gcal/hr)' ||
+            r.displayName?.toLowerCase().includes('max duty for pilot furnace'),
         )
         const mainRow = rows.find(
-          (r) => r.displayName === 'Max Duty For Main Furnaces',
+          (r) =>
+            r.displayName === 'Max Duty For Main Furnaces' ||
+            r.displayName === 'Max Duty For Main Furnaces(Gcal/hr)' ||
+            r.displayName?.toLowerCase().includes('max duty for main furnaces'),
         )
 
         setSadDurationRow(sadRow || null)
@@ -666,19 +674,19 @@ const DecokingConfig = () => {
     const payload = [
       {
         id: sadRow?.id || sadRow?.Id || null,
-        displayName: 'SAD Duration',
+        displayName: sadRow?.displayName || 'SAD Duration(Days)',
         attributeValue: currentSad,
         remarks: sadRow?.remarks || null,
       },
       {
         id: pilotRow?.id || pilotRow?.Id || null,
-        displayName: 'Max Duty For Pilot Furnace',
+        displayName: pilotRow?.displayName || 'Max Duty For Pilot Furnace(Gcal/hr)',
         attributeValue: currentPilot,
         remarks: pilotRow?.remarks || null,
       },
       {
         id: mainRow?.id || mainRow?.Id || null,
-        displayName: 'Max Duty For Main Furnaces',
+        displayName: mainRow?.displayName || 'Max Duty For Main Furnaces(Gcal/hr)',
         attributeValue: currentMain,
         remarks: mainRow?.remarks || null,
       },
@@ -1998,7 +2006,7 @@ const DecokingConfig = () => {
                       '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
-                  Max Duty For Pilot Furnace
+                  Max Duty For Pilot Furnace(Gcal/hr)
                 </Typography>
                 <TextField
                   id='max-duty-pilot-furnace'
@@ -2049,7 +2057,7 @@ const DecokingConfig = () => {
                       '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
-                  Max Duty For Main Furnaces
+                  Max Duty For Main Furnaces(Gcal/hr)
                 </Typography>
                 <TextField
                   id='max-duty-main-furnaces'
@@ -2101,7 +2109,7 @@ const DecokingConfig = () => {
                       '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
-                  SAD Duration
+                  SAD Duration(Days)
                 </Typography>
                 <TextField
                   id='sad-duration'
