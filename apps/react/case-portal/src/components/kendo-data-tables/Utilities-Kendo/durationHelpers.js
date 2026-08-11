@@ -105,8 +105,8 @@ export const getMonthStartEndDate = (monthName, fiscalYear) => {
   return [start, end]
 }
 
-// ─── Field-name constants shared by calcEndDateFromDuration & calcDurationFromDates ───
-export const DURATION_FIELDS = ['Duration', 'duration', 'may']
+// --- Field-name constants shared by calcEndDateFromDuration & calcDurationFromDates ---
+export const DURATION_FIELDS = ['Duration', 'duration', 'may', 'FunShtdwnDuration']
 export const START_DATE_FIELDS = ['startDate', 'StartDate', 'apr']
 export const END_DATE_FIELDS = ['endDate', 'EndDate']
 
