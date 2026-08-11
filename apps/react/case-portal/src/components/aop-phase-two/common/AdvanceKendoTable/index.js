@@ -260,6 +260,7 @@ const AdvanceKendoTable = ({
   defaultGridExpanded = true,
   showFilters = false,
   convertScientificValue = false,
+  pagable = true,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -422,7 +423,7 @@ const AdvanceKendoTable = ({
 
   // Calculate total minimum width and setup resize listener
   useEffect(() => {
-    gridRef.current = document.querySelector('.k-grid')
+    gridRef.current = gridContainerRef.current?.querySelector('.k-grid')
     if (!gridRef.current) return
 
     const allColumns = extractAllColumns(columns)
@@ -733,10 +734,17 @@ const AdvanceKendoTable = ({
         '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container',
       )
 
+      // Check if click is inside another AdvanceKendoTable grid instance
+      const isInsideAnotherGrid =
+        e.target.closest('.kendo-data-grid') &&
+        gridContainerRef.current &&
+        !gridContainerRef.current.contains(e.target)
+
       if (
         gridContainerRef.current &&
         !gridContainerRef.current.contains(e.target) &&
-        !isKendoPopup // Don't close if clicking on Kendo popup elements
+        !isKendoPopup && // Don't close if clicking on Kendo popup elements
+        !isInsideAnotherGrid // Don't close if clicking inside another grid instance
       ) {
         setRows((prev) =>
           prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r)),
@@ -2984,7 +2992,7 @@ const AdvanceKendoTable = ({
                   showGroupPanel: false,
                 }}
                 size='small'
-                pageable={getPaginationConfig()}
+                pageable={pagable && getPaginationConfig()}
                 onRowClick={handleRowClick}
               >
                 {permissions?.deleteMultiple &&

@@ -81,7 +81,7 @@ const SteadyStateConsumption = () => {
     },
     {
       field: 'sapCode',
-      title: 'Sap Code',
+      title: 'SAP Code',
       minWidth: 120,
       type: 'text',
       editable: false,

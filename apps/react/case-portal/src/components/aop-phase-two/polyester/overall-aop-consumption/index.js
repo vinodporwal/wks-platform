@@ -98,7 +98,7 @@ const OverallAopConsumption = () => {
     },
     {
       field: 'sapCode',
-      title: 'Sap Code',
+      title: 'SAP Code',
       minWidth: 120,
       type: 'text',
       editable: false,
@@ -119,7 +119,7 @@ const OverallAopConsumption = () => {
     })),
     // {
     //   field: 'avgOfAllMonths',
-    //   title: 'Average',
+    //   title: 'YTD',
     //   editable: false,
     //   type: 'number1',
     //   hidden: true,
