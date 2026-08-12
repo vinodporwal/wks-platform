@@ -754,7 +754,9 @@ const WorkFlowMerge = () => {
             ? 'Reverted for update successfully'
             : aopGate === 'prepare'
               ? 'Submitted for approval successfully'
-              : 'Approved successfully',
+              : aopRole
+                ? `Approved as ${aopRole} successfully`
+                : 'Approved successfully',
         severity: 'success',
       })
       setText('')
