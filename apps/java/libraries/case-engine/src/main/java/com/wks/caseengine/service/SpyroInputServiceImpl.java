@@ -365,6 +365,85 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		}
 	}
 
+  // ref : updateSpyroInputData | seperate method to handle single value field in Reactor and Recovery parameters (crackerC2)
+	@Override
+	public AOPMessageVM updateSpyroInputDataValue(List<SpyroInputDTO> spyroInputDTOList, String plantFKId, String year, String key) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		UUID plantId;
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+		if(key == null || key.isBlank()) { 
+			throw new RestInvalidArgumentException("key is required", null);
+		}
+
+		boolean isValueTable = key.equalsIgnoreCase("Reactor Parameters")
+         || key.equalsIgnoreCase("Recovery Parameters");
+		try {
+			plantId = UUID.fromString(plantFKId);
+
+			for (SpyroInputDTO spyroInputDTO : spyroInputDTOList) {
+				if ("Failed".equalsIgnoreCase(spyroInputDTO.getSaveStatus())) {
+					continue;
+				}
+
+				if(spyroInputDTO.getNormParameterFKID() == null || spyroInputDTO.getNormParameterFKID().isBlank()) { 
+					continue;
+				}
+				String rawId = spyroInputDTO.getNormParameterFKID();
+				if (rawId == null || rawId.isBlank() || !UUID_PATTERN.matcher(rawId).matches()) {
+				    continue;
+				}
+				
+				UUID normParameterFKId = UUID.fromString(rawId);
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					spyroInputDTO.setSaveStatus("Failed");
+					spyroInputDTO.setErrDescription("Norm Parameter not found");
+					continue;
+				}
+
+				if (!optionNormParameters.get().getIsEditable()) {
+					continue;
+				}
+
+				for (int month = 1; month <= 12; month++) {
+			
+					Double attributeValue = getAttributeValue(spyroInputDTO, month);
+					saveDataValue(normParameterFKId, month, attributeValue, spyroInputDTO, plantFKId, year, key);
+				}
+			}
+
+			// Mark AOP calculations for dependent screens after processing inputs
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("spyro-input");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
+			// Filter only failed records using Stream API
+			List<SpyroInputDTO> failedList = spyroInputDTOList.stream()
+					.filter(dto -> "Failed".equalsIgnoreCase(dto.getSaveStatus()))
+					.collect(Collectors.toList());
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(failedList);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to update Spyro input data", ex);
+		}
+	}
+
 	public Double getAttributeValue(SpyroInputDTO spyroInputDTO, Integer i) {
 		switch (i) {
 			case 1:
@@ -439,6 +518,90 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	            }
 
 	            if (remarksMatch && valuesDiffer) {
+	                spyroInputDTO.setSaveStatus("Failed");
+	                spyroInputDTO.setErrDescription("Please add/update remark");
+	                return;
+	            }
+	        } 
+	        
+	        existing.setRemarks(newRemarks);
+	        existing.setAttributeValue(newValueStr); // Keep setting the canonical string value
+	        existing.setModifiedOn(new Date());
+	        existing.setUserName(Utility.getUserName());
+	        normAttributeTransactionsRepository.save(existing);
+
+	    } else {
+	     	if(!losses) {
+	     		Double newValue = Double.parseDouble(newValueStr);
+		        if (newRemarks.isEmpty() && newValue!=0.0) {
+		            spyroInputDTO.setSaveStatus("Failed");
+		            spyroInputDTO.setErrDescription("Please add/update remark");
+		            return;
+		        }
+	    	}
+
+	        NormAttributeTransactions newRecord = new NormAttributeTransactions();
+	        newRecord.setCreatedOn(new Date());
+	        newRecord.setAttributeValueVersion("V1");
+	        newRecord.setUserName(Utility.getUserName());
+	        newRecord.setNormParameterFKId(normParameterFKId);
+	        newRecord.setAopMonth(i);
+	        newRecord.setAuditYear(year);
+	        newRecord.setRemarks(newRemarks);
+	        newRecord.setAttributeValue(newValueStr);
+
+	        normAttributeTransactionsRepository.save(newRecord);
+	    }
+	}
+  // ref : saveData | seperate method to handle value field in Reactor and Recovery parameters (crackerC2)
+	public void saveDataValue(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO, String plantId, String year, String key) {
+	    if (spyroInputDTO == null) {
+	        throw new IllegalArgumentException("SpyroInputDTO cannot be null");
+	    }
+
+		boolean isValueTable = key.equalsIgnoreCase("Reactor Parameters")
+         || key.equalsIgnoreCase("Recovery Parameters");
+
+		 boolean skipRemarkValidation = isValueTable && (i != 4);
+
+	    String newRemarks = Optional.ofNullable(spyroInputDTO.getRemarks()).orElse("").trim();
+	    String newValueStr = attributeValue != null ? attributeValue.toString() : "0.0";
+	    
+	    Optional<NormAttributeTransactions> existingOpt = 
+	        normAttributeTransactionsRepository
+	            .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+	    
+	    Boolean losses = false; 
+	    
+	    if (existingOpt.isPresent()) {
+	        NormAttributeTransactions existing = existingOpt.get();
+	        String existingRemarks = Optional.ofNullable(existing.getRemarks()).orElse("").trim();
+	        String existingValueStr = Optional.ofNullable(existing.getAttributeValue()).orElse("0.0").trim();
+	        Double existingDouble = null;
+	        Double newDouble = null;
+
+	        try {
+	            existingDouble = Double.parseDouble(existingValueStr);
+	        } catch (NumberFormatException e) {
+	            System.err.println("Error parsing existing attribute value: " + existingValueStr);
+	            if (!existingValueStr.equalsIgnoreCase(newValueStr)) {
+	                 
+	            }
+	        }
+	        
+	        newDouble = attributeValue != null ? attributeValue : 0.0;
+
+
+	        if (!losses) {
+	            boolean remarksMatch = existingRemarks.equalsIgnoreCase(newRemarks);
+	            boolean valuesDiffer = false;
+	            if (existingDouble != null && newDouble != null) {
+	                valuesDiffer = Double.compare(existingDouble, newDouble) != 0;
+	            } else {
+	                valuesDiffer = !existingValueStr.equalsIgnoreCase(newValueStr);
+	            }
+
+	            if (remarksMatch && valuesDiffer && !skipRemarkValidation) {
 	                spyroInputDTO.setSaveStatus("Failed");
 	                spyroInputDTO.setErrDescription("Please add/update remark");
 	                return;
@@ -906,19 +1069,20 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 									excelUtilityService.getAcademicYearMonths(year));
 						}
 
-						List<List<Object>> dataList = new ArrayList<>();
+					List<List<Object>> dataList = new ArrayList<>();
 
-						if (isAfterSave) {
-							if (!mapForExcel.containsKey(tableId)) {
-								hideTable = true;
-								continue;
-							}
-							headers.add("saveStatus");
-							headers.add("errDescription");
-							headersOuterTitles.get(0).add("SaveStatus");
-							headersOuterTitles.get(0).add("ErrDescription");
+					if (isAfterSave) {
+						List<SpyroInputDTO> failedRows = mapForExcel.get(tableId);
+						if (failedRows == null || failedRows.isEmpty()) {
+							table.put(ExcelConstants.HIDE_TABLE, true);
+							continue;
+						}
+						headers.add("saveStatus");
+						headers.add("errDescription");
+						headersOuterTitles.get(0).add("SaveStatus");
+						headersOuterTitles.get(0).add("ErrDescription");
 
-							for (SpyroInputDTO dto : mapForExcel.get(tableId)) {
+						for (SpyroInputDTO dto : failedRows) {
 								List<Object> list = new ArrayList<>();
 								if (isSingleValue) {
 									list.add(dto.getParticulars());            // col 0
@@ -1014,7 +1178,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			Map<String, List<SpyroInputDTO>> mapForExcel = new HashMap<>();
 			List<SpyroInputDTO> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
-				AOPMessageVM vm = updateSpyroInputData(map.get(key), plantFKId, year);
+				AOPMessageVM vm = updateSpyroInputDataValue(map.get(key), plantFKId, year, key);
 				List<SpyroInputDTO> failedList = (List<SpyroInputDTO>) vm.getData();
 				failedRecords.addAll(failedList);
 				mapForExcel.put(key, failedList);

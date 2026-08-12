@@ -5,6 +5,7 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { SpyroInputValueApiService } from 'services/spyro-input-value-api-service'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
@@ -174,12 +175,12 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       downloadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
@@ -828,6 +829,14 @@ const CrackerConfig = () => {
           PLANT_ID,
           AOP_YEAR,
         )
+      } else if (IS_CRACKER_C2) {
+        response = await SpyroInputValueApiService.importSpyroInputExcelValue(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response = await DataService.importSpyroInputExcel(
           rawFile,
@@ -926,6 +935,14 @@ const CrackerConfig = () => {
       if (currentTabDisplay == 'Naphtha') {
         response = await DataService.exportNaphthaExcel(
           keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
+      } else if (IS_CRACKER_C2) {
+        response = await SpyroInputValueApiService.exportSpyroInputExcelValue(
+          keycloak,
+          mode,
           PLANT_ID,
           AOP_YEAR,
           EXCEL_NAME,
