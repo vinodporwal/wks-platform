@@ -8,6 +8,7 @@ const useFilteredMenu = () => {
   const keycloak = useSession()
   const { items: menuItems } = useMenuContext()
   const isPlantManager = keycloak?.realmAccess?.roles?.includes('cts_admin')
+  const isDeveloper = keycloak?.realmAccess?.roles?.includes('developer')
   // const isPlantManager = true
 
   const filterMenuByRole = (items) => {
@@ -21,7 +22,7 @@ const useFilteredMenu = () => {
     return items.map((item, index) => {
       if (item.type === 'group' && item.children) {
         const filteredChildren = item.children.filter((child) => {
-          return child.id !== 'user-management'
+          return child.id !== 'user-management' || child.id !== 'tab-management'
         })
 
         return {
@@ -33,6 +34,24 @@ const useFilteredMenu = () => {
     })
   }
 
+  const tabManagementRoute = {
+    children: [
+      {
+        id: 'tab-management',
+        title: i18n.t('menu.tabManage'),
+        type: 'item',
+        url: '/tab-management',
+        icon: IconUserCog,
+        breadcrumbs: true,
+      },
+    ],
+    id: 'utilities',
+    title: '',
+    type: 'group',
+    url: '',
+    icon: undefined,
+    breadcrumbs: false,
+  }
   const userManagementRoute = {
     children: [
       {
@@ -74,7 +93,11 @@ const useFilteredMenu = () => {
   const filteredMenu = useMemo(() => {
     const filteredMenuItem = filterMenuByRole(menuItems || [])
     const updatedMenu = isPlantManager
-      ? [...filteredMenuItem, userManagementRoute]
+      ? [
+          ...filteredMenuItem,
+          userManagementRoute,
+          ...(isDeveloper ? [tabManagementRoute] : []),
+        ]
       : [...filteredMenuItem]
 
     return {
