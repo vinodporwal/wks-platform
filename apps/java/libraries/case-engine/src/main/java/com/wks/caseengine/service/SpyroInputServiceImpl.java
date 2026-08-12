@@ -409,12 +409,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				}
 
 				for (int month = 1; month <= 12; month++) {
-					// skip if valueTable and month is not april
-				if(crackerC2 && isValueTable && month != 4) {
-					continue;
-				}
+			
 					Double attributeValue = getAttributeValue(spyroInputDTO, month);
-					saveData(normParameterFKId, month, attributeValue, spyroInputDTO, plantFKId, year);
+					saveDataValue(normParameterFKId, month, attributeValue, spyroInputDTO, plantFKId, year, key);
 				}
 			}
 
@@ -521,6 +518,90 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	            }
 
 	            if (remarksMatch && valuesDiffer) {
+	                spyroInputDTO.setSaveStatus("Failed");
+	                spyroInputDTO.setErrDescription("Please add/update remark");
+	                return;
+	            }
+	        } 
+	        
+	        existing.setRemarks(newRemarks);
+	        existing.setAttributeValue(newValueStr); // Keep setting the canonical string value
+	        existing.setModifiedOn(new Date());
+	        existing.setUserName(Utility.getUserName());
+	        normAttributeTransactionsRepository.save(existing);
+
+	    } else {
+	     	if(!losses) {
+	     		Double newValue = Double.parseDouble(newValueStr);
+		        if (newRemarks.isEmpty() && newValue!=0.0) {
+		            spyroInputDTO.setSaveStatus("Failed");
+		            spyroInputDTO.setErrDescription("Please add/update remark");
+		            return;
+		        }
+	    	}
+
+	        NormAttributeTransactions newRecord = new NormAttributeTransactions();
+	        newRecord.setCreatedOn(new Date());
+	        newRecord.setAttributeValueVersion("V1");
+	        newRecord.setUserName(Utility.getUserName());
+	        newRecord.setNormParameterFKId(normParameterFKId);
+	        newRecord.setAopMonth(i);
+	        newRecord.setAuditYear(year);
+	        newRecord.setRemarks(newRemarks);
+	        newRecord.setAttributeValue(newValueStr);
+
+	        normAttributeTransactionsRepository.save(newRecord);
+	    }
+	}
+  // ref : saveData | seperate method to handle value field in Reactor and Recovery parameters (crackerC2)
+	public void saveDataValue(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO, String plantId, String year, String key) {
+	    if (spyroInputDTO == null) {
+	        throw new IllegalArgumentException("SpyroInputDTO cannot be null");
+	    }
+
+		boolean isValueTable = key.equalsIgnoreCase("Reactor Parameters")
+         || key.equalsIgnoreCase("Recovery Parameters");
+
+		 boolean skipRemarkValidation = isValueTable && (i != 4);
+
+	    String newRemarks = Optional.ofNullable(spyroInputDTO.getRemarks()).orElse("").trim();
+	    String newValueStr = attributeValue != null ? attributeValue.toString() : "0.0";
+	    
+	    Optional<NormAttributeTransactions> existingOpt = 
+	        normAttributeTransactionsRepository
+	            .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+	    
+	    Boolean losses = false; 
+	    
+	    if (existingOpt.isPresent()) {
+	        NormAttributeTransactions existing = existingOpt.get();
+	        String existingRemarks = Optional.ofNullable(existing.getRemarks()).orElse("").trim();
+	        String existingValueStr = Optional.ofNullable(existing.getAttributeValue()).orElse("0.0").trim();
+	        Double existingDouble = null;
+	        Double newDouble = null;
+
+	        try {
+	            existingDouble = Double.parseDouble(existingValueStr);
+	        } catch (NumberFormatException e) {
+	            System.err.println("Error parsing existing attribute value: " + existingValueStr);
+	            if (!existingValueStr.equalsIgnoreCase(newValueStr)) {
+	                 
+	            }
+	        }
+	        
+	        newDouble = attributeValue != null ? attributeValue : 0.0;
+
+
+	        if (!losses) {
+	            boolean remarksMatch = existingRemarks.equalsIgnoreCase(newRemarks);
+	            boolean valuesDiffer = false;
+	            if (existingDouble != null && newDouble != null) {
+	                valuesDiffer = Double.compare(existingDouble, newDouble) != 0;
+	            } else {
+	                valuesDiffer = !existingValueStr.equalsIgnoreCase(newValueStr);
+	            }
+
+	            if (remarksMatch && valuesDiffer && !skipRemarkValidation) {
 	                spyroInputDTO.setSaveStatus("Failed");
 	                spyroInputDTO.setErrDescription("Please add/update remark");
 	                return;
