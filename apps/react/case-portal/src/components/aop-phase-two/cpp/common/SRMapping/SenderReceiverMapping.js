@@ -8,9 +8,34 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import { useDebounce } from 'hooks/useDebounce'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const SR_MAPPING_ROLE = 'sr_mapping'
+
+// Mandatory fields that must be filled for each row
+const REQUIRED_FIELDS = [
+  'cppPlantId',
+  'senderCostCenterName',
+  'senderPlantName',
+  'senderUtilityName',
+  'receiverCostCenterName',
+  'receiverPlantName',
+  'receiverUtilityName',
+]
+
+const FIELD_LABELS = {
+  cppPlantId: 'CPP Plant',
+  senderCostCenterName: 'Sender Cost Center',
+  senderPlantName: 'Sender Plant',
+  senderUtilityName: 'Sender Utility',
+  receiverCostCenterName: 'Receiver Cost Center',
+  receiverPlantName: 'Receiver Plant',
+  receiverUtilityName: 'Receiver Utility',
+}
+
+// Fields to check for changes (used for remarks validation)
+const FIELDS_TO_CHECK = REQUIRED_FIELDS
 
 const PREFIXES = ['sender', 'receiver']
 
@@ -760,6 +785,44 @@ const SenderReceiverMapping = () => {
     if (!dataToSave || dataToSave.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+      setLoading(false)
+      return
+    }
+
+    // Mandatory fields validation: every required field must be filled
+    const missingFields = dataToSave.find((row) =>
+      REQUIRED_FIELDS.some(
+        (field) => !row[field] || row[field].toString().trim() === '',
+      ),
+    )
+    if (missingFields) {
+      const emptyField = REQUIRED_FIELDS.find(
+        (field) =>
+          !missingFields[field] ||
+          missingFields[field].toString().trim() === '',
+      )
+      const rowIndex = rows.findIndex((r) => r.id === missingFields.id)
+      const rowLabel = `Row ${rowIndex >= 0 ? rowIndex + 1 : missingFields.id}`
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `${FIELD_LABELS[emptyField]} is required for: ${rowLabel}`,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    // Remarks validation: if any row data was updated, remarks must be filled
+    // and different from the original
+    const remarksError = validateRowDataWithRemarks(
+      dataToSave,
+      originalRows,
+      FIELDS_TO_CHECK,
+      'senderPlantName',
+    )
+    if (remarksError) {
+      setSnackbarOpen(true)
+      setSnackbarData({ message: remarksError, severity: 'error' })
       setLoading(false)
       return
     }

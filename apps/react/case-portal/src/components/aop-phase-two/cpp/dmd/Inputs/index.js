@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import AssetCapacity from './AssetCapacity/index'
@@ -27,17 +26,8 @@ const InputsDMD = () => {
   const IS_CPP = lowerVertName === 'cpp'
 
   // Tab management via custom hook (type = 'Inputs')
-  const { tabs, filteredTabs, loading } = useConfigurationTabs('Inputs')
-
-  const [tabIndex, setTabIndex] = useState(0)
-
-  useEffect(() => {
-    if (filteredTabs.length > 0) {
-      setTabIndex(0)
-    } else {
-      setTabIndex(null)
-    }
-  }, [tabs])
+  const { filteredTabs, tabIndex, setTabIndex, loading } =
+    useConfigurationTabs('Inputs')
 
   // Get current tab display name
   const currentTabName = filteredTabs[tabIndex]?.name
