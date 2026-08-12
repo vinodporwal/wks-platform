@@ -188,6 +188,7 @@ import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyeste
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
+import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 
 // Naphthasplitter Ended
 
@@ -410,13 +411,9 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
-
-
         ],
         // REFINERY AOP BUDGET Ended],
       },
-
 
       {
         path: 'production-norms-plan',
@@ -1613,6 +1610,14 @@ export const MainRoutes = (
           </PrivateRoute>
         ),
         // element: <FiveTables />,
+      },
+      {
+        path: 'tab-management',
+        element: (
+          <PrivateRoute routeId='tab-management'>
+            <TabManagement keycloak={keycloak} />
+          </PrivateRoute>
+        ),
       },
       {
         path: 'user-management',

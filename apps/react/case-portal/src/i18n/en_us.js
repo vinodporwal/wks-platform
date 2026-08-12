@@ -81,6 +81,7 @@ const defs = {
     matBalSheet: 'MAT Bal Sheet',
     workflow: 'AOP Approval Flow',
     userManage: 'User Management',
+    tabManage: 'Tab Management',
     valueHistory: 'Value History',
     rawData: 'Steam Norms Basis',
     runlengthData: 'Furnace Run Length ',
@@ -121,7 +122,7 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
-    jsBudget: 'Js Budget',   
+    jsBudget: 'Js Budget',
     jwBudgetSource: 'JW Budget Source',
 
     //SSRS
