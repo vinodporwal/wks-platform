@@ -1,5 +1,12 @@
 /* eslint-disable no-unused-vars */
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  GridToolbarContainer,
+  GridToolbarFilterButton,
+  GridToolbarExport,
+  GridToolbarQuickFilter,
+  GridFilterPanel,
+} from '@mui/x-data-grid'
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material'
 import CloseIcon from '@mui/icons-material/Close'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
@@ -18,6 +25,7 @@ import { useSession } from 'SessionStoreContext'
 import MainCard from 'components/MainCard'
 import Config from 'consts/index'
 import { CaseDefService } from 'services/CaseDefService'
+import CircularProgress from '@mui/material/CircularProgress'
 
 import React, {
   Suspense,
@@ -67,6 +75,86 @@ const CaseNewFormPage = lazy(() =>
   })),
 )
 
+
+function CustomToolbar({ searchText, onSearchChange, caseStatusFilter, onCaseStatusChange, onExport, exportLoading, onClear }) {
+  const caseStatusOptions = JSON.parse(localStorage.getItem('caseStatusOptions')) || [
+    { label: 'Assigned', value: 1 },
+    { label: 'Under Analysis', value: 2 },
+    { label: 'Closed', value: 3 },
+    { label: 'Rejected', value: 10002 },
+  ]
+
+  const hasFilters = searchText || caseStatusFilter
+
+  return (
+    <GridToolbarContainer sx={{ p: 1, gap: 1, flexWrap: 'wrap' }}>
+      {/* Search */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <label style={{ fontSize: '12px', fontWeight: 600, color: '#666', marginBottom: '2px' }}>Search Case Details</label>
+        <input
+          value={searchText}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search..."
+          style={{
+            width: 300,
+            border: '1px solid #e0e0e0',
+            borderRadius: '4px',
+            padding: '6px 10px',
+            fontSize: '14px',
+            outline: 'none',
+          }}
+        />
+      </div>
+
+      {/* Case Status Filter */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <label style={{ fontSize: '12px', fontWeight: 600, color: '#666', marginBottom: '2px' }}>Filter by Case Status</label>
+        <select
+          value={caseStatusFilter}
+          onChange={(e) => onCaseStatusChange(e.target.value)}
+          style={{
+            border: '1px solid #e0e0e0',
+            borderRadius: '4px',
+            padding: '6px 10px',
+            fontSize: '14px',
+            outline: 'none',
+            backgroundColor: '#fff',
+            cursor: 'pointer',
+          }}
+        >
+          <option value="">All Status</option>
+          {caseStatusOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Clear button — only shown when filters are active */}
+      {hasFilters && (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={onClear}
+          sx={{ borderColor: '#e0e0e0', color: '#666', marginTop:'20px' }}
+        >
+          Clear
+        </Button>
+      )}
+
+      {/* Server-side Export */}
+      <Button
+        variant="contained"
+        size="small"
+        onClick={onExport}
+        disabled={exportLoading}
+        sx={{ ml: 'auto' }}
+      >
+        {exportLoading && <CircularProgress size={14} color="inherit" sx={{ mr: 1 }} />}
+        Export
+      </Button>
+    </GridToolbarContainer>
+  )
+}
 export const CaseList = ({ status, caseDefId }) => {
   const PaginationContext = createContext()
   const { t } = useTranslation()
@@ -518,7 +606,6 @@ export const CaseList = ({ status, caseDefId }) => {
         headerName: 'Case Status',
         flex: 1,
         valueGetter: (value, row) => {
-          console.log('value=========================',value, row)
           try {
             if (!row) {
               return ''
@@ -567,8 +654,6 @@ export const CaseList = ({ status, caseDefId }) => {
               : {}
 
             const caseStatusValue = parsedContainer.caseStatus || ''
-                      console.log('value===',caseStatusValue)
-
 
             // Find the label corresponding to the value
             const matchingOption = caseStatusOptions.find(
@@ -699,7 +784,6 @@ export const CaseList = ({ status, caseDefId }) => {
         sortable: false,
         renderCell: (data) => {
           const onClick = (e) => {
-            console.log('data.row', data.row)
             setACase(data.row)
             e.stopPropagation()
             setOpenCaseForm(true)
@@ -805,11 +889,6 @@ if (!eventIds) {
 
 const eventIdsArray = eventIds.split(',')
 const businessKeys = selectedRows;
-console.log("eventIds: ", eventIds);
-console.log("businessKeys: ", businessKeys);
-console.log("typeof businessKeys: ", typeof businessKeys);
-console.log('single businessKey: ', businessKeys[0]);
-
 const selectedCases = cases.filter(c => 
   businessKeys.includes(c.businessKey) || 
   businessKeys.includes(c.caseNo) || 
@@ -923,6 +1002,65 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
       setView(nextView)
     }
   }
+  
+  const handleClear = () => {
+    setSearchText('')
+    setCaseStatusFilter('')
+    setPage(0)
+    const { assetName, hierarchyName } = getUrlParams()
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, '', '', rowsPerPage, 0, setTotalCount)
+  }
+
+  const handleExportCsv = async () => {
+  try {
+    setExportLoading(true);
+    const searchParams = new URLSearchParams(window.location.search);
+    const assetName = searchParams.get('assetName') || '';
+    const hierarchyName = searchParams.get('hierarchyName') || '';
+
+    const blob = await CaseService.exportCasesCsv(
+      keycloak,
+      caseDefId,
+      assetName,
+      hierarchyName
+    );
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = downloadUrl;
+    link.download = `cases_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(downloadUrl);
+
+  } catch (error) {
+    console.error("Export error:", error);
+  }
+  finally {
+    setExportLoading(false)   
+  }
+};
+  
+  const handleSearchChange = (value) => {
+    setSearchText(value)
+    clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      const { assetName, hierarchyName } = getUrlParams()
+      setPage(0)
+      fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, value, caseStatusFilter, rowsPerPage, 0, setTotalCount)
+    }, 400)
+  }
+
+  const handleCaseStatusChange = (value) => {
+    setCaseStatusFilter(value)
+    const { assetName, hierarchyName } = getUrlParams()
+    setPage(0)
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, value, rowsPerPage, 0, setTotalCount)
+  }
 
   const fetchKanbanConfig = () => {
     return caseDefs.find((o) => o.id === caseDefId).kanbanConfig
@@ -1000,7 +1138,6 @@ let request;
  
       request.then((resp) => {
         const { data, paging } = resp
-        console.log("#### cases are being set 3 : ", data)
         setCases(data)
         setFilter({
           ...filter,
@@ -1048,7 +1185,6 @@ else {
     
       request.then((resp) => {
         const { data, paging } = resp
-        console.log("#### cases are being set 4 : ", data)
         setCases(data)
         setFilter({
           ...filter,
@@ -1106,84 +1242,52 @@ else {
   }
 
   const CustomPagination = () => {
-    console.log("custom pagination");
+    const from = totalCount === 0 ? 0 : page * rowsPerPage + 1
+    const to = Math.min((page + 1) * rowsPerPage, totalCount)
+
+    const handleRowsPerPageChange = (e) => {
+      setFetching(true)
+      const newLimit = Number(e.target.value)
+      setRowsPerPage(newLimit)
+      setPage(0)
+      let request
+      if (isLinkCaseUrl) {
+        const urlParams = new URLSearchParams(window.location.search)
+        const mainAssetName = urlParams.get('assetName')
+        const eventIds = urlParams.get('eventIds')
+        request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, { limit: newLimit }, mainAssetName, eventIds, newLimit, 0)
+          .then((data) => ({ data: Array.isArray(data) ? data : (data?.data || []), paging: { cursors: {}, hasPrevious: false, hasNext: false } }))
+      } else {
+        const { assetName, hierarchyName } = getUrlParams()
+        request = CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, searchText, caseStatusFilter, newLimit, 0)
+          .then((data) => ({ data, paging: { cursors: {}, hasPrevious: false, hasNext: false } }))
+      }
+      request.then(({ data, paging }) => {
+        setCases(data)
+        setFilter({ ...filter, limit: newLimit, cursors: paging.cursors, hasPrevious: paging.hasPrevious, hasNext: paging.hasNext })
+      }).finally(() => setFetching(false))
+    }
+
     return (
-      <PaginationContext.Provider value={filter}>
-        <TablePagination
-          component='div'
-          count={-1}
-          page={0}
-          labelRowsPerPage={
-            <span style={{ paddingTop: 15 }}>Rows per page:</span>
-          }
-          rowsPerPage={rowsPerPage}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          getItemAriaLabel={() => ''}
-          labelDisplayedRows={() => ''}
-          onPageChange={(e, type) => {
-            console.log("onPageChange", e, type);
-            const action = {
-              next: handlerNextPage,
-              back: handlerPriorPage,
-            }
-            action[type]()
-          }}
-          onRowsPerPageChange={(e) => {
-            setFetching(true)
-              const newLimit = Number(e.target.value)
-              setRowsPerPage(newLimit)
-              setPage(0)   // reset page whenever the page size changes
-
-            let request;
-
-          if (isLinkCaseUrl) {
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const mainAssetName = urlParams.get('assetName');
-            const eventIds = urlParams.get('eventIds');  
-            request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, {
-              limit: newLimit,
-            }, mainAssetName, eventIds, newLimit, 0)
-    .then((data) => ({
-      data: Array.isArray(data) ? data : (data?.data || []),
-      paging: { cursors: {}, hasPrevious: false, hasNext: false }
-    }));
-          }
-          else {
-            const { assetName, hierarchyName } = getUrlParams()
-            request = CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, searchText, caseStatusFilter, newLimit, 0)
-              .then((data) => ({
-             data, paging: { cursors: {}, hasPrevious: false, hasNext: false }
-            }))
-          }
-              request.then((resp) => {
-                const { data, paging } = resp;
-
-                console.log('cases are being set 5 : ', data)
-
-        
-                setCases(data);
-                setFilter({
-                  ...filter,
-                  limit: newLimit,
-                  cursors: paging.cursors,
-                  hasPrevious: paging.hasPrevious,
-                  hasNext: paging.hasNext,
-                })
-              })
-              .finally(() => {
-                setFetching(false)
-              })
-          }}
-          SelectProps={{
-            inputProps: {
-              'aria-label': 'rows per page',
-            },
-            native: true,
-          }}
-          ActionsComponent={TablePaginationActions}
-        />
-      </PaginationContext.Provider>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', px: 2, py: 1, gap: 1, fontSize: '14px', color: 'rgba(0,0,0,0.6)' }}>
+        <span>Rows per page:</span>
+        <select
+          value={rowsPerPage}
+          onChange={handleRowsPerPageChange}
+          style={{ border: '1px solid #e0e0e0', borderRadius: 4, padding: '2px 4px', fontSize: '14px', cursor: 'pointer' }}
+        >
+          {[5, 10, 25, 50].map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+        <span style={{ marginLeft: 8 }}>{from}-{to} of {totalCount}</span>
+        <IconButton size='small' onClick={handlerPriorPage} disabled={page === 0} aria-label='previous page'>
+          <KeyboardArrowLeft />
+        </IconButton>
+        <IconButton size='small' onClick={handlerNextPage} disabled={to >= totalCount} aria-label='next page'>
+          <KeyboardArrowRight />
+        </IconButton>
+      </Box>
     )
   }
 
@@ -1323,7 +1427,21 @@ else {
                     }}
                     loading={fetching}
                    // components={{ Pagination: CustomPagination }}
-                   slots={{ pagination: CustomPagination }}
+                   slots={{
+                    toolbar: CustomToolbar,
+                    pagination: CustomPagination,
+                  }}
+                  slotProps={{
+                    toolbar: {
+                      searchText,
+                      onSearchChange: handleSearchChange,
+                      caseStatusFilter,
+                      onCaseStatusChange: handleCaseStatusChange,
+                      onExport: handleExportCsv,
+                      exportLoading,
+                      onClear: handleClear,
+                    },
+                    }}
                   />
                 </Suspense>
 

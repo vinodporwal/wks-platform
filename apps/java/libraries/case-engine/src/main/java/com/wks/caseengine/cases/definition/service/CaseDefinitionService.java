@@ -76,9 +76,11 @@ public interface CaseDefinitionService {
 	List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() throws Exception;
 	List<Case> updateRecommendationStatus() throws JsonMappingException, JsonProcessingException, Exception;
 	Case saveAnalysis(Case caseData);
+	List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName);
 	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
 	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset);
 	long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search,String caseStatus);
 	
 	void sendCaseLinkedEmail(String businessKey);
+	byte[] exportCasesToExcel(String caseDefinitionId,String assetName,String hierarchyName);
 }

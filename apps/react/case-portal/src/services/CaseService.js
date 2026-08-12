@@ -28,6 +28,7 @@ export const CaseService = {
   saveRecommendation,
   saveAnalysis,
   updateEventIds,
+  exportCasesCsv,
   linkEventsToCase
 }
 
@@ -631,5 +632,38 @@ async function getSingleCaseByBusinessKey(keycloak, caseDefId = '', businessKey)
 } catch (e) {
     console.error('Error fetching case by businessKey:', e)
     throw e
+  }
+}
+
+async function exportCasesCsv(keycloak, caseDefId = '', assetName = '', hierarchyName = '') {
+
+  const queryParams = new URLSearchParams();
+
+  queryParams.append('caseDefinitionId', caseDefId);
+  if (assetName) queryParams.append('assetName', assetName);
+  if (hierarchyName) queryParams.append('hierarchyName', hierarchyName);
+
+  const url = `${Config.CaseEngineUrl}/case-definition/case/export?${queryParams.toString()}`;
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  };
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers
+    });
+
+    if (!resp.ok) {
+      throw new Error("Export failed");
+    }
+  
+    const blob = await resp.blob();
+    return blob;
+
+  } catch (e) {
+    console.error(e);
+    throw e;
   }
 }

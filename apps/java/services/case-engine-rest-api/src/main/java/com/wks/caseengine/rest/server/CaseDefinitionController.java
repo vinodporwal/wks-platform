@@ -44,6 +44,8 @@ import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("case-definition")
@@ -293,4 +295,21 @@ public class CaseDefinitionController {
         Case savedCase = caseDefinitionService.saveAnalysis(caseData);
         return ResponseEntity.ok(savedCase);
     }
+	//Controller For Export Excel
+	@GetMapping("/case/export")
+	public ResponseEntity<byte[]> exportCases(
+			@RequestParam String caseDefinitionId,
+			@RequestParam String assetName,
+			@RequestParam String hierarchyName) {
+
+		byte[] excel = caseDefinitionService.exportCasesToExcel(
+				caseDefinitionId, assetName, hierarchyName);
+
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION,
+						"attachment; filename=cases.xlsx")
+				.contentType(MediaType.parseMediaType(
+						"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+				.body(excel);
+	}
 }

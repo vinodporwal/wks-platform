@@ -21,6 +21,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,6 +34,14 @@ import com.wks.caseengine.rest.db2.repository.*;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -43,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -75,6 +87,8 @@ import com.wks.caseengine.rest.model.Users;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.wks.caseengine.cases.instance.CaseInstance;
 
@@ -83,6 +97,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
     private final JavaMailSender mailSender;
     private final CaseManagementSyncService caseManagementSyncService;
+	private static final Logger log =LoggerFactory.getLogger(CaseDefinitionServiceImpl.class);
 
     @Autowired
     public CaseDefinitionServiceImpl(
@@ -1656,7 +1671,7 @@ data.put("assignedToLabel", assignedToLabel);
 		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
 
 		if (hasSearch) {
-			query.append(" AND (c.case_no LIKE :search OR c.path LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
+			query.append(" AND (c.case_no LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
 		}
 		if (hasCaseStatus) {
 			query.append(" AND c.status_id = :caseStatus");
@@ -1720,6 +1735,185 @@ data.put("assignedToLabel", assignedToLabel);
 
 		Object result = nativeQuery.getSingleResult();
 		return ((Number) result).longValue();
+	}
+
+//Implementation For Excel Export 
+
+
+	private void validateExportInputs(String caseDefinitionId,
+			String assetName,
+			String hierarchyName) {
+
+		if (caseDefinitionId == null || caseDefinitionId.isBlank()) {
+			throw new IllegalArgumentException("caseDefinitionId is required");
+		}
+
+		if (assetName == null || assetName.isBlank()) {
+			throw new IllegalArgumentException("assetName is required");
+		}
+
+		if (hierarchyName == null || hierarchyName.isBlank()) {
+			throw new IllegalArgumentException("hierarchyName is required");
+		}
+	}
+
+    @Override
+    public byte[] exportCasesToExcel(String caseDefinitionId,
+                                 String assetName,
+                                 String hierarchyName) {
+
+        validateExportInputs(caseDefinitionId, assetName, hierarchyName);
+
+        List<Case> cases = getCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName);
+
+        if (cases.isEmpty()) {
+            throw new IllegalArgumentException("No records found for the given filter criteria");
+        }
+
+        if (cases.size() > 100000) {
+            throw new IllegalStateException("Export limit exceeded (100,000 max)");
+        }
+
+        return generateExcel(cases);
+    }
+
+private byte[] generateExcel(List<Case> cases) {
+
+    try (Workbook workbook = new XSSFWorkbook()) {
+
+        Sheet sheet = workbook.createSheet("Cases");
+
+        // Create a date cell style
+        CellStyle dateCellStyle = workbook.createCellStyle();
+        CreationHelper createHelper = workbook.getCreationHelper();
+        dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd-mm-yyyy hh:mm"));
+
+        String[] headers = {
+                "Case No",
+                "Case Title",
+                "Main Asset",
+                "Case Status",
+                "Status",
+                "Case Assigned To",
+                "Created On"
+        };
+
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        int rowNum = 1;
+
+        for (Case c : cases) {
+
+            Row row = sheet.createRow(rowNum++);
+
+            row.createCell(0).setCellValue(
+                    c.getCaseNo() == null ? "" : c.getCaseNo()
+            );
+
+            String caseTitle = "";
+            String mainAsset = "";
+
+            try {
+                if (c.getAttributes() != null && !c.getAttributes().isEmpty()) {
+
+                    String attr = c.getAttributes().get(0)
+                            .getValue()
+                            .replace("\\\"", "\"");
+
+                    JsonNode root = mapper.readTree(attr);
+
+                    caseTitle = root.path("caseTitle").asText("");
+                    mainAsset = root.path("textField1").asText("");
+                }
+
+            } catch (Exception e) {
+                log.error("JSON parse error for case: {}", c.getCaseNo(), e);
+            }
+
+            row.createCell(1).setCellValue(caseTitle);
+
+            // row.createCell(2).setCellValue(
+            //         c.getPath() == null ? "" : c.getPath()
+            // );
+
+            String finalAsset = mainAsset.isEmpty()
+                    ? (c.getAssetName() == null ? "" : c.getAssetName())
+                    : mainAsset;
+
+            row.createCell(2).setCellValue(finalAsset);
+
+            row.createCell(3).setCellValue(
+                    c.getStatus() != null && c.getStatus().getName() != null
+                            ? c.getStatus().getName()
+                            : ""
+            );
+
+            row.createCell(4).setCellValue(
+                    "y".equalsIgnoreCase(c.getIsDraft())
+                            ? "Draft"
+                            :  "n".equalsIgnoreCase(c.getIsDraft()) ? "Submitted" : "Overdue"
+            );
+
+            row.createCell(5).setCellValue(
+                    c.getAssignedTo() != null && c.getAssignedTo().get(0).getEmailId() != null
+                            ? c.getAssignedTo().get(0).getEmailId()
+                            : ""
+            );
+
+            // Write Created On as a proper Excel date cell
+            Cell dateCell = row.createCell(6);
+            if (c.getCreationDate() != null && !c.getCreationDate().isEmpty()) {
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
+                            c.getCreationDate(),
+                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+                    );
+                    dateCell.setCellValue(java.util.Date.from(
+                            ldt.atZone(java.time.ZoneId.systemDefault()).toInstant()
+                    ));
+                    dateCell.setCellStyle(dateCellStyle);
+                } catch (Exception e) {
+                    // Fallback to string if parsing fails
+                    dateCell.setCellValue(c.getCreationDate());
+                }
+            }
+        }
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        return outputStream.toByteArray();
+
+    } catch (Exception e) {
+        throw new RuntimeException("Error generating Excel file", e);
+    }
+}
+
+@Override
+public List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName) {
+	String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
+                    "WHERE c.caseDefinitionId = :caseDefinitionId " +
+                    // "AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                    // 	"SELECT hn.HierarchyNode_PK_ID " +
+                    // 	"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+                    // 	"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+                    // 	"ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                    // 	"WHERE hn.IsDeleted = 0 " +
+                        "AND c.asset_name = :assetName " +
+                        "AND c.hierarchy_name = :hierarchyName " +
+                        "ORDER BY c.case_no DESC";
+                    // ")"
+	
+        Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
+            nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+	        nativeQuery.setParameter("assetName", assetName);
+		    nativeQuery.setParameter("hierarchyName", hierarchyName);
+
+		List<Case> cases = nativeQuery.getResultList();
+		return cases;
 	}
 
     public Boolean checkUserAvailableInGEAPM(String geAPMAcsessToken, String userId) throws Exception {
