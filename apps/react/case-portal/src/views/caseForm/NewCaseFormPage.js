@@ -323,8 +323,16 @@ const createApmUrlBasedOnSelectedEvent = () => {
 
     // NOTE: You earlier had logic pushing analysis fields conditionally.
     // If you removed analyst logic, remove this block; if you still need it, keep it.
-    const faultCategoryValue = formData?.data?.container?.faultCategory
-    if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
+    // const faultCategoryValue = formData?.data?.container?.faultCategory
+    // if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
+    //   requiredFields.push(
+    //     'caseCauseCategory',
+    //     'caseCauseDescription',
+    //     'analysisDesc',
+    //   )
+    // }
+    const analysisTeam = formData?.data?.container?.analysisTeam
+    if (analysisTeam && analysisTeam.length > 0) {
       requiredFields.push(
         'caseCauseCategory',
         'caseCauseDescription',
