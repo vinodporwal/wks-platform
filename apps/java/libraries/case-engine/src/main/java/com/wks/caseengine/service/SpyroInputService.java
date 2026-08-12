@@ -48,4 +48,6 @@ public interface SpyroInputService {
 	AOPMessageVM importSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear,
 			String mode, MultipartFile file);
 
+	AOPMessageVM updateSpyroInputDataValue(List<SpyroInputDTO> spyroInputDTOList, String plantFKId, String year, String key);
+
 }

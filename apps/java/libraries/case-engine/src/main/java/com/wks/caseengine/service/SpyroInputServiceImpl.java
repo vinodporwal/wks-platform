@@ -365,6 +365,88 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		}
 	}
 
+  // ref : updateSpyroInputData | seperate method to handle single value field in Reactor and Recovery parameters (crackerC2)
+	@Override
+	public AOPMessageVM updateSpyroInputDataValue(List<SpyroInputDTO> spyroInputDTOList, String plantFKId, String year, String key) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		UUID plantId;
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+		if(key == null || key.isBlank()) { 
+			throw new RestInvalidArgumentException("key is required", null);
+		}
+
+		boolean isValueTable = key.equalsIgnoreCase("Reactor Parameters")
+         || key.equalsIgnoreCase("Recovery Parameters");
+		try {
+			plantId = UUID.fromString(plantFKId);
+
+			for (SpyroInputDTO spyroInputDTO : spyroInputDTOList) {
+				if ("Failed".equalsIgnoreCase(spyroInputDTO.getSaveStatus())) {
+					continue;
+				}
+
+				if(spyroInputDTO.getNormParameterFKID() == null || spyroInputDTO.getNormParameterFKID().isBlank()) { 
+					continue;
+				}
+				String rawId = spyroInputDTO.getNormParameterFKID();
+				if (rawId == null || rawId.isBlank() || !UUID_PATTERN.matcher(rawId).matches()) {
+				    continue;
+				}
+				
+				UUID normParameterFKId = UUID.fromString(rawId);
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					spyroInputDTO.setSaveStatus("Failed");
+					spyroInputDTO.setErrDescription("Norm Parameter not found");
+					continue;
+				}
+
+				if (!optionNormParameters.get().getIsEditable()) {
+					continue;
+				}
+
+				for (int month = 1; month <= 12; month++) {
+					// skip if valueTable and month is not april
+				if(crackerC2 && isValueTable && month != 4) {
+					continue;
+				}
+					Double attributeValue = getAttributeValue(spyroInputDTO, month);
+					saveData(normParameterFKId, month, attributeValue, spyroInputDTO, plantFKId, year);
+				}
+			}
+
+			// Mark AOP calculations for dependent screens after processing inputs
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("spyro-input");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
+			// Filter only failed records using Stream API
+			List<SpyroInputDTO> failedList = spyroInputDTOList.stream()
+					.filter(dto -> "Failed".equalsIgnoreCase(dto.getSaveStatus()))
+					.collect(Collectors.toList());
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(failedList);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to update Spyro input data", ex);
+		}
+	}
+
 	public Double getAttributeValue(SpyroInputDTO spyroInputDTO, Integer i) {
 		switch (i) {
 			case 1:
@@ -1015,7 +1097,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			Map<String, List<SpyroInputDTO>> mapForExcel = new HashMap<>();
 			List<SpyroInputDTO> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
-				AOPMessageVM vm = updateSpyroInputData(map.get(key), plantFKId, year);
+				AOPMessageVM vm = updateSpyroInputDataValue(map.get(key), plantFKId, year, key);
 				List<SpyroInputDTO> failedList = (List<SpyroInputDTO>) vm.getData();
 				failedRecords.addAll(failedList);
 				mapForExcel.put(key, failedList);
