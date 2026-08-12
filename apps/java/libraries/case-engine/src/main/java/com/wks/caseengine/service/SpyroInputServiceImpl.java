@@ -906,19 +906,20 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 									excelUtilityService.getAcademicYearMonths(year));
 						}
 
-						List<List<Object>> dataList = new ArrayList<>();
+					List<List<Object>> dataList = new ArrayList<>();
 
-						if (isAfterSave) {
-							if (!mapForExcel.containsKey(tableId)) {
-								hideTable = true;
-								continue;
-							}
-							headers.add("saveStatus");
-							headers.add("errDescription");
-							headersOuterTitles.get(0).add("SaveStatus");
-							headersOuterTitles.get(0).add("ErrDescription");
+					if (isAfterSave) {
+						List<SpyroInputDTO> failedRows = mapForExcel.get(tableId);
+						if (failedRows == null || failedRows.isEmpty()) {
+							table.put(ExcelConstants.HIDE_TABLE, true);
+							continue;
+						}
+						headers.add("saveStatus");
+						headers.add("errDescription");
+						headersOuterTitles.get(0).add("SaveStatus");
+						headersOuterTitles.get(0).add("ErrDescription");
 
-							for (SpyroInputDTO dto : mapForExcel.get(tableId)) {
+						for (SpyroInputDTO dto : failedRows) {
 								List<Object> list = new ArrayList<>();
 								if (isSingleValue) {
 									list.add(dto.getParticulars());            // col 0
