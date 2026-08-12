@@ -78,22 +78,34 @@ const ProductionTargetBasis = () => {
         (col) => col.field !== 'GRID_TYPE',
       )
       const applyFixedWidth = filteredCols.length < 7
-      const fixedWidth = applyFixedWidth ? 150 : 121
+      const fixedWidth = applyFixedWidth ? 160 : 140
       return backendCols
         .filter((col) => col.field !== 'GRID_TYPE')
         .map((col) => {
           const isTextCol = col.type === 'string'
           const isNumberCol = col.type === 'number'
+          const fieldName = String(col.field || col.title || '').toLowerCase()
+          const isYearCol = fieldName === 'year'
+          const titleStr = col.title || col.field || ''
+          const titleLength = titleStr.length
+          const titleBasedWidth = Math.max(140, titleLength * 12 + 55)
+          const baseWidth = col.widthT || col.width || fixedWidth
+          const finalWidth = Math.max(Math.round(baseWidth * 1.5), titleBasedWidth)
+
           return {
             ...col,
-            title: col.title || col.field,
+            title: titleStr,
             filterable: true,
             filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
             align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-            ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
+            ...(isNumberCol
+              ? isYearCol
+                ? { format: '{0:0}' }
+                : { format: '{0:0.00}' }
+              : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
-            ...(fixedWidth ? { widthT: fixedWidth } : {}),
+            widthT: finalWidth,
           }
         })
     },
@@ -196,9 +208,6 @@ const ProductionTargetBasis = () => {
         return
       }
 
-      // Support two possible shapes for convenience:
-      // 1) apiResponse.data is the array of grids
-      // 2) apiResponse.data.data is the array (older wrappers)
       const gridsArray = Array.isArray(apiResponse.data)
         ? apiResponse.data
         : Array.isArray(apiResponse.data?.data)
@@ -231,7 +240,7 @@ const ProductionTargetBasis = () => {
 
         if (g.gridName === 'Raw Data - Max Achieved Capacity') {
           enrichedCols = enrichedCols.map((col) => {
-            return { ...col, widthT: 120 }
+            return { ...col, widthT: Math.max(col.widthT || 0, 180) }
           })
         }
 
@@ -391,8 +400,6 @@ const ProductionTargetBasis = () => {
         {tabIndex === 0 && (
           <>
             {gridNames.map((name, idx) => {
-              if (idx === 0) return null
-
               const d = dataMap[name] || { rows: [], columns: [] }
               return (
                 <div key={name}>
