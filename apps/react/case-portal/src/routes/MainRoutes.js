@@ -169,6 +169,7 @@ import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consum
 
 // Vertical Refinery Utility
 import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
+import ShutdownConsumptionRefinery from 'components/aop-phase-two/refineryUtility/shutdown-consumption/index'
 import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
 import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
@@ -1172,6 +1173,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='steady-state-consumption-refinery'>
                 <SteadyStateConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-refinery',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-refinery'>
+                <ShutdownConsumptionRefinery />
               </PrivateRoute>
             ),
           },
