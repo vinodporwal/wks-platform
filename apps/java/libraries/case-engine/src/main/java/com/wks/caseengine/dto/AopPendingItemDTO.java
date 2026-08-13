@@ -8,9 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * One row in a user's "My Approvals" inbox — an AOP workflow currently pending
- * that user's action, identified by (plantId, year). Carries the taskId needed
- * to act and denormalised plant/site/vertical names for display.
+ * One row in a user's "My Approvals" inbox — an open AOP task pending that user's
+ * action for a specific assignee role. A plant at Gate 2 can yield multiple rows
+ * when the caller holds several Gate 2 roles. Carries the taskId needed to act
+ * and denormalised plant/site/vertical names for display.
  */
 @Configuration
 @NoArgsConstructor
