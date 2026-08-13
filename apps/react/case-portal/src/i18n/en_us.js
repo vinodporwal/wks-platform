@@ -33,7 +33,7 @@ const defs = {
     spyroInput: 'Optimizer Input',
     spyroOutput: 'Optimizer Output',
     spyroMenu: 'Optimizer Menu',
-    decokingActivities: 'Furnace SAD & Maint. Plant',
+    decokingActivities: 'Furnace SAD & Maint. Plan',
     maintenanceDetails: 'Net Production Hours',
     combinedProductionNorms: 'Combined Production Target',
     consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',

@@ -355,12 +355,12 @@ const DecokingConfig = () => {
                     item.IsIBR !== undefined
                       ? !!item.IsIBR
                       : !!(
-                          item.IBR_SD ||
-                          item.FunShtdwnDuration ||
-                          item.IBR_ED ||
-                          converted.IBR_SD ||
-                          converted.IBR_ED
-                        ),
+                        item.IBR_SD ||
+                        item.FunShtdwnDuration ||
+                        item.IBR_ED ||
+                        converted.IBR_SD ||
+                        converted.IBR_ED
+                      ),
                   Id: item.Id,
                   id: index,
                   DisplayName:
@@ -395,10 +395,10 @@ const DecokingConfig = () => {
                   editable: IS_CRACKER_C2
                     ? !['TA_Duration_Days', 'DisplayName'].includes(col.field)
                     : ![
-                        'Pre_CR_Days',
-                        'TA_Duration_Days',
-                        'DisplayName',
-                      ].includes(col.field),
+                      'Pre_CR_Days',
+                      'TA_Duration_Days',
+                      'DisplayName',
+                    ].includes(col.field),
                 }))
 
               if (IS_CRACKER_C2) {
@@ -411,11 +411,11 @@ const DecokingConfig = () => {
                 )
                 const isIbrCol = {
                   field: 'IsIBR',
-                  title: 'Is IBR',
+                  title: 'Is IBR planned',
                   type: 'switch',
                   editable: true,
-                  widthT: 120,
-                  minWidth: 100,
+                  widthT: 130,
+                  minWidth: 110,
                 }
                 if (isCrIndex !== -1) {
                   baseCols.splice(isCrIndex + 1, 0, isIbrCol)
@@ -635,7 +635,7 @@ const DecokingConfig = () => {
   const saveRunningDurationParams = async () => {
     const listToSave =
       otherFurnanceDetailsListRef.current &&
-      otherFurnanceDetailsListRef.current.length > 0
+        otherFurnanceDetailsListRef.current.length > 0
         ? otherFurnanceDetailsListRef.current
         : otherFurnanceDetailsList
 
@@ -835,12 +835,11 @@ const DecokingConfig = () => {
       const rowsToSave = Object.values(modifiedCellsSdTa)
 
       if (
-        !globalTaStartDate ||
-        !globalTaEndDate ||
-        (startLimit && globalTaStartDate < startLimit) ||
-        (endLimit && globalTaStartDate > endLimit) ||
-        (startLimit && globalTaEndDate < startLimit) ||
-        (endLimit && globalTaEndDate > endLimit)
+        (!IS_CRACKER_C2 && (!globalTaStartDate || !globalTaEndDate)) ||
+        (globalTaStartDate && startLimit && globalTaStartDate < startLimit) ||
+        (globalTaStartDate && endLimit && globalTaStartDate > endLimit) ||
+        (globalTaEndDate && startLimit && globalTaEndDate < startLimit) ||
+        (globalTaEndDate && endLimit && globalTaEndDate > endLimit)
       ) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1105,7 +1104,7 @@ const DecokingConfig = () => {
           if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1212,39 +1211,20 @@ const DecokingConfig = () => {
         throw new Error('ibrPlanColumns not loaded')
       }
 
-      if (!newRow || newRow.length === 0) {
-        if (durationSaved) {
+      if (newRow && newRow.length > 0) {
+        const requiredFields = ['Remarks']
+
+        const validationMessage = validateFields(newRow, requiredFields)
+
+        if (validationMessage) {
           setSnackbarOpen(true)
           setSnackbarData({
-            message: 'Data Saved Successfully!',
-            severity: 'success',
+            message: validationMessage,
+            severity: 'error',
           })
-          setSummaryEdited(false)
-          fetchOtherCost()
           setLoading(false)
           return
         }
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        setLoading(false)
-        return
-      }
-
-      const requiredFields = ['Remarks']
-
-      const validationMessage = validateFields(newRow, requiredFields)
-
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
       }
 
       const formatIfDate = (value) => {
@@ -1288,7 +1268,7 @@ const DecokingConfig = () => {
           if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 

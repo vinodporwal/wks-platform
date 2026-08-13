@@ -124,21 +124,51 @@ const OnOffSwitchEditCell = (props) => {
 }
 
 const FeedTypeDisplayCell = (props) => {
-  const { dataItem, field, tdProps, column } = props
+  const { dataItem, field, tdProps, column, customModifiedCells: propModifiedCells } = props
   const value = dataItem[field]
   const rowId = dataItem.id
-  const customModifiedCells = column?.customModifiedCells || {}
+  const customModifiedCells = propModifiedCells || column?.customModifiedCells || {}
   const isEdited = Object.prototype.hasOwnProperty.call(
     customModifiedCells?.[rowId] || {},
     field,
   )
+
+  const isDropdownRow = dataItem?.UOM === '#'
+  const isNumeric =
+    !isDropdownRow &&
+    value !== null &&
+    value !== undefined &&
+    value !== '' &&
+    !isNaN(Number(value))
+
+  let displayValue = value
+  if (isNumeric) {
+    const num = Number(value)
+    const fmt = column?.format || '{0:0.00}'
+    if (fmt === '{0:0.000}') {
+      displayValue = num.toFixed(3)
+    } else if (fmt === '{0:0.0000}') {
+      displayValue = num.toFixed(4)
+    } else if (fmt === '{0:0.000000}') {
+      displayValue = num.toFixed(6)
+    } else {
+      displayValue = num.toFixed(2)
+    }
+  }
+
+  const isRightAlign = isNumeric
+
   return (
     <td
       {...tdProps}
-      title={value}
-      className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
+      title={value !== null && value !== undefined ? String(value) : ''}
+      className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''} ${isRightAlign ? 'text-right' : ''}`.trim()}
+      style={{
+        textAlign: isRightAlign ? 'right' : 'left',
+        ...tdProps?.style,
+      }}
     >
-      {value}
+      {displayValue}
     </td>
   )
 }
@@ -4265,7 +4295,12 @@ const KendoDataTables = ({
                             edit: {
                               text: StableFeedTypeOrNumericEditor,
                             },
-                            data: FeedTypeDisplayCell,
+                            data: (props) => (
+                              <FeedTypeDisplayCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                              />
+                            ),
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           columnMenu={ColumnMenuCheckboxFilter}

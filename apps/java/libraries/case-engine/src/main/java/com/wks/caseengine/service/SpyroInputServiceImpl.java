@@ -2032,7 +2032,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 				for (int month = 1; month <= 12; month++) {
 					String attributeValue = getOptimizingVariableMonthValue(dto, month);
-					saveOptimizingVariableData(normParameterFKId, month, attributeValue, aopYear);
+					saveOptimizingVariableData(normParameterFKId, month, attributeValue, dto.getRemarks(), aopYear);
 				}
 			}
 
@@ -2065,8 +2065,9 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		}
 	}
 
-	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String aopYear) {
+	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String remarks, String aopYear) {
 		String newValueStr = attributeValue != null ? attributeValue.trim() : "";
+		String remarksStr = remarks != null ? remarks.trim() : null;
 
 		Optional<NormAttributeTransactions> existingOpt =
 				normAttributeTransactionsRepository
@@ -2075,6 +2076,9 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		if (existingOpt.isPresent()) {
 			NormAttributeTransactions existing = existingOpt.get();
 			existing.setAttributeValue(newValueStr);
+			if (remarksStr != null) {
+				existing.setRemarks(remarksStr);
+			}
 			existing.setModifiedOn(new Date());
 			existing.setUserName(Utility.getUserName());
 			normAttributeTransactionsRepository.save(existing);
@@ -2087,6 +2091,9 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			newRecord.setAopMonth(month);
 			newRecord.setAuditYear(aopYear);
 			newRecord.setAttributeValue(newValueStr);
+			if (remarksStr != null) {
+				newRecord.setRemarks(remarksStr);
+			}
 			normAttributeTransactionsRepository.save(newRecord);
 		}
 	}
@@ -2133,6 +2140,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 						.january(row[17] != null ? row[17].toString() : null)
 						.february(row[18] != null ? row[18].toString() : null)
 						.march(row[19] != null ? row[19].toString() : null)
+						.remarks(row.length > 20 && row[20] != null ? row[20].toString() : null)
 						.build();
 				resultList.add(dto);
 			}

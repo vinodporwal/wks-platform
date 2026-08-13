@@ -217,7 +217,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		}
 	}
 
-	// --- Proposed AOP Export - Excel Builder -------------------------------------
+	// --- Proposed AOP Export – Excel Builder -------------------------------------
 
 	@Override
 	public byte[] createProposedAOPExcel(UUID plantId, String aopYear, boolean isAfterSave,
@@ -272,7 +272,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			List<ProposedAOPDTO> dtoList, boolean isAfterSave) {
 
 		boolean isAllGrade = "All Grade".equals(sheetName);
-		Sheet sheet = workbook.createSheet(sheetName);
+		Sheet sheet = workbook.createSheet(Utility.sanitizeSheetName(sheetName));
 		int currentRow = 0;
 
 		// Columns 0-5: visible editable/locked data
@@ -304,11 +304,11 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			Row row = sheet.createRow(currentRow++);
 
 			Cell particularsCell = row.createCell(0);
-			particularsCell.setCellValue(dto.getProductName() != null ? dto.getProductName() : "");
+			particularsCell.setCellValue(Utility.sanitizeCellString(dto.getProductName()));
 			particularsCell.setCellStyle(lockedStyle);
 
 			Cell uomCell = row.createCell(1);
-			uomCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+			uomCell.setCellValue(Utility.sanitizeCellString(dto.getUom()));
 			uomCell.setCellStyle(lockedStyle);
 
 			Cell lastFYCell = row.createCell(2);
@@ -327,7 +327,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			proposedCell.setCellStyle(isAllGrade ? lockedStyle : unlockedStyle);
 
 			Cell remarksCell = row.createCell(5);
-			remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+			remarksCell.setCellValue(Utility.sanitizeCellString(dto.getRemarks()));
 			remarksCell.setCellStyle(isAllGrade ? wrapLocked : wrapUnlocked);
 
 			Cell normParamCell = row.createCell(6);
@@ -339,7 +339,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			gradeIdCell.setCellStyle(lockedStyle);
 
 			Cell aopYearCell = row.createCell(8);
-			aopYearCell.setCellValue(dto.getAopYear() != null ? dto.getAopYear() : "");
+			aopYearCell.setCellValue(Utility.sanitizeCellString(dto.getAopYear()));
 			aopYearCell.setCellStyle(lockedStyle);
 
 			Cell idCell = row.createCell(9);
@@ -357,11 +357,11 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 
 			if (isAfterSave) {
 				Cell statusCell = row.createCell(12);
-				statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+				statusCell.setCellValue(Utility.sanitizeCellString(dto.getSaveStatus()));
 				statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
 				Cell errCell = row.createCell(13);
-				errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+				errCell.setCellValue(Utility.sanitizeCellString(dto.getErrDescription()));
 				errCell.setCellStyle(Utility.createBorderedStyle(workbook));
 			}
 
@@ -387,7 +387,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		sheet.protectSheet("");
 	}
 
-	// --- Proposed AOP Import - Excel Reader --------------------------------------
+	// --- Proposed AOP Import – Excel Reader --------------------------------------
 
 	public List<ProposedAOPDTO> readProposedAOPExcel(InputStream inputStream) {
 		List<ProposedAOPDTO> resultList = new ArrayList<>();
@@ -522,7 +522,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		return resultList;
 	}
 
-	// --- Proposed AOP Import - API
+	// --- Proposed AOP Import – API
 	// ------------------------------------------------
 
 	@Override
