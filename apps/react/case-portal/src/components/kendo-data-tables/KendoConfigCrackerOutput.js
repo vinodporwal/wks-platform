@@ -274,6 +274,7 @@ const CrackerConfig = () => {
 
   useEffect(() => {
     fetchModes()
+
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
@@ -1035,26 +1036,17 @@ const CrackerConfig = () => {
         )
       }
 
-      if (response?.code === 200) {
-        // setSnackbarOpen(true)
-        // setSnackbarData({
-        //   message: 'Excel download completed successfully!',
-        //   severity: 'success',
-        // })
-      } else {
-        // setSnackbarOpen(true)
-        // setSnackbarData({
-        //   message: 'Failed to download Excel1.',
-        //   severity: 'error',
-        // })
-      }
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
       setSnackbarOpen(true)
     }
   }

@@ -957,31 +957,18 @@ const CrackerConfig = () => {
         )
       }
 
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-
-        setSnackbarData({
-          message: 'Excel download completed successfully!',
-          severity: 'success',
-        })
-      } else {
-        setSnackbarOpen(true)
-
-        setSnackbarData({
-          message: 'Failed to download Excel.',
-          severity: 'error',
-        })
-      }
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
     } catch (error) {
       console.error('Error downloading Excel:', error)
-      setSnackbarOpen(true)
-
       setSnackbarData({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
-      setSnackbarOpen(false)
+      setSnackbarOpen(true)
     }
   }
   const handleLoadNaphthaData = async (startDate, endDate) => {
