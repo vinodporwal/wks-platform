@@ -1631,22 +1631,64 @@ const handleFormChange = (submission) => {
     return content
   }
 
-  // Fetch an image with auth and return a base64 data URL
-  const fetchImageAsBase64 = async (url) => {
+  const storageDownloadUrl = (file) => {
+    if (!file?.name) return null
+
+    const storageBaseUrl = String(Config.StorageUrl || '').trim().replace(/\/+$/, '')
+    if (!storageBaseUrl) return null
+
+    const storageApiUrl = /\/storage$/i.test(storageBaseUrl)
+      ? storageBaseUrl
+      : `${storageBaseUrl}/storage`
+    const directory = String(file.dir || 'cases')
+      .split('/')
+      .filter(Boolean)
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')
+    const contentType = encodeURIComponent(file.type || 'application/octet-stream')
+
+    return `${storageApiUrl}/files1/${directory}/downloads/${encodeURIComponent(file.name)}?content-type=${contentType}`
+  }
+
+  const preparedImageKey = (file) =>
+    `${String(file?.dir || 'cases').replace(/^\/+|\/+$/g, '')}/${file?.name || ''}`
+
+  const blobAsDataUrl = (blob, url) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = () => reject(new Error(`Image conversion failed for ${url}`))
+      reader.readAsDataURL(blob)
+    })
+
+  const fetchImageAsBase64 = async (file) => {
+    const url = storageDownloadUrl(file)
+    if (!url) throw new Error('Image download URL could not be constructed.')
+
+    let response
     try {
-      const resp = await fetch(url, {
+      response = await fetch(url, {
         headers: { Authorization: `Bearer ${keycloak.token}` },
       })
-      if (!resp.ok) return null
-      const blob = await resp.blob()
-      return new Promise((resolve) => {
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result)
-        reader.onerror = () => resolve(null)
-        reader.readAsDataURL(blob)
-      })
-    } catch {
-      return null
+    } catch (error) {
+      throw new Error(`Image request failed for ${url}: ${error.message}`)
+    }
+
+    if (!response.ok) {
+      throw new Error(`Image download failed for ${url} with status ${response.status}.`)
+    }
+
+    const blob = await response.blob()
+    try {
+      const dataUrl = await blobAsDataUrl(blob, url)
+      if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) {
+        throw new Error(`Image conversion returned an invalid Data URL for ${url}`)
+      }
+      return dataUrl
+    } catch (error) {
+      throw new Error(
+        `${error.message} (content-type: ${response.headers.get('content-type') || 'unknown'}, blob type: ${blob.type || 'unknown'}, blob size: ${blob.size})`,
+      )
     }
   }
 
@@ -1841,7 +1883,13 @@ const handleFormChange = (submission) => {
   }
 
 
-  const generatePdfMakeDefinition = (aCase, structure, base64Map = {}) => {
+  const generatePdfMakeDefinition = (
+    aCase,
+    structure,
+    preparedImages = {},
+    caseDocuments = [],
+    caseComments = [],
+  ) => {
     const containerData = JSON.parse(
       aCase.attributes.find((attr) => attr.name === 'container').value,
     )
@@ -1858,7 +1906,15 @@ const handleFormChange = (submission) => {
       containerData.caseCauseCategory,
     )
 
-    const files = Array.isArray(containerData.file) ? containerData.file : []
+    const files = Array.isArray(containerData.file)
+      ? containerData.file.filter((file) => file?.name)
+      : []
+    const validDocuments = Array.isArray(caseDocuments)
+      ? caseDocuments.filter((file) => file?.name && storageDownloadUrl(file))
+      : []
+    const validComments = Array.isArray(caseComments)
+      ? caseComments.filter((comment) => comment && typeof comment === 'object')
+      : []
 
     const content = [
       {
@@ -1958,7 +2014,8 @@ const handleFormChange = (submission) => {
           },
           ...files.map((file) => {
             const isImage = file.type && file.type.startsWith('image/')
-            const imageSrc = base64Map[file.name]
+            const preparedImage = preparedImages[preparedImageKey(file)]
+            const imageSrc = preparedImage?.dataUrl
 
             if (isImage && imageSrc) {
               return {
@@ -1979,13 +2036,20 @@ const handleFormChange = (submission) => {
             }
 
             return {
-              text: file.name,
-              fontSize: 8.5,
-              margin: [0, 5, 0, 2],
+              stack: [
+                {
+                  text: file.name,
+                  fontSize: 8.5,
+                  margin: [0, 5, 0, 2],
+                },
+                ...(isImage && preparedImage?.failed
+                  ? [{ text: 'Image unavailable', italics: true, color: '#777777', fontSize: 8 }]
+                  : []),
+              ],
             }
           }),
         ],
-        true,
+        false,
       ),
     ]
 
@@ -2038,6 +2102,73 @@ const handleFormChange = (submission) => {
       ),
     )
 
+    if (validDocuments.length > 0) {
+      content.push(
+        pdfSection(
+          'Uploaded Files',
+          validDocuments.map((file) => ({
+            text: pdfText(file.name),
+            link: storageDownloadUrl(file),
+            color: '#1155cc',
+            decoration: 'underline',
+            fontSize: 8.5,
+            margin: [3, 2, 3, 2],
+          })),
+          false,
+        ),
+      )
+    }
+
+    if (validComments.length > 0) {
+      const rootComments = validComments.filter(
+        (comment) => comment.parentId === null || comment.parentId === undefined,
+      )
+      const formatCommentAuthor = (userId) =>
+        typeof userId === 'string'
+          ? userId
+            .split('.')
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ')
+          : ''
+      const formatCommentDate = (createdAt) => {
+        const date = new Date(createdAt)
+        return createdAt && !Number.isNaN(date.getTime())
+          ? date.toLocaleDateString()
+          : ''
+      }
+      const commentNode = (comment, isReply = false) => {
+        const author = formatCommentAuthor(comment.userId)
+        const createdAt = formatCommentDate(comment.createdAt)
+        const metadata = [author, createdAt].filter(Boolean).join(' - ')
+
+        return {
+          stack: [
+            ...(metadata
+              ? [{ text: metadata, bold: true, fontSize: 8, color: '#555555' }]
+              : []),
+            { text: pdfText(comment.body), fontSize: 8.5 },
+          ],
+          margin: [isReply ? 18 : 3, 3, 3, 3],
+        }
+      }
+      const commentContent = []
+
+      rootComments.forEach((rootComment) => {
+        commentContent.push(commentNode(rootComment))
+        validComments
+          .filter((comment) => comment.parentId === rootComment.id)
+          .sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          )
+          .forEach((reply) => commentContent.push(commentNode(reply, true)))
+      })
+
+      if (commentContent.length > 0) {
+        content.push(pdfSection('Comments', commentContent, false))
+      }
+    }
+
     return {
       pageSize: 'A4',
       pageMargins: [18, 16, 18, 18],
@@ -2056,19 +2187,25 @@ const handleFormChange = (submission) => {
 
     // Collect all image files from both Analysis and Uploaded Files sections
     const analysisFiles = Array.isArray(containerData.file) ? containerData.file : []
-    const uploadedFiles = Array.isArray(containerData.file) ? containerData.file : []
-    const allImageFiles = [...analysisFiles, ...uploadedFiles].filter(
-      (f, i, arr) => f.type && f.type.startsWith('image/') && arr.findIndex(x => x.name === f.name) === i
+    const allImageFiles = analysisFiles.filter(
+      (file, index, allFiles) =>
+        file?.name &&
+        file.type?.startsWith('image/') &&
+        allFiles.findIndex((candidate) => preparedImageKey(candidate) === preparedImageKey(file)) === index,
     )
 
     // Pre-fetch all images as base64
-    const base64Map = {}
+    const preparedImages = {}
     await Promise.all(
       allImageFiles.map(async (file) => {
-        const url = `${Config.StorageUrl}/storage/files1/${file.dir || 'cases'}/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
-        const b64 = await fetchImageAsBase64(url)
-        if (b64) base64Map[file.name] = b64
-      })
+        const key = preparedImageKey(file)
+        try {
+          preparedImages[key] = { dataUrl: await fetchImageAsBase64(file), failed: false }
+        } catch (error) {
+          preparedImages[key] = { dataUrl: null, failed: true }
+          console.warn('Unable to prepare an Analysis image for the PDF:', error.message)
+        }
+      }),
     )
 
     // const printContent = generatePrintContent(aCase, formStructure, documents, base64Map);
@@ -2099,7 +2236,9 @@ const handleFormChange = (submission) => {
     const docDefinition = generatePdfMakeDefinition(
       aCase,
       formStructure,
-      base64Map,
+      preparedImages,
+      documents || aCase.documents || [],
+      comments || aCase.comments || [],
     )
 
     pdfMake.createPdf(docDefinition).download(fileName)
