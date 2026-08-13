@@ -400,6 +400,8 @@ const ProductionTargetBasis = () => {
         {tabIndex === 0 && (
           <>
             {gridNames.map((name, idx) => {
+              if (idx === 0) return null
+
               const d = dataMap[name] || { rows: [], columns: [] }
               return (
                 <div key={name}>
