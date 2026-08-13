@@ -132,7 +132,7 @@ export default function SpyroInputMinMax() {
                     children: [
                          {
                               field: 'minWeightAverage',
-                              title: 'min',
+                              title: 'Min',
                               width: 30,
                               editable: false,
                               type: 'number',
@@ -142,7 +142,7 @@ export default function SpyroInputMinMax() {
                          },
                          {
                               field: 'maxWeightAverage',
-                              title: 'max',
+                              title: 'Max',
                               width: 30,
                               editable: false,
                               type: 'number',
@@ -206,21 +206,21 @@ export default function SpyroInputMinMax() {
 
                     if (cleanRow[minKey] !== undefined) {
                          const val = cleanRow[minKey]
-                         cleanRow[minKey] = (val === null || val === undefined || val === '' || Number(val) === 0 || isNaN(Number(val))) ? null : Number(val)
+                         cleanRow[minKey] = (val === null || val === undefined || val === '' || isNaN(Number(val))) ? null : Number(val)
                     }
                     if (cleanRow[maxKey] !== undefined) {
                          const val = cleanRow[maxKey]
-                         cleanRow[maxKey] = (val === null || val === undefined || val === '' || Number(val) === 0 || isNaN(Number(val))) ? null : Number(val)
+                         cleanRow[maxKey] = (val === null || val === undefined || val === '' || isNaN(Number(val))) ? null : Number(val)
                     }
                })
 
                if (cleanRow.minWeightAverage !== undefined) {
                     const val = cleanRow.minWeightAverage
-                    cleanRow.minWeightAverage = (val === null || val === undefined || val === '' || Number(val) === 0 || isNaN(Number(val))) ? null : Number(val)
+                    cleanRow.minWeightAverage = (val === null || val === undefined || val === '' || isNaN(Number(val))) ? null : Number(val)
                }
                if (cleanRow.maxWeightAverage !== undefined) {
                     const val = cleanRow.maxWeightAverage
-                    cleanRow.maxWeightAverage = (val === null || val === undefined || val === '' || Number(val) === 0 || isNaN(Number(val))) ? null : Number(val)
+                    cleanRow.maxWeightAverage = (val === null || val === undefined || val === '' || isNaN(Number(val))) ? null : Number(val)
                }
 
                return cleanRow

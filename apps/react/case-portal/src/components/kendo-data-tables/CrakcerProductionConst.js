@@ -201,7 +201,7 @@ const CrakcerProductionConst = () => {
         editable: true,
         type: 'number',
         widthT: 120,
-        format: FORMATE_VALUE,
+        format: valueFormat,
         minWidth: 100,
       },
       {

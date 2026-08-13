@@ -351,6 +351,16 @@ const DecokingConfig = () => {
                   ...item,
                   ...converted,
                   ...(IS_CRACKER_C2 ? { FunShtdwnDuration: durationVal } : {}),
+                  IsIBR:
+                    item.IsIBR !== undefined
+                      ? !!item.IsIBR
+                      : !!(
+                          item.IBR_SD ||
+                          item.FunShtdwnDuration ||
+                          item.IBR_ED ||
+                          converted.IBR_SD ||
+                          converted.IBR_ED
+                        ),
                   Id: item.Id,
                   id: index,
                   DisplayName:
@@ -361,32 +371,67 @@ const DecokingConfig = () => {
                 }
               })
 
-              serIbrPlanColumns(
-                (data2?.data?.columns || [])
-                  .filter(
-                    (col) =>
-                      ![
-                        'DisplaySeq',
-                        'AOPYear',
-                        'Plant_FK_Id',
-                        'Name',
-                        'Id',
-                        'isEditable',
-                        //'TA_SD',
-                        //'TA_ED',
-                      ].includes(col.field),
-                  )
-                  .map((col) => ({
-                    ...col,
-                    widthT: 150,
-                    minWidth: col.field == 'DisplayName' ? 200 : 150,
-                    editable: ![
-                      'Pre_CR_Days',
-                      'TA_Duration_Days',
-                      'DisplayName',
+              const baseCols = (data2?.data?.columns || [])
+                .filter(
+                  (col) =>
+                    ![
+                      'DisplaySeq',
+                      'AOPYear',
+                      'Plant_FK_Id',
+                      'Name',
+                      'Id',
+                      'isEditable',
                     ].includes(col.field),
-                  })),
-              )
+                )
+                .map((col) => ({
+                  ...col,
+                  widthT: col.field === 'Remarks' ? 350 : 150,
+                  minWidth:
+                    col.field === 'DisplayName'
+                      ? 200
+                      : col.field === 'Remarks'
+                        ? 300
+                        : 150,
+                  editable: IS_CRACKER_C2
+                    ? !['TA_Duration_Days', 'DisplayName'].includes(col.field)
+                    : ![
+                        'Pre_CR_Days',
+                        'TA_Duration_Days',
+                        'DisplayName',
+                      ].includes(col.field),
+                }))
+
+              if (IS_CRACKER_C2) {
+                const isCrIndex = baseCols.findIndex(
+                  (c) =>
+                    c.field === 'IsCR' ||
+                    c.field === 'IsCoilReplacement' ||
+                    c.field === 'Is_Coil_Replacement' ||
+                    c.field === 'Is Coil Replacement',
+                )
+                const isIbrCol = {
+                  field: 'IsIBR',
+                  title: 'Is IBR',
+                  type: 'switch',
+                  editable: true,
+                  widthT: 120,
+                  minWidth: 100,
+                }
+                if (isCrIndex !== -1) {
+                  baseCols.splice(isCrIndex + 1, 0, isIbrCol)
+                } else {
+                  const dispNameIndex = baseCols.findIndex(
+                    (c) => c.field === 'DisplayName',
+                  )
+                  baseCols.splice(
+                    dispNameIndex !== -1 ? dispNameIndex + 1 : 1,
+                    0,
+                    isIbrCol,
+                  )
+                }
+              }
+
+              serIbrPlanColumns(baseCols)
 
               setRowsForTab(currentTab, processedData, 2)
 
@@ -966,6 +1011,7 @@ const DecokingConfig = () => {
   }, [modifiedCellsRunLength])
 
   function validatePostCrDays(newRows) {
+    if (IS_CRACKER_C2) return { valid: true }
     for (let i = 0; i < newRows.length; i++) {
       const row = newRows[i]
       const rowLabel = row.DisplayName || `Row ${i + 1}`
@@ -1047,6 +1093,7 @@ const DecokingConfig = () => {
           }
 
           columns.forEach((col) => {
+            if (col.field === 'IsIBR' || col.field === 'Is_IBR') return
             let value = row[col.field]
 
             if (col.type === 'date') value = formatIfDate(value)
@@ -1055,7 +1102,7 @@ const DecokingConfig = () => {
             obj[col.field] = value
           })
 
-          if (row.ActualRunLength != null && row.Reduction != null) {
+          if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
                 (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
@@ -1229,6 +1276,7 @@ const DecokingConfig = () => {
           }
 
           columns.forEach((col) => {
+            if (col.field === 'IsIBR' || col.field === 'Is_IBR') return
             let value = row[col.field]
 
             if (col.type === 'date') value = formatIfDate(value)
@@ -1237,7 +1285,7 @@ const DecokingConfig = () => {
             obj[col.field] = value
           })
 
-          if (row.ActualRunLength != null && row.Reduction != null) {
+          if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
                 (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
@@ -1796,6 +1844,19 @@ const DecokingConfig = () => {
       const applyCalc = (rows) => {
         if (!Array.isArray(rows)) return rows
         return rows.map((row) => {
+          if (row.IsIBR === false || row.Is_IBR === false) {
+            row = {
+              ...row,
+              IBR_SD: null,
+              FunShtdwnDuration: null,
+              IBR_ED: null,
+            }
+          } else if (row.IBR_SD || row.FunShtdwnDuration || row.IBR_ED) {
+            row = {
+              ...row,
+              IsIBR: true,
+            }
+          }
           const sdVal = row.IBR_SD
           let durVal = row.FunShtdwnDuration
           if (
