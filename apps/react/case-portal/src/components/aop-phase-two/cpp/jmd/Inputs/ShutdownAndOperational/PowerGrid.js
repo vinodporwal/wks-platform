@@ -248,6 +248,7 @@ const PowerGrid = ({
     const rowsWithIds = transformedData?.map((row, index) => ({
       ...row,
       id: row.id || index + 1,
+      remarks: row.remarks || '',
     }))
     setRows(rowsWithIds)
     setOriginalRows(rowsWithIds)

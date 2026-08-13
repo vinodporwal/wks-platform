@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import AssetCapacity from './AssetCapacity/index'
@@ -26,21 +25,8 @@ const InputsJMD = () => {
   const IS_CPP = lowerVertName === 'cpp'
 
   // Tab management via custom hook (type = 'Inputs')
-  const { tabs, filteredTabs, loading } = useConfigurationTabs('Inputs')
-
-  const [tabIndex, setTabIndex] = useState(0)
-
-  // Reset tabIndex when tabs change.
-  // NOTE: depend on `tabs` (stable state from the hook), NOT `filteredTabs`
-  // (which is a new array reference every render and would reset tabIndex
-  // on every render, breaking tab switching).
-  useEffect(() => {
-    if (filteredTabs.length > 0) {
-      setTabIndex(0)
-    } else {
-      setTabIndex(null)
-    }
-  }, [tabs])
+  const { filteredTabs, tabIndex, setTabIndex, loading } =
+    useConfigurationTabs('Inputs')
 
   // Get current tab display name
   const currentTabName = filteredTabs[tabIndex]?.name

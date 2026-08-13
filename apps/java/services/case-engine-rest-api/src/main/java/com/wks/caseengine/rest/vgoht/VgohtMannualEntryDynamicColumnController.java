@@ -32,12 +32,13 @@ public class VgohtMannualEntryDynamicColumnController {
             @RequestParam UUID plantId,
             @RequestParam String aopYear,
             @RequestParam String periodFrom,
-            @RequestParam String periodTo) {
+            @RequestParam String periodTo,
+            @RequestParam String tabName) {
 
-        logger.info("[GET /vgoht/manual-production] plantId: {}, aopYear: {}, periodFrom: {}, periodTo: {}",
-                plantId, aopYear, periodFrom, periodTo);
+        logger.info("[GET /vgoht/manual-production] plantId: {}, aopYear: {}, periodFrom: {}, periodTo: {}, tabName: {}",
+                plantId, aopYear, periodFrom, periodTo, tabName);
 
-        AOPMessageVM response = vgohtManualEntryService.getManualProduction(plantId, aopYear, periodFrom, periodTo);
+        AOPMessageVM response = vgohtManualEntryService.getManualProduction(plantId, aopYear, periodFrom, periodTo, tabName);
 
         logger.info("[GET /vgoht/manual-production] code: {}, message: {}",
                 response.getCode(), response.getMessage());
@@ -51,12 +52,13 @@ public class VgohtMannualEntryDynamicColumnController {
             @RequestParam String aopYear,
             @RequestParam String periodFrom,
             @RequestParam String periodTo,
+            @RequestParam String tabName,
             @RequestBody List<Map<String, Object>> data) {
 
-        logger.info("[POST /vgoht/manual-production] plantId: {}, aopYear: {}, periodFrom: {}, periodTo: {}, rows: {}",
-                plantId, aopYear, periodFrom, periodTo, data != null ? data.size() : 0);
+        logger.info("[POST /vgoht/manual-production] plantId: {}, aopYear: {}, periodFrom: {}, periodTo: {}, tabName: {}, rows: {}",
+                plantId, aopYear, periodFrom, periodTo, tabName, data != null ? data.size() : 0);
 
-        AOPMessageVM response = vgohtManualEntryService.saveManualProduction(plantId, aopYear, periodFrom, periodTo, data);
+        AOPMessageVM response = vgohtManualEntryService.saveManualProduction(plantId, aopYear, periodFrom, periodTo, data, tabName);
 
         logger.info("[POST /vgoht/manual-production] code: {}, message: {}",
                 response.getCode(), response.getMessage());
