@@ -2363,7 +2363,7 @@ const handleFormChange = (submission) => {
                 {'Print'}
               </Button>
 
-              <Button color='inherit' hidden={!isDraft} onClick={onSave}>
+              <Button color='inherit' hidden={true} onClick={onSave}>
                 {'Save'}
               </Button>
               {/* Case Actions Menu */}
