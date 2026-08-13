@@ -326,7 +326,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			for (VgohtNormConfigurationDTO dto : dtoList) {
 				
 				saveProductionDemandValues(dto.getNormParameterFKId(), year, String.valueOf(dto.getApr()), dto.getRemarks(), 4);
-				saveProductionDemandValues(dto.getNormParameterFKId(), year, String.valueOf(dto.getMay()), dto.getRemarks(), 5);
+				saveProductionDemandValues(dto.getNormParameterFKId(), year, String.valueOf(dto.getOct()), dto.getRemarks(), 10);
 				
 			}
 
@@ -824,7 +824,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 					NP.DisplayName,
 
 					MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr,
-					MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May,
+					MAX(CASE WHEN NAT.AOPMonth = 10 THEN NAT.AttributeValue END) AS Oct,
 
 					MAX(NAT.Remarks) AS Remarks,
 					NP.UOM,
@@ -867,7 +867,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setProductName(row[1] != null ? row[1].toString() : "");
 
 				dto.setApr(parseDouble(row[2]));
-				dto.setMay(parseDouble(row[3]));
+				dto.setOct(parseDouble(row[3]));
 
 				dto.setRemarks(row[4] != null ? row[4].toString() : "");
 				dto.setUOM(row[5] != null ? row[5].toString() : "");
