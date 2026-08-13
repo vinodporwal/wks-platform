@@ -1716,7 +1716,7 @@ data.put("assignedToLabel", assignedToLabel);
 		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
 
 		if (hasSearch) {
-			query.append(" AND (c.case_no LIKE :search OR c.path LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
+			query.append(" AND (c.case_no LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
 		}
 		if (hasCaseStatus) {
 			query.append(" AND c.status_id = :caseStatus");
