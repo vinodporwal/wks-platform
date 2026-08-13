@@ -13,5 +13,8 @@ services:
                 REACT_APP_WEBSOCKETS_HUMAN_TASK_CREATED: ${KAFKA_TOPIC_CREATE_HUMAN_TASK}
                 REACT_APP_NOVU_ENABLED: ${NOVU_ENABLED}
                 REACT_APP_NOVU_PUBLISHER_API_URL: ${NOVU_PUBLISHER_API_URL}
+                # Proxy required on production to deploy
+                HTTP_PROXY: ${http_proxy}
+                HTTPS_PROXY: ${https_proxy}
         ports:
             - 3001:80
