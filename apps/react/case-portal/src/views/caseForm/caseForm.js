@@ -1888,7 +1888,6 @@ const handleFormChange = (submission) => {
     structure,
     preparedImages = {},
     caseDocuments = [],
-    caseComments = [],
   ) => {
     const containerData = JSON.parse(
       aCase.attributes.find((attr) => attr.name === 'container').value,
@@ -1911,9 +1910,6 @@ const handleFormChange = (submission) => {
       : []
     const validDocuments = Array.isArray(caseDocuments)
       ? caseDocuments.filter((file) => file?.name && storageDownloadUrl(file))
-      : []
-    const validComments = Array.isArray(caseComments)
-      ? caseComments.filter((comment) => comment && typeof comment === 'object')
       : []
 
     const content = [
@@ -2119,56 +2115,6 @@ const handleFormChange = (submission) => {
       )
     }
 
-    if (validComments.length > 0) {
-      const rootComments = validComments.filter(
-        (comment) => comment.parentId === null || comment.parentId === undefined,
-      )
-      const formatCommentAuthor = (userId) =>
-        typeof userId === 'string'
-          ? userId
-            .split('.')
-            .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-            .join(' ')
-          : ''
-      const formatCommentDate = (createdAt) => {
-        const date = new Date(createdAt)
-        return createdAt && !Number.isNaN(date.getTime())
-          ? date.toLocaleDateString()
-          : ''
-      }
-      const commentNode = (comment, isReply = false) => {
-        const author = formatCommentAuthor(comment.userId)
-        const createdAt = formatCommentDate(comment.createdAt)
-        const metadata = [author, createdAt].filter(Boolean).join(' - ')
-
-        return {
-          stack: [
-            ...(metadata
-              ? [{ text: metadata, bold: true, fontSize: 8, color: '#555555' }]
-              : []),
-            { text: pdfText(comment.body), fontSize: 8.5 },
-          ],
-          margin: [isReply ? 18 : 3, 3, 3, 3],
-        }
-      }
-      const commentContent = []
-
-      rootComments.forEach((rootComment) => {
-        commentContent.push(commentNode(rootComment))
-        validComments
-          .filter((comment) => comment.parentId === rootComment.id)
-          .sort(
-            (a, b) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-          )
-          .forEach((reply) => commentContent.push(commentNode(reply, true)))
-      })
-
-      if (commentContent.length > 0) {
-        content.push(pdfSection('Comments', commentContent, false))
-      }
-    }
-
     return {
       pageSize: 'A4',
       pageMargins: [18, 16, 18, 18],
@@ -2238,7 +2184,6 @@ const handleFormChange = (submission) => {
       formStructure,
       preparedImages,
       documents || aCase.documents || [],
-      comments || aCase.comments || [],
     )
 
     pdfMake.createPdf(docDefinition).download(fileName)
