@@ -2008,9 +2008,8 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 	@Override
 	@Transactional
-	public AOPMessageVM updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		try {
+	public List<OptimizingVariablesDropdownDTO> updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear) {
+		List<OptimizingVariablesDropdownDTO> failedRecords = new ArrayList<>();
 			for (OptimizingVariablesDropdownDTO dto : dtoList) {
 				if (dto.getId() == null || dto.getId().isBlank()) {
 					continue;
@@ -2032,19 +2031,11 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 				for (int month = 1; month <= 12; month++) {
 					String attributeValue = getOptimizingVariableMonthValue(dto, month);
-					saveOptimizingVariableData(normParameterFKId, month, attributeValue, dto.getRemarks(), aopYear);
+					saveOptimizingVariableData(normParameterFKId, month, attributeValue, dto.getRemarks(), aopYear, dto, failedRecords);
 				}
 			}
 
-			aopMessageVM.setCode(200);
-			aopMessageVM.setMessage("Data updated successfully");
-			aopMessageVM.setData(null);
-		} catch (IllegalArgumentException e) {
-			throw new RestInvalidArgumentException("Invalid UUID format", e);
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to update optimizing variables dropdown data", ex);
-		}
-		return aopMessageVM;
+		return failedRecords;
 	}
 
 	private String getOptimizingVariableMonthValue(OptimizingVariablesDropdownDTO dto, int month) {
@@ -2065,7 +2056,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		}
 	}
 
-	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String remarks, String aopYear) {
+	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String remarks, String aopYear, OptimizingVariablesDropdownDTO dto, List<OptimizingVariablesDropdownDTO> failedRecords) {
 		String newValueStr = attributeValue != null ? attributeValue.trim() : "";
 		String remarksStr = remarks != null ? remarks.trim() : null;
 
@@ -2075,6 +2066,23 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 		if (existingOpt.isPresent()) {
 			NormAttributeTransactions existing = existingOpt.get();
+
+			String existingValue = existing.getAttributeValue() != null ? existing.getAttributeValue().trim() : "";
+			boolean valueChanged = !newValueStr.equals(existingValue);
+
+			if (valueChanged) {
+				String existingRemarks = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
+				String newRemarks = remarksStr != null ? remarksStr : "";
+				boolean remarkChanged = !newRemarks.equals(existingRemarks);
+
+				if (!remarkChanged) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription("Please update Remarks");
+					failedRecords.add(dto);
+					return;
+				}
+			}
+
 			existing.setAttributeValue(newValueStr);
 			if (remarksStr != null) {
 				existing.setRemarks(remarksStr);

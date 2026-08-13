@@ -31,4 +31,6 @@ public class OptimizingVariablesDropdownDTO {
     private String february;
     private String march;
     private String remarks;
+    private String saveStatus;
+    private String errDescription;
 }

@@ -35,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.dto.YieldDMDDTO;
 import com.wks.caseengine.dto.YieldDTO;
@@ -104,6 +105,10 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	@Autowired
 	private BusinessDemandDataService businessDemandDataService;
 
+	@Autowired
+	private SpyroInputService spyroInputService;
+
+	private static final String PILOT_FURNACE_TABLE_ID = "Pilot Furnace Details";
 
 	@Override
 	public AOPMessageVM getSpyroOutputData(String year, String plantId,String Mode,String type) {
@@ -1992,20 +1997,22 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								hideTable = true;
 								continue;
 							}
-						} else {
-							AOPMessageVM vm = new AOPMessageVM();
-							if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {  
-								vm = getSpyroOutputData(year, plantId, dataInput, "output");
-							}
-							else {
-								vm = getSpyroOutputData(year, plantId, mode, dataInput);
-							}
-							
-						
-
-							spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
-							
+					} else if (dataInput.equalsIgnoreCase(PILOT_FURNACE_TABLE_ID)) {
+						spyroOutputDataList = getPilotFurnaceDetailsAsMap(plantId, year);
+					} else {
+						AOPMessageVM vm = new AOPMessageVM();
+						if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {  
+							vm = getSpyroOutputData(year, plantId, dataInput, "output");
 						}
+						else {
+							vm = getSpyroOutputData(year, plantId, mode, dataInput);
+						}
+						
+					
+
+						spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
+						
+					}
 
 						if(spyroOutputDataList==null ||spyroOutputDataList.isEmpty()){
 							hideTable = true;
@@ -2054,22 +2061,34 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			boolean CrackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 		
 			Map<String, List<SpyroOutputDTO>> map = new HashMap<>();
-			if(CrackerC2) {
-				map = readSpyroOutputExcelWithWeightedAverage(file.getInputStream(), year);
-			}
-			else {
+			// if(CrackerC2) {
+			// 	map = readSpyroOutputExcelWithWeightedAverage(file.getInputStream(), year);
+			// }
+			// else {
 				map = readSpyroOutputExcel(file.getInputStream(), year);
-			}
+		//	}
 		
 			
-			Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
-			List<SpyroOutputDTO> failedRecords = new ArrayList<>();
-			for (String key : map.keySet()) {
-				AOPMessageVM vm = updateSpyroOutputData(year,plantFKId,map.get(key));
-				List<SpyroOutputDTO> failedList = (List<SpyroOutputDTO>) vm.getData();
-				failedRecords.addAll(failedList);
-				mapForExcel.put(key, failedList);
+		Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
+		List<SpyroOutputDTO> failedRecords = new ArrayList<>();
+
+		if (map.containsKey(PILOT_FURNACE_TABLE_ID)) {
+			List<SpyroOutputDTO> pilotFurnaceDtos = map.remove(PILOT_FURNACE_TABLE_ID);
+			List<OptimizingVariablesDropdownDTO> optimizingDtos = convertToPilotFurnaceDropdownDTOs(pilotFurnaceDtos);
+			List<OptimizingVariablesDropdownDTO> pilotFurnaceFailedDtos = spyroInputService.updateOptimizingVariablesDropdown(optimizingDtos, plantFKId, year);
+			if (!pilotFurnaceFailedDtos.isEmpty()) {
+				List<SpyroOutputDTO> pilotFurnaceFailedSpyroDtos = convertPilotFurnaceFailedToSpyroDTOs(pilotFurnaceFailedDtos);
+				failedRecords.addAll(pilotFurnaceFailedSpyroDtos);
+				mapForExcel.put(PILOT_FURNACE_TABLE_ID, pilotFurnaceFailedSpyroDtos);
 			}
+		}
+
+		for (String key : map.keySet()) {
+			AOPMessageVM vm = updateSpyroOutputData(year,plantFKId,map.get(key));
+			List<SpyroOutputDTO> failedList = (List<SpyroOutputDTO>) vm.getData();
+			failedRecords.addAll(failedList);
+			mapForExcel.put(key, failedList);
+		}
 
 			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -2093,6 +2112,101 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		}
 	}
 	
+	private List<Map<String, Object>> getPilotFurnaceDetailsAsMap(String plantId, String year) {
+		AOPMessageVM vm = spyroInputService.getOptimizingVariablesDropdown(plantId, year);
+		// keeps all DTOs except those where uom is "#".
+		List<OptimizingVariablesDropdownDTO> dtoList =
+        ((List<OptimizingVariablesDropdownDTO>) vm.getData())
+                .stream()
+                .filter(dto -> !"#".equals(dto.getUom()))
+                .collect(Collectors.toList());
+
+		List<Map<String, Object>> result = new ArrayList<>();
+		if (dtoList == null) return result;
+		for (OptimizingVariablesDropdownDTO dto : dtoList) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("particulars", dto.getName());
+			map.put("uom", dto.getUom());
+			map.put("apr", dto.getApril());
+			map.put("may", dto.getMay());
+			map.put("jun", dto.getJune());
+			map.put("jul", dto.getJuly());
+			map.put("aug", dto.getAugust());
+			map.put("sep", dto.getSeptember());
+			map.put("oct", dto.getOctober());
+			map.put("nov", dto.getNovember());
+			map.put("dec", dto.getDecember());
+			map.put("jan", dto.getJanuary());
+			map.put("feb", dto.getFebruary());
+			map.put("mar", dto.getMarch());
+			map.put("remarks", dto.getRemarks());
+			map.put("normParameterFKID", dto.getId());
+			map.put("isEditable", dto.getIsEditable());
+			result.add(map);
+		}
+		return result;
+	}
+
+	private List<OptimizingVariablesDropdownDTO> convertToPilotFurnaceDropdownDTOs(List<SpyroOutputDTO> dtoList) {
+		List<OptimizingVariablesDropdownDTO> result = new ArrayList<>();
+		for (SpyroOutputDTO dto : dtoList) {
+			if (dto.getNormParameterFKID() == null || dto.getNormParameterFKID().isBlank()) continue;
+			result.add(OptimizingVariablesDropdownDTO.builder()
+					.id(dto.getNormParameterFKID())
+					.april(dto.getApr() != null ? dto.getApr().toString() : null)
+					.may(dto.getMay() != null ? dto.getMay().toString() : null)
+					.june(dto.getJun() != null ? dto.getJun().toString() : null)
+					.july(dto.getJul() != null ? dto.getJul().toString() : null)
+					.august(dto.getAug() != null ? dto.getAug().toString() : null)
+					.september(dto.getSep() != null ? dto.getSep().toString() : null)
+					.october(dto.getOct() != null ? dto.getOct().toString() : null)
+					.november(dto.getNov() != null ? dto.getNov().toString() : null)
+					.december(dto.getDec() != null ? dto.getDec().toString() : null)
+					.january(dto.getJan() != null ? dto.getJan().toString() : null)
+					.february(dto.getFeb() != null ? dto.getFeb().toString() : null)
+					.march(dto.getMar() != null ? dto.getMar().toString() : null)
+					.remarks(dto.getRemarks() != null ? dto.getRemarks() : null)
+					.build());
+		}
+		return result;
+	}
+
+	private List<SpyroOutputDTO> convertPilotFurnaceFailedToSpyroDTOs(List<OptimizingVariablesDropdownDTO> failedDtos) {
+		List<SpyroOutputDTO> result = new ArrayList<>();
+		for (OptimizingVariablesDropdownDTO dto : failedDtos) {
+			SpyroOutputDTO spyroDto = new SpyroOutputDTO();
+			spyroDto.setNormParameterFKID(dto.getId());
+			spyroDto.setParticulars(dto.getName());
+			spyroDto.setUom(dto.getUom());
+			spyroDto.setRemarks(dto.getRemarks());
+			spyroDto.setApr(parsePilotFurnaceDouble(dto.getApril()));
+			spyroDto.setMay(parsePilotFurnaceDouble(dto.getMay()));
+			spyroDto.setJun(parsePilotFurnaceDouble(dto.getJune()));
+			spyroDto.setJul(parsePilotFurnaceDouble(dto.getJuly()));
+			spyroDto.setAug(parsePilotFurnaceDouble(dto.getAugust()));
+			spyroDto.setSep(parsePilotFurnaceDouble(dto.getSeptember()));
+			spyroDto.setOct(parsePilotFurnaceDouble(dto.getOctober()));
+			spyroDto.setNov(parsePilotFurnaceDouble(dto.getNovember()));
+			spyroDto.setDec(parsePilotFurnaceDouble(dto.getDecember()));
+			spyroDto.setJan(parsePilotFurnaceDouble(dto.getJanuary()));
+			spyroDto.setFeb(parsePilotFurnaceDouble(dto.getFebruary()));
+			spyroDto.setMar(parsePilotFurnaceDouble(dto.getMarch()));
+			spyroDto.setSaveStatus(dto.getSaveStatus());
+			spyroDto.setErrDescription(dto.getErrDescription());
+			result.add(spyroDto);
+		}
+		return result;
+	}
+
+	private static Double parsePilotFurnaceDouble(String value) {
+		if (value == null || value.isBlank()) return null;
+		try {
+			return Double.parseDouble(value.trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
 	public Map<String, List<SpyroOutputDTO>> readSpyroOutputExcel(InputStream inputStream, String year) {
 
 		Map<String, List<SpyroOutputDTO>> map = new HashMap<>();
