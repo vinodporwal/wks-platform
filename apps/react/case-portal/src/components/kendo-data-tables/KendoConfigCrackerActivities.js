@@ -1211,39 +1211,20 @@ const DecokingConfig = () => {
         throw new Error('ibrPlanColumns not loaded')
       }
 
-      if (!newRow || newRow.length === 0) {
-        if (durationSaved) {
+      if (newRow && newRow.length > 0) {
+        const requiredFields = ['Remarks']
+
+        const validationMessage = validateFields(newRow, requiredFields)
+
+        if (validationMessage) {
           setSnackbarOpen(true)
           setSnackbarData({
-            message: 'Data Saved Successfully!',
-            severity: 'success',
+            message: validationMessage,
+            severity: 'error',
           })
-          setSummaryEdited(false)
-          fetchOtherCost()
           setLoading(false)
           return
         }
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        setLoading(false)
-        return
-      }
-
-      const requiredFields = ['Remarks']
-
-      const validationMessage = validateFields(newRow, requiredFields)
-
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
       }
 
       const formatIfDate = (value) => {
