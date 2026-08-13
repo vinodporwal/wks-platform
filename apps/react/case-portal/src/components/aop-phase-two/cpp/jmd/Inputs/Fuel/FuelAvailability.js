@@ -1,16 +1,61 @@
-import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { Box, IconButton, Tooltip } from '@mui/material'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cpp/jmd/fuelAvailabilityAPIService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
+import { useDebounce } from 'hooks/useDebounce'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const FuelAvailability = () => {
+// Type used to filter the Fuel Availability rows from the
+// CPPFuelAvailabilityTransaction table (shared with NCV).
+const DATA_TYPE = 'FUEL_AVAILABILITY'
+
+const FuelAvailability = ({
+  allFuels = [],
+  allCategories = [],
+  categoryOptions = [],
+}) => {
   const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { plantObject, siteObject, year, jmdSelectedPlants } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const IS_JMD = siteObject?.name?.toLowerCase() == 'jmd'
+  const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Fuel_Availability')
+
+  // For JMD plants we send the full list of selected plants; for non-JMD
+  // we send only the currently selected plant.
+  const PLANT_ID_LIST = useMemo(
+    () =>
+      IS_JMD
+        ? jmdSelectedPlants?.map((plant) => plant.id) ?? []
+        : PLANT_ID
+          ? [PLANT_ID]
+          : [],
+    [plantObject, jmdSelectedPlants, siteObject],
+  )
+
+  // Plant options for the inline add row's CPP Plant dropdown
+  const plantOptions = useMemo(
+    () =>
+      (IS_JMD ? jmdSelectedPlants : PLANT_ID ? [plantObject] : [])?.map(
+        (plant) => ({
+          value: plant.id,
+          label: plant.name || plant.id,
+        }),
+      ) || [],
+    [IS_JMD, jmdSelectedPlants, plantObject, PLANT_ID],
+  )
+
+  const headerMap = generateHeaderNames(AOP_YEAR)
+  const valueFormat = ValueFormatterPhaseTwo()
 
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -19,176 +64,147 @@ const FuelAvailability = () => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, screenTitle } = dataGridStore
-  const PLANT_ID = plantObject?.id
-  const AOP_YEAR = year?.selectedYear
-  const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [rowToDelete, setRowToDelete] = useState(null)
+
+  // Fuel dropdown options filtered by the selected category for a given row.
+  // For rows with no category, show all fuels.
+  const getFuelOptionsForRow = useCallback(
+    (dataItem) => {
+      const selectedCategoryId = dataItem?.categoryId
+      if (!selectedCategoryId) return []
+      return allFuels
+        .filter((f) => f.categoryFkId === selectedCategoryId)
+        .map((f) => ({
+          value: f.id,
+          label: f.fuelDisplayName || f.fuelName || f.id,
+        }))
+    },
+    [allFuels],
+  )
+
+  const MONTH_TO_INDEX = {
+    apr: 4,
+    may: 5,
+    jun: 6,
+    jul: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12,
+    jan: 1,
+    feb: 2,
+    mar: 3,
+  }
+
+  const MONTH_FIELDS = [
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
+  ]
+
+  const monthBaseColumnConfig = {
+    editable: true,
+    widthT: 100,
+    minWidth: 100,
+    align: 'left',
+    headerAlign: 'left',
+    type: 'number1',
+    format: valueFormat,
+  }
+
+  const MONTH_COLUMNS = MONTH_FIELDS.map((mon) => ({
+    ...monthBaseColumnConfig,
+    field: mon,
+    title: headerMap[MONTH_TO_INDEX[mon]],
+  }))
+
+  const ActionCell = ({ dataItem, tdProps }) => (
+    <td
+      {...tdProps}
+      style={{
+        ...tdProps?.style,
+        textAlign: 'center',
+        verticalAlign: 'middle',
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Tooltip title='Delete Row'>
+          <span>
+            <IconButton
+              size='medium'
+              color='error'
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='medium' />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
+    </td>
+  )
 
   const columns = [
     {
-      field: 'fuel',
-      title: 'Fuel',
-      widthT: 250,
+      field: 'cppPlantName',
+      title: 'CPP Plant',
+      type: 'select',
+      options: plantOptions,
+      displayMode: 'label',
+      returnFullObject: true,
+      editable: true,
+      locked: true,
       minWidth: 200,
-      type: 'text',
-      editable: false,
-      hidden: false,
+    },
+    {
+      field: 'categoryDisplayName',
+      title: 'Fuel Category',
+      type: 'select',
+      options: categoryOptions,
+      displayMode: 'label',
+      returnFullObject: true,
+      editable: true,
+      locked: true,
+      minWidth: 150,
+    },
+    {
+      field: 'fuelDisplayName',
+      title: 'Fuel',
+      type: 'select',
+      dynamicOptions: true,
+      getOptions: getFuelOptionsForRow,
+      displayMode: 'label',
+      returnFullObject: true,
+      editable: true,
+      locked: true,
+      minWidth: 200,
     },
     {
       field: 'uom',
       title: 'UOM',
-      widthT: 100,
-      minWidth: 100,
       type: 'text',
       editable: false,
-    },
-    {
-      field: 'fuelCategory',
-      title: 'Fuel Category',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'apr',
-      title: headerMap[4],
-      editable: true,
-      widthT: 100,
       minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
     },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
+    ...MONTH_COLUMNS,
     {
       field: 'remarks',
       title: 'Remarks',
@@ -197,214 +213,156 @@ const FuelAvailability = () => {
       editable: true,
       minWidth: 250,
     },
+    {
+      field: 'customActions',
+      title: 'Action',
+      type: 'customAction',
+      minWidth: 100,
+      className: 'k-text-center',
+      cell: ActionCell,
+      locked: true,
+      lockPosition: 'right',
+    },
   ]
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchFuelAvailabilityData()
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchFuelAvailabilityData = async () => {
+  // Fetch fuel availability transaction data for the grid
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID_LIST.length || !AOP_YEAR) return
     setLoading(true)
     try {
-      // Default mock data based on Excel structure
-      const defaultData = [
-        {
-          id: 1,
-          fuel: 'Fuel gas',
-          uom: 'MT',
-          fuelCategory: 'INTERNAL_LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 2,
-          fuel: 'High Speed Diesel-HSD',
-          uom: 'K15',
-          fuelCategory: 'LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 3,
-          fuel: 'Low Sulfur Heavy Stock',
-          uom: 'MT',
-          fuelCategory: 'LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 4,
-          fuel: 'MIXED OIL',
-          uom: 'MT',
-          fuelCategory: 'LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 5,
-          fuel: 'FURNACE OIL ( MEDIUM VISCOSITY GRADE )',
-          uom: 'MT',
-          fuelCategory: 'FO',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 6,
-          fuel: 'NATURAL GAS',
-          uom: 'GBT',
-          fuelCategory: 'R-GAS',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 7,
-          fuel: 'AMBIENT ETHANE',
-          uom: 'MT',
-          fuelCategory: 'ETHANE',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 8,
-          fuel: 'COAL BED METHANE GAS',
-          uom: 'GBT',
-          fuelCategory: 'CBM',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-      ]
+      const response = await FuelAvailabilityAPIService.getFuelAvailability(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+        DATA_TYPE,
+      )
+      const data = response?.data || []
 
-      //   const res = await InputApiService.getFuelAvailabilityData(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
-      // Fallback to default data if API returns empty
-      const res = defaultData
-
-      if (res?.length === 0) {
+      if (!data || data.length === 0) {
         setRows([])
+        setOriginalRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 
-      console.log('Fuel Availability data:', res)
-      const formattedData = res?.map((item, index) => ({
-        ...item,
-        remarks: item.remarks || '',
-        id: item?.id || index + 1,
+      const rowsWithId = data.map((row, index) => ({
+        ...row,
+        id: row.id || `row_${index}`,
+        remarks: row.remarks || '',
       }))
-      setRows(formattedData)
-      setOriginalRows(formattedData)
+      setRows(rowsWithId)
+      setOriginalRows(rowsWithId)
     } catch (error) {
       console.error('Error fetching fuel availability data:', error)
+      setRows([])
+      setOriginalRows([])
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchData()
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR],
+  )
+
+  useEffect(() => {
+    setModifiedCells({})
+  }, [PLANT_ID_LIST, AOP_YEAR])
+
+  // Custom item change handler for cascading selects.
+  // With returnFullObject: true, value is the full option object { value, label }.
+  // When category changes, reset fuel fields. When fuel changes, populate
+  // fuelId/fuelDisplayName/categoryId/categoryDisplayName/type/uom from the
+  // selected fuel option. When plant changes, populate cppPlantFkId/cppPlantName.
+  const handleCustomItemChange = useCallback(
+    (e, setRowsState, setModifiedCellsState) => {
+      const { dataItem, field, value } = e
+      if (!dataItem || !field) return
+
+      // With returnFullObject, value is { value, label } or null/'' when cleared
+      const isObject = value && typeof value === 'object'
+      const selectedId = isObject ? value.value : value
+      const selectedLabel = isObject ? value.label : value
+
+      const updates = { [field]: selectedLabel }
+
+      if (field === 'cppPlantName') {
+        updates.cppPlantFkId = selectedId || ''
+        updates.cppPlantName = selectedLabel || ''
+      } else if (field === 'categoryDisplayName') {
+        const cat = allCategories.find((c) => c.id === selectedId)
+        updates.categoryId = selectedId || ''
+        updates.categoryDisplayName =
+          cat?.fuelDisplayName || selectedLabel || ''
+        updates.categoryName = cat?.fuelName || ''
+        // Reset fuel when category changes
+        updates.fuelId = ''
+        updates.fuelDisplayName = ''
+      } else if (field === 'fuelDisplayName') {
+        const fuel = allFuels.find((f) => f.id === selectedId)
+        updates.fuelId = selectedId || ''
+        updates.fuelDisplayName = fuel?.fuelDisplayName || selectedLabel || ''
+        updates.fuelName = fuel?.fuelName || ''
+        updates.fuelCode = fuel?.fuelCode || ''
+        // Auto-populate UOM from the selected fuel
+        if (fuel?.uom) {
+          updates.uom = fuel.uom
+        }
+        // Auto-populate category from the selected fuel's categoryFkId
+        if (fuel?.categoryFkId) {
+          updates.categoryId = fuel.categoryFkId
+          const cat = allCategories.find((c) => c.id === fuel.categoryFkId)
+          updates.categoryDisplayName = cat?.fuelDisplayName || ''
+          updates.categoryName = cat?.fuelName || ''
+        }
+        // Set type for new rows
+        if (dataItem.isNew) {
+          updates.type = DATA_TYPE
+        }
+      }
+
+      // Update rows
+      setRowsState((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id ? { ...row, ...updates } : row,
+        ),
+      )
+
+      // Update modifiedCells
+      setModifiedCellsState((prev) => {
+        const existing = prev[dataItem.id] || {}
+        return {
+          ...prev,
+          [dataItem.id]: {
+            ...existing,
+            ...updates,
+            id: dataItem.id,
+            inEdit: true,
+          },
+        }
+      })
+    },
+    [plantOptions, allCategories, allFuels],
+  )
 
   const permissions = {
     showAction: true,
-    addButton: false,
-    deleteButton: false,
-    editButton: true,
+    addButton: true,
+    addBtnName: 'Add Fuel',
+    editButton: false,
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Fuel Availability - ${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
@@ -413,7 +371,6 @@ const FuelAvailability = () => {
 
   const saveChanges = async () => {
     setLoading(true)
-
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
       setSnackbarOpen(true)
@@ -436,25 +393,36 @@ const FuelAvailability = () => {
       return
     }
 
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
+    // Validate new rows: must have plant, category, fuel
+    for (const row of data) {
+      if (row.isNew) {
+        if (!row.cppPlantFkId) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Please select a CPP Plant for the new row.',
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
+        if (!row.fuelId) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Please select a Fuel for the new row.',
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
+      }
+    }
+
+    const fieldsToCheck = MONTH_FIELDS
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'fuel',
+      'fuelDisplayName',
     )
 
     if (validationError) {
@@ -467,12 +435,28 @@ const FuelAvailability = () => {
       return
     }
 
-    const payload = modifiedData
     try {
-      console.log('Saving fuel availability data:', payload)
+      const payload = modifiedData.map((item) => {
+        const { inEdit, isNew, isEditable, ...rest } = item
+        // For new rows, set id to null so backend creates the record
+        const sanitized = {
+          ...rest,
+          id: isNew ? null : rest.id,
+          type: DATA_TYPE,
+          financialYear: AOP_YEAR,
+        }
+        // Convert empty strings to null
+        Object.keys(sanitized).forEach((key) => {
+          if (sanitized[key] === '' || sanitized[key] === undefined) {
+            sanitized[key] = null
+          }
+        })
+        return sanitized
+      })
 
-      const response = await InputApiService.saveFuelAvailabilityData(
+      await FuelAvailabilityAPIService.saveFuelAvailability(
         keycloak,
+        PLANT_ID_LIST,
         AOP_YEAR,
         payload,
       )
@@ -483,6 +467,7 @@ const FuelAvailability = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      fetchData()
     } catch (error) {
       console.error('Error saving fuel availability data:', error)
       setSnackbarOpen(true)
@@ -497,13 +482,12 @@ const FuelAvailability = () => {
 
   const handleExcelUpload = async (file) => {
     if (!file) return
-
     setLoading(true)
     try {
-      const response = await InputApiService.saveFuelAvailabilityExcel(
+      const response = await FuelAvailabilityAPIService.importFuelAvailability(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -513,7 +497,8 @@ const FuelAvailability = () => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchFuelAvailabilityData()
+        setModifiedCells({})
+        await fetchData()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -541,7 +526,7 @@ const FuelAvailability = () => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchFuelAvailabilityData()
+          await fetchData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -577,10 +562,12 @@ const FuelAvailability = () => {
     })
 
     try {
-      await InputApiService.exportFuelAvailabilityExcel(
+      await FuelAvailabilityAPIService.exportFuelAvailability(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        DATA_TYPE,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -599,6 +586,49 @@ const FuelAvailability = () => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
+  }
+
+  const deleteRowData = (row) => {
+    setRows((prev) => prev.filter((r) => r.id !== row.id))
+    setOriginalRows((prev) => prev.filter((r) => r.id !== row.id))
+    setModifiedCells((prev) => {
+      const next = { ...prev }
+      delete next[row.id]
+      return next
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!rowToDelete) return
+    setDeleteDialogOpen(false)
+
+    const isExistingRecord =
+      typeof rowToDelete.id === 'string' && rowToDelete.id.length === 36
+
+    if (isExistingRecord) {
+      try {
+        await FuelAvailabilityAPIService.deleteFuelAvailability(
+          keycloak,
+          rowToDelete.id,
+        )
+      } catch (error) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Failed to delete record from server.',
+          severity: 'error',
+        })
+        setRowToDelete(null)
+        return
+      }
+    }
+
+    deleteRowData(rowToDelete)
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Record deleted successfully!',
+      severity: 'success',
+    })
+    setRowToDelete(null)
   }
 
   return (
@@ -626,13 +656,29 @@ const FuelAvailability = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // customHeight={60}
+        // groupBy={['cppPlantName']}
+        initialFieldValues={{
+          cppPlantName: '',
+          categoryDisplayName: '',
+          fuelDisplayName: '',
+          type: DATA_TYPE,
+          uom: '',
+          remarks: '',
+        }}
+        customItemChange={handleCustomItemChange}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 100,
         }}
+      />
+      <DeleteDialog
+        openDeleteDialogeBox={deleteDialogOpen}
+        setOpenDeleteDialogeBox={setDeleteDialogOpen}
+        deleteTheRecord={handleConfirmDelete}
+        message='Are you sure you want to delete this Fuel Availability record?'
+        confirmButtonText='Delete'
       />
     </Box>
   )

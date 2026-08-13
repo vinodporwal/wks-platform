@@ -7,17 +7,17 @@ import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cp
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-// Type used to filter the Fuel Availability rows from the
-// CPPFuelAvailabilityTransaction table (shared with NCV).
-const DATA_TYPE = 'FUEL_AVAILABILITY'
+// NCV rows live in the same CPPFuelAvailabilityTransaction table,
+// filtered by Type = 'NCV'.
+const DATA_TYPE = 'NCV'
 
-const FuelAvailability = ({
+const NetCalorificValue = ({
   allFuels = [],
   allCategories = [],
   categoryOptions = [],
@@ -28,7 +28,7 @@ const FuelAvailability = ({
   const PLANT_ID = plantObject?.id
   const IS_JMD = siteObject?.name?.toLowerCase() == 'jmd'
   const AOP_YEAR = year?.selectedYear
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Fuel_Availability')
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Net_Calorific_Value')
 
   // For JMD plants we send the full list of selected plants; for non-JMD
   // we send only the currently selected plant.
@@ -202,6 +202,7 @@ const FuelAvailability = ({
       title: 'UOM',
       type: 'text',
       editable: false,
+      locked: true,
       minWidth: 100,
     },
     ...MONTH_COLUMNS,
@@ -225,7 +226,7 @@ const FuelAvailability = ({
     },
   ]
 
-  // Fetch fuel availability transaction data for the grid
+  // Fetch NCV transaction data for the grid
   const fetchData = useCallback(async () => {
     if (!PLANT_ID_LIST.length || !AOP_YEAR) return
     setLoading(true)
@@ -254,7 +255,7 @@ const FuelAvailability = ({
       setRows(rowsWithId)
       setOriginalRows(rowsWithId)
     } catch (error) {
-      console.error('Error fetching fuel availability data:', error)
+      console.error('Error fetching NCV data:', error)
       setRows([])
       setOriginalRows([])
       setSnackbarOpen(true)
@@ -366,7 +367,7 @@ const FuelAvailability = ({
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Fuel Availability',
+    titleName: 'Net Calorific Value (NCV)',
   }
 
   const saveChanges = async () => {
@@ -469,7 +470,7 @@ const FuelAvailability = ({
       })
       fetchData()
     } catch (error) {
-      console.error('Error saving fuel availability data:', error)
+      console.error('Error saving NCV data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -513,7 +514,7 @@ const FuelAvailability = ({
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Fuel_Availability_Errors_${new Date().getTime()}.xlsx`
+          link.download = `NCV_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -574,7 +575,7 @@ const FuelAvailability = ({
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Fuel Availability data:', error)
+      console.error('Error exporting NCV data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -677,11 +678,11 @@ const FuelAvailability = ({
         openDeleteDialogeBox={deleteDialogOpen}
         setOpenDeleteDialogeBox={setDeleteDialogOpen}
         deleteTheRecord={handleConfirmDelete}
-        message='Are you sure you want to delete this Fuel Availability record?'
+        message='Are you sure you want to delete this NCV record?'
         confirmButtonText='Delete'
       />
     </Box>
   )
 }
 
-export default FuelAvailability
+export default NetCalorificValue
