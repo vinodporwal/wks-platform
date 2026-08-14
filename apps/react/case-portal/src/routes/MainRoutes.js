@@ -138,6 +138,7 @@ import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-p
 import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
 import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
 import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
+import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -189,6 +190,7 @@ import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyeste
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
+import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 
 // Naphthasplitter Ended
@@ -426,7 +428,6 @@ export const MainRoutes = (
         ],
         // REFINERY AOP BUDGET Ended],
       },
-
 
       {
         path: 'production-norms-plan',
@@ -1071,6 +1072,15 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'configuration-other-cost-polyester',
+            element: (
+              <PrivateRoute routeId='configuration-other-cost-polyester'>
+                <ConfigurationOtherCostPolyester />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical STAPLE (Polyester) Ended ****************************
 
           //Vertical MEROX Started
@@ -1631,6 +1641,14 @@ export const MainRoutes = (
           </PrivateRoute>
         ),
         // element: <FiveTables />,
+      },
+      {
+        path: 'tab-management',
+        element: (
+          <PrivateRoute routeId='tab-management'>
+            <TabManagement keycloak={keycloak} />
+          </PrivateRoute>
+        ),
       },
       {
         path: 'user-management',

@@ -152,6 +152,7 @@ const HistoricalMonths = ({ startDate, endDate, refreshData }) => {
         PLANT_ID,
         formattedFrom,
         formattedTo,
+        'Historical Months',
       )
 
       const apiResponse = response?.data || {}
@@ -286,6 +287,7 @@ const HistoricalMonths = ({ startDate, endDate, refreshData }) => {
         formattedFrom,
         formattedTo,
         convertedData,
+        'Historical Months'
       )
 
       // If we reach here, save was successful

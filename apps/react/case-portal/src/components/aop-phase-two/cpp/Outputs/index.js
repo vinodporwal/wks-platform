@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Box } from '@mui/material'
 import AopTabs from 'components/AopTabs'
 import { useSelector } from 'react-redux'
@@ -19,17 +19,8 @@ const Outputs = () => {
   const IS_CPP = lowerVertName === 'cpp'
 
   // Tab management via custom hook (type = 'OutputReport')
-  const { tabs, filteredTabs, loading } = useConfigurationTabs('OutputReport')
-
-  const [tabIndex, setTabIndex] = useState(0)
-
-  useEffect(() => {
-    if (filteredTabs.length > 0) {
-      setTabIndex(0)
-    } else {
-      setTabIndex(null)
-    }
-  }, [tabs])
+  const { filteredTabs, tabIndex, setTabIndex, loading } =
+    useConfigurationTabs('OutputReport')
 
   // Get current tab display name
   const currentTabName = filteredTabs[tabIndex]?.name

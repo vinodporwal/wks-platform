@@ -232,6 +232,8 @@ const STGGrid = ({
     const rowsWithIds = transformedData?.map((row, index) => ({
       ...row,
       id: row.id || index + 1,
+      remarks: row.remarks || '',
+      isEditable: row.assetType === 'HRSG' ? false : true,
     }))
     setRows(rowsWithIds)
     setOriginalRows(rowsWithIds)
@@ -250,6 +252,7 @@ const STGGrid = ({
     ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: false,
+    note: ' HRSG operational hours are auto-synced with their linked GT assets.',
   }
 
   const saveChanges = async () => {

@@ -33,6 +33,7 @@ public interface NormalOperationNormsService {
 		public AOPMessageVM importExcelPolyester(String year, UUID fromString, String gradeId, MultipartFile file,
 			String mode);
 	public AOPMessageVM checkAllGradeNormsPolyester(UUID fromString, String year, String gradeId);
+	public AOPMessageVM calculateNormalOpsNormsPolyester(String aopYear, String plantId, String siteId, String verticalId);
 
 
 }

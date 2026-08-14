@@ -19,5 +19,6 @@ public class ConfigurationAccessMatrixDTO {
 	private String siteId;
 	private String plantId;
 	private String configurationTabs;
+	private String type;
 
 }
