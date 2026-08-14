@@ -108,6 +108,8 @@ const defs = {
     ethyleneBalance: 'Ethylene Balance',
     propyleneBalance: 'Propylene Balance',
     specificConsumptionC3: 'Feed Availability',
+  
+    jwUnit: 'Job Work Unit',
 
     functionalReports: 'Reports',
     aopDesignBasis: 'AOP Basis',

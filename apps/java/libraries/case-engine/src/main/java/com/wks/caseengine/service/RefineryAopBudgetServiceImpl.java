@@ -40,6 +40,7 @@ import com.wks.caseengine.dto.PlantsDTO;
 import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
+import com.wks.caseengine.dto.JwUnitDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
@@ -2000,4 +2001,101 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
+    @Override
+    public AOPMessageVM getJwUnit(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC dbo.sp_GetJwUnitData @SiteId = ?, @AOPYear = ?";
+
+            List<JwUnitDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                JwUnitDTO.builder()
+                    .id(rs.getString("id"))
+                    .normParameterFkId(rs.getString("normParameterFkId"))
+                    .siteFkId(rs.getString("siteFkId"))
+                    .aopYear(rs.getString("aopYear"))
+                    .normParameterTypeName(rs.getString("normParameterTypeName"))
+                    .normParameterTypeDisplayName(rs.getString("normParameterTypeDisplayName"))
+                    .productName(rs.getString("productName"))
+                    .displayName(rs.getString("displayName"))
+                    .uom(rs.getString("UOM"))
+                    .sequenceOrder(rs.getObject("sequenceOrder") != null ? rs.getInt("sequenceOrder") : null)
+                    .april(rs.getObject("april") != null ? rs.getDouble("april") : 0.0)
+                    .may(rs.getObject("may") != null ? rs.getDouble("may") : 0.0)
+                    .june(rs.getObject("june") != null ? rs.getDouble("june") : 0.0)
+                    .july(rs.getObject("july") != null ? rs.getDouble("july") : 0.0)
+                    .aug(rs.getObject("aug") != null ? rs.getDouble("aug") : 0.0)
+                    .sep(rs.getObject("sep") != null ? rs.getDouble("sep") : 0.0)
+                    .oct(rs.getObject("oct") != null ? rs.getDouble("oct") : 0.0)
+                    .nov(rs.getObject("nov") != null ? rs.getDouble("nov") : 0.0)
+                    .dec(rs.getObject("dec") != null ? rs.getDouble("dec") : 0.0)
+                    .jan(rs.getObject("jan") != null ? rs.getDouble("jan") : 0.0)
+                    .feb(rs.getObject("feb") != null ? rs.getDouble("feb") : 0.0)
+                    .march(rs.getObject("march") != null ? rs.getDouble("march") : 0.0)
+                    .avgNorms(rs.getObject("avgNorms") != null ? rs.getDouble("avgNorms") : 0.0)
+                    .remarks(rs.getString("remarks"))
+                    .isEditable(rs.getObject("isEditable") != null ? rs.getBoolean("isEditable") : true)
+                    .isVisible(rs.getObject("isVisible") != null ? rs.getBoolean("isVisible") : true)
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch JW Unit data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<JwUnitDTO> saveJwUnit(List<JwUnitDTO> jwUnitDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<JwUnitDTO> failedRecords = new ArrayList<>();
+
+        for (JwUnitDTO dto : jwUnitDTOs) {
+            try {
+                String normParamId = dto.getNormParameterFkId() != null ? dto.getNormParameterFkId() : dto.getId();
+                String siteId = dto.getSiteFkId();
+                String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
+
+                if (normParamId == null || siteId == null || year == null) {
+                    continue;
+                }
+
+                String checkSql = "SELECT COUNT(1) FROM dbo.JwUnitTransactionData " +
+                                  "WHERE NormParameter_FK_Id = ? AND Site_FK_Id = ? AND AOPYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, normParamId, siteId, year);
+
+                if (count > 0) {
+                    String updateSql = "UPDATE dbo.JwUnitTransactionData " +
+                                       "SET April = ?, May = ?, June = ?, July = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, March = ?, " +
+                                       "Remarks = ?, UpdatedDate = GETDATE(), UpdatedBy = ? " +
+                                       "WHERE NormParameter_FK_Id = ? AND Site_FK_Id = ? AND AOPYear = ?";
+                    jdbcTemplate.update(updateSql,
+                        dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMarch(),
+                        dto.getRemarks(), updatedBy,
+                        normParamId, siteId, year);
+                } else {
+                    String insertSql = "INSERT INTO dbo.JwUnitTransactionData " +
+                                       "(Id, NormParameter_FK_Id, Site_FK_Id, April, May, June, July, Aug, Sep, Oct, Nov, Dec, Jan, Feb, March, " +
+                                       "Remarks, AOPYear, CreatedDate, UpdatedDate, UpdatedBy) " +
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?)";
+                    jdbcTemplate.update(insertSql,
+                        normParamId, siteId,
+                        dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMarch(),
+                        dto.getRemarks(), year, updatedBy);
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+        return failedRecords;
+    }
 }
