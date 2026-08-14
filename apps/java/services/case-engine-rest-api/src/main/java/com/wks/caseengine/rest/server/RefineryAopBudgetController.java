@@ -23,6 +23,7 @@ import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
+import com.wks.caseengine.dto.JwUnitDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.service.RefineryAopBudgetService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -230,5 +231,20 @@ public class RefineryAopBudgetController {
     @GetMapping("/norms-material-dropdown")
     public AOPMessageVM getNormsMaterialDropdown(@RequestParam String siteId, @RequestParam String profitId) {
         return refineryAopBudgetService.getNormsMaterialDropdown(siteId, profitId);
+    }
+
+    @GetMapping("/jw-unit")
+    public AOPMessageVM getJwUnit(@RequestParam String siteId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.getJwUnit(siteId, aopYear);
+    }
+
+    @PostMapping("/jw-unit")
+    public AOPMessageVM saveJwUnit(@RequestBody List<JwUnitDTO> jwUnitDTOs, @RequestParam String aopYear) {
+        List<JwUnitDTO> failedRecords = refineryAopBudgetService.saveJwUnit(jwUnitDTOs, aopYear);
+        if (failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "All data has been saved", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
+        }
     }
 }

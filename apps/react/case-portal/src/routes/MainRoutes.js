@@ -138,6 +138,7 @@ import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-p
 import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
 import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
 import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
+import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -169,6 +170,7 @@ import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consum
 
 // Vertical Refinery Utility
 import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
+import ShutdownConsumptionRefinery from 'components/aop-phase-two/refineryUtility/shutdown-consumption/index'
 import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
 import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
@@ -188,7 +190,9 @@ import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyeste
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
+import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
+import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
 
 // Naphthasplitter Ended
 
@@ -419,9 +423,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
-
-
+          {
+            path: 'jw-unit',
+            element: (
+              <PrivateRoute routeId='jw-unit'>
+                <JwUnitScreen />
+              </PrivateRoute>
+            ),
+          },
         ],
         // REFINERY AOP BUDGET Ended],
       },
@@ -1070,6 +1079,15 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'configuration-other-cost-polyester',
+            element: (
+              <PrivateRoute routeId='configuration-other-cost-polyester'>
+                <ConfigurationOtherCostPolyester />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical STAPLE (Polyester) Ended ****************************
 
           //Vertical MEROX Started
@@ -1172,6 +1190,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='steady-state-consumption-refinery'>
                 <SteadyStateConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-refinery',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-refinery'>
+                <ShutdownConsumptionRefinery />
               </PrivateRoute>
             ),
           },
@@ -1622,6 +1648,14 @@ export const MainRoutes = (
           </PrivateRoute>
         ),
         // element: <FiveTables />,
+      },
+      {
+        path: 'tab-management',
+        element: (
+          <PrivateRoute routeId='tab-management'>
+            <TabManagement keycloak={keycloak} />
+          </PrivateRoute>
+        ),
       },
       {
         path: 'user-management',

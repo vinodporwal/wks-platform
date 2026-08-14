@@ -710,18 +710,18 @@ const WorkFlowMerge = () => {
   const customPETabs = [
     'Annual AOP Cost',
     'Plant Production Summary (T-14)',
+    'Annual Production Plan (T-15)',
     'Month Wise Production Plan (T-16)',
+    'Specific Consumption Norms (T-17)',
     'Month Wise Raw Data (T-18)',
     'Turnaround Report (T-19A)',
-    'Annual Production Plan (T-15)',
-    'Plant Contribution(T-21)',
-    'Plant Contribution Summary (T-22)',
-    'Specific Consumption Norms (T-17)',
-    'Norms Entry Sheet',
     'Shutdown Report (T-19B)',
     'Shutdown Break-up Last Four Year (T-19C)',
     'Norms for Shutdown & Slowdown (T-19D)',
     'MonthWise Operating Hours (T-20)',
+    'Plant Contribution(T-21)',
+    'Plant Contribution Summary (T-22)',
+    'Norms Entry Sheet',
   ]
   const PPTabs = [
     'Annual AOP Cost',
@@ -1084,20 +1084,40 @@ const WorkFlowMerge = () => {
                 setText={setText}
               />
             )}
-            {tabIndex === 1 && <PlantsProductionSummary />}
-            {tabIndex === 2 && <MonthwiseProduction />}
-            {tabIndex === 3 && <MonthwiseRawMaterial />}
-            {tabIndex === 4 && <TurnaroundReport />}
-            {tabIndex === 5 && <AnnualProductionPlan />}
-            {tabIndex === 6 && <PlantContribution />}
-            {tabIndex === 7 && <PlantContributionLastFourYears />}
-            {tabIndex === 8 && <SpecificConsumptionNormsII />}
-            {tabIndex === 9 && <SpecificConsumptionNorm />}
-            {tabIndex === 10 && <ShutdownReport />} {/* T-19B */}
-            {tabIndex === 11 && <ShutdownSummaryReport />} {/* T-19C */}
-            {tabIndex === 12 && <PlantShutdownSlowdown />} {/* T-19D */}
-            {/* Remaining Reports */}
-            {tabIndex === 13 && <MonthwiseOperatingHours />} {/* T-20 */}
+            {gridVerticals?.includes(lowerVertName) ? (
+              <>
+                {activeTabs[tabIndex] === 'Plant Production Summary (T-14)' && <PlantsProductionSummary />}
+                {activeTabs[tabIndex] === 'Month Wise Production Plan (T-16)' && <MonthwiseProduction />}
+                {activeTabs[tabIndex] === 'Month Wise Raw Data (T-18)' && <MonthwiseRawMaterial />}
+                {activeTabs[tabIndex] === 'Turnaround Report (T-19A)' && <TurnaroundReport />}
+                {activeTabs[tabIndex] === 'Annual Production Plan (T-15)' && <AnnualProductionPlan />}
+                {(activeTabs[tabIndex] === 'Plant Contribution (T-21)' || activeTabs[tabIndex] === 'Plant Contribution(T-21)') && <PlantContribution />}
+                {activeTabs[tabIndex] === 'Plant Contribution Summary (T-22)' && <PlantContributionLastFourYears />}
+                {activeTabs[tabIndex] === 'Specific Consumption Norms (T-17)' && <SpecificConsumptionNormsII />}
+                {activeTabs[tabIndex] === 'Norms Entry Sheet' && <SpecificConsumptionNorm />}
+                {activeTabs[tabIndex] === 'Shutdown Report (T-19B)' && <ShutdownReport />}
+                {activeTabs[tabIndex] === 'Shutdown Break-up Last Four Year (T-19C)' && <ShutdownSummaryReport />}
+                {activeTabs[tabIndex] === 'Norms for Shutdown & Slowdown (T-19D)' && <PlantShutdownSlowdown />}
+                {activeTabs[tabIndex] === 'MonthWise Operating Hours (T-20)' && <MonthwiseOperatingHours />}
+              </>
+            ) : (
+              <>
+                {tabIndex === 1 && <PlantsProductionSummary />}
+                {tabIndex === 2 && <MonthwiseProduction />}
+                {tabIndex === 3 && <MonthwiseRawMaterial />}
+                {tabIndex === 4 && <TurnaroundReport />}
+                {tabIndex === 5 && <AnnualProductionPlan />}
+                {tabIndex === 6 && <PlantContribution />}
+                {tabIndex === 7 && <PlantContributionLastFourYears />}
+                {tabIndex === 8 && <SpecificConsumptionNormsII />}
+                {tabIndex === 9 && <SpecificConsumptionNorm />}
+                {tabIndex === 10 && <ShutdownReport />} {/* T-19B */}
+                {tabIndex === 11 && <ShutdownSummaryReport />} {/* T-19C */}
+                {tabIndex === 12 && <PlantShutdownSlowdown />} {/* T-19D */}
+                {/* Remaining Reports */}
+                {tabIndex === 13 && <MonthwiseOperatingHours />} {/* T-20 */}
+              </>
+            )}
           </>
         ) : (
           <>

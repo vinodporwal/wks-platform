@@ -110,6 +110,7 @@ public class SpyroInputController {
 			@RequestParam("file") MultipartFile file) {
 		return spyroInputService.importExcelV2(year, plantId, mode, file);
 	}
+
 	@GetMapping(value="/modes")
 	public AOPMessageVM getModes(@RequestParam String year,@RequestParam String plantId,@RequestParam String type){
 		return	spyroInputService.getModes(year, plantId, type);
@@ -136,7 +137,13 @@ public class SpyroInputController {
 			@RequestBody List<OptimizingVariablesDropdownDTO> dtoList,
 			@RequestParam String plantId,
 			@RequestParam String aopYear) {
-		return spyroInputService.updateOptimizingVariablesDropdown(dtoList, plantId, aopYear);
+		List<OptimizingVariablesDropdownDTO> failedRecords = spyroInputService.updateOptimizingVariablesDropdown(dtoList, plantId, aopYear);
+
+		if (failedRecords.isEmpty()) {
+			return new AOPMessageVM(200, "Data updated successfully", null);
+		} else {
+			return new AOPMessageVM(422, "Partial data updated", failedRecords);
+		}
 	}
 
 	@GetMapping(value = "/feed-type-flow-mappings")

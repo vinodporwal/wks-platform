@@ -30,4 +30,7 @@ public class ConfigurationAccessMatrix {
 	@Column(name = "ConfigurationTabs")
 	private String configurationTabs;
 
+	@Column(name = "Type")
+	private String type;
+
 }

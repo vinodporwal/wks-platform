@@ -81,6 +81,7 @@ const defs = {
     matBalSheet: 'MAT Bal Sheet',
     workflow: 'AOP Approval Flow',
     userManage: 'User Management',
+    tabManage: 'Tab Management',
     valueHistory: 'Value History',
     rawData: 'Steam Norms Basis',
     runlengthData: 'Furnace Run Length ',
@@ -107,6 +108,8 @@ const defs = {
     ethyleneBalance: 'Ethylene Balance',
     propyleneBalance: 'Propylene Balance',
     specificConsumptionC3: 'Feed Availability',
+  
+    jwUnit: 'Job Work Unit',
 
     functionalReports: 'Reports',
     aopDesignBasis: 'AOP Basis',

@@ -1,5 +1,6 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -22,6 +23,7 @@ import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -35,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.dto.YieldDMDDTO;
 import com.wks.caseengine.dto.YieldDTO;
@@ -104,6 +107,12 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	@Autowired
 	private BusinessDemandDataService businessDemandDataService;
 
+	@Autowired
+	private SpyroInputService spyroInputService;
+
+	private static final String PILOT_FURNACE_TABLE_ID = "Pilot Furnace Details";
+	private static final String PILOT_FURNACE_LAYOUT_SPACER = "_pilotFurnaceLayoutSpacer";
+	private static final String WEIGHTED_AVERAGE_HEADER = "Weighted Average";
 
 	@Override
 	public AOPMessageVM getSpyroOutputData(String year, String plantId,String Mode,String type) {
@@ -1992,20 +2001,21 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								hideTable = true;
 								continue;
 							}
-						} else {
-							AOPMessageVM vm = new AOPMessageVM();
-							if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {  
-								vm = getSpyroOutputData(year, plantId, dataInput, "output");
-							}
-							else {
-								vm = getSpyroOutputData(year, plantId, mode, dataInput);
-							}
-							
-						
-
-							spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
-							
+					}
+					else {
+						AOPMessageVM vm = new AOPMessageVM();
+						if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {  
+							vm = getSpyroOutputData(year, plantId, dataInput, "output");
 						}
+						else {
+							vm = getSpyroOutputData(year, plantId, mode, dataInput);
+						}
+						
+					
+
+						spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
+						
+					}
 
 						if(spyroOutputDataList==null ||spyroOutputDataList.isEmpty()){
 							hideTable = true;
@@ -2062,14 +2072,16 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			}
 		
 			
-			Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
-			List<SpyroOutputDTO> failedRecords = new ArrayList<>();
-			for (String key : map.keySet()) {
-				AOPMessageVM vm = updateSpyroOutputData(year,plantFKId,map.get(key));
-				List<SpyroOutputDTO> failedList = (List<SpyroOutputDTO>) vm.getData();
-				failedRecords.addAll(failedList);
-				mapForExcel.put(key, failedList);
-			}
+		Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
+		List<SpyroOutputDTO> failedRecords = new ArrayList<>();
+
+
+		for (String key : map.keySet()) {
+			AOPMessageVM vm = updateSpyroOutputData(year,plantFKId,map.get(key));
+			List<SpyroOutputDTO> failedList = (List<SpyroOutputDTO>) vm.getData();
+			failedRecords.addAll(failedList);
+			mapForExcel.put(key, failedList);
+		}
 
 			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -2092,7 +2104,491 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public byte[] createExcelWithPilotFurnace(String year, String plantId, String mode, boolean isAfterSave,
+		Map<String, List<SpyroOutputDTO>> mapForExcel) {
+	try {
+
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+		Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
+				.findByExcelIdAndVerticalFkIdAndSiteFkId("spyroOutput", plant.getVerticalFKId(),plant.getSiteFkId());
+
+				if (!optExcelConfiguration.isPresent())  return null;
+				
+	//	String structureJson = getJson();
+		String structureJson = optExcelConfiguration.get().getJsonValue();
+		ObjectMapper mapper = new ObjectMapper();
+		Map<String, List<List<Object>>> data = new HashMap<>();
+		Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
+		alignPilotFurnaceHiddenColumns(structure);
+		Map<String, List<Map<String, Object>>> spyroOutputDataListMap = new HashMap<>();
+		if (!isAfterSave) {
+			AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, "Composition");
+			List<Map<String, Object>> spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
+			spyroOutputDataListMap = Utility.groupByNormParameterTypeName(spyroOutputDataList);
+		}
+
+		for (String sheetName : structure.keySet()) {
+			Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+			List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
+
+			for (Map<String, Object> table : tables) {
+				String title = (String) table.get(ExcelConstants.TITLE);
+				String tableId = (String) table.get(ExcelConstants.TABLEID);
+				String dataInput = (String) table.get(ExcelConstants.DATA_INPUT);
+				List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+				boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
+				Integer startingIndexofMonths = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
+				List<List<String>> headersOuterTitles = (List<List<String>>) table
+						.get(ExcelConstants.HEADERSTITLES);
+				headersOuterTitles.get(0).addAll(startingIndexofMonths,
+						excelUtilityService.getAcademicYearMonths(year));
+				List<List<Object>> dataList = new ArrayList<>();
+				if (isAfterSave) {
+				if(!mapForExcel.containsKey(tableId)){
+					table.put(ExcelConstants.HIDE_TABLE, true);
+					continue;
+				}
+				headers.add("saveStatus");
+				headers.add("errDescription");
+				headersOuterTitles.get(0).add("SaveStatus");
+				headersOuterTitles.get(0).add("ErrDescription");
+
+
+				for (SpyroOutputDTO dto : mapForExcel.get(tableId)) {
+
+					List<Object> list = new ArrayList<>();
+					for (String fieldName : headers) {
+						if (WEIGHTED_AVERAGE_HEADER.equalsIgnoreCase(fieldName)
+									|| PILOT_FURNACE_LAYOUT_SPACER.equals(fieldName)) {
+								// These layout/display-only columns are never populated from an import DTO.
+								list.add(null);
+								continue;
+							}
+							String methodName = "get" + capitalize(fieldName);
+							Method method = dto.getClass().getMethod(methodName);
+							Object value = method.invoke(dto);
+							list.add(value);
+						}
+						list.add(tableId);
+						UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKID());
+						Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+						if(optionNormParameters.isPresent()) {
+							list.add(optionNormParameters.get().getIsEditable());
+						}
+						dataList.add(list);
+					}
+
+				} else {
+
+					List<Map<String, Object>> spyroOutputDataList = new ArrayList<>();
+					if (dataInput.equalsIgnoreCase("Composition")) {
+						if(spyroOutputDataListMap.containsKey(title)){
+							spyroOutputDataList = spyroOutputDataListMap.get(title);
+						}else{
+							hideTable = true;
+							continue;
+						}
+				} else if (dataInput.equalsIgnoreCase(PILOT_FURNACE_TABLE_ID)) {
+					spyroOutputDataList = getPilotFurnaceDetailsAsMap(plantId, year);
+				} else {
+					AOPMessageVM vm = new AOPMessageVM();
+					if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {  
+						vm = getSpyroOutputData(year, plantId, dataInput, "output");
+					}
+					else {
+						vm = getSpyroOutputData(year, plantId, mode, dataInput);
+					}
+					
+				
+
+					spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
+					
+				}
+
+					if(spyroOutputDataList==null ||spyroOutputDataList.isEmpty()){
+						hideTable = true;
+						continue;
+					}
+					// Data rows
+					for (Map<String, Object> map : spyroOutputDataList) {
+						List<Object> list = new ArrayList<>();
+						for (String header : headers) {
+							
+							list.add(map.get(header));
+						}
+						list.add(tableId);
+						list.add(map.get("isEditable"));
+						dataList.add(list);
+					}
+
+				}
+
+			
+				data.put(tableId, dataList);
+			}
+		}
+		
+		byte[] excelBytes = excelUtilityService.generateFlexibleExcel(structure, data);
+		return removePilotFurnaceSpacerCells(excelBytes);
+
+	} catch (Exception e) {
+		e.printStackTrace();
+
+	}
+	return null;
+}
+
+@Override
+public AOPMessageVM importExcelWithPilotFurnace(String year, String plantFKId, String mode, MultipartFile file) {
+	// TODO Auto-generated method stub
+	if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+		throw new IllegalArgumentException("Invalid or empty Excel file.");
+	}
+
+	try {
+
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId))
+				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+		ExcelConfigurations excelConfiguration = excelConfigurationsRepository
+				.findByExcelIdAndVerticalFkIdAndSiteFkId(
+						"spyroOutput", plant.getVerticalFKId(), plant.getSiteFkId())
+				.orElseThrow(() -> new IllegalArgumentException("Spyro Output Excel configuration not found"));
+		Map<String, Object> structure = new ObjectMapper()
+				.readValue(excelConfiguration.getJsonValue(), Map.class);
+		alignPilotFurnaceHiddenColumns(structure);
+
+		Map<String, List<SpyroOutputDTO>> map =
+				readSpyroOutputExcelWithPilotFurnace(file.getInputStream(), year, structure);
 	
+		
+	Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
+	List<SpyroOutputDTO> failedRecords = new ArrayList<>();
+
+	if (map.containsKey(PILOT_FURNACE_TABLE_ID)) {
+		List<SpyroOutputDTO> pilotFurnaceDtos = map.remove(PILOT_FURNACE_TABLE_ID);
+		List<OptimizingVariablesDropdownDTO> optimizingDtos = convertToPilotFurnaceDropdownDTOs(pilotFurnaceDtos);
+		List<OptimizingVariablesDropdownDTO> pilotFurnaceFailedDtos = spyroInputService.updateOptimizingVariablesDropdown(optimizingDtos, plantFKId, year);
+		if (!pilotFurnaceFailedDtos.isEmpty()) {
+			List<SpyroOutputDTO> pilotFurnaceFailedSpyroDtos = convertPilotFurnaceFailedToSpyroDTOs(pilotFurnaceFailedDtos);
+			failedRecords.addAll(pilotFurnaceFailedSpyroDtos);
+			mapForExcel.put(PILOT_FURNACE_TABLE_ID, pilotFurnaceFailedSpyroDtos);
+		}
+	}
+
+	for (String key : map.keySet()) {
+		AOPMessageVM vm = updateSpyroOutputData(year,plantFKId,map.get(key));
+		List<SpyroOutputDTO> failedList = (List<SpyroOutputDTO>) vm.getData();
+		failedRecords.addAll(failedList);
+		if(failedList.size() > 0) {
+			mapForExcel.put(key, failedList);
+		}
+	}
+
+		
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		if (failedRecords != null && failedRecords.size() > 0) {
+			byte[] fileByteArray = createExcelWithPilotFurnace(year, plantFKId, mode, true, mapForExcel);
+			String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+			aopMessageVM.setData(base64File);
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Partial data has been saved");
+		} else {
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("All data has been saved");
+		}
+
+		return aopMessageVM;
+		// return ResponseEntity.ok(data);
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
+
+	private void alignPilotFurnaceHiddenColumns(Map<String, Object> structure) {
+		for (Object sheetValue : structure.values()) {
+			Map<String, Object> sheetConfiguration = (Map<String, Object>) sheetValue;
+			List<Map<String, Object>> tables =
+					(List<Map<String, Object>>) sheetConfiguration.get(ExcelConstants.TABLES);
+			if (tables == null) {
+				continue;
+			}
+
+			for (Map<String, Object> table : tables) {
+				String tableId = (String) table.get(ExcelConstants.TABLEID);
+				if (!PILOT_FURNACE_TABLE_ID.equalsIgnoreCase(tableId)) {
+					continue;
+				}
+
+				List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+				int normParameterIndex = getHeaderIndex(headers, "normParameterFKID");
+				if (normParameterIndex < 0 || headers.contains(PILOT_FURNACE_LAYOUT_SPACER)) {
+					continue;
+				}
+
+				headers.add(normParameterIndex, PILOT_FURNACE_LAYOUT_SPACER);
+
+				List<List<String>> headerTitles =
+						(List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+				if (headerTitles != null && !headerTitles.isEmpty()) {
+					List<String> titles = headerTitles.get(0);
+					int normParameterTitleIndex = getHeaderIndex(titles, "NormParameterFKID");
+					if (normParameterTitleIndex >= 0) {
+						// The hidden metadata header is unnecessary; omitting it keeps
+						// Pilot Furnace visually ending at Remark.
+						titles.remove(normParameterTitleIndex);
+					}
+				}
+
+				// Column hiding applies to the whole sheet. Keep Pilot Furnace metadata
+				// aligned with weighted tables so its old index 15 does not hide Remark.
+				table.put(ExcelConstants.HIDDEN_COLUMNS,
+						List.of(normParameterIndex + 1, headers.size(), headers.size() + 2));
+			}
+		}
+	}
+
+	private int getHeaderIndex(List<String> headers, String headerName) {
+		if (headers == null) {
+			return -1;
+		}
+		for (int index = 0; index < headers.size(); index++) {
+			if (headerName.equalsIgnoreCase(headers.get(index))) {
+				return index;
+			}
+		}
+		return -1;
+	}
+
+	private byte[] removePilotFurnaceSpacerCells(byte[] excelBytes) throws Exception {
+		if (excelBytes == null) {
+			return null;
+		}
+
+		try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(excelBytes));
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			DataFormatter formatter = new DataFormatter();
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				for (Row row : workbook.getSheetAt(sheetIndex)) {
+					boolean pilotFurnaceRow = false;
+					for (int tableIdColumn : List.of(17, 19)) {
+						Cell tableIdCell =
+								row.getCell(tableIdColumn, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+						if (tableIdCell != null && PILOT_FURNACE_TABLE_ID.equalsIgnoreCase(
+								formatter.formatCellValue(tableIdCell).trim())) {
+							pilotFurnaceRow = true;
+							break;
+						}
+					}
+					if (pilotFurnaceRow) {
+						Cell spacerCell =
+								row.getCell(15, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+						if (spacerCell != null) {
+							row.removeCell(spacerCell);
+						}
+					}
+				}
+			}
+			workbook.write(outputStream);
+			return outputStream.toByteArray();
+		}
+	}
+
+	private Map<String, List<SpyroOutputDTO>> readSpyroOutputExcelWithPilotFurnace(
+			InputStream inputStream, String year, Map<String, Object> structure) {
+		Map<String, List<SpyroOutputDTO>> result = new HashMap<>();
+		List<Map<String, Object>> tableConfigurations = new ArrayList<>();
+
+		for (Object sheetValue : structure.values()) {
+			Map<String, Object> sheetConfiguration = (Map<String, Object>) sheetValue;
+			List<Map<String, Object>> tables =
+					(List<Map<String, Object>>) sheetConfiguration.get(ExcelConstants.TABLES);
+			if (tables != null) {
+				tableConfigurations.addAll(tables);
+			}
+		}
+
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			DataFormatter formatter = new DataFormatter();
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				for (Row row : sheet) {
+					Map<String, Object> tableConfiguration =
+							findTableConfiguration(row, tableConfigurations, formatter);
+					if (tableConfiguration == null) {
+						continue;
+					}
+
+					List<String> headers =
+							(List<String>) tableConfiguration.get(ExcelConstants.HEADERS);
+					String tableId = (String) tableConfiguration.get(ExcelConstants.TABLEID);
+					SpyroOutputDTO dto = new SpyroOutputDTO();
+
+					try {
+						dto.setParticulars(getStringCellValue(getConfiguredCell(row, headers, "particulars"), dto));
+						dto.setUom(getStringCellValue(getConfiguredCell(row, headers, "uom"), dto));
+						dto.setAuditYear(year);
+						dto.setApr(getNumericCellValue(getConfiguredCell(row, headers, "apr"), dto));
+						dto.setMay(getNumericCellValue(getConfiguredCell(row, headers, "may"), dto));
+						dto.setJun(getNumericCellValue(getConfiguredCell(row, headers, "jun"), dto));
+						dto.setJul(getNumericCellValue(getConfiguredCell(row, headers, "jul"), dto));
+						dto.setAug(getNumericCellValue(getConfiguredCell(row, headers, "aug"), dto));
+						dto.setSep(getNumericCellValue(getConfiguredCell(row, headers, "sep"), dto));
+						dto.setOct(getNumericCellValue(getConfiguredCell(row, headers, "oct"), dto));
+						dto.setNov(getNumericCellValue(getConfiguredCell(row, headers, "nov"), dto));
+						dto.setDec(getNumericCellValue(getConfiguredCell(row, headers, "dec"), dto));
+						dto.setJan(getNumericCellValue(getConfiguredCell(row, headers, "jan"), dto));
+						dto.setFeb(getNumericCellValue(getConfiguredCell(row, headers, "feb"), dto));
+						dto.setMar(getNumericCellValue(getConfiguredCell(row, headers, "mar"), dto));
+						// Weighted Average is intentionally not read into the DTO.
+						dto.setRemarks(getStringCellValue(getConfiguredCell(row, headers, "remarks"), dto));
+						dto.setNormParameterFKID(
+								getStringCellValue(getConfiguredCell(row, headers, "normParameterFKID"), dto));
+						dto.setTableId(tableId);
+					} catch (Exception e) {
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+
+					result.computeIfAbsent(tableId, key -> new ArrayList<>()).add(dto);
+				}
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Data", e);
+		}
+
+		return result;
+	}
+
+	private Map<String, Object> findTableConfiguration(
+			Row row, List<Map<String, Object>> tableConfigurations, DataFormatter formatter) {
+		for (Map<String, Object> tableConfiguration : tableConfigurations) {
+			List<String> headers =
+					(List<String>) tableConfiguration.get(ExcelConstants.HEADERS);
+			String tableId = (String) tableConfiguration.get(ExcelConstants.TABLEID);
+			if (headers == null || tableId == null) {
+				continue;
+			}
+
+			Cell tableIdCell = row.getCell(headers.size(), Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if (tableIdCell != null
+					&& tableId.equalsIgnoreCase(formatter.formatCellValue(tableIdCell).trim())) {
+				return tableConfiguration;
+			}
+		}
+		return null;
+	}
+
+	private Cell getConfiguredCell(Row row, List<String> headers, String headerName) {
+		for (int index = 0; index < headers.size(); index++) {
+			if (headerName.equalsIgnoreCase(headers.get(index))) {
+				return row.getCell(index, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			}
+		}
+		return null;
+	}
+	
+	private List<Map<String, Object>> getPilotFurnaceDetailsAsMap(String plantId, String year) {
+		AOPMessageVM vm = spyroInputService.getOptimizingVariablesDropdown(plantId, year);
+		// keeps all DTOs except those where uom is "#".
+		List<OptimizingVariablesDropdownDTO> dtoList =
+        ((List<OptimizingVariablesDropdownDTO>) vm.getData())
+                .stream()
+                .filter(dto -> !"#".equals(dto.getUom()))
+                .collect(Collectors.toList());
+
+		List<Map<String, Object>> result = new ArrayList<>();
+		if (dtoList == null) return result;
+		for (OptimizingVariablesDropdownDTO dto : dtoList) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("particulars", dto.getName());
+			map.put("uom", dto.getUom());
+			map.put("apr", dto.getApril());
+			map.put("may", dto.getMay());
+			map.put("jun", dto.getJune());
+			map.put("jul", dto.getJuly());
+			map.put("aug", dto.getAugust());
+			map.put("sep", dto.getSeptember());
+			map.put("oct", dto.getOctober());
+			map.put("nov", dto.getNovember());
+			map.put("dec", dto.getDecember());
+			map.put("jan", dto.getJanuary());
+			map.put("feb", dto.getFebruary());
+			map.put("mar", dto.getMarch());
+			map.put("remarks", dto.getRemarks());
+			map.put("normParameterFKID", dto.getId());
+			map.put("isEditable", dto.getIsEditable());
+			result.add(map);
+		}
+		return result;
+	}
+
+	private List<OptimizingVariablesDropdownDTO> convertToPilotFurnaceDropdownDTOs(List<SpyroOutputDTO> dtoList) {
+		List<OptimizingVariablesDropdownDTO> result = new ArrayList<>();
+		for (SpyroOutputDTO dto : dtoList) {
+			if (dto.getNormParameterFKID() == null || dto.getNormParameterFKID().isBlank()) continue;
+			result.add(OptimizingVariablesDropdownDTO.builder()
+					.id(dto.getNormParameterFKID())
+					.april(dto.getApr() != null ? dto.getApr().toString() : null)
+					.may(dto.getMay() != null ? dto.getMay().toString() : null)
+					.june(dto.getJun() != null ? dto.getJun().toString() : null)
+					.july(dto.getJul() != null ? dto.getJul().toString() : null)
+					.august(dto.getAug() != null ? dto.getAug().toString() : null)
+					.september(dto.getSep() != null ? dto.getSep().toString() : null)
+					.october(dto.getOct() != null ? dto.getOct().toString() : null)
+					.november(dto.getNov() != null ? dto.getNov().toString() : null)
+					.december(dto.getDec() != null ? dto.getDec().toString() : null)
+					.january(dto.getJan() != null ? dto.getJan().toString() : null)
+					.february(dto.getFeb() != null ? dto.getFeb().toString() : null)
+					.march(dto.getMar() != null ? dto.getMar().toString() : null)
+					.remarks(dto.getRemarks() != null ? dto.getRemarks() : null)
+					.build());
+		}
+		return result;
+	}
+
+	private List<SpyroOutputDTO> convertPilotFurnaceFailedToSpyroDTOs(List<OptimizingVariablesDropdownDTO> failedDtos) {
+		List<SpyroOutputDTO> result = new ArrayList<>();
+		for (OptimizingVariablesDropdownDTO dto : failedDtos) {
+			SpyroOutputDTO spyroDto = new SpyroOutputDTO();
+			spyroDto.setNormParameterFKID(dto.getId());
+			spyroDto.setParticulars(dto.getName());
+			spyroDto.setUom(dto.getUom());
+			spyroDto.setRemarks(dto.getRemarks());
+			spyroDto.setApr(parsePilotFurnaceDouble(dto.getApril()));
+			spyroDto.setMay(parsePilotFurnaceDouble(dto.getMay()));
+			spyroDto.setJun(parsePilotFurnaceDouble(dto.getJune()));
+			spyroDto.setJul(parsePilotFurnaceDouble(dto.getJuly()));
+			spyroDto.setAug(parsePilotFurnaceDouble(dto.getAugust()));
+			spyroDto.setSep(parsePilotFurnaceDouble(dto.getSeptember()));
+			spyroDto.setOct(parsePilotFurnaceDouble(dto.getOctober()));
+			spyroDto.setNov(parsePilotFurnaceDouble(dto.getNovember()));
+			spyroDto.setDec(parsePilotFurnaceDouble(dto.getDecember()));
+			spyroDto.setJan(parsePilotFurnaceDouble(dto.getJanuary()));
+			spyroDto.setFeb(parsePilotFurnaceDouble(dto.getFebruary()));
+			spyroDto.setMar(parsePilotFurnaceDouble(dto.getMarch()));
+			spyroDto.setSaveStatus(dto.getSaveStatus());
+			spyroDto.setErrDescription(dto.getErrDescription());
+			result.add(spyroDto);
+		}
+		return result;
+	}
+
+	private static Double parsePilotFurnaceDouble(String value) {
+		if (value == null || value.isBlank()) return null;
+		try {
+			return Double.parseDouble(value.trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
 	public Map<String, List<SpyroOutputDTO>> readSpyroOutputExcel(InputStream inputStream, String year) {
 
 		Map<String, List<SpyroOutputDTO>> map = new HashMap<>();
