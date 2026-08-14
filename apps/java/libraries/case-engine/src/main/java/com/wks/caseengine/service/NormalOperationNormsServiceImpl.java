@@ -135,7 +135,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Boolean withGrade = false;
 		Boolean elastomer = verticalName.equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		if ((plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
-				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() )) {
+				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) ||  (vertical.getName().equalsIgnoreCase("Filament")&& gradeId != null && !gradeId.trim().isEmpty() )) {
 			withGrade = true;
 		}
 		try {
@@ -664,7 +664,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	      
 	       
-	        if (isStapleWithGrade || isFilamentWithGrade) {
+	        if (isStapleWithGrade) {
 	        	
 	        	  String procedureName = vertical.getName() + "_" + site.getName() + "_GradeValidation";
 
@@ -745,7 +745,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                failedList.add(dto);
 	                continue;
 	            }
-	            if (isStapleWithGrade || isFilamentWithGrade) {
+	            if (isStapleWithGrade) {
 
 	            
 	                Optional<MCUNormsValueGrade> optionalValue = mcuNormsValueGradeRepository
@@ -2208,7 +2208,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 
 			Boolean withGrade = false;
-			if (elastomerHmdSbr || pvc || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() )) {
+			if (elastomerHmdSbr || pvc || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || (vertical.getName().equalsIgnoreCase("Filament")&& gradeId != null && !gradeId.trim().isEmpty() )) {
 				withGrade = true;
 			}
 			
@@ -3615,6 +3615,58 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetNormsValue";
+		String callSql = "{call " + storedProcedure + "(?, ?, ?, ?)}";
+
+		try (Connection connection = dataSource.getConnection();
+				CallableStatement stmt = connection.prepareCall(callSql)) {
+
+			// Set parameters
+			stmt.setString(1, plantId);
+			stmt.setString(2, siteId);
+			stmt.setString(3, verticalId);
+			stmt.setString(4, aopYear);
+
+			// Execute the stored procedure
+			stmt.executeUpdate();
+
+			// Optional: commit if auto-commit is off
+			if (!connection.getAutoCommit()) {
+				connection.commit();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear,
+				"normal-op-norms");
+
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			if (!screenMapping.getCalculationScreen().equalsIgnoreCase(screenMapping.getDependentScreen())) {
+
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(aopYear);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+		}
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("SP Executed successfully");
+		// aopMessageVM.setData(rowsAffected);
+		return aopMessageVM;
+
+	}
+
+	@Override
+	public AOPMessageVM calculateNormalOpsNormsPolyester(String aopYear, String plantId, String siteId, String verticalId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		String storedProcedure = vertical.getName() + "_" + site.getName() + "_GradeNormCalculation";
 		String callSql = "{call " + storedProcedure + "(?, ?, ?, ?)}";
 
 		try (Connection connection = dataSource.getConnection();

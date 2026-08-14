@@ -5,7 +5,9 @@ import com.wks.caseengine.cpp.dto.CPPAssetOperationalHoursProjection;
 import com.wks.caseengine.cpp.dto.CPPAssetOperationalHoursResponseDto;
 import com.wks.caseengine.cpp.entity.CPPAssetOperationalHours;
 import com.wks.caseengine.cpp.entity.CPPSteamAssetsOperationalHours;
+import com.wks.caseengine.cpp.entity.CppSteamGenerationAsset;
 import com.wks.caseengine.cpp.repository.CPPAssetOperationalHoursRepository;
+import com.wks.caseengine.cpp.repository.CppSteamGenerationAssetRepository;
 import com.wks.caseengine.cpp.service.JMDAssetsService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,6 +52,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
     @Autowired
     private com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository importRepository;
+
+    @Autowired
+    private CppSteamGenerationAssetRepository cppSteamGenerationAssetRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -582,6 +587,16 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         CPPAssetOperationalHours entity = optionalEntity.get();
         entity.setModifiedDate(LocalDateTime.now());
 
+        // Populate plantFkId and assetFkId on the DTO from the DB entity so that
+        // the GT→HRSG sync (which indexes by plantId:assetFkId) works for Excel imports
+        // where these fields may not be present in the imported data.
+        if (dto.getPlantFkId() == null) {
+            dto.setPlantFkId(entity.getPlantFkId());
+        }
+        if (dto.getAssetFkId() == null) {
+            dto.setAssetFkId(entity.getAssetFkId());
+        }
+
         // Update only monthly operational hours (Apr to Mar) and remarks
         entity.setApr(dto.getApr());
         entity.setMay(dto.getMay());
@@ -648,6 +663,24 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         }
         
         CPPSteamAssetsOperationalHours entity = optionalEntity.get();
+
+        // Skip saving HRSG assets that are linked to a GT via LinkedPowerAsset_FK_ID.
+        // These HRSGs follow their linked GT's operational hours (one-way sync) and
+        // should not be independently updated from grid save or Excel import.
+        UUID steamAssetId = entity.getSteamAssetFkId();
+        if (steamAssetId != null) {
+            try {
+                var linkedAsset = cppSteamGenerationAssetRepository.findById(steamAssetId);
+                if (linkedAsset.isPresent() && linkedAsset.get().getLinkedPowerAssetFkId() != null) {
+                    logger.info("[POST Service - Steam] Skipping HRSG {} (linked to GT {}) — values controlled by GT sync",
+                            steamAssetId, linkedAsset.get().getLinkedPowerAssetFkId());
+                    return true; // return true so it's not counted as skipped/failed
+                }
+            } catch (Exception ex) {
+                logger.warn("[POST Service - Steam] Could not check linked GT for steam asset {}: {}", steamAssetId, ex.getMessage());
+            }
+        }
+
         entity.setUpdatedDate(LocalDateTime.now());
 
         // Update only monthly operational hours (Apr to Mar) and remarks
@@ -671,10 +704,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
     }
 
     /**
-     * Sync operational hours between linked GT (Power) and HRSG (Steam) assets.
-     * If a GT is modified, all linked HRSGs get the same values.
-     * If an HRSG is modified (without its GT), the GT and all sibling HRSGs get the same values.
-     * Requires CPPSteamGenerationAsset.LinkedPowerAsset_FK_ID column.
+     * Sync operational hours from linked GT (Power) to HRSG (Steam) assets — one-way.
+     * When a GT is modified, all HRSGs linked via CPPSteamGenerationAsset.LinkedPowerAsset_FK_ID
+     * get the same monthly operational hours values.
+     * Editing an HRSG directly does NOT cascade back to the GT.
      */
     private int syncLinkedOperationalHours(JMDOperationalHoursRequestDTO payload, String financialYear) {
         int cascadeCount = 0;
@@ -690,20 +723,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             }
         }
 
-        // Index modified steam records by plantId:assetFkId
-        Map<String, CPPAssetOperationalHoursResponseDto> modifiedSteamByKey = new HashMap<>();
-        if (payload.getSteamResponse() != null) {
-            for (CPPAssetOperationalHoursResponseDto dto : payload.getSteamResponse()) {
-                if (dto.getAssetFkId() != null && dto.getPlantFkId() != null) {
-                    modifiedSteamByKey.put(dto.getPlantFkId() + ":" + dto.getAssetFkId(), dto);
-                }
-            }
-        }
-
-        // Gather all plantIds involved
+        // Gather all plantIds involved (only from modified power records — one-way GT→HRSG)
         Set<UUID> plantIds = new HashSet<>();
         modifiedPowerByKey.values().forEach(d -> plantIds.add(d.getPlantFkId()));
-        modifiedSteamByKey.values().forEach(d -> plantIds.add(d.getPlantFkId()));
 
         for (UUID plantId : plantIds) {
             // Load all GT operational hour records for this plant+year
@@ -722,13 +744,19 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 String groupKey = plantId + ":" + gtAssetId;
                 if (processedGroups.contains(groupKey)) continue;
 
-                // Find HRSGs linked to this GT via CPPSteamGenerationAsset.LinkedPowerAsset_FK_ID
+                // One-way: only process if the GT itself was modified
+                boolean gtModified = modifiedPowerByKey.containsKey(groupKey);
+                if (!gtModified) continue;
+                processedGroups.add(groupKey);
+
+                // Find HRSGs linked to this GT via CPPSteamGenerationAsset.LinkedPowerAsset_FK_ID (JPA)
                 List<UUID> linkedHrsgIds;
                 try {
-                    linkedHrsgIds = jdbcTemplate.queryForList(
-                            "SELECT AssetId FROM [dbo].[CPPSteamGenerationAsset] WITH(NOLOCK) " +
-                            "WHERE LinkedPowerAsset_FK_ID = ? AND CPPPLANT_FK_Id = ?",
-                            UUID.class, gtAssetId, plantId);
+                    linkedHrsgIds = cppSteamGenerationAssetRepository
+                            .findByLinkedPowerAssetFkIdAndCppPlantFkId(gtAssetId, plantId)
+                            .stream()
+                            .map(CppSteamGenerationAsset::getAssetId)
+                            .collect(Collectors.toList());
                 } catch (Exception ex) {
                     logger.warn("[Sync] Could not query linked HRSGs for GT {} plant {}: {}", gtAssetId, plantId, ex.getMessage());
                     continue;
@@ -736,52 +764,15 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
                 if (linkedHrsgIds == null || linkedHrsgIds.isEmpty()) continue;
 
-                boolean gtModified = modifiedPowerByKey.containsKey(groupKey);
-                boolean anyHrsgModified = linkedHrsgIds.stream()
-                        .anyMatch(id -> modifiedSteamByKey.containsKey(plantId + ":" + id));
+                // Source-of-truth monthly values come from the modified GT
+                CPPAssetOperationalHoursResponseDto src = modifiedPowerByKey.get(groupKey);
+                Double sourceApr = src.getApr(), sourceMay = src.getMay(), sourceJun = src.getJun();
+                Double sourceJul = src.getJul(), sourceAug = src.getAug(), sourceSep = src.getSep();
+                Double sourceOct = src.getOct(), sourceNov = src.getNov(), sourceDec = src.getDec();
+                Double sourceJan = src.getJan(), sourceFeb = src.getFeb(), sourceMar = src.getMar();
+                String sourceRemarks = src.getRemarks();
 
-                // Skip this group if nothing in it was modified
-                if (!gtModified && !anyHrsgModified) continue;
-                processedGroups.add(groupKey);
-
-                // Determine source-of-truth monthly values
-                Double sourceApr, sourceMay, sourceJun, sourceJul, sourceAug, sourceSep;
-                Double sourceOct, sourceNov, sourceDec, sourceJan, sourceFeb, sourceMar;
-                String sourceRemarks;
-
-                if (gtModified) {
-                    CPPAssetOperationalHoursResponseDto src = modifiedPowerByKey.get(groupKey);
-                    sourceApr = src.getApr(); sourceMay = src.getMay(); sourceJun = src.getJun();
-                    sourceJul = src.getJul(); sourceAug = src.getAug(); sourceSep = src.getSep();
-                    sourceOct = src.getOct(); sourceNov = src.getNov(); sourceDec = src.getDec();
-                    sourceJan = src.getJan(); sourceFeb = src.getFeb(); sourceMar = src.getMar();
-                    sourceRemarks = src.getRemarks();
-                } else {
-                    UUID srcHrsgId = linkedHrsgIds.stream()
-                            .filter(id -> modifiedSteamByKey.containsKey(plantId + ":" + id))
-                            .findFirst().orElse(null);
-                    CPPAssetOperationalHoursResponseDto src = modifiedSteamByKey.get(plantId + ":" + srcHrsgId);
-                    sourceApr = src.getApr(); sourceMay = src.getMay(); sourceJun = src.getJun();
-                    sourceJul = src.getJul(); sourceAug = src.getAug(); sourceSep = src.getSep();
-                    sourceOct = src.getOct(); sourceNov = src.getNov(); sourceDec = src.getDec();
-                    sourceJan = src.getJan(); sourceFeb = src.getFeb(); sourceMar = src.getMar();
-                    sourceRemarks = src.getRemarks();
-                }
-
-                // Update GT if it wasn't the source of truth
-                if (!gtModified) {
-                    gtRecord.setApr(sourceApr); gtRecord.setMay(sourceMay); gtRecord.setJun(sourceJun);
-                    gtRecord.setJul(sourceJul); gtRecord.setAug(sourceAug); gtRecord.setSep(sourceSep);
-                    gtRecord.setOct(sourceOct); gtRecord.setNov(sourceNov); gtRecord.setDec(sourceDec);
-                    gtRecord.setJan(sourceJan); gtRecord.setFeb(sourceFeb); gtRecord.setMar(sourceMar);
-                    gtRecord.setRemarks(sourceRemarks);
-                    gtRecord.setModifiedDate(LocalDateTime.now());
-                    repository.save(gtRecord);
-                    cascadeCount++;
-                    logger.info("[Sync] Updated GT {} to match linked HRSG values", gtAssetId);
-                }
-
-                // Update all linked HRSGs
+                // Update all linked HRSGs with the GT's values
                 for (UUID hrsgId : linkedHrsgIds) {
                     Optional<CPPSteamAssetsOperationalHours> hrsgOpt =
                             steamRepository.findBySteamAssetFkIdAndPlantFkIdAndAopYear(hrsgId, plantId, financialYear);

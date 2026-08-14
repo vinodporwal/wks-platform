@@ -1,58 +1,43 @@
-import { useEffect, useState, useCallback } from 'react'
+import React from 'react'
 import { Box } from '@mui/material'
 import AopTabs from 'components/AopTabs'
 import { useSelector } from 'react-redux'
-import { useSession } from 'SessionStoreContext'
 
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import useConfigurationTabs from 'components/aop-phase-two/common/hooks/useConfigurationTabs'
 import HeatRate from './heat-rate'
+import SRMapping from './sr-mapping'
+import SummaryJMD from '../jmd/Summary'
+import QtyCostReportJMD from '../jmd/qty-cost-report'
 
 const Outputs = () => {
-  const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, siteObject, verticalObject, year } = dataGridStore
-
-  const PLANT_ID = plantObject?.id
-  const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
-  const AOP_YEAR = year?.selectedYear
+  const { siteObject, verticalObject } = dataGridStore
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
   const IS_CPP = lowerVertName === 'cpp'
 
-  // State management
-  const [tabObj, setTabObj] = useState([])
-  const [tabIndex, setTabIndex] = useState(0)
-  const [tabsData, setTabsData] = useState({})
-  const [snackbarData, setSnackbarData] = useState({
-    message: '',
-    severity: 'info',
-  })
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  // Tab management via custom hook (type = 'OutputReport')
+  const { filteredTabs, tabIndex, setTabIndex, loading } =
+    useConfigurationTabs('OutputReport')
 
-  // Initialize tabs
-  useEffect(() => {
-    const tabs = [
-      {
-        id: 'heat-rate',
-        name: 'heatRate',
-        displayName: 'Heat Rate',
-        displaySequence: 0,
-      },
-    ]
-    setTabObj(tabs)
-  }, [])
+  // Get current tab display name
+  const currentTabName = filteredTabs[tabIndex]?.name
 
-  // Get current tab
-  const currentTab = tabObj[tabIndex] || {}
-
-  // Render tab content based on tab ID
+  // Render tab content based on display name
   const renderTabContent = () => {
-    switch (currentTab.id) {
-      case 'heat-rate':
+    if (!currentTabName) return null
+
+    switch (currentTabName) {
+      case 'Heat Rate':
         return <HeatRate />
+      case 'SR Mapping':
+        return <SRMapping />
+      case 'Norm Cost Report':
+        return <QtyCostReportJMD />
+      case 'Summary':
+        return <SummaryJMD />
       default:
         return null
     }
@@ -68,23 +53,25 @@ const Outputs = () => {
         return (
           <>
             {/* Tabs - sticky below StepperNav */}
-            <Box
-              sx={{
-                position: 'sticky',
-                top: -1,
-                zIndex: 10,
-                backgroundColor: '#ffffff',
-                borderBottom: 1,
-                borderColor: 'divider',
-                mb: 1,
-              }}
-            >
-              <AopTabs
-                tabIndex={tabIndex}
-                setTabIndex={setTabIndex}
-                tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
-              />
-            </Box>
+            {filteredTabs.length > 0 && (
+              <Box
+                sx={{
+                  position: 'sticky',
+                  top: -1,
+                  zIndex: 10,
+                  backgroundColor: '#ffffff',
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                  mb: 1,
+                }}
+              >
+                <AopTabs
+                  tabIndex={tabIndex}
+                  setTabIndex={setTabIndex}
+                  tabs={filteredTabs.map((tab) => tab.name)}
+                />
+              </Box>
+            )}
 
             {/* Tab Content */}
             <Box>{renderTabContent()}</Box>
