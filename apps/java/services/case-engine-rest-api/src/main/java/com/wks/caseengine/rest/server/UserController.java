@@ -1,6 +1,8 @@
 package com.wks.caseengine.rest.server;
 
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -83,6 +85,30 @@ public class UserController {
 				: status == 400 ? HttpStatus.BAD_REQUEST
 				: HttpStatus.OK;
 		return ResponseEntity.status(httpStatus).body(result);
+	}
+
+	/**
+	 * Download Excel template for bulk role assignment.
+	 * GET /task/users/roles/export
+	 * Columns: username | roles  (roles comma-separated)
+	 */
+	@GetMapping(value = "/roles/export")
+	public ResponseEntity<byte[]> exportRolesExcelTemplate() {
+		try {
+			byte[] excelBytes = userService.exportRolesExcelTemplate();
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("user_roles_assignment_template.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	/**
