@@ -172,7 +172,7 @@ const NetCalorificValue = ({
       returnFullObject: true,
       editable: true,
       locked: true,
-      minWidth: 200,
+      minWidth: 120,
     },
     {
       field: 'categoryDisplayName',

@@ -172,7 +172,7 @@ const FuelAvailability = ({
       returnFullObject: true,
       editable: true,
       locked: true,
-      minWidth: 200,
+      minWidth: 120,
     },
     {
       field: 'categoryDisplayName',
@@ -202,6 +202,7 @@ const FuelAvailability = ({
       title: 'UOM',
       type: 'text',
       editable: false,
+      locked: true,
       minWidth: 100,
     },
     ...MONTH_COLUMNS,
