@@ -138,6 +138,7 @@ import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-p
 import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
 import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
 import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
+import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -1058,6 +1059,15 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'configuration-other-cost-polyester',
+            element: (
+              <PrivateRoute routeId='configuration-other-cost-polyester'>
+                <ConfigurationOtherCostPolyester />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical STAPLE (Polyester) Ended ****************************
 
           //Vertical MEROX Started

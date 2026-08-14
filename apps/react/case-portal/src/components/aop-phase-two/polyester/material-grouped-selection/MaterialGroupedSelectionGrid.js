@@ -251,7 +251,7 @@ export default function MaterialGroupedSelectionGrid({ onSaveSuccess }) {
             alwaysEnableSave: true,
             showTitleNameBusiness: true,
             showTitle: true,
-            titleName: screenTitle?.title || 'Material Grouped Selection',
+            titleName: 'Material Grouped Selection',
             ExcelName: EXCEL_NAME,
             showAction: false,
             addButton: false,
