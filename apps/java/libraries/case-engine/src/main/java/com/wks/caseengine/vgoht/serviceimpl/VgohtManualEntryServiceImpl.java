@@ -64,15 +64,15 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
 
 
     @Override
-    public AOPMessageVM getManualProduction(UUID plantId, String aopYear, String periodFrom, String periodTo) {
+    public AOPMessageVM getManualProduction(UUID plantId, String aopYear, String periodFrom, String periodTo, String tabName) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
-        logger.info("[VGOHT GetManualProduction] plantId: {}, aopYear: {}, periodFrom: {}, periodTo: {}",
-                plantId, aopYear, periodFrom, periodTo);
+        logger.info("[VGOHT GetManualProduction] plantId: {}, aopYear: {}, periodFrom: {}, periodTo: {}, tabName: {}",
+                plantId, aopYear, periodFrom, periodTo, tabName);
 
         try {
             String getSpName = buildDynamicSpName(plantId, "GetManualProduction");
-            List<String> columnNames = getColumnNames(plantId.toString(), aopYear, periodFrom, periodTo, getSpName);
-            List<Object[]> rows = getData(plantId.toString(), aopYear, periodFrom, periodTo, getSpName);
+            List<String> columnNames = getColumnNames(plantId.toString(), aopYear, periodFrom, periodTo, tabName, getSpName);
+            List<Object[]> rows = getData(plantId.toString(), aopYear, periodFrom, periodTo, tabName, getSpName);
 
             List<Map<String, Object>> resultList = new ArrayList<>();
             for (Object[] row : rows) {
@@ -105,7 +105,7 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
     @Transactional
     public AOPMessageVM saveManualProduction(UUID plantId, String aopYear,
             String periodFrom, String periodTo,
-            List<Map<String, Object>> data) {
+            List<Map<String, Object>> data, String tabName) {
 
         AOPMessageVM aopMessageVM = new AOPMessageVM();
 
@@ -204,7 +204,8 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
                             "UPDATE dbo.ManualProduction " +
                             "SET StringValue = :stringValue, " +
                             "    Type = :type, " +
-                            "    Remarks = :remarks " +
+                            "    Remarks = :remarks, " +
+                            "    TabName = :tabName " +
                             "WHERE Plant_Id = :plantId " +
                             "  AND AOP_Year = :aopYear " +
                             "  AND Month_Year = :monthYear");
@@ -212,6 +213,7 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
                     query.setParameter("stringValue", stringValue);
                     query.setParameter("type", catalystType);
                     query.setParameter("remarks", remarks);
+                    query.setParameter("tabName", tabName);
                     query.setParameter("plantId", plantIdStr);
                     query.setParameter("aopYear", aopYear);
                     query.setParameter("monthYear", columnName);
@@ -222,14 +224,15 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
                          * Record does not exist, insert a new record.
                          */
                         Query insertQuery = entityManager.createNativeQuery(
-                                "INSERT INTO dbo.ManualProduction (Plant_Id, AOP_Year, Month_Year, StringValue, Type, Remarks) " +
-                                "VALUES (:plantId, :aopYear, :monthYear, :stringValue, :type, :remarks)");
+                                "INSERT INTO dbo.ManualProduction (Plant_Id, AOP_Year, Month_Year, StringValue, Type, Remarks, TabName) " +
+                                "VALUES (:plantId, :aopYear, :monthYear, :stringValue, :type, :remarks, :tabName)");
                         insertQuery.setParameter("plantId", plantIdStr);
                         insertQuery.setParameter("aopYear", aopYear);
                         insertQuery.setParameter("monthYear", columnName);
                         insertQuery.setParameter("stringValue", stringValue);
                         insertQuery.setParameter("type", catalystType);
                         insertQuery.setParameter("remarks", remarks);
+                        insertQuery.setParameter("tabName", tabName);
                         insertQuery.executeUpdate();
                         updatedCount++;
                     } else {
@@ -260,15 +263,16 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
         return aopMessageVM;
     }
 
-    private List<String> getColumnNames(String plantId, String aopYear, String periodFrom, String periodTo, String spName) {
+    private List<String> getColumnNames(String plantId, String aopYear, String periodFrom, String periodTo, String tabName, String spName) {
         return entityManager.unwrap(Session.class).doReturningWork(connection -> {
             List<String> columnNames = new ArrayList<>();
-            String sql = "EXEC dbo." + spName + " @plantId = ?, @aopYear = ?, @periodFrom = ?, @periodTo = ?";
+            String sql = "EXEC dbo." + spName + " @plantId = ?, @aopYear = ?, @periodFrom = ?, @periodTo = ?, @tabName = ?";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, plantId);
                 ps.setString(2, aopYear);
                 ps.setString(3, periodFrom);
                 ps.setString(4, periodTo);
+                ps.setString(5, tabName);
                 try (ResultSet rs = ps.executeQuery()) {
                     ResultSetMetaData rsMetaData = rs.getMetaData();
                     for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
@@ -280,13 +284,14 @@ public class VgohtManualEntryServiceImpl implements VgohtManualEntryService {
         });
     }
 
-    private List<Object[]> getData(String plantId, String aopYear, String periodFrom, String periodTo, String spName) {
-        String sql = "EXEC dbo." + spName + " @plantId = :plantId, @aopYear = :aopYear, @periodFrom = :periodFrom, @periodTo = :periodTo";
+    private List<Object[]> getData(String plantId, String aopYear, String periodFrom, String periodTo, String tabName, String spName) {
+        String sql = "EXEC dbo." + spName + " @plantId = :plantId, @aopYear = :aopYear, @periodFrom = :periodFrom, @periodTo = :periodTo, @tabName = :tabName";
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("plantId", plantId);
         query.setParameter("aopYear", aopYear);
         query.setParameter("periodFrom", periodFrom);
         query.setParameter("periodTo", periodTo);
+        query.setParameter("tabName", tabName);
         return query.getResultList();
     }
 }
