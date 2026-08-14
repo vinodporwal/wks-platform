@@ -609,7 +609,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
       titleName: `${SCREEN_NAME}`,
       uploadExcelBtn: true,
       ExcelName: `${EXCEL_EXPORT_TITLE}`,
-      showCalculate: calculationObject.length > 0,
+      showCalculate: false,
       calculateDisabled: false,
       showReleaseBtn: showReleaseButton ? true : false,
     },
