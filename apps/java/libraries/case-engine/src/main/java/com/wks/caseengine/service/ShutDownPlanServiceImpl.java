@@ -1582,6 +1582,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+				Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+
+				boolean peHmd = vertical.getName().equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("HMD");
 	            
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 	    
@@ -1774,6 +1778,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                        }
 
 	                        double durationInDecimalHours = (double) totalMinutes / 60.0;
+							if(peHmd) {
+								durationInDecimalHours = convertMinutesToHoursMinutes(totalMinutes);
+							}
 	                        dto.setDurationInHrs(durationInDecimalHours);
 	                    } catch (Exception e) {
 	                        if (!alreadyFailed) { 
@@ -3569,6 +3576,17 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
+	}
+
+	public static double convertMinutesToHoursMinutes(long totalMinutes) {
+		if (totalMinutes < 0) {
+			throw new IllegalArgumentException("Total minutes cannot be negative.");
+		}
+	
+		long hours = totalMinutes / 60;
+		long minutes = totalMinutes % 60;
+	
+		return Double.parseDouble(String.format("%d.%02d", hours, minutes));
 	}
 
 	private void updateSlowdownActivities(ShutDownPlanDTO shutDownPlanDTO, PlantMaintenanceTransaction plantMaintenanceTransaction, UUID plantId) {  
