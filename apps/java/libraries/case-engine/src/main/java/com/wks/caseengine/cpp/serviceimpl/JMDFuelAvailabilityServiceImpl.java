@@ -14,6 +14,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -413,25 +414,26 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         dto.setFuelId(row[3] != null ? UUID.fromString(row[3].toString()) : null);
         dto.setFuelName(row[4] != null ? row[4].toString() : null);
         dto.setFuelDisplayName(row[5] != null ? row[5].toString() : null);
-        dto.setCategoryId(row[6] != null ? UUID.fromString(row[6].toString()) : null);
-        dto.setCategoryName(row[7] != null ? row[7].toString() : null);
-        dto.setCategoryDisplayName(row[8] != null ? row[8].toString() : null);
-        dto.setType(row[9] != null ? row[9].toString() : null);
-        dto.setUom(row[10] != null ? row[10].toString() : null);
-        dto.setFinancialYear(row[11] != null ? row[11].toString() : null);
-        dto.setApr(toDoubleObj(row[12]));
-        dto.setMay(toDoubleObj(row[13]));
-        dto.setJun(toDoubleObj(row[14]));
-        dto.setJul(toDoubleObj(row[15]));
-        dto.setAug(toDoubleObj(row[16]));
-        dto.setSep(toDoubleObj(row[17]));
-        dto.setOct(toDoubleObj(row[18]));
-        dto.setNov(toDoubleObj(row[19]));
-        dto.setDec(toDoubleObj(row[20]));
-        dto.setJan(toDoubleObj(row[21]));
-        dto.setFeb(toDoubleObj(row[22]));
-        dto.setMar(toDoubleObj(row[23]));
-        dto.setRemarks(row[24] != null ? row[24].toString() : null);
+        dto.setFuelCode(row[6] != null ? row[6].toString() : null);
+        dto.setCategoryId(row[7] != null ? UUID.fromString(row[7].toString()) : null);
+        dto.setCategoryName(row[8] != null ? row[8].toString() : null);
+        dto.setCategoryDisplayName(row[9] != null ? row[9].toString() : null);
+        dto.setType(row[10] != null ? row[10].toString() : null);
+        dto.setUom(row[11] != null ? row[11].toString() : null);
+        dto.setFinancialYear(row[12] != null ? row[12].toString() : null);
+        dto.setApr(toDoubleObj(row[13]));
+        dto.setMay(toDoubleObj(row[14]));
+        dto.setJun(toDoubleObj(row[15]));
+        dto.setJul(toDoubleObj(row[16]));
+        dto.setAug(toDoubleObj(row[17]));
+        dto.setSep(toDoubleObj(row[18]));
+        dto.setOct(toDoubleObj(row[19]));
+        dto.setNov(toDoubleObj(row[20]));
+        dto.setDec(toDoubleObj(row[21]));
+        dto.setJan(toDoubleObj(row[22]));
+        dto.setFeb(toDoubleObj(row[23]));
+        dto.setMar(toDoubleObj(row[24]));
+        dto.setRemarks(row[25] != null ? row[25].toString() : null);
         return dto;
     }
 
@@ -453,8 +455,9 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         Sheet sheet = workbook.createSheet(isErrorExcel ? "Fuel Availability Errors" : "Fuel Availability");
 
         CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
-        CellStyle dataStyle = ExcelStyles.createDataStyle(workbook);
-        CellStyle remarksStyle = ExcelStyles.createRemarksStyle(workbook);
+        CellStyle lockedStyle = ExcelStyles.createLockedStyle(workbook);
+        CellStyle unlockedStyle = ExcelStyles.createUnlockedStyle(workbook);
+        CellStyle remarksStyle = ExcelStyles.createEditableRemarksStyle(workbook);
         CellStyle errorStyle = isErrorExcel ? ExcelStyles.createErrorStyle(workbook) : null;
 
         String[] months = FiscalYearMonths.getMonthHeaders(financialYear);
@@ -463,7 +466,7 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         int col = 0;
 
         Row headerRow = sheet.createRow(rowNum++);
-        String[] baseHeaders = {"CPP Plant", "Category", "Fuel", "Type", "UOM"};
+        String[] baseHeaders = {"CPP Plant", "Category", "Fuel", "Fuel Code", "Type", "UOM"};
         for (String header : baseHeaders) {
             ExcelCells.setString(headerRow.createCell(col++), header, headerStyle);
         }
@@ -503,31 +506,32 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
             Row row = sheet.createRow(rowNum++);
             col = 0;
 
-            ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(), dataStyle);
-            ExcelCells.setString(row.createCell(col++), dto.getCategoryDisplayName(), dataStyle);
-            ExcelCells.setString(row.createCell(col++), dto.getFuelDisplayName(), dataStyle);
-            ExcelCells.setString(row.createCell(col++), dto.getType(), dataStyle);
-            ExcelCells.setString(row.createCell(col++), dto.getUom(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(), lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getCategoryDisplayName(), lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getFuelDisplayName(), lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getFuelCode(), lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getType(), lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUom(), lockedStyle);
 
-            ExcelCells.setDouble(row.createCell(monthStartCol + 0), dto.getApr(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 1), dto.getMay(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 2), dto.getJun(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 3), dto.getJul(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 4), dto.getAug(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 5), dto.getSep(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 6), dto.getOct(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 7), dto.getNov(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 8), dto.getDec(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 9), dto.getJan(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 10), dto.getFeb(), dataStyle);
-            ExcelCells.setDouble(row.createCell(monthStartCol + 11), dto.getMar(), dataStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 0), dto.getApr(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 1), dto.getMay(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 2), dto.getJun(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 3), dto.getJul(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 4), dto.getAug(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 5), dto.getSep(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 6), dto.getOct(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 7), dto.getNov(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 8), dto.getDec(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 9), dto.getJan(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 10), dto.getFeb(), unlockedStyle);
+            ExcelCells.setDouble(row.createCell(monthStartCol + 11), dto.getMar(), unlockedStyle);
             col = monthStartCol + 12;
 
             ExcelCells.setString(row.createCell(col++), dto.getRemarks(), remarksStyle);
-            ExcelCells.setString(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
-            ExcelCells.setString(row.createCell(col++), dto.getCppPlantFkId() != null ? dto.getCppPlantFkId().toString() : null, dataStyle);
-            ExcelCells.setString(row.createCell(col++), dto.getFuelId() != null ? dto.getFuelId().toString() : null, dataStyle);
-            ExcelCells.setString(row.createCell(col++), generateHash(dto), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getCppPlantFkId() != null ? dto.getCppPlantFkId().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getFuelId() != null ? dto.getFuelId().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(col++), generateHash(dto), lockedStyle);
 
             if (isErrorExcel) {
                 ExcelCells.setString(row.createCell(col++), "Failed", errorStyle);
@@ -540,6 +544,14 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         if (commentCol >= 0) {
             sheet.setColumnWidth(commentCol, ExcelColumns.DEFAULT_REMARKS_WIDTH);
         }
+
+        // Protect the sheet so locked/unlocked cell styles take effect.
+        // Only Apr–Mar and Remarks columns are unlocked (editable); all other
+        // columns are locked with a grey background.
+        sheet.protectSheet("");
+        XSSFSheet xssfSheet = (XSSFSheet) sheet;
+        xssfSheet.lockFormatColumns(false);  // allow column width changes + unhide
+        xssfSheet.lockFormatRows(false);     // allow row height changes
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
@@ -564,10 +576,11 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         int idColIdx = -1;
         int cppPlantFkIdColIdx = -1;
         int fuelIdColIdx = -1;
+        int fuelCodeColIdx = -1;
         int remarksColIdx = -1;
         int dataHashColIdx = -1;
-        // Base headers: 0=CPP Plant, 1=Category, 2=Fuel, 3=Type, 4=UOM
-        int monthStartIdx = 5;
+        // Base headers: 0=CPP Plant, 1=Category, 2=Fuel, 3=Fuel Code, 4=Type, 5=UOM
+        int monthStartIdx = 6;
 
         for (int i = 0; i < numCols; i++) {
             String header = ExcelCells.toString(headerRow.getCell(i));
@@ -579,6 +592,8 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
                 cppPlantFkIdColIdx = i;
             } else if (headerLower.equals("fuelid")) {
                 fuelIdColIdx = i;
+            } else if (headerLower.equals("fuelcode")) {
+                fuelCodeColIdx = i;
             } else if (headerLower.equals("remarks")) {
                 remarksColIdx = i;
             } else if (headerLower.equals("datahash")) {
@@ -596,8 +611,9 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
             dto.setCppPlantName(ExcelCells.toStringValue(row.getCell(0)));
             dto.setCategoryDisplayName(ExcelCells.toStringValue(row.getCell(1)));
             dto.setFuelDisplayName(ExcelCells.toStringValue(row.getCell(2)));
-            dto.setType(ExcelCells.toStringValue(row.getCell(3)));
-            dto.setUom(ExcelCells.toStringValue(row.getCell(4)));
+            dto.setFuelCode(ExcelCells.toStringValue(row.getCell(3)));
+            dto.setType(ExcelCells.toStringValue(row.getCell(4)));
+            dto.setUom(ExcelCells.toStringValue(row.getCell(5)));
 
             if (idColIdx >= 0) {
                 dto.setId(ExcelCells.toUUID(row.getCell(idColIdx)));
@@ -609,6 +625,10 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
 
             if (fuelIdColIdx >= 0) {
                 dto.setFuelId(ExcelCells.toUUID(row.getCell(fuelIdColIdx)));
+            }
+
+            if (fuelCodeColIdx >= 0) {
+                dto.setFuelCode(ExcelCells.toStringValue(row.getCell(fuelCodeColIdx)));
             }
 
             if (remarksColIdx >= 0) {

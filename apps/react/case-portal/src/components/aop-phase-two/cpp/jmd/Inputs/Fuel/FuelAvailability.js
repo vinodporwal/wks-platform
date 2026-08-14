@@ -198,6 +198,14 @@ const FuelAvailability = ({
       minWidth: 200,
     },
     {
+      field: 'fuelCode',
+      title: 'Fuel Code',
+      type: 'text',
+      editable: false,
+      locked: true,
+      minWidth: 120,
+    },
+    {
       field: 'uom',
       title: 'UOM',
       type: 'text',
@@ -662,6 +670,7 @@ const FuelAvailability = ({
           cppPlantName: '',
           categoryDisplayName: '',
           fuelDisplayName: '',
+          fuelCode: '',
           type: DATA_TYPE,
           uom: '',
           remarks: '',

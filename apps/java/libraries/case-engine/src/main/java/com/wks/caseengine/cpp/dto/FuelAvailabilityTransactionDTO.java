@@ -26,6 +26,9 @@ public class FuelAvailabilityTransactionDTO {
     @JsonProperty("fuelDisplayName")
     private String fuelDisplayName;
 
+    @JsonProperty("fuelCode")
+    private String fuelCode;
+
     @JsonProperty("categoryId")
     private UUID categoryId;
 
