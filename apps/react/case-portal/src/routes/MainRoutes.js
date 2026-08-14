@@ -192,6 +192,7 @@ import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
 import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
+import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
 
 // Naphthasplitter Ended
 
@@ -422,12 +423,18 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
-
-
+          {
+            path: 'jw-unit',
+            element: (
+              <PrivateRoute routeId='jw-unit'>
+                <JwUnitScreen />
+              </PrivateRoute>
+            ),
+          },
         ],
         // REFINERY AOP BUDGET Ended],
       },
+
 
       {
         path: 'production-norms-plan',
