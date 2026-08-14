@@ -1,5 +1,6 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -110,6 +111,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	private SpyroInputService spyroInputService;
 
 	private static final String PILOT_FURNACE_TABLE_ID = "Pilot Furnace Details";
+	private static final String PILOT_FURNACE_LAYOUT_SPACER = "_pilotFurnaceLayoutSpacer";
 	private static final String WEIGHTED_AVERAGE_HEADER = "Weighted Average";
 
 	@Override
@@ -2122,6 +2124,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		ObjectMapper mapper = new ObjectMapper();
 		Map<String, List<List<Object>>> data = new HashMap<>();
 		Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
+		alignPilotFurnaceHiddenColumns(structure);
 		Map<String, List<Map<String, Object>>> spyroOutputDataListMap = new HashMap<>();
 		if (!isAfterSave) {
 			AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, "Composition");
@@ -2146,22 +2149,23 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						excelUtilityService.getAcademicYearMonths(year));
 				List<List<Object>> dataList = new ArrayList<>();
 				if (isAfterSave) {
-					if(!mapForExcel.containsKey(tableId)){
-						hideTable = true;
-						continue;
-					}
-					headers.add("saveStatus");
-					headers.add("errDescription");
-					headersOuterTitles.get(0).add("SaveStatus");
-					headersOuterTitles.get(0).add("ErrDescription");
+				if(!mapForExcel.containsKey(tableId)){
+					table.put(ExcelConstants.HIDE_TABLE, true);
+					continue;
+				}
+				headers.add("saveStatus");
+				headers.add("errDescription");
+				headersOuterTitles.get(0).add("SaveStatus");
+				headersOuterTitles.get(0).add("ErrDescription");
 
 
-					for (SpyroOutputDTO dto : mapForExcel.get(tableId)) {
+				for (SpyroOutputDTO dto : mapForExcel.get(tableId)) {
 
-						List<Object> list = new ArrayList<>();
-						for (String fieldName : headers) {
-							if (WEIGHTED_AVERAGE_HEADER.equalsIgnoreCase(fieldName)) {
-								// Weighted Average is display-only and is never populated from an import DTO.
+					List<Object> list = new ArrayList<>();
+					for (String fieldName : headers) {
+						if (WEIGHTED_AVERAGE_HEADER.equalsIgnoreCase(fieldName)
+									|| PILOT_FURNACE_LAYOUT_SPACER.equals(fieldName)) {
+								// These layout/display-only columns are never populated from an import DTO.
 								list.add(null);
 								continue;
 							}
@@ -2229,7 +2233,8 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			}
 		}
 		
-		return excelUtilityService.generateFlexibleExcel(structure, data);
+		byte[] excelBytes = excelUtilityService.generateFlexibleExcel(structure, data);
+		return removePilotFurnaceSpacerCells(excelBytes);
 
 	} catch (Exception e) {
 		e.printStackTrace();
@@ -2255,6 +2260,7 @@ public AOPMessageVM importExcelWithPilotFurnace(String year, String plantFKId, S
 				.orElseThrow(() -> new IllegalArgumentException("Spyro Output Excel configuration not found"));
 		Map<String, Object> structure = new ObjectMapper()
 				.readValue(excelConfiguration.getJsonValue(), Map.class);
+		alignPilotFurnaceHiddenColumns(structure);
 
 		Map<String, List<SpyroOutputDTO>> map =
 				readSpyroOutputExcelWithPilotFurnace(file.getInputStream(), year, structure);
@@ -2278,7 +2284,9 @@ public AOPMessageVM importExcelWithPilotFurnace(String year, String plantFKId, S
 		AOPMessageVM vm = updateSpyroOutputData(year,plantFKId,map.get(key));
 		List<SpyroOutputDTO> failedList = (List<SpyroOutputDTO>) vm.getData();
 		failedRecords.addAll(failedList);
-		mapForExcel.put(key, failedList);
+		if(failedList.size() > 0) {
+			mapForExcel.put(key, failedList);
+		}
 	}
 
 		
@@ -2302,6 +2310,95 @@ public AOPMessageVM importExcelWithPilotFurnace(String year, String plantFKId, S
 		throw new RuntimeException("Failed to fetch data", ex);
 	}
 }
+
+	private void alignPilotFurnaceHiddenColumns(Map<String, Object> structure) {
+		for (Object sheetValue : structure.values()) {
+			Map<String, Object> sheetConfiguration = (Map<String, Object>) sheetValue;
+			List<Map<String, Object>> tables =
+					(List<Map<String, Object>>) sheetConfiguration.get(ExcelConstants.TABLES);
+			if (tables == null) {
+				continue;
+			}
+
+			for (Map<String, Object> table : tables) {
+				String tableId = (String) table.get(ExcelConstants.TABLEID);
+				if (!PILOT_FURNACE_TABLE_ID.equalsIgnoreCase(tableId)) {
+					continue;
+				}
+
+				List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+				int normParameterIndex = getHeaderIndex(headers, "normParameterFKID");
+				if (normParameterIndex < 0 || headers.contains(PILOT_FURNACE_LAYOUT_SPACER)) {
+					continue;
+				}
+
+				headers.add(normParameterIndex, PILOT_FURNACE_LAYOUT_SPACER);
+
+				List<List<String>> headerTitles =
+						(List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+				if (headerTitles != null && !headerTitles.isEmpty()) {
+					List<String> titles = headerTitles.get(0);
+					int normParameterTitleIndex = getHeaderIndex(titles, "NormParameterFKID");
+					if (normParameterTitleIndex >= 0) {
+						// The hidden metadata header is unnecessary; omitting it keeps
+						// Pilot Furnace visually ending at Remark.
+						titles.remove(normParameterTitleIndex);
+					}
+				}
+
+				// Column hiding applies to the whole sheet. Keep Pilot Furnace metadata
+				// aligned with weighted tables so its old index 15 does not hide Remark.
+				table.put(ExcelConstants.HIDDEN_COLUMNS,
+						List.of(normParameterIndex + 1, headers.size(), headers.size() + 2));
+			}
+		}
+	}
+
+	private int getHeaderIndex(List<String> headers, String headerName) {
+		if (headers == null) {
+			return -1;
+		}
+		for (int index = 0; index < headers.size(); index++) {
+			if (headerName.equalsIgnoreCase(headers.get(index))) {
+				return index;
+			}
+		}
+		return -1;
+	}
+
+	private byte[] removePilotFurnaceSpacerCells(byte[] excelBytes) throws Exception {
+		if (excelBytes == null) {
+			return null;
+		}
+
+		try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(excelBytes));
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			DataFormatter formatter = new DataFormatter();
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				for (Row row : workbook.getSheetAt(sheetIndex)) {
+					boolean pilotFurnaceRow = false;
+					for (int tableIdColumn : List.of(17, 19)) {
+						Cell tableIdCell =
+								row.getCell(tableIdColumn, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+						if (tableIdCell != null && PILOT_FURNACE_TABLE_ID.equalsIgnoreCase(
+								formatter.formatCellValue(tableIdCell).trim())) {
+							pilotFurnaceRow = true;
+							break;
+						}
+					}
+					if (pilotFurnaceRow) {
+						Cell spacerCell =
+								row.getCell(15, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+						if (spacerCell != null) {
+							row.removeCell(spacerCell);
+						}
+					}
+				}
+			}
+			workbook.write(outputStream);
+			return outputStream.toByteArray();
+		}
+	}
 
 	private Map<String, List<SpyroOutputDTO>> readSpyroOutputExcelWithPilotFurnace(
 			InputStream inputStream, String year, Map<String, Object> structure) {
