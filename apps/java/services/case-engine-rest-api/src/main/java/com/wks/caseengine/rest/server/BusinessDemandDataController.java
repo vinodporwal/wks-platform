@@ -196,44 +196,6 @@ public class BusinessDemandDataController {
 		return businessDemandDataService.calculateBusinessDemand(year, plantId);
 	}
 
-	// ref: /business-demand-export | seperate api to include 'Total' column
-	@GetMapping(value = "/business-demand-export-total")
-	public ResponseEntity<byte[]> exportBusinessDemandTotal(
-	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year
-	        ) {
-	    try {
-			
-	        byte[] excelBytes = businessDemandDataService.exportBusinessDemandWithTotal(year,plantId,false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
-
-	        HttpHeaders headers = new HttpHeaders();
-	        headers.setContentType(MediaType.parseMediaType(
-	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-	        headers.setContentDisposition(ContentDisposition.builder("attachment")
-	                .filename("Business_demand.xlsx")
-	                .build());
-	        headers.setContentLength(excelBytes.length);
-
-	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
-	    } catch (Exception e) {
-	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-	    }
-	}
-	
-	
-		// ref: /business-demand-import | seperate api to handle 'Total' column
-	@PostMapping(value = "/business-demand-import-total", consumes = "multipart/form-data")
-	public AOPMessageVM importExcelWithTotal(
-	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file
-	        ) {
-			return	businessDemandDataService.importExcelWithTotal(year,UUID.fromString(plantId), file); 
-	}
-	
-	
-	
-
 
 }
 

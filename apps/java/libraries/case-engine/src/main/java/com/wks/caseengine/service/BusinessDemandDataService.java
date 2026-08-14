@@ -34,8 +34,4 @@ public interface BusinessDemandDataService {
 	public AOPMessageVM importExcelV2(String year, UUID plantId, MultipartFile file);
 	public AOPMessageVM importExcelWithTotal(String year, UUID plantId, MultipartFile file);
 
-	public byte[] exportBusinessDemandWithTotal(String year, String plantId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
-
-    public AOPMessageVM importExcelWithTotal(String year, UUID plantId, MultipartFile file);
-
 }
