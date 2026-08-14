@@ -8,6 +8,7 @@ import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import { useSession } from 'SessionStoreContext'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import { OptimizerOutputApiService } from 'services/optimizer-output-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
@@ -855,6 +856,14 @@ const CrackerConfig = () => {
             AOP_YEAR,
           )
         }
+      } else if (IS_CRACKER_C2) {
+        response = await OptimizerOutputApiService.importExcelWithPilotFurnace(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response = await DataService.importSpyroOutputExcel(
           rawFile,
@@ -1027,13 +1036,23 @@ const CrackerConfig = () => {
       } else {
         const ExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_${AOP_YEAR}`
 
-        response = await DataService.exportSpyroOutputExcel(
-          keycloak,
-          mode,
-          PLANT_ID,
-          AOP_YEAR,
-          ExcelName,
-        )
+        if (IS_CRACKER_C2) {
+          response = await OptimizerOutputApiService.exportSpyroOutputReportWithPilotFurnace(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            ExcelName,
+          )
+        } else {
+          response = await DataService.exportSpyroOutputExcel(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            ExcelName,
+          )
+        }
       }
 
       setSnackbarData({
