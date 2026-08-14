@@ -2404,7 +2404,7 @@ continue;
 				String procedure=verticalName+"_"+site.getName()+"_svhEquivalent_Calculation";
 				executeProcedure(procedure, plantFKId, year);
 			}
-
+  
 			if (aromaticsHmd) {
 				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 						.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));

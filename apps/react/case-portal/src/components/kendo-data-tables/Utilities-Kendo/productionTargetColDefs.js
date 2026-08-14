@@ -454,6 +454,37 @@ export function getColDefsMaxAchievedCapacityPTA(headerMap = {}, valueFormat) {
     ...generateMonthColumnsFixedWidthPTA(headerMap, true, valueFormat),
   ]
 }
+export function getColDefsMaxAchievedCapacityPTAPMDPIA(headerMap = {}, valueFormat) {
+  return [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+      editable: true,
+      hidden: true,
+      isVisible: false,
+      minWidth: 120,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 120,
+      editable: false,
+      minWidth: 120,
+      locked: true,
+    },
+    ...generateMonthColumnsFixedWidthPTA(headerMap, true, valueFormat),
+    {
+      field: 'remarks',
+      title: 'Remark',
+      editable: true,
+      align: 'left',
+      headerAlign: 'left',
+      widthT: 100,
+      minWidth: 100,
+    },
+  ]
+}
 
 export function getColDefsMaxAchievedCapacityPEPP(headerMap = {}, valueFormat) {
   return [

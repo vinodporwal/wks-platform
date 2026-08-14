@@ -37,6 +37,7 @@ const GradeWiseSteadyStateConsumption = () => {
     dataGridStore,
     'Grade_Wise_Steady_State_Consumption',
   )
+  const isFilament = verticalObject?.name?.toLowerCase() === 'filament (pfy)'
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -46,15 +47,12 @@ const GradeWiseSteadyStateConsumption = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Grade dropdown state (for PE/PP — same as NormalOpNorms.js isPEPP logic)
+  // Grade dropdown state
   const [grades, setGrades] = useState([])
   const [selectedGradeId, setSelectedGradeId] = useState(null)
 
   // calculationObject for conditional calculateDisabled
   const [calculationObject, setCalculationObject] = useState([])
-
-  // allRedCell for norm transaction highlights
-  const [allRedCell, setAllRedCell] = useState([])
 
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -216,7 +214,7 @@ const GradeWiseSteadyStateConsumption = () => {
     },
   ]
 
-  // ===================== Fetch Grade Dropdown (for PE — same as NormalOpNorms fetchGradeDropdowns) =====================
+  // ===================== Fetch Grade Dropdown =====================
 
   const fetchGrades = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -246,30 +244,7 @@ const GradeWiseSteadyStateConsumption = () => {
     }
   }, [PLANT_ID, AOP_YEAR, keycloak])
 
-  // ===================== Fetch Norm Transactions (allRedCell for red highlight) =====================
-
-  const fetchNormTransactions = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    try {
-      let res = await SteadyStateConsumptionApiService.getNormTransactions(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (res?.code === 200) {
-        const normalized = (res?.data || []).map((obj) => ({
-          ...obj,
-          normParameterFKId: obj.normParameterFKId?.toUpperCase(),
-        }))
-        setAllRedCell(normalized)
-      }
-    } catch (error) {
-      console.error('Error fetching norm transactions:', error)
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak])
-
-  // ===================== Fetch Main Data (requires gradeId for PE — same as NormalOpNorms fetchData) =====================
+  // ===================== Fetch Main Data (requires gradeId) =====================
 
   const fetchData = useCallback(
     async (gradeId) => {
@@ -336,26 +311,24 @@ const GradeWiseSteadyStateConsumption = () => {
     [PLANT_ID, AOP_YEAR, keycloak],
   )
 
-  // ===================== Initial load & Grade change (same as NormalOpNorms fetchAllData) =====================
+  // ===================== Initial load & Grade change =====================
 
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
     setOriginalRows([])
-    setAllRedCell([])
     setGrades([])
     setSelectedGradeId(null)
-    Promise.all([fetchGrades(), fetchNormTransactions()])
+    Promise.all([fetchGrades()])
   }, [PLANT_ID, AOP_YEAR])
 
   // Re-fetch data & validate when selectedGradeId changes
   useEffect(() => {
     if (selectedGradeId) {
       fetchData(selectedGradeId)
-      fetchNormTransactions()
-      validateGradeNorms(selectedGradeId)
+      if (!isFilament) validateGradeNorms(selectedGradeId)
     }
-  }, [selectedGradeId, fetchData, fetchNormTransactions, validateGradeNorms])
+  }, [selectedGradeId, isFilament, fetchData, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -448,7 +421,7 @@ const GradeWiseSteadyStateConsumption = () => {
         }
       }
 
-      if (isWeightedAverageError) {
+      if (isWeightedAverageError && !isFilament) {
         if (errorDataList && errorDataList.length > 0) {
           setValidationErrors(errorDataList)
           setValidationErrorDialogOpen(true)
@@ -464,7 +437,6 @@ const GradeWiseSteadyStateConsumption = () => {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setModifiedCells({})
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Norms not saved!', severity: 'error' })
@@ -483,7 +455,7 @@ const GradeWiseSteadyStateConsumption = () => {
     keycloak,
     selectedGradeId,
     fetchData,
-    fetchNormTransactions,
+    isFilament
   ])
 
   // ===================== Calculate (PE uses site + vertical — same as NormalOpNorms handleCalculateNormalOperationNormsPe) =====================
@@ -493,15 +465,24 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Calculating...', severity: 'info' })
     try {
-      // Same as NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe
-      const data =
-        await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
+      let data;
+      if (isFilament){
+        data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPolyester(
           PLANT_ID,
           SITE_ID,
           VERTICAL_ID,
           AOP_YEAR,
           keycloak,
         )
+      } else{
+       data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
+          PLANT_ID,
+          SITE_ID,
+          VERTICAL_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+      }
 
       if (data == 0 || data) {
         setSnackbarOpen(true)
@@ -511,7 +492,6 @@ const GradeWiseSteadyStateConsumption = () => {
         })
         await fetchGrades()
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -607,7 +587,6 @@ const GradeWiseSteadyStateConsumption = () => {
         })
         setModifiedCells({})
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else if (response?.code === 400 && response?.data) {
         // Partial save — download error file
         downloadBase64Excel(
@@ -620,7 +599,6 @@ const GradeWiseSteadyStateConsumption = () => {
           severity: 'warning',
         })
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -709,7 +687,6 @@ const GradeWiseSteadyStateConsumption = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        allRedCell={allRedCell}
         groupBy={['normParameterTypeDisplayName']}
         customHeight={70}
         paginationConfig={{

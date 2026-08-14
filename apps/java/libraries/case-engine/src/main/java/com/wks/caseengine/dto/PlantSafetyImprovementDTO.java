@@ -28,4 +28,6 @@ public class PlantSafetyImprovementDTO {
     private boolean isEditable;
     private boolean isVisible;
     private int displayOrder;
+    private String saveStatus;
+    private String errDescription;
 }

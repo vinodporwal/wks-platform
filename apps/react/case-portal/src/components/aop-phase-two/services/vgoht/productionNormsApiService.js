@@ -596,8 +596,8 @@ async function exportManualEntryExcel(keycloak, plantId, year, fileName) {
  * @param {string} periodTo - End date
  * @returns {Promise} Manual entry data
  */
-async function getHistoricalMonths(keycloak, aopYear, plantId, periodFrom, periodTo) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/manual-production?aopYear=${aopYear}&plantId=${plantId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+async function getHistoricalMonths(keycloak, aopYear, plantId, periodFrom, periodTo, tab) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/manual-production?aopYear=${aopYear}&plantId=${plantId}&periodFrom=${periodFrom}&periodTo=${periodTo}&tabName=${tab}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -625,8 +625,8 @@ async function getHistoricalMonths(keycloak, aopYear, plantId, periodFrom, perio
  * @param {Array} payload - Data to save
  * @returns {Promise} Save response
  */
-async function saveHistoricalMonths(keycloak, year, plantId, periodFrom, periodTo, payload) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/manual-production?aopYear=${year}&plantId=${plantId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+async function saveHistoricalMonths(keycloak, year, plantId, periodFrom, periodTo, payload, tab) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/manual-production?aopYear=${year}&plantId=${plantId}&periodFrom=${periodFrom}&periodTo=${periodTo}&tabName=${tab}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

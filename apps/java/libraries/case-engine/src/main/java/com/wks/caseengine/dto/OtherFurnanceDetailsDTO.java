@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class OtherFurnanceDetailsDTO {
     
     private String id;
+    private String name;
     private String displayName;
     private String attributeValue;
     private String remarks;

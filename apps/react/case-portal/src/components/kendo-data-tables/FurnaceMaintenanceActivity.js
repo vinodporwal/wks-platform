@@ -197,6 +197,9 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
           .map((col) => ({
             ...col,
             editable: true,
+            width: 350,
+            widthT: 350,
+            minWidth: 300,
           }))
 
         setRunLengthColumns([

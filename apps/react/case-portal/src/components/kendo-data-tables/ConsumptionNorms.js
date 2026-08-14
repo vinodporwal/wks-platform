@@ -121,6 +121,7 @@ const ConsumptionNorms = () => {
 
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
+  const IS_PTA_PMD_PIA = lowerVertName === 'pta' && lowerSiteName === 'pmd' && lowerPlantName === 'pia'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -537,7 +538,7 @@ const ConsumptionNorms = () => {
   }
 
   const handleCalculate = () => {
-    if (lowerVertName === 'pe' && lowerSiteName === 'c2') {
+    if (lowerVertName === 'pe' && lowerSiteName === 'c2'&& lowerPlantName=== 'lldpe') {
       setOpenMaterialGroupedSelectionDialog(true)
     } else {
       handleCalculateMeg()
@@ -716,7 +717,7 @@ const ConsumptionNorms = () => {
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
       showReleaseBtn: false,
-      titleName: `${SCREEN_NAME}`,
+      titleName: IS_PTA_PMD_PIA?`Overall AOP Consumption`:`${SCREEN_NAME}`,
     },
     isOldYear,
   )

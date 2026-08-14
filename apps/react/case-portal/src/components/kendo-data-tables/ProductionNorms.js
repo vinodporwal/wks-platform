@@ -118,7 +118,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'vmd' &&
     plantName === 'acrylonitrile'
-
+  const IS_PTA_PMD_PIA=
+    lowerVertName === 'pta' &&
+    SITE_NAME_LOWERCASE === 'pmd' &&
+    plantName === 'pia'
   const IS_CHEMICAL_NMD =
     lowerVertName === 'chemical' && SITE_NAME_LOWERCASE === 'nmd'
 
@@ -253,7 +256,11 @@ const ProductionNorms = ({ permissions }) => {
         ...row,
         total: row.total ?? findSum('1', row),
       }))
-      if (!IS_CHEMICAL_VMD_ACRYLONITRILE && !IS_CHEMICAL_NMD) {
+      if (
+        !IS_CHEMICAL_VMD_ACRYLONITRILE &&
+        !IS_CHEMICAL_NMD &&
+        !IS_PTA_PMD_PIA
+      ) {
         const result = validateTotalsWithIIR({
           data: enrichedData,
           rowsInKT,
@@ -583,7 +590,7 @@ const ProductionNorms = ({ permissions }) => {
           remark: product.remark,
           isEditable:
             IS_ELASTOMER_JMD_IIR ||
-            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE || IS_PTA_PMD_PIA ||
             IS_CHEMICAL_NMD
               ? true
               : false,
@@ -1321,7 +1328,8 @@ const ProductionNorms = ({ permissions }) => {
           saveBtn:
             IS_ELASTOMER_JMD_IIR ||
             IS_CHEMICAL_VMD_ACRYLONITRILE ||
-            IS_CHEMICAL_NMD
+            IS_CHEMICAL_NMD ||
+            IS_PTA_PMD_PIA
               ? true
               : (permissions?.saveBtn ?? false),
           units:

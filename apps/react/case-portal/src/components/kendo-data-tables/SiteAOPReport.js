@@ -890,11 +890,11 @@ const SiteAOPReport = ({ permissions }) => {
   useEffect(() => {
     if (tabIndex === 0) {
       fetchData()
-    } else if (tabIndex === 1) {
+    } else if (tabIndex === 3) {
       fetchDataEnergyPerformance()
       getPerformanceHighlights()
     }
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
+  }, [PLANT_ID, SITE_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -1050,7 +1050,7 @@ const SiteAOPReport = ({ permissions }) => {
               mt: 1,
             }}
           >
-            <Typography className='button-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               Performance Highlights
             </Typography>
 

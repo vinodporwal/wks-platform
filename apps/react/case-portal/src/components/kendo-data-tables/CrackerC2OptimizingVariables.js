@@ -9,6 +9,7 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import Notification from 'components/Utilities/Notification'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { validateFields } from 'utils/validationUtils'
 
 const MONTH_FIELDS = [
   'april',
@@ -24,11 +25,6 @@ const MONTH_FIELDS = [
   'february',
   'march',
 ]
-
-
-
-
-// ───────────────────────────────────────────────────────────
 
 const CrackerC2OptimizingVariables = () => {
   const keycloak = useSession()
@@ -61,12 +57,21 @@ const CrackerC2OptimizingVariables = () => {
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [dropdownOptions, setDropdownOptions] = useState([])
-  const [feedTypeFlowMappings, setFeedTypeFlowMappings] = useState([])
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
 
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
 
   const unsavedChangesRef = useRef({
     unsavedRows: {},
@@ -76,108 +81,12 @@ const CrackerC2OptimizingVariables = () => {
   const dropdownOptionsRef = useRef([])
 
   const handleSetRows = useCallback((updateFn) => {
-    setRows((prev) => {
-      const nextRows = typeof updateFn === 'function' ? updateFn(prev) : updateFn
+    setRows((prev) => (typeof updateFn === 'function' ? updateFn(prev) : updateFn))
+  }, [])
 
-      if (!Array.isArray(nextRows) || !Array.isArray(prev)) return nextRows
-
-      const getNormalizedString = (val) => (val || '').toLowerCase().replace(/\s+/g, ' ').trim()
-
-      // Find Row 1 and Row 2 in nextRows using normalized string comparisons
-      const feedTypeRow = nextRows.find((r) => {
-        const normName = getNormalizedString(r.Name || r.name)
-        const normDisp = getNormalizedString(r.DisplayName || r.displayName)
-        return normName === 'pilot furnace feed type' || normDisp === 'pilot furnace feed type'
-      })
-
-      const feedFlowRow = nextRows.find((r) => {
-        const normName = getNormalizedString(r.Name || r.name)
-        const normDisp = getNormalizedString(r.DisplayName || r.displayName)
-        return normName === 'pilot furnace feed flow' || normDisp === 'pilot furnace feed flow'
-      })
-
-      if (!feedTypeRow || !feedFlowRow) return nextRows
-
-      // Find Row 1 in prev to compare
-      const prevFeedTypeRow = prev.find((r) => {
-        const normName = getNormalizedString(r.Name || r.name)
-        const normDisp = getNormalizedString(r.DisplayName || r.displayName)
-        return normName === 'pilot furnace feed type' || normDisp === 'pilot furnace feed type'
-      })
-
-      let flowRowUpdated = false
-      const updatedFeedFlowRow = { ...feedFlowRow }
-
-      MONTH_FIELDS.forEach((month) => {
-        const feedTypeVal = feedTypeRow[month]
-        const prevFeedTypeVal = prevFeedTypeRow ? prevFeedTypeRow[month] : undefined
-
-        // ONLY trigger update if the dropdown value for this month actually changed!
-        if (prevFeedTypeRow && feedTypeVal === prevFeedTypeVal) {
-          return
-        }
-
-        const mapping = feedTypeFlowMappings.find(
-          (m) => m.feedType === feedTypeVal && m.month === month,
-        )
-
-        if (mapping) {
-          const expectedFlow = mapping.flowValue
-          if (updatedFeedFlowRow[month] !== expectedFlow) {
-            updatedFeedFlowRow[month] = expectedFlow
-            flowRowUpdated = true
-
-            // Update modifiedCells for the feedFlowRow
-            setModifiedCells((prevMod) => {
-              const prevModRow = prevMod[feedFlowRow.id] || {
-                ...feedFlowRow,
-              }
-              return {
-                ...prevMod,
-                [feedFlowRow.id]: {
-                  ...prevModRow,
-                  [month]: expectedFlow,
-                },
-              }
-            })
-          }
-        } else if (!feedTypeVal) {
-          if (updatedFeedFlowRow[month] !== null && updatedFeedFlowRow[month] !== '') {
-            updatedFeedFlowRow[month] = null
-            flowRowUpdated = true
-
-            setModifiedCells((prevMod) => {
-              const prevModRow = prevMod[feedFlowRow.id] || {
-                ...feedFlowRow,
-              }
-              return {
-                ...prevMod,
-                [feedFlowRow.id]: {
-                  ...prevModRow,
-                  [month]: null,
-                },
-              }
-            })
-          }
-        }
-      })
-
-      if (flowRowUpdated) {
-        return nextRows.map((r) =>
-          r.id === updatedFeedFlowRow.id ? updatedFeedFlowRow : r,
-        )
-      }
-
-      return nextRows
-    })
-  }, [feedTypeFlowMappings])
-
-  // Column definitions
   // Month columns use 'feedTypeOrNumeric' type — the FeedTypeOrNumericEditor
-  // renders a dropdown (C2/C3/C4/Naphtha) when UOM === '#', or a numeric
-  // input otherwise.
+  // renders a dropdown when UOM === '#', or a numeric input otherwise.
   const monthColumns = MONTH_FIELDS.map((monthField, idx) => {
-    // headerMap is keyed 1-12 (Jan=1 … Dec=12), fiscal months start Apr=4
     const calendarMonth = ((idx + 3) % 12) + 1
     return {
       field: monthField,
@@ -186,6 +95,7 @@ const CrackerC2OptimizingVariables = () => {
       type: 'feedTypeOrNumeric',
       minWidth: 100,
       format: valueFormat,
+      isRightAlligned: 'numeric',
     }
   })
 
@@ -205,10 +115,16 @@ const CrackerC2OptimizingVariables = () => {
       locked: true,
     },
     ...monthColumns,
-
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      editable: true,
+      minWidth: 200,
+      widthT: 200,
+    },
   ]
 
-  // ── Format raw API data into grid rows ──
+  // Format raw API data into grid rows
   const formatApiData = (data, options = []) => {
     const defValue = options[0]?.name || null
     return data.map((item, index) => {
@@ -308,34 +224,13 @@ const CrackerC2OptimizingVariables = () => {
     }
   }, [keycloak])
 
-  const fetchFeedTypeFlowMappings = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    try {
-      const res = await OptimizingVariablesApiService.getFeedTypeFlowMappings(keycloak, PLANT_ID, AOP_YEAR)
-      if (res?.code === 200 && Array.isArray(res.data)) {
-        const mapped = res.data.map(item => ({
-          feedType: item.feedType,
-          month: item.monthName ? item.monthName.toLowerCase() : '',
-          flowValue: item.flowValue
-        }))
-        setFeedTypeFlowMappings(mapped)
-      } else {
-        setFeedTypeFlowMappings([])
-      }
-    } catch (e) {
-      console.error("Failed to fetch feed type flow mappings", e)
-      setFeedTypeFlowMappings([])
-    }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
-
   useEffect(() => {
     const init = async () => {
       const opts = await fetchDropdownOptions()
       await fetchData(opts)
-      await fetchFeedTypeFlowMappings()
     }
     init()
-  }, [fetchDropdownOptions, fetchData, fetchFeedTypeFlowMappings])
+  }, [fetchDropdownOptions, fetchData])
 
   // Save handler
   const saveData = async (editedRows) => {
@@ -350,6 +245,7 @@ const CrackerC2OptimizingVariables = () => {
         isEditable: row.isEditable,
         isVisible: row.isVisible ?? true,
         displayOrder: row.displayOrder || null,
+        remarks: row.remarks || '',
         april: row.april !== undefined && row.april !== null ? String(row.april) : null,
         may: row.may !== undefined && row.may !== null ? String(row.may) : null,
         june: row.june !== undefined && row.june !== null ? String(row.june) : null,
@@ -379,7 +275,6 @@ const CrackerC2OptimizingVariables = () => {
         })
         setModifiedCells({})
         fetchData()
-        fetchFeedTypeFlowMappings()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -412,13 +307,22 @@ const CrackerC2OptimizingVariables = () => {
         return
       }
 
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+
       saveData(data)
     } catch (error) {
       console.error('Error in saveChanges:', error)
     }
   }, [modifiedCells])
-
-
 
   // Permissions
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -445,7 +349,7 @@ const CrackerC2OptimizingVariables = () => {
       allAction: true,
       showTitleNameBusiness: true,
       titleName: 'Pilot furnace details',
-      saveWithRemark: false,
+      saveWithRemark: true,
       saveBtn: true,
       showCalculate: false,
       downloadExcelBtn: false,
@@ -472,6 +376,12 @@ const CrackerC2OptimizingVariables = () => {
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          handleRemarkCellClick={handleRemarkCellClick}
           unsavedChangesRef={unsavedChangesRef}
           permissions={adjustedPermissions}
         />

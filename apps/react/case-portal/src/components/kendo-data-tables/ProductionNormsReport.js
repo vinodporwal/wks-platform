@@ -59,7 +59,7 @@ const ProductionNormsReport = () => {
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
-
+  const IS_VCM_HMDVMD =VERTICAL_NAME_NO_CASE === 'VCM' && (SITE_NAME_NO_CASE=== 'HMD' || SITE_NAME_NO_CASE=== 'VMD')
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Season_Month`
 
   const handleRemarkCellClick = (row) => {
@@ -99,7 +99,7 @@ const ProductionNormsReport = () => {
       downloadExcelBtnFromUI: false,
       ExcelName: `${EXCEL_EXPORT_TITLE}`,
       showTitleNameBusiness: true,
-      titleName: 'Main Products - Production for the budget year',
+      titleName: IS_VCM_HMDVMD? `Main Products - Production for the budget year FY-${AOP_YEAR}` : 'Main Products - Production for the budget year',
     },
     IS_OLD_YEAR,
   )

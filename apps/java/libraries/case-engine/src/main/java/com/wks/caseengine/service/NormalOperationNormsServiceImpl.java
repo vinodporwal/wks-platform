@@ -5,19 +5,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.util.stream.Collectors;
 
@@ -135,7 +123,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Boolean withGrade = false;
 		Boolean elastomer = verticalName.equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		if ((plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
-				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() )) {
+				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) ||  (vertical.getName().equalsIgnoreCase("Filament")&& gradeId != null && !gradeId.trim().isEmpty() )) {
 			withGrade = true;
 		}
 		try {
@@ -745,7 +733,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                failedList.add(dto);
 	                continue;
 	            }
-	            if (isStapleWithGrade || isFilamentWithGrade) {
+	            if (isStapleWithGrade) {
 
 	            
 	                Optional<MCUNormsValueGrade> optionalValue = mcuNormsValueGradeRepository
@@ -2208,7 +2196,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 
 			Boolean withGrade = false;
-			if (elastomerHmdSbr || pvc || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() )) {
+			if (elastomerHmdSbr || pvc || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || (vertical.getName().equalsIgnoreCase("Filament")&& gradeId != null && !gradeId.trim().isEmpty() )) {
 				withGrade = true;
 			}
 			
@@ -3667,7 +3655,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		String storedProcedure = vertical.getName() + "_" + site.getName() + "_GradeNormCalculation";
-		String callSql = "{call " + storedProcedure + "(?, ?, ?, ?)}";
+		String callSql = "{call " + "[" + storedProcedure + "]" + "(?, ?, ?, ?)}";
 
 		try (Connection connection = dataSource.getConnection();
 				CallableStatement stmt = connection.prepareCall(callSql)) {

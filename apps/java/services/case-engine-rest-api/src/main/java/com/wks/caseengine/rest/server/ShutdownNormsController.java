@@ -60,9 +60,10 @@ public class ShutdownNormsController {
 			boolean vcmDmd = vertical.getName().equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("DMD");
 			boolean chemicalDmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD");
 			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+			boolean ptaPmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
 			byte[] excelBytes=null;
 			 
-			if(vcmDmd || chemicalDmd || meg) {
+			if(vcmDmd || chemicalDmd || meg || ptaPmd) {
 				// seperate export method to enable months as per shutdown months
 				  excelBytes = shutdownNormsService.exportDMDShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 
 			}else {
@@ -92,6 +93,16 @@ public class ShutdownNormsController {
 			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
 	        ) {
 			return	shutdownNormsService.importShutdownConsumption(year,UUID.fromString(plantId),gradeId, file); 
+	}
+
+	@PostMapping(value = "/import-shutdown-consumption-by-material-id", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelByMaterialId(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+            @RequestParam(required = false) String gradeId,
+			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
+	        ) {
+			return	shutdownNormsService.importShutdownConsumptionByMaterialId(year,UUID.fromString(plantId),gradeId, file); 
 	}
 
 	@GetMapping(value = "/shutdown-consumption-export")

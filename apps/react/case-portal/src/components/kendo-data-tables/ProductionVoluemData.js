@@ -24,6 +24,7 @@ import {
   getColDefsMaxAchievedCapacity,
   getColDefsMaxAchievedCapacityPEPP,
   getColDefsMaxAchievedCapacityPTA,
+  getColDefsMaxAchievedCapacityPTAPMDPIA,
   getColDefsNonEditable,
   getColDefsPercentageSummary,
   getColDefsPercentageSummaryPEPP,
@@ -55,6 +56,10 @@ const ProductionvolumeData = ({
   const [modifiedCellsDesignCapacity, setModifiedCellsDesignCapacity] =
     React.useState({})
   const [enableSaveAddBtnDesignCapacity, setEnableSaveAddBtnDesignCapacity] =
+    useState(false)
+  const [modifiedCellsMaxCapacity, setModifiedCellsMaxCapacity] =
+    React.useState({})
+  const [enableSaveAddBtnMaxCapacity, setEnableSaveAddBtnMaxCapacity] =
     useState(false)
   const [_plantID, set_PlantID] = useState('')
 
@@ -129,6 +134,7 @@ const ProductionvolumeData = ({
   const IS_CRACKER_C2 = VERTICAL_NAME === 'cracker' && SITE_NAME === 'c2'
   const IS_CRACKER_DMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'dmd'
   const IS_VCM_DMD_EDC = IS_VCM && SITE_NAME === 'dmd' && PLANT_NAME === 'edc'
+  const IS_PTA_PMD_PIA = VERTICAL_NAME === 'pta' && SITE_NAME === 'pmd' && PLANT_NAME === 'pia'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -150,11 +156,17 @@ const ProductionvolumeData = ({
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [remarkDialogOpenDesignCapacity, setRemarkDialogOpenDesignCapacity] =
     useState(false)
+  const [remarkDialogOpenMaxCapacity, setRemarkDialogOpenMaxCapacity] =
+    useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRemarkDesignCapacity, setCurrentRemarkDesignCapacity] =
     useState('')
+  const [currentRemarkMaxCapacity, setCurrentRemarkMaxCapacity] =
+    useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [currentRowIdDesignCapacity, setCurrentRowIdDesignCapacity] =
+    useState(null)
+  const [currentRowIdMaxCapacity, setCurrentRowIdMaxCapacity] =
     useState(null)
   const [startDate, setStartDate] = useState(null)
   const [endDate, setEndDate] = useState(null)
@@ -179,6 +191,12 @@ const ProductionvolumeData = ({
     setCurrentRemarkDesignCapacity(row.remarks || '')
     setCurrentRowIdDesignCapacity(row.id)
     setRemarkDialogOpenDesignCapacity(true)
+  }
+  const handleRemarkCellClickMaxCapacity = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemarkMaxCapacity(row.remarks || '')
+    setCurrentRowIdMaxCapacity(row.id)
+    setRemarkDialogOpenMaxCapacity(true)
   }
 
   const findAvg = (value, row) => {
@@ -412,6 +430,106 @@ const ProductionvolumeData = ({
     }
   }, [modifiedCellsDesignCapacity, unitDesignCapacity])
 
+  const editMaxCapacityData = async (newRows) => {
+    setLoading(true)
+    try {
+      const isTPH = unitMaxCapacity === 'TPD'
+
+      const months = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
+      ]
+
+      const maxCapacityData = newRows.map((row) => {
+        const mapped = { id: row.idFromApi || null }
+        months.forEach((month) => {
+          mapped[month] =
+            isTPH && row[month] ? row[month] / 24 : row[month] || null
+        })
+        mapped.remarks = row.remarks || row.remark || ''
+        mapped.materialFKId = row.normParametersFKId || row.materialFKId || null
+        mapped.productName = row.productName || row.materialDisplayName || null
+        return mapped
+      })
+
+      const response =
+        await ProductionVolumeDataApiService.editMaxAchievedCapacityData(
+          maxCapacityData,
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (response && (response.code === 200 || response.status === 200)) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCellsMaxCapacity({})
+        setEnableSaveAddBtnMaxCapacity(false)
+        fetchMaxCapacityData(unitMaxCapacity)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please fill all fields, try again!',
+          severity: 'error',
+        })
+      }
+      setLoading(false)
+      return response
+    } catch (error) {
+      console.error('Error saving Max Achieved Capacity:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error saving Max Achieved Capacity!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
+
+  const saveChangesMaxCapacity = React.useCallback(async () => {
+    try {
+      const data = Object.values(modifiedCellsMaxCapacity)
+
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+      const requiredFields = ['remarks']
+      
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+      editMaxCapacityData(data)
+      setEnableSaveAddBtnMaxCapacity(false)
+    } catch (error) {
+      console.log('Facing issue at saving data', error)
+    }
+  }, [modifiedCellsMaxCapacity, unitMaxCapacity, IS_PTA_PMD_PIA])
+
   //
   const saveChanges = React.useCallback(async () => {
     try {
@@ -439,13 +557,13 @@ const ProductionvolumeData = ({
         'february',
         'march',
       ]
-      const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD
+      const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD 
       const invalidRows = data.filter((row) => {
         if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
           return true
         }
 
-        if (isPPDTAorHMD) {
+        if (isPPDTAorHMD || IS_PTA_PMD_PIA) {
           // Only "april" is required
           const value = row['april']
           if (
@@ -486,7 +604,7 @@ const ProductionvolumeData = ({
 
       if (invalidRows.length > 0) {
         setSnackbarData({
-          message: isPPDTAorHMD
+          message: isPPDTAorHMD || IS_PTA_PMD_PIA
             ? 'Please fill April and Remark in edited row!'
             : 'Please fill all fields in edited row and update the Remark!',
           severity: 'error',
@@ -826,15 +944,19 @@ const ProductionvolumeData = ({
   const colDefs_max_achieved_capacity =
     IS_PE_PP || IS_PET || IS_PVC_VMD
       ? getColDefsMaxAchievedCapacityPEPP(headerMap, valueFormat)
-      : IS_PTA || IS_CHEMICAL
-        ? getColDefsMaxAchievedCapacityPTA(headerMap, valueFormat)
-        : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
+      : IS_PTA_PMD_PIA
+        ? getColDefsMaxAchievedCapacityPTAPMDPIA(headerMap, valueFormat)
+        : IS_PTA || IS_CHEMICAL
+          ? getColDefsMaxAchievedCapacityPTA(headerMap, valueFormat)
+          : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
 
   const colDefs_non_editable = getColDefsNonEditable(headerMap, valueFormat)
 
   useEffect(() => {
     setModifiedCellsDesignCapacity({})
-    setEnableSaveAddBtnDesignCapacity({})
+    setEnableSaveAddBtnDesignCapacity(false)
+    setModifiedCellsMaxCapacity({})
+    setEnableSaveAddBtnMaxCapacity(false)
     setModifiedCells({})
 
     fetchData()
@@ -1066,8 +1188,12 @@ const ProductionvolumeData = ({
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => ({
           ...item,
+          id: index + 1,
           idFromApi: item?.id || null,
           productName: item?.materialDisplayName,
+          remarks: item?.remarks?.trim() || null,
+          originalRemark: item?.remarks?.trim() || null,
+          remark: item?.remarks?.trim() || '',
           april: isTPD && item.april ? item.april * 24 : item.april,
           may: isTPD && item.may ? item.may * 24 : item.may,
           june: isTPD && item.june ? item.june * 24 : item.june,
@@ -1081,7 +1207,7 @@ const ProductionvolumeData = ({
           january: isTPD && item.january ? item.january * 24 : item.january,
           february: isTPD && item.february ? item.february * 24 : item.february,
           march: isTPD && item.march ? item.march * 24 : item.march,
-          isEditable: false,
+          isEditable: IS_PTA_PMD_PIA ? true : false,
         }))
         setRowsMaxCapacity(formatted)
       } else {
@@ -1260,7 +1386,7 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: false,
+      saveBtn:  IS_PTA_PMD_PIA?  true: false,
       units: ['TPH', 'TPD'],
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       titleName: percentageTitle,
@@ -1287,6 +1413,7 @@ const ProductionvolumeData = ({
           IS_PVC_DMD ||
           IS_AROMATICS_SEZ_PX4 ||
           IS_PVC_HMD ||
+          IS_PTA_PMD_PIA ||
           VERTICAL_NAME === 'meg'
           ? false
           : true,
@@ -1322,6 +1449,7 @@ const ProductionvolumeData = ({
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
       IS_PVC_HMD ||
+      IS_PTA_PMD_PIA ||
       VERTICAL_NAME === 'meg'
     ) {
       return true
@@ -1338,6 +1466,7 @@ const ProductionvolumeData = ({
     IS_CRACKER_DMD,
     IS_PVC_DMD,
     IS_PVC_HMD,
+    IS_PTA_PMD_PIA,
     IS_CRACKER_C2,
     VERTICAL_NAME,
   ])
@@ -1362,6 +1491,7 @@ const ProductionvolumeData = ({
       IS_PVC_DMD ||
       IS_PVC_HMD ||
       IS_CRACKER_C2 ||
+      IS_PTA_PMD_PIA ||
       VERTICAL_NAME === 'meg'
     ) {
       return true
@@ -1378,6 +1508,7 @@ const ProductionvolumeData = ({
     IS_CRACKER_DMD,
     IS_PVC_DMD,
     IS_PVC_HMD,
+    IS_PTA_PMD_PIA,
     IS_CRACKER_C2,
     VERTICAL_NAME === 'meg',
   ])
@@ -1410,6 +1541,7 @@ const ProductionvolumeData = ({
           IS_PVC_DMD ||
           IS_PVC_HMD ||
           IS_CRACKER_C2 ||
+          IS_PTA_PMD_PIA ||
           VERTICAL_NAME === 'meg'
           ? false
           : true,
@@ -1478,6 +1610,7 @@ const ProductionvolumeData = ({
           IS_AROMATICS_SEZ_PX4 ||
           IS_PVC_HMD ||
           IS_PVC_VMD ||
+          IS_PTA_PMD_PIA ||
           permissions?.hideDownloadExcel ||
           VERTICAL_NAME === 'meg'
           ? false
@@ -1492,6 +1625,7 @@ const ProductionvolumeData = ({
           IS_PVC_HMD ||
           IS_PVC_VMD ||
           IS_VCM_DMD_EDC ||
+          IS_PTA_PMD_PIA ||
           permissions?.hideDownloadExcel ||
           VERTICAL_NAME === 'meg'
           ? false
@@ -1601,7 +1735,7 @@ const ProductionvolumeData = ({
         )
       } else {
         if (gridType === 'design') {
-          if (IS_CRACKER_DMD || IS_CRACKER_C2) {
+          if (IS_CRACKER_DMD || IS_CRACKER_C2 || IS_PTA_PMD_PIA) {
             await ProductionVolumeDataApiService.getProductionVolExcelCommon(
               keycloak,
               PLANT_ID,
@@ -1827,6 +1961,10 @@ const ProductionvolumeData = ({
       {/* MAX_ACHIEVED_CAPACITY */}
       {conditionForFirst && (
         <KendoDataTables
+          modifiedCells={modifiedCellsMaxCapacity}
+          setModifiedCells={setModifiedCellsMaxCapacity}
+          enableSaveAddBtn={enableSaveAddBtnMaxCapacity}
+          setEnableSaveAddBtn={setEnableSaveAddBtnMaxCapacity}
           setRows={setRowsMaxCapacity}
           columns={max_achieved_capacity}
           rows={rowsMaxCapacity}
@@ -1835,6 +1973,19 @@ const ProductionvolumeData = ({
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleUnitChange={handleUnitChangeMaxCapacity}
+          saveChanges={IS_PTA_PMD_PIA ? saveChangesMaxCapacity : undefined}
+          handleRemarkCellClick={handleRemarkCellClickMaxCapacity}
+          experimentalFeatures={{ newEditingApi: true }}
+          remarkDialogOpen={remarkDialogOpenMaxCapacity}
+          setRemarkDialogOpen={setRemarkDialogOpenMaxCapacity}
+          currentRemark={currentRemarkMaxCapacity}
+          setCurrentRemark={setCurrentRemarkMaxCapacity}
+          currentRowId={currentRowIdMaxCapacity}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRef}
           // supressGridHeight={!IS_PP_HMD}
           supressGridHeight={!(rows?.length > 10)}
           downloadExcelForConfiguration={() =>

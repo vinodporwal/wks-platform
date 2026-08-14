@@ -20,6 +20,8 @@ export const CrackerReportsApiDataService = {
   calculateMonthWiseRawData,
   getSpyroInputMinMaxData,
   saveSpyroInputMinMaxData,
+  exportSpyroInputMinMax,
+  importSpyroInputMinMax,
 }
 
 async function runLengthDataSet(keycloak, reportType, PLANT_ID, AOP_YEAR) {
@@ -421,6 +423,72 @@ async function saveSpyroInputMinMaxData(keycloak, PLANT_ID, AOP_YEAR, payload) {
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportSpyroInputMinMax(
+  keycloak,
+  PLANT_ID,
+  SITE_ID,
+  VERTICAL_ID,
+  AOP_YEAR,
+  mode,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-input-min-max-export?plantId=${encodeURIComponent(PLANT_ID)}&siteId=${encodeURIComponent(SITE_ID)}&verticalId=${encodeURIComponent(VERTICAL_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}&mode=${encodeURIComponent(mode)}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = EXCEL_NAME || `Spyro_Input_Min_Max_${AOP_YEAR}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Spyro Input Min Max Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function importSpyroInputMinMax(
+  keycloak,
+  PLANT_ID,
+  SITE_ID,
+  VERTICAL_ID,
+  AOP_YEAR,
+  mode,
+  file,
+) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-input-min-max-import?plantId=${encodeURIComponent(PLANT_ID)}&siteId=${encodeURIComponent(SITE_ID)}&verticalId=${encodeURIComponent(VERTICAL_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}&mode=${encodeURIComponent(mode)}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing Spyro Input Min Max Excel:', e)
     return Promise.reject(e)
   }
 }

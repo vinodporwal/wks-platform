@@ -18,6 +18,8 @@ export const SteadyStateConsumptionApiService = {
   exportSteadyStateConsumption,
   importSteadyStateConsumption,
   calculateSteadyStateConsumption,
+  // filament
+  calculateSteadyStateConsumptionPolyester,
 }
 
 // ========================|| Steady State Consumption - PE/NMD Specific (same endpoints as NormalOperationNormsApiService) ||===//
@@ -168,6 +170,33 @@ async function calculateSteadyStateConsumptionPE(
   keycloak,
 ) {
   const url = `${Config.CaseEngineUrl}/task/calculate-normal-ops-norms?plantId=${plantId}&siteId=${siteId}&verticalId=${verticalId}&aopYear=${year}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    return await resp.json()
+  } catch (e) {
+    console.error('Error calculating steady state norms (PE):', e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Calculate Steady State Consumption for Polyester vertical (uses plant + site + vertical)
+ * Same as NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe
+ * Endpoint: GET /task/calculate-normal-ops-norms?plantId=&siteId=&verticalId=&aopYear=
+ */
+async function calculateSteadyStateConsumptionPolyester(
+  plantId,
+  siteId,
+  verticalId,
+  year,
+  keycloak,
+) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-normal-ops-norms/polyester?plantId=${plantId}&siteId=${siteId}&verticalId=${verticalId}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
