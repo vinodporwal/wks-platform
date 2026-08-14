@@ -1,25 +1,37 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,8 +107,18 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	@Autowired
 	private BusinessDemandDataService businessDemandDataService;
 
+	@Autowired
+	private ConfigurationService configurationService;
+
 	private static final Pattern UUID_PATTERN = 
 		    Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
+	/**
+	 * Table IDs that use a single "Value" column (April value) instead of
+	 * month-by-month columns in the V2 export/import format.
+	 */
+	private static final Set<String> SINGLE_VALUE_TABLE_IDS = new HashSet<>(
+			Arrays.asList("Reactor Parameters", "Recovery Parameters"));
 	
 	@Override
 	public AOPMessageVM getSpyroInputData(String year, String plantId, String Mode, String type) {
@@ -343,6 +365,85 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		}
 	}
 
+  // ref : updateSpyroInputData | seperate method to handle single value field in Reactor and Recovery parameters (crackerC2)
+	@Override
+	public AOPMessageVM updateSpyroInputDataValue(List<SpyroInputDTO> spyroInputDTOList, String plantFKId, String year, String key) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		UUID plantId;
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+		if(key == null || key.isBlank()) { 
+			throw new RestInvalidArgumentException("key is required", null);
+		}
+
+		boolean isValueTable = key.equalsIgnoreCase("Reactor Parameters")
+         || key.equalsIgnoreCase("Recovery Parameters");
+		try {
+			plantId = UUID.fromString(plantFKId);
+
+			for (SpyroInputDTO spyroInputDTO : spyroInputDTOList) {
+				if ("Failed".equalsIgnoreCase(spyroInputDTO.getSaveStatus())) {
+					continue;
+				}
+
+				if(spyroInputDTO.getNormParameterFKID() == null || spyroInputDTO.getNormParameterFKID().isBlank()) { 
+					continue;
+				}
+				String rawId = spyroInputDTO.getNormParameterFKID();
+				if (rawId == null || rawId.isBlank() || !UUID_PATTERN.matcher(rawId).matches()) {
+				    continue;
+				}
+				
+				UUID normParameterFKId = UUID.fromString(rawId);
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					spyroInputDTO.setSaveStatus("Failed");
+					spyroInputDTO.setErrDescription("Norm Parameter not found");
+					continue;
+				}
+
+				if (!optionNormParameters.get().getIsEditable()) {
+					continue;
+				}
+
+				for (int month = 1; month <= 12; month++) {
+			
+					Double attributeValue = getAttributeValue(spyroInputDTO, month);
+					saveDataValue(normParameterFKId, month, attributeValue, spyroInputDTO, plantFKId, year, key);
+				}
+			}
+
+			// Mark AOP calculations for dependent screens after processing inputs
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("spyro-input");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
+			// Filter only failed records using Stream API
+			List<SpyroInputDTO> failedList = spyroInputDTOList.stream()
+					.filter(dto -> "Failed".equalsIgnoreCase(dto.getSaveStatus()))
+					.collect(Collectors.toList());
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(failedList);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to update Spyro input data", ex);
+		}
+	}
+
 	public Double getAttributeValue(SpyroInputDTO spyroInputDTO, Integer i) {
 		switch (i) {
 			case 1:
@@ -417,6 +518,90 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	            }
 
 	            if (remarksMatch && valuesDiffer) {
+	                spyroInputDTO.setSaveStatus("Failed");
+	                spyroInputDTO.setErrDescription("Please add/update remark");
+	                return;
+	            }
+	        } 
+	        
+	        existing.setRemarks(newRemarks);
+	        existing.setAttributeValue(newValueStr); // Keep setting the canonical string value
+	        existing.setModifiedOn(new Date());
+	        existing.setUserName(Utility.getUserName());
+	        normAttributeTransactionsRepository.save(existing);
+
+	    } else {
+	     	if(!losses) {
+	     		Double newValue = Double.parseDouble(newValueStr);
+		        if (newRemarks.isEmpty() && newValue!=0.0) {
+		            spyroInputDTO.setSaveStatus("Failed");
+		            spyroInputDTO.setErrDescription("Please add/update remark");
+		            return;
+		        }
+	    	}
+
+	        NormAttributeTransactions newRecord = new NormAttributeTransactions();
+	        newRecord.setCreatedOn(new Date());
+	        newRecord.setAttributeValueVersion("V1");
+	        newRecord.setUserName(Utility.getUserName());
+	        newRecord.setNormParameterFKId(normParameterFKId);
+	        newRecord.setAopMonth(i);
+	        newRecord.setAuditYear(year);
+	        newRecord.setRemarks(newRemarks);
+	        newRecord.setAttributeValue(newValueStr);
+
+	        normAttributeTransactionsRepository.save(newRecord);
+	    }
+	}
+  // ref : saveData | seperate method to handle value field in Reactor and Recovery parameters (crackerC2)
+	public void saveDataValue(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO, String plantId, String year, String key) {
+	    if (spyroInputDTO == null) {
+	        throw new IllegalArgumentException("SpyroInputDTO cannot be null");
+	    }
+
+		boolean isValueTable = key.equalsIgnoreCase("Reactor Parameters")
+         || key.equalsIgnoreCase("Recovery Parameters");
+
+		 boolean skipRemarkValidation = isValueTable && (i != 4);
+
+	    String newRemarks = Optional.ofNullable(spyroInputDTO.getRemarks()).orElse("").trim();
+	    String newValueStr = attributeValue != null ? attributeValue.toString() : "0.0";
+	    
+	    Optional<NormAttributeTransactions> existingOpt = 
+	        normAttributeTransactionsRepository
+	            .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+	    
+	    Boolean losses = false; 
+	    
+	    if (existingOpt.isPresent()) {
+	        NormAttributeTransactions existing = existingOpt.get();
+	        String existingRemarks = Optional.ofNullable(existing.getRemarks()).orElse("").trim();
+	        String existingValueStr = Optional.ofNullable(existing.getAttributeValue()).orElse("0.0").trim();
+	        Double existingDouble = null;
+	        Double newDouble = null;
+
+	        try {
+	            existingDouble = Double.parseDouble(existingValueStr);
+	        } catch (NumberFormatException e) {
+	            System.err.println("Error parsing existing attribute value: " + existingValueStr);
+	            if (!existingValueStr.equalsIgnoreCase(newValueStr)) {
+	                 
+	            }
+	        }
+	        
+	        newDouble = attributeValue != null ? attributeValue : 0.0;
+
+
+	        if (!losses) {
+	            boolean remarksMatch = existingRemarks.equalsIgnoreCase(newRemarks);
+	            boolean valuesDiffer = false;
+	            if (existingDouble != null && newDouble != null) {
+	                valuesDiffer = Double.compare(existingDouble, newDouble) != 0;
+	            } else {
+	                valuesDiffer = !existingValueStr.equalsIgnoreCase(newValueStr);
+	            }
+
+	            if (remarksMatch && valuesDiffer && !skipRemarkValidation) {
 	                spyroInputDTO.setSaveStatus("Failed");
 	                spyroInputDTO.setErrDescription("Please add/update remark");
 	                return;
@@ -614,12 +799,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			boolean crackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
 			Map<String, List<SpyroInputDTO>> map = new HashMap<>();
-			if(crackerC2) { 
-				map = readSpyroInputsExcelWithWeightedAverage(file.getInputStream(), year);
-			}
-			// read excel without weighted average
-			else {
-			map = readSpyroInputsExcel(file.getInputStream(), year);  }
+			
+			map = readSpyroInputsExcel(file.getInputStream(), year); 
+		
 
 			// remove Optimizer Input from map
 		
@@ -812,6 +994,301 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			throw new RuntimeException("Failed to read Data", e);
 		}
 
+		return map;
+	}
+
+	// -------------------------------------------------------------------------
+	// V2 Export/Import: Reactor Parameters and Recovery Parameters use a single
+	// "Value" column (= April value) instead of 12 month columns.
+	// All other tables remain identical to the V1 format.
+	// -------------------------------------------------------------------------
+
+	@Override
+	public byte[] createExcelV2(String year, String plantId, String mode, boolean isAfterSave,
+			Map<String, List<SpyroInputDTO>> mapForExcel) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker")
+					&& site.getName().equalsIgnoreCase("C2");
+
+			Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
+					.findByExcelIdAndVerticalFkIdAndSiteFkId("spyroInput", plant.getVerticalFKId(),
+							plant.getSiteFkId());
+
+			if (optExcelConfiguration.isPresent()) {
+				String structureJson = optExcelConfiguration.get().getJsonValue();
+				ObjectMapper mapper = new ObjectMapper();
+				Map<String, List<List<Object>>> data = new HashMap<>();
+				Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
+				Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();
+
+				if (!isAfterSave) {
+					AOPMessageVM vm = null;
+					if (site.getName().equalsIgnoreCase("HMD") || crackerC2) {
+						vm = getSpyroInputData(year, plantId, "Composition", "Composition");
+					} else {
+						vm = getSpyroInputData(year, plantId, mode, "Composition");
+					}
+					List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
+					spyroInputDataListMap = Utility.groupByNormParameterTypeName(spyroInputDataList);
+				}
+
+				for (String sheetName : structure.keySet()) {
+					Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+					List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData
+							.get(ExcelConstants.TABLES);
+
+					for (Map<String, Object> table : tables) {
+						String title = (String) table.get(ExcelConstants.TITLE);
+						String tableId = (String) table.get(ExcelConstants.TABLEID);
+						String dataInput = (String) table.get(ExcelConstants.DATA_INPUT);
+						List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+						boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
+						Integer startingIndexofMonths = (Integer) table
+								.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
+						List<List<String>> headersOuterTitles = (List<List<String>>) table
+								.get(ExcelConstants.HEADERSTITLES);
+
+						boolean isSingleValue = SINGLE_VALUE_TABLE_IDS.contains(tableId);
+
+						if (isSingleValue) {
+							// Inject "Value" header at the month-start position, then 11 blank strings
+							// to maintain column alignment so normParameterFKID and tableId stay at
+							// the same column indices as the normal (V1) format (cols 15 and 16).
+							List<String> singleValueHeaders = new ArrayList<>();
+							singleValueHeaders.add("Value");
+							for (int i = 0; i < 11; i++) {
+								singleValueHeaders.add("");
+							}
+							headersOuterTitles.get(0).addAll(startingIndexofMonths, singleValueHeaders);
+						} else {
+							headersOuterTitles.get(0).addAll(startingIndexofMonths,
+									excelUtilityService.getAcademicYearMonths(year));
+						}
+
+					List<List<Object>> dataList = new ArrayList<>();
+
+					if (isAfterSave) {
+						List<SpyroInputDTO> failedRows = mapForExcel.get(tableId);
+						if (failedRows == null || failedRows.isEmpty()) {
+							table.put(ExcelConstants.HIDE_TABLE, true);
+							continue;
+						}
+						headers.add("saveStatus");
+						headers.add("errDescription");
+						headersOuterTitles.get(0).add("SaveStatus");
+						headersOuterTitles.get(0).add("ErrDescription");
+
+						for (SpyroInputDTO dto : failedRows) {
+								List<Object> list = new ArrayList<>();
+								if (isSingleValue) {
+									list.add(dto.getParticulars());            // col 0
+									list.add(dto.getUom());                    // col 1
+									list.add(dto.getApr());                    // col 2 = "Value"
+									for (int i = 0; i < 11; i++) list.add(null); // cols 3-13 blank
+									list.add(dto.getRemarks());                // col 14
+									list.add(dto.getNormParameterFKID());      // col 15
+									list.add(dto.getSaveStatus());             // col 16
+									list.add(dto.getErrDescription());         // col 17
+								} else {
+									for (String fieldName : headers) {
+										String methodName = "get" + capitalize(fieldName);
+										Method method = dto.getClass().getMethod(methodName);
+										Object value = method.invoke(dto);
+										list.add(value);
+									}
+								}
+								list.add(tableId);
+								UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKID());
+								Optional<NormParameters> optionNormParameters = normParametersRepository
+										.findById(normParameterFKId);
+								if (optionNormParameters.isPresent()) {
+									list.add(optionNormParameters.get().getIsEditable());
+								}
+								dataList.add(list);
+							}
+
+						} else {
+							List<Map<String, Object>> spyroInputDataList = new ArrayList<>();
+							if (dataInput.equalsIgnoreCase("Composition")) {
+								if (spyroInputDataListMap.containsKey(title)) {
+									spyroInputDataList = spyroInputDataListMap.get(title);
+								} else {
+									hideTable = true;
+									continue;
+								}
+							} else {
+								AOPMessageVM vm = new AOPMessageVM();
+								if (site.getName().equalsIgnoreCase("HMD") || crackerC2) {
+									vm = getSpyroInputData(year, plantId, dataInput, dataInput);
+								} else {
+									vm = getSpyroInputData(year, plantId, mode, dataInput);
+								}
+								spyroInputDataList = (List<Map<String, Object>>) vm.getData();
+							}
+
+							if (spyroInputDataList == null || spyroInputDataList.isEmpty()) {
+								hideTable = true;
+								continue;
+							}
+
+							for (Map<String, Object> map : spyroInputDataList) {
+								List<Object> list = new ArrayList<>();
+								if (isSingleValue) {
+									list.add(map.get("particulars"));          // col 0
+									list.add(map.get("uom"));                  // col 1
+									list.add(map.get("apr"));                  // col 2 = "Value"
+									for (int i = 0; i < 11; i++) list.add(null); // cols 3-13 blank
+									list.add(map.get("remarks"));              // col 14
+									list.add(map.get("normParameterFKID"));    // col 15
+								} else {
+									for (String header : headers) {
+										list.add(map.get(header));
+									}
+								}
+								list.add(tableId);                             // col 16
+								list.add(map.get("isEditable"));               // NOT written (last element)
+								dataList.add(list);
+							}
+						}
+
+						data.put(tableId, dataList);
+					}
+				}
+
+				return excelUtilityService.generateFlexibleExcel(structure, data);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public AOPMessageVM importExcelV2(String year, String plantFKId, String mode, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			Map<String, List<SpyroInputDTO>> map = readSpyroInputsExcelV2(file.getInputStream(), year);
+
+			Map<String, List<SpyroInputDTO>> mapForExcel = new HashMap<>();
+			List<SpyroInputDTO> failedRecords = new ArrayList<>();
+			for (String key : map.keySet()) {
+				AOPMessageVM vm = updateSpyroInputDataValue(map.get(key), plantFKId, year, key);
+				List<SpyroInputDTO> failedList = (List<SpyroInputDTO>) vm.getData();
+				failedRecords.addAll(failedList);
+				mapForExcel.put(key, failedList);
+			}
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				byte[] fileByteArray = createExcelV2(year, plantFKId, mode, true, mapForExcel);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	/**
+	 * Reads the V2 Excel format.
+	 * <p>
+	 * For tableIds "Reactor Parameters" and "Recovery Parameters" the month columns
+	 * are collapsed into a single "Value" column at position 2 (= April). All other
+	 * 11 month positions (cols 3-13) are blank in the file and are not imported.
+	 * Every other table follows the standard V1 column layout.
+	 */
+	public Map<String, List<SpyroInputDTO>> readSpyroInputsExcelV2(InputStream inputStream, String year) {
+
+		Map<String, List<SpyroInputDTO>> map = new HashMap<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			if (rowIterator.hasNext())
+				rowIterator.next(); // Skip header row
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+
+				// Read tableId from col 16 (same position for both V1 and V2 formats)
+				Cell tableIdRaw = row.getCell(16);
+				String tableIdValue = null;
+				if (tableIdRaw != null) {
+					try {
+						tableIdRaw.setCellType(CellType.STRING);
+						tableIdValue = tableIdRaw.getStringCellValue().trim();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+
+				if (tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
+					continue;
+				}
+
+				Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
+					continue;
+				}
+
+				SpyroInputDTO dto = new SpyroInputDTO();
+				try {
+					dto.setAuditYear(year);
+					dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+					dto.setUom(getStringCellValue(row.getCell(1), dto));
+
+					if (SINGLE_VALUE_TABLE_IDS.contains(tableIdValue)) {
+						// V2 single-value layout: col 2 = "Value" → april only
+						dto.setApr(getNumericCellValue(row.getCell(2), dto));
+						// cols 3-13 are intentionally blank; all other months remain null
+						dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+						dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
+						dto.setTableId(tableIdValue);
+					} else {
+						// Standard V1 layout: cols 2-13 = apr-mar, col 14 = remarks, 15 = fkId, 16 = tableId
+						dto.setApr(getNumericCellValue(row.getCell(2), dto));
+						dto.setMay(getNumericCellValue(row.getCell(3), dto));
+						dto.setJun(getNumericCellValue(row.getCell(4), dto));
+						dto.setJul(getNumericCellValue(row.getCell(5), dto));
+						dto.setAug(getNumericCellValue(row.getCell(6), dto));
+						dto.setSep(getNumericCellValue(row.getCell(7), dto));
+						dto.setOct(getNumericCellValue(row.getCell(8), dto));
+						dto.setNov(getNumericCellValue(row.getCell(9), dto));
+						dto.setDec(getNumericCellValue(row.getCell(10), dto));
+						dto.setJan(getNumericCellValue(row.getCell(11), dto));
+						dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+						dto.setMar(getNumericCellValue(row.getCell(13), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+						dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
+						dto.setTableId(getStringCellValue(row.getCell(16), dto));
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setErrDescription(e.getMessage());
+					dto.setSaveStatus("Failed");
+				}
+
+				map.putIfAbsent(dto.getTableId(), new ArrayList<>());
+				map.get(dto.getTableId()).add(dto);
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Data", e);
+		}
 		return map;
 	}
 
@@ -1531,9 +2008,8 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 	@Override
 	@Transactional
-	public AOPMessageVM updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		try {
+	public List<OptimizingVariablesDropdownDTO> updateOptimizingVariablesDropdown(List<OptimizingVariablesDropdownDTO> dtoList, String plantId, String aopYear) {
+		List<OptimizingVariablesDropdownDTO> failedRecords = new ArrayList<>();
 			for (OptimizingVariablesDropdownDTO dto : dtoList) {
 				if (dto.getId() == null || dto.getId().isBlank()) {
 					continue;
@@ -1555,19 +2031,11 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 				for (int month = 1; month <= 12; month++) {
 					String attributeValue = getOptimizingVariableMonthValue(dto, month);
-					saveOptimizingVariableData(normParameterFKId, month, attributeValue, aopYear);
+					saveOptimizingVariableData(normParameterFKId, month, attributeValue, dto.getRemarks(), aopYear, dto, failedRecords);
 				}
 			}
 
-			aopMessageVM.setCode(200);
-			aopMessageVM.setMessage("Data updated successfully");
-			aopMessageVM.setData(null);
-		} catch (IllegalArgumentException e) {
-			throw new RestInvalidArgumentException("Invalid UUID format", e);
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to update optimizing variables dropdown data", ex);
-		}
-		return aopMessageVM;
+		return failedRecords;
 	}
 
 	private String getOptimizingVariableMonthValue(OptimizingVariablesDropdownDTO dto, int month) {
@@ -1588,8 +2056,9 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		}
 	}
 
-	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String aopYear) {
+	private void saveOptimizingVariableData(UUID normParameterFKId, Integer month, String attributeValue, String remarks, String aopYear, OptimizingVariablesDropdownDTO dto, List<OptimizingVariablesDropdownDTO> failedRecords) {
 		String newValueStr = attributeValue != null ? attributeValue.trim() : "";
+		String remarksStr = remarks != null ? remarks.trim() : null;
 
 		Optional<NormAttributeTransactions> existingOpt =
 				normAttributeTransactionsRepository
@@ -1597,7 +2066,27 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 		if (existingOpt.isPresent()) {
 			NormAttributeTransactions existing = existingOpt.get();
+
+			String existingValue = existing.getAttributeValue() != null ? existing.getAttributeValue().trim() : "";
+			boolean valueChanged = !newValueStr.equals(existingValue);
+
+			if (valueChanged) {
+				String existingRemarks = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
+				String newRemarks = remarksStr != null ? remarksStr : "";
+				boolean remarkChanged = !newRemarks.equals(existingRemarks);
+
+				if (!remarkChanged) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription("Please update Remarks");
+					failedRecords.add(dto);
+					return;
+				}
+			}
+
 			existing.setAttributeValue(newValueStr);
+			if (remarksStr != null) {
+				existing.setRemarks(remarksStr);
+			}
 			existing.setModifiedOn(new Date());
 			existing.setUserName(Utility.getUserName());
 			normAttributeTransactionsRepository.save(existing);
@@ -1610,6 +2099,9 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			newRecord.setAopMonth(month);
 			newRecord.setAuditYear(aopYear);
 			newRecord.setAttributeValue(newValueStr);
+			if (remarksStr != null) {
+				newRecord.setRemarks(remarksStr);
+			}
 			normAttributeTransactionsRepository.save(newRecord);
 		}
 	}
@@ -1656,6 +2148,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 						.january(row[17] != null ? row[17].toString() : null)
 						.february(row[18] != null ? row[18].toString() : null)
 						.march(row[19] != null ? row[19].toString() : null)
+						.remarks(row.length > 20 && row[20] != null ? row[20].toString() : null)
 						.build();
 				resultList.add(dto);
 			}
@@ -1845,9 +2338,9 @@ session.doWork(connection -> {
 
 	@Override
 	@Transactional
-	public AOPMessageVM saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		try {
+	public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(List<SpyroInputMinMaxDTO> dtoList, String aopYear) {
+		List<SpyroInputMinMaxDTO> failedList = new ArrayList<>();
+		
 			// month number -> [minValue, maxValue] field accessor pairs
 			// Months in financial year order: Apr=4 .. Mar=3
 			int[][] monthIndices = {
@@ -1890,13 +2383,364 @@ session.doWork(connection -> {
 				}
 			}
 
-			aopMessageVM.setCode(200);
-			aopMessageVM.setMessage("SpyroInput Min/Max saved successfully");
+				return failedList;
+		
+	}
+
+	// ─── SpyroInput MinMax Export ─────────────────────────────────────────────────
+
+	@Override
+	public byte[] createSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear,
+			String mode, boolean isAfterSave, List<SpyroInputMinMaxDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getSpyroInputMinMax(plantId, siteId, verticalId, aopYear, mode);
+				@SuppressWarnings("unchecked")
+				Map<String, Object> dataMap = (Map<String, Object>) result.getData();
+				dtoList = (List<SpyroInputMinMaxDTO>) dataMap.get("resultList");
+			}
+
+			// Derive short-year suffix from aopYear e.g. "2026-27" → "26", "27"
+			String[] yearParts = aopYear.split("-");
+			String startYearShort = yearParts[0].substring(2);
+			String endYearShort = yearParts[1];
+
+			String[] monthLabels = {
+				"Apr-" + startYearShort, "May-" + startYearShort, "Jun-" + startYearShort,
+				"Jul-" + startYearShort, "Aug-" + startYearShort, "Sep-" + startYearShort,
+				"Oct-" + startYearShort, "Nov-" + startYearShort, "Dec-" + startYearShort,
+				"Jan-" + endYearShort,   "Feb-" + endYearShort,   "Mar-" + endYearShort
+			};
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("SpyroInputMinMax");
+
+			// Bold + centered style for top-level merged headers (unlocked so sheet
+			// protection only locks the Weighted Average columns)
+			CellStyle boldCenteredStyle = workbook.createCellStyle();
+			Font boldFont = workbook.createFont();
+			boldFont.setBold(true);
+			boldCenteredStyle.setFont(boldFont);
+			boldCenteredStyle.setAlignment(HorizontalAlignment.CENTER);
+			boldCenteredStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+			boldCenteredStyle.setBorderBottom(BorderStyle.THIN);
+			boldCenteredStyle.setBorderTop(BorderStyle.THIN);
+			boldCenteredStyle.setBorderLeft(BorderStyle.THIN);
+			boldCenteredStyle.setBorderRight(BorderStyle.THIN);
+			boldCenteredStyle.setLocked(false);
+
+			CellStyle subHeaderStyle = Utility.createBoldBorderedStyle(workbook);
+			subHeaderStyle.setLocked(false);
+			CellStyle dataStyle      = Utility.createBorderedStyle(workbook);
+			dataStyle.setLocked(false);
+
+			// ── Grey locked styles for Weighted Average columns ───────────────────
+			// Header row: bold, centred, grey fill, locked
+			CellStyle greyBoldCenteredStyle = workbook.createCellStyle();
+			Font greyBoldFont = workbook.createFont();
+			greyBoldFont.setBold(true);
+			greyBoldCenteredStyle.setFont(greyBoldFont);
+			greyBoldCenteredStyle.setAlignment(HorizontalAlignment.CENTER);
+			greyBoldCenteredStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+			greyBoldCenteredStyle.setBorderBottom(BorderStyle.THIN);
+			greyBoldCenteredStyle.setBorderTop(BorderStyle.THIN);
+			greyBoldCenteredStyle.setBorderLeft(BorderStyle.THIN);
+			greyBoldCenteredStyle.setBorderRight(BorderStyle.THIN);
+			greyBoldCenteredStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			greyBoldCenteredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			greyBoldCenteredStyle.setLocked(true);
+
+			// Sub-header row: bold, bordered, grey fill, locked
+			CellStyle greySubHeaderStyle = workbook.createCellStyle();
+			Font greySubHeaderFont = workbook.createFont();
+			greySubHeaderFont.setBold(true);
+			greySubHeaderStyle.setFont(greySubHeaderFont);
+			greySubHeaderStyle.setAlignment(HorizontalAlignment.CENTER);
+			greySubHeaderStyle.setBorderBottom(BorderStyle.THIN);
+			greySubHeaderStyle.setBorderTop(BorderStyle.THIN);
+			greySubHeaderStyle.setBorderLeft(BorderStyle.THIN);
+			greySubHeaderStyle.setBorderRight(BorderStyle.THIN);
+			greySubHeaderStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			greySubHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			greySubHeaderStyle.setLocked(true);
+
+			// Data cells: bordered, grey fill, locked (non-editable)
+			CellStyle greyDataStyle = workbook.createCellStyle();
+			greyDataStyle.setBorderBottom(BorderStyle.THIN);
+			greyDataStyle.setBorderTop(BorderStyle.THIN);
+			greyDataStyle.setBorderLeft(BorderStyle.THIN);
+			greyDataStyle.setBorderRight(BorderStyle.THIN);
+			greyDataStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			greyDataStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			greyDataStyle.setLocked(true);
+
+			// ── Row 0: top-level merged headers ──────────────────────────────────
+			Row headerRow0 = sheet.createRow(0);
+
+			Cell particularsCell = headerRow0.createCell(0);
+			particularsCell.setCellValue("Particulars");
+			particularsCell.setCellStyle(boldCenteredStyle);
+			sheet.addMergedRegion(new CellRangeAddress(0, 1, 0, 0));
+
+			Cell uomCell = headerRow0.createCell(1);
+			uomCell.setCellValue("UOM");
+			uomCell.setCellStyle(boldCenteredStyle);
+			sheet.addMergedRegion(new CellRangeAddress(0, 1, 1, 1));
+
+			for (int m = 0; m < 12; m++) {
+				int colStart = 2 + m * 2;
+				Cell monthCell = headerRow0.createCell(colStart);
+				monthCell.setCellValue(monthLabels[m]);
+				monthCell.setCellStyle(boldCenteredStyle);
+				sheet.addMergedRegion(new CellRangeAddress(0, 0, colStart, colStart + 1));
+			}
+
+			Cell waCell = headerRow0.createCell(26);
+			waCell.setCellValue("Weighted Average");
+			waCell.setCellStyle(greyBoldCenteredStyle);
+			sheet.addMergedRegion(new CellRangeAddress(0, 0, 26, 27));
+
+			// ── Row 1: sub-headers (Min/Max) ──────────────────────────────────────
+			Row headerRow1 = sheet.createRow(1);
+
+			for (int m = 0; m < 12; m++) {
+				int colStart = 2 + m * 2;
+				Cell minHdr = headerRow1.createCell(colStart);
+				minHdr.setCellValue("Min");
+				minHdr.setCellStyle(subHeaderStyle);
+				Cell maxHdr = headerRow1.createCell(colStart + 1);
+				maxHdr.setCellValue("Max");
+				maxHdr.setCellStyle(subHeaderStyle);
+			}
+
+			Cell waMinHdr = headerRow1.createCell(26);
+			waMinHdr.setCellValue("min");
+			waMinHdr.setCellStyle(greySubHeaderStyle);
+			Cell waMaxHdr = headerRow1.createCell(27);
+			waMaxHdr.setCellValue("max");
+			waMaxHdr.setCellStyle(greySubHeaderStyle);
+
+			// Hidden column headers
+			Cell idMinHdr = headerRow1.createCell(28);
+			idMinHdr.setCellValue("idMin");
+			idMinHdr.setCellStyle(subHeaderStyle);
+			Cell idMaxHdr = headerRow1.createCell(29);
+			idMaxHdr.setCellValue("idMax");
+			idMaxHdr.setCellStyle(subHeaderStyle);
+
+			if (isAfterSave) {
+				Cell statusHdr = headerRow1.createCell(30);
+				statusHdr.setCellValue("Status");
+				statusHdr.setCellStyle(subHeaderStyle);
+				Cell errHdr = headerRow1.createCell(31);
+				errHdr.setCellValue("Error Description");
+				errHdr.setCellStyle(subHeaderStyle);
+			}
+
+			// ── Data rows ─────────────────────────────────────────────────────────
+			int currentRow = 2;
+			for (SpyroInputMinMaxDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+
+				String[][] monthMinMax = {
+					{dto.getAprMin(), dto.getAprMax()},
+					{dto.getMayMin(), dto.getMayMax()},
+					{dto.getJunMin(), dto.getJunMax()},
+					{dto.getJulMin(), dto.getJulMax()},
+					{dto.getAugMin(), dto.getAugMax()},
+					{dto.getSepMin(), dto.getSepMax()},
+					{dto.getOctMin(), dto.getOctMax()},
+					{dto.getNovMin(), dto.getNovMax()},
+					{dto.getDecMin(), dto.getDecMax()},
+					{dto.getJanMin(), dto.getJanMax()},
+					{dto.getFebMin(), dto.getFebMax()},
+					{dto.getMarMin(), dto.getMarMax()}
+				};
+
+				Cell nameCell = row.createCell(0);
+				nameCell.setCellValue(dto.getDisplayName() != null ? dto.getDisplayName() : "");
+				nameCell.setCellStyle(dataStyle);
+
+				Cell uomDataCell = row.createCell(1);
+				uomDataCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+				uomDataCell.setCellStyle(dataStyle);
+
+				for (int m = 0; m < 12; m++) {
+					int colStart = 2 + m * 2;
+					Cell minCell = row.createCell(colStart);
+					minCell.setCellValue(monthMinMax[m][0] != null ? monthMinMax[m][0] : "");
+					minCell.setCellStyle(dataStyle);
+					Cell maxCell = row.createCell(colStart + 1);
+					maxCell.setCellValue(monthMinMax[m][1] != null ? monthMinMax[m][1] : "");
+					maxCell.setCellStyle(dataStyle);
+				}
+
+				Cell waMinCell = row.createCell(26);
+				waMinCell.setCellValue(dto.getMinWeightAverage() != null ? dto.getMinWeightAverage() : "");
+				waMinCell.setCellStyle(greyDataStyle);
+
+				Cell waMaxCell = row.createCell(27);
+				waMaxCell.setCellValue(dto.getMaxWeightAverage() != null ? dto.getMaxWeightAverage() : "");
+				waMaxCell.setCellStyle(greyDataStyle);
+
+				Cell idMinCell = row.createCell(28);
+				idMinCell.setCellValue(dto.getIdMin() != null ? dto.getIdMin() : "");
+				idMinCell.setCellStyle(dataStyle);
+
+				Cell idMaxCell = row.createCell(29);
+				idMaxCell.setCellValue(dto.getIdMax() != null ? dto.getIdMax() : "");
+				idMaxCell.setCellStyle(dataStyle);
+
+				if (isAfterSave) {
+					Cell statusCell = row.createCell(30);
+					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					statusCell.setCellStyle(dataStyle);
+					Cell errCell = row.createCell(31);
+					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+					errCell.setCellStyle(dataStyle);
+				}
+			}
+
+			// ── Column widths & hidden columns ────────────────────────────────────
+			int totalCols = isAfterSave ? 32 : 30;
+			for (int col = 0; col < totalCols; col++) {
+				sheet.autoSizeColumn(col);
+			}
+			sheet.setColumnHidden(28, true);
+			sheet.setColumnHidden(29, true);
+
+			// Protect the sheet so locked cells (Weighted Average columns) are
+			// non-editable; all other cells were explicitly unlocked above.
+			sheet.protectSheet("");
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// ─── SpyroInput MinMax Excel Reader (helper) ──────────────────────────────────
+
+	private List<SpyroInputMinMaxDTO> readSpyroInputMinMaxExcel(InputStream inputStream) {
+		List<SpyroInputMinMaxDTO> resultList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			// Skip the 2 header rows
+			if (rowIterator.hasNext()) rowIterator.next();
+			if (rowIterator.hasNext()) rowIterator.next();
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+
+				// Ignore completely empty rows
+				boolean allEmpty = true;
+				for (int c = 0; c <= 29; c++) {
+					Cell cell = row.getCell(c);
+					if (cell != null && cell.getCellType() != CellType.BLANK) {
+						cell.setCellType(CellType.STRING);
+						if (!cell.getStringCellValue().trim().isEmpty()) {
+							allEmpty = false;
+							break;
+						}
+					}
+				}
+				if (allEmpty) continue;
+
+				SpyroInputMinMaxDTO dto = new SpyroInputMinMaxDTO();
+				try {
+					dto.setDisplayName(getCellStringValue(row.getCell(0)));
+					dto.setUom(getCellStringValue(row.getCell(1)));
+
+					dto.setAprMin(getCellStringValue(row.getCell(2)));
+					dto.setAprMax(getCellStringValue(row.getCell(3)));
+					dto.setMayMin(getCellStringValue(row.getCell(4)));
+					dto.setMayMax(getCellStringValue(row.getCell(5)));
+					dto.setJunMin(getCellStringValue(row.getCell(6)));
+					dto.setJunMax(getCellStringValue(row.getCell(7)));
+					dto.setJulMin(getCellStringValue(row.getCell(8)));
+					dto.setJulMax(getCellStringValue(row.getCell(9)));
+					dto.setAugMin(getCellStringValue(row.getCell(10)));
+					dto.setAugMax(getCellStringValue(row.getCell(11)));
+					dto.setSepMin(getCellStringValue(row.getCell(12)));
+					dto.setSepMax(getCellStringValue(row.getCell(13)));
+					dto.setOctMin(getCellStringValue(row.getCell(14)));
+					dto.setOctMax(getCellStringValue(row.getCell(15)));
+					dto.setNovMin(getCellStringValue(row.getCell(16)));
+					dto.setNovMax(getCellStringValue(row.getCell(17)));
+					dto.setDecMin(getCellStringValue(row.getCell(18)));
+					dto.setDecMax(getCellStringValue(row.getCell(19)));
+					dto.setJanMin(getCellStringValue(row.getCell(20)));
+					dto.setJanMax(getCellStringValue(row.getCell(21)));
+					dto.setFebMin(getCellStringValue(row.getCell(22)));
+					dto.setFebMax(getCellStringValue(row.getCell(23)));
+					dto.setMarMin(getCellStringValue(row.getCell(24)));
+					dto.setMarMax(getCellStringValue(row.getCell(25)));
+					dto.setMinWeightAverage(getCellStringValue(row.getCell(26)));
+					dto.setMaxWeightAverage(getCellStringValue(row.getCell(27)));
+
+					String idMin = getCellStringValue(row.getCell(28));
+					dto.setIdMin(idMin.isEmpty() ? null : idMin);
+					String idMax = getCellStringValue(row.getCell(29));
+					dto.setIdMax(idMax.isEmpty() ? null : idMax);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+				}
+				resultList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read SpyroInputMinMax Excel", e);
+		}
+		return resultList;
+	}
+
+	private String getCellStringValue(Cell cell) {
+		if (cell == null) return "";
+		cell.setCellType(CellType.STRING);
+		String val = cell.getStringCellValue();
+		return val != null ? val.trim() : "";
+	}
+
+	// ─── SpyroInput MinMax Import ─────────────────────────────────────────────────
+
+	@Override
+	@Transactional
+	public AOPMessageVM importSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear,
+			String mode, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<SpyroInputMinMaxDTO> data = readSpyroInputMinMaxExcel(file.getInputStream());
+
+			List<SpyroInputMinMaxDTO> failedRecords = configurationService.saveSpyroInputMinMax(aopYear, plantId, data);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = createSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
 			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
 		} catch (Exception ex) {
-			aopMessageVM.setCode(500);
-			aopMessageVM.setMessage("Error saving SpyroInput Min/Max: " + ex.getMessage());
-			return aopMessageVM;
+			throw new RuntimeException("Failed to import SpyroInputMinMax data", ex);
 		}
 	}
 

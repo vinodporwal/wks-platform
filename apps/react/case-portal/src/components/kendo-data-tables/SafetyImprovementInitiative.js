@@ -61,9 +61,6 @@ const PlantAOPReport = ({ permissions }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
@@ -71,12 +68,6 @@ const PlantAOPReport = ({ permissions }) => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const handleRemarkCellClick = (row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }
   const columns = [
     {
       field: 'id',
@@ -114,8 +105,8 @@ const PlantAOPReport = ({ permissions }) => {
       isVisible: true,
     },
     {
-      field: 'remark',
-      title: 'Remark',
+      field: 'responsibility',
+      title: 'Responsibility',
       editable: true,
       hidden: false,
       isVisible: true,
@@ -187,8 +178,7 @@ const PlantAOPReport = ({ permissions }) => {
           id: index,
           idFromApi: item.id || null,
           isEditable: item?.isEditable,
-          remark: item.remark,
-          originalRemark: item.remark,
+          responsibility: item.remark,
         }))
         setRows(mapped)
       } else {
@@ -228,10 +218,6 @@ const PlantAOPReport = ({ permissions }) => {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
-        'recommendation',
-        'outcome',
-        'targetDate',
-        'remark',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
@@ -251,25 +237,25 @@ const PlantAOPReport = ({ permissions }) => {
         outcome: item.outcome,
         recommendation: item.recommendation,
         targetDate: toLocalDateString(item.targetDate),
-        remark: item.remark,
+        remark: item.responsibility,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable:
           item.isEditable === '' ||
-          item.isEditable === undefined ||
-          item.isEditable === null
+            item.isEditable === undefined ||
+            item.isEditable === null
             ? true
             : !!item.isEditable,
         isVisible:
           item.isVisible === '' ||
-          item.isVisible === undefined ||
-          item.isVisible === null
+            item.isVisible === undefined ||
+            item.isVisible === null
             ? true
             : !!item.isVisible,
         displayOrder:
           item.displayOrder === '' ||
-          item.displayOrder === undefined ||
-          item.displayOrder === null
+            item.displayOrder === undefined ||
+            item.displayOrder === null
             ? 0
             : Number(item.displayOrder),
       }))
@@ -347,6 +333,109 @@ const PlantAOPReport = ({ permissions }) => {
     }
   }
 
+  const getExcelExportTitle = useCallback(
+    () =>
+      [
+        VERTICAL_NAME_NO_CASE || vertName?.toUpperCase(),
+        SITE_NAME_NO_CASE,
+        PLANT_NAME_NO_CASE,
+        'Safety_Improvement',
+        AOP_YEAR,
+      ]
+        .filter(Boolean)
+        .join('_'),
+    [VERTICAL_NAME_NO_CASE, SITE_NAME_NO_CASE, PLANT_NAME_NO_CASE, vertName, AOP_YEAR],
+  )
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+    try {
+      const excelTitle = getExcelExportTitle()
+      await PlantAopReportApiService.exportPlantSafetyImprovement(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        excelTitle,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response =
+        await PlantAopReportApiService.importPlantSafetyImprovement(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Safety Improvement.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -375,12 +464,13 @@ const PlantAOPReport = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
+      ExcelName: getExcelExportTitle(),
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'Safety Improvement Initiative',
-
-      uploadExcelBtn: false,
+      disableColWidth: true,
     },
     isOldYear,
   )
@@ -408,13 +498,9 @@ const PlantAOPReport = ({ permissions }) => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
         permissions={adjustedPermissions}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
         disableRedHighlight={true}
         screenType='shutdown'
       />

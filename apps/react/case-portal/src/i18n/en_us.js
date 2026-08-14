@@ -33,7 +33,7 @@ const defs = {
     spyroInput: 'Optimizer Input',
     spyroOutput: 'Optimizer Output',
     spyroMenu: 'Optimizer Menu',
-    decokingActivities: 'Net Production Hours (Furnace & SAD plan)',
+    decokingActivities: 'Furnace SAD & Maint. Plan',
     maintenanceDetails: 'Net Production Hours',
     combinedProductionNorms: 'Combined Production Target',
     consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
@@ -102,7 +102,7 @@ const defs = {
     productionTargetBasis: 'Production Target Basis',
     maintenanceSummary: 'Plant Maintenance Summary',
     siteMaintenanceSummary: 'Site Maintenance Summary',
-    siteAOPReport: 'Site AOP Report',
+    siteAOPReport: 'Site AOP Report Inputs',
     plantBudgetSummary: 'Plant Budget Summary',
     siteBudgetSummary: 'Site Budget Summary',
     ethyleneBalance: 'Ethylene Balance',
@@ -122,8 +122,9 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
-    jsBudget: 'Js Budget',
-    jwBudgetSource: 'JW Budget Source',
+    jwBudget: 'Job Work Budget',
+    jwBudgetSource: 'Job Work Throughput',
+    throughputNorms: 'Job Work Norms',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -144,7 +145,7 @@ const defs = {
 
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
-    plantAOPReport: 'Plant AOP Report',
+    plantAOPReport: 'Plant AOP Report Inputs',
     gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
     vcmAvailability: 'VCM Availability',
@@ -364,7 +365,8 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
-        jwBudgetSource: 'JW Budget Source',
+        jwBudgetSource: 'Job Work Throughput',
+        throughputNorms: 'Job Work Norms',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',

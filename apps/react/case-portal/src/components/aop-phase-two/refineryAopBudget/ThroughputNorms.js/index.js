@@ -1,19 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo, {
-     customValueFormatterPhaseTwo,
-} from '../../common/ValueFormatterPhaseTwo'
-import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
-import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
+import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { JswBudgetSourceAPIService } from 'components/aop-phase-two/services/crude/jwBudgetSourceAPIService'
-import { getUnitOptions } from './helpers'
+import { ThroughputNormsApiService } from 'components/aop-phase-two/services/crude/throughputNormsApiService'
+import {
+     formatUnitDropdownOptions,
+     formatMaterialDropdownOptions,
+     getMaterialOptions,
+     formatNormsInitialRows,
+     getUniqueUnitsToFetch,
+} from './helpers'
 
-const JwBudgetScreen = () => {
+const ThroughputNormsScreen = () => {
      const keycloak = useSession()
      const dataGridStore = useSelector((state) => state.dataGridStore)
      const { plantObject, siteObject, year } = dataGridStore
@@ -29,6 +31,13 @@ const JwBudgetScreen = () => {
      const [originalRows, setOriginalRows] = useState([])
      const [modifiedCells, setModifiedCells] = useState({})
      const [unitDropdown, setUnitDropdown] = useState([])
+     const [materialDropdownMap, setMaterialDropdownMap] = useState({})
+     const materialDropdownMapRef = useRef({})
+
+     useEffect(() => {
+          materialDropdownMapRef.current = materialDropdownMap
+     }, [materialDropdownMap])
+
      const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
      const [currentRemark, setCurrentRemark] = useState('')
      const [currentRowId, setCurrentRowId] = useState(null)
@@ -40,6 +49,60 @@ const JwBudgetScreen = () => {
 
      const valueFormat = customValueFormatterPhaseTwo(5)
      const headerMap = generateHeaderNames(AOP_YEAR)
+
+     // Fetch Unit dropdown using getDropdownUnit API
+     const fetchUnitDropdown = useCallback(async () => {
+          if (!SITE_ID) return []
+          try {
+               const response = await ThroughputNormsApiService.getDropdownUnit(
+                    keycloak,
+                    SITE_ID,
+               )
+               const data = response?.data || response?.result || response || []
+               const formattedOptions = formatUnitDropdownOptions(data)
+               setUnitDropdown(formattedOptions)
+               return formattedOptions
+          } catch (error) {
+               console.error('Error fetching unit dropdown options:', error)
+               return []
+          }
+     }, [keycloak, SITE_ID])
+
+     // Fetch Material dropdown for a specific profitId (unitId) or unitName using getNormsMaterialDropdown API
+     const fetchMaterialDropdownForUnit = useCallback(
+          async (profitId, unitName) => {
+               if ((!profitId && !unitName) || !SITE_ID) return []
+               const cacheKey = profitId || unitName
+               if (materialDropdownMapRef.current[cacheKey]) {
+                    return materialDropdownMapRef.current[cacheKey]
+               }
+               try {
+                    const response = await ThroughputNormsApiService.getNormsMaterialDropdown(
+                         keycloak,
+                         SITE_ID,
+                         profitId || '',
+                    )
+                    const data = response?.data || response?.result || response || []
+                    const rawList = Array.isArray(data) ? data : []
+
+                    const formatted = formatMaterialDropdownOptions(rawList, profitId, unitName)
+
+                    setMaterialDropdownMap((prev) => {
+                         const next = { ...prev }
+                         if (profitId) next[profitId] = formatted
+                         if (unitName) next[unitName] = formatted
+                         return next
+                    })
+                    if (profitId) materialDropdownMapRef.current[profitId] = formatted
+                    if (unitName) materialDropdownMapRef.current[unitName] = formatted
+                    return formatted
+               } catch (error) {
+                    console.error('Error fetching material dropdown for profitId:', profitId, error)
+                    return []
+               }
+          },
+          [keycloak, SITE_ID],
+     )
 
      const columns = [
           {
@@ -58,20 +121,21 @@ const JwBudgetScreen = () => {
                widthT: 250,
                minWidth: 200,
                type: 'select',
-               dynamicOptions: true,
-               getOptions: (dataItem) => getUnitOptions(dataItem, unitDropdown, rows),
+               options: unitDropdown,
                editable: true,
                locked: true,
           },
           {
-               field: 'normParameterTypeDisplayName',
-               title: 'Type',
+               field: 'displayName',
+               title: 'Material Code',
                widthT: 250,
                minWidth: 200,
-               type: 'text',
-               editable: false,
+               type: 'select',
+               dynamicOptions: true,
+               getOptions: (dataItem) =>
+                    getMaterialOptions(dataItem, materialDropdownMap, materialDropdownMapRef, rows),
+               editable: true,
                locked: true,
-               hidden: true,
           },
           {
                field: 'uom',
@@ -190,40 +254,15 @@ const JwBudgetScreen = () => {
                editable: true,
                format: valueFormat,
           },
-
      ]
-
-     const dummyRows = []
 
      useEffect(() => {
           if (SITE_ID) {
                fetchUnitDropdown()
           }
-     }, [SITE_ID])
+     }, [SITE_ID, fetchUnitDropdown])
 
-     const fetchUnitDropdown = async () => {
-          try {
-               const response = await JswBudgetSourceAPIService.getDropdownUnit(
-                    keycloak,
-                    SITE_ID,
-               )
-               const data = response?.data || response?.result || response || []
-               const formattedOptions = Array.isArray(data)
-                    ? data.map((item) => ({
-                         label: item?.Unit || item?.unit || item?.name || item?.displayName || '',
-                         value: item?.Unit || item?.unit || item?.id || item?.Id || '',
-                         id: item?.Id || item?.id,
-                         unitId: item?.Id || item?.id,
-                         uom: item?.UOM || item?.uom || '',
-                    }))
-                    : []
-               setUnitDropdown(formattedOptions)
-          } catch (error) {
-               console.error('Error fetching unit dropdown options:', error)
-          }
-     }
-
-     const handleCustomItemChange = (e, setRowsState, setModifiedCellsState) => {
+     const handleCustomItemChange = async (e, setRowsState, setModifiedCellsState) => {
           const { dataItem, field, value } = e
           if (field === 'unit') {
                const valStr = typeof value === 'object' ? (value?.value || value?.label || '') : String(value || '')
@@ -232,19 +271,24 @@ const JwBudgetScreen = () => {
                          String(opt.value || '').toLowerCase() === valStr.toLowerCase() ||
                          String(opt.label || '').toLowerCase() === valStr.toLowerCase() ||
                          String(opt.id || '').toLowerCase() === valStr.toLowerCase() ||
-                         String(opt.unitId || '').toLowerCase() === valStr.toLowerCase()
+                         String(opt.unitId || '').toLowerCase() === valStr.toLowerCase(),
                )
+
                if (selectedObj) {
-                    const uomVal = selectedObj.uom || ''
-                    const unitIdVal = selectedObj.unitId || selectedObj.id || ''
+                    const unitIdVal = selectedObj.unitId || selectedObj.profitId || selectedObj.id
                     const unitLabel = selectedObj.label || selectedObj.value || valStr
 
+                    // Fetch materials for selected unitId / profitId
+                    if (unitIdVal) {
+                         await fetchMaterialDropdownForUnit(unitIdVal, unitLabel)
+                    }
+
                     dataItem.unit = unitLabel
-                    dataItem.uom = uomVal
-                    dataItem.UOM = uomVal
                     dataItem.unitId = unitIdVal
-                    dataItem.unitFKId = unitIdVal
-                    dataItem.normParameterFKId = unitIdVal
+                    dataItem.profitId = unitIdVal
+                    dataItem.displayName = ''
+                    dataItem.uom = ''
+                    dataItem.UOM = ''
 
                     setRowsState((prev) =>
                          prev.map((r) =>
@@ -252,14 +296,14 @@ const JwBudgetScreen = () => {
                                    ? {
                                         ...r,
                                         unit: unitLabel,
-                                        uom: uomVal,
-                                        UOM: uomVal,
                                         unitId: unitIdVal,
-                                        unitFKId: unitIdVal,
-                                        normParameterFKId: unitIdVal,
+                                        profitId: unitIdVal,
+                                        displayName: '',
+                                        uom: '',
+                                        UOM: '',
                                    }
-                                   : r
-                         )
+                                   : r,
+                         ),
                     )
 
                     setModifiedCellsState((prev) => {
@@ -269,13 +313,87 @@ const JwBudgetScreen = () => {
                               ...dataItem,
                               ...previousModified,
                               unit: unitLabel,
-                              uom: uomVal,
-                              UOM: uomVal,
                               unitId: unitIdVal,
-                              unitFKId: unitIdVal,
-                              normParameterFKId: unitIdVal,
+                              profitId: unitIdVal,
+                              displayName: '',
+                              uom: '',
+                              UOM: '',
                          }
                          return { ...prev, [rowId]: updatedRow }
+                    })
+               }
+          } else if (field === 'displayName') {
+               const valStr = typeof value === 'object' ? (value?.value || value?.label || '') : String(value || '')
+               const profitId = dataItem?.unitId || dataItem?.profitId || dataItem?.profitCenter_FK_Id || dataItem?.profitCenterFkId
+               const unitName = dataItem?.unit || dataItem?.Unit
+               const options =
+                    materialDropdownMapRef.current[profitId] ||
+                    materialDropdownMapRef.current[unitName] ||
+                    []
+
+               const selectedMaterial = options.find(
+                    (opt) =>
+                         String(opt.value || '').toLowerCase() === valStr.toLowerCase() ||
+                         String(opt.label || '').toLowerCase() === valStr.toLowerCase() ||
+                         String(opt.id || '').toLowerCase() === valStr.toLowerCase(),
+               )
+
+               if (selectedMaterial) {
+                    const mId = selectedMaterial.materialId || selectedMaterial.id
+                    const dName = selectedMaterial.label || selectedMaterial.value || valStr
+                    const uId = selectedMaterial.unitId || profitId
+                    const uName = selectedMaterial.unit || dataItem.unit
+                    const uomVal = selectedMaterial.uom || ''
+
+                    // Set materialId as id for inserted record
+                    dataItem.id = mId
+                    dataItem.materialId = mId
+                    dataItem.displayName = dName
+                    dataItem.unitId = uId
+                    dataItem.profitId = uId
+                    dataItem.unit = uName
+                    dataItem.uom = uomVal
+                    dataItem.UOM = uomVal
+
+                    setRowsState((prev) =>
+                         prev.map((r) =>
+                              String(r.id) === String(e.dataItem.id) || r === dataItem
+                                   ? {
+                                        ...r,
+                                        id: mId,
+                                        materialId: mId,
+                                        displayName: dName,
+                                        unitId: uId,
+                                        profitId: uId,
+                                        unit: uName,
+                                        uom: uomVal,
+                                        UOM: uomVal,
+                                   }
+                                   : r,
+                         ),
+                    )
+
+                    setModifiedCellsState((prev) => {
+                         const rowKey = mId || dataItem.id
+                         const previousModified = prev[e.dataItem.id] || prev[rowKey] || {}
+                         const updatedRow = {
+                              ...dataItem,
+                              ...previousModified,
+                              id: mId,
+                              materialId: mId,
+                              displayName: dName,
+                              unitId: uId,
+                              profitId: uId,
+                              unit: uName,
+                              uom: uomVal,
+                              UOM: uomVal,
+                         }
+                         const copy = { ...prev }
+                         if (e.dataItem.id !== mId) {
+                              delete copy[e.dataItem.id]
+                         }
+                         copy[rowKey] = updatedRow
+                         return copy
                     })
                }
           }
@@ -291,26 +409,28 @@ const JwBudgetScreen = () => {
      const fetchData = async () => {
           setLoading(true)
           try {
+               const unitsList = await fetchUnitDropdown()
+
                const response =
-                    await JswBudgetSourceAPIService.getJswBudgetSourceData(
+                    await ThroughputNormsApiService.getThroughputNorms(
                          keycloak,
                          SITE_ID,
                          AOP_YEAR,
                     )
                const data = response?.data || []
-               const formattedData = data?.map((item, index) => ({
-                    ...item,
-                    unit: item.unit || item.Unit || '',
-                    uom: item.uom || item.UOM || '',
-                    UOM: item.UOM || item.uom || '',
-                    remarks: item.remarks || '',
-                    id: item?.id || index + 1,
-                    isEditable: true,
-               }))
+               const formattedData = formatNormsInitialRows(data, unitsList)
+
+               // Pre-fetch material options for all distinct units in the loaded rows
+               const uniqueUnitsToFetch = getUniqueUnitsToFetch(formattedData)
+
+               await Promise.all(
+                    uniqueUnitsToFetch.map((u) => fetchMaterialDropdownForUnit(u.profitId, u.unitName)),
+               )
+
                setRows(formattedData)
                setOriginalRows(formattedData)
           } catch (error) {
-               console.error('Error fetching jw budget data:', error)
+               console.error('Error fetching Throughput Norms data:', error)
                setSnackbarOpen(true)
                setSnackbarData({
                     message: 'Error fetching data',
@@ -348,33 +468,46 @@ const JwBudgetScreen = () => {
                return
           }
 
-          const payloadData = data.map((row) => {
-               const matched = unitDropdown.find(
-                    (opt) => opt.value === row.unit || opt.label === row.unit || opt.id === row.unit || opt.unitId === row.unitId
-               )
-               return {
-                    ...row,
-                    id: row.id || matched?.unitId || matched?.id,
-                    uom: row.uom || row.UOM || matched?.uom || '',
-                    jan: row.jan || 0,
-                    feb: row.feb || 0,
-                    mar: row.mar || 0,
-                    apr: row.apr || 0,
-                    may: row.may || 0,
-                    jun: row.jun || 0,
-                    jul: row.jul || 0,
-                    aug: row.aug || 0,
-                    sep: row.sep || 0,
-                    oct: row.oct || 0,
-                    nov: row.nov || 0,
-                    dec: row.dec || 0,
-               }
-          })
+          // Validation: Material Name (displayName) and Unit are mandatory to fill
+          const invalidRow = data.find(
+               (row) => !row.unit || !row.displayName || String(row.displayName).trim() === '',
+          )
+          if (invalidRow) {
+               setSnackbarOpen(true)
+               setSnackbarData({
+                    message: 'Material Name (Display Name) is mandatory to fill!',
+                    severity: 'error',
+               })
+               setLoading(false)
+               return
+          }
+
+          const payloadData = data.map((row) => ({
+               id: row.id || row.materialId,
+               materialId: row.materialId || row.id,
+               unitId: row.unitId || row.profitId,
+               unit: row.unit,
+               displayName: row.displayName,
+               uom: row.uom || row.UOM || '',
+               jan: Number(row.jan || 0),
+               feb: Number(row.feb || 0),
+               mar: Number(row.mar || 0),
+               apr: Number(row.apr || 0),
+               may: Number(row.may || 0),
+               jun: Number(row.jun || 0),
+               jul: Number(row.jul || 0),
+               aug: Number(row.aug || 0),
+               sep: Number(row.sep || 0),
+               oct: Number(row.oct || 0),
+               nov: Number(row.nov || 0),
+               dec: Number(row.dec || 0),
+               remarks: row.remarks || '',
+          }))
 
           try {
-               await JswBudgetSourceAPIService.saveJswBudgetSourceData(
-                    payloadData,
+               await ThroughputNormsApiService.saveThroughputNorms(
                     keycloak,
+                    payloadData,
                     AOP_YEAR,
                )
 
@@ -389,8 +522,7 @@ const JwBudgetScreen = () => {
                isFetchedRef.current = false
                await fetchData()
           } catch (error) {
-
-               console.error('Error saving jw budget data:', error)
+               console.error('Error saving throughput norms data:', error)
                setSnackbarOpen(true)
                setSnackbarData({
                     message: 'Error saving data!',
@@ -424,9 +556,17 @@ const JwBudgetScreen = () => {
                return
           }
 
+          const materialId = dataItem.materialId || dataItem.id
+          const unitId = dataItem.unitId || dataItem.profitId
+
           setLoading(true)
           try {
-               await JswBudgetSourceAPIService.deleteJwBudgetData(keycloak, dataItem.id, AOP_YEAR)
+               await ThroughputNormsApiService.deleteThroughputNormsData(
+                    keycloak,
+                    materialId,
+                    unitId,
+                    AOP_YEAR,
+               )
                setSnackbarOpen(true)
                setSnackbarData({
                     message: 'Record deleted successfully!',
@@ -446,7 +586,6 @@ const JwBudgetScreen = () => {
           }
      }
 
-
      const permissions = {
           showAction: true,
           addButton: true,
@@ -457,10 +596,10 @@ const JwBudgetScreen = () => {
           showExport: false,
           showImport: false,
           showCalculate: false,
-          ExcelName: `JwBudget_${AOP_YEAR}`,
+          ExcelName: `Throughput Norms_${AOP_YEAR}`,
           showTitleNameBusiness: true,
           showTitle: true,
-          titleName: 'Job Work Budget',
+          titleName: 'Throughput Norms',
           showDropdown: false,
           remarksEditable: true,
      }
@@ -491,10 +630,9 @@ const JwBudgetScreen = () => {
                     snackbarOpen={snackbarOpen}
                     setSnackbarOpen={setSnackbarOpen}
                     setSnackbarData={setSnackbarData}
-               //customHeight={70}
                />
           </Box>
      )
 }
 
-export default JwBudgetScreen
+export default ThroughputNormsScreen

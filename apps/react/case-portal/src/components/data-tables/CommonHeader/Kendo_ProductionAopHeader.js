@@ -27,6 +27,10 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const lowerSiteName = siteObject?.name.toLowerCase()
   const lowerPlantName = plantObject?.name.toLowerCase()
+  const IS_PTA_PMD_PIA =
+  lowerVertName === 'pta' &&
+  lowerSiteName === 'pmd' &&
+  lowerPlantName === 'pia'  
 
   let cols
 
@@ -34,15 +38,16 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
     cols = productionColDefsPE
   } else if (lowerVertName === 'cracker') {
     cols = productionColDefsCracker
+  } else if (
+    (lowerVertName === 'chemical' &&
+      lowerSiteName === 'vmd' &&
+      lowerPlantName === 'acrylonitrile') ||
+    IS_PTA_PMD_PIA
+  ) {
+    cols = productionColDefsElastomerJmd
   } else if (lowerVertName === 'pta' || lowerVertName === 'vcm') {
     cols = productionColDefsvcmpta
   } else if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
-    cols = productionColDefsElastomerJmd
-  } else if (
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'vmd' &&
-    lowerPlantName === 'acrylonitrile'
-  ) {
     cols = productionColDefsElastomerJmd
   } else {
     cols = productionColDefs

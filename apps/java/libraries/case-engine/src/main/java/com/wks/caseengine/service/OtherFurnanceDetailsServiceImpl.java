@@ -59,13 +59,21 @@ public class OtherFurnanceDetailsServiceImpl implements OtherFurnanceDetailsServ
 
     private List<OtherFurnanceDetailsDTO> getOtherFurnanceDetailsFromSP(String procedureName, String plantId, String aopYear) {
         String sql = "EXEC " + "[RIL.AOP].[dbo]." + procedureName + " @plantId = ?, @aopYear = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-            OtherFurnanceDetailsDTO.builder()
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            String nameVal = null;
+            try {
+                nameVal = rs.getString("Name");
+            } catch (Exception e) {
+                // Column Name might not exist yet in older SPs
+            }
+            return OtherFurnanceDetailsDTO.builder()
                 .id(rs.getString("Id"))
+                .name(nameVal)
                 .displayName(rs.getString("DisplayName"))   
                 .attributeValue(rs.getString("AttributeValue"))
                 .remarks(rs.getString("Remarks"))
-                .build(), plantId, aopYear);
+                .build();
+        }, plantId, aopYear);
     }
 
     @Override

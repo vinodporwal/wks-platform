@@ -8,6 +8,7 @@ import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import { useSession } from 'SessionStoreContext'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import { OptimizerOutputApiService } from 'services/optimizer-output-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
@@ -274,6 +275,7 @@ const CrackerConfig = () => {
 
   useEffect(() => {
     fetchModes()
+
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
@@ -854,6 +856,14 @@ const CrackerConfig = () => {
             AOP_YEAR,
           )
         }
+      } else if (IS_CRACKER_C2) {
+        response = await OptimizerOutputApiService.importExcelWithPilotFurnace(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response = await DataService.importSpyroOutputExcel(
           rawFile,
@@ -1026,35 +1036,36 @@ const CrackerConfig = () => {
       } else {
         const ExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_${AOP_YEAR}`
 
-        response = await DataService.exportSpyroOutputExcel(
-          keycloak,
-          mode,
-          PLANT_ID,
-          AOP_YEAR,
-          ExcelName,
-        )
+        if (IS_CRACKER_C2) {
+          response = await OptimizerOutputApiService.exportSpyroOutputReportWithPilotFurnace(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            ExcelName,
+          )
+        } else {
+          response = await DataService.exportSpyroOutputExcel(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            ExcelName,
+          )
+        }
       }
 
-      if (response?.code === 200) {
-        // setSnackbarOpen(true)
-        // setSnackbarData({
-        //   message: 'Excel download completed successfully!',
-        //   severity: 'success',
-        // })
-      } else {
-        // setSnackbarOpen(true)
-        // setSnackbarData({
-        //   message: 'Failed to download Excel1.',
-        //   severity: 'error',
-        // })
-      }
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
       setSnackbarOpen(true)
     }
   }

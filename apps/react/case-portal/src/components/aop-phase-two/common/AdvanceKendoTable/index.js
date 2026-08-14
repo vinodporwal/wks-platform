@@ -357,6 +357,9 @@ const AdvanceKendoTable = ({
 
   // Build pagination configuration with defaults
   const getPaginationConfig = useCallback(() => {
+    if (permissions?.makePagable === false) {
+      return false
+    }
     const defaults = {
       threshold: 100,
       buttonCount: 4,
@@ -372,7 +375,7 @@ const AdvanceKendoTable = ({
       }
     }
     return false
-  }, [rows?.length, paginationConfig])
+  }, [rows?.length, paginationConfig, permissions?.makePagable])
 
   // Constants for viewport height calculation
   const rowHeightVH = 5 // each row ~5vh

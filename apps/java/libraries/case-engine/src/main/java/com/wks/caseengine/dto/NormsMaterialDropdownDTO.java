@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Data
-public class OtherFurnanceDetailsDTO {
-    
-    private String id;
-    private String name;
+public class NormsMaterialDropdownDTO {
+
+    private String unitId;
+    private String materialId;
+    private String unit;
     private String displayName;
-    private String attributeValue;
-    private String remarks;
+    private String uom;
 }

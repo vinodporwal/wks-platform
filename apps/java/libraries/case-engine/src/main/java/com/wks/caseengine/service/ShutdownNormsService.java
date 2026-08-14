@@ -33,4 +33,5 @@ public interface ShutdownNormsService {
 	public byte[] exportShutdownConsumption(String year, UUID plantFKId,boolean isAfterSave,List<ShutdownNormsValueDTO> dtoList,String gradeId);
 	public byte[] exportDMDShutdownConsumption(String year, UUID plantFKId,boolean isAfterSave,List<ShutdownNormsValueDTO> dtoList,String gradeId);
 	 public AOPMessageVM importShutdownConsumption(String year, UUID fromString,String gradeId, MultipartFile file);
+	 public AOPMessageVM importShutdownConsumptionByMaterialId(String year, UUID plantFKId, String gradeId, MultipartFile file);
 }

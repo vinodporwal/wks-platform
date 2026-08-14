@@ -32,4 +32,6 @@ public class PlantReportDTO {
     private boolean isEditable;
     private boolean isVisible;
     private Integer displayOrder;
+    private String saveStatus;
+    private String errDescription;
 }
