@@ -19,6 +19,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 
 public class Utility {
 
@@ -98,6 +100,7 @@ public class Utility {
 		style.setBorderTop(BorderStyle.THIN);
 		style.setBorderLeft(BorderStyle.THIN);
 		style.setBorderRight(BorderStyle.THIN);
+		
 		return style;
 	}
 
@@ -145,6 +148,8 @@ public class Utility {
 		font.setBold(true);
 		CellStyle style = wb.createCellStyle();
 		style.setFont(font);
+		style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
 		return style;
 	}
 
