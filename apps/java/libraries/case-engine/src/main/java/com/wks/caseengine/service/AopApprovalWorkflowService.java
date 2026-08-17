@@ -55,8 +55,9 @@ public interface AopApprovalWorkflowService {
     AopWorkflowStatusDTO getStatus(String plantId, String year, String callerUserId, List<String> callerRoles);
 
     /**
-     * Every active AOP workflow currently pending on one of the caller's roles —
-     * the "My Approvals" inbox, keyed by (plant, year) across all plants.
+     * The caller's AOP inbox across all plants: in-flight workflows plus fully
+     * approved (completed) ones. Each item carries {@code status} of
+     * {@code pending} or {@code completed}.
      */
     List<AopPendingItemDTO> getMyPending(String callerUserId, List<String> callerRoles);
 }

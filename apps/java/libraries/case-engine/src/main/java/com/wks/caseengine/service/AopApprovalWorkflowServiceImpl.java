@@ -6,6 +6,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.ProcessVariableType;
 import com.wks.bpm.engine.model.spi.Task;
 import com.wks.caseengine.dto.AopPendingItemDTO;
+import com.wks.caseengine.dto.AopStepRoleDTO;
 import com.wks.caseengine.dto.AopViewerDTO;
 import com.wks.caseengine.dto.AopWorkflowStatusDTO;
 import com.wks.caseengine.dto.WorkflowDTO;
@@ -58,6 +60,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private static final String SUBMITTED = "SUBMITTED";
     /** Recorded as the destination when a decision ends the process. */
     private static final String COMPLETED = "COMPLETED";
+    private static final String STATUS_PENDING = "pending";
+    private static final String STATUS_COMPLETED = "completed";
     /** Camunda REST emits offsets without a colon, e.g. 2026-07-21T15:30:00.000+0000. */
     private static final DateTimeFormatter ENGINE_TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
@@ -793,15 +797,43 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             return items;
         }
         for (Workflow wf : workflowRepository.findAllByCaseDefIdAndIsDeletedFalse(CASE_DEF_ID)) {
+            Plants plant = wf.getPlantFKId() != null ? plantsRepository.findById(wf.getPlantFKId()).orElse(null) : null;
+            UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
+            Map<String, StepMeta> meta = loadStepMeta(masterId);
+
+            if (auditService.hasCompleted(wf.getCaseId())) {
+                String lastGate = GATES.get(GATES.size() - 1);
+                items.add(AopPendingItemDTO.builder()
+                        .caseId(wf.getCaseId())
+                        .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
+                        .plantName(plant != null ? plant.getName() : null)
+                        .siteName(siteName(wf.getSiteFKId()))
+                        .verticalName(verticalName(wf.getVerticalFKId()))
+                        .year(wf.getYear())
+                        .gateName(COMPLETED)
+                        .gateDisplayName("Approved")
+                        .sequence(null)
+                        .assignedRole(null)
+                        .taskId(null)
+                        .listOfRoles(listOfRolesForStep(masterId, lastGate, wf.getCaseId(), List.of()))
+                        .status(STATUS_COMPLETED)
+                        .actions(AopViewerDTO.builder()
+                                .mode("READ_ONLY")
+                                .canApprove(false)
+                                .canRevert(false)
+                                .canEdit(false)
+                                .canSubmit(false)
+                                .remarkMandatory(false)
+                                .roles(roles).build())
+                        .build());
+                continue;
+            }
+
             String processInstanceId = canonicalProcessInstanceId(wf, wf.getCaseId());
             List<Task> tasks = safeFind(wf.getCaseId(), processInstanceId);
             if (tasks == null || tasks.isEmpty()) {
                 continue;
             }
-
-            Plants plant = wf.getPlantFKId() != null ? plantsRepository.findById(wf.getPlantFKId()).orElse(null) : null;
-            UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
-            Map<String, StepMeta> meta = loadStepMeta(masterId);
 
             Task mine = tasks.stream()
                     .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
@@ -861,10 +893,48 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .sequence(sm != null ? sm.sequence : null)
                     .assignedRole(targetTask.getAssignee())
                     .taskId(isActionable && mine != null ? mine.getId() : null)
+                    .listOfRoles(listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks))
+                    .status(STATUS_PENDING)
                     .actions(actions)
                     .build());
         }
         return items;
+    }
+
+    /**
+     * Approver roles for the current gate, each marked approved (already acted
+     * this visit) or pending (still has an open task / has not approved).
+     */
+    private List<AopStepRoleDTO> listOfRolesForStep(UUID masterId, String stepName, String caseId,
+            List<Task> tasks) {
+        List<AopStepRoleDTO> result = new ArrayList<>();
+        if (stepName == null) {
+            return result;
+        }
+
+        Set<String> pendingAssignees = new HashSet<>();
+        if (tasks != null) {
+            for (Task task : tasks) {
+                if (stepName.equals(stepNameForTask(task.getTaskDefinitionKey()))
+                        && task.getAssignee() != null && !task.getAssignee().isBlank()) {
+                    pendingAssignees.add(task.getAssignee());
+                }
+            }
+        }
+
+        Set<String> approvedRoles = auditService.approvedRolesInCurrentVisit(
+                caseId, stepName, visitStartOf(tasks, stepName));
+
+        LinkedHashSet<String> ordered = new LinkedHashSet<>();
+        ordered.addAll(activeRoles(masterId, stepName));
+        ordered.addAll(pendingAssignees);
+        ordered.addAll(approvedRoles);
+
+        for (String role : ordered) {
+            boolean approved = approvedRoles.contains(role) && !pendingAssignees.contains(role);
+            result.add(AopStepRoleDTO.builder().role(role).approved(approved).build());
+        }
+        return result;
     }
 
     /**
