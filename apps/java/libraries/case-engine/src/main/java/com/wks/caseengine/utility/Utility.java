@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -94,14 +95,33 @@ public class Utility {
 		style.setFont(font);
 		return style;
 	}
-	
+
+	public static CellStyle decimalStyle(Workbook workbook) {
+		DataFormat dataFormat = workbook.createDataFormat();
+		CellStyle decimalStyle = workbook.createCellStyle();
+		workbook.createCellStyle();
+		decimalStyle.setDataFormat(
+				dataFormat.getFormat("0.00"));
+
+		// if (borders) {
+		decimalStyle.setBorderTop(BorderStyle.THIN);
+		decimalStyle.setBorderBottom(BorderStyle.THIN);
+		decimalStyle.setBorderLeft(BorderStyle.THIN);
+		decimalStyle.setBorderRight(BorderStyle.THIN);
+		decimalStyle.setAlignment(HorizontalAlignment.CENTER);
+		decimalStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+		return decimalStyle;
+	}
+
 	public static CellStyle createBorderedStyle(Workbook wb) {
 		CellStyle style = wb.createCellStyle();
 		style.setBorderBottom(BorderStyle.THIN);
 		style.setBorderTop(BorderStyle.THIN);
 		style.setBorderLeft(BorderStyle.THIN);
 		style.setBorderRight(BorderStyle.THIN);
-		
+		style.setAlignment(HorizontalAlignment.CENTER);
+		style.setVerticalAlignment(VerticalAlignment.CENTER);
+
 		return style;
 	}
 
@@ -142,7 +162,6 @@ public class Utility {
 		style.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
 		return style;
 	}
-	
 
 	public static CellStyle createBoldStyle(Workbook wb) {
 		Font font = wb.createFont();
@@ -150,7 +169,11 @@ public class Utility {
 		CellStyle style = wb.createCellStyle();
 		style.setFont(font);
 		style.setAlignment(HorizontalAlignment.CENTER);
-        style.setVerticalAlignment(VerticalAlignment.CENTER);
+		style.setVerticalAlignment(VerticalAlignment.CENTER);
+		style.setBorderBottom(BorderStyle.THIN);
+		style.setBorderTop(BorderStyle.THIN);
+		style.setBorderLeft(BorderStyle.THIN);
+		style.setBorderRight(BorderStyle.THIN);
 		return style;
 	}
 
