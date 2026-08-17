@@ -13,8 +13,8 @@ import com.wks.caseengine.entity.AopApprovalHistory;
 @Repository
 public interface AopApprovalHistoryRepository extends JpaRepository<AopApprovalHistory, UUID> {
 
-    /** Full audit trail for a plant + year, most recent action first. */
-    List<AopApprovalHistory> findAllByPlantFkIdAndYearOrderByActionAtDesc(UUID plantFkId, String year);
+    /** Full audit trail for a plant + year, oldest action first. */
+    List<AopApprovalHistory> findAllByPlantFkIdAndYearOrderByActionAtAsc(UUID plantFkId, String year);
 
     /** Full audit trail for a workflow instance, most recent action first. */
     List<AopApprovalHistory> findAllByCaseIdOrderByActionAtDesc(String caseId);
@@ -36,6 +36,13 @@ public interface AopApprovalHistoryRepository extends JpaRepository<AopApprovalH
     /** Has this user ever acted at this gate (used when there is no boundary yet)? */
     boolean existsByCaseIdAndGateNameAndActorUserId(
             String caseId, String gateName, String actorUserId);
+
+    /** All actions at a gate (used when there is no current-visit boundary yet). */
+    List<AopApprovalHistory> findAllByCaseIdAndGateName(String caseId, String gateName);
+
+    /** Actions at a gate after the current visit started. */
+    List<AopApprovalHistory> findAllByCaseIdAndGateNameAndActionAtAfter(
+            String caseId, String gateName, OffsetDateTime after);
 
     /** True once Gate 5 approval has finished the process ({@code toGate = COMPLETED}). */
     boolean existsByCaseIdAndToGate(String caseId, String toGate);
