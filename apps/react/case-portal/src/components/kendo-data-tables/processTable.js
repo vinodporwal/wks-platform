@@ -99,9 +99,7 @@ const buildCrackerC2Columns = (rawColumns = []) => {
 
   // Standalone columns after mode
   result.push(getColDef('Total', 'Total'))
-  result.push(
-    getColDef('NumberOfDays', 'Actual Days In Month', 'number', false),
-  )
+  result.push(getColDef('NumberOfDays', 'Actual Days In Month', 'number', false))
   result.push(getColDef('NoOfSAD', 'No Of SAD'))
   result.push(getColDef('Remarks', 'Remarks', 'string'))
 
@@ -390,7 +388,8 @@ const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
       const rawCols = resp.data?.columns || columns
       const hiddenKeys = ['Id', 'AOPYear', 'PlantId']
 
-      const isCrackerC2 = siteName === 'c2' && lowerVertName === 'cracker'
+      const isCrackerC2 =
+        siteName === 'c2' && lowerVertName === 'cracker'
       let dynamicColumns = []
       if (isCrackerC2) {
         dynamicColumns = buildCrackerC2Columns(rawCols)
@@ -445,15 +444,7 @@ const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [
-    PLANT_ID,
-    keycloak,
-    AOP_YEAR,
-    siteName,
-    plantName,
-    siteObject,
-    plantObject,
-  ])
+  }, [PLANT_ID, keycloak, AOP_YEAR, siteName, plantName, siteObject, plantObject])
 
   const handleCalculate = useCallback(async () => {
     try {

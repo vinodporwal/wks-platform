@@ -477,12 +477,12 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	int remarkColIndex = vertical.getName().equalsIgnoreCase("PTA") ? 3 : 4;
 	int totalCols = innerHeaders.size();
 
-	// Wrap style for remark column — top-aligned with text wrapping enabled
+	// Wrap style for remark column â€” top-aligned with text wrapping enabled
 	CellStyle wrapStyle = Utility.createBorderedStyle(workbook);
 	wrapStyle.setWrapText(true);
 	wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
 
-		// Fixed preferred width for remark column (~50 characters × 256 units)
+		// Fixed preferred width for remark column (~50 characters Ã— 256 units)
 		final int REMARK_CHARS = 50;
 		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
 
@@ -1582,6 +1582,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+				Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+
+				boolean peHmd = vertical.getName().equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("HMD");
 	            
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 	    
@@ -1774,6 +1778,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                        }
 
 	                        double durationInDecimalHours = (double) totalMinutes / 60.0;
+							if(peHmd) {
+								durationInDecimalHours = convertMinutesToHoursMinutes(totalMinutes);
+							}
 	                        dto.setDurationInHrs(durationInDecimalHours);
 	                    } catch (Exception e) {
 	                        if (!alreadyFailed) { 
@@ -3141,7 +3148,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		);
 		boolean chemicalHmdHtpb = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("HTPB");
 		boolean aromaticsHmd = verticalName.equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("HMD");
-		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd;
+		boolean ptaPmd = verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
+		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd;
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
@@ -3265,9 +3273,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
     int actualYear;
     if (month.getValue() >= Month.APRIL.getValue()) {
-        actualYear = startYear; // Apr–Dec ? 2026
+        actualYear = startYear; // Aprâ€“Dec â†’ 2026
     } else {
-        actualYear = endYear;   // Jan–Mar ? 2027
+        actualYear = endYear;   // Janâ€“Mar â†’ 2027
     }
 
     YearMonth yearMonth = YearMonth.of(actualYear, month);
@@ -3427,6 +3435,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
 						if (plantMaintenance.isPresent()) {
 							PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
+							entityManager.detach(plantMaintenanceTransaction);
 							plantMaintenanceTransaction.setPlantId(plantId);
 							if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown || filament || staple) {
 				            	if(shutDownPlanDTO.getMonth()!=null) {
@@ -3567,6 +3576,17 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
+	}
+
+	public static double convertMinutesToHoursMinutes(long totalMinutes) {
+		if (totalMinutes < 0) {
+			throw new IllegalArgumentException("Total minutes cannot be negative.");
+		}
+	
+		long hours = totalMinutes / 60;
+		long minutes = totalMinutes % 60;
+	
+		return Double.parseDouble(String.format("%d.%02d", hours, minutes));
 	}
 
 	private void updateSlowdownActivities(ShutDownPlanDTO shutDownPlanDTO, PlantMaintenanceTransaction plantMaintenanceTransaction, UUID plantId) {  

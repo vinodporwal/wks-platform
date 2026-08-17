@@ -33,7 +33,7 @@ const defs = {
     spyroInput: 'Optimizer Input',
     spyroOutput: 'Optimizer Output',
     spyroMenu: 'Optimizer Menu',
-    decokingActivities: 'Net Production Hours (Furnace & SAD plan)',
+    decokingActivities: 'Furnace SAD & Maint. Plan',
     maintenanceDetails: 'Net Production Hours',
     combinedProductionNorms: 'Combined Production Target',
     consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
@@ -44,7 +44,8 @@ const defs = {
     shutdownNorms: 'Shutdown Consumption (Quantity)',
     slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
     normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-    normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
+    normalOpNormsGradeWise:
+      'Grade Wise Steady State Consumption (Norm/Quantity)',
     slowdownPlan: 'Slowdown Activities',
     taPlan: 'Turnaround Activities',
     feedStock: 'Feed Stock Availability',
@@ -63,6 +64,7 @@ const defs = {
     norms_qty_cost_report: 'Norms Quantity Cost Report',
     utility_rate: 'Utility Rate',
     inputs: 'Inputs',
+    outputs: 'Reports',
     summary: 'Summary',
     senderReceiverMapping: 'Sender Receiver Mapping',
     importPower: 'Import Power',
@@ -79,6 +81,7 @@ const defs = {
     matBalSheet: 'MAT Bal Sheet',
     workflow: 'AOP Approval Flow',
     userManage: 'User Management',
+    tabManage: 'Tab Management',
     valueHistory: 'Value History',
     rawData: 'Steam Norms Basis',
     runlengthData: 'Furnace Run Length ',
@@ -99,12 +102,14 @@ const defs = {
     productionTargetBasis: 'Production Target Basis',
     maintenanceSummary: 'Plant Maintenance Summary',
     siteMaintenanceSummary: 'Site Maintenance Summary',
-    siteAOPReport: 'Site AOP Report',
+    siteAOPReport: 'Site AOP Report Inputs',
     plantBudgetSummary: 'Plant Budget Summary',
     siteBudgetSummary: 'Site Budget Summary',
     ethyleneBalance: 'Ethylene Balance',
     propyleneBalance: 'Propylene Balance',
     specificConsumptionC3: 'Feed Availability',
+  
+    jwUnit: 'Job Work Unit',
 
     functionalReports: 'Reports',
     aopDesignBasis: 'AOP Basis',
@@ -119,8 +124,9 @@ const defs = {
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
-    jsBudget: 'Js Budget',   
-    jwBudgetSource: 'JW Budget Source',
+    jwBudget: 'Job Work Budget',
+    jwBudgetSource: 'Job Work Throughput',
+    throughputNorms: 'Job Work Norms',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -141,13 +147,13 @@ const defs = {
 
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
-    plantAOPReport: 'Plant AOP Report',
+    plantAOPReport: 'Plant AOP Report Inputs',
     gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
-    configurationOtherCost: 'Other Cost'
+    configurationOtherCost: 'Other Cost',
   },
   pages: {
     dashboard: {
@@ -292,7 +298,8 @@ const defs = {
         shutdownPlan: 'Shutdown Activities',
         shutdownNorms: 'Shutdown Consumption (Quantity)',
         normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
-        normalOpNormsGradeWise: 'Grade Wise Steady State Consumption (Norm/Quantity)',
+        normalOpNormsGradeWise:
+          'Grade Wise Steady State Consumption (Norm/Quantity)',
         slowdownPlan: 'Slowdown Activities',
         taPlan: 'Turnaround Activities',
         productionNormsOutput: 'Production Norms (Output)',
@@ -360,7 +367,8 @@ const defs = {
         plantCapacities: 'Plant Capacities',
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
-        jwBudgetSource: 'JW Budget Source',
+        jwBudgetSource: 'Job Work Throughput',
+        throughputNorms: 'Job Work Norms',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',

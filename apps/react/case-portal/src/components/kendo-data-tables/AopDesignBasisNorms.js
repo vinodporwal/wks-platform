@@ -126,9 +126,8 @@ const AopDesignBasisNorms = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find(
-            (item) => item.Name === name,
-          )?.AttributeValue,
+          configurationExecutionDetails.find((item) => item.Name === name)
+            ?.AttributeValue,
         )
       setStartDate(getDateValue('StartDateNorms'))
       setEndDate(getDateValue('EndDateNorms'))
@@ -415,115 +414,6 @@ const AopDesignBasisNorms = () => {
 
   const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
-
-  // const ConfigurationAccordian = useMemo(() => {
-  //   return (
-  //     <Box sx={{ mb: '0px' }}>
-  //       <CustomAccordion defaultExpanded disableGutters>
-  //         <CustomAccordionSummary
-  //           aria-controls='meg-grid-content'
-  //           id='meg-grid-header'
-  //         >
-  //           <Typography className='grid-title'>
-  //             AOP Historical Period Basis
-  //           </Typography>
-  //         </CustomAccordionSummary>
-  //         <CustomAccordionDetails>
-  //           <Box
-  //             sx={{
-  //               display: 'flex',
-  //               justifyContent: 'space-between',
-  //               alignItems: 'flex-end',
-  //               mt: 0,
-  //             }}
-  //           >
-  //             <Box
-  //               sx={{
-  //                 display: 'flex',
-  //                 alignItems: 'center',
-  //                 gap: 1,
-  //                 marginTop: '5px',
-  //               }}
-  //             >
-  //               {true && (
-  //                 <Box
-  //                   sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
-  //                 >
-  //                   <Box
-  //                     sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
-  //                   >
-  //                     <Typography
-  //                       className='button-title'
-  //                       sx={{ whiteSpace: 'nowrap' }}
-  //                     >
-  //                       Start Date
-  //                     </Typography>
-  //                     <DatePicker
-  //                       id='start-date'
-  //                       format='dd-MM-yyyy'
-  //                       value={startDate}
-  //                       onChange={(e) => setStartDate(e.value)}
-  //                       style={{ height: '80px' }}
-  //                       size={'medium'}
-  //                       disabled={READ_ONLY}
-  //                     />{' '}
-  //                   </Box>
-  //                   {/* End Date */}
-  //                   <Box
-  //                     sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
-  //                   >
-  //                     <Typography
-  //                       className='button-title'
-  //                       sx={{ whiteSpace: 'nowrap' }}
-  //                     >
-  //                       End Date
-  //                     </Typography>
-  //                     <DatePicker
-  //                       id='end-date'
-  //                       format='dd-MM-yyyy'
-  //                       value={endDate}
-  //                       onChange={(e) => setEndDate(e.value)}
-  //                       style={{ height: '80px' }}
-  //                       size={'medium'}
-  //                       disabled={READ_ONLY}
-  //                     />{' '}
-  //                   </Box>
-  //                   {/* Load Button */}
-  //                   {!isOldYear && (
-  //                     <Button
-  //                       variant='contained'
-  //                       // onClick={onLoad}
-  //                       onClick={handleOpenDialog}
-  //                       className='btn-save'
-  //                       disabled={READ_ONLY}
-  //                       sx={{ alignSelf: 'flex-end' }}
-  //                     >
-  //                       Load
-  //                     </Button>
-  //                   )}
-  //                 </Box>
-  //               )}
-
-  //               {configurationExecutionDetails[0]?.ModifiedOn && (
-  //                 <Typography
-  //                   className={
-  //                     READ_ONLY ? 'summary-title-disabled' : 'summary-title'
-  //                   }
-  //                   sx={{
-  //                     whiteSpace: 'normal',
-  //                     alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
-  //                   }}
-  //                 >
-  //                   {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
-  //                 </Typography>
-  //               )}
-  //             </Box>
-  //           </Box>
-  //         </CustomAccordionDetails>
-  //       </CustomAccordion>
-  //     </Box>
-  //   )
-  // }, [startDate, endDate, summary, startDateFromConfig, endDateDateFromConfig])
 
   const ConfigurationDialog = useMemo(() => {
     return (

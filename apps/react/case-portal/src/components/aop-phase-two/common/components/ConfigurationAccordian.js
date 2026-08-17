@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import React, { useMemo, useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import {
   Box,
   Button,
@@ -51,16 +51,31 @@ const ConfigurationAccordian = ({
   const keycloak = useSession()
   const hasExecutedRef = useRef(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { isReleased, oldYear } = dataGridStore
+  const { isReleased, oldYear, plantObject, siteObject, verticalObject } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const VERTICAL_NAME = verticalObject?.name?.toLowerCase() || ''
+  const SITE_NAME = siteObject?.name?.toLowerCase() || ''
+  const PLANT_NAME = plantObject?.name?.toLowerCase() || ''
+
+  const isHTSEZVGOHT3 = useMemo(() => {
+    return (
+      VERTICAL_NAME === 'hydrotreater' &&
+      SITE_NAME === 'sez' &&
+      PLANT_NAME === 'vgoht-3'
+    )
+  }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
   // State management
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
   const [startShow, setStartShow] = useState(false)
   const [endShow, setEndShow] = useState(false)
+  const [sorStartDate, setSorStartDate] = useState()
+  const [sorEndDate, setSorEndDate] = useState()
+  const [sorStartShow, setSorStartShow] = useState(false)
+  const [sorEndShow, setSorEndShow] = useState(false)
   const [summary, setSummary] = useState('')
   const [lastModifiedBy, setLastModifiedBy] = useState('')
   const [dateEdited, setDateEdited] = useState(false)
@@ -220,6 +235,8 @@ const ConfigurationAccordian = ({
         )
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
+      setSorStartDate(getDateValue('SORStartDate'))
+      setSorEndDate(getDateValue('SOREndDate'))
     } else {
       const today = new Date()
       const fallbackEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
@@ -230,6 +247,8 @@ const ConfigurationAccordian = ({
       )
       setStartDate(fallbackStartDate)
       setEndDate(fallbackEndDate)
+      setSorStartDate(fallbackStartDate)
+      setSorEndDate(fallbackEndDate)
     }
   }, [configurationExecutionDetails])
 
@@ -297,6 +316,8 @@ const ConfigurationAccordian = ({
         configurationExecutionDetails,
         PLANT_ID,
         AOP_YEAR,
+        sorStartDate,
+        sorEndDate,
       )
 
       if (!payload) {
@@ -367,10 +388,33 @@ const ConfigurationAccordian = ({
     }
   }
 
+  const carryForwardRecords = async () => {
+      try {
+        const response = await HistoricPeriodBasisApiService.carryForwardRecords(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+  
+        if (response && response.code === 200) {
+          // console.log('Carry forward successful, status 200.')
+        } else {
+          console.warn(
+            `Carry forward request completed but status was not 200: ${response?.status}`,
+          )
+        }
+      } catch (error) {
+        console.error('Error fetching getConfigurationExecutionDetails:', error)
+      } finally {
+        // setLoading1(false)
+      }
+    }
+
   // Initialize on mount and when PLANT_ID/AOP_YEAR changes
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
     hasExecutedRef.current = false
+    carryForwardRecords()
     fetchConfigurationDetails()
     fetchSummary()
     setSummaryEdited(false)
@@ -385,9 +429,9 @@ const ConfigurationAccordian = ({
   // Notify parent component when dates change
   useEffect(() => {
     if (onDatesChange && startDate && endDate) {
-      onDatesChange(startDate, endDate)
+      onDatesChange(startDate, endDate, sorStartDate, sorEndDate)
     }
-  }, [startDate, endDate, onDatesChange])
+  }, [startDate, endDate, sorStartDate, sorEndDate, onDatesChange])
 
   const startDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'StartDate',
@@ -399,6 +443,49 @@ const ConfigurationAccordian = ({
 
   const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
+
+  const renderDatePickerPill = (label, value, setValue, show, setShow, id) => {
+    return (
+      <Box className='date-pill-wrapper'>
+        <Box
+          component='img'
+          src={CalenderIcon}
+          className='w16-icon'
+          style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+          onClick={() => !READ_ONLY && setShow((v) => !v)}
+        />
+        <Box component='span' className='header-dropdown-label'>
+          {label}:
+        </Box>
+        <DatePicker
+          id={id}
+          format='dd-MM-yyyy'
+          value={value}
+          show={show}
+          onClose={() => setShow(false)}
+          onChange={(e) => {
+            setValue(e.value)
+            setDateEdited(true)
+          }}
+          disabled={READ_ONLY}
+        />
+        <IconButton
+          style={{
+            cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+            p: 0,
+            width: 0,
+            height: 0,
+          }}
+          onClick={() => !READ_ONLY && setShow((v) => !v)}
+          size='small'
+        >
+          <ExpandMoreIcon
+            sx={{ fontSize: '1rem', color: '#606060' }}
+          />
+        </IconButton>
+      </Box>
+    )
+  }
 
   const accordian = useMemo(() => {
     const expandCollapseIconStyle = {
@@ -455,89 +542,30 @@ const ConfigurationAccordian = ({
               {/* ROW 1: Date pickers + Load button */}
               <Stack
                 direction='row'
-                sx={{ columnGap: 1, rowGap: 0 }}
+                sx={{ columnGap: 1.5, rowGap: 1.5 }}
                 alignItems='flex-start'
                 flexWrap='wrap'
               >
-                {/* START */}
-                <Box className='date-pill-wrapper'>
-                  <Box
-                    component='img'
-                    src={CalenderIcon}
-                    className='w16-icon'
-                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
-                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
-                  />
-                  <Box component='span' className='header-dropdown-label'>
-                    Start Date:
-                  </Box>
-                  <DatePicker
-                    id='start-date'
-                    format='dd-MM-yyyy'
-                    value={startDate}
-                    show={startShow}
-                    onClose={() => setStartShow(false)}
-                    onChange={(e) => {
-                      setStartDate(e.value)
-                      setDateEdited(true)
-                    }}
-                    disabled={READ_ONLY}
-                  />
-                  <IconButton
-                    style={{
-                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
-                      p: 0,
-                      width: 0,
-                      height: 0,
-                    }}
-                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
-                    size='small'
+                <Stack direction='column' spacing={1.5}>
+                  <Stack
+                    direction='row'
+                    sx={{ columnGap: 1, rowGap: 0 }}
+                    alignItems='center'
+                    flexWrap='wrap'
                   >
-                    <ExpandMoreIcon
-                      sx={{ fontSize: '1rem', color: '#606060' }}
-                    />
-                  </IconButton>
-                </Box>
-
-                {/* END */}
-                <Box className='date-pill-wrapper'>
-                  <Box
-                    component='img'
-                    src={CalenderIcon}
-                    className='w16-icon'
-                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
-                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
-                  />
-                  <Box component='span' className='header-dropdown-label'>
-                    End Date:
-                  </Box>
-                  <DatePicker
-                    id='end-date'
-                    format='dd-MM-yyyy'
-                    value={endDate}
-                    show={endShow}
-                    onClose={() => setEndShow(false)}
-                    onChange={(e) => {
-                      setEndDate(e.value)
-                      setDateEdited(true)
-                    }}
-                    disabled={READ_ONLY}
-                  />
-                  <IconButton
-                    style={{
-                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
-                      p: 0,
-                      width: 0,
-                      height: 0,
-                    }}
-                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
-                    size='small'
+                    {renderDatePickerPill('Start Date', startDate, setStartDate, startShow, setStartShow, 'start-date')}
+                    {renderDatePickerPill('End Date', endDate, setEndDate, endShow, setEndShow, 'end-date')}
+                  </Stack>
+                  {isHTSEZVGOHT3 && (<Stack
+                    direction='row'
+                    sx={{ columnGap: 1, rowGap: 0 }}
+                    alignItems='center'
+                    flexWrap='wrap'
                   >
-                    <ExpandMoreIcon
-                      sx={{ fontSize: '1rem', color: '#606060' }}
-                    />
-                  </IconButton>
-                </Box>
+                    {renderDatePickerPill('SOR Start Date', sorStartDate, setSorStartDate, sorStartShow, setSorStartShow, 'sor-start-date')}
+                    {renderDatePickerPill('SOR End Date', sorEndDate, setSorEndDate, sorEndShow, setSorEndShow, 'sor-end-date')}
+                  </Stack>)}
+                </Stack>
 
                 {/* LOAD BUTTON */}
                 {!isOldYear && (
@@ -610,6 +638,11 @@ const ConfigurationAccordian = ({
     endDate,
     startShow,
     endShow,
+    sorStartDate,
+    sorEndDate,
+    sorStartShow,
+    sorEndShow,
+    isHTSEZVGOHT3,
     summary,
     configurationExecutionDetails,
     isOldYear,

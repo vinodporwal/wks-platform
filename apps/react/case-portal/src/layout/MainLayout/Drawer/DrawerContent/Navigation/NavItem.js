@@ -42,8 +42,7 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
 
   useEffect(() => {
     const isCurrent = item.url
-      ? location.pathname === item.url ||
-        location.pathname.startsWith(item.url + '/')
+      ? location.pathname === item.url || location.pathname.startsWith(item.url + '/')
       : location.pathname.includes(item.id)
     if (isCurrent) {
       dispatch(activeItem({ openItem: [item.id] }))

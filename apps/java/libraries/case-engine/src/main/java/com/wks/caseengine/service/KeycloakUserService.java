@@ -6,6 +6,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -19,10 +20,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.BulkRoleAssignmentRequest;
+import com.wks.caseengine.entity.Roles;
 import com.wks.caseengine.entity.UserScreenMapping;
+import com.wks.caseengine.repository.RolesRepository;
 import com.wks.caseengine.repository.UserScreenMappingRepository;
 import com.wks.caseengine.utility.KeycloakAdminClient;
+import com.wks.caseengine.utility.Utility;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,8 +49,13 @@ public class KeycloakUserService {
 
 	@Autowired
 	private UserScreenMappingRepository userScreenMappingRepository;
+
+	@Autowired
+	private RolesRepository rolesRepository;
 	
 	private final KeycloakAdminClient keycloakAdminClient;
+
+	private final ObjectMapper roleObjectMapper = new ObjectMapper();
 
 	public KeycloakUserService(KeycloakAdminClient keycloakAdminClient) {
 		this.keycloakAdminClient = keycloakAdminClient;
@@ -690,6 +700,36 @@ public class KeycloakUserService {
 		return result;
 	}
 
+	/**
+	 * Builds a blank Excel (.xlsx) template for bulk role assignment via
+	 * {@link #assignRolesFromExcel(MultipartFile)}.
+	 * Columns only: username | roles (no data rows).
+	 */
+	public byte[] exportRolesExcelTemplate() throws Exception {
+		try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			Sheet sheet = workbook.createSheet("Roles");
+
+			CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+
+			Row headerRow = sheet.createRow(0);
+			String[] headers = { "username", "roles" };
+			for (int col = 0; col < headers.length; col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headers[col]);
+				cell.setCellStyle(headerStyle);
+			}
+
+			for (int col = 0; col < headers.length; col++) {
+				sheet.autoSizeColumn(col);
+			}
+
+			workbook.write(outputStream);
+			return outputStream.toByteArray();
+		} catch (Exception ex) {
+			throw new Exception("Failed to generate roles Excel template: " + ex.getMessage(), ex);
+		}
+	}
+
 	private UserRepresentation findUserByUsername(Keycloak keycloak, String username) {
 		List<UserRepresentation> candidates = keycloak.realm(keycloakRealmName)
 				.users()
@@ -719,13 +759,15 @@ public class KeycloakUserService {
 	 * Lists realm roles with optional search and pagination.
 	 * {@code q} filters by role name or description (case-insensitive contains).
 	 * {@code page} is 1-based (default 1). {@code size} defaults to 20 (max 100).
+	 * Each role includes {@code screens} (from the Keycloak role attribute) when present.
 	 */
 	public Map<String, Object> getRealmRoles(String q, Integer page, Integer size) throws Exception {
 		Map<String, Object> result = new HashMap<String, Object>();
 		Keycloak keycloak = keycloakAdminClient.getInstance();
 
 		try {
-			List<RoleRepresentation> realmRoles = keycloak.realm(keycloakRealmName).roles().list();
+			// briefRepresentation=false so role attributes (including screens) are returned
+			List<RoleRepresentation> realmRoles = keycloak.realm(keycloakRealmName).roles().list(false);
 
 			if (q != null && !q.isBlank()) {
 				String needle = q.trim().toLowerCase();
@@ -747,7 +789,10 @@ public class KeycloakUserService {
 			int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / pageSize);
 			int fromIndex = Math.min((pageNumber - 1) * pageSize, total);
 			int toIndex = Math.min(fromIndex + pageSize, total);
-			List<RoleRepresentation> pageData = realmRoles.subList(fromIndex, toIndex);
+
+			List<Map<String, Object>> pageData = realmRoles.subList(fromIndex, toIndex).stream()
+					.map(this::toRoleListItem)
+					.collect(Collectors.toList());
 
 			result.put("status", 200);
 			result.put("message", "User roles fetched successfully.");
@@ -763,6 +808,26 @@ public class KeycloakUserService {
 		return result;
 	}
 
+	private Map<String, Object> toRoleListItem(RoleRepresentation role) {
+		Map<String, Object> item = new HashMap<>();
+		item.put("id", role.getId());
+		item.put("name", role.getName());
+		item.put("description", role.getDescription());
+		item.put("composite", role.isComposite());
+		item.put("clientRole", role.getClientRole());
+		item.put("containerId", role.getContainerId());
+
+		Map<String, List<String>> attributes = role.getAttributes() != null
+				? role.getAttributes()
+				: Collections.emptyMap();
+		item.put("attributes", attributes);
+
+		List<String> screens = attributes.getOrDefault("screens", Collections.emptyList());
+		item.put("screens", screens != null ? screens : Collections.emptyList());
+
+		return item;
+	}
+
 	public Map<String, Object> getRealmRoles(String q) throws Exception {
 		return getRealmRoles(q, null, null);
 	}
@@ -775,6 +840,11 @@ public class KeycloakUserService {
 	 * Creates a new realm role in Keycloak.
 	 */
 	public Map<String, Object> createRealmRole(String name, String description) throws Exception {
+		return createRealmRole(name, description, null);
+	}
+
+	public Map<String, Object> createRealmRole(String name, String description, List<String> screens)
+			throws Exception {
 		Map<String, Object> result = new HashMap<>();
 
 		if (name == null || name.isBlank()) {
@@ -785,13 +855,46 @@ public class KeycloakUserService {
 		Keycloak keycloak = keycloakAdminClient.getInstance();
 
 		try {
+			RoleRepresentation existingInKeycloak = null;
 			try {
-				keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
-				result.put("status", 409);
-				result.put("message", "Role already exists: " + roleName);
-				return result;
+				existingInKeycloak = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
 			} catch (Exception ignored) {
 				// Role does not exist — proceed with creation
+			}
+
+			// Role already in Keycloak: still upsert DB (covers roles created before dual-write).
+			if (existingInKeycloak != null) {
+				List<String> normalizedScreens = screens != null
+						? normalizeScreens(screens)
+						: existingInKeycloak.getAttributes() != null
+								? existingInKeycloak.getAttributes().getOrDefault("screens", Collections.emptyList())
+								: Collections.emptyList();
+
+				String desc = description != null && !description.isBlank()
+						? description.trim()
+						: existingInKeycloak.getDescription();
+
+				if (screens != null || (description != null && !description.isBlank())) {
+					if (description != null && !description.isBlank()) {
+						existingInKeycloak.setDescription(description.trim());
+					}
+					if (screens != null) {
+						Map<String, List<String>> attributes = Optional.ofNullable(existingInKeycloak.getAttributes())
+								.map(HashMap::new)
+								.orElseGet(HashMap::new);
+						attributes.put("screens", normalizedScreens);
+						existingInKeycloak.setAttributes(attributes);
+					}
+					keycloak.realm(keycloakRealmName).roles().get(roleName).update(existingInKeycloak);
+					existingInKeycloak = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+				}
+
+				saveRoleToDb(roleName, desc, normalizedScreens, existingInKeycloak.getId());
+
+				result.put("status", 409);
+				result.put("message", "Role already exists in Keycloak; synced to DB: " + roleName);
+				result.put("data", existingInKeycloak);
+				return result;
 			}
 
 			RoleRepresentation role = new RoleRepresentation();
@@ -804,6 +907,20 @@ public class KeycloakUserService {
 
 			RoleRepresentation created = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
 
+			List<String> normalizedScreens = screens != null ? normalizeScreens(screens) : Collections.emptyList();
+			if (screens != null) {
+				Map<String, List<String>> attributes = Optional.ofNullable(created.getAttributes())
+						.map(HashMap::new)
+						.orElseGet(HashMap::new);
+				attributes.put("screens", normalizedScreens);
+				created.setAttributes(attributes);
+				keycloak.realm(keycloakRealmName).roles().get(roleName).update(created);
+
+				created = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+			}
+
+			saveRoleToDb(roleName, description, normalizedScreens, created.getId());
+
 			result.put("status", 201);
 			result.put("message", "Role created successfully.");
 			result.put("data", created);
@@ -811,6 +928,66 @@ public class KeycloakUserService {
 			throw ex;
 		} catch (Exception ex) {
 			throw new Exception("Failed to create role: " + ex.getMessage(), ex);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Updates an existing realm role in Keycloak (description and/or screens attribute).
+	 * Pass screens as null to leave the attribute unchanged; pass an empty list to clear it.
+	 */
+	public Map<String, Object> updateRealmRole(String name, String description, List<String> screens)
+			throws Exception {
+		Map<String, Object> result = new HashMap<>();
+
+		if (name == null || name.isBlank()) {
+			throw new IllegalArgumentException("Role name must not be null or blank.");
+		}
+
+		String roleName = name.trim();
+		Keycloak keycloak = keycloakAdminClient.getInstance();
+
+		try {
+			RoleRepresentation existing;
+			try {
+				existing = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+			} catch (Exception ex) {
+				result.put("status", 404);
+				result.put("message", "Role not found: " + roleName);
+				return result;
+			}
+
+			if (description != null) {
+				existing.setDescription(description.trim());
+			}
+
+			List<String> normalizedScreens = null;
+			boolean updateScreens = screens != null;
+			if (updateScreens) {
+				normalizedScreens = normalizeScreens(screens);
+
+				Map<String, List<String>> attributes = Optional.ofNullable(existing.getAttributes())
+						.map(HashMap::new)
+						.orElseGet(HashMap::new);
+				attributes.put("screens", normalizedScreens);
+				existing.setAttributes(attributes);
+			}
+
+			keycloak.realm(keycloakRealmName).roles().get(roleName).update(existing);
+
+			RoleRepresentation updated = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
+
+			updateRoleInDb(roleName, description, updateScreens ? normalizedScreens : null, updateScreens,
+					updated.getId());
+
+			result.put("status", 200);
+			result.put("message", "Role updated successfully.");
+			result.put("data", updated);
+		} catch (IllegalArgumentException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new Exception("Failed to update role: " + ex.getMessage(), ex);
 		}
 
 		return result;
@@ -839,6 +1016,7 @@ public class KeycloakUserService {
 			}
 
 			keycloak.realm(keycloakRealmName).roles().deleteRole(roleName);
+			deleteRoleFromDb(roleName);
 
 			result.put("status", 200);
 			result.put("message", "Role deleted successfully.");
@@ -850,6 +1028,87 @@ public class KeycloakUserService {
 		}
 
 		return result;
+	}
+
+	private List<String> normalizeScreens(List<String> screens) {
+		if (screens == null) {
+			return Collections.emptyList();
+		}
+		return screens.stream()
+				.filter(s -> s != null && !s.isBlank())
+				.map(String::trim)
+				.distinct()
+				.collect(Collectors.toList());
+	}
+
+	private String screensToJson(List<String> screens) throws Exception {
+		try {
+			return roleObjectMapper.writeValueAsString(screens != null ? screens : Collections.emptyList());
+		} catch (Exception ex) {
+			throw new Exception("Failed to serialize role screens: " + ex.getMessage(), ex);
+		}
+	}
+
+	private void saveRoleToDb(String roleName, String description, List<String> screens, String keycloakRoleId)
+			throws Exception {
+		try {
+			Roles role = rolesRepository.findByName(roleName).orElseGet(() -> {
+				Roles created = new Roles();
+				created.setId(UUID.randomUUID());
+				created.setName(roleName);
+				return created;
+			});
+			role.setName(roleName);
+			if (description != null) {
+				role.setDescription(description.isBlank() ? null : description.trim());
+			}
+			role.setScreens(screensToJson(screens != null ? screens : Collections.emptyList()));
+			if (keycloakRoleId != null && !keycloakRoleId.isBlank()) {
+				role.setKeycloakRoleId(keycloakRoleId);
+			}
+			rolesRepository.saveAndFlush(role);
+		} catch (Exception ex) {
+			throw new Exception("Role saved in Keycloak but failed to persist in DB: " + ex.getMessage(), ex);
+		}
+	}
+
+	/**
+	 * Upserts the local Roles row after a Keycloak update.
+	 * When {@code updateScreens} is false, existing screens in DB are left unchanged.
+	 */
+	private void updateRoleInDb(String roleName, String description, List<String> screens, boolean updateScreens,
+			String keycloakRoleId) throws Exception {
+		try {
+			Roles role = rolesRepository.findByName(roleName).orElseGet(() -> {
+				Roles created = new Roles();
+				created.setId(UUID.randomUUID());
+				created.setName(roleName);
+				return created;
+			});
+
+			if (description != null) {
+				role.setDescription(description.trim());
+			}
+			if (updateScreens) {
+				role.setScreens(screensToJson(screens));
+			} else if (role.getScreens() == null) {
+				role.setScreens(screensToJson(Collections.emptyList()));
+			}
+			if (keycloakRoleId != null && !keycloakRoleId.isBlank()) {
+				role.setKeycloakRoleId(keycloakRoleId);
+			}
+			rolesRepository.saveAndFlush(role);
+		} catch (Exception ex) {
+			throw new Exception("Role updated in Keycloak but failed to persist in DB: " + ex.getMessage(), ex);
+		}
+	}
+
+	private void deleteRoleFromDb(String roleName) throws Exception {
+		try {
+			rolesRepository.findByName(roleName).ifPresent(rolesRepository::delete);
+		} catch (Exception ex) {
+			throw new Exception("Role deleted in Keycloak but failed to remove from DB: " + ex.getMessage(), ex);
+		}
 	}
 
 	/**

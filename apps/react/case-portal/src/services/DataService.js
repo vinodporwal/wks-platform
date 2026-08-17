@@ -771,7 +771,7 @@ async function getMonthWiseSummary(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-async function getUserBySearch(keycloak, searchKey) {
+async function getUserBySearch(keycloak, searchKey, signal) {
   const url = `${Config.CaseEngineUrl}/task/users/search?search=${encodeURIComponent(searchKey)}`
   const headers = {
     Accept: 'application/json',
@@ -779,14 +779,15 @@ async function getUserBySearch(keycloak, searchKey) {
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    // Optional: check response directly here
+    const resp = await fetch(url, { method: 'GET', headers, signal })
     if (!resp.ok) {
       throw new Error(`API Error: ${resp.status} ${resp.statusText}`)
     }
     return await resp.json()
-    // OR return await json(keycloak, resp) if using a wrapper
   } catch (e) {
+    if (e.name === 'AbortError') {
+      return { data: [] }
+    }
     console.error('Search user API failed:', e)
     return Promise.reject(e)
   }

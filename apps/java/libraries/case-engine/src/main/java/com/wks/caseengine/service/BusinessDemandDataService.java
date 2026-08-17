@@ -30,7 +30,10 @@ public interface BusinessDemandDataService {
 	public AOPMessageVM importExcelLineWise(String year, UUID plantId, MultipartFile file);
 
 	public byte[] exportBusinessDemandV2(String year, String plantFKId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
-
 	public AOPMessageVM importExcelV2(String year, UUID plantId, MultipartFile file);
+
+	public byte[] exportBusinessDemandWithTotal(String year, String plantId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
+
+    public AOPMessageVM importExcelWithTotal(String year, UUID plantId, MultipartFile file);
 
 }

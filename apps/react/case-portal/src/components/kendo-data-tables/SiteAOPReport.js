@@ -29,6 +29,7 @@ import MCUCapacityUtilization from './MCUCapacityUtilization'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import SiteSafetyPerformanceTarget from './SiteSafetyPerformanceTarget'
+import ConversionVariableCost from './ConversionVariableCost'
 const SiteAOPReport = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -124,6 +125,7 @@ const SiteAOPReport = ({ permissions }) => {
   const defaultTabs = [
     'Site Team',
     'Safety Performance & Targets',
+    'Conversion & Variable Cost',
     'Energy Performance',
     'Fixed Expenses',
     'Capex/PIO Plan',
@@ -142,7 +144,7 @@ const SiteAOPReport = ({ permissions }) => {
     // // Major Process Incidents FY26 columns and dummy data (tabIndex 9)
     // 'Production (TPH) basis',
     // 'Production',
-    // 'Conversion & Variable Cost',
+
   ]
   function getAopShortYears(aopYear) {
     if (!aopYear) return { prev: '', next: '' }
@@ -321,51 +323,6 @@ const SiteAOPReport = ({ permissions }) => {
     },
   ]
   const [production, setProduction] = useState(productionRows)
-  //----------------------------------
-
-  const conversionVariableCostRows = [
-    {
-      id: 1,
-      plant: 'Cracker',
-      costHead: 'Conversion',
-      fy26Aop: 1200,
-      fy26Actual: 1150,
-      fy27Aop: 1250,
-      rationalReasons: '** Free Text Field** - User Entry',
-    },
-    {
-      id: 2,
-      plant: 'Cracker',
-      costHead: 'Variable',
-      fy26Aop: 800,
-      fy26Actual: 780,
-      fy27Aop: 820,
-      rationalReasons: 'Raw material price fluctuation',
-    },
-    {
-      id: 3,
-      plant: 'EOEG',
-      costHead: 'Conversion',
-      fy26Aop: 950,
-      fy26Actual: 900,
-      fy27Aop: 980,
-      rationalReasons: 'FY26 Actual – as on 30th Nov’25',
-    },
-    {
-      id: 4,
-      plant: 'EOEG',
-      costHead: 'Variable',
-      fy26Aop: 600,
-      fy26Actual: 620,
-      fy27Aop: 640,
-      rationalReasons: 'Increase in utility cost',
-    },
-    // ...add more rows as needed
-  ]
-  const [conversionVariableCost, setConversionVariableCost] = useState(
-    conversionVariableCostRows,
-  )
-  //----------------------------------
 
   const fetchDataEnergyPerformance = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -933,11 +890,11 @@ const SiteAOPReport = ({ permissions }) => {
   useEffect(() => {
     if (tabIndex === 0) {
       fetchData()
-    } else if (tabIndex === 1) {
+    } else if (tabIndex === 3) {
       fetchDataEnergyPerformance()
       getPerformanceHighlights()
     }
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
+  }, [PLANT_ID, SITE_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -1056,7 +1013,9 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
       {tabIndex === 1 && <SiteSafetyPerformanceTarget />}
-      {tabIndex === 2 && (
+      {tabIndex === 2 && (<ConversionVariableCost />
+      )}
+      {tabIndex === 3 && (
         <>
           <KendoDataTables
             modifiedCells={modifiedCellsEnergyPerformance}
@@ -1091,7 +1050,7 @@ const SiteAOPReport = ({ permissions }) => {
               mt: 1,
             }}
           >
-            <Typography className='button-title' sx={{ whiteSpace: 'nowrap' }}>
+            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               Performance Highlights
             </Typography>
 
@@ -1122,26 +1081,26 @@ const SiteAOPReport = ({ permissions }) => {
         </>
       )}
 
-      {tabIndex === 3 && <FixedExpenses />}
+      {tabIndex === 4 && <FixedExpenses />}
 
-      {tabIndex === 4 && <Capex />}
-      {tabIndex === 5 && <ShutdownSlowdownPlan />}
+      {tabIndex === 5 && <Capex />}
+      {tabIndex === 6 && <ShutdownSlowdownPlan />}
 
-      {tabIndex === 6 && <TechnicalAvailability />}
+      {tabIndex === 7 && <TechnicalAvailability />}
 
-      {tabIndex === 7 && <CrackerReportMannualEntry tabIndex={5} />}
+      {tabIndex === 8 && <CrackerReportMannualEntry tabIndex={5} />}
 
-      {tabIndex === 8 && <MajorSafetyInitiative />}
+      {tabIndex === 9 && <MajorSafetyInitiative />}
 
-      {tabIndex === 9 && <MajorProfitInitiative />}
+      {tabIndex === 10 && <MajorProfitInitiative />}
 
-      {tabIndex === 10 && <MajorReliabilityInitiative />}
+      {tabIndex === 11 && <MajorReliabilityInitiative />}
 
-      {tabIndex === 11 && <MajorPeopleInitiative />}
+      {tabIndex === 12 && <MajorPeopleInitiative />}
 
-      {tabIndex === 12 && <MCUCapacityUtilization />}
+      {tabIndex === 13 && <MCUCapacityUtilization />}
 
-      {tabIndex === 13 && (
+      {tabIndex === 14 && (
         <KendoDataTablesReports
           columns={columns.safetyPerformance}
           rows={Rowssafety}
@@ -1165,7 +1124,7 @@ const SiteAOPReport = ({ permissions }) => {
           permissions={adjustedPermissionsslowdown}
         />
       )}
-      {tabIndex === 14 && (
+      {tabIndex === 15 && (
         <KendoDataTables
           columns={contributionColumns}
           rows={contribution}
@@ -1179,7 +1138,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 15 && (
+      {tabIndex === 16 && (
         <KendoDataTables
           columns={majorProcessIncidentsFy26Columns}
           rows={majorProcessIncidentsFy26State}
@@ -1193,7 +1152,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 16 && (
+      {tabIndex === 17 && (
         <KendoDataTables
           columns={columns.majorIncidents}
           rows={majorIncidents}
@@ -1215,7 +1174,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 17 && (
+      {tabIndex === 18 && (
         <KendoDataTables
           columns={productionTphColumns}
           rows={productionTphState}
@@ -1229,7 +1188,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 18 && (
+      {tabIndex === 19 && (
         <KendoDataTablesReports
           columns={columns.production}
           rows={production}
@@ -1243,20 +1202,6 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 19 && (
-        <KendoDataTables
-          columns={columns.conversionVariableCost}
-          rows={conversionVariableCost}
-          setRows={setConversionVariableCost}
-          title='B3.3. Conversion & Variable Cost'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
-          groupBy={'plant'}
-        />
-      )}
     </div>
   )
 }

@@ -142,7 +142,7 @@ const ColumnFilterPopover = ({
             variant='subtitle2'
             sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.875rem' }}
           >
-            Filter
+            Filter {columnTitle ? `by ${columnTitle}` : ''}
           </Typography>
         </Box>
         <IconButton

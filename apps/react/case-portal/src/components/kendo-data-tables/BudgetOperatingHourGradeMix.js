@@ -16,6 +16,7 @@ import { Box } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [modifiedCellsSubGrade, setModifiedCellsSubGrade] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -63,12 +64,14 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     message: '',
     severity: 'info',
   })
+  const IS_PVC_DMD = VERTICAL_NAME_NO_CASE === 'PVC' && SITE_NAME_NO_CASE === 'DMD'
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
+  const [rowsAllocation, setRowsAllocation] = useState([])
   const [tabIndex, setTabIndex] = useState(0)
   const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
@@ -78,6 +81,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const [lineDetails, setLineDetails] = useState([])
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [aopCalculation, setAopCalculation] = useState([])
+  const [aopCalculationSubGrade, setAopCalculationSubGrade] = useState([])
   const [refreshSignal, setRefreshSignal] = useState(0)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY || row.isEditable === false) return
@@ -121,6 +125,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       editable: false,
       widthT: 300,
       minWidth: 150,
+      locked: true,
     },
     {
       field: 'apr',
@@ -284,6 +289,48 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     setTabIndex(0)
   }, [PLANT_ID, AOP_YEAR])
 
+  const fetchDataSubGradeAllocation = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    const lineId = lineDetails[tabIndex]?.id
+    if (!lineId) return // wait until lineDetails has loaded
+    setModifiedCellsSubGrade({})
+    setLoading(true)
+    try {
+      const res =
+        await OptimizerDataApiService.getSubGradewiseBudgetOperatingHours(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+        )
+
+      setAopCalculationSubGrade(res?.data?.aopCalculation || [])
+
+      if (res?.code === 200) {
+        const mappedAllocation = (res?.data.budgetedOperatingHoursData || []).map(
+          (item, index) => ({
+            ...item,
+            id: index,
+            idFromApi: item.id || null,
+            isEditable: item?.isEditable,
+            remarks: item.remarks,
+            originalRemark: item.remarks,
+            normParameterFkId: item.normParameterFkId,
+            uom: item.uom,
+          }),
+        )
+        setRowsAllocation(mappedAllocation)
+      } else {
+        setRowsAllocation([])
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err)
+      setRowsAllocation([])
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, lineDetails, tabIndex])
+
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     const lineId = lineDetails[tabIndex]?.id
@@ -307,7 +354,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
             ...item,
             id: index,
             idFromApi: item.id || null,
-            isEditable: item?.isEditable,
+            isEditable: false,
             remarks: item.remarks,
             originalRemark: item.remarks,
             normParameterFkId: item.normParameterFkId,
@@ -329,7 +376,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const saveChanges = React.useCallback(async () => {
     try {
       setLoading(true)
-      const data = Object.values(modifiedCells)
+      const data = Object.values(modifiedCellsSubGrade)
 
       if (data.length === 0) {
         setSnackbarOpen(true)
@@ -390,7 +437,8 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           message: 'Saved Successfully!',
           severity: 'success',
         })
-        setModifiedCells({})
+        setModifiedCellsSubGrade({})
+        fetchDataSubGradeAllocation()
         fetchData()
         setRefreshSignal((prev) => prev + 1)
       } else {
@@ -409,16 +457,18 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal])
+  }, [modifiedCellsSubGrade, keycloak, PLANT_ID, AOP_YEAR, fetchDataSubGradeAllocation, setRefreshSignal])
   useEffect(() => {
     if (tabIndex === 0) {
       fetchData()
+      fetchDataSubGradeAllocation()
     }
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
 
   useEffect(() => {
     if (lineDetails.length > 0 && lineDetails[tabIndex]) {
       fetchData()
+      fetchDataSubGradeAllocation()
     }
   }, [
     PLANT_ID,
@@ -433,8 +483,9 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   useEffect(() => {
     if (saveTrigger > 0) {
       fetchData()
+      fetchDataSubGradeAllocation()
     }
-  }, [saveTrigger, fetchData])
+  }, [saveTrigger, fetchData, fetchDataSubGradeAllocation])
 
   const handleCalculate = async () => {
     setLoading(true)
@@ -471,6 +522,41 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       setLoading(false)
     }
   }
+  const handleCalculateGradeAllocation = async () => {
+    setLoading(true)
+    try {
+      const data =
+        await OptimizerDataApiService.calculateSubGradeAllocation(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+      if (data || data === 0 || data?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchDataSubGradeAllocation()
+        setRefreshSignal((prev) => prev + 1)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error saving refresh data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -478,7 +564,8 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       message: 'Excel download started!',
       severity: 'success',
     })
-    const EXCEL_NAME = `${EXCEL_EXPORT_TITLE}_Budget_Operating_Hours`
+    const EXCEL_NAME = `${EXCEL_EXPORT_TITLE}_Gradewise_Hours_Allocation`
+
     try {
       await OptimizerDataApiService.budgetOperatingLineExport(
         keycloak,
@@ -520,7 +607,8 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           message: 'Uploaded Successfully!',
           severity: 'success',
         })
-        setModifiedCells({})
+        setModifiedCellsSubGrade({})
+        fetchDataSubGradeAllocation()
         fetchData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
@@ -536,7 +624,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Budget Operating Hour.xlsx')
+        link.setAttribute('download', 'Error File - Gradewise Hours Allocation.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -547,7 +635,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        fetchData()
+        fetchDataSubGradeAllocation()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -592,6 +680,25 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       showAction: permissions?.showAction ?? true,
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
+      saveBtn: false ?? permissions?.saveBtn ?? true,
+      customHeight: permissions?.customHeight,
+      allAction: true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      showNoteWhileDeleting: false,
+      showTitleNameBusiness: true,
+      titleName: 'Gradewise Monthwise Budgeted Operating Hours',
+      showCalculate: true,
+      showCalculateVisibility: aopCalculation.length > 0,
+    },
+    isOldYear,
+  )
+
+  const adjustedHoursAllocationPermissions = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? true,
+      showUnit: permissions?.showUnit ?? false,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
@@ -599,9 +706,9 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       uploadExcelBtn: true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Gradewise Monthwise Budgeted Operating Hours',
+      titleName: 'Gradewise Hours Allocation',
       showCalculate: true,
-      showCalculateVisibility: aopCalculation.length > 0,
+      showCalculateVisibility: aopCalculationSubGrade.length > 0,
     },
     isOldYear,
   )
@@ -615,7 +722,39 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
       )}
-
+      {IS_PVC_DMD && (
+        <KendoDataTables
+          modifiedCells={modifiedCellsSubGrade}
+          setModifiedCells={setModifiedCellsSubGrade}
+          setRows={setRowsAllocation}
+          columns={columns}
+          rows={rowsAllocation}
+          fetchData={fetchDataSubGradeAllocation}
+          saveChanges={saveChanges}
+          paginationOptions={[100, 200, 300]}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          deleteId={deleteId}
+          open1={open1}
+          setDeleteId={setDeleteId}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          handleCalculate={handleCalculateGradeAllocation}
+          currentRowId={currentRowId}
+          permissions={adjustedHoursAllocationPermissions}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          handleExcelUpload={handleExcelUpload}
+          disableRedHighlight={true}
+          screenType='shutdown'
+        />
+      )}
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
@@ -623,7 +762,6 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         columns={columns}
         rows={rows}
         fetchData={fetchData}
-        saveChanges={saveChanges}
         paginationOptions={[100, 200, 300]}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
@@ -634,16 +772,14 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
+        //handleRemarkCellClick={handleRemarkCellClick}
+        //remarkDialogOpen={remarkDialogOpen}
+        //setRemarkDialogOpen={setRemarkDialogOpen}
+        //currentRemark={currentRemark}
+        //setCurrentRemark={setCurrentRemark}
         handleCalculate={handleCalculate}
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
-        handleExcelUpload={handleExcelUpload}
         disableRedHighlight={true}
         screenType='shutdown'
       />

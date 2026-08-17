@@ -161,15 +161,12 @@ const ProductionNormsBasis = () => {
 
       if (response?.code === 422) {
         // Then show validation error after a delay
-        setTimeout(() => {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: response.message || 'Validation error occurred.',
-            severity: 'error',
-            autoHide: false,
-          })
-          setRefreshData(true)
-        }, 500)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response.message || 'Validation error occurred.',
+          severity: 'error',
+          autoHide: false,
+        })
       } else {
         // Code 200 - show only success notification
         setSnackbarOpen(true)
@@ -179,7 +176,6 @@ const ProductionNormsBasis = () => {
           severity: 'success',
           autoHide: true,
         })
-        setRefreshData(true)
       }
     } catch (error) {
       console.error('Error in norm calculation:', error)
@@ -191,7 +187,11 @@ const ProductionNormsBasis = () => {
       })
     } finally {
       setNormCalculationLoading(false)
+      setRefreshData(true)
     }
+    setTimeout(() => {
+      setRefreshData(false)
+    }, 500)
   }
 
   const [start, end] = AOP_YEAR ? AOP_YEAR.split('-').map(Number) : [0, 0]
@@ -257,7 +257,13 @@ const ProductionNormsBasis = () => {
       case 'Manual Entry':
         return <ManualEntry startDate={startDate} endDate={endDate} />
       case 'Historical Months':
-        return <HistoricalMonths startDate={startDate} endDate={endDate} />
+        return (
+          <HistoricalMonths
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       default:
         return null
     }

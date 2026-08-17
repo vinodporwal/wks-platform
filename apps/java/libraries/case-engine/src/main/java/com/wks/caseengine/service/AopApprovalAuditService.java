@@ -2,6 +2,7 @@ package com.wks.caseengine.service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.wks.caseengine.dto.AopApprovalHistoryDTO;
@@ -65,4 +66,10 @@ public interface AopApprovalAuditService {
 
     /** True after Gate 5 approval ends the Camunda process ({@code toGate = COMPLETED}). */
     boolean hasCompleted(String caseId);
+
+    /**
+     * Roles that APPROVED or SUBMITTED at this gate during the current visit.
+     * Roles still waiting on an open task are not included.
+     */
+    Set<String> approvedRolesInCurrentVisit(String caseId, String gateName, OffsetDateTime visitStart);
 }

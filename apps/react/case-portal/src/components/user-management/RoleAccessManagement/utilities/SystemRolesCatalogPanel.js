@@ -59,6 +59,21 @@ const SystemRolesCatalogPanel = ({
     [filteredRolesList],
   )
 
+  // Extract unique distinct values for each column for popovers
+  const uniqueColumnValues = useMemo(() => {
+    const values = {}
+    const fields = ['name', 'description']
+    fields.forEach((field) => {
+      const set = new Set()
+      rows.forEach((r) => {
+        const val = r[field] ? String(r[field]) : '(Blank)'
+        set.add(val)
+      })
+      values[field] = Array.from(set).sort()
+    })
+    return values
+  }, [rows])
+
   // Filter Popover handlers
   const handleOpenFilterPopover = (event, field) => {
     event.stopPropagation()
@@ -75,6 +90,14 @@ const SystemRolesCatalogPanel = ({
       [field]:
         selectedValues && selectedValues.length > 0 ? selectedValues : null,
     }))
+  }
+
+  const handleClearColumnFilter = (field) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
   }
 
   const handleClearAllFilters = () => {
@@ -355,7 +378,7 @@ const SystemRolesCatalogPanel = ({
                     key={field}
                     label={`${label}: ${values.join(', ')}`}
                     size='small'
-                    onDelete={() => handleApplyColumnFilter(field, null)}
+                    onDelete={() => handleClearColumnFilter(field)}
                     sx={{
                       fontWeight: 700,
                       backgroundColor: '#0284c7',
@@ -764,17 +787,16 @@ const SystemRolesCatalogPanel = ({
       {filterPopover && (
         <ColumnFilterPopover
           anchorEl={filterPopover.anchorEl}
-          open={Boolean(filterPopover)}
           onClose={handleCloseFilterPopover}
-          columnField={filterPopover.field}
-          columnLabel={
+          columnTitle={
             filterPopover.field === 'name' ? 'Role Name' : 'Description'
           }
-          rows={rows}
-          activeFilters={columnFilters[filterPopover.field] || []}
+          allValues={uniqueColumnValues[filterPopover.field] || []}
+          selectedValues={columnFilters[filterPopover.field] || null}
           onApplyFilter={(selected) =>
             handleApplyColumnFilter(filterPopover.field, selected)
           }
+          onClearFilter={() => handleClearColumnFilter(filterPopover.field)}
         />
       )}
     </Paper>

@@ -15,6 +15,7 @@ export const SelectCellEditor = ({
   valueField = 'value',
   placeholder = 'Select...',
   showClearOption = false,
+  returnFullObject = false,
 }) => {
   const storedValue = dataItem[field] ?? ''
   // Find the matching option object based on the stored value
@@ -37,7 +38,9 @@ export const SelectCellEditor = ({
 
   const selectedOption =
     optionsWithClear.find(
-      (opt) => normalizeValue(opt[valueField]) === normalizeValue(storedValue),
+      (opt) =>
+        normalizeValue(opt[valueField]) === normalizeValue(storedValue) ||
+        normalizeValue(opt[textField]) === normalizeValue(storedValue),
     ) || null
   const [localValue, setLocalValue] = useState(selectedOption)
   const [filteredData, setFilteredData] = useState(optionsWithClear.slice())
@@ -64,7 +67,11 @@ export const SelectCellEditor = ({
 
   const handleChange = (e) => {
     const selectedOpt = e.value
-    const newValue = selectedOpt ? selectedOpt[valueField] : ''
+    const newValue = returnFullObject
+      ? selectedOpt
+      : selectedOpt
+        ? selectedOpt[valueField]
+        : ''
     setLocalValue(selectedOpt)
     onChange({ dataItem, field, value: newValue })
   }

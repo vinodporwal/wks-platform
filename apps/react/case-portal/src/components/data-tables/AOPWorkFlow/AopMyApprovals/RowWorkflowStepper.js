@@ -72,7 +72,27 @@ const RowWorkflowStepper = ({ row }) => {
         if (!active) return
 
         const steps = status?.steps || []
-        setMasterSteps(steps)
+        const enrichedSteps = steps.map((s) => {
+          const hasRoles =
+            (Array.isArray(s.listOfRoles) && s.listOfRoles.length > 0) ||
+            (Array.isArray(s.roles) && s.roles.length > 0)
+          if (hasRoles) return s
+
+          const isMatchingGate =
+            s.name === row?.gateName ||
+            s.gateName === row?.gateName ||
+            s.displayName === row?.gateDisplayName ||
+            s.status === 'inprogress'
+
+          if (isMatchingGate && (row?.listOfRoles || status?.listOfRoles)) {
+            return {
+              ...s,
+              listOfRoles: row?.listOfRoles || status?.listOfRoles,
+            }
+          }
+          return s
+        })
+        setMasterSteps(enrichedSteps)
 
         const activeIdx = steps.findIndex((s) => s.status === 'inprogress')
         if (activeIdx > -1) {

@@ -188,6 +188,28 @@ public class SpyroOutputController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
+
+	@GetMapping(value = "/optimizer-output-export")
+	public ResponseEntity<byte[]> exportSpyroOutputReportWithPilotFurnace(
+	         @RequestParam String year,@RequestParam String plantId,@RequestParam String mode,@RequestParam(value = "type", required = false) String type
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = spyroOutputService.createExcelWithPilotFurnace(year, plantId, mode, false, null);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("SpyroOutput.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 	
 	@PostMapping(value = "/yield-import", consumes = "multipart/form-data")
 	public AOPMessageVM importYieldExcel(
@@ -224,6 +246,16 @@ public class SpyroOutputController {
 			@RequestParam("file") MultipartFile file
 	        ) {
 			return	spyroOutputService.importExcel(year, plantId, mode, file); 
+	}
+
+	@PostMapping(value = "/optimizer-output-import", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelWithPilotFurnace(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("mode") String mode,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	spyroOutputService.importExcelWithPilotFurnace(year, plantId, mode, file); 
 	}
 
 	@GetMapping(value = "/spyro-output/calculate")

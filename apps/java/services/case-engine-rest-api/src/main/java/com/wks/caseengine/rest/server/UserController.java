@@ -1,6 +1,8 @@
 package com.wks.caseengine.rest.server;
 
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.BulkRoleAssignmentRequest;
 import com.wks.caseengine.dto.RoleCreateRequest;
+import com.wks.caseengine.dto.RoleUpdateRequest;
 import com.wks.caseengine.dto.UsersByRolesRequest;
 import com.wks.caseengine.service.KeycloakUserService;
 
@@ -85,17 +88,59 @@ public class UserController {
 	}
 
 	/**
+	 * Download Excel template for bulk role assignment.
+	 * GET /task/users/roles/export
+	 * Columns: username | roles  (roles comma-separated)
+	 */
+	@GetMapping(value = "/roles/export")
+	public ResponseEntity<byte[]> exportRolesExcelTemplate() {
+		try {
+			byte[] excelBytes = userService.exportRolesExcelTemplate();
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("user_roles_assignment_template.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	/**
 	 * Create a new realm role.
 	 * POST /task/users/roles
-	 * Body: { "name": "role_name", "description": "optional" }
+	 * Body: { "name": "role_name", "description": "optional", "screens": ["screen_a", "screen_b"] }
 	 */
 	@PostMapping("/roles")
 	public ResponseEntity<Map<String, Object>> createRole(@RequestBody RoleCreateRequest request) throws Exception {
-		Map<String, Object> result = userService.createRealmRole(request.getName(), request.getDescription());
+		Map<String, Object> result = userService.createRealmRole(
+				request.getName(), request.getDescription(), request.getScreens());
 		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 201;
 		HttpStatus httpStatus = status == 409 ? HttpStatus.CONFLICT
 				: status == 201 ? HttpStatus.CREATED
 				: HttpStatus.OK;
+		return ResponseEntity.status(httpStatus).body(result);
+	}
+
+	/**
+	 * Update an existing realm role (description and/or screens attribute).
+	 * PUT /task/users/roles/{roleName}
+	 * Body: { "description": "optional", "screens": ["screen_a", "screen_b"] }
+	 * Omit screens to leave unchanged; send [] to clear screens.
+	 */
+	@PutMapping("/roles/{roleName}")
+	public ResponseEntity<Map<String, Object>> updateRole(
+			@PathVariable String roleName,
+			@RequestBody RoleUpdateRequest request) throws Exception {
+		Map<String, Object> result = userService.updateRealmRole(
+				roleName, request.getDescription(), request.getScreens());
+		int status = result.get("status") instanceof Integer ? (Integer) result.get("status") : 200;
+		HttpStatus httpStatus = status == 404 ? HttpStatus.NOT_FOUND : HttpStatus.OK;
 		return ResponseEntity.status(httpStatus).body(result);
 	}
 

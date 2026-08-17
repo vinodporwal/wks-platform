@@ -73,6 +73,44 @@ public class SpyroInputController {
 			return	spyroInputService.importExcel(year, plantId, mode, file); 
 	}
 
+	/**
+	 * V2 export: "Reactor Parameters" and "Recovery Parameters" tables use a single
+	 * "Value" column (April value) instead of 12 month columns. All other tables
+	 * are identical to the standard export.
+	 */
+	@GetMapping(value = "/spyro-input-export-excel-value")
+	public ResponseEntity<byte[]> exportSpyroInputV2(
+			@RequestParam String year, @RequestParam String plantId, @RequestParam String mode) {
+		try {
+			byte[] excelBytes = spyroInputService.createExcelV2(year, plantId, mode, false, null);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("SpyroInputV2.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	/**
+	 * V2 import: reads the V2 Excel format where "Reactor Parameters" and
+	 * "Recovery Parameters" rows carry a single "Value" column mapped to April.
+	 */
+	@PostMapping(value = "/spyro-input-import-excel-value", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelV2(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year,
+			@RequestParam("mode") String mode,
+			@RequestParam("file") MultipartFile file) {
+		return spyroInputService.importExcelV2(year, plantId, mode, file);
+	}
+
 	@GetMapping(value="/modes")
 	public AOPMessageVM getModes(@RequestParam String year,@RequestParam String plantId,@RequestParam String type){
 		return	spyroInputService.getModes(year, plantId, type);
@@ -99,7 +137,13 @@ public class SpyroInputController {
 			@RequestBody List<OptimizingVariablesDropdownDTO> dtoList,
 			@RequestParam String plantId,
 			@RequestParam String aopYear) {
-		return spyroInputService.updateOptimizingVariablesDropdown(dtoList, plantId, aopYear);
+		List<OptimizingVariablesDropdownDTO> failedRecords = spyroInputService.updateOptimizingVariablesDropdown(dtoList, plantId, aopYear);
+
+		if (failedRecords.isEmpty()) {
+			return new AOPMessageVM(200, "Data updated successfully", null);
+		} else {
+			return new AOPMessageVM(422, "Partial data updated", failedRecords);
+		}
 	}
 
 	@GetMapping(value = "/feed-type-flow-mappings")
@@ -112,6 +156,40 @@ public class SpyroInputController {
 		return spyroInputService.getSpyroInputMinMax(plantId, siteId, verticalId, aopYear, mode);
 	}
 
+	@GetMapping(value = "/spyro-input-min-max-export")
+	public ResponseEntity<byte[]> exportSpyroInputMinMax(
+			@RequestParam String plantId,
+			@RequestParam String siteId,
+			@RequestParam String verticalId,
+			@RequestParam String aopYear,
+			@RequestParam String mode) {
+		try {
+			byte[] excelBytes = spyroInputService.createSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, false, null);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("SpyroInputMinMax.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/spyro-input-min-max-import", consumes = "multipart/form-data")
+	public AOPMessageVM importSpyroInputMinMax(
+			@RequestParam String plantId,
+			@RequestParam String siteId,
+			@RequestParam String verticalId,
+			@RequestParam String aopYear,
+			@RequestParam String mode,
+			@RequestParam("file") MultipartFile file) {
+		return spyroInputService.importSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, file);
+	}
 
 }
 

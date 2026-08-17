@@ -119,7 +119,7 @@ export default function useApprovalsInbox(onClose) {
           const role = String(item.assignedRole || '').toLowerCase()
           const modeStr =
             item.actions?.mode === 'ACTION'
-              ? 'action required'
+              ? 'approval pending action required'
               : 'in progress tracked'
           return (
             pName.includes(term) ||
@@ -179,9 +179,14 @@ export default function useApprovalsInbox(onClose) {
       const rowId = row.id || row.plantId || row.plantName
       setNavigatingId(rowId)
 
-      let pid = row.plantId || row.pid || row.plant_id || row.id
-      let sid = row.siteId || row.sid || row.sId || row.site_id
-      let v_id = row.verticalId || row.v_id || row.vid || row.vertical_id
+      let targetPlantId = row.plantId || row.pid || row.plant_id || row.id || ''
+      let targetPlantName = row.plantName || row.plant || ''
+      let targetSiteName = row.siteName || row.site || ''
+      let targetVerticalName = row.verticalName || row.vertical || ''
+
+      let pid = targetPlantId
+      let sid = row.siteId || row.sid || row.sId || row.site_id || ''
+      let v_id = row.verticalId || row.v_id || row.vid || row.vertical_id || ''
 
       let hierarchy = sitesData
       if (!hierarchy) {
@@ -193,57 +198,94 @@ export default function useApprovalsInbox(onClose) {
         }
       }
 
-      if (Array.isArray(hierarchy)) {
-        for (const vertical of hierarchy) {
-          const verticalMatch =
-            !row.verticalName ||
-            (v_id &&
-              String(vertical.id).toUpperCase() ===
-                String(v_id).toUpperCase()) ||
-            String(vertical.id).toUpperCase() ===
-              String(row.verticalName).toUpperCase() ||
-            String(
-              vertical.displayName || vertical.name || '',
-            ).toUpperCase() === String(row.verticalName).toUpperCase()
+      if (Array.isArray(hierarchy) && hierarchy.length > 0) {
+        let found = false
 
-          if (!verticalMatch) continue
-
-          for (const site of vertical.sites || []) {
-            const siteMatch =
-              !row.siteName ||
-              (sid &&
-                String(site.id).toUpperCase() === String(sid).toUpperCase()) ||
-              String(site.id).toUpperCase() ===
-                String(row.siteName).toUpperCase() ||
-              String(site.displayName || site.name || '').toUpperCase() ===
-                String(row.siteName).toUpperCase()
-
-            if (!siteMatch) continue
-
-            for (const plant of site.plants || []) {
-              const matchesId =
-                pid &&
-                String(plant.id).toUpperCase() ===
-                  String(plant.id).toUpperCase() &&
-                String(plant.id).toUpperCase() === String(pid).toUpperCase()
-              const matchesName =
-                row.plantName &&
-                (String(plant.id).toUpperCase() ===
-                  String(row.plantName).toUpperCase() ||
-                  String(
-                    plant.displayName || plant.name || '',
-                  ).toUpperCase() === String(row.plantName).toUpperCase())
-
-              if (matchesId || matchesName) {
-                pid = plant.id
-                sid = site.id
-                v_id = vertical.id
-                break
+        // Strategy 1: Exact UUID match for plant.id across all verticals & sites
+        if (targetPlantId) {
+          for (const vertical of hierarchy) {
+            for (const site of vertical.sites || []) {
+              for (const plant of site.plants || []) {
+                if (
+                  String(plant.id).toUpperCase() ===
+                  String(targetPlantId).toUpperCase()
+                ) {
+                  pid = plant.id
+                  sid = site.id
+                  v_id = vertical.id
+                  found = true
+                  break
+                }
               }
+              if (found) break
             }
-            if (pid && sid && v_id) break
+            if (found) break
           }
-          if (pid && sid && v_id) break
+        }
+
+        // Strategy 2: Exact Name match (verticalName + siteName + plantName)
+        if (!found && targetPlantName) {
+          for (const vertical of hierarchy) {
+            const vNameMatch =
+              !targetVerticalName ||
+              String(vertical.id).toUpperCase() ===
+                String(targetVerticalName).toUpperCase() ||
+              String(vertical.displayName || vertical.name || '').toUpperCase() ===
+                String(targetVerticalName).toUpperCase()
+
+            if (!vNameMatch) continue
+
+            for (const site of vertical.sites || []) {
+              const sNameMatch =
+                !targetSiteName ||
+                String(site.id).toUpperCase() ===
+                  String(targetSiteName).toUpperCase() ||
+                String(site.displayName || site.name || '').toUpperCase() ===
+                  String(targetSiteName).toUpperCase()
+
+              if (!sNameMatch) continue
+
+              for (const plant of site.plants || []) {
+                const pNameMatch =
+                  String(plant.id).toUpperCase() ===
+                    String(targetPlantName).toUpperCase() ||
+                  String(plant.displayName || plant.name || '').toUpperCase() ===
+                    String(targetPlantName).toUpperCase()
+
+                if (pNameMatch) {
+                  pid = plant.id
+                  sid = site.id
+                  v_id = vertical.id
+                  found = true
+                  break
+                }
+              }
+              if (found) break
+            }
+            if (found) break
+          }
+        }
+
+        // Strategy 3: Fallback Plant Name match anywhere in hierarchy
+        if (!found && targetPlantName) {
+          for (const vertical of hierarchy) {
+            for (const site of vertical.sites || []) {
+              for (const plant of site.plants || []) {
+                if (
+                  String(plant.displayName || plant.name || '').toUpperCase() ===
+                  String(targetPlantName).toUpperCase()
+                ) {
+                  pid = plant.id
+                  sid = site.id
+                  v_id = vertical.id
+                  found = true
+                  break
+                }
+              }
+              if (found) break
+            }
+            if (found) break
+          }
         }
       }
 

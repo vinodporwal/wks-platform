@@ -1,5 +1,6 @@
 package com.wks.caseengine.cpp.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +19,8 @@ public interface CPPNormsRepository extends JpaRepository<CPPNorms, UUID> {
     Optional<CPPNorms> findByNormsHeaderFkIdAndFinancialYear(UUID normsHeaderFkId, String financialYear);
 
     List<CPPNorms> findByFinancialYear(String financialYear);
+
+    List<CPPNorms> findByNormsHeaderFkIdInAndFinancialYear(Collection<UUID> normsHeaderFkIds, String financialYear);
 
     @Procedure(name = "CPP_UpdateCPPNorms")
     void updateCPPNorms(

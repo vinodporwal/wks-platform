@@ -320,6 +320,51 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	}
 
 	@Transactional
+	public AOPMessageVM saveProductionDemand(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
+
+	
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				
+				saveProductionDemandValues(dto.getNormParameterFKId(), year, String.valueOf(dto.getApr()), dto.getRemarks(), 4);
+				saveProductionDemandValues(dto.getNormParameterFKId(), year, String.valueOf(dto.getOct()), dto.getRemarks(), 10);
+				
+			}
+
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Production demand saved successfully");
+		return response;
+
+		
+	}
+
+	private void saveProductionDemandValues(String normParameterId, String year, String value, String remarks, int month) {
+		String sql = """
+			MERGE INTO NormAttributeTransactions AS target
+			USING (SELECT :normParameterId AS NormParameter_FK_Id,
+						:year AS AuditYear) AS source
+			ON target.NormParameter_FK_Id = source.NormParameter_FK_Id
+			AND target.AuditYear = source.AuditYear
+			AND target.AOPMonth = :month
+			WHEN MATCHED THEN
+				UPDATE SET AttributeValue = :value,
+						Remarks = :remarks
+			WHEN NOT MATCHED THEN
+				INSERT (Id, NormParameter_FK_Id, AuditYear, AOPMonth, AttributeValue, Remarks)
+				VALUES (NEWID(), :normParameterId, :year, :month, :value, :remarks);
+		""";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("normParameterId", normParameterId);
+		query.setParameter("year", year);
+		query.setParameter("value", value);
+		query.setParameter("remarks", remarks);
+		query.setParameter("month", month);
+		query.executeUpdate();
+	}
+
+
+	@Transactional
 	public AOPMessageVM importYearlyValues(
 			String year,
 			UUID plantFKId,
@@ -753,6 +798,81 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setUOM(row[15] != null ? row[15].toString() : "");
 				dto.setTypeDisplayName(row[16] != null ? row[16].toString() : "");
 				dto.setType(row[17] != null ? row[17].toString() : "");
+
+				dtoList.add(dto);
+			}
+
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setData(dtoList);
+			response.setMessage("Monthly values fetched successfully");
+
+			return response;
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to fetch monthly values", e);
+		}
+	}
+
+	public AOPMessageVM getProductionDemand(String year, UUID plantFKId) {
+
+		try {
+
+			String sql = """
+				SELECT
+					NP.Id AS NormParameter_FK_Id,
+					NP.DisplayName,
+
+					MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr,
+					MAX(CASE WHEN NAT.AOPMonth = 10 THEN NAT.AttributeValue END) AS Oct,
+
+					MAX(NAT.Remarks) AS Remarks,
+					NP.UOM,
+					MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
+					NP.Type
+
+				FROM NormParameters NP
+				JOIN NormParameterType NPT
+					ON NP.NormParameterType_FK_Id = NPT.Id
+
+				LEFT JOIN NormAttributeTransactions NAT
+					ON NAT.NormParameter_FK_Id = NP.Id
+					AND NAT.AuditYear = :year
+
+				WHERE NP.Plant_FK_Id = :plantFKId
+					AND NPT.Name = 'Production Demand'
+
+				GROUP BY
+					NP.Id,
+					NP.DisplayName,
+					NP.DisplayOrder,
+					NP.UOM,
+					NP.Type
+
+				ORDER BY NP.DisplayOrder
+				""";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("year", year);
+			query.setParameter("plantFKId", plantFKId);
+
+			List<Object[]> resultList = query.getResultList();
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+				dto.setProductName(row[1] != null ? row[1].toString() : "");
+
+				dto.setApr(parseDouble(row[2]));
+				dto.setOct(parseDouble(row[3]));
+
+				dto.setRemarks(row[4] != null ? row[4].toString() : "");
+				dto.setUOM(row[5] != null ? row[5].toString() : "");
+				dto.setTypeDisplayName(row[6] != null ? row[6].toString() : "");
+				dto.setType(row[7] != null ? row[7].toString() : "");
 
 				dtoList.add(dto);
 			}

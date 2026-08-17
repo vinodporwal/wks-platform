@@ -241,10 +241,7 @@ const UploadDocumentDialog = ({
           >
             <FileIcon sx={{ fontSize: '1rem', color: '#f57f17' }} />
             <Typography sx={{ fontSize: '0.78rem', color: '#5d4037' }}>
-              Replacing:{' '}
-              <strong>
-                {selectedRowForUpdate?.fileName || selectedRowForUpdate?.name}
-              </strong>
+              Replacing: <strong>{selectedRowForUpdate?.fileName || selectedRowForUpdate?.name}</strong>
             </Typography>
           </Box>
         )}
@@ -309,12 +306,7 @@ const UploadDocumentDialog = ({
           >
             Browse File
           </Button>
-          <Typography
-            variant='caption'
-            color='text.secondary'
-            textAlign='center'
-            sx={{ lineHeight: 1.4 }}
-          >
+          <Typography variant='caption' color='text.secondary' textAlign='center' sx={{ lineHeight: 1.4 }}>
             Supported: XLS, XLSX, XLSM, PDF, CSV
             <br />
             Max size: {MAX_FILE_SIZE_MB} MB
