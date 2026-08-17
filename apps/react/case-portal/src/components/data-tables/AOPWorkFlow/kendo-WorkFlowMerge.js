@@ -12,11 +12,11 @@ import { styled } from '@mui/material/styles'
 import Notification from 'components/Utilities/Notification'
 import AuditTrailDialog from 'components/data-tables/AOPWorkFlow/AopMyApprovals/AuditTrailDialog'
 import React, { useEffect, useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
-// import { CaseService } from 'services/CaseService'
+import { useSelector, useDispatch } from 'react-redux'
+import { setIsReleased } from 'store/reducers/dataGridStore'
+import ReleaseAPIService from 'components/aop-phase-two/services/common/releaseAPIService'
 import { DataService } from 'services/DataService'
 import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
-// import { TaskService } from 'services/TaskService'
 import { useSession } from 'SessionStoreContext'
 import postmanData from '../../../assets/postmandata.json'
 
@@ -71,6 +71,29 @@ import WorkflowRemarksDialog from 'components/Utilities/WorkflowRemarksDialog'
 import AopWorkflowStepper from 'components/Utilities/AopWorkflowStepper'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
+  const dispatch = useDispatch()
+
+  const handleWorkflowReleaseSync = async (actionType) => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      if (actionType === 'SUBMIT') {
+        await ReleaseAPIService.releaseAOPReport(keycloak, PLANT_ID, AOP_YEAR)
+        dispatch(setIsReleased({ isReleased: 1 }))
+      } else if (actionType === 'REJECT') {
+        await ReleaseAPIService.deleteReleaseAOPByPlantAndYear(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        dispatch(setIsReleased({ isReleased: 0 }))
+      }
+      // Re-fetch grid data & re-evaluate read-only / released permissions
+      await fetchData()
+    } catch (err) {
+      console.error(`Error syncing release status for action ${actionType}:`, err)
+    }
+  }
+
   // const READ_ONLY = getRoleName(keycloak)
   // const [steps, setSteps] = useState([])
   const [activeStep, setActiveStep] = useState(0)
@@ -636,10 +659,10 @@ const WorkFlowMerge = () => {
 
       const matchingPending = Array.isArray(myPendingList)
         ? myPendingList.find(
-            (p) =>
-              String(p.plantId || p.plant_id).toUpperCase() ===
-              String(PLANT_ID).toUpperCase(),
-          )
+          (p) =>
+            String(p.plantId || p.plant_id).toUpperCase() ===
+            String(PLANT_ID).toUpperCase(),
+        )
         : null
 
       const rolesFromPending = matchingPending?.listOfRoles || []
@@ -727,14 +750,18 @@ const WorkFlowMerge = () => {
         PLANT_ID,
         AOP_YEAR,
         remarkText,
-        aopRole || 'preparer',
+        aopRole || 'cts_lead',
       )
+      // Call release API on workflow submission
+      await handleWorkflowReleaseSync('SUBMIT')
+
       setSnackbarData({
         message: 'Submitted',
         severity: 'success',
       })
       await fetchAopStatus()
       await getCaseId()
+      await fetchData()
     } catch (error) {
       setSnackbarData({
         message: error.message || 'Failed to start workflow',
@@ -780,6 +807,14 @@ const WorkFlowMerge = () => {
         remark: remarkText,
         actorRole: aopRole,
       })
+
+      // Sync Release status & Redux state based on action
+      if (decision === 'REVERTED') {
+        await handleWorkflowReleaseSync('REJECT')
+      } else if (workflowActionConfig?.type === 'SUBMIT' || aopGate === 'prepare') {
+        await handleWorkflowReleaseSync('SUBMIT')
+      }
+
       setSnackbarData({
         message:
           decision === 'REVERTED'
@@ -794,6 +829,7 @@ const WorkFlowMerge = () => {
       // AOP status owns the stepper; refresh it first so Gate advances immediately.
       await fetchAopStatus()
       await getCaseId()
+      await fetchData()
     } catch (err) {
       setSnackbarData({ message: err.message, severity: 'error' })
     } finally {
@@ -806,7 +842,7 @@ const WorkFlowMerge = () => {
   const handleOpenSubmitDialog = () => {
     setWorkflowActionConfig({
       type: 'SUBMIT',
-      label: 'Submit for Approval',
+      label: 'Submit AOP',
       decision: 'START',
     })
     setWorkflowDialogOpen(true)
@@ -851,7 +887,10 @@ const WorkFlowMerge = () => {
   useEffect(() => {
     getCaseId()
     fetchAopStatus()
-  }, [PLANT_ID, AOP_YEAR])
+    if (tabIndex === 0) {
+      fetchData()
+    }
+  }, [PLANT_ID, AOP_YEAR, tabIndex])
 
   // handle reject click
   const handleRejectClick = () => {
@@ -1169,7 +1208,7 @@ const WorkFlowMerge = () => {
                 },
               }}
             >
-              Submit for Approval
+              Submit AOP
             </Button>
           )}
 
@@ -1285,7 +1324,7 @@ const WorkFlowMerge = () => {
           onSubmit={handleWorkflowRemarksSubmit}
           actionType={workflowActionConfig.type}
           actionLabel={workflowActionConfig.label}
-          role={aopRole || 'Workflow User'}
+          role={aopRole || 'Cts Lead'}
           siteName={SITE_NAME || siteObject?.displayName || siteObject?.name || siteObject?.id || ''}
           plantName={PLANT_NAME}
           year={AOP_YEAR}

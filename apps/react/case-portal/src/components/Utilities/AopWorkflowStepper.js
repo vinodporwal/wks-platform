@@ -21,14 +21,57 @@ import CheckIcon from '@mui/icons-material/Check'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh'
 
+const KNOWN_ROLES_MAP = {
+  plant_manager: 'Plant Manager',
+  cts_head: 'CTS Head',
+  fca_head: 'FCA Head',
+  operation_head: 'Operation Head',
+  operations_head: 'Operations Head',
+  maintenance_head: 'Maintenance Head',
+  technology_vertical_head: 'Technology Vertical Head',
+  site_head: 'Site Head',
+  gms_head: 'GMS Head',
+  gms_business_head: 'GMS Business Head',
+  preparer: 'Preparer',
+  production_manager: 'Production Manager',
+  cts_lead: 'CTS Lead',
+}
+
 /**
- * Format role identifier string (e.g. gms_head -> GMS Head)
+ * Format role identifier string to display name (e.g. plant_manager -> Plant Manager)
  */
 export const formatRoleName = (roleStr) => {
-  if (!roleStr) return '-'
-  return String(roleStr)
+  if (!roleStr || typeof roleStr !== 'string') return '-'
+  const cleanCode = roleStr.trim()
+  const lower = cleanCode.toLowerCase()
+  if (KNOWN_ROLES_MAP[lower]) return KNOWN_ROLES_MAP[lower]
+
+  return cleanCode
     .replace(/_/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/-/g, ' ')
+    .split(' ')
+    .map((word) => {
+      const wLower = word.toLowerCase()
+      if (['cts', 'fca', 'gms', 'bpc', 'ldpe', 'meg', 'eoeg'].includes(wLower)) {
+        return wLower.toUpperCase()
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
+    .join(' ')
+}
+
+/**
+ * Format role identifier string to "code - Title Name" (e.g. plant_manager -> plant_manager - Plant Manager)
+ */
+export const formatRoleWithCode = (roleStr) => {
+  if (!roleStr || typeof roleStr !== 'string') return '-'
+  const cleanCode = roleStr.trim()
+  const displayName = formatRoleName(cleanCode)
+
+  if (cleanCode.toLowerCase() === displayName.toLowerCase()) {
+    return cleanCode
+  }
+  return `${cleanCode} - ${displayName}`
 }
 
 /**

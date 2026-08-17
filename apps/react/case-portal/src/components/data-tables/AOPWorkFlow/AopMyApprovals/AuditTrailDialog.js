@@ -36,6 +36,7 @@ import {
 } from '@progress/kendo-react-excel-export'
 import { useSession } from 'SessionStoreContext'
 import { AopApprovalService } from 'services/AopApprovalService'
+import { getRoleTitle } from 'components/Utilities/aopRoleUtils'
 
 /**
  * AuditTrailDialog Component
@@ -380,7 +381,7 @@ const AuditTrailDialog = ({ open, onClose, row }) => {
                     borderBottom: '1px solid #cbd5e1',
                   }}
                 >
-                  {item.actorRole || '-'}
+                  {item.actorRole ? getRoleTitle(item.actorRole) : '-'}
                 </TableCell>
                 <TableCell
                   sx={{

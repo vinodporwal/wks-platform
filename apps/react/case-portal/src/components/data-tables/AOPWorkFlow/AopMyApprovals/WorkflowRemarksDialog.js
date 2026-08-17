@@ -18,6 +18,7 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
+import { getRoleTitle } from 'components/Utilities/aopRoleUtils'
 
 /**
  * Utility Remarks PopUp for Workflow Actions
@@ -198,7 +199,7 @@ const WorkflowRemarksDialog = ({
                     variant='body2'
                     sx={{ color: '#334155', fontSize: '0.82rem' }}
                   >
-                    <strong>Role:</strong> {role}
+                    <strong>Role:</strong> {getRoleTitle(role)}
                   </Typography>
                 </Box>
               )}
