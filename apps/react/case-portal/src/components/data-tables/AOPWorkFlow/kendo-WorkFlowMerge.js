@@ -629,44 +629,76 @@ const WorkFlowMerge = () => {
   const fetchAopStatus = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
-      const data = await AopApprovalService.getStatus(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const [data, myPendingList] = await Promise.all([
+        AopApprovalService.getStatus(keycloak, PLANT_ID, AOP_YEAR).catch(() => null),
+        AopApprovalService.getMyPending(keycloak).catch(() => []),
+      ])
+
+      const matchingPending = Array.isArray(myPendingList)
+        ? myPendingList.find(
+            (p) =>
+              String(p.plantId || p.plant_id).toUpperCase() ===
+              String(PLANT_ID).toUpperCase(),
+          )
+        : null
+
+      const rolesFromPending = matchingPending?.listOfRoles || []
+
       console.log('=== [AOP Approval Status Debug] ===')
       console.log('Plant ID:', PLANT_ID, '| Year:', AOP_YEAR)
       console.log('Workflow Exists:', data?.exists)
       console.log(
         'Current Gate Name:',
-        data?.currentGateName,
+        data?.currentGateName || matchingPending?.gateName,
         '(',
-        data?.currentGateDisplayName,
+        data?.currentGateDisplayName || matchingPending?.gateDisplayName,
         ')',
       )
-      console.log('Task ID:', data?.taskId)
-      console.log('Assigned Role:', data?.assignedRole)
-      console.log('Viewer Mode:', data?.viewer?.mode)
-      console.log(
-        'Viewer Permissions -> Can Submit:',
-        data?.viewer?.canSubmit,
-        '| Can Approve:',
-        data?.viewer?.canApprove,
-        '| Can Revert:',
-        data?.viewer?.canRevert,
-      )
+      console.log('Task ID:', data?.taskId || matchingPending?.taskId)
+      console.log('Assigned Role:', data?.assignedRole || matchingPending?.assignedRole)
+      console.log('Viewer Mode:', data?.viewer?.mode || matchingPending?.actions?.mode)
       console.log(
         'User Roles (from Viewer/Keycloak):',
         data?.viewer?.roles || keycloak?.realmAccess?.roles,
       )
+      console.log('Matching Pending listOfRoles:', rolesFromPending)
       console.log('===================================')
-      setViewer(data?.viewer || null)
-      setAopGate(data?.currentGateName || '')
-      setAopTaskId(data?.taskId || '')
-      setAopRole(data?.assignedRole || '')
-      setAopExists(Boolean(data?.exists))
+
+      setViewer(data?.viewer || matchingPending?.actions || null)
+      setAopGate(data?.currentGateName || matchingPending?.gateName || '')
+      setAopTaskId(data?.taskId || matchingPending?.taskId || '')
+      setAopRole(data?.assignedRole || matchingPending?.assignedRole || '')
+      setAopExists(Boolean(data?.exists || matchingPending))
+
       if (data?.steps?.length) {
-        setMasterSteps(data.steps)
+        const currentGate = data.currentGateName || matchingPending?.gateName
+        const enrichedSteps = data.steps.map((s) => {
+          const hasRoles =
+            (Array.isArray(s.listOfRoles) && s.listOfRoles.length > 0) ||
+            (Array.isArray(s.roles) && s.roles.length > 0)
+          if (hasRoles) return s
+
+          const isCurrentStep =
+            s.status === 'inprogress' ||
+            s.gateName === currentGate ||
+            s.name === currentGate ||
+            s.displayName === currentGate
+
+          if (
+            isCurrentStep &&
+            (rolesFromPending.length > 0 || data?.listOfRoles)
+          ) {
+            return {
+              ...s,
+              listOfRoles:
+                rolesFromPending.length > 0
+                  ? rolesFromPending
+                  : data.listOfRoles,
+            }
+          }
+          return s
+        })
+        setMasterSteps(enrichedSteps)
         const activeIdx = data.steps.findIndex((s) => s.status === 'inprogress')
         if (activeIdx > -1) {
           setActiveStep(activeIdx)
@@ -698,7 +730,7 @@ const WorkFlowMerge = () => {
         aopRole || 'preparer',
       )
       setSnackbarData({
-        message: 'AOP workflow submitted for approval',
+        message: 'Submitted',
         severity: 'success',
       })
       await fetchAopStatus()
@@ -751,10 +783,10 @@ const WorkFlowMerge = () => {
       setSnackbarData({
         message:
           decision === 'REVERTED'
-            ? 'Reverted for update successfully'
+            ? 'Rejected'
             : aopGate === 'prepare'
-              ? 'Submitted for approval successfully'
-              : 'Approved successfully',
+              ? 'Submitted'
+              : 'Approved',
         severity: 'success',
       })
       setText('')
@@ -1067,156 +1099,155 @@ const WorkFlowMerge = () => {
           </Typography>
         </Box>
 
-        {/* AOP approval buttons — visibility comes from the server `viewer` */}
-        {((viewer?.canSubmit && !aopExists) ||
-          (viewer?.mode === 'ACTION' && aopTaskId)) && (
-          <Stack
-            direction='row'
-            spacing={1.5}
-            alignItems='center'
-            justifyContent='flex-end'
-            sx={{ mt: 1, mb: 1.5 }}
+        {/* Action controls & Audit Trail */}
+        <Stack
+          direction='row'
+          spacing={1.5}
+          alignItems='center'
+          justifyContent='flex-end'
+          sx={{ mt: 1, mb: 1.5 }}
+        >
+          {/* Audit Trail Button - Always Visible */}
+          <Button
+            variant='outlined'
+            onClick={handleAuditOpen}
+            startIcon={
+              <HistoryIcon sx={{ fontSize: '16px !important' }} />
+            }
+            sx={{
+              height: '34px',
+              px: 2.2,
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              borderRadius: '6px',
+              textTransform: 'none',
+              color: '#005eb8',
+              backgroundColor: '#e0f2fe',
+              border: '1.5px solid #005eb8',
+              boxShadow: '0 2px 4px rgba(0, 94, 184, 0.12)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: '#bae6fd',
+                borderColor: '#004b93',
+                color: '#004b93',
+                boxShadow: '0 4px 8px rgba(0, 94, 184, 0.25)',
+              },
+            }}
           >
-            {viewer?.canSubmit && (
-              <Button
-                variant='outlined'
-                className='btn-save'
-                onClick={handleOpenSubmitDialog}
-                disabled={isCreatingCase || actionDisabled}
-                startIcon={<SendIcon sx={{ fontSize: '16px !important' }} />}
-                sx={{
-                  height: '34px',
-                  px: 2.2,
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  borderRadius: '6px',
-                  textTransform: 'none',
-                  color: '#1565c0',
-                  backgroundColor: '#e3f2fd',
-                  border: '1.5px solid #1976d2',
-                  boxShadow: '0 2px 4px rgba(25, 118, 210, 0.12)',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: '#bbdefb',
-                    borderColor: '#1565c0',
-                    color: '#0d47a1',
-                    boxShadow: '0 4px 8px rgba(25, 118, 210, 0.25)',
-                  },
-                  '&:disabled': {
-                    backgroundColor: '#f5f5f5',
-                    color: '#bdbdbd',
-                    borderColor: '#e0e0e0',
-                  },
-                }}
-              >
-                Submit for Approval
-              </Button>
-            )}
-            {viewer?.canApprove && aopTaskId && (
-              <>
-                <Button
-                  variant='outlined'
-                  onClick={handleAuditOpen}
-                  startIcon={
-                    <HistoryIcon sx={{ fontSize: '16px !important' }} />
-                  }
-                  sx={{
-                    height: '34px',
-                    px: 2.2,
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    textTransform: 'none',
-                    color: '#005eb8',
-                    backgroundColor: '#e0f2fe',
-                    border: '1.5px solid #005eb8',
-                    boxShadow: '0 2px 4px rgba(0, 94, 184, 0.12)',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: '#bae6fd',
-                      borderColor: '#004b93',
-                      color: '#004b93',
-                      boxShadow: '0 4px 8px rgba(0, 94, 184, 0.25)',
-                    },
-                  }}
-                >
-                  Audit Trail
-                </Button>
-                <Button
-                  variant='outlined'
-                  className='btn-add'
-                  onClick={handleOpenApproveDialog}
-                  disabled={actionDisabled}
-                  startIcon={
-                    <CheckCircleOutlineIcon
-                      sx={{ fontSize: '16px !important' }}
-                    />
-                  }
-                  sx={{
-                    height: '34px',
-                    px: 2.2,
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    textTransform: 'none',
-                    color: '#2e7d32',
-                    backgroundColor: '#e8f5e9',
-                    border: '1.5px solid #2e7d32',
-                    boxShadow: '0 2px 4px rgba(46, 125, 50, 0.12)',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: '#c8e6c9',
-                      borderColor: '#1b5e20',
-                      color: '#1b5e20',
-                      boxShadow: '0 4px 8px rgba(46, 125, 50, 0.25)',
-                    },
-                    '&:disabled': {
-                      backgroundColor: '#f5f5f5',
-                      color: '#bdbdbd',
-                      borderColor: '#e0e0e0',
-                    },
-                  }}
-                >
-                  Approve
-                </Button>
-              </>
-            )}
-            {viewer?.canRevert && aopTaskId && (
-              <Button
-                variant='outlined'
-                onClick={handleOpenRevertDialog}
-                disabled={actionDisabled}
-                startIcon={<UndoIcon sx={{ fontSize: '16px !important' }} />}
-                sx={{
-                  height: '34px',
-                  px: 2.2,
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  borderRadius: '6px',
-                  textTransform: 'none',
-                  color: '#c62828',
-                  backgroundColor: '#ffebee',
-                  border: '1.5px solid #c62828',
-                  boxShadow: '0 2px 4px rgba(198, 40, 40, 0.12)',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: '#ffcdd2',
-                    borderColor: '#b71c1c',
-                    color: '#b71c1c',
-                    boxShadow: '0 4px 8px rgba(198, 40, 40, 0.25)',
-                  },
-                  '&:disabled': {
-                    backgroundColor: '#f5f5f5',
-                    color: '#bdbdbd',
-                    borderColor: '#e0e0e0',
-                  },
-                }}
-              >
-                Revert
-              </Button>
-            )}
-          </Stack>
-        )}
+            Audit Trail
+          </Button>
+
+          {viewer?.canSubmit && (
+            <Button
+              variant='outlined'
+              className='btn-save'
+              onClick={handleOpenSubmitDialog}
+              disabled={isCreatingCase || actionDisabled}
+              startIcon={<SendIcon sx={{ fontSize: '16px !important' }} />}
+              sx={{
+                height: '34px',
+                px: 2.2,
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                borderRadius: '6px',
+                textTransform: 'none',
+                color: '#1565c0',
+                backgroundColor: '#e3f2fd',
+                border: '1.5px solid #1976d2',
+                boxShadow: '0 2px 4px rgba(25, 118, 210, 0.12)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: '#bbdefb',
+                  borderColor: '#1565c0',
+                  color: '#0d47a1',
+                  boxShadow: '0 4px 8px rgba(25, 118, 210, 0.25)',
+                },
+                '&:disabled': {
+                  backgroundColor: '#f5f5f5',
+                  color: '#bdbdbd',
+                  borderColor: '#e0e0e0',
+                },
+              }}
+            >
+              Submit for Approval
+            </Button>
+          )}
+
+          {viewer?.canApprove && aopTaskId && (
+            <Button
+              variant='outlined'
+              className='btn-add'
+              onClick={handleOpenApproveDialog}
+              disabled={actionDisabled}
+              startIcon={
+                <CheckCircleOutlineIcon
+                  sx={{ fontSize: '16px !important' }}
+                />
+              }
+              sx={{
+                height: '34px',
+                px: 2.2,
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                borderRadius: '6px',
+                textTransform: 'none',
+                color: '#2e7d32',
+                backgroundColor: '#e8f5e9',
+                border: '1.5px solid #2e7d32',
+                boxShadow: '0 2px 4px rgba(46, 125, 50, 0.12)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: '#c8e6c9',
+                  borderColor: '#1b5e20',
+                  color: '#1b5e20',
+                  boxShadow: '0 4px 8px rgba(46, 125, 50, 0.25)',
+                },
+                '&:disabled': {
+                  backgroundColor: '#f5f5f5',
+                  color: '#bdbdbd',
+                  borderColor: '#e0e0e0',
+                },
+              }}
+            >
+              Approve
+            </Button>
+          )}
+
+          {viewer?.canRevert && aopTaskId && (
+            <Button
+              variant='outlined'
+              onClick={handleOpenRevertDialog}
+              disabled={actionDisabled}
+              startIcon={<UndoIcon sx={{ fontSize: '16px !important' }} />}
+              sx={{
+                height: '34px',
+                px: 2.2,
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                borderRadius: '6px',
+                textTransform: 'none',
+                color: '#c62828',
+                backgroundColor: '#ffebee',
+                border: '1.5px solid #c62828',
+                boxShadow: '0 2px 4px rgba(198, 40, 40, 0.12)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: '#ffcdd2',
+                  borderColor: '#b71c1c',
+                  color: '#b71c1c',
+                  boxShadow: '0 4px 8px rgba(198, 40, 40, 0.25)',
+                },
+                '&:disabled': {
+                  backgroundColor: '#f5f5f5',
+                  color: '#bdbdbd',
+                  borderColor: '#e0e0e0',
+                },
+              }}
+            >
+              Revert
+            </Button>
+          )}
+        </Stack>
 
         <Stack
           direction='row'
@@ -1255,7 +1286,7 @@ const WorkFlowMerge = () => {
           actionType={workflowActionConfig.type}
           actionLabel={workflowActionConfig.label}
           role={aopRole || 'Workflow User'}
-          gateName={aopGate || 'AOP Approval'}
+          siteName={SITE_NAME || siteObject?.displayName || siteObject?.name || siteObject?.id || ''}
           plantName={PLANT_NAME}
           year={AOP_YEAR}
           isMandatory={true}

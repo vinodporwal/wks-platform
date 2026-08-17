@@ -8,11 +8,187 @@ import {
   Typography,
   Chip,
   Paper,
+  Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   styled,
 } from '@mui/material'
 import CheckIcon from '@mui/icons-material/Check'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh'
+
+/**
+ * Format role identifier string (e.g. gms_head -> GMS Head)
+ */
+export const formatRoleName = (roleStr) => {
+  if (!roleStr) return '-'
+  return String(roleStr)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+/**
+ * Shared Light Theme Role Approvals Mini-Table Tooltip
+ */
+export const RoleApprovalsTooltip = ({ rolesList = [], children }) => {
+  if (!Array.isArray(rolesList) || rolesList.length === 0) {
+    return children
+  }
+
+  const approvedCount = rolesList.filter((r) => r.approved).length
+  const totalRoles = rolesList.length
+
+  const tooltipContent = (
+    <Box sx={{ p: 0.25, minWidth: 220 }}>
+      <Typography
+        sx={{
+          fontWeight: 800,
+          fontSize: '0.7rem',
+          color: '#475569',
+          mb: 0.75,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        Role Approvals ({approvedCount}/{totalRoles})
+      </Typography>
+      <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{
+          backgroundColor: '#ffffff',
+          border: '1px solid #cbd5e1',
+          borderRadius: '6px',
+          overflow: 'hidden',
+        }}
+      >
+        <Table size='small' sx={{ borderCollapse: 'collapse' }}>
+          <TableHead sx={{ backgroundColor: '#f1f5f9' }}>
+            <TableRow>
+              <TableCell
+                sx={{
+                  color: '#334155',
+                  fontWeight: 800,
+                  fontSize: '0.68rem',
+                  textTransform: 'uppercase',
+                  py: 0.5,
+                  px: 1,
+                  borderRight: '1px solid #cbd5e1',
+                  borderBottom: '1px solid #cbd5e1',
+                }}
+              >
+                Role
+              </TableCell>
+              <TableCell
+                sx={{
+                  color: '#334155',
+                  fontWeight: 800,
+                  fontSize: '0.68rem',
+                  textTransform: 'uppercase',
+                  py: 0.5,
+                  px: 1,
+                  borderBottom: '1px solid #cbd5e1',
+                  textAlign: 'center',
+                }}
+              >
+                Status
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rolesList.map((r, idx) => (
+              <TableRow
+                key={idx}
+                sx={{
+                  '&:nth-of-type(even)': {
+                    backgroundColor: '#f8fafc',
+                  },
+                }}
+              >
+                <TableCell
+                  sx={{
+                    color: '#0f172a',
+                    fontWeight: 600,
+                    fontSize: '0.72rem',
+                    py: 0.5,
+                    px: 1,
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom:
+                      idx < rolesList.length - 1 ? '1px solid #e2e8f0' : 'none',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.75,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        backgroundColor: r.approved ? '#16a34a' : '#d97706',
+                      }}
+                    />
+                    {formatRoleName(r.role)}
+                  </Box>
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: r.approved ? '#16a34a' : '#b45309',
+                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    py: 0.5,
+                    px: 1,
+                    textAlign: 'center',
+                    borderBottom:
+                      idx < rolesList.length - 1 ? '1px solid #e2e8f0' : 'none',
+                  }}
+                >
+                  {r.approved ? 'Approved' : 'Pending'}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  )
+
+  return (
+    <Tooltip
+      title={tooltipContent}
+      placement='top'
+      arrow
+      enterDelay={100}
+      componentsProps={{
+        tooltip: {
+          sx: {
+            backgroundColor: '#ffffff',
+            color: '#0f172a',
+            boxShadow: '0 10px 25px rgba(15, 23, 42, 0.15)',
+            border: '1px solid #cbd5e1',
+            borderRadius: '8px',
+            p: 1.25,
+          },
+        },
+        arrow: {
+          sx: { color: '#ffffff' },
+        },
+      }}
+    >
+      <Box component='span' sx={{ display: 'inline-block', width: '100%', cursor: 'pointer' }}>
+        {children}
+      </Box>
+    </Tooltip>
+  )
+}
 
 // Custom Connector with gradient/solid transition
 const ColorlibConnector = styled(StepConnector)(() => ({
@@ -125,8 +301,6 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
         }}
       >
         {steps.map((step, index) => {
-          // Trust API status only. Mixing in `index < activeStep` made post-revert
-          // steppers show every gate as Completed when activeStep was wrong/missing.
           const status = (step.status || '').toLowerCase()
           const isCompleted = status === 'completed'
           const isInProgress = status === 'inprogress'
@@ -153,6 +327,64 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
             statusLabel = 'Pending'
           }
 
+          const rolesList =
+            Array.isArray(step.listOfRoles) && step.listOfRoles.length > 0
+              ? step.listOfRoles
+              : Array.isArray(step.roles) && step.roles.length > 0
+                ? step.roles
+                : step.assignedRole
+                  ? [{ role: step.assignedRole, approved: isCompleted }]
+                  : []
+
+          const stepLabelContent = (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 0.5,
+                cursor: 'pointer',
+              }}
+            >
+              <Typography
+                variant='body2'
+                sx={{
+                  fontWeight: isInProgress ? 700 : isCompleted ? 600 : 500,
+                  fontSize: '0.72rem',
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                  color: isInProgress
+                    ? '#005eb8'
+                    : isCompleted
+                      ? '#1e293b'
+                      : '#64748b',
+                  lineHeight: 1.2,
+                  textAlign: 'center',
+                  wordBreak: 'break-word',
+                  maxWidth: '135px',
+                }}
+              >
+                {step.displayName}
+              </Typography>
+
+              <Chip
+                label={statusLabel}
+                size='small'
+                sx={{
+                  height: '18px',
+                  fontSize: '0.62rem',
+                  fontWeight: 600,
+                  backgroundColor: statusColor.bg,
+                  color: statusColor.color,
+                  border: `1px solid ${statusColor.border}`,
+                  '& .MuiChip-label': {
+                    px: 0.8,
+                    py: 0,
+                  },
+                }}
+              />
+            </Box>
+          )
+
           return (
             <Step
               key={step.displayName || index}
@@ -165,13 +397,25 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
               }}
             >
               <StepLabel
-                StepIconComponent={(iconProps) => (
-                  <CustomStepIcon
-                    {...iconProps}
-                    status={step.status}
-                    icon={index + 1}
-                  />
-                )}
+                StepIconComponent={(iconProps) =>
+                  rolesList.length > 0 ? (
+                    <RoleApprovalsTooltip rolesList={rolesList}>
+                      <Box component='span'>
+                        <CustomStepIcon
+                          {...iconProps}
+                          status={step.status}
+                          icon={index + 1}
+                        />
+                      </Box>
+                    </RoleApprovalsTooltip>
+                  ) : (
+                    <CustomStepIcon
+                      {...iconProps}
+                      status={step.status}
+                      icon={index + 1}
+                    />
+                  )
+                }
                 sx={{
                   '&.MuiStepLabel-alternativeLabel': {
                     position: 'relative !important',
@@ -194,51 +438,13 @@ const AopWorkflowStepper = ({ steps = [], activeStep = 0, onStepClick }) => {
                   },
                 }}
               >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 0.5,
-                  }}
-                >
-                  <Typography
-                    variant='body2'
-                    sx={{
-                      fontWeight: isInProgress ? 700 : isCompleted ? 600 : 500,
-                      fontSize: '0.72rem',
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                      color: isInProgress
-                        ? '#005eb8'
-                        : isCompleted
-                          ? '#1e293b'
-                          : '#64748b',
-                      lineHeight: 1.2,
-                      textAlign: 'center',
-                      wordBreak: 'break-word',
-                      maxWidth: '135px',
-                    }}
-                  >
-                    {step.displayName}
-                  </Typography>
-
-                  <Chip
-                    label={statusLabel}
-                    size='small'
-                    sx={{
-                      height: '18px',
-                      fontSize: '0.62rem',
-                      fontWeight: 600,
-                      backgroundColor: statusColor.bg,
-                      color: statusColor.color,
-                      border: `1px solid ${statusColor.border}`,
-                      '& .MuiChip-label': {
-                        px: 0.8,
-                        py: 0,
-                      },
-                    }}
-                  />
-                </Box>
+                {rolesList.length > 0 ? (
+                  <RoleApprovalsTooltip rolesList={rolesList}>
+                    {stepLabelContent}
+                  </RoleApprovalsTooltip>
+                ) : (
+                  stepLabelContent
+                )}
               </StepLabel>
             </Step>
           )

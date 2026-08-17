@@ -31,6 +31,7 @@ const WorkflowRemarksDialog = ({
   actionType = 'APPROVE', // 'SUBMIT' | 'APPROVE' | 'REVERT'
   actionLabel = 'Approve',
   role = '',
+  siteName = '',
   gateName = '',
   plantName = '',
   year = '',
@@ -61,7 +62,7 @@ const WorkflowRemarksDialog = ({
     switch (actionType?.toUpperCase()) {
       case 'SUBMIT':
         return {
-          title: 'Submit for Approval',
+          title: 'Submit',
           color: '#1565c0',
           bgColor: '#e3f2fd',
           borderColor: '#1976d2',
@@ -73,7 +74,7 @@ const WorkflowRemarksDialog = ({
         }
       case 'APPROVE':
         return {
-          title: 'Approve Workflow Stage',
+          title: 'Approve',
           color: '#2e7d32',
           bgColor: '#e8f5e9',
           borderColor: '#2e7d32',
@@ -86,8 +87,9 @@ const WorkflowRemarksDialog = ({
           btnHoverBg: '#1b5e20',
         }
       case 'REVERT':
+      case 'REJECT':
         return {
-          title: 'Revert for Update / Improvement',
+          title: 'Reject',
           color: '#c62828',
           bgColor: '#ffebee',
           borderColor: '#c62828',
@@ -99,7 +101,7 @@ const WorkflowRemarksDialog = ({
         }
       default:
         return {
-          title: 'Workflow Action Remarks',
+          title: 'Workflow Action',
           color: '#1976d2',
           bgColor: '#f5f5f5',
           borderColor: '#cccccc',
@@ -177,7 +179,7 @@ const WorkflowRemarksDialog = ({
                   letterSpacing: 0.5,
                 }}
               >
-                Workflow Action Details
+                Details
               </Typography>
             </Box>
 
@@ -201,14 +203,14 @@ const WorkflowRemarksDialog = ({
                 </Box>
               )}
 
-              {gateName && (
+              {siteName && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <AccountTreeIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                  <LocationOnIcon sx={{ fontSize: 16, color: '#64748b' }} />
                   <Typography
                     variant='body2'
                     sx={{ color: '#334155', fontSize: '0.82rem' }}
                   >
-                    <strong>Stage:</strong> {gateName}
+                    <strong>Site:</strong> {siteName}
                   </Typography>
                 </Box>
               )}
