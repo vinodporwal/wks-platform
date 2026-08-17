@@ -1,8 +1,12 @@
 package com.wks.caseengine.service;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +23,7 @@ import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.ProcessVariableType;
 import com.wks.bpm.engine.model.spi.Task;
 import com.wks.caseengine.dto.AopPendingItemDTO;
+import com.wks.caseengine.dto.AopStepRoleDTO;
 import com.wks.caseengine.dto.AopViewerDTO;
 import com.wks.caseengine.dto.AopWorkflowStatusDTO;
 import com.wks.caseengine.dto.WorkflowDTO;
@@ -55,6 +60,11 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private static final String SUBMITTED = "SUBMITTED";
     /** Recorded as the destination when a decision ends the process. */
     private static final String COMPLETED = "COMPLETED";
+    private static final String STATUS_PENDING = "pending";
+    private static final String STATUS_COMPLETED = "completed";
+    /** Camunda REST emits offsets without a colon, e.g. 2026-07-21T15:30:00.000+0000. */
+    private static final DateTimeFormatter ENGINE_TIMESTAMP =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     @Autowired
     private ProcessInstanceService processInstanceService;
@@ -219,7 +229,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             throw new IllegalStateException("Failed to start Camunda process '" + PROCESS_KEY
                     + "' for businessKey " + businessKey
                     + ". Check that the process is deployed under the configured tenant and that the"
-                    + " c7-plugins jar (AopGateDecisionListener) is on the engine classpath;"
+                    + " c7-client jar (AopGateDecisionListener) is on the engine classpath;"
                     + " the engine error is logged by C7EngineClient as 'Error starting process'.");
         }
         return id;
@@ -297,15 +307,20 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         String auditAction = PREPARE.equals(resolvedGate) ? SUBMITTED : normalized;
         StepMeta gateMeta = steps.get(resolvedGate);
 
-        // Approve: one Camunda task = one role. A user with several Gate 2 roles
-        // must decide once per role so each slot gets its own audit trail.
+        // One decision covers every role the caller holds at this gate. A gate fans
+        // out one task per approver role; when one person wears several of those
+        // hats, asking them to click Approve once per hat is noise, and hiding the
+        // button after the first click would strand the rest of their tasks with
+        // nobody able to complete them. So apply the decision to all of them at
+        // once, and audit each role separately so the trail still shows that every
+        // required role was accounted for.
         // Prepare: complete every multi-instance slot so one Submit advances.
         // Revert: any one reverter must leave the gate — complete remaining slots
         // (BPMN completionCondition also cancels them on new deployments; this
         // covers in-flight processes still on the old definition).
         List<Task> toComplete = (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized))
                 ? allOpenTasksAtGate(openTasks, resolvedGate, taskId)
-                : selectedTaskForCaller(openTasks, resolvedGate, taskId, callerRoles);
+                : tasksForCallerAtGate(openTasks, resolvedGate, taskId, callerRoles);
 
         // Replayed request: the caller has no open task left at this gate, so this
         // decision has already been applied (a double-clicked button, a retried
@@ -385,29 +400,39 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     }
 
     /**
-     * The explicitly selected open task at {@code gateName}, when the caller holds
-     * its assignee role (or the task has no assignee). Empty when that slot is
-     * already gone — treat as a replayed request, not a lookup failure.
+     * Every open task at {@code gateName} assigned to a role the caller holds,
+     * with the explicitly-selected task first. Empty when the caller has nothing
+     * left to act on there.
      *
-     * <p>The caller must pass tasks from {@link #tasksForActing}, which throws on
+     * <p>An empty result must mean "already decided", never "the lookup failed",
+     * or a replayed request would be indistinguishable from a first one. The
+     * caller must pass tasks from {@link #tasksForActing}, which throws on
      * engine outage instead of silently yielding an empty list.</p>
      */
-    private List<Task> selectedTaskForCaller(List<Task> openTasks, String gateName, String taskId,
+    private List<Task> tasksForCallerAtGate(List<Task> openTasks, String gateName, String taskId,
             List<String> callerRoles) {
 
-        Task selected = findTaskById(openTasks, taskId);
-        if (selected == null) {
-            return List.of();
+        List<Task> matched = new ArrayList<>();
+        Task selected = null;
+        Set<String> seen = new HashSet<>();
+        for (Task task : openTasks) {
+            if (task.getId() == null || !seen.add(task.getId())) {
+                continue;
+            }
+            if (!gateName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
+                continue;
+            }
+            if (task.getId().equals(taskId)) {
+                selected = task;
+            } else if (callerRoles != null && task.getAssignee() != null
+                    && callerRoles.contains(task.getAssignee())) {
+                matched.add(task);
+            }
         }
-        if (!gateName.equals(stepNameForTask(selected.getTaskDefinitionKey()))) {
-            return List.of();
+        if (selected != null) {
+            matched.add(0, selected);
         }
-        String assignee = selected.getAssignee();
-        if (assignee != null && (callerRoles == null || !callerRoles.contains(assignee))) {
-            throw new IllegalStateException(
-                    "Caller is not authorized for role '" + assignee + "' at " + gateName);
-        }
-        return List.of(selected);
+        return matched;
     }
 
     /**
@@ -694,19 +719,26 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         Integer currentSeq = currentStep != null && meta.containsKey(currentStep) ? meta.get(currentStep).sequence : null;
         markStatuses(steps, currentSeq);
 
+        // One decision per person per gate visit — except Prepare/rework, where any
+        // preparer must be able to finish remaining multi-instance tasks and advance.
+        boolean alreadyActed = !PREPARE.equals(currentStep)
+                && auditService.hasActedInCurrentCycle(
+                        businessKey, currentStep, callerUserId, visitStartOf(tasks, currentStep));
+
         // Actionable task = one whose assignee role is held by the caller, preferring
         // the current gate so a role match on a different step cannot win.
-        // A user may hold several roles at the same gate (e.g. Gate 2); each open
-        // role slot stays actionable until that specific task is completed.
-        Task mine = tasks.stream()
-                .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                .filter(t -> currentStep == null
-                        || currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
-                .findFirst()
-                .orElseGet(() -> tasks.stream()
-                        .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                        .findFirst()
-                        .orElse(null));
+        Task mine = null;
+        if (!alreadyActed) {
+            mine = tasks.stream()
+                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+                    .filter(t -> currentStep == null
+                            || currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
+                    .findFirst()
+                    .orElseGet(() -> tasks.stream()
+                            .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+                            .findFirst()
+                            .orElse(null));
+        }
         // After one preparer completes their multi-instance slot, peer prepare
         // tasks remain under other roles. Any preparer must still be able to
         // Submit and clear those so the plan advances to Gate 1.
@@ -765,55 +797,90 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
             return items;
         }
         for (Workflow wf : workflowRepository.findAllByCaseDefIdAndIsDeletedFalse(CASE_DEF_ID)) {
+            Plants plant = wf.getPlantFKId() != null ? plantsRepository.findById(wf.getPlantFKId()).orElse(null) : null;
+            UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
+            Map<String, StepMeta> meta = loadStepMeta(masterId);
+
+            if (auditService.hasCompleted(wf.getCaseId())) {
+                String lastGate = GATES.get(GATES.size() - 1);
+                items.add(AopPendingItemDTO.builder()
+                        .caseId(wf.getCaseId())
+                        .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
+                        .plantName(plant != null ? plant.getName() : null)
+                        .siteName(siteName(wf.getSiteFKId()))
+                        .verticalName(verticalName(wf.getVerticalFKId()))
+                        .year(wf.getYear())
+                        .gateName(COMPLETED)
+                        .gateDisplayName("Approved")
+                        .sequence(null)
+                        .assignedRole(null)
+                        .taskId(null)
+                        .listOfRoles(listOfRolesForStep(masterId, lastGate, wf.getCaseId(), List.of()))
+                        .status(STATUS_COMPLETED)
+                        .actions(AopViewerDTO.builder()
+                                .mode("READ_ONLY")
+                                .canApprove(false)
+                                .canRevert(false)
+                                .canEdit(false)
+                                .canSubmit(false)
+                                .remarkMandatory(false)
+                                .roles(roles).build())
+                        .build());
+                continue;
+            }
+
             String processInstanceId = canonicalProcessInstanceId(wf, wf.getCaseId());
             List<Task> tasks = safeFind(wf.getCaseId(), processInstanceId);
             if (tasks == null || tasks.isEmpty()) {
                 continue;
             }
 
-            Plants plant = wf.getPlantFKId() != null ? plantsRepository.findById(wf.getPlantFKId()).orElse(null) : null;
-            UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
-            Map<String, StepMeta> meta = loadStepMeta(masterId);
-
-            // One inbox row per open role slot the caller holds (Gate 2 often has many).
-            List<Task> mine = tasks.stream()
+            Task mine = tasks.stream()
                     .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                    .toList();
+                    .findFirst().orElse(null);
 
-            if (!mine.isEmpty()) {
-                for (Task task : mine) {
-                    String stepName = stepNameForTask(task.getTaskDefinitionKey());
-                    StepMeta sm = stepName != null ? meta.get(stepName) : null;
-                    boolean prepareStage = PREPARE.equals(stepName);
-                    items.add(AopPendingItemDTO.builder()
-                            .caseId(wf.getCaseId())
-                            .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
-                            .plantName(plant != null ? plant.getName() : null)
-                            .siteName(siteName(wf.getSiteFKId()))
-                            .verticalName(verticalName(wf.getVerticalFKId()))
-                            .year(wf.getYear())
-                            .gateName(stepName)
-                            .gateDisplayName(sm != null ? sm.displayName : stepName)
-                            .sequence(sm != null ? sm.sequence : null)
-                            .assignedRole(task.getAssignee())
-                            .taskId(task.getId())
-                            .actions(AopViewerDTO.builder()
-                                    .mode("ACTION")
-                                    .canApprove(!prepareStage)
-                                    .canRevert(!prepareStage)
-                                    .canEdit(prepareStage)
-                                    .canSubmit(prepareStage)
-                                    .remarkMandatory(sm != null && !sm.remarksDisabled)
-                                    .roles(roles).build())
-                            .build());
+            boolean isActionable = false;
+            Task targetTask = mine;
+
+            if (mine != null) {
+                String mineStep = stepNameForTask(mine.getTaskDefinitionKey());
+                boolean alreadyActed = !PREPARE.equals(mineStep)
+                        && auditService.hasActedInCurrentCycle(wf.getCaseId(), mineStep, callerUserId,
+                        visitStartOf(tasks, mineStep));
+                if (!alreadyActed) {
+                    isActionable = true;
                 }
-                continue;
             }
 
-            // No matching role — still surface the plant as in-progress tracking.
-            Task targetTask = tasks.get(0);
+            if (!isActionable) {
+                targetTask = tasks.get(0);
+            }
+
             String stepName = stepNameForTask(targetTask.getTaskDefinitionKey());
             StepMeta sm = stepName != null ? meta.get(stepName) : null;
+            boolean prepareStage = PREPARE.equals(stepName);
+
+            AopViewerDTO actions;
+            if (isActionable) {
+                actions = AopViewerDTO.builder()
+                        .mode("ACTION")
+                        .canApprove(!prepareStage)
+                        .canRevert(!prepareStage)
+                        .canEdit(prepareStage)
+                        .canSubmit(prepareStage)
+                        .remarkMandatory(sm != null && !sm.remarksDisabled)
+                        .roles(roles).build();
+            } else {
+                actions = AopViewerDTO.builder()
+                        .mode("READ_ONLY")
+                        .canApprove(false)
+                        .canRevert(false)
+                        .canEdit(false)
+                        .canSubmit(false)
+                        .remarkMandatory(false)
+                        .roles(roles).build();
+            }
+
             items.add(AopPendingItemDTO.builder()
                     .caseId(wf.getCaseId())
                     .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
@@ -825,18 +892,95 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .gateDisplayName(sm != null ? sm.displayName : stepName)
                     .sequence(sm != null ? sm.sequence : null)
                     .assignedRole(targetTask.getAssignee())
-                    .taskId(null)
-                    .actions(AopViewerDTO.builder()
-                            .mode("READ_ONLY")
-                            .canApprove(false)
-                            .canRevert(false)
-                            .canEdit(false)
-                            .canSubmit(false)
-                            .remarkMandatory(false)
-                            .roles(roles).build())
+                    .taskId(isActionable && mine != null ? mine.getId() : null)
+                    .listOfRoles(listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks))
+                    .status(STATUS_PENDING)
+                    .actions(actions)
                     .build());
         }
         return items;
+    }
+
+    /**
+     * Approver roles for the current gate, each marked approved (already acted
+     * this visit) or pending (still has an open task / has not approved).
+     */
+    private List<AopStepRoleDTO> listOfRolesForStep(UUID masterId, String stepName, String caseId,
+            List<Task> tasks) {
+        List<AopStepRoleDTO> result = new ArrayList<>();
+        if (stepName == null) {
+            return result;
+        }
+
+        Set<String> pendingAssignees = new HashSet<>();
+        if (tasks != null) {
+            for (Task task : tasks) {
+                if (stepName.equals(stepNameForTask(task.getTaskDefinitionKey()))
+                        && task.getAssignee() != null && !task.getAssignee().isBlank()) {
+                    pendingAssignees.add(task.getAssignee());
+                }
+            }
+        }
+
+        Set<String> approvedRoles = auditService.approvedRolesInCurrentVisit(
+                caseId, stepName, visitStartOf(tasks, stepName));
+
+        LinkedHashSet<String> ordered = new LinkedHashSet<>();
+        ordered.addAll(activeRoles(masterId, stepName));
+        ordered.addAll(pendingAssignees);
+        ordered.addAll(approvedRoles);
+
+        for (String role : ordered) {
+            boolean approved = approvedRoles.contains(role) && !pendingAssignees.contains(role);
+            result.add(AopStepRoleDTO.builder().role(role).approved(approved).build());
+        }
+        return result;
+    }
+
+    /**
+     * When the plan entered {@code stepName} — the earliest creation time among the
+     * gate's currently open tasks. A gate's instances are all created together on
+     * entry, so this marks the start of the current visit; re-entering after a
+     * revert creates fresh tasks and moves the boundary forward.
+     *
+     * @return null if no open task at that step carries a parsable timestamp
+     */
+    private OffsetDateTime visitStartOf(List<Task> tasks, String stepName) {
+        if (tasks == null || stepName == null) {
+            return null;
+        }
+        OffsetDateTime earliest = null;
+        for (Task task : tasks) {
+            if (!stepName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
+                continue;
+            }
+            OffsetDateTime created = parseEngineTimestamp(task.getCreated());
+            if (created != null && (earliest == null || created.isBefore(earliest))) {
+                earliest = created;
+            }
+        }
+        return earliest;
+    }
+
+    /**
+     * Parse a Camunda REST timestamp. The engine emits an offset without a colon
+     * ("2026-07-21T15:30:00.000+0000"), which ISO_OFFSET_DATE_TIME rejects, so try
+     * the engine's own format first and fall back to strict ISO.
+     */
+    private OffsetDateTime parseEngineTimestamp(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value, ENGINE_TIMESTAMP);
+        } catch (DateTimeParseException ignored) {
+            try {
+                return OffsetDateTime.parse(value);
+            } catch (DateTimeParseException ex) {
+                log.warn("AOP: could not parse task timestamp '{}'", value);
+                return null;
+            }
+        }
     }
 
     /**
