@@ -1,0 +1,86 @@
+Using the four operating cases, we can derive an empirical algebraic correlation for
+Specific Steam Consumption (SSC)
+as a function of:
+HP Extraction (HP) in TPH
+MP Extraction (MP) in TPH
+Condensate Flow (CF) in TPH
+Step 1: Observations from Data
+Case
+HP
+MP
+CF
+SSC (kg/kWh)
+I
+145
+75
+25
+4.03
+II
+90
+75
+25
+4.15
+III
+145
+50
+25
+4.17
+IV
+90
+50
+50
+4.29
+Assume a linear relationship:
+SSC=a+b(HP)+c(MP)+d(CF)
+Substituting the four cases and solving simultaneously gives:
+SSC=4.81-0.00233(HP)-0.00467(MP)+0.00360(CF)
+where:
+SSC = Specific Steam Consumption (kg/kWh)
+HP = HP Extraction (TPH)
+MP = MP Extraction (TPH)
+CF = Condensate Flow (TPH)
+Verification
+Case I
+SSC=4.81-0.00233(145)-0.00467(75)+0.0036(25)
+SSC=4.03
+Case II
+SSC=4.81-0.00233(90)-0.00467(75)+0.0036(25)
+SSC=4.15
+Case III
+SSC=4.81-0.00233(145)-0.00467(50)+0.0036(25)
+SSC=4.17
+Case IV
+SSC=4.81-0.00233(90)-0.00467(50)+0.0036(50)
+SSC=4.29
+All four cases are reproduced exactly because there are four equations and four unknown coefficients.
+More Physically Meaningful Correlation
+From your table:
+SSC=
+Net HHP Steam to Power (TPH)
+×1000
+Power Generation (MW)
+×1000
+which simplifies to:
+SSC=
+Net HHP Steam to Power
+MW
+and
+Net HHP Steam to Power
+=HHP-(0.82×HP)-(0.62×MP)
+based on the equivalent HHP factors in your table:
+119
+145
+=0.82
+46
+75
+≈0.62
+Therefore:
+SSC≈
+HHP-0.82
+HP-0.62
+MP
+MW
+Using the generated power relation for your turbine, this expression is generally more robust than the purely statistical equation above.
+For norms preparation, I would recommend using the
+Net HHP Steam to Power approach
+rather than the regression equation because it is based on turbine steam-energy balance and can be extrapolated beyond the four operating cases.

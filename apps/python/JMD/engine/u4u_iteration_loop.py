@@ -39,6 +39,9 @@ _EXCLUDED_NON_DISPATCHABLE = {"Power_Dis"}
 # positive "Power" quantity means power is being imported from another site.
 _POWER_DIS_OTHER_PLANT_MATERIAL = "Power"
 
+# DTA CPP plant id — used for STG extraction override.
+_DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
+
 # Constants for reverse MMBTU norm calculation (same as NMD)
 _KCAL_TO_BTU = 3.96567
 _BTU_TO_MMBTU = 1_000_000
@@ -194,6 +197,10 @@ class U4UIterationLoop:
         self.converged: bool = False
         self.iterations_used: int = 0
 
+        # Track inter-plant U4U quantities skipped during the loop.
+        self._interplant_skipped: dict = {}
+        self._interplant_skip_warned: set = set()
+
     def run(self) -> dict:
         """Run the U4U iteration loop until convergence or max iterations."""
         self.consumption_norms = self.ods_reader.get_consumption_norms(include_all_accounts=True)
@@ -219,6 +226,7 @@ class U4UIterationLoop:
                         sum(len(v) for v in self._bpc_quantities.values()))
 
         self._all_producers = set(self.consumption_norms.keys())
+        self._build_interplant_uom_set()
         initial_utility_demands = self._build_initial_demands()  # sets _raw_process/_raw_fixed
         self._precompute_initial_values()                         # reads _raw_process/_raw_fixed
 
@@ -298,6 +306,12 @@ class U4UIterationLoop:
             logger.warning("")
             logger.warning("  [U4U LOOP] ⚠ Did NOT converge after %d iterations", self.max_iterations)
 
+        if self._interplant_skipped:
+            logger.warning("")
+            logger.warning("  [U4U LOOP] Total inter-plant U4U skipped (not added to DTA U4U):")
+            for (prod, mat), qty in self._interplant_skipped.items():
+                logger.warning("    %s -> %s: %.2f", prod, mat, qty)
+
         self._log_final_summary()
 
         return {
@@ -344,6 +358,52 @@ class U4UIterationLoop:
                 proc  = float(self._raw_process.get(mat, 0.0))
                 fixed = float(self._raw_fixed.get(mat, 0.0))
                 self._initial_steam_mt[mat] = proc + fixed
+
+    def _build_interplant_uom_set(self):
+        """Build the set of in-plant UOMs that look like plant names.
+
+        Some ODS consumption rows use a plant name (e.g. 'JMD - Utility Plant',
+        'RIL-JW Plant-DTA PCG') as the material UOM instead of a real unit.
+        External / inter-plant plant names must not be counted as U4U demand on
+        the current plant's utilities.
+        """
+        uom_plants = set()
+        for info in self.consumption_norms.values():
+            for c in info.get("consumptions", []):
+                # The issuing plant may be stored either in issuing_plant (DB reader)
+                # or material_uom (ODS reader).  Use whichever contains a plant name.
+                uom = c.get("issuing_plant") or c.get("material_uom", "")
+                if isinstance(uom, str) and (
+                    "Plant" in uom or "Dist" in uom or "Proc" in uom
+                ):
+                    uom_plants.add(uom)
+
+        # In-plant UOMs for JMD/Jamnagar sites.  Anything else is treated as an
+        # external/inter-plant transfer and excluded from U4U accumulation.
+        self._inplant_uom_plants = {
+            u for u in uom_plants
+            if u.startswith(("JMD", "Jamnagar")) or u.startswith("No Plant")
+        }
+        logger.info("  [U4U LOOP] UOM plant names detected: %s", sorted(uom_plants))
+        logger.info("  [U4U LOOP] In-plant UOM plant names: %s", sorted(self._inplant_uom_plants))
+        external = sorted(uom_plants - self._inplant_uom_plants)
+        if external:
+            logger.warning(
+                "  [U4U LOOP] External/inter-plant material UOMs detected: %s",
+                external,
+            )
+
+    def _is_interplant_uom(self, issuing_plant_or_uom: str) -> bool:
+        """Return True if the issuing plant indicates an external/inter-plant source."""
+        if not isinstance(issuing_plant_or_uom, str):
+            return False
+        if not (
+            "Plant" in issuing_plant_or_uom
+            or "Dist" in issuing_plant_or_uom
+            or "Proc" in issuing_plant_or_uom
+        ):
+            return False
+        return issuing_plant_or_uom not in self._inplant_uom_plants
 
     def _build_initial_demands(self) -> dict:
         """Build initial demand map keyed by ODS material name.
@@ -506,6 +566,10 @@ class U4UIterationLoop:
         )
         self._apply_import_power_overrides(u4u, details, power_dis_gen_mwh)
 
+        # For DTA, replace ODS-derived STG HP/MP extraction with the actual
+        # dispatch-based extraction computed by dispatch_power.
+        self._apply_stg_extraction_u4u(power_result, u4u, details)
+
         return u4u, details
 
     def _apply_import_power_overrides(
@@ -588,6 +652,59 @@ class U4UIterationLoop:
                     "import handled by Power_Dis reverse-norm table instead",
                     display, self.plant_id
                 )
+
+    def _apply_stg_extraction_u4u(
+        self, power_result: dict, u4u: dict, details: list
+    ) -> None:
+        """Override ODS-derived STG HP/MP extraction with dispatch_power values.
+
+        For DTA only, the actual STG extraction per power asset (from the
+        averaged interpolated curve) is already computed in dispatch_power and
+        stored in the asset dict.  Replace the U4U back-calculated values with
+        those real quantities so the cascade uses the correct SHP consumption.
+        """
+        if self.plant_id != _DTA_PLANT_ID:
+            return
+
+        ext_fields = [
+            ("stg_hp_extraction_mt", "stg_hp_material"),
+            ("stg_mp_extraction_mt", "stg_mp_material"),
+        ]
+        for asset in power_result.get("assets", []):
+            for qty_key, mat_key in ext_fields:
+                qty = float(asset.get(qty_key, 0.0))
+                material = str(asset.get(mat_key, "")).strip()
+                if qty <= 0 or not material:
+                    continue
+
+                u4u[material] = qty
+
+                # Update or append the matching detail record
+                found = False
+                for rec in details:
+                    if str(rec.get("material", "")).strip() == material:
+                        rec["quantity"] = qty
+                        if "generation" in rec:
+                            gen = float(rec.get("generation", 0.0))
+                            if gen > 0.0:
+                                rec["norm"] = qty / gen
+                        found = True
+                        break
+
+                if not found:
+                    details.append({
+                        "producer": material,
+                        "producer_utility": material,
+                        "producer_uom": "MT",
+                        "generation": 0.0,
+                        "account": "Utilities",
+                        "material": material,
+                        "material_uom": "MT",
+                        "norm": 0.0,
+                        "quantity": qty,
+                        "norms_header_id": None,
+                        "norms_month_detail_id": None,
+                    })
 
     def _calculate_u4u_from_power(self, power_result: dict) -> tuple:
         """Calculate U4U from power dispatch using per-asset ODS norms.
@@ -825,6 +942,24 @@ class U4UIterationLoop:
                         "norms_header_id": c.get("norms_header_id"),
                         "norms_month_detail_id": c.get("norms_month_detail_id"),
                     })
+                    continue
+
+                # External/inter-plant transfers are identified by the issuing
+                # plant name (e.g. 'RIL-JW Plant-DTA PCG'). They are supplied by
+                # another plant and must NOT be counted as U4U demand on this
+                # plant's own utility generation.
+                issuing_plant = c.get("issuing_plant") or material_uom
+                if self._is_interplant_uom(issuing_plant):
+                    key = (producer_name, material)
+                    # Store the last-iteration skipped quantity so the final summary
+                    # reflects the converged steady-state amount, not a cumulative sum.
+                    self._interplant_skipped[key] = quantity
+                    if key not in self._interplant_skip_warned:
+                        self._interplant_skip_warned.add(key)
+                        logger.warning(
+                            "  [INTER-PLANT U4U SKIPPED] %s -> %s via %s: will not be added to DTA U4U",
+                            producer_name, material, issuing_plant,
+                        )
                     continue
 
                 if material == "Power_Dis":
@@ -1611,13 +1746,30 @@ class U4UIterationLoop:
 
         return supply_records, other_plant_record, total_supply_kwh, other_plant_kwh
 
+    def _lp_byproduct_source_name(self, asset_name: str, utility: str) -> str:
+        """Return the ODS/BPC source name for an SHP asset's LP steam byproduct."""
+        bpc_map = (self._bpc_quantities or {}).get(utility, {})
+        default = asset_name.replace("_SHP STEAM", "_LP STEAM")
+        # Prefer an exact case-insensitive match with the ODS BPC layout
+        for key in bpc_map:
+            if key.upper() == default.upper():
+                return key
+        # Fall back to a key containing the asset base and LP
+        base = asset_name.split("_")[0]
+        candidates = [k for k in bpc_map if base.upper() in k.upper() and "LP" in k.upper()]
+        if candidates:
+            return sorted(candidates, key=len)[0]
+        return default
+
     def _build_steam_dis_supply_records(self, utility: str) -> tuple:
         """
         Build reverse-norm supply records for a *_Steam_Dis utility.
 
         Sources are the dispatch output for assets of that grade, the PRDS
-        letdown generation from the cascade, and any STEAM(<grade>) inter-plant
-        exchange.  The layout mirrors _build_power_dis_supply_records.
+        net output (not the higher-grade letdown consumption), any LP steam
+        byproduct from SHP assets, the DTA STG extraction, and any
+        STEAM(<grade>) inter-plant exchange.  The layout mirrors
+        _build_power_dis_supply_records.
         """
         if utility not in self.consumption_norms:
             return [], None, 0.0, 0.0
@@ -1625,7 +1777,13 @@ class U4UIterationLoop:
         utility_info = self.consumption_norms[utility]
         grade = utility.split()[0]
         other_material = f"STEAM({grade})"
-        prds_material = f"{grade} Steam PRDS"
+
+        # Use the real ODS PRDS name (e.g. "MP Steam PRDS SHP") so BPC lookups match.
+        cascade = self.ods_reader.get_steam_letdown_norms().get("_cascade", [])
+        prds_material = next(
+            (step["prds"] for step in cascade if step.get("produces") == utility),
+            f"{grade} Steam PRDS",
+        )
 
         supplies: Dict[str, float] = {}
 
@@ -1638,11 +1796,45 @@ class U4UIterationLoop:
                 continue
             supplies[aname] = supplies.get(aname, 0.0) + total_mt
 
-        # 2. PRDS / letdown generation from the steam cascade.
+        # 2. PRDS net output from the steam cascade (not the higher-grade letdown).
         dd = (self.final_steam_result or {}).get("demand_detail") or {}
         letdown_mt = float(dd.get(f"{grade.lower()}_letdown", 0.0))
+        net_mt = float(dd.get(f"{grade.lower()}_net", 0.0))
+        # The PRDS exists when it lets down a higher grade (letdown > 0).
+        # Its output of this grade is the net demand for this grade.
         if letdown_mt > 0:
-            supplies[prds_material] = supplies.get(prds_material, 0.0) + letdown_mt
+            supplies[prds_material] = supplies.get(prds_material, 0.0) + net_mt
+
+        # 2.5 LP steam byproduct from SHP/HRSG/AuxBoiler assets shown as a supply
+        # to LP Steam_Dis instead of being removed from the demand.
+        if utility == "LP Steam_Dis":
+            byproduct_norms = self.ods_reader.get_hrsg_byproduct_norms()
+            for asset in (self.final_steam_result or {}).get("assets", []):
+                aname = str(asset.get("asset_name", "")).strip()
+                total_mt = float(asset.get("total_output_mt", 0.0))
+                a_upper = aname.upper()
+                norm_val = byproduct_norms.get(a_upper)
+                if norm_val is None:
+                    norm_val = next(
+                        (v for k, v in byproduct_norms.items()
+                         if k in a_upper or a_upper in k),
+                        0.0,
+                    )
+                byproduct_mt = total_mt * abs(norm_val or 0.0)
+                if byproduct_mt > 0:
+                    source_name = self._lp_byproduct_source_name(aname, utility)
+                    supplies[source_name] = supplies.get(source_name, 0.0) + byproduct_mt
+
+        # 2.6 DTA STG extraction adds HP/MP supply from the dispatched power assets.
+        if utility in ("HP Steam_Dis", "MP Steam_Dis"):
+            grade_short = utility.split()[0]
+            ext_key = f"stg_{grade_short.lower()}_extraction_mt"
+            mat_key = f"stg_{grade_short.lower()}_material"
+            for asset in (self.final_power_result or {}).get("assets", []):
+                qty = float(asset.get(ext_key, 0.0))
+                material = str(asset.get(mat_key, "")).strip()
+                if qty > 0 and material:
+                    supplies[material] = supplies.get(material, 0.0) + qty
 
         # 3. Inter-plant STEAM(<grade>) from ODS BPC (positive = import, negative = export).
         bpc_other = self._lookup_bpc_qty(utility, other_material)

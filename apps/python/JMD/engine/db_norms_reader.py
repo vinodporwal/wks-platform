@@ -137,6 +137,7 @@ class DBNormsReader:
                 "material": material_name,
                 "material_id": row["material_id"],
                 "issuing_plant_id": "",  # Not available in current DB schema
+                "issuing_plant": issuing_plant_name,  # Used to detect inter-plant transfers
                 "norm": norm_val,
                 "quantity": qty_val,
                 "material_uom": material_uom,

@@ -17,7 +17,9 @@ Usage:
 Designed to be reusable across all 5 CPP plants — parameterised by plant_id.
 """
 
+import csv
 import os
+import re
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -38,6 +40,12 @@ from database.queries import (
 )
 from engine.norms_reader_factory import get_norms_reader
 from engine.balancing_integration_v3 import _apply_power_spinning_margin_v2
+from engine.dta_stg_calc import (
+    calculate_dta_stg_extraction,
+    get_default_dta_stg_calc,
+    log_stg_extraction,
+)
+from engine.dta_stg_config import get_dta_stg_config
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +193,88 @@ def _get_asset_equipment_type(asset_name: str) -> str:
     return _ASSET_TO_EQUIPMENT_TYPE.get(asset_name.strip(), "")
 
 
+# DTA STG extraction curve — averaged from the four cases in the site Excel.
+# Loaded on first use so it does not affect other plants.
+_DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
+_DTA_STG_CSV = os.path.join(os.path.dirname(__file__), "..", "data", "dta_stg_extraction.csv")
+_DTA_STG_LOOKUP: list = []
+
+
+def _load_dta_stg_lookup() -> list:
+    """Load the DTA STG extraction curve from the CSV and sort by LoadMW."""
+    global _DTA_STG_LOOKUP
+    if _DTA_STG_LOOKUP:
+        return _DTA_STG_LOOKUP
+    try:
+        with open(_DTA_STG_CSV, newline="") as f:
+            reader = csv.DictReader(f)
+            _DTA_STG_LOOKUP = sorted(
+                [{k: float(v) for k, v in row.items() if v != ""} for row in reader],
+                key=lambda r: r["LoadMW"],
+            )
+    except (FileNotFoundError, ValueError, KeyError):
+        _DTA_STG_LOOKUP = []
+    return _DTA_STG_LOOKUP
+
+
+def _stg_num_from_name(asset_name: str) -> int:
+    """Extract STG number from asset names like 'JMD - SGT Plant 5'."""
+    m = re.search(r"(?:STG|SGT)[^0-9]*(\d+)", asset_name, re.IGNORECASE)
+    return int(m.group(1)) if m else 0
+
+
+def _interpolate_dta_stg(load_mw: float) -> dict:
+    """Interpolate the DTA STG extraction curve for a given per-unit load."""
+    table = _load_dta_stg_lookup()
+    if not table or load_mw <= 0:
+        return {
+            "shp_inlet_tph": 0.0, "hp_extraction_tph": 0.0,
+            "mp_extraction_tph": 0.0, "lp_extraction_tph": 0.0,
+            "condensate_tph": 0.0, "free_steam_factor": 0.0,
+        }
+    min_load = table[0]["LoadMW"]
+    max_load = table[-1]["LoadMW"]
+    if load_mw <= min_load:
+        row = table[0]
+    elif load_mw >= max_load:
+        row = table[-1]
+    else:
+        lower = next(r for r in table if r["LoadMW"] <= load_mw)
+        upper = next(r for r in table if r["LoadMW"] >= load_mw)
+        if upper == lower:
+            row = lower
+        else:
+            f = (load_mw - lower["LoadMW"]) / (upper["LoadMW"] - lower["LoadMW"])
+            def _val(key):
+                return lower[key] + f * (upper[key] - lower[key])
+            row = {k: _val(k) for k in lower}
+    return {
+        "shp_inlet_tph": row.get("SHPInletTPH", 0.0),
+        "hp_extraction_tph": row.get("HPExtractionTPH", 0.0),
+        "mp_extraction_tph": row.get("MPExtractionTPH", 0.0),
+        "lp_extraction_tph": row.get("LPExtractionTPH", 0.0),
+        "condensate_tph": row.get("CondensateM3hr", 0.0),
+        "free_steam_factor": row.get("FreeSteamFactor", 0.0),
+    }
+
+
+def _stg_extraction_totals_from_power_result(power_result: dict) -> dict:
+    """Sum STG extraction across all dispatched STG assets."""
+    totals = {
+        "shp_consumption_mt": 0.0,
+        "hp_extraction_mt": 0.0,
+        "mp_extraction_mt": 0.0,
+        "lp_extraction_mt": 0.0,
+    }
+    for d in (power_result or {}).get("assets", []):
+        if "STG" in d.get("asset_type", "").upper():
+            totals["shp_consumption_mt"] += d.get("stg_shp_consumption_mt", 0.0)
+            totals["hp_extraction_mt"] += d.get("stg_hp_extraction_mt", 0.0)
+            totals["mp_extraction_mt"] += d.get("stg_mp_extraction_mt", 0.0)
+            totals["lp_extraction_mt"] += d.get("stg_lp_extraction_mt", 0.0)
+    return totals
+
+
 # ---------------------------------------------------------------------------
 # Steam Spinning Margin (TPH) — per plant
 # Hardcoded for now; will be replaced by DB table lookup per plant.
@@ -300,6 +390,11 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
     caps_by_id = {c["asset_id"]: c for c in cap_list}
     pri_by_id = {p["asset_id"]: p for p in pri_list}
 
+    # DTA STG effective capacity from the new extraction methodology
+    dta_stg_mw = None
+    if plant_id == _DTA_PLANT_ID:
+        dta_stg_mw = get_default_dta_stg_calc()["mw"]
+
     result = []
     for asset in assets:
         aid = asset["asset_id"]
@@ -342,6 +437,12 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
 
         fixed_max_mw = float(cap_row.get("fixed_max", 0) or 0)
 
+        # DTA STG: effective power cap is the MW at the max-extraction point
+        if dta_stg_mw is not None and atype == "STG":
+            max_mw = dta_stg_mw
+
+        max_mwh = max_mw * op_hours
+
         result.append({
             "asset_id": aid,
             "asset_name": aname,
@@ -353,7 +454,7 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             "priority": priority,
             "mandatory": mandatory,
             "min_mwh": min_mw * op_hours,
-            "max_mwh": max_mw * op_hours,
+            "max_mwh": max_mwh,
         })
 
     return result
@@ -790,12 +891,57 @@ def dispatch_power(
     total_free_steam = round(sum(d.get("free_steam_mt", 0) for d in dispatch), 2)
     total_aux = round(sum(d.get("aux_power", 0.0) for d in dispatch), 2)
 
+    # 4b. DTA STG extraction (Option A: averaged curve, per-load interpolation)
+    total_stg_shp_consumption_mt = 0.0
+    total_stg_hp_extraction_mt = 0.0
+    total_stg_mp_extraction_mt = 0.0
+    total_stg_condensate_mt = 0.0
+
+    if plant_id == _DTA_PLANT_ID:
+        dta_stg_calc = get_default_dta_stg_calc()
+        for d in dispatch:
+            if "STG" not in d.get("asset_type", "").upper():
+                continue
+            hours = d.get("op_hours", 0.0)
+            mwh = d.get("dispatched_mwh", 0.0)
+            if hours <= 0 or mwh <= 0:
+                d["stg_shp_consumption_mt"] = 0.0
+                d["stg_hp_extraction_mt"] = 0.0
+                d["stg_mp_extraction_mt"] = 0.0
+                d["stg_lp_extraction_mt"] = 0.0
+                d["stg_condensate_mt"] = 0.0
+                continue
+            ext = dta_stg_calc
+            stg_num = _stg_num_from_name(d["asset_name"])
+            d["stg_shp_inlet_tph"] = round(ext["shp_inlet_tph"], 4)
+            d["stg_hp_extraction_tph"] = round(ext["hp_extraction_tph"], 4)
+            d["stg_mp_extraction_tph"] = round(ext["mp_extraction_tph"], 4)
+            d["stg_lp_extraction_tph"] = round(ext.get("lp_extraction_tph", 0.0), 4)
+            d["stg_condensate_tph"] = round(ext["condensate_tph"], 4)
+            d["stg_shp_consumption_mt"] = round(ext["shp_inlet_tph"] * hours, 2)
+            d["stg_hp_extraction_mt"] = round(ext["hp_extraction_tph"] * hours, 2)
+            d["stg_mp_extraction_mt"] = round(ext["mp_extraction_tph"] * hours, 2)
+            d["stg_lp_extraction_mt"] = round(ext.get("lp_extraction_tph", 0.0) * hours, 2)
+            d["stg_condensate_mt"] = round(ext["condensate_tph"] * hours, 2)
+            d["stg_hp_material"] = f"STG{stg_num}_HP STEAM" if stg_num else ""
+            d["stg_mp_material"] = f"STG{stg_num}_MP STEAM" if stg_num else ""
+            d["stg_heat_rate_kcal_kwh"] = round(ext.get("heat_rate_kcal_kwh", 0.0), 4)
+            total_stg_shp_consumption_mt += d["stg_shp_consumption_mt"]
+            total_stg_hp_extraction_mt += d["stg_hp_extraction_mt"]
+            total_stg_mp_extraction_mt += d["stg_mp_extraction_mt"]
+            total_stg_condensate_mt += d["stg_condensate_mt"]
+            log_stg_extraction(d["asset_name"], ext)
+
     return {
         "demand_mwh": total_demand,
         "demand_detail": demand,
         "total_generation_mwh": round(total_gen, 2),
         "total_free_steam_mt": total_free_steam,
         "total_aux_power_mwh": total_aux,
+        "total_stg_shp_consumption_mt": round(total_stg_shp_consumption_mt, 2),
+        "total_stg_hp_extraction_mt": round(total_stg_hp_extraction_mt, 2),
+        "total_stg_mp_extraction_mt": round(total_stg_mp_extraction_mt, 2),
+        "total_stg_condensate_mt": round(total_stg_condensate_mt, 2),
         "spinning_margin_mw": power_spinning_margin,
         "surplus_mwh": surplus,
         "deficit_mwh": deficit,
@@ -1052,6 +1198,8 @@ def dispatch_steam(
     demand_details = {}
     free_steam = float(power_result.get("total_free_steam_mt", 0.0))
     
+    stg_totals = _stg_extraction_totals_from_power_result(power_result) if plant_id == _DTA_PLANT_ID else {}
+
     for iteration in range(5):
         # Dynamic cascade: walk from lowest grade upward, each grade letdowns into the next
         net_by_grade = {}
@@ -1078,6 +1226,48 @@ def dispatch_steam(
             letdown_by_grade[g] = letdown
             prev_letdown = letdown
 
+        # Adjust the cascade for DTA STG extraction (Option A)
+        if stg_totals:
+            norm_hp_per_mp = None
+            norm_shp_per_hp = None
+            for step in cascade:
+                produces = step["produces"].replace(" Steam_Dis", "").lower()
+                consumes = step["consumes"].replace(" Steam_Dis", "").lower()
+                if produces == "mp" and consumes == "hp":
+                    norm_hp_per_mp = step["norm"]
+                elif produces == "hp" and consumes == "shp":
+                    norm_shp_per_hp = step["norm"]
+
+            mp_ext = stg_totals.get("mp_extraction_mt", 0.0)
+            hp_ext = stg_totals.get("hp_extraction_mt", 0.0)
+
+            if "mp" in net_by_grade and mp_ext:
+                net_by_grade["mp"] = max(0.0, net_by_grade["mp"] - mp_ext)
+            if "hp" in net_by_grade:
+                hp_reduction = hp_ext
+                if norm_hp_per_mp and mp_ext:
+                    hp_reduction += mp_ext * norm_hp_per_mp
+                net_by_grade["hp"] = max(0.0, net_by_grade["hp"] - hp_reduction)
+
+            # Recalculate letdown for adjusted grades (cascade unchanged)
+            for i, g in enumerate(grade_prefixes):
+                if i < len(cascade):
+                    norm = cascade[i]["norm"]
+                    letdown_by_grade[g] = max(0.0, net_by_grade[g]) * norm
+                else:
+                    letdown_by_grade[g] = 0.0
+
+            if top_grade in net_by_grade:
+                shp_saved = 0.0
+                if hp_ext and norm_shp_per_hp:
+                    shp_saved += hp_ext * norm_shp_per_hp
+                    if mp_ext and norm_hp_per_mp:
+                        shp_saved += mp_ext * norm_hp_per_mp * norm_shp_per_hp
+                net_by_grade[top_grade] = max(
+                    0.0,
+                    net_by_grade[top_grade] - shp_saved + stg_totals.get("shp_consumption_mt", 0.0)
+                )
+
         demand_details = {
             **raw_demands,
             f"{lowest_grade}_byproduct": byproduct_low_steam,
@@ -1085,8 +1275,11 @@ def dispatch_steam(
             **{f"{g}_net": round(net_by_grade[g], 2) for g in grade_prefixes},
             "_cascade_grades": grade_prefixes,
             "_top_grade": top_grade,
+            "stg_shp_consumption_mt": stg_totals.get("shp_consumption_mt", 0.0),
+            "stg_hp_extraction_mt": stg_totals.get("hp_extraction_mt", 0.0),
+            "stg_mp_extraction_mt": stg_totals.get("mp_extraction_mt", 0.0),
         }
-        
+
         # Remaining top-grade demand to be met by supplementary firing.
         # Free steam from GTs is already available supply — only the portion
         # NOT covered by free steam needs supplementary firing from assets.
