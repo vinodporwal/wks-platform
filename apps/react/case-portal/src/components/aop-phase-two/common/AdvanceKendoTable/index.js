@@ -218,23 +218,23 @@ const AdvanceKendoTable = ({
   columns,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
-  handleExport = () => {},
-  handleExcelUpload = () => {},
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
+  handleExport = () => { },
+  handleExcelUpload = () => { },
   showThreeColors = false,
   groupBy = null,
   dropdownConfig = {},
@@ -252,13 +252,15 @@ const AdvanceKendoTable = ({
   externalSetCustomModifiedCells = null,
   customHandleRemarkSave = null,
   isReleaseDisabled = true,
-  handleRelease = () => {},
-  handleDeleteSelected = (selectedItems) => {},
+  handleRelease = () => { },
+  handleDeleteSelected = (selectedItems) => { },
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  defaultGridExpanded = true,
   showFilters = false,
   convertScientificValue = false,
+  pagable = true,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -277,7 +279,7 @@ const AdvanceKendoTable = ({
   const gridContainerRef = useRef(null)
   const activeCellRef = useRef({ rowId: null, field: null })
   const _export = useRef(null)
-  const [gridExpanded, setGridExpanded] = useState(true)
+  const [gridExpanded, setGridExpanded] = useState(defaultGridExpanded)
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -355,6 +357,9 @@ const AdvanceKendoTable = ({
 
   // Build pagination configuration with defaults
   const getPaginationConfig = useCallback(() => {
+    if (permissions?.makePagable === false) {
+      return false
+    }
     const defaults = {
       threshold: 100,
       buttonCount: 4,
@@ -370,7 +375,7 @@ const AdvanceKendoTable = ({
       }
     }
     return false
-  }, [rows?.length, paginationConfig])
+  }, [rows?.length, paginationConfig, permissions?.makePagable])
 
   // Constants for viewport height calculation
   const rowHeightVH = 5 // each row ~5vh
@@ -418,7 +423,7 @@ const AdvanceKendoTable = ({
 
   // Calculate total minimum width and setup resize listener
   useEffect(() => {
-    gridRef.current = document.querySelector('.k-grid')
+    gridRef.current = gridContainerRef.current?.querySelector('.k-grid')
     if (!gridRef.current) return
 
     const allColumns = extractAllColumns(columns)
@@ -729,10 +734,17 @@ const AdvanceKendoTable = ({
         '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container',
       )
 
+      // Check if click is inside another AdvanceKendoTable grid instance
+      const isInsideAnotherGrid =
+        e.target.closest('.kendo-data-grid') &&
+        gridContainerRef.current &&
+        !gridContainerRef.current.contains(e.target)
+
       if (
         gridContainerRef.current &&
         !gridContainerRef.current.contains(e.target) &&
-        !isKendoPopup // Don't close if clicking on Kendo popup elements
+        !isKendoPopup && // Don't close if clicking on Kendo popup elements
+        !isInsideAnotherGrid // Don't close if clicking inside another grid instance
       ) {
         setRows((prev) =>
           prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r)),
@@ -1483,7 +1495,7 @@ const AdvanceKendoTable = ({
                 <RemarkCell
                   {...cellProps}
                   showPlaceholder={col.showPlaceholder}
-                  onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
+                  onRemarkClick={isEditable ? handleRemarkCellClick : () => { }}
                 />
               ),
               headerCell: SimpleHeaderWithTooltip,
@@ -1516,7 +1528,7 @@ const AdvanceKendoTable = ({
               data: (cellProps) => (
                 <RemarkCell
                   {...cellProps}
-                  onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
+                  onRemarkClick={isEditable ? handleRemarkCellClick : () => { }}
                 />
               ),
               headerCell: SimpleHeaderWithTooltip,
@@ -1561,11 +1573,11 @@ const AdvanceKendoTable = ({
                 date:
                   col?.type == 'dateTime'
                     ? (props) => (
-                        <DateTimePickerEditor
-                          {...props}
-                          isFinancialYear={col.isFinancialYear !== false}
-                        />
-                      )
+                      <DateTimePickerEditor
+                        {...props}
+                        isFinancialYear={col.isFinancialYear !== false}
+                      />
+                    )
                     : DateOnlyPicker,
               },
               data: (props) => (
@@ -1678,16 +1690,16 @@ const AdvanceKendoTable = ({
             cells={{
               edit: hasMinMaxConstraints
                 ? {
-                    text: (cellProps) => (
-                      <NumericEditorWithMinMax
-                        {...cellProps}
-                        min={getResolvedValue(col.minValue, cellProps.dataItem)}
-                        max={getResolvedValue(col.maxValue, cellProps.dataItem)}
-                        wholeNumberOnly={col.wholeNumberOnly === true}
-                        errorMessage={col.errorMessage}
-                      />
-                    ),
-                  }
+                  text: (cellProps) => (
+                    <NumericEditorWithMinMax
+                      {...cellProps}
+                      min={getResolvedValue(col.minValue, cellProps.dataItem)}
+                      max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                      wholeNumberOnly={col.wholeNumberOnly === true}
+                      errorMessage={col.errorMessage}
+                    />
+                  ),
+                }
                 : { text: NoSpinnerNumericEditor },
               data: (props) =>
                 showThreeColors ? (
@@ -1745,9 +1757,9 @@ const AdvanceKendoTable = ({
                 text: (cellProps) => {
                   const isPiggingStatus =
                     cellProps.dataItem?.normParameterTypeName ===
-                      'Pigging Status' ||
+                    'Pigging Status' ||
                     cellProps.dataItem?.productName ==
-                      'Pigging (P)/Non-Pigging (NP)'
+                    'Pigging (P)/Non-Pigging (NP)'
 
                   if (isPiggingStatus) {
                     return (
@@ -1861,30 +1873,30 @@ const AdvanceKendoTable = ({
               },
               data: col.customCell
                 ? (props) => (
-                    <col.customCell
+                  <col.customCell
+                    {...props}
+                    customModifiedCells={customModifiedCells}
+                  />
+                )
+                : (props) =>
+                  showThreeColors ? (
+                    <RedHighlightCell2
                       {...props}
                       customModifiedCells={customModifiedCells}
+                      allRedCell={allRedCell}
+                      allRedCell2={allRedCell2}
+                      disableRedHighlight={disableRedHighlight}
+                      format={col.format}
                     />
-                  )
-                : (props) =>
-                    showThreeColors ? (
-                      <RedHighlightCell2
-                        {...props}
-                        customModifiedCells={customModifiedCells}
-                        allRedCell={allRedCell}
-                        allRedCell2={allRedCell2}
-                        disableRedHighlight={disableRedHighlight}
-                        format={col.format}
-                      />
-                    ) : (
-                      <RedHighlightCell
-                        {...props}
-                        customModifiedCells={customModifiedCells}
-                        allRedCell={allRedCell}
-                        disableRedHighlight={disableRedHighlight}
-                        format={col.format}
-                      />
-                    ),
+                  ) : (
+                    <RedHighlightCell
+                      {...props}
+                      customModifiedCells={customModifiedCells}
+                      allRedCell={allRedCell}
+                      disableRedHighlight={disableRedHighlight}
+                      format={col.format}
+                    />
+                  ),
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
@@ -2206,6 +2218,7 @@ const AdvanceKendoTable = ({
                       placeholder='Select...'
                       searchable={col.searchable || false}
                       showClearOption={col.showClearOption || false}
+                      returnFullObject={col.returnFullObject || false}
                     />
                   )
                 },
@@ -2979,7 +2992,7 @@ const AdvanceKendoTable = ({
                   showGroupPanel: false,
                 }}
                 size='small'
-                pageable={getPaginationConfig()}
+                pageable={pagable && getPaginationConfig()}
                 onRowClick={handleRowClick}
               >
                 {permissions?.deleteMultiple &&

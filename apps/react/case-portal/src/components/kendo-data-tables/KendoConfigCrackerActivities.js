@@ -130,28 +130,12 @@ const DecokingConfig = () => {
   const [ibrScreen2Rows, setIbrScreen2Rows] = useState([])
   const [globalTaStartDate, setGlobalTaStartDate] = useState(null)
   const [globalTaEndDate, setGlobalTaEndDate] = useState(null)
-  const [sadDurationRow, setSadDurationRow] = useState(null)
-  const [maxDutyPilotRow, setMaxDutyPilotRow] = useState(null)
-  const [maxDutyMainRow, setMaxDutyMainRow] = useState(null)
-  const [sadDuration, setSadDuration] = useState('')
-  const [maxDutyPilot, setMaxDutyPilot] = useState('')
-  const [maxDutyMain, setMaxDutyMain] = useState('')
-
-  const sadDurationRef = useRef(sadDuration)
-  const maxDutyPilotRef = useRef(maxDutyPilot)
-  const maxDutyMainRef = useRef(maxDutyMain)
+  const [otherFurnanceDetailsList, setOtherFurnanceDetailsList] = useState([])
+  const otherFurnanceDetailsListRef = useRef(otherFurnanceDetailsList)
 
   useEffect(() => {
-    sadDurationRef.current = sadDuration
-  }, [sadDuration])
-
-  useEffect(() => {
-    maxDutyPilotRef.current = maxDutyPilot
-  }, [maxDutyPilot])
-
-  useEffect(() => {
-    maxDutyMainRef.current = maxDutyMain
-  }, [maxDutyMain])
+    otherFurnanceDetailsListRef.current = otherFurnanceDetailsList
+  }, [otherFurnanceDetailsList])
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -260,40 +244,20 @@ const DecokingConfig = () => {
         PLANT_ID,
         AOP_YEAR,
       )
-      if (resp?.code === 200 && resp?.data) {
-        const rows = resp.data
-        const sadRow = rows.find((r) => r.displayName === 'SAD Duration')
-        const pilotRow = rows.find(
-          (r) => r.displayName === 'Max Duty For Pilot Furnace',
-        )
-        const mainRow = rows.find(
-          (r) => r.displayName === 'Max Duty For Main Furnaces',
-        )
-
-        setSadDurationRow(sadRow || null)
-        setMaxDutyPilotRow(pilotRow || null)
-        setMaxDutyMainRow(mainRow || null)
-        const formatTwoDecimals = (val) => {
-          if (val === null || val === undefined || val === '') return ''
-          const num = parseFloat(val)
-          return !isNaN(num) ? num.toFixed(2) : String(val)
-        }
-
-        setSadDuration(
-          sadRow && sadRow.attributeValue != null
-            ? formatTwoDecimals(sadRow.attributeValue)
-            : '',
-        )
-        setMaxDutyPilot(
-          pilotRow && pilotRow.attributeValue != null
-            ? formatTwoDecimals(pilotRow.attributeValue)
-            : '',
-        )
-        setMaxDutyMain(
-          mainRow && mainRow.attributeValue != null
-            ? formatTwoDecimals(mainRow.attributeValue)
-            : '',
-        )
+      if (resp?.code === 200 && Array.isArray(resp?.data)) {
+        const formattedRows = resp.data.map((item) => {
+          const num = parseFloat(item.attributeValue)
+          const formattedVal =
+            item.attributeValue != null && item.attributeValue !== '' && !isNaN(num)
+              ? num.toFixed(2)
+              : item.attributeValue ?? ''
+          return {
+            ...item,
+            attributeValue: formattedVal,
+          }
+        })
+        setOtherFurnanceDetailsList(formattedRows)
+        otherFurnanceDetailsListRef.current = formattedRows
       }
       console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
     } catch (error) {
@@ -364,7 +328,7 @@ const DecokingConfig = () => {
                   converted[field] = toDateObject(item[field])
                 })
 
-                let durationVal = item.Duration
+                let durationVal = item.FunShtdwnDuration ?? item.Duration
                 if (
                   IS_CRACKER_C2 &&
                   (durationVal === undefined ||
@@ -386,7 +350,17 @@ const DecokingConfig = () => {
                 return {
                   ...item,
                   ...converted,
-                  ...(IS_CRACKER_C2 ? { Duration: durationVal } : {}),
+                  ...(IS_CRACKER_C2 ? { FunShtdwnDuration: durationVal } : {}),
+                  IsIBR:
+                    item.IsIBR !== undefined
+                      ? !!item.IsIBR
+                      : !!(
+                        item.IBR_SD ||
+                        item.FunShtdwnDuration ||
+                        item.IBR_ED ||
+                        converted.IBR_SD ||
+                        converted.IBR_ED
+                      ),
                   Id: item.Id,
                   id: index,
                   DisplayName:
@@ -397,32 +371,67 @@ const DecokingConfig = () => {
                 }
               })
 
-              serIbrPlanColumns(
-                (data2?.data?.columns || [])
-                  .filter(
-                    (col) =>
-                      ![
-                        'DisplaySeq',
-                        'AOPYear',
-                        'Plant_FK_Id',
-                        'Name',
-                        'Id',
-                        'isEditable',
-                        //'TA_SD',
-                        //'TA_ED',
-                      ].includes(col.field),
-                  )
-                  .map((col) => ({
-                    ...col,
-                    widthT: 150,
-                    minWidth: col.field == 'DisplayName' ? 200 : 150,
-                    editable: ![
+              const baseCols = (data2?.data?.columns || [])
+                .filter(
+                  (col) =>
+                    ![
+                      'DisplaySeq',
+                      'AOPYear',
+                      'Plant_FK_Id',
+                      'Name',
+                      'Id',
+                      'isEditable',
+                    ].includes(col.field),
+                )
+                .map((col) => ({
+                  ...col,
+                  widthT: col.field === 'Remarks' ? 350 : 150,
+                  minWidth:
+                    col.field === 'DisplayName'
+                      ? 200
+                      : col.field === 'Remarks'
+                        ? 300
+                        : 150,
+                  editable: IS_CRACKER_C2
+                    ? !['TA_Duration_Days', 'DisplayName'].includes(col.field)
+                    : ![
                       'Pre_CR_Days',
                       'TA_Duration_Days',
                       'DisplayName',
                     ].includes(col.field),
-                  })),
-              )
+                }))
+
+              if (IS_CRACKER_C2) {
+                const isCrIndex = baseCols.findIndex(
+                  (c) =>
+                    c.field === 'IsCR' ||
+                    c.field === 'IsCoilReplacement' ||
+                    c.field === 'Is_Coil_Replacement' ||
+                    c.field === 'Is Coil Replacement',
+                )
+                const isIbrCol = {
+                  field: 'IsIBR',
+                  title: 'Is IBR planned',
+                  type: 'switch',
+                  editable: true,
+                  widthT: 130,
+                  minWidth: 110,
+                }
+                if (isCrIndex !== -1) {
+                  baseCols.splice(isCrIndex + 1, 0, isIbrCol)
+                } else {
+                  const dispNameIndex = baseCols.findIndex(
+                    (c) => c.field === 'DisplayName',
+                  )
+                  baseCols.splice(
+                    dispNameIndex !== -1 ? dispNameIndex + 1 : 1,
+                    0,
+                    isIbrCol,
+                  )
+                }
+              }
+
+              serIbrPlanColumns(baseCols)
 
               setRowsForTab(currentTab, processedData, 2)
 
@@ -623,13 +632,32 @@ const DecokingConfig = () => {
     return null
   }
 
-  const saveRunningDurationParams = async (
-    currentSad = sadDurationRef.current,
-    currentPilot = maxDutyPilotRef.current,
-    currentMain = maxDutyMainRef.current,
-  ) => {
-    if (currentSad !== '' && currentSad !== null && currentSad !== undefined) {
-      const sadVal = parseFloat(currentSad)
+  const saveRunningDurationParams = async () => {
+    const listToSave =
+      otherFurnanceDetailsListRef.current &&
+        otherFurnanceDetailsListRef.current.length > 0
+        ? otherFurnanceDetailsListRef.current
+        : otherFurnanceDetailsList
+
+    if (!Array.isArray(listToSave) || listToSave.length === 0) return true
+
+    // Validate SAD Duration field if present in the dynamic API response list
+    const sadItem = listToSave.find(
+      (item) =>
+        item.name === 'sad_duration' ||
+        item.name === 'SAD' ||
+        item.displayName === 'SAD Duration' ||
+        item.displayName === 'SAD Duration(Days)' ||
+        item.displayName?.toLowerCase().includes('sad duration'),
+    )
+
+    if (
+      sadItem &&
+      sadItem.attributeValue !== '' &&
+      sadItem.attributeValue !== null &&
+      sadItem.attributeValue !== undefined
+    ) {
+      const sadVal = parseFloat(sadItem.attributeValue)
       if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -640,53 +668,21 @@ const DecokingConfig = () => {
       }
     }
 
-    const payload = [
-      {
-        id: sadDurationRow?.id || null,
-        displayName: 'SAD Duration',
-        attributeValue: currentSad,
-        remarks: sadDurationRow?.remarks || null,
-      },
-      {
-        id: maxDutyPilotRow?.id || null,
-        displayName: 'Max Duty For Pilot Furnace',
-        attributeValue: currentPilot,
-        remarks: maxDutyPilotRow?.remarks || null,
-      },
-      {
-        id: maxDutyMainRow?.id || null,
-        displayName: 'Max Duty For Main Furnaces',
-        attributeValue: currentMain,
-        remarks: maxDutyMainRow?.remarks || null,
-      },
-    ]
-
     try {
       const resp = await DataService.saveOtherFurnanceDetails(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        payload,
+        listToSave,
       )
       if (resp?.code === 200) {
-        if (sadDurationRow) sadDurationRow.attributeValue = currentSad
-        if (maxDutyPilotRow) maxDutyPilotRow.attributeValue = currentPilot
-        if (maxDutyMainRow) maxDutyMainRow.attributeValue = currentMain
-        setSummaryEdited(false)
-        fetchOtherCost()
         return true
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Failed to save Decoking Activities parameters!',
-          severity: 'error',
-        })
-        return false
       }
     } catch (err) {
-      console.error('Error saving decoking parameters:', err)
+      console.error('Error saving dynamic furnace parameters:', err)
       return false
     }
+    return true
   }
 
   const saveChangesSdTa = async () => {
@@ -839,12 +835,11 @@ const DecokingConfig = () => {
       const rowsToSave = Object.values(modifiedCellsSdTa)
 
       if (
-        !globalTaStartDate ||
-        !globalTaEndDate ||
-        (startLimit && globalTaStartDate < startLimit) ||
-        (endLimit && globalTaStartDate > endLimit) ||
-        (startLimit && globalTaEndDate < startLimit) ||
-        (endLimit && globalTaEndDate > endLimit)
+        (!IS_CRACKER_C2 && (!globalTaStartDate || !globalTaEndDate)) ||
+        (globalTaStartDate && startLimit && globalTaStartDate < startLimit) ||
+        (globalTaStartDate && endLimit && globalTaStartDate > endLimit) ||
+        (globalTaEndDate && startLimit && globalTaEndDate < startLimit) ||
+        (globalTaEndDate && endLimit && globalTaEndDate > endLimit)
       ) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1015,6 +1010,7 @@ const DecokingConfig = () => {
   }, [modifiedCellsRunLength])
 
   function validatePostCrDays(newRows) {
+    if (IS_CRACKER_C2) return { valid: true }
     for (let i = 0; i < newRows.length; i++) {
       const row = newRows[i]
       const rowLabel = row.DisplayName || `Row ${i + 1}`
@@ -1096,6 +1092,7 @@ const DecokingConfig = () => {
           }
 
           columns.forEach((col) => {
+            if (col.field === 'IsIBR' || col.field === 'Is_IBR') return
             let value = row[col.field]
 
             if (col.type === 'date') value = formatIfDate(value)
@@ -1104,10 +1101,10 @@ const DecokingConfig = () => {
             obj[col.field] = value
           })
 
-          if (row.ActualRunLength != null && row.Reduction != null) {
+          if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1214,39 +1211,20 @@ const DecokingConfig = () => {
         throw new Error('ibrPlanColumns not loaded')
       }
 
-      if (!newRow || newRow.length === 0) {
-        if (durationSaved) {
+      if (newRow && newRow.length > 0) {
+        const requiredFields = ['Remarks']
+
+        const validationMessage = validateFields(newRow, requiredFields)
+
+        if (validationMessage) {
           setSnackbarOpen(true)
           setSnackbarData({
-            message: 'Data Saved Successfully!',
-            severity: 'success',
+            message: validationMessage,
+            severity: 'error',
           })
-          setSummaryEdited(false)
-          fetchOtherCost()
           setLoading(false)
           return
         }
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        setLoading(false)
-        return
-      }
-
-      const requiredFields = ['Remarks']
-
-      const validationMessage = validateFields(newRow, requiredFields)
-
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
       }
 
       const formatIfDate = (value) => {
@@ -1278,6 +1256,7 @@ const DecokingConfig = () => {
           }
 
           columns.forEach((col) => {
+            if (col.field === 'IsIBR' || col.field === 'Is_IBR') return
             let value = row[col.field]
 
             if (col.type === 'date') value = formatIfDate(value)
@@ -1286,10 +1265,10 @@ const DecokingConfig = () => {
             obj[col.field] = value
           })
 
-          if (row.ActualRunLength != null && row.Reduction != null) {
+          if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1311,6 +1290,9 @@ const DecokingConfig = () => {
       )
 
       if (response?.code == 200) {
+        if (IS_CRACKER_C2) {
+          await saveRunningDurationParams()
+        }
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data Saved Successfully!',
@@ -1769,16 +1751,16 @@ const DecokingConfig = () => {
         return col
       })
 
-      const hasDuration = cols.some((c) => c.field === 'Duration')
+      const hasDuration = cols.some((c) => c.field === 'FunShtdwnDuration')
       if (!hasDuration) {
         const ibrSdIdx = cols.findIndex((c) => c.field === 'IBR_SD')
         const durationCol = {
-          field: 'Duration',
-          title: 'Duration',
-          type: 'integer',
+          field: 'FunShtdwnDuration',
+          title: 'FunShtdwnDuration',
+          type: 'numeric',
           editable: true,
           filter: false,
-          widthT: 120,
+          widthT: 140,
           minWidth: 100,
         }
         if (ibrSdIdx !== -1) {
@@ -1801,8 +1783,13 @@ const DecokingConfig = () => {
     ) {
       return null
     }
-    const durationNum = parseInt(durationVal, 10)
-    if (isNaN(durationNum)) return null
+    const durationNum = parseFloat(durationVal)
+    if (isNaN(durationNum) || durationNum < 0) return null
+
+    // Ceil logic:
+    // 1.0 -> 1 day, 1.2..1.9 -> 2 days
+    // 3.0 -> 3 days, 3.2..3.9 -> 4 days
+    const daysToAdd = Math.ceil(durationNum)
 
     let m = moment(sdVal)
     if (!m.isValid()) {
@@ -1810,7 +1797,7 @@ const DecokingConfig = () => {
     }
     if (!m.isValid()) return null
 
-    const calculatedEd = m.clone().add(durationNum, 'days')
+    const calculatedEd = m.clone().add(daysToAdd, 'days')
 
     if (sdVal instanceof Date) {
       return calculatedEd.toDate()
@@ -1837,8 +1824,34 @@ const DecokingConfig = () => {
       const applyCalc = (rows) => {
         if (!Array.isArray(rows)) return rows
         return rows.map((row) => {
+          if (row.IsIBR === false || row.Is_IBR === false) {
+            row = {
+              ...row,
+              IBR_SD: null,
+              FunShtdwnDuration: null,
+              IBR_ED: null,
+            }
+          } else if (row.IBR_SD || row.FunShtdwnDuration || row.IBR_ED) {
+            row = {
+              ...row,
+              IsIBR: true,
+            }
+          }
           const sdVal = row.IBR_SD
-          const durVal = row.Duration
+          let durVal = row.FunShtdwnDuration
+          if (
+            durVal !== undefined &&
+            durVal !== null &&
+            durVal !== ''
+          ) {
+            const num = parseFloat(durVal)
+            if (!isNaN(num)) {
+              // Format/round to 1 decimal place (0-9)
+              const roundedDur = Math.round(num * 10) / 10
+              durVal = roundedDur
+              row = { ...row, FunShtdwnDuration: roundedDur }
+            }
+          }
           if (
             sdVal &&
             durVal !== undefined &&
@@ -1854,7 +1867,7 @@ const DecokingConfig = () => {
 
       // itemChange in index-cracker calls setRows as a functional updater:
       // setRows((prev) => prev.map(...))
-      // So `data` may be a function � handle both forms.
+      // So `data` may be a function ? handle both forms.
       if (typeof data === 'function') {
         setIbrScreen2Rows((prev) => applyCalc(data(prev)))
       } else {
@@ -1961,11 +1974,13 @@ const DecokingConfig = () => {
             </Box>
           </Box>
 
-          {/* Remaining C2 Specific Controls */}
-          {IS_CRACKER_C2 && (
-            <>
-              {/* Max Duty For Pilot Furnace */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {/* Dynamic C2 Other Furnace Details Fields */}
+          {IS_CRACKER_C2 &&
+            otherFurnanceDetailsList.map((item, idx) => (
+              <Box
+                key={item.id || item.name || idx}
+                sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+              >
                 <Typography
                   sx={{
                     fontSize: '14px',
@@ -1975,80 +1990,47 @@ const DecokingConfig = () => {
                       '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
-                  Max Duty For Pilot Furnace
+                  {item.displayName || item.name}
                 </Typography>
                 <TextField
-                  id='max-duty-pilot-furnace'
+                  id={`other-furnace-detail-${item.name || idx}`}
                   type='number'
                   size='small'
-                  value={maxDutyPilot}
+                  value={item.attributeValue ?? ''}
                   onChange={(e) => {
-                    setMaxDutyPilot(e.target.value)
+                    const newVal = e.target.value
+                    setOtherFurnanceDetailsList((prev) => {
+                      const updated = prev.map((row, i) =>
+                        i === idx || (row.id && row.id === item.id) || (row.name && row.name === item.name)
+                          ? { ...row, attributeValue: newVal }
+                          : row,
+                      )
+                      otherFurnanceDetailsListRef.current = updated
+                      return updated
+                    })
                     setSummaryEdited(true)
                   }}
                   onBlur={(e) => {
                     const val = e.target.value
                     const num = parseFloat(val)
                     if (!isNaN(num)) {
-                      setMaxDutyPilot(num.toFixed(2))
+                      const formatted = num.toFixed(2)
+                      setOtherFurnanceDetailsList((prev) => {
+                        const updated = prev.map((row, i) =>
+                          i === idx || (row.id && row.id === item.id) || (row.name && row.name === item.name)
+                            ? { ...row, attributeValue: formatted }
+                            : row,
+                        )
+                        otherFurnanceDetailsListRef.current = updated
+                        return updated
+                      })
                     }
                   }}
                   disabled={READ_ONLY}
                   sx={{
                     '& .MuiInputBase-root': {
                       height: '36px',
-                      width: '185px',
-                      backgroundColor: '#ffffff',
-                    },
-                    '& input[type=number]': {
-                      '-moz-appearance': 'textfield',
-                    },
-                    '& input[type=number]::-webkit-outer-spin-button': {
-                      '-webkit-appearance': 'none',
-                      margin: 0,
-                    },
-                    '& input[type=number]::-webkit-inner-spin-button': {
-                      '-webkit-appearance': 'none',
-                      margin: 0,
-                    },
-                  }}
-                />
-              </Box>
-
-              {/* Max Duty For Main Furnaces */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Typography
-                  sx={{
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    color: '#252525',
-                    fontFamily:
-                      '"Honeywell Sans Web", "Inter", sans-serif !important',
-                  }}
-                >
-                  Max Duty For Main Furnaces
-                </Typography>
-                <TextField
-                  id='max-duty-main-furnaces'
-                  type='number'
-                  size='small'
-                  value={maxDutyMain}
-                  onChange={(e) => {
-                    setMaxDutyMain(e.target.value)
-                    setSummaryEdited(true)
-                  }}
-                  onBlur={(e) => {
-                    const val = e.target.value
-                    const num = parseFloat(val)
-                    if (!isNaN(num)) {
-                      setMaxDutyMain(num.toFixed(2))
-                    }
-                  }}
-                  disabled={READ_ONLY}
-                  sx={{
-                    '& .MuiInputBase-root': {
-                      height: '36px',
-                      width: '190px',
+                      minWidth: '185px',
                       backgroundColor: '#ffffff',
                     },
                     '& input[type=number]': {
@@ -2066,59 +2048,7 @@ const DecokingConfig = () => {
                   }}
                 />
               </Box>
-
-              {/* SAD Duration */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Typography
-                  sx={{
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    color: '#252525',
-                    fontFamily:
-                      '"Honeywell Sans Web", "Inter", sans-serif !important',
-                  }}
-                >
-                  SAD Duration
-                </Typography>
-                <TextField
-                  id='sad-duration'
-                  type='number'
-                  size='small'
-                  value={sadDuration}
-                  onChange={(e) => {
-                    setSadDuration(e.target.value)
-                    setSummaryEdited(true)
-                  }}
-                  onBlur={(e) => {
-                    const val = e.target.value
-                    const num = parseFloat(val)
-                    if (!isNaN(num)) {
-                      setSadDuration(num.toFixed(2))
-                    }
-                  }}
-                  disabled={READ_ONLY}
-                  sx={{
-                    '& .MuiInputBase-root': {
-                      height: '36px',
-                      width: '185px',
-                      backgroundColor: '#ffffff',
-                    },
-                    '& input[type=number]': {
-                      '-moz-appearance': 'textfield',
-                    },
-                    '& input[type=number]::-webkit-outer-spin-button': {
-                      '-webkit-appearance': 'none',
-                      margin: 0,
-                    },
-                    '& input[type=number]::-webkit-inner-spin-button': {
-                      '-webkit-appearance': 'none',
-                      margin: 0,
-                    },
-                  }}
-                />
-              </Box>
-            </>
-          )}
+            ))}
         </Box>
       </LocalizationProvider>
 

@@ -1,7 +1,9 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +33,15 @@ import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
 import com.wks.caseengine.cpp.dto.SRMappingDTO;
+import com.wks.caseengine.cpp.dto.SRMappingQtyDTO;
 import com.wks.caseengine.cpp.dto.norm.NormParameterDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.repository.CPPSRMappingRepository;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
+import com.wks.caseengine.cpp.utility.ExcelCells;
+import com.wks.caseengine.cpp.utility.ExcelColumns;
+import com.wks.caseengine.cpp.utility.ExcelStyles;
+import com.wks.caseengine.cpp.utility.FiscalYearMonths;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
@@ -643,51 +650,48 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 }
 
                 // ── Step 6: Sync NormsHeader and child tables (only for NMD sites) ────────────
-                if (isNmdSite(dto.getCppPlantId())) {
-                    if (existingMasterFound) {
-                        // Existing master found — locate its NormsHeader, then check/insert child records
-                        List<String> normsHeaderList = db1JdbcTemplate.queryForList(
-                                "SELECT TOP 1 Id FROM NormsHeader WITH(NOLOCK) WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
-                                String.class, srMappingId.toString());
-                        if (!normsHeaderList.isEmpty()) {
-                            UUID normsHeaderId = UUID.fromString(normsHeaderList.get(0));
-                            String result = insertChildRecordsIfAbsent(normsHeaderId, financialYear);
-                            if ("ALREADY_EXISTS".equals(result)) {
-                                alreadyExistCount++;
-                            } else {
-                                childInsertedCount++;
-                                // Update Remarks and UpdatedDate on the existing master record
-                                db1JdbcTemplate.update(
-                                        "UPDATE CPP_SR_Mapping_Master SET Remarks = ?, UpdatedDate = GETDATE() WHERE ID = ?",
-                                        dto.getRemarks(), srMappingId.toString());
-                                logger.info("updateSRMappingsByPlant: updated Remarks+UpdatedDate on CPP_SR_Mapping_Master ID={} after child insert", srMappingId);
-                            }
+
+                if (existingMasterFound) {
+                    // Existing master found — locate its NormsHeader, then check/insert child records
+                    List<String> normsHeaderList = db1JdbcTemplate.queryForList(
+                            "SELECT TOP 1 Id FROM NormsHeader WITH(NOLOCK) WHERE CPP_SR_Mapping_Master_Fk_Id = ?",
+                            String.class, srMappingId.toString());
+                    if (!normsHeaderList.isEmpty()) {
+                        UUID normsHeaderId = UUID.fromString(normsHeaderList.get(0));
+                        String result = insertChildRecordsIfAbsent(normsHeaderId, financialYear);
+                        if ("ALREADY_EXISTS".equals(result)) {
+                            alreadyExistCount++;
                         } else {
-                            // No NormsHeader yet on this existing master — create one, then insert child records
-                            logger.warn("updateSRMappingsByPlant: existing SR Mapping ID={} has no NormsHeader — creating one", srMappingId);
-                            UUID newNormsHeaderId = resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
-                            if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
-                                insertChildRecordsIfAbsent(newNormsHeaderId, financialYear);
-                                childInsertedCount++;
-                                // Update Remarks and UpdatedDate on the existing master record
-                                db1JdbcTemplate.update(
-                                        "UPDATE CPP_SR_Mapping_Master SET Remarks = ?, UpdatedDate = GETDATE() WHERE ID = ?",
-                                        dto.getRemarks(), srMappingId.toString());
-                                logger.info("updateSRMappingsByPlant: updated Remarks+UpdatedDate on CPP_SR_Mapping_Master ID={} after NormsHeader+child insert", srMappingId);
-                            }
+                            childInsertedCount++;
+                            // Update Remarks and UpdatedDate on the existing master record
+                            db1JdbcTemplate.update(
+                                    "UPDATE CPP_SR_Mapping_Master SET Remarks = ?, UpdatedDate = GETDATE() WHERE ID = ?",
+                                    dto.getRemarks(), srMappingId.toString());
+                            logger.info("updateSRMappingsByPlant: updated Remarks+UpdatedDate on CPP_SR_Mapping_Master ID={} after child insert", srMappingId);
                         }
                     } else {
-                        // New or updated master — original NormsHeader + child-table flow
+                        // No NormsHeader yet on this existing master — create one, then insert child records
+                        logger.warn("updateSRMappingsByPlant: existing SR Mapping ID={} has no NormsHeader — creating one", srMappingId);
                         UUID newNormsHeaderId = resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
                         if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
                             insertChildRecordsIfAbsent(newNormsHeaderId, financialYear);
+                            childInsertedCount++;
+                            // Update Remarks and UpdatedDate on the existing master record
+                            db1JdbcTemplate.update(
+                                    "UPDATE CPP_SR_Mapping_Master SET Remarks = ?, UpdatedDate = GETDATE() WHERE ID = ?",
+                                    dto.getRemarks(), srMappingId.toString());
+                            logger.info("updateSRMappingsByPlant: updated Remarks+UpdatedDate on CPP_SR_Mapping_Master ID={} after NormsHeader+child insert", srMappingId);
                         }
-                        createdCount++;
                     }
                 } else {
-                    logger.info("updateSRMappingsByPlant: skipping NormsHeader – cppPlantId={} is not an NMD site", dto.getCppPlantId());
+                    // New or updated master — original NormsHeader + child-table flow
+                    UUID newNormsHeaderId = resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
+                    if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
+                        insertChildRecordsIfAbsent(newNormsHeaderId, financialYear);
+                    }
                     createdCount++;
                 }
+
 
                 // Collect unique cppPlantId values for AopCalculation flag update
                 if (dto.getCppPlantId() != null) {
@@ -1393,5 +1397,239 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         if (val instanceof Boolean) return (Boolean) val;
         if (val instanceof Number) return ((Number) val).intValue() != 0;
         return Boolean.parseBoolean(val.toString());
+    }
+
+    /** Null-safe Long from result-set row. */
+    private Long toLong(Map<String, Object> row, String key) {
+        Object val = row.get(key);
+        if (val == null) return null;
+        if (val instanceof Number) return ((Number) val).longValue();
+        try { return Long.parseLong(val.toString()); }
+        catch (NumberFormatException e) {
+            logger.warn("Could not parse Long for column {}: {}", key, val);
+            return null;
+        }
+    }
+
+    /** Null-safe Double from result-set row. */
+    private Double toDouble(Map<String, Object> row, String key) {
+        Object val = row.get(key);
+        if (val == null) return null;
+        if (val instanceof Number) return ((Number) val).doubleValue();
+        try { return Double.parseDouble(val.toString()); }
+        catch (NumberFormatException e) {
+            logger.warn("Could not parse Double for column {}: {}", key, val);
+            return null;
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SR MAPPING QTY  (SP: CPP_GetSRMappingQTY)
+    //  GET + EXPORT
+    // ════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public AOPMessageVM getSRMappingQty(String plantIds, String financialYear) {
+        logger.info("getSRMappingQty: plantIds={}, financialYear={}", plantIds, financialYear);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(db1JdbcTemplate)
+                    .withProcedureName("CPP_GetSRMappingQTY");
+
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("PlantIds",      plantIds)
+                    .addValue("FinancialYear", financialYear);
+
+            Map<String, Object> result = jdbcCall.execute(params);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rows =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            List<SRMappingQtyDTO> data = new ArrayList<>();
+            if (rows != null) {
+                for (Map<String, Object> row : rows) {
+                    SRMappingQtyDTO dto = new SRMappingQtyDTO();
+
+                    dto.setId                    (toLong  (row, "id"));
+                    dto.setCppPlantId            (str     (row, "cppPlantId"));
+                    dto.setCppPlantName          (str     (row, "cppPlantName"));
+
+                    dto.setSenderPlantName       (str     (row, "senderPlantName"));
+                    dto.setSenderPlantCode       (str     (row, "senderPlantCode"));
+                    dto.setSenderPlantId         (toUuid  (row, "senderPlantId"));
+
+                    dto.setSenderUtilityId       (toUuid  (row, "senderUtilityId"));
+                    dto.setSenderUtilityName     (str     (row, "senderUtilityName"));
+                    dto.setSenderUtilityCode     (str     (row, "senderUtilityCode"));
+                    dto.setSenderUtilityUOM      (str     (row, "senderUtilityUOM"));
+
+                    dto.setSenderCostCenterId    (toUuid  (row, "senderCostCenterId"));
+                    dto.setSenderCostCenterName  (str     (row, "senderCostCenterName"));
+                    dto.setSenderCostCenterCode  (str     (row, "senderCostCenterCode"));
+
+                    dto.setReceiverPlantName     (str     (row, "receiverPlantName"));
+                    dto.setReceiverPlantCode     (str     (row, "receiverPlantCode"));
+                    dto.setReceiverPlantId       (toUuid  (row, "receiverPlantId"));
+
+                    dto.setReceiverUtilityId     (toUuid  (row, "receiverUtilityId"));
+                    dto.setReceiverUtilityName   (str     (row, "receiverUtilityName"));
+                    dto.setReceiverUtilityCode   (str     (row, "receiverUtilityCode"));
+                    dto.setReceiverUtilityUOM    (str     (row, "receiverUtilityUOM"));
+
+                    dto.setReceiverCostCenterId  (toUuid  (row, "receiverCostCenterId"));
+                    dto.setReceiverCostCenterName(str     (row, "receiverCostCenterName"));
+                    dto.setReceiverCostCenterCode(str     (row, "receiverCostCenterCode"));
+
+                    dto.setRemarks               (str     (row, "remarks"));
+
+                    // Monthly QTY (Apr → Mar)
+                    dto.setApr(toDouble(row, "apr"));
+                    dto.setMay(toDouble(row, "may"));
+                    dto.setJun(toDouble(row, "jun"));
+                    dto.setJul(toDouble(row, "jul"));
+                    dto.setAug(toDouble(row, "aug"));
+                    dto.setSep(toDouble(row, "sep"));
+                    dto.setOct(toDouble(row, "oct"));
+                    dto.setNov(toDouble(row, "nov"));
+                    dto.setDec(toDouble(row, "dec"));
+                    dto.setJan(toDouble(row, "jan"));
+                    dto.setFeb(toDouble(row, "feb"));
+                    dto.setMar(toDouble(row, "mar"));
+
+                    data.add(dto);
+                }
+            }
+
+            logger.info("getSRMappingQty: {} records returned", data.size());
+            response.setCode(200);
+            response.setMessage(data.size() + " record(s) found.");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("getSRMappingQty error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public byte[] exportSRMappingQty(String plantIds, String financialYear) {
+        logger.info("[Export SR Mapping QTY] plantIds: {}, financialYear: {}", plantIds, financialYear);
+        try {
+            AOPMessageVM response = getSRMappingQty(plantIds, financialYear);
+            @SuppressWarnings("unchecked")
+            List<SRMappingQtyDTO> dtoList = (List<SRMappingQtyDTO>) response.getData();
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            // Preserve SP ordering: senderPlantName → receiverPlantName → receiverCostCenterName
+            dtoList.sort(Comparator
+                    .comparing((SRMappingQtyDTO d) -> d.getSenderPlantName() != null ? d.getSenderPlantName() : "")
+                    .thenComparing(d -> d.getReceiverPlantName() != null ? d.getReceiverPlantName() : "")
+                    .thenComparing(d -> d.getReceiverCostCenterName() != null ? d.getReceiverCostCenterName() : ""));
+
+            return buildSRMappingQtyExcel(dtoList, financialYear);
+        } catch (Exception e) {
+            logger.error("[Export SR Mapping QTY] Error: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private byte[] buildSRMappingQtyExcel(List<SRMappingQtyDTO> dtoList, String financialYear) throws Exception {
+        org.apache.poi.ss.usermodel.Workbook workbook = new XSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("CPP_SRMapping_QTY");
+
+        CellStyle headerStyle  = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle dataStyle    = ExcelStyles.createDataStyle(workbook);
+
+        String[] monthHeaders = FiscalYearMonths.getMonthHeaders(financialYear);
+
+        // Header row
+        List<String> headers = new ArrayList<>();
+        headers.add("CPP Plant Id");
+        headers.add("CPP Plant Name");
+        headers.add("Sender Plant Name");
+        headers.add("Sender Plant Code");
+        headers.add("Sender Utility Name");
+        headers.add("Sender Utility Code");
+        headers.add("Sender Utility UOM");
+        headers.add("Sender Cost Center Name");
+        headers.add("Sender Cost Center Code");
+        headers.add("Receiver Plant Name");
+        headers.add("Receiver Plant Code");
+        headers.add("Receiver Utility Name");
+        headers.add("Receiver Utility Code");
+        headers.add("Receiver Utility UOM");
+        headers.add("Receiver Cost Center Name");
+        headers.add("Receiver Cost Center Code");
+        // 12 months × 1 (QTY)
+        for (String mh : monthHeaders) {
+            headers.add(mh);
+        }
+        // Hidden id column
+        headers.add("id");
+
+        Row headerRow = sheet.createRow(0);
+        for (int c = 0; c < headers.size(); c++) {
+            ExcelCells.setString(headerRow.createCell(c), headers.get(c), headerStyle);
+        }
+
+        // Data rows
+        int rowNum = 1;
+        for (SRMappingQtyDTO dto : dtoList) {
+            Row row = sheet.createRow(rowNum++);
+            int col = 0;
+
+            ExcelCells.setString(row.createCell(col++), dto.getCppPlantId(),           dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(),         dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderPlantName(),      dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderPlantCode(),      dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderUtilityName(),    dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderUtilityCode(),    dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderUtilityUOM(),     dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderCostCenterName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderCostCenterCode(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverPlantName(),    dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverPlantCode(),    dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverUtilityName(),  dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverUtilityCode(),  dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverUtilityUOM(),   dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverCostCenterName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverCostCenterCode(), dataStyle);
+
+            // Monthly QTY (Apr → Mar)
+            ExcelCells.setDouble(row.createCell(col++), dto.getApr(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getMay(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getJun(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getJul(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getAug(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getSep(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getOct(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getNov(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getDec(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getJan(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getFeb(), dataStyle);
+            ExcelCells.setDouble(row.createCell(col++), dto.getMar(), dataStyle);
+
+            // Hidden id
+            ExcelCells.setString(row.createCell(col++),
+                    dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+        }
+
+        // Auto-size all columns first (before hiding, so autoSizeColumn
+        // does not reset the hidden state of CPP Plant Id / id columns)
+        ExcelColumns.autoSize(sheet, headers.size(), -1);
+
+        // Hide CPP Plant Id (index 0) and id (last column)
+        int idColIndex = headers.size() - 1;
+        ExcelColumns.hideColumns(sheet, 0, idColIndex);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        workbook.write(baos);
+        workbook.close();
+        return baos.toByteArray();
     }
 }

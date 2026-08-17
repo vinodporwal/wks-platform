@@ -254,8 +254,6 @@ button:disabled svg {
 }
 
 /* Force Kendo Tooltips / Column Menus / Popups to render on top of Material UI Dialogs */
-.k-tooltip,
-.k-animation-container,
-.k-popup {
+.k-tooltip, .k-animation-container, .k-popup {
   z-index: 20000 !important;
 }

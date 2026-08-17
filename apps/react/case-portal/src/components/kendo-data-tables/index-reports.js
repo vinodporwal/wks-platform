@@ -136,27 +136,27 @@ const KendoDataTablesReports = ({
   columns,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
-  handleExport = () => {},
-  handleExcelUpload = () => {},
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
+  handleExport = () => { },
+  handleExcelUpload = () => { },
   groupBy = null,
   grades = [],
-  handleGradeChange = () => {},
-  handleRelease = () => {},
+  handleGradeChange = () => { },
+  handleRelease = () => { },
   isReleaseDisabled = true,
   supressGridHeight = false,
   isProposedAOP = false,
@@ -262,11 +262,11 @@ const KendoDataTablesReports = ({
   )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -468,6 +468,7 @@ const KendoDataTablesReports = ({
       <td
         {...tdProps}
         className='remark-cell'
+        title={rawValue || 'Add remark'}
         style={{
           color: rawValue ? 'inherit' : 'gray',
           background: isDisabled ? '#f1f5f9' : undefined,
@@ -499,7 +500,7 @@ const KendoDataTablesReports = ({
         READ_ONLY ||
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
 
-      const dataIndex = isProposedAOP && rows ? rows.indexOf(dataItem) : -1
+      const dataIndex = (isProposedAOP && rows) ? rows.indexOf(dataItem) : -1
       const isEvenRow = dataIndex !== -1 && dataIndex % 2 === 1
 
       const rowClassName = [
@@ -734,10 +735,10 @@ const KendoDataTablesReports = ({
             title={col.title || col.headerName}
             width={setWidth(
               col?.fixedWidth ||
-                col?.width ||
-                col?.widthT ||
-                col?.minWidth ||
-                130,
+              col?.width ||
+              col?.widthT ||
+              col?.minWidth ||
+              130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
@@ -1096,7 +1097,7 @@ const KendoDataTablesReports = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -1187,9 +1188,9 @@ const KendoDataTablesReports = ({
                   ? false
                   : rows?.length > 100
                     ? {
-                        buttonCount: 4,
-                        pageSizes: [10, 50, 100],
-                      }
+                      buttonCount: 4,
+                      pageSizes: [10, 50, 100],
+                    }
                     : false
               }
               onRowClick={handleRowClick}

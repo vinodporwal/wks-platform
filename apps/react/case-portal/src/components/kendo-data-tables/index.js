@@ -66,6 +66,8 @@ import {
   getMonthStartEndDate,
   recalcDuration,
   recalcEndDate,
+  calcEndDateFromDuration,
+  calcDurationFromDates,
 } from './Utilities-Kendo/durationHelpers'
 import LimitCellEditor from './Utilities-Kendo/LimitCellEditor'
 import MonthCell from './Utilities-Kendo/MonthCell'
@@ -122,21 +124,51 @@ const OnOffSwitchEditCell = (props) => {
 }
 
 const FeedTypeDisplayCell = (props) => {
-  const { dataItem, field, tdProps, column } = props
+  const { dataItem, field, tdProps, column, customModifiedCells: propModifiedCells } = props
   const value = dataItem[field]
   const rowId = dataItem.id
-  const customModifiedCells = column?.customModifiedCells || {}
+  const customModifiedCells = propModifiedCells || column?.customModifiedCells || {}
   const isEdited = Object.prototype.hasOwnProperty.call(
     customModifiedCells?.[rowId] || {},
     field,
   )
+
+  const isDropdownRow = dataItem?.UOM === '#'
+  const isNumeric =
+    !isDropdownRow &&
+    value !== null &&
+    value !== undefined &&
+    value !== '' &&
+    !isNaN(Number(value))
+
+  let displayValue = value
+  if (isNumeric) {
+    const num = Number(value)
+    const fmt = column?.format || '{0:0.00}'
+    if (fmt === '{0:0.000}') {
+      displayValue = num.toFixed(3)
+    } else if (fmt === '{0:0.0000}') {
+      displayValue = num.toFixed(4)
+    } else if (fmt === '{0:0.000000}') {
+      displayValue = num.toFixed(6)
+    } else {
+      displayValue = num.toFixed(2)
+    }
+  }
+
+  const isRightAlign = isNumeric
+
   return (
     <td
       {...tdProps}
-      title={value}
-      className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
+      title={value !== null && value !== undefined ? String(value) : ''}
+      className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''} ${isRightAlign ? 'text-right' : ''}`.trim()}
+      style={{
+        textAlign: isRightAlign ? 'right' : 'left',
+        ...tdProps?.style,
+      }}
     >
-      {value}
+      {displayValue}
     </td>
   )
 }
@@ -220,29 +252,29 @@ const KendoDataTables = ({
   typeRank = {},
   permissions = {},
   errorRows = new Set(),
-  setSnackbarOpen = () => {},
-  setSnackbarData = () => {},
+  setSnackbarOpen = () => { },
+  setSnackbarData = () => { },
   snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  NormParameterIdCell = () => {},
-  setModifiedCells = () => {},
+  NormParameterIdCell = () => { },
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = (selectedItems) => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleAddPlantSite = () => {},
-  handleCalculate = () => {},
-  handleLoad = () => {},
-  fetchData = () => {},
-  handleUnitChange = () => {},
-  handleYearChange = () => {},
-  handleGradeChange = () => {},
-  handleRemarkCellClick = () => {},
-  calculatebtnClicked = () => {},
+  handleDeleteSelected = (selectedItems) => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleAddPlantSite = () => { },
+  handleCalculate = () => { },
+  handleLoad = () => { },
+  fetchData = () => { },
+  handleUnitChange = () => { },
+  handleYearChange = () => { },
+  handleGradeChange = () => { },
+  handleRemarkCellClick = () => { },
+  calculatebtnClicked = () => { },
   selectedUsers = [],
   groupBy = null,
   totalRowConfiguration = null,
@@ -256,13 +288,13 @@ const KendoDataTables = ({
   allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
-  setSelectMode = () => {},
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
-  onLoad = () => {},
+  setSelectMode = () => { },
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
+  onLoad = () => { },
   disableRedHighlight = false,
   showThreeColors = false,
-  resetDataChanges = () => {},
+  resetDataChanges = () => { },
   noteOnSaveDialogeBox = '',
   deleteNoteOnDeleteDialogeBox = '',
   shutdownMonths = [],
@@ -274,12 +306,13 @@ const KendoDataTables = ({
   mcuMaxCapValues = [],
   key = [],
   isReleaseDisabled = true,
-  handleRelease = () => {},
+  handleRelease = () => { },
   customItemChange = null,
   configType,
   isEditable = false,
   currentTabDisplayName,
   cellHighlightStrategy = '',
+  enableDateDurationCalculation = false,
 }) => {
   const columns = useMemo(() => {
     const normalize = (cols) => {
@@ -392,6 +425,7 @@ const KendoDataTables = ({
     'VA Stream to BZ',
     'PYROLYSIS GASOLINE',
     'Benzene Content in feed for PyGas',
+    'NRS of BZ to NCP',
   ].map((n) => n.trim().toLowerCase())
 
   const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_NP = [
@@ -515,12 +549,12 @@ const KendoDataTables = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          aggregates: totalRowConfiguration,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        aggregates: totalRowConfiguration,
+        dir: undefined,
+      },
+    ]
     : []
 
   const MyFooterCustomCell = (props) => {
@@ -812,111 +846,42 @@ const KendoDataTables = ({
         return new Date(end.getTime() - totalMs)
       }
 
-      // ✅ Pre-calculate End Date if Duration or Start Date changed
+      // ✅ Pre-calculate End Date / Duration — only when enableDateDurationCalculation prop is true
       let calculatedEndDate = null
       let calculatedDuration = null
-      const durationFields = ['Duration', 'duration', 'may']
-      const startDateFields = ['startDate', 'StartDate', 'apr']
-      const endDateFields = ['endDate', 'EndDate']
+      let shouldCalculateEndDate = false
 
-      const shouldCalculateEndDate =
-        durationFields.includes(field) || startDateFields.includes(field)
-      const shouldCalculateDuration = endDateFields.includes(field)
-
-      if (shouldCalculateEndDate) {
+      if (enableDateDurationCalculation) {
         const currentRow =
           (rowsRef.current || []).find((r) => r.id === itemId) || dataItem
-        const rawDuration = durationFields.includes(field)
-          ? value
-          : currentRow?.Duration ??
-            currentRow?.duration ??
-            currentRow?.ConstantValue ??
-            currentRow?.constantValue ??
-            currentRow?.may
-        const rawStartDate = startDateFields.includes(field)
-          ? value
-          : currentRow?.startDate ?? currentRow?.StartDate ?? currentRow?.apr
 
-        const isDurationValid =
-          rawDuration !== null &&
-          rawDuration !== undefined &&
-          String(rawDuration).trim() !== '' &&
-          !isNaN(Number(rawDuration))
+        // End Date ← Start Date + Duration
+        const endDateResult = calcEndDateFromDuration({
+          field,
+          value,
+          currentRow,
+          dataItem,
+          parseDateFn: parseDateRobust,
+          onMissingStartDate: () => {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: 'Start Date is required to calculate End Date.',
+              severity: 'warning',
+            })
+          },
+        })
+        calculatedEndDate = endDateResult.calculatedEndDate
+        shouldCalculateEndDate = endDateResult.shouldCalculateEndDate
 
-        if (!isDurationValid) {
-          calculatedEndDate = null
-        } else {
-          const durationVal = Number(rawDuration)
-          const startDateObj = parseDateRobust(rawStartDate)
-
-          if (!startDateObj || isNaN(startDateObj.getTime())) {
-            calculatedEndDate = null
-            if (durationFields.includes(field)) {
-              setSnackbarOpen(true)
-              setSnackbarData({
-                message: 'Start Date is required to calculate End Date.',
-                severity: 'warning',
-              })
-            }
-          } else {
-            const uom = (currentRow?.UOM || dataItem?.UOM || '')
-              .trim()
-              .toLowerCase()
-            const isMonthUom = uom === 'month' || uom === 'months'
-
-            let endDateObj
-            if (isMonthUom) {
-              endDateObj = new Date(startDateObj)
-              endDateObj.setMonth(endDateObj.getMonth() + durationVal)
-            } else {
-              endDateObj = new Date(
-                startDateObj.getTime() + durationVal * 24 * 60 * 60 * 1000,
-              )
-            }
-            const dd = String(endDateObj.getDate()).padStart(2, '0')
-            const mm = String(endDateObj.getMonth() + 1).padStart(2, '0')
-            const yyyy = endDateObj.getFullYear()
-            calculatedEndDate = `${dd}-${mm}-${yyyy}`
-          }
-        }
-      }
-
-      if (shouldCalculateDuration) {
-        const currentRow =
-          (rowsRef.current || []).find((r) => r.id === itemId) || dataItem
-        const rawEndDate = endDateFields.includes(field)
-          ? value
-          : currentRow?.endDate ?? currentRow?.EndDate
-        const rawStartDate = startDateFields.includes(field)
-          ? value
-          : currentRow?.startDate ?? currentRow?.StartDate ?? currentRow?.apr
-
-        const startDateObj = parseDateRobust(rawStartDate)
-        const endDateObj = parseDateRobust(rawEndDate)
-
-        if (
-          startDateObj &&
-          !isNaN(startDateObj.getTime()) &&
-          endDateObj &&
-          !isNaN(endDateObj.getTime())
-        ) {
-          const uom = (currentRow?.UOM || dataItem?.UOM || '')
-            .trim()
-            .toLowerCase()
-          const isMonthUom = uom === 'month' || uom === 'months'
-
-          if (isMonthUom) {
-            const months =
-              (endDateObj.getFullYear() - startDateObj.getFullYear()) * 12 +
-              (endDateObj.getMonth() - startDateObj.getMonth())
-            calculatedDuration = months >= 0 ? String(months) : '0'
-          } else {
-            const diffMs = endDateObj.getTime() - startDateObj.getTime()
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-            calculatedDuration = diffDays >= 0 ? String(diffDays) : '0'
-          }
-        }
-      }
+        // Duration ← End Date - Start Date
+        calculatedDuration = calcDurationFromDates({
+          field,
+          value,
+          currentRow,
+          dataItem,
+          parseDateFn: parseDateRobust,
+        })
+      } // end enableDateDurationCalculation
 
       setRows((prev) =>
         prev.map((r) => {
@@ -2762,7 +2727,7 @@ const KendoDataTables = ({
                         },
                       },
                     }}
-                    // disabled={rows?.length === 0}
+                  // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled className='menu-item-style'>
                       UOM
@@ -2894,7 +2859,7 @@ const KendoDataTables = ({
                   onClick={excelExport}
                   // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
-                  //ANY ONE CAN EXPORT
+                //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -2965,7 +2930,7 @@ const KendoDataTables = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
@@ -3095,21 +3060,21 @@ const KendoDataTables = ({
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
-                        enabled: false,
-                        footer: 'visible',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'visible',
+                      showGroupPanel: false,
+                    }
                     : {
-                        enabled: false,
-                        footer: 'none',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'none',
+                      showGroupPanel: false,
+                    }
                 }
                 cells={
                   permissions?.isTotalFooterActive
                     ? {
-                        groupFooter: MyFooterCustomCell,
-                      }
+                      groupFooter: MyFooterCustomCell,
+                    }
                     : undefined
                 }
                 allRedCell={allRedCell}
@@ -3120,9 +3085,9 @@ const KendoDataTables = ({
                     ? false
                     : rows?.length > 100
                       ? {
-                          buttonCount: 4,
-                          pageSizes: [10, 50, 100],
-                        }
+                        buttonCount: 4,
+                        pageSizes: [10, 50, 100],
+                      }
                       : false
                 }
                 sortable={true}
@@ -4330,7 +4295,12 @@ const KendoDataTables = ({
                             edit: {
                               text: StableFeedTypeOrNumericEditor,
                             },
-                            data: FeedTypeDisplayCell,
+                            data: (props) => (
+                              <FeedTypeDisplayCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                              />
+                            ),
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           columnMenu={ColumnMenuCheckboxFilter}
@@ -5137,7 +5107,11 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
-                        width={setWidth(col?.minWidth || 150)}
+                        width={
+                          permissions?.disableColWidth
+                            ? col?.width || undefined
+                            : setWidth(col?.minWidth || 150)
+                        }
                         hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}

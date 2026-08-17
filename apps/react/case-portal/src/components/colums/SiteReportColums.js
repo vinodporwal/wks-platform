@@ -106,7 +106,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       align: 'right',
       format: '{0:0}',
     },
-    { field: 'plant', title: 'Plant', widthT: 100, editable: true },
+    { field: 'plant', title: 'Plant', widthT: 100, editable: false },
     {
       field: 'initiativeDescription',
       title: 'Initiative Description',
@@ -141,7 +141,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       align: 'right',
       format: '{0:0}',
     },
-    { field: 'plant', title: 'Plant', widthT: 100, editable: true },
+    { field: 'plant', title: 'Plant', widthT: 100, editable: false },
     {
       field: 'initiativeDescription',
       title: 'Initiative Description',

@@ -282,10 +282,8 @@ const KendoDataTablesCracker = ({
   }
   const itemChange = useCallback(
     (e) => {
-
       const { dataItem, field, value } = e
       const itemId = dataItem.id || dataItem.Id
-
 
       // Ignore group header expand/collapse events — they are not real edits
       if (!field || dataItem?.items) {
@@ -294,13 +292,20 @@ const KendoDataTablesCracker = ({
 
       setIsRowEdited(true)
 
-
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId && r.Id !== itemId) return r
           const updated = { ...r, [field]: value }
           if (field === 'Post_CR_Days' || field === 'IsCR') {
             updated.originalIsCr = originalIsCrRef.current[itemId]
+          }
+          if ((field === 'IsIBR' || field === 'Is_IBR') && value === false) {
+            updated.IBR_SD = null
+            updated.FunShtdwnDuration = null
+            updated.IBR_ED = null
+          }
+          if (['IBR_SD', 'FunShtdwnDuration', 'IBR_ED'].includes(field) && value) {
+            updated.IsIBR = true
           }
           // Auto-calculate preCrDays
           if (field === 'ActualRunLength' || field === 'Reduction') {
@@ -314,6 +319,14 @@ const KendoDataTablesCracker = ({
       )
       setModifiedCells((prev) => {
         const base = { ...dataItem, [field]: value }
+        if ((field === 'IsIBR' || field === 'Is_IBR') && value === false) {
+          base.IBR_SD = null
+          base.FunShtdwnDuration = null
+          base.IBR_ED = null
+        }
+        if (['IBR_SD', 'FunShtdwnDuration', 'IBR_ED'].includes(field) && value) {
+          base.IsIBR = true
+        }
         // Auto-calculate preCrDays in modified cells too
         if (field === 'ActualRunLength' || field === 'Reduction') {
           base.Pre_CR_Days = calcPreCoilReplacementRunLength(
@@ -762,7 +775,10 @@ const KendoDataTablesCracker = ({
         }
         //--
 
-        if (col.field === 'IsCR') {
+        if (
+          col.field === 'IsCR' ||
+          (col.field === 'IsIBR' && col.type === 'switch')
+        ) {
           const handleSwitchChange = (props, value) => {
             itemChange({
               dataItem: props.dataItem,

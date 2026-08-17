@@ -154,5 +154,18 @@ public class Utility {
         return sanitized.substring(0, Math.min(sanitized.length(), 31));
     }
 
+	/**
+	 * Removes characters that are illegal in XML 1.0 from a cell string value.
+	 * Illegal ranges: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+FFFE, U+FFFF.
+	 * Tab (U+0009), LF (U+000A) and CR (U+000D) are legal and are preserved.
+	 * Apache POI does not validate these characters before writing them to the XML
+	 * parts of an .xlsx file, so passing an illegal character produces a corrupt
+	 * workbook that Excel refuses to open cleanly.
+	 */
+	public static String sanitizeCellString(String value) {
+		if (value == null) return "";
+		return value.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFE\\uFFFF]", "");
+	}
+
     
 }

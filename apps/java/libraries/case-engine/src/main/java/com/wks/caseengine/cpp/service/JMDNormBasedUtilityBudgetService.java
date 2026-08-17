@@ -32,6 +32,17 @@ public interface JMDNormBasedUtilityBudgetService {
     AOPMessageVM importExcel(List<UUID> cppPlantIds, String financialYear, MultipartFile file);
     
     Map<String, Object> runFullYear(Map<String, Object> request);
+
+
+    // ===================== || QUANTITY APIs (NEW) || ===================== //
+
+    AOPMessageVM getQuantity(List<UUID> cppPlantIds, String financialYear);
+
+    AOPMessageVM saveOrUpdateQuantityBulk(List<NormsMonthUpdateRequestDTO> dtoList, String financialYear);
+
+    byte[] exportQuantity(List<UUID> cppPlantIds, String financialYear, boolean isAfterSave, List<OutputNormsUtilityBudgetResponseDTO> dtoList);
+
+    byte[] exportQuantityDetailed(List<UUID> cppPlantId, String financialYear);
+
+    AOPMessageVM importQuantityExcel(List<UUID> cppPlantIds, String financialYear, MultipartFile file);
 }
-
-

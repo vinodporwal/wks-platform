@@ -47,6 +47,11 @@ public class NormalOperationNormsController {
 		return	normalOperationNormsService.calculateNormalOpsNorms(aopYear, plantId,siteId,verticalId);
 	}
 
+	@GetMapping(value="/calculate-normal-ops-norms/polyester")
+	public AOPMessageVM calculateNormalOpsNormsPolyester(@RequestParam String aopYear,@RequestParam String plantId,@RequestParam String siteId,@RequestParam String verticalId){
+		return	normalOperationNormsService.calculateNormalOpsNormsPolyester(aopYear, plantId,siteId,verticalId);
+	}
+
 	@GetMapping(value = "/norms-transactions")
 	public AOPMessageVM getNormsTransaction(@RequestParam String plantId, @RequestParam String year) {
 		return normalOperationNormsService.getNormsTransaction(plantId, year);

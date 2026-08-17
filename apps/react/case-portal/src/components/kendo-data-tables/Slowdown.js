@@ -353,15 +353,15 @@ const SlowDown = ({ permissions }) => {
         discription: row.discription,
         durationInHrs:
           row.durationInHrs !== undefined &&
-          row.durationInHrs !== null &&
-          row.durationInHrs !== ''
+            row.durationInHrs !== null &&
+            row.durationInHrs !== ''
             ? row.durationInHrs
             : (() => {
-                const v = findDuration('1', row)
-                if (!v) return null
-                const [h = '00', m = '00'] = String(v).split('.')
-                return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
-              })(),
+              const v = findDuration('1', row)
+              if (!v) return null
+              const [h = '00', m = '00'] = String(v).split('.')
+              return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+            })(),
         month: row.monthly,
         remark: row.remark,
         rate: row.rate,
@@ -408,17 +408,17 @@ const SlowDown = ({ permissions }) => {
         IS_ELASTOMER_HMD_SBR || IS_ELASTOMER_HMD_PBR3
           ? slowDownDetailsElastomerHmdSbr
           : lowerVertName === 'elastomer' &&
-              !IS_ELASTOMER_HMD_SBR &&
-              !IS_ELASTOMER_HMD_PBR3
+            !IS_ELASTOMER_HMD_SBR &&
+            !IS_ELASTOMER_HMD_PBR3
             ? slowDownDetailsElastomer
             : IS_PTA_DMD
               ? slowDownDetailsPTADMD
               : lowerVertName === 'pe' ||
-                  lowerVertName === 'pp' ||
-                  lowerVertName === 'pet' ||
-                  IS_PVC_VMD ||
-                  IS_PVC_DMD ||
-                  IS_PVC_HMD
+                lowerVertName === 'pp' ||
+                lowerVertName === 'pet' ||
+                IS_PVC_VMD ||
+                IS_PVC_DMD ||
+                IS_PVC_HMD
                 ? slowDownDetailsPEPP
                 : slowDownDetailsMEG,
         keycloak,
@@ -1263,10 +1263,10 @@ const SlowDown = ({ permissions }) => {
           hidden: removedCols.includes(item.field),
           ...(item.field !== 'particulars' &&
             item.field.toLowerCase() !== 'uom' && {
-              format: FORMATE_DECIMAL,
-              type: 'number',
-              minWidth: 100,
-            }),
+            format: FORMATE_DECIMAL,
+            type: 'number',
+            minWidth: 100,
+          }),
         }))
 
         setColDefs2(dynamicColDefs)
@@ -1429,11 +1429,7 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.AROMATICS:
         return SlowDownAromaticsColumns
       case verticalEnums.PVC:
-        return IS_PVC_VMD
-          ? SlowDownPeColumns
-          : IS_PVC_DMD
-            ? SlowDownPvcDmdColumns
-            : SlowDownPpDtaColumns
+        return IS_PVC_VMD ? SlowDownPeColumns : IS_PVC_DMD ? SlowDownPvcDmdColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
         return IS_VCM_DMD_VCM
           ? SlowDownVcmColumns
@@ -1789,38 +1785,38 @@ const SlowDown = ({ permissions }) => {
         (lowerVertName === 'elastomer' &&
           !IS_ELASTOMER_JMD &&
           !IS_ELASTOMER_HMD_SBR)) && (
-        <Box style={{ margin: 0, padding: 0 }}>
-          <AopTabs
-            tabIndex={selectedTab}
-            setTabIndex={(index) => handleTabChange(null, index)}
-            tabs={[
-              'Slowdown Details',
-              lowerVertName === 'meg'
-                ? 'Slowdown Configuration'
-                : 'Slowdown History Config',
-            ]}
-          >
-            {[
-              'Slowdown Details',
-              lowerVertName === 'meg'
-                ? 'Slowdown Configuration'
-                : 'Slowdown History Config',
-            ].map((label, idx) => (
-              <Tab
-                key={idx}
-                label={label}
-                sx={{
-                  border: '1px solid #ADD8E6',
-                  borderBottom: '1px solid #ADD8E6',
-                  fontSize: '0.75rem',
-                  padding: '9px',
-                  minHeight: '12px',
-                }}
-              />
-            ))}
-          </AopTabs>
-        </Box>
-      )}
+          <Box style={{ margin: 0, padding: 0 }}>
+            <AopTabs
+              tabIndex={selectedTab}
+              setTabIndex={(index) => handleTabChange(null, index)}
+              tabs={[
+                'Slowdown Details',
+                lowerVertName === 'meg'
+                  ? 'Slowdown Configuration'
+                  : 'Slowdown History Config',
+              ]}
+            >
+              {[
+                'Slowdown Details',
+                lowerVertName === 'meg'
+                  ? 'Slowdown Configuration'
+                  : 'Slowdown History Config',
+              ].map((label, idx) => (
+                <Tab
+                  key={idx}
+                  label={label}
+                  sx={{
+                    border: '1px solid #ADD8E6',
+                    borderBottom: '1px solid #ADD8E6',
+                    fontSize: '0.75rem',
+                    padding: '9px',
+                    minHeight: '12px',
+                  }}
+                />
+              ))}
+            </AopTabs>
+          </Box>
+        )}
 
       {/* TAB 1 - SAME FOR MEG + ELASTOMER */}
       {selectedTab === 0 && (

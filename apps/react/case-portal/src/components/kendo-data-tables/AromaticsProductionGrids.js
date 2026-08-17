@@ -1083,13 +1083,11 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const adjustedPermissionsLast = getAdjustedPermissions(
     {
       allAction: true,
-      showTitleAndInformation:
-        VERTICAL_NAME === 'cracker' || isAromaticsHmd ? true : false,
+      showTitleAndInformation: VERTICAL_NAME === 'cracker' || isAromaticsHmd ? true : false,
       titleAndInformation: isAromaticsHmd
         ? 'Proposed Operating Capacity compared with Max Achieved Capacity'
         : 'Percentage Summary (Ethylene)',
-      showTitleNameBusiness:
-        VERTICAL_NAME !== 'cracker' && !isAromaticsHmd ? true : false,
+      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' && !isAromaticsHmd ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'

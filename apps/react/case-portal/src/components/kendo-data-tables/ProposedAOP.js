@@ -84,7 +84,7 @@ const ProposedAOP = () => {
         uom: row?.uom ?? null,
         lastFY: row?.lastFY ?? null,
         sysGrn: row?.sysGrn ?? null,
-        proposed: row?.proposed === '' ? null : row?.proposed ?? null,
+        proposed: row?.proposed === '' ? null : (row?.proposed ?? null),
         remarks: row?.remarks ?? null,
         plantId: row?.plantId ?? null,
         aopYear: row?.aopYear ?? null,
@@ -160,12 +160,7 @@ const ProposedAOP = () => {
       if (response?.code == 200) {
         const normalized = (response?.data || []).map((grade) => ({
           ...grade,
-          displayName:
-            grade.displayName ||
-            grade.DisplayName ||
-            grade.name ||
-            grade.Name ||
-            '',
+          displayName: grade.displayName || grade.DisplayName || grade.name || grade.Name || '',
           name: grade.name || grade.Name || '',
         }))
         setGrades(normalized)
@@ -181,6 +176,7 @@ const ProposedAOP = () => {
     }
   }
 
+
   const fetchGradeDropdownsAfterCalc = async () => {
     try {
       setGrades([])
@@ -194,12 +190,7 @@ const ProposedAOP = () => {
       if (response?.code == 200) {
         const normalized = (response?.data || []).map((grade) => ({
           ...grade,
-          displayName:
-            grade.displayName ||
-            grade.DisplayName ||
-            grade.name ||
-            grade.Name ||
-            '',
+          displayName: grade.displayName || grade.DisplayName || grade.name || grade.Name || '',
           name: grade.name || grade.Name || '',
         }))
         setGrades(normalized)
@@ -223,6 +214,7 @@ const ProposedAOP = () => {
       console.error('Error fetching Business Demand data:', error)
     }
   }
+
 
   const fetchData = async (currentGradeId, passedGradeName = null) => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -249,9 +241,7 @@ const ProposedAOP = () => {
 
       let resolvedGradeName = passedGradeName
       if (!resolvedGradeName && grades.length > 0) {
-        const matchedGrade = grades.find(
-          (g) => (g.gradeId ?? g.id) === currentGradeId,
-        )
+        const matchedGrade = grades.find((g) => (g.gradeId ?? g.id) === currentGradeId)
         resolvedGradeName = matchedGrade?.name ?? null
       }
       if (!resolvedGradeName) {
@@ -478,9 +468,7 @@ const ProposedAOP = () => {
 
   const handleGradeChange = (selectedGradeId) => {
     setGradeId(selectedGradeId)
-    const selectedGrade = grades.find(
-      (g) => (g.gradeId ?? g.id) === selectedGradeId,
-    )
+    const selectedGrade = grades.find((g) => (g.gradeId ?? g.id) === selectedGradeId)
     const selectedName = selectedGrade?.name ?? null
     setGradeName(selectedName)
     fetchData(selectedGradeId, selectedName)

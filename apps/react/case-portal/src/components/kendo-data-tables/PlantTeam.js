@@ -10,10 +10,7 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function PlantTeam({
-  onlyPeopleInitiative = false,
-  onlyPlantTeam = false,
-}) {
+export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam = false }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -76,8 +73,8 @@ export default function PlantTeam({
         field: 'serialNumber',
         title: 'S.No.',
         editable: false,
-        type: 'number',
-        minWidth: 80,
+        width: 100,
+        minWidth: 100,
       },
       {
         field: 'function',
@@ -128,27 +125,27 @@ export default function PlantTeam({
       field: 'serialNumber',
       title: 'S.No.',
       editable: false,
-      type: 'number',
-      minWidth: 80,
+      width: 100,
+      minWidth: 100,
     },
     {
       field: 'initiative',
-      title: 'Initiative',
+      title: 'Initiative Description',
       editable: true,
       minWidth: 200,
     },
     {
       field: 'outcome',
-      title: 'Outcome',
+      title: 'Expected Outcome',
       editable: true,
       minWidth: 200,
     },
-    {
-      field: 'recommendation',
-      title: 'Recommendation',
-      editable: true,
-      minWidth: 240,
-    },
+    // {
+    //   field: 'recommendation',
+    //   title: 'Recommendation',
+    //   editable: true,
+    //   minWidth: 240,
+    // },
     {
       field: 'targetDate',
       title: 'Target Date',
@@ -158,7 +155,7 @@ export default function PlantTeam({
     },
     {
       field: 'responsible',
-      title: 'Resp.',
+      title: 'Responsibilities',
       editable: true,
       minWidth: 150,
     },
@@ -190,9 +187,9 @@ export default function PlantTeam({
             serialNumber: index + 1,
             function: item.functions,
             jobRole: item.jobRole,
-            name: item.name,
-            age: item.age,
-            teamSize: item.teamSize,
+            name: item.name ?? '',
+            age: item.age ?? '',
+            teamSize: item.teamSize ?? '',
             remarks: item.remark,
             isEditable: item?.isEditable,
             originalRemark: item.remark,
@@ -205,14 +202,12 @@ export default function PlantTeam({
 
       if (!onlyPlantTeam) {
         if (res1?.code === 200) {
-          const peopleInitiativeMapped = res1?.data?.Data?.map(
-            (item, index) => ({
-              ...item,
-              id: item.id || null,
-              idFromApi: item.id || null,
-              serialNumber: index + 1,
-            }),
-          )
+          const peopleInitiativeMapped = res1?.data?.Data?.map((item, index) => ({
+            ...item,
+            id: item.id || null,
+            idFromApi: item.id || null,
+            serialNumber: index + 1,
+          }))
           setPeopleInitiativeRows(peopleInitiativeMapped)
         } else {
           setPeopleInitiativeRows([])
@@ -225,15 +220,7 @@ export default function PlantTeam({
     } finally {
       setLoading(false)
     }
-  }, [
-    keycloak,
-    yearChanged,
-    plantID,
-    PLANT_ID,
-    AOP_YEAR,
-    onlyPeopleInitiative,
-    onlyPlantTeam,
-  ])
+  }, [keycloak, yearChanged, plantID, PLANT_ID, AOP_YEAR, onlyPeopleInitiative, onlyPlantTeam])
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, fetchData])
@@ -251,7 +238,7 @@ export default function PlantTeam({
         return
       }
 
-      const requiredFields = ['function', 'jobRole', 'name', 'age', 'teamSize']
+      const requiredFields = ['function', 'jobRole']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -264,13 +251,19 @@ export default function PlantTeam({
         return
       }
 
+      const parseOptionalInt = (val) => {
+        if (val === undefined || val === null || val === '') return null
+        const num = Number(val)
+        return isNaN(num) ? null : num
+      }
+
       const payload = data.map((item, index) => ({
         id: item.id || null,
         functions: item.function,
         jobRole: item.jobRole,
-        name: item.name,
-        age: item.age,
-        teamSize: item.teamSize,
+        name: item.name || null,
+        age: parseOptionalInt(item.age),
+        teamSize: parseOptionalInt(item.teamSize),
         remark: item.remarks || 'system generated',
       }))
 
@@ -320,10 +313,6 @@ export default function PlantTeam({
       }
       const requiredFields = [
         'initiative',
-        'outcome',
-        'recommendation',
-        'targetDate',
-        'responsible',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
@@ -500,6 +489,20 @@ export default function PlantTeam({
     }
   }
 
+  const getExcelExportTitle = useCallback(
+    (gridTitle) =>
+      [
+        verticalObject?.name?.toUpperCase() || vertName?.toUpperCase(),
+        siteObject?.name?.toUpperCase(),
+        plantObject?.name?.toUpperCase(),
+        gridTitle,
+        AOP_YEAR,
+      ]
+        .filter(Boolean)
+        .join('_'),
+    [verticalObject, siteObject, plantObject, vertName, AOP_YEAR],
+  )
+
   const downloadExcelForConfiguration = async (type) => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -512,7 +515,7 @@ export default function PlantTeam({
       let EXCEL_EXPORT_TITLE = ''
 
       if (type === 'plantTeam') {
-        EXCEL_EXPORT_TITLE = `${vertName}_Plant_Team`
+        EXCEL_EXPORT_TITLE = getExcelExportTitle('Plant_Team')
         response = await DataService.PlantTeamExport(
           keycloak,
           PLANT_ID,
@@ -520,7 +523,7 @@ export default function PlantTeam({
           EXCEL_EXPORT_TITLE,
         )
       } else if (type === 'peopleInitiative') {
-        EXCEL_EXPORT_TITLE = `${vertName}_People_Initiative`
+        EXCEL_EXPORT_TITLE = getExcelExportTitle('People_Initiative')
         response = await DataService.ExportPeopleInitiative(
           keycloak,
           PLANT_ID,
@@ -572,9 +575,10 @@ export default function PlantTeam({
       //downloadExcelBtnFromUI: true,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
-      ExcelName: `${lowerVertName}_Plant_Team`,
+      ExcelName: getExcelExportTitle('Plant_Team'),
       addButton: true,
       deleteButton: true,
+      disableColWidth: true,
     },
     isOldYear,
   )
@@ -601,9 +605,10 @@ export default function PlantTeam({
     adjustedPermissions: true,
     downloadExcelBtn: true,
     uploadExcelBtn: true,
-    ExcelName: `${lowerVertName}_People_Initiative`,
+    ExcelName: getExcelExportTitle('People_Initiative'),
     addButton: true,
     deleteButton: true,
+    disableColWidth: true,
   })
 
   const commonGridProps = {

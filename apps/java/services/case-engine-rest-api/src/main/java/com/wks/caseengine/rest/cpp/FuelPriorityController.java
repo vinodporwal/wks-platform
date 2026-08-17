@@ -1,11 +1,13 @@
 package com.wks.caseengine.rest.cpp;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
 import com.wks.caseengine.cpp.dto.FuelMasterDto;
+import com.wks.caseengine.cpp.dto.PlantFuelAvailabilityMonthlyDto;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
 import com.wks.caseengine.cpp.service.FuelPriorityService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -84,6 +87,60 @@ public class FuelPriorityController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("[PUT /plant-fuel-availability] Error updating plant fuel availability: {}", e.getMessage(), e);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @GetMapping("/plant-fuel-availability-monthly/{plantIds}/{financialYear}")
+    public ResponseEntity<AOPMessageVM> getPlantFuelAvailabilityMonthly(@PathVariable String plantIds, @PathVariable String financialYear) {
+        logger.info("[GET /plant-fuel-availability-monthly] plantIds: {}, financialYear: {}", plantIds, financialYear);
+        try {
+            List<PlantFuelAvailabilityMonthlyDto> data = service.getPlantFuelAvailabilityMonthly(plantIds, financialYear);
+            logger.info("[GET /plant-fuel-availability-monthly] Retrieved {} records", data.size());
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Success");
+            response.setData(data);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[GET /plant-fuel-availability-monthly] Error: {}", e.getMessage(), e);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @PostMapping("/plant-fuel-availability-monthly")
+    public ResponseEntity<AOPMessageVM> savePlantFuelAvailabilityMonthly(@RequestBody List<PlantFuelAvailabilityMonthlyDto> payload) {
+        logger.info("[POST /plant-fuel-availability-monthly] Saving {} records", payload != null ? payload.size() : 0);
+        try {
+            AOPMessageVM response = service.updatePlantFuelAvailabilityMonthly(payload);
+            logger.info("[POST /plant-fuel-availability-monthly] {}", response.getMessage());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[POST /plant-fuel-availability-monthly] Error: {}", e.getMessage(), e);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @DeleteMapping("/plant-fuel-availability-monthly/{id}")
+    public ResponseEntity<AOPMessageVM> deletePlantFuelAvailabilityMonthly(@PathVariable UUID id) {
+        logger.info("[DELETE /plant-fuel-availability-monthly] Deleting record with id: {}", id);
+        try {
+            AOPMessageVM response = service.deletePlantFuelAvailabilityMonthly(id);
+            logger.info("[DELETE /plant-fuel-availability-monthly] {}", response.getMessage());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[DELETE /plant-fuel-availability-monthly] Error: {}", e.getMessage(), e);
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(500);
             response.setMessage("Error: " + e.getMessage());

@@ -57,4 +57,9 @@ public interface SpyroOutputService {
 
 	AOPMessageVM calculateSpyroOutputData(String year, String plantId, String Mode, String type);
 
+	AOPMessageVM importExcelWithPilotFurnace(String year, String plantFKId, String mode, MultipartFile file);
+
+	byte[] createExcelWithPilotFurnace(String year, String plantId, String mode, boolean isAfterSave,
+			Map<String, List<SpyroOutputDTO>> mapForExcel);
+
 }

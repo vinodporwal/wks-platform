@@ -344,6 +344,7 @@ const PlantCapacities = ({ permissions }) => {
     showWorkFlowBtns: false,
     showTitle: true,
     filterable: false,
+    makePagable: false,
   }
 
   return (

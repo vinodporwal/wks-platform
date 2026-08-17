@@ -12,6 +12,7 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/mer
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import Constants from './Constants'
 import PIMSThroughput from './PIMSThroughput'
+import ProductionDemands from './ProductionDemand'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -231,6 +232,8 @@ const ProductionNormsBasis = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
+      case 'Production Demand':
+        return <ProductionDemands/>  
       default:
         return null
     }
