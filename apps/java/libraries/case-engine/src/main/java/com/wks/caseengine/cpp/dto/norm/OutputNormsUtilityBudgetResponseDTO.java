@@ -93,6 +93,10 @@ public class OutputNormsUtilityBudgetResponseDTO {
     // Fields for import/export tracking
     private String saveStatus;
     private String errDescription;
+
+    @JsonProperty("dataHash")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String dataHash;
 }
 
 

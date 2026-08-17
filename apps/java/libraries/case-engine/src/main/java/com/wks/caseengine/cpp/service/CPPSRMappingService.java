@@ -6,8 +6,6 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import com.wks.caseengine.cpp.dto.CPPCostCenterDTO;
-import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
 import com.wks.caseengine.cpp.dto.SRMappingDTO;
@@ -84,4 +82,23 @@ public interface CPPSRMappingService {
      * @param normTypeId optional; 1 = Production, 2 = Consumption, null = All
      */
     AOPMessageVM getNormParametersBySourcePlant(String plantId, Integer normTypeId);
+
+    /**
+     * Returns sender-receiver mapping data with monthly QTY values by calling SP
+     * CPP_GetSRMappingQTY.
+     *
+     * @param plantIds      comma-separated Plant GUIDs (e.g. "23BCA1B3-...,48051DCF-...")
+     * @param financialYear financial year string e.g. "2025-26"
+     */
+    AOPMessageVM getSRMappingQty(String plantIds, String financialYear);
+
+    /**
+     * Exports the SR Mapping QTY data (from SP CPP_GetSRMappingQTY) to an Excel
+     * workbook and returns the workbook bytes.
+     *
+     * @param plantIds      comma-separated Plant GUIDs
+     * @param financialYear financial year string e.g. "2025-26"
+     * @return Excel file bytes, or {@code null} on error
+     */
+    byte[] exportSRMappingQty(String plantIds, String financialYear);
 }

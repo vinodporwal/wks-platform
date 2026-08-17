@@ -38,6 +38,9 @@ import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.PlantsDTO;
 import com.wks.caseengine.dto.ProfitCenterDTO;
+import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
+import com.wks.caseengine.dto.ThroughputNormsDTO;
+import com.wks.caseengine.dto.JwUnitDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
@@ -1770,8 +1773,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
         for (ProfitCenterDTO dto : profitCenterDTOs) {
             try {
-                UUID normParameterFKId = UUID.fromString(dto.getId());
-                String auditYear = aopYear;
+                String unitId = dto.getId();
+
+                if (unitId == null) {
+                    continue;
+                }
 
                 for (Map.Entry<Integer, java.util.function.Function<ProfitCenterDTO, String>> entry : monthValueGetters.entrySet()) {
                     int month = entry.getKey();
@@ -1781,28 +1787,31 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         continue;
                     }
 
-                    java.util.Optional<NormAttributeTransactions> existing =
-                        normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(
-                            normParameterFKId, month, auditYear);
+                    String checkSql = "SELECT COUNT(1) FROM ThroughputProfitTransaction " +
+                                      "WHERE Unit_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                    int count = jdbcTemplate.queryForObject(checkSql, Integer.class, unitId, month, aopYear);
 
-                    if (existing.isPresent()) {
-                        NormAttributeTransactions entity = existing.get();
-                        entity.setAttributeValue(value);
-                        entity.setModifiedOn(new Date());
-                        entity.setUserName(updatedBy);
-                        normAttributeTransactionsRepository.save(entity);
+                    if (count > 0) {
+                        String updateSql = "UPDATE ThroughputProfitTransaction " +
+                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "WHERE Unit_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                        jdbcTemplate.update(updateSql,
+                            new java.math.BigDecimal(value),
+                            updatedBy,
+                            unitId,
+                            month,
+                            aopYear);
                     } else {
-                        NormAttributeTransactions newRecord = NormAttributeTransactions.builder()
-                            .normParameterFKId(normParameterFKId)
-                            .attributeValue(value)
-                            .aopMonth(month)
-                            .auditYear(auditYear)
-                            .createdOn(new Date())
-                            .modifiedOn(new Date())
-                            .userName(updatedBy)
-                            .attributeValueVersion("V1")
-                            .build();
-                        normAttributeTransactionsRepository.save(newRecord);
+                        String insertSql = "INSERT INTO ThroughputProfitTransaction " +
+                                           "(Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
+                                           "VALUES (NEWID(), ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                        jdbcTemplate.update(insertSql,
+                            unitId,
+                            month,
+                            aopYear,
+                            new java.math.BigDecimal(value),
+                            updatedBy);
                     }
                 }
             } catch (Exception e) {
@@ -1817,7 +1826,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 @Override
     public AOPMessageVM deleteProfitCenterData(String id, String aopYear) { 
 
-        String sql = "DELETE FROM NormAttributeTransactions WHERE Normparameter_FK_Id = ? AND AuditYear = ?";
+        String sql = "DELETE FROM ThroughputProfitTransaction WHERE Unit_Id = ? AND AuditYear = ?";
         jdbcTemplate.update(sql, id, aopYear);
         AOPMessageVM response = new AOPMessageVM();
         response.setCode(200);
@@ -1841,5 +1850,252 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
- 
+
+    @Override
+    public AOPMessageVM getThroughputNorms(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_GetThroughputNorms @SiteId = ?, @AOPYear = ?";
+
+            List<ThroughputNormsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                ThroughputNormsDTO.builder()
+                    .id(rs.getString("Id"))
+                    .unit(rs.getString("Unit"))
+                    .unitId(rs.getString("UnitId"))
+                    .materialCode(rs.getString("MaterialCode"))
+                    .materialCodeDecription(rs.getString("MaterialCodeDecription"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+                    .apr(rs.getString("Apr"))
+                    .may(rs.getString("May"))
+                    .jun(rs.getString("Jun"))
+                    .jul(rs.getString("Jul"))
+                    .aug(rs.getString("Aug"))
+                    .sep(rs.getString("Sep"))
+                    .oct(rs.getString("Oct"))
+                    .nov(rs.getString("Nov"))
+                    .dec(rs.getString("Dec"))
+                    .jan(rs.getString("Jan"))
+                    .feb(rs.getString("Feb"))
+                    .mar(rs.getString("Mar"))
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch throughput norms data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<ThroughputNormsDTO> saveThroughputNorms(List<ThroughputNormsDTO> throughputNormsDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<ThroughputNormsDTO> failedRecords = new ArrayList<>();
+
+        Map<Integer, java.util.function.Function<ThroughputNormsDTO, String>> monthValueGetters = new java.util.LinkedHashMap<>();
+        monthValueGetters.put(4,  ThroughputNormsDTO::getApr);
+        monthValueGetters.put(5,  ThroughputNormsDTO::getMay);
+        monthValueGetters.put(6,  ThroughputNormsDTO::getJun);
+        monthValueGetters.put(7,  ThroughputNormsDTO::getJul);
+        monthValueGetters.put(8,  ThroughputNormsDTO::getAug);
+        monthValueGetters.put(9,  ThroughputNormsDTO::getSep);
+        monthValueGetters.put(10, ThroughputNormsDTO::getOct);
+        monthValueGetters.put(11, ThroughputNormsDTO::getNov);
+        monthValueGetters.put(12, ThroughputNormsDTO::getDec);
+        monthValueGetters.put(1,  ThroughputNormsDTO::getJan);
+        monthValueGetters.put(2,  ThroughputNormsDTO::getFeb);
+        monthValueGetters.put(3,  ThroughputNormsDTO::getMar);
+
+        for (ThroughputNormsDTO dto : throughputNormsDTOs) {
+            try {
+                String materialId = dto.getId();
+                String unitId = dto.getUnitId();
+
+                if(materialId == null || unitId == null) {
+                    continue;
+                }
+
+                for (Map.Entry<Integer, java.util.function.Function<ThroughputNormsDTO, String>> entry : monthValueGetters.entrySet()) {
+                    int month = entry.getKey();
+                    String value = entry.getValue().apply(dto);
+
+                    if (value == null) {
+                        continue;
+                    }
+
+                    String checkSql = "SELECT COUNT(1) FROM ThroughputNormsTransaction " +
+                                      "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                    int count = jdbcTemplate.queryForObject(checkSql, Integer.class, materialId, month, aopYear, unitId);
+
+                    if (count > 0) {
+                        String updateSql = "UPDATE ThroughputNormsTransaction " +
+                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                        jdbcTemplate.update(updateSql,
+                            new java.math.BigDecimal(value),
+                            updatedBy,
+                            materialId,
+                            month,
+                            aopYear,
+                            unitId);
+                    } else {
+                        String insertSql = "INSERT INTO ThroughputNormsTransaction " +
+                                           "(Id, Material_Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
+                                           "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                        jdbcTemplate.update(insertSql,
+                            materialId,
+                            unitId,
+                            month,
+                            aopYear,
+                            new java.math.BigDecimal(value),
+                            updatedBy);
+                    }
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+
+        return failedRecords;
+    }
+
+    public AOPMessageVM deleteThroughputNorms(String materialId, String unitId, String aopYear) {
+        String sql = "DELETE FROM ThroughputNormsTransaction WHERE Material_Id = ? AND Unit_Id = ? AND AuditYear = ?";
+        jdbcTemplate.update(sql, materialId, unitId, aopYear);
+        AOPMessageVM response = new AOPMessageVM();
+        response.setCode(200);
+        response.setMessage("Data deleted successfully");
+        return response;
+    }
+
+    @Override
+    public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId) {
+        try {
+            String sql = "EXEC Sp_GetNormsMaterialDropdown @siteId = ?, @profitId = ?";
+
+            List<NormsMaterialDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                NormsMaterialDropdownDTO.builder()
+                    .unitId(rs.getString("UnitId"))
+                    .materialId(rs.getString("MaterialId"))
+                    .unit(rs.getString("Unit"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+        
+                    .build(),
+                siteId, profitId);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch norms material dropdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getJwUnit(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC dbo.sp_GetJwUnitData @SiteId = ?, @AOPYear = ?";
+
+            List<JwUnitDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                JwUnitDTO.builder()
+                    .id(rs.getString("id"))
+                    .normParameterFkId(rs.getString("normParameterFkId"))
+                    .siteFkId(rs.getString("siteFkId"))
+                    .aopYear(rs.getString("aopYear"))
+                    .normParameterTypeName(rs.getString("normParameterTypeName"))
+                    .normParameterTypeDisplayName(rs.getString("normParameterTypeDisplayName"))
+                    .productName(rs.getString("productName"))
+                    .displayName(rs.getString("displayName"))
+                    .uom(rs.getString("UOM"))
+                    .sequenceOrder(rs.getObject("sequenceOrder") != null ? rs.getInt("sequenceOrder") : null)
+                    .april(rs.getObject("april") != null ? rs.getDouble("april") : 0.0)
+                    .may(rs.getObject("may") != null ? rs.getDouble("may") : 0.0)
+                    .june(rs.getObject("june") != null ? rs.getDouble("june") : 0.0)
+                    .july(rs.getObject("july") != null ? rs.getDouble("july") : 0.0)
+                    .aug(rs.getObject("aug") != null ? rs.getDouble("aug") : 0.0)
+                    .sep(rs.getObject("sep") != null ? rs.getDouble("sep") : 0.0)
+                    .oct(rs.getObject("oct") != null ? rs.getDouble("oct") : 0.0)
+                    .nov(rs.getObject("nov") != null ? rs.getDouble("nov") : 0.0)
+                    .dec(rs.getObject("dec") != null ? rs.getDouble("dec") : 0.0)
+                    .jan(rs.getObject("jan") != null ? rs.getDouble("jan") : 0.0)
+                    .feb(rs.getObject("feb") != null ? rs.getDouble("feb") : 0.0)
+                    .march(rs.getObject("march") != null ? rs.getDouble("march") : 0.0)
+                    .avgNorms(rs.getObject("avgNorms") != null ? rs.getDouble("avgNorms") : 0.0)
+                    .remarks(rs.getString("remarks"))
+                    .isEditable(rs.getObject("isEditable") != null ? rs.getBoolean("isEditable") : true)
+                    .isVisible(rs.getObject("isVisible") != null ? rs.getBoolean("isVisible") : true)
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch JW Unit data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<JwUnitDTO> saveJwUnit(List<JwUnitDTO> jwUnitDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<JwUnitDTO> failedRecords = new ArrayList<>();
+
+        for (JwUnitDTO dto : jwUnitDTOs) {
+            try {
+                String normParamId = dto.getNormParameterFkId() != null ? dto.getNormParameterFkId() : dto.getId();
+                String siteId = dto.getSiteFkId();
+                String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
+
+                if (normParamId == null || siteId == null || year == null) {
+                    continue;
+                }
+
+                String checkSql = "SELECT COUNT(1) FROM dbo.JwUnitTransactionData " +
+                                  "WHERE NormParameter_FK_Id = ? AND Site_FK_Id = ? AND AOPYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, normParamId, siteId, year);
+
+                if (count > 0) {
+                    String updateSql = "UPDATE dbo.JwUnitTransactionData " +
+                                       "SET April = ?, May = ?, June = ?, July = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, March = ?, " +
+                                       "Remarks = ?, UpdatedDate = GETDATE(), UpdatedBy = ? " +
+                                       "WHERE NormParameter_FK_Id = ? AND Site_FK_Id = ? AND AOPYear = ?";
+                    jdbcTemplate.update(updateSql,
+                        dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMarch(),
+                        dto.getRemarks(), updatedBy,
+                        normParamId, siteId, year);
+                } else {
+                    String insertSql = "INSERT INTO dbo.JwUnitTransactionData " +
+                                       "(Id, NormParameter_FK_Id, Site_FK_Id, April, May, June, July, Aug, Sep, Oct, Nov, Dec, Jan, Feb, March, " +
+                                       "Remarks, AOPYear, CreatedDate, UpdatedDate, UpdatedBy) " +
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?)";
+                    jdbcTemplate.update(insertSql,
+                        normParamId, siteId,
+                        dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMarch(),
+                        dto.getRemarks(), year, updatedBy);
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+        return failedRecords;
+    }
 }

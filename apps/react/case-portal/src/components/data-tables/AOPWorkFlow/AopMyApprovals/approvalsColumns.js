@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Chip, IconButton, Stack, Tooltip } from '@mui/material'
+import { Box, Button, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import HistoryIcon from '@mui/icons-material/History'
 import FactoryIcon from '@mui/icons-material/Factory'
@@ -10,6 +10,7 @@ import BadgeIcon from '@mui/icons-material/Badge'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import HourglassTopIcon from '@mui/icons-material/HourglassTop'
 import RuleIcon from '@mui/icons-material/Rule'
+import { RoleApprovalsTooltip, formatRoleName } from 'components/Utilities/AopWorkflowStepper'
 
 /**
  * Calculates dynamic column width based on maximum character length of row values
@@ -34,8 +35,13 @@ export const getColumnWidth = (
       else if (field === 'verticalName')
         val = row.verticalName || row.vertical || ''
       else if (field === 'year') val = String(row.year || '')
-      else if (field === 'gateDisplayName')
-        val = row.gateDisplayName || row.gateName || ''
+      else if (field === 'gateDisplayName') {
+        const isCompleted =
+          row.status === 'completed' ||
+          row.gateName === 'COMPLETED' ||
+          String(row.gateDisplayName || '').toLowerCase().includes('approved')
+        val = isCompleted ? 'All Approved' : (row.gateDisplayName || row.gateName || '')
+      }
       else if (field === 'assignedRole') val = row.assignedRole || ''
       else if (field === 'action') val = 'Go to Plant'
       else val = String(row[field] || '')
@@ -164,37 +170,58 @@ export const getApprovalsColumns = (
     editable: false,
     cell: (props) => {
       const row = props.dataItem || {}
-      const label = row.gateDisplayName || row.gateName || 'Pending'
+      const rawLabel = row.gateDisplayName || row.gateName || 'Pending'
+      const rolesList = Array.isArray(row.listOfRoles) ? row.listOfRoles : []
       let stageClass = 'aop-chip-stage-default'
       let StageIcon = RuleIcon
 
-      const lowerLabel = String(label).toLowerCase()
-      if (lowerLabel.includes('approved') || lowerLabel.includes('completed')) {
+      const isCompleted =
+        String(rawLabel).toLowerCase().includes('approved') ||
+        String(rawLabel).toLowerCase().includes('completed') ||
+        row.status === 'completed' ||
+        row.gateName === 'COMPLETED'
+
+      const label = isCompleted ? 'All Approved' : rawLabel
+
+      if (isCompleted) {
         stageClass = 'aop-chip-stage-approved'
         StageIcon = CheckCircleOutlineIcon
       } else if (
-        lowerLabel.includes('pending') ||
-        lowerLabel.includes('review')
+        String(label).toLowerCase().includes('pending') ||
+        String(label).toLowerCase().includes('review')
       ) {
         stageClass = 'aop-chip-stage-pending'
         StageIcon = HourglassTopIcon
       } else if (
-        lowerLabel.includes('gate') ||
-        lowerLabel.includes('l1') ||
-        lowerLabel.includes('l2')
+        String(label).toLowerCase().includes('gate') ||
+        String(label).toLowerCase().includes('l1') ||
+        String(label).toLowerCase().includes('l2')
       ) {
         stageClass = 'aop-chip-stage-gate'
         StageIcon = RuleIcon
       }
 
+      const approvedCount = rolesList.filter((r) => r.approved).length
+      const totalRoles = rolesList.length
+
+      const chipElement = (
+        <Chip
+          className={`aop-chip ${stageClass}`}
+          size='small'
+          icon={<StageIcon style={{ fontSize: 14 }} />}
+          label={label}
+        />
+      )
+
       return (
         <td style={{ textAlign: 'left', padding: '6px 12px' }}>
-          <Chip
-            className={`aop-chip ${stageClass}`}
-            size='small'
-            icon={<StageIcon style={{ fontSize: 14 }} />}
-            label={label}
-          />
+          {rolesList.length > 0 ? (
+            <RoleApprovalsTooltip rolesList={rolesList}>
+              {chipElement}
+            </RoleApprovalsTooltip>
+          ) : (
+            chipElement
+          )}
         </td>
       )
     },
@@ -206,25 +233,42 @@ export const getApprovalsColumns = (
     editable: false,
     cell: (props) => {
       const row = props.dataItem || {}
+      const isCompleted =
+        row.status === 'completed' ||
+        row.gateName === 'COMPLETED' ||
+        String(row.gateDisplayName).toLowerCase() === 'approved'
       const isAction = row.actions?.mode === 'ACTION'
+
       return (
         <td style={{ padding: '6px 12px' }}>
-          {isAction ? (
+          {isCompleted ? (
             <Chip
               size='small'
-              label='Action Required'
+              label='Approved'
               sx={{
                 backgroundColor: '#dcfce7',
                 color: '#15803d',
-                fontWeight: 600,
+                fontWeight: 700,
                 fontSize: '11px',
                 border: '1px solid #86efac',
+              }}
+            />
+          ) : isAction ? (
+            <Chip
+              size='small'
+              label='Approval Pending'
+              sx={{
+                backgroundColor: '#eff6ff',
+                color: '#1d4ed8',
+                fontWeight: 600,
+                fontSize: '11px',
+                border: '1px solid #93c5fd',
               }}
             />
           ) : (
             <Chip
               size='small'
-              label='In Progress (Tracked)'
+              label='In Progress'
               sx={{
                 backgroundColor: '#fef3c7',
                 color: '#b45309',
@@ -238,31 +282,31 @@ export const getApprovalsColumns = (
       )
     },
   },
-  {
-    field: 'assignedRole',
-    title: 'Current Role',
-    minWidth: getColumnWidth(
-      'assignedRole',
-      'Current Role',
-      filteredItems,
-      items,
-      140,
-    ),
-    editable: false,
-    cell: (props) => {
-      const val = props.dataItem?.assignedRole || '-'
-      return (
-        <td style={{ padding: '6px 12px' }}>
-          <Chip
-            className='aop-chip aop-chip-role'
-            size='small'
-            icon={<BadgeIcon style={{ fontSize: 14 }} />}
-            label={val}
-          />
-        </td>
-      )
-    },
-  },
+  // {
+  //   field: 'assignedRole',
+  //   title: 'Current Role',
+  //   minWidth: getColumnWidth(
+  //     'assignedRole',
+  //     'Current Role',
+  //     filteredItems,
+  //     items,
+  //     140,
+  //   ),
+  //   editable: false,
+  //   cell: (props) => {
+  //     const val = props.dataItem?.assignedRole || '-'
+  //     return (
+  //       <td style={{ padding: '6px 12px' }}>
+  //         <Chip
+  //           className='aop-chip aop-chip-role'
+  //           size='small'
+  //           icon={<BadgeIcon style={{ fontSize: 14 }} />}
+  //           label={val}
+  //         />
+  //       </td>
+  //     )
+  //   },
+  // },
   {
     field: 'action',
     title: 'Action',

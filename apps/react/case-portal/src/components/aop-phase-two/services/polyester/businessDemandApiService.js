@@ -86,7 +86,7 @@ async function exportBusinessDemand(
   excelExportTitle,
   screenName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/business-demand-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const url = `${Config.CaseEngineUrl}/task/business-demand-export-total?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -121,7 +121,7 @@ async function exportBusinessDemand(
  * @returns {Promise} Import response
  */
 async function importBusinessDemand(keycloak, plantId, year, file) {
-  const url = `${Config.CaseEngineUrl}/task/business-demand-import?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/business-demand-import-total?plantId=${plantId}&year=${year}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {

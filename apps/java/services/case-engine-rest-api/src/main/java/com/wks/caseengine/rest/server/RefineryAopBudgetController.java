@@ -21,6 +21,9 @@ import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
 import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
+import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
+import com.wks.caseengine.dto.ThroughputNormsDTO;
+import com.wks.caseengine.dto.JwUnitDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.service.RefineryAopBudgetService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -203,5 +206,45 @@ public class RefineryAopBudgetController {
     @DeleteMapping("/profit-center-data")
     public AOPMessageVM deleteProfitCenterData(@RequestParam String id, @RequestParam String aopYear) {
         return refineryAopBudgetService.deleteProfitCenterData(id, aopYear);
+    }
+
+    @GetMapping("/throughput-norms")
+    public AOPMessageVM getThroughputNorms(@RequestParam String siteId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.getThroughputNorms(siteId, aopYear);
+    }
+
+    @PostMapping("/throughput-norms")
+    public AOPMessageVM saveThroughputNorms(@RequestBody List<ThroughputNormsDTO> throughputNormsDTOs, @RequestParam String aopYear) {
+        List<ThroughputNormsDTO> failedRecords = refineryAopBudgetService.saveThroughputNorms(throughputNormsDTOs, aopYear);
+        if (failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "All data has been saved", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
+        }
+    }
+
+    @DeleteMapping("/throughput-norms")
+    public AOPMessageVM deleteThroughputNorms(@RequestParam String materialId, @RequestParam String unitId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.deleteThroughputNorms(materialId, unitId, aopYear);
+    }
+
+    @GetMapping("/norms-material-dropdown")
+    public AOPMessageVM getNormsMaterialDropdown(@RequestParam String siteId, @RequestParam String profitId) {
+        return refineryAopBudgetService.getNormsMaterialDropdown(siteId, profitId);
+    }
+
+    @GetMapping("/jw-unit")
+    public AOPMessageVM getJwUnit(@RequestParam String siteId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.getJwUnit(siteId, aopYear);
+    }
+
+    @PostMapping("/jw-unit")
+    public AOPMessageVM saveJwUnit(@RequestBody List<JwUnitDTO> jwUnitDTOs, @RequestParam String aopYear) {
+        List<JwUnitDTO> failedRecords = refineryAopBudgetService.saveJwUnit(jwUnitDTOs, aopYear);
+        if (failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "All data has been saved", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
+        }
     }
 }

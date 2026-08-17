@@ -38,17 +38,28 @@ const AopMyApprovals = ({ onClose }) => {
     handleOpenAudit,
   )
 
+  const isCompletedRow = (i) =>
+    i.status === 'completed' ||
+    i.status === 'approved' ||
+    i.gateName === 'COMPLETED' ||
+    String(i.gateDisplayName).toLowerCase() === 'approved'
+
+  const approvedCount = filteredItems.filter((i) => isCompletedRow(i)).length
+  const actionCount = filteredItems.filter(
+    (i) => !isCompletedRow(i) && i.actions?.mode === 'ACTION',
+  ).length
+  const trackedCount = filteredItems.filter(
+    (i) => !isCompletedRow(i) && i.actions?.mode !== 'ACTION',
+  ).length
+
   return (
     <Box className='aop-my-approvals-container' sx={{ width: '100%' }}>
       <ApprovalsHeader
         onClose={onClose}
         itemCount={filteredItems.length}
-        actionCount={
-          filteredItems.filter((i) => i.actions?.mode === 'ACTION').length
-        }
-        trackedCount={
-          filteredItems.filter((i) => i.actions?.mode === 'READ_ONLY').length
-        }
+        approvedCount={approvedCount}
+        actionCount={actionCount}
+        trackedCount={trackedCount}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         load={load}

@@ -79,13 +79,7 @@ export const parseDateRobust = (value) => {
   return null
 }
 
-const durationFields = [
-  'ConstantValue',
-  'constantValue',
-  'Duration',
-  'duration',
-  'may',
-]
+const durationFields = ['ConstantValue', 'constantValue', 'Duration', 'duration', 'may']
 
 export const ConstantValueEditCell = (props) => {
   const { dataItem, field, onChange } = props
@@ -207,9 +201,7 @@ export const ConstantValueDataCell = (props) => {
           textAlign: 'center',
         }}
       >
-        {displayValue !== null && displayValue !== undefined
-          ? displayValue
-          : ''}
+        {displayValue !== null && displayValue !== undefined ? displayValue : ''}
       </td>
     )
   }

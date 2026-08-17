@@ -1,8 +1,11 @@
 package com.wks.caseengine.service;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -96,7 +99,7 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
     @Override
     @Transactional(readOnly = true)
     public List<AopApprovalHistoryDTO> getAuditTrail(UUID plantFkId, String year) {
-        return auditRepository.findAllByPlantFkIdAndYearOrderByActionAtDesc(plantFkId, year)
+        return auditRepository.findAllByPlantFkIdAndYearOrderByActionAtAsc(plantFkId, year)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
@@ -126,6 +129,31 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
     @Transactional(readOnly = true)
     public boolean hasCompleted(String caseId) {
         return caseId != null && auditRepository.existsByCaseIdAndToGate(caseId, "COMPLETED");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Set<String> approvedRolesInCurrentVisit(String caseId, String gateName, OffsetDateTime visitStart) {
+        if (caseId == null || gateName == null) {
+            return Collections.emptySet();
+        }
+        List<AopApprovalHistory> rows = visitStart == null
+                ? auditRepository.findAllByCaseIdAndGateName(caseId, gateName)
+                : auditRepository.findAllByCaseIdAndGateNameAndActionAtAfter(caseId, gateName, visitStart);
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> approved = new HashSet<>();
+        for (AopApprovalHistory row : rows) {
+            if (row.getActorRole() == null || row.getActorRole().isBlank()) {
+                continue;
+            }
+            String action = row.getAction();
+            if ("APPROVED".equals(action) || "SUBMITTED".equals(action)) {
+                approved.add(row.getActorRole());
+            }
+        }
+        return approved;
     }
 
     private AopApprovalHistoryDTO toDTO(AopApprovalHistory h) {

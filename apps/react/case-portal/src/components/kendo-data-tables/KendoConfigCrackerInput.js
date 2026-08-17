@@ -5,6 +5,7 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { SpyroInputValueApiService } from 'services/spyro-input-value-api-service'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
@@ -174,12 +175,12 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       downloadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
@@ -223,8 +224,8 @@ const CrackerConfig = () => {
               ? 'Naphtha'
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
-                : currentTabDisplay === 'Hydrogenation' &&
-                    lowerSiteName === 'c2'
+                : (currentTabDisplay === 'Hydrogenation' || currentTabDisplay === 'Recovery') &&
+                  lowerSiteName === 'c2'
                   ? 'cracker_c2_recovery'
                   : lowerSiteName === 'c2'
                     ? 'cracker_c2'
@@ -828,6 +829,14 @@ const CrackerConfig = () => {
           PLANT_ID,
           AOP_YEAR,
         )
+      } else if (IS_CRACKER_C2) {
+        response = await SpyroInputValueApiService.importSpyroInputExcelValue(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response = await DataService.importSpyroInputExcel(
           rawFile,
@@ -930,6 +939,14 @@ const CrackerConfig = () => {
           AOP_YEAR,
           EXCEL_NAME,
         )
+      } else if (IS_CRACKER_C2) {
+        response = await SpyroInputValueApiService.exportSpyroInputExcelValue(
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
       } else {
         response = await DataService.exportSpyroInputExcel(
           keycloak,
@@ -940,31 +957,18 @@ const CrackerConfig = () => {
         )
       }
 
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-
-        setSnackbarData({
-          message: 'Excel download completed successfully!',
-          severity: 'success',
-        })
-      } else {
-        setSnackbarOpen(true)
-
-        setSnackbarData({
-          message: 'Failed to download Excel.',
-          severity: 'error',
-        })
-      }
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
     } catch (error) {
       console.error('Error downloading Excel:', error)
-      setSnackbarOpen(true)
-
       setSnackbarData({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
-      setSnackbarOpen(false)
+      setSnackbarOpen(true)
     }
   }
   const handleLoadNaphthaData = async (startDate, endDate) => {

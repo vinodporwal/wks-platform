@@ -120,30 +120,30 @@ const KendoDataTablesCracker = ({
   summaryEdited,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleGradeChange = () => {},
-  handleRemarkCellClick = () => {},
+  handleDeleteSelected = () => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleGradeChange = () => { },
+  handleRemarkCellClick = () => { },
   selectedUsers = [],
   groupBy = null,
   note = '',
   titleName = '',
   allProducts = [],
   allMonths = [],
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
-  onLoad = () => {},
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
+  onLoad = () => { },
   disableInnerNotification = false,
 }) => {
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -178,11 +178,11 @@ const KendoDataTablesCracker = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -299,6 +299,14 @@ const KendoDataTablesCracker = ({
           if (field === 'Post_CR_Days' || field === 'IsCR') {
             updated.originalIsCr = originalIsCrRef.current[itemId]
           }
+          if ((field === 'IsIBR' || field === 'Is_IBR') && value === false) {
+            updated.IBR_SD = null
+            updated.FunShtdwnDuration = null
+            updated.IBR_ED = null
+          }
+          if (['IBR_SD', 'FunShtdwnDuration', 'IBR_ED'].includes(field) && value) {
+            updated.IsIBR = true
+          }
           // Auto-calculate preCrDays
           if (field === 'ActualRunLength' || field === 'Reduction') {
             updated.Pre_CR_Days = calcPreCoilReplacementRunLength(
@@ -311,6 +319,14 @@ const KendoDataTablesCracker = ({
       )
       setModifiedCells((prev) => {
         const base = { ...dataItem, [field]: value }
+        if ((field === 'IsIBR' || field === 'Is_IBR') && value === false) {
+          base.IBR_SD = null
+          base.FunShtdwnDuration = null
+          base.IBR_ED = null
+        }
+        if (['IBR_SD', 'FunShtdwnDuration', 'IBR_ED'].includes(field) && value) {
+          base.IsIBR = true
+        }
         // Auto-calculate preCrDays in modified cells too
         if (field === 'ActualRunLength' || field === 'Reduction') {
           base.Pre_CR_Days = calcPreCoilReplacementRunLength(
@@ -759,7 +775,10 @@ const KendoDataTablesCracker = ({
         }
         //--
 
-        if (col.field === 'IsCR') {
+        if (
+          col.field === 'IsCR' ||
+          (col.field === 'IsIBR' && col.type === 'switch')
+        ) {
           const handleSwitchChange = (props, value) => {
             itemChange({
               dataItem: props.dataItem,
@@ -895,7 +914,7 @@ const KendoDataTablesCracker = ({
             >
               {/* CASE 1: Permission TRUE ? Full Header UI */}
               {permissions?.showTitleNameBusiness ||
-              permissions?.showTitleName ? (
+                permissions?.showTitleName ? (
                 <Typography
                   component='div'
                   sx={{
@@ -1072,7 +1091,7 @@ const KendoDataTablesCracker = ({
                     rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility
+                      !permissions?.showCalculateVisibility
                   }
                   className='btn-calculate'
                   startIcon={

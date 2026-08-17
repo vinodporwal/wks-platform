@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Box, Tabs, Tab, Paper, Snackbar, Alert } from '@mui/material'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import SecurityIcon from '@mui/icons-material/Security'
@@ -178,37 +178,64 @@ const RoleAccessManagement = ({ keycloak }) => {
     }
   }
 
+  const assignSearchControllerRef = useRef(null)
+  const latestAssignQueryRef = useRef('')
+
+  const lookupSearchControllerRef = useRef(null)
+  const latestLookupQueryRef = useRef('')
+
   // Dynamic User Search for Assignment
   const handleUserSearchForAssign = async (searchText) => {
-    if (searchText && searchText.length >= 2) {
+    const query = searchText || ''
+    latestAssignQueryRef.current = query
+
+    if (assignSearchControllerRef.current) {
+      assignSearchControllerRef.current.abort()
+    }
+
+    if (query.trim().length >= 2) {
+      const controller = new AbortController()
+      assignSearchControllerRef.current = controller
       setUserSearchLoading(true)
       try {
-        const res = await DataService.getUserBySearch(keycloak, searchText)
-        const fetched = res?.data || (Array.isArray(res) ? res : [])
-        const mapped = fetched.map((u) => ({
-          id: u.id || u.userId || u.username,
-          username: u.username,
-          email: u.email || '',
-        }))
+        const res = await DataService.getUserBySearch(
+          keycloak,
+          query,
+          controller.signal,
+        )
+        if (latestAssignQueryRef.current === query) {
+          const fetched = res?.data || (Array.isArray(res) ? res : [])
+          const mapped = fetched.map((u) => ({
+            id: u.id || u.userId || u.username,
+            username: u.username,
+            email: u.email || '',
+          }))
 
-        const combined = [...selectedUsers]
-        mapped.forEach((opt) => {
-          if (
-            !combined.some((item) =>
-              item.id && opt.id
-                ? item.id === opt.id
-                : item.username === opt.username,
-            )
-          ) {
-            combined.push(opt)
-          }
-        })
-        setUserSearchOptions(combined)
+          const combined = [...selectedUsers]
+          mapped.forEach((opt) => {
+            if (
+              !combined.some((item) =>
+                item.id && opt.id
+                  ? item.id === opt.id
+                  : item.username === opt.username,
+              )
+            ) {
+              combined.push(opt)
+            }
+          })
+          setUserSearchOptions(combined)
+        }
       } catch (err) {
-        console.error('User search failed:', err)
+        if (err.name !== 'AbortError') {
+          console.error('User search failed:', err)
+        }
       } finally {
-        setUserSearchLoading(false)
+        if (latestAssignQueryRef.current === query) {
+          setUserSearchLoading(false)
+        }
       }
+    } else {
+      setUserSearchLoading(false)
     }
   }
 
@@ -258,22 +285,44 @@ const RoleAccessManagement = ({ keycloak }) => {
 
   // Dynamic User Search for Lookup
   const handleUserSearchForLookup = async (searchText) => {
-    if (searchText && searchText.length >= 2) {
+    const query = searchText || ''
+    latestLookupQueryRef.current = query
+
+    if (lookupSearchControllerRef.current) {
+      lookupSearchControllerRef.current.abort()
+    }
+
+    if (query.trim().length >= 2) {
+      const controller = new AbortController()
+      lookupSearchControllerRef.current = controller
       setLookupUserLoading(true)
       try {
-        const res = await DataService.getUserBySearch(keycloak, searchText)
-        const fetched = res?.data || (Array.isArray(res) ? res : [])
-        const mapped = fetched.map((u) => ({
-          id: u.id || u.userId || u.username,
-          username: u.username,
-          email: u.email || '',
-        }))
-        setLookupUserOptions(mapped)
+        const res = await DataService.getUserBySearch(
+          keycloak,
+          query,
+          controller.signal,
+        )
+        if (latestLookupQueryRef.current === query) {
+          const fetched = res?.data || (Array.isArray(res) ? res : [])
+          const mapped = fetched.map((u) => ({
+            id: u.id || u.userId || u.username,
+            username: u.username,
+            email: u.email || '',
+          }))
+          setLookupUserOptions(mapped)
+        }
       } catch (err) {
-        console.error('User lookup search failed:', err)
+        if (err.name !== 'AbortError') {
+          console.error('User lookup search failed:', err)
+        }
       } finally {
-        setLookupUserLoading(false)
+        if (latestLookupQueryRef.current === query) {
+          setLookupUserLoading(false)
+        }
       }
+    } else {
+      setLookupUserOptions([])
+      setLookupUserLoading(false)
     }
   }
 

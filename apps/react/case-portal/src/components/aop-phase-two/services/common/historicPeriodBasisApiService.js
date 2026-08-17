@@ -8,6 +8,8 @@ export const HistoricPeriodBasisApiService = {
   // AOP Summary APIs
   getAopSummary,
   saveAOPSummary,
+  // Carry Forward APIs
+  carryForwardRecords,
 }
 
 /**
@@ -122,5 +124,28 @@ async function saveAOPSummary(plantId, aopYear, summary, keycloak) {
   } catch (error) {
     console.error('Error saving AOP summary:', error)
     return await Promise.reject(error)
+  }
+}
+
+/**
+ * Get carry forward records
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @param {Object} keycloak - Keycloak session
+ * @returns {Promise} Response from carry forward operation
+ */
+async function carryForwardRecords(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/carry-forward?plantId=${plantId}&year=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

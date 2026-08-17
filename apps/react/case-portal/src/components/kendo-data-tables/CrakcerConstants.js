@@ -144,6 +144,7 @@ const CrakcerConstants = () => {
       type: 'number',
       widthT: 120,
       minWidth: 120,
+      format: valueFormat,
     },
 
     {

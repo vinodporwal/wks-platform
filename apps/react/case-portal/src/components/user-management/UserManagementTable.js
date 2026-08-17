@@ -129,19 +129,43 @@ const UserManagementTable = ({ keycloak }) => {
     getPlantAndSite()
   }, [keycloak])
 
+  const searchControllerRef = useRef(null)
+  const latestSearchQueryRef = useRef('')
+
   const handleSearchChange = async (value) => {
-    if (value.length > 2) {
+    const query = value || ''
+    latestSearchQueryRef.current = query
+
+    if (searchControllerRef.current) {
+      searchControllerRef.current.abort()
+    }
+
+    if (query.trim().length > 2) {
+      const controller = new AbortController()
+      searchControllerRef.current = controller
       setLoading(true)
       try {
-        const res = await DataService.getUserBySearch(keycloak, value)
-        setSearchOptions(res.data)
+        const res = await DataService.getUserBySearch(
+          keycloak,
+          query,
+          controller.signal,
+        )
+        if (latestSearchQueryRef.current === query) {
+          const fetchedData = res?.data || (Array.isArray(res) ? res : [])
+          setSearchOptions(fetchedData)
+        }
       } catch (err) {
-        console.error(err)
+        if (err.name !== 'AbortError') {
+          console.error('User search error:', err)
+        }
       } finally {
-        setLoading(false)
+        if (latestSearchQueryRef.current === query) {
+          setLoading(false)
+        }
       }
     } else {
       setSearchOptions([])
+      setLoading(false)
     }
   }
   // Finalize selection when Enter key is pressed.

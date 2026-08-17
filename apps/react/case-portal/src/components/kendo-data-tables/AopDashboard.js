@@ -636,7 +636,7 @@ export default function AopDashboardCompact() {
                 color: viewMode === 'approvals' ? '#005eb8' : '#64748b',
               }}
             />{' '}
-            Approvals
+            Plant AOP Budget Status
           </Box>
         </Box>
         <Box className='filters-right'>

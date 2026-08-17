@@ -19,6 +19,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
     oldYear,
     plantObject,
     siteObject,
+    verticalObject,
   } = dataGridStore
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID = plantObject?.id
@@ -29,8 +30,6 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
@@ -60,29 +59,40 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       {
         field: 'sNo',
         title: 'S.No',
-        widthT: 70,
+        width: 100,
         editable: false,
-        minWidth: 70,
+        minWidth: 100,
       },
       {
         field: 'initiativeDescription',
-        title: 'Initiative',
+        title: 'Initiative Description',
         editable: true,
         widthT: 300,
         minWidth: 100,
       },
       {
-        field: 'outcome',
-        title: 'Outcome',
-        widthT: 80,
+        field: 'recommendation',
+        title: 'Category',
         editable: true,
         minWidth: 100,
       },
       {
-        field: 'recommendation',
-        title: 'Recommendation',
+        field: 'cost',
+        title: 'Cost (Rs/Cr)',
+        widthT: 80,
         editable: true,
         minWidth: 100,
+        type: 'number',
+        format: '{0:0.000}',
+      },
+      {
+        field: 'outcome',
+        title: 'Expected Outcome',
+        widthT: 80,
+        editable: true,
+        minWidth: 100,
+        type: 'number',
+        format: '{0:0.000}',
       },
       {
         field: 'targetDate',
@@ -91,8 +101,8 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         minWidth: 100,
       },
       {
-        field: 'remark',
-        title: 'Remark',
+        field: 'responsibility',
+        title: 'Responsibilities',
         widthT: 60,
         editable: true,
         minWidth: 100,
@@ -116,7 +126,8 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
           idFromApi: item?.id,
           sNo: index + 1,
           isEditable: item?.isEditable,
-          originalRemark: item.remark,
+          cost: item.cost,
+          responsibility: item.remark,
         }))
 
         setRows(mapped)
@@ -156,10 +167,6 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       // adjust to whichever fields are actually mandatory on this grid
       const requiredFields = [
         'initiativeDescription',
-        'recommendation',
-        'outcome',
-        'targetDate',
-        'remark',
       ]
 
       const validationMessage = validateFields(data, requiredFields)
@@ -176,28 +183,29 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       const payload = data.map((item) => ({
         id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
-        outcome: item.outcome,
-        recommendation: item.recommendation,
-        targetDate: toLocalDateString(item.targetDate),
-        remark: item.remark,
+        cost: item.cost != null && item.cost !== '' ? Number(item.cost) : null,
+        outcome: item.outcome != null && item.outcome !== '' ? Number(item.outcome) : null,
+        recommendation: item.recommendation || null,
+        targetDate: toLocalDateString(item.targetDate) || null,
+        remark: item.responsibility || null,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
         isEditable:
           item.isEditable === '' ||
-          item.isEditable === undefined ||
-          item.isEditable === null
+            item.isEditable === undefined ||
+            item.isEditable === null
             ? true
             : !!item.isEditable,
         isVisible:
           item.isVisible === '' ||
-          item.isVisible === undefined ||
-          item.isVisible === null
+            item.isVisible === undefined ||
+            item.isVisible === null
             ? true
             : !!item.isVisible,
         displayOrder:
           item.displayOrder === '' ||
-          item.displayOrder === undefined ||
-          item.displayOrder === null
+            item.displayOrder === undefined ||
+            item.displayOrder === null
             ? 0
             : Number(item.displayOrder),
       }))
@@ -276,13 +284,110 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
     }
   }
 
-  const handleCalculate = () => {}
+  const getExcelExportTitle = useCallback(
+    () =>
+      [
+        verticalObject?.name?.toUpperCase() || vertName?.toUpperCase(),
+        siteObject?.name?.toUpperCase(),
+        plantObject?.name?.toUpperCase(),
+        'Reliability_Improvement',
+        AOP_YEAR,
+      ]
+        .filter(Boolean)
+        .join('_'),
+    [verticalObject, siteObject, plantObject, vertName, AOP_YEAR],
+  )
 
-  const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [])
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+    try {
+      const excelTitle = getExcelExportTitle()
+      await PlantAopReportApiService.exportReliabilityImprovement(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        excelTitle,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response =
+        await PlantAopReportApiService.importReliabilityImprovement(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Reliability Improvement.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCalculate = () => { }
 
   const getAdjustedPermissionsC = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -308,10 +413,10 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       showTitleNameBusiness: true,
       titleName: 'Reliability Improvement Initiative',
       adjustedPermissions: true,
-      // downloadExcelBtnFromUI: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
-      ExcelName: `${lowerVertName}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Plant_AOP_Report_Reliability_Improvement_Initiative`,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
+      ExcelName: getExcelExportTitle(),
+      disableColWidth: true,
     },
     IS_OLD_YEAR,
   )
@@ -327,18 +432,15 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         title='Reliability Improvement Initiative'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         deleteRowData={deleteRowData}
         handleCalculate={handleCalculate}
-        handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissionsC}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
       />
 
       <Notification

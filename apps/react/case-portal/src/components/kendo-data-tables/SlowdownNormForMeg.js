@@ -43,7 +43,7 @@ const SlowdownNormForMeg = () => {
 
   // Single source of truth for the snackbar/notification UI.
   // (Removed the old `notification` / showNotification / closeNotification
-  // state — it was never rendered anywhere, which is why saves appeared silent.)
+  // state ? it was never rendered anywhere, which is why saves appeared silent.)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -249,7 +249,7 @@ const SlowdownNormForMeg = () => {
 
   // NOTE: the old duplicate `saveChanges` (React.useCallback, referencing
   // undefined `payload`, `fetchData`, `PlantAopReportApiService`) has been
-  // removed — it was dead code left over from copy/paste and was never wired
+  // removed ? it was dead code left over from copy/paste and was never wired
   // to the grid (the grid uses `handleSaveChanges` via the `saveChanges` prop below).
 
   const handleCalculateData = useCallback(async () => {
@@ -375,11 +375,10 @@ const SlowdownNormForMeg = () => {
       downloadExcelBtnFromUI: false,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
-      ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_${SCREEN_NAME}`,
       showTitleNameBusiness: true,
       titleName: `${SCREEN_NAME}`,
     }
-  }, [isOldYear, tableRows.length, calculationResults.length])
+  }, [isOldYear, tableRows.length, calculationResults.length, SCREEN_NAME])
 
   return (
     <div>

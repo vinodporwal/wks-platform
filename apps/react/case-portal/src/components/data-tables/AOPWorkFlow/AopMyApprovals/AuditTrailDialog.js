@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -13,47 +13,43 @@ import {
   Paper,
   Stack,
   Divider,
-  ToggleButtonGroup,
-  ToggleButton,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Tooltip,
 } from '@mui/material'
 import HistoryIcon from '@mui/icons-material/History'
 import CloseIcon from '@mui/icons-material/Close'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import UndoIcon from '@mui/icons-material/Undo'
 import SendIcon from '@mui/icons-material/Send'
-import PersonIcon from '@mui/icons-material/Person'
-import BadgeIcon from '@mui/icons-material/Badge'
-import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import CommentIcon from '@mui/icons-material/Comment'
-import FactoryIcon from '@mui/icons-material/Factory'
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
-import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'
-import TableChartIcon from '@mui/icons-material/TableChart'
-import TimelineIcon from '@mui/icons-material/Timeline'
-import AccountTreeIcon from '@mui/icons-material/AccountTree'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import {
+  ExcelExport,
+  ExcelExportColumn,
+} from '@progress/kendo-react-excel-export'
 import { useSession } from 'SessionStoreContext'
 import { AopApprovalService } from 'services/AopApprovalService'
+import { getRoleTitle } from 'components/Utilities/aopRoleUtils'
 
 /**
  * AuditTrailDialog Component
- * Supports 4 layout view modes: Cards, Table, Timeline (Graph), and Tree
+ * Displays compact, grid-lined table of workflow history with Excel export & full remark modal
  */
 const AuditTrailDialog = ({ open, onClose, row }) => {
   const keycloak = useSession()
+  const _excelExporter = useRef(null)
+
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState([])
   const [error, setError] = useState(null)
-  const [viewMode, setViewMode] = useState('cards') // 'cards' | 'table' | 'timeline' | 'tree'
+  const [selectedRemarkItem, setSelectedRemarkItem] = useState(null)
 
   const getYearStr = (y) => {
     if (!y) return ''
@@ -136,767 +132,701 @@ const AuditTrailDialog = ({ open, onClose, row }) => {
 
   const getActionChip = (actionStr) => {
     const act = String(actionStr || '').toUpperCase()
+    let dotColor = '#2563eb'
+    let textColor = '#1d4ed8'
+    let textLabel = actionStr || 'Submitted'
+
     if (act.includes('APPROV')) {
-      return (
-        <Chip
-          size='small'
-          icon={<CheckCircleOutlineIcon style={{ fontSize: 14 }} />}
-          label={actionStr || 'Approved'}
-          sx={{
-            backgroundColor: '#ecfdf5',
-            color: '#047857',
-            border: '1px solid #a7f3d0',
-            fontWeight: 700,
-            fontSize: '0.72rem',
-          }}
-        />
-      )
+      dotColor = '#16a34a'
+      textColor = '#15803d'
+      textLabel = actionStr || 'Approved'
+    } else if (act.includes('REVERT')) {
+      dotColor = '#dc2626'
+      textColor = '#b91c1c'
+      textLabel = actionStr || 'Reverted'
     }
-    if (act.includes('REVERT')) {
-      return (
-        <Chip
-          size='small'
-          icon={<UndoIcon style={{ fontSize: 14 }} />}
-          label={actionStr || 'Reverted'}
-          sx={{
-            backgroundColor: '#fef2f2',
-            color: '#b91c1c',
-            border: '1px solid #fca5a5',
-            fontWeight: 700,
-            fontSize: '0.72rem',
-          }}
-        />
-      )
-    }
+
     return (
-      <Chip
-        size='small'
-        icon={<SendIcon style={{ fontSize: 13 }} />}
-        label={actionStr || 'Submitted'}
-        sx={{
-          backgroundColor: '#eff6ff',
-          color: '#1d4ed8',
-          border: '1px solid #bfdbfe',
-          fontWeight: 700,
-          fontSize: '0.72rem',
-        }}
-      />
+      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+        <Box
+          sx={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            backgroundColor: dotColor,
+            flexShrink: 0,
+          }}
+        />
+        <Typography
+          component='span'
+          sx={{
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            color: textColor,
+            lineHeight: 1,
+            cursor: 'default',
+            userSelect: 'none',
+          }}
+        >
+          {textLabel}
+        </Typography>
+      </Box>
     )
   }
 
+  const siteName =
+    row?.siteName ||
+    row?.site ||
+    row?.site_name ||
+    row?.sidName ||
+    row?.sName ||
+    ''
   const plantName = row?.plantName || row?.plant || 'Plant'
-  const year = row?.year || '-'
+  const year = yearStr || row?.year || '-'
 
-  // Group history items by Gate for Tree View
-  const groupedTreeData = history.reduce((acc, item) => {
-    const gate = item.gateDisplayName || item.gateName || 'Stage General'
-    if (!acc[gate]) acc[gate] = []
-    acc[gate].push(item)
-    return acc
-  }, {})
+  const handleExportExcel = () => {
+    if (_excelExporter.current) {
+      _excelExporter.current.save()
+    }
+  }
 
-  // 1. CARDS VIEW
-  const renderCardsView = () => (
-    <Stack spacing={1.5}>
-      {history.map((item, index) => {
-        const gate =
-          item.gateDisplayName ||
-          item.gateName ||
-          `Stage ${item.sequence || index + 1}`
-        const user = item.actorUserId || 'System User'
-        const role = item.actorRole || '-'
-        const dateStr = formatTimestamp(item.actionAt)
-        const remarkText = item.remark
-
-        return (
-          <Paper
-            key={item.id || index}
-            elevation={0}
-            sx={{
-              p: 2,
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              backgroundColor: '#ffffff',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                borderColor: '#94a3b8',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)',
-              },
-            }}
-          >
-            <Stack
-              direction='row'
-              justifyContent='space-between'
-              alignItems='center'
-              flexWrap='wrap'
-              gap={1}
-              sx={{ mb: 1 }}
-            >
-              <Typography
-                variant='subtitle2'
-                sx={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}
-              >
-                {gate}
-              </Typography>
-              <Stack direction='row' spacing={1} alignItems='center'>
-                {getActionChip(item.action)}
-                <Chip
-                  size='small'
-                  icon={<AccessTimeIcon style={{ fontSize: 12 }} />}
-                  label={dateStr}
-                  variant='outlined'
-                  sx={{
-                    height: 22,
-                    fontSize: '0.68rem',
-                    color: '#64748b',
-                    borderColor: '#cbd5e1',
-                  }}
-                />
-              </Stack>
-            </Stack>
-
-            <Stack
-              direction='row'
-              spacing={2}
-              alignItems='center'
-              flexWrap='wrap'
-              sx={{ mb: remarkText ? 1.25 : 0 }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <PersonIcon sx={{ fontSize: 15, color: '#005eb8' }} />
-                <Typography
-                  variant='caption'
-                  sx={{ color: '#334155', fontWeight: 600 }}
-                >
-                  User:{' '}
-                  <span style={{ color: '#0f172a', fontWeight: 700 }}>
-                    {user}
-                  </span>
-                </Typography>
-              </Box>
-
-              {role && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <BadgeIcon sx={{ fontSize: 15, color: '#64748b' }} />
-                  <Typography
-                    variant='caption'
-                    sx={{ color: '#334155', fontWeight: 600 }}
-                  >
-                    Role:{' '}
-                    <span style={{ color: '#0f172a', fontWeight: 700 }}>
-                      {role}
-                    </span>
-                  </Typography>
-                </Box>
-              )}
-            </Stack>
-
-            {remarkText && (
-              <Box
-                sx={{
-                  p: 1.25,
-                  borderRadius: '6px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 1,
-                }}
-              >
-                <CommentIcon sx={{ fontSize: 15, color: '#64748b', mt: 0.2 }} />
-                <Typography
-                  variant='body2'
-                  sx={{
-                    fontSize: '0.8rem',
-                    color: '#334155',
-                    fontStyle: 'italic',
-                    lineHeight: 1.4,
-                  }}
-                >
-                  &quot;{remarkText}&quot;
-                </Typography>
-              </Box>
-            )}
-          </Paper>
-        )
-      })}
-    </Stack>
-  )
-
-  // 2. TABLE VIEW
+  // Render Table View with grid lines and solid compact headers
   const renderTableView = () => (
     <TableContainer
       component={Paper}
       elevation={0}
       sx={{
         border: '1px solid #cbd5e1',
-        borderRadius: '10px',
+        borderRadius: '8px',
         overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
       }}
     >
-      <Table size='small'>
-        <TableHead sx={{ backgroundColor: '#f1f5f9' }}>
-          <TableRow>
+      <Table size='small' sx={{ borderCollapse: 'collapse' }}>
+        <TableHead>
+          <TableRow sx={{ backgroundColor: '#cbd5e1' }}>
             <TableCell
-              sx={{ fontWeight: 800, color: '#334155', fontSize: '0.75rem' }}
+              sx={{
+                fontWeight: 800,
+                color: '#0f172a',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                py: 1,
+                px: 1.25,
+                borderRight: '1px solid #94a3b8',
+                borderBottom: '1px solid #94a3b8',
+                width: '45px',
+                textAlign: 'center',
+              }}
             >
               #
             </TableCell>
             <TableCell
-              sx={{ fontWeight: 800, color: '#334155', fontSize: '0.75rem' }}
+              sx={{
+                fontWeight: 800,
+                color: '#0f172a',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                py: 1,
+                px: 1.25,
+                borderRight: '1px solid #94a3b8',
+                borderBottom: '1px solid #94a3b8',
+              }}
             >
-              Stage / Gate
+              Stage
             </TableCell>
             <TableCell
-              sx={{ fontWeight: 800, color: '#334155', fontSize: '0.75rem' }}
+              sx={{
+                fontWeight: 800,
+                color: '#0f172a',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                py: 1,
+                px: 1.25,
+                borderRight: '1px solid #94a3b8',
+                borderBottom: '1px solid #94a3b8',
+              }}
             >
               Action
             </TableCell>
             <TableCell
-              sx={{ fontWeight: 800, color: '#334155', fontSize: '0.75rem' }}
+              sx={{
+                fontWeight: 800,
+                color: '#0f172a',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                py: 1,
+                px: 1.25,
+                borderRight: '1px solid #94a3b8',
+                borderBottom: '1px solid #94a3b8',
+              }}
             >
               User
             </TableCell>
             <TableCell
-              sx={{ fontWeight: 800, color: '#334155', fontSize: '0.75rem' }}
+              sx={{
+                fontWeight: 800,
+                color: '#0f172a',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                py: 1,
+                px: 1.25,
+                borderRight: '1px solid #94a3b8',
+                borderBottom: '1px solid #94a3b8',
+              }}
             >
               Role
             </TableCell>
             <TableCell
-              sx={{ fontWeight: 800, color: '#334155', fontSize: '0.75rem' }}
+              sx={{
+                fontWeight: 800,
+                color: '#0f172a',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                py: 1,
+                px: 1.25,
+                borderRight: '1px solid #94a3b8',
+                borderBottom: '1px solid #94a3b8',
+                whiteSpace: 'nowrap',
+              }}
             >
-              Timestamp
+              Date &amp; Time
             </TableCell>
             <TableCell
-              sx={{ fontWeight: 800, color: '#334155', fontSize: '0.75rem' }}
+              sx={{
+                fontWeight: 800,
+                color: '#0f172a',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                py: 1,
+                px: 1.25,
+                borderBottom: '1px solid #94a3b8',
+              }}
             >
               Remarks
             </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {history.map((item, idx) => (
-            <TableRow
-              key={item.id || idx}
-              hover
-              sx={{ '&:nth-of-type(even)': { backgroundColor: '#fafafa' } }}
-            >
-              <TableCell
-                sx={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}
-              >
-                {idx + 1}
-              </TableCell>
-              <TableCell
-                sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a' }}
-              >
-                {item.gateDisplayName || item.gateName || '-'}
-              </TableCell>
-              <TableCell>{getActionChip(item.action)}</TableCell>
-              <TableCell
-                sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#1e293b' }}
-              >
-                {item.actorUserId || '-'}
-              </TableCell>
-              <TableCell sx={{ fontSize: '0.78rem', color: '#475569' }}>
-                {item.actorRole || '-'}
-              </TableCell>
-              <TableCell
+          {history.map((item, idx) => {
+            const remarkText = item.remark || ''
+            const isLongRemark = remarkText.length > 50
+
+            return (
+              <TableRow
+                key={item.id || idx}
+                hover
                 sx={{
-                  fontSize: '0.75rem',
-                  color: '#64748b',
-                  whiteSpace: 'nowrap',
+                  backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                  '&:hover': { backgroundColor: '#eff6ff !important' },
                 }}
               >
-                {formatTimestamp(item.actionAt)}
-              </TableCell>
-              <TableCell
-                sx={{
-                  fontSize: '0.78rem',
-                  color: '#334155',
-                  fontStyle: item.remark ? 'italic' : 'normal',
-                }}
-              >
-                {item.remark || '-'}
-              </TableCell>
-            </TableRow>
-          ))}
+                <TableCell
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: '#64748b',
+                    fontWeight: 600,
+                    py: 0.8,
+                    px: 1.25,
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom: '1px solid #cbd5e1',
+                    textAlign: 'center',
+                  }}
+                >
+                  {idx + 1}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    py: 0.8,
+                    px: 1.25,
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom: '1px solid #cbd5e1',
+                  }}
+                >
+                  {item.gateDisplayName || item.gateName || '-'}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    py: 0.8,
+                    px: 1.25,
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom: '1px solid #cbd5e1',
+                  }}
+                >
+                  {getActionChip(item.action)}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    color: '#1e293b',
+                    py: 0.8,
+                    px: 1.25,
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom: '1px solid #cbd5e1',
+                  }}
+                >
+                  {item.actorUserId || '-'}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: '0.78rem',
+                    color: '#475569',
+                    py: 0.8,
+                    px: 1.25,
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom: '1px solid #cbd5e1',
+                  }}
+                >
+                  {item.actorRole ? getRoleTitle(item.actorRole) : '-'}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: '#475569',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    py: 0.8,
+                    px: 1.25,
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom: '1px solid #cbd5e1',
+                  }}
+                >
+                  {formatTimestamp(item.actionAt)}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: '0.78rem',
+                    color: '#334155',
+                    py: 0.8,
+                    px: 1.25,
+                    borderBottom: '1px solid #cbd5e1',
+                  }}
+                >
+                  {remarkText ? (
+                    <Tooltip
+                      title={
+                        <Box
+                          sx={{
+                            maxWidth: 380,
+                            maxHeight: 220,
+                            overflowY: 'auto',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            fontSize: '0.82rem',
+                            lineHeight: 1.5,
+                            p: 0.25,
+                          }}
+                        >
+                          {remarkText}
+                        </Box>
+                      }
+                      placement='top'
+                      arrow
+                      componentsProps={{
+                        tooltip: {
+                          sx: {
+                            backgroundColor: '#0f172a',
+                            color: '#f8fafc',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                            borderRadius: '8px',
+                            p: 1.25,
+                          },
+                        },
+                        arrow: {
+                          sx: {
+                            color: '#0f172a',
+                          },
+                        },
+                      }}
+                    >
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          fontSize: '0.78rem',
+                          color: '#334155',
+                          fontStyle: 'italic',
+                          maxWidth: 280,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          cursor: 'default',
+                        }}
+                      >
+                        &quot;{remarkText}&quot;
+                      </Typography>
+                    </Tooltip>
+                  ) : (
+                    <span style={{ color: '#94a3b8' }}>-</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </TableContainer>
   )
 
-  // 3. TIMELINE / GRAPH VIEW
-  const renderTimelineView = () => (
-    <Box sx={{ position: 'relative', pl: 3, pr: 1, py: 1 }}>
-      {/* Connected Line */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 24,
-          bottom: 24,
-          left: 19,
-          width: 3,
-          backgroundColor: '#cbd5e1',
-          borderRadius: 2,
-        }}
-      />
-      <Stack spacing={2.5}>
-        {history.map((item, idx) => {
-          const act = String(item.action || '').toUpperCase()
-          let nodeBg = '#005eb8'
-          let NodeIcon = CheckCircleOutlineIcon
-          if (act.includes('REVERT')) {
-            nodeBg = '#ef4444'
-            NodeIcon = UndoIcon
-          } else if (act.includes('SUBMIT')) {
-            nodeBg = '#2563eb'
-            NodeIcon = SendIcon
-          }
+  return (
+    <>
+      {/* Hidden Kendo ExcelExport Wrapper */}
+      <ExcelExport
+        data={history.map((item, idx) => ({
+          seq: idx + 1,
+          stage: item.gateDisplayName || item.gateName || '-',
+          action: item.action || '-',
+          user: item.actorUserId || '-',
+          role: item.actorRole || '-',
+          timestamp: formatTimestamp(item.actionAt),
+          remarks: item.remark || '-',
+        }))}
+        fileName={`Audit_Trail_${plantName}_${year}.xlsx`}
+        ref={_excelExporter}
+      >
+        <ExcelExportColumn field='seq' title='#' />
+        <ExcelExportColumn field='stage' title='Stage' />
+        <ExcelExportColumn field='action' title='Action' />
+        <ExcelExportColumn field='user' title='User' />
+        <ExcelExportColumn field='role' title='Role' />
+        <ExcelExportColumn field='timestamp' title='Date & Time' />
+        <ExcelExportColumn field='remarks' title='Remarks' />
+      </ExcelExport>
 
-          return (
+      <Dialog
+        open={Boolean(open)}
+        onClose={onClose}
+        maxWidth='md'
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            boxShadow: '0 16px 40px rgba(15, 23, 42, 0.2)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        {/* Dialog Header */}
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            py: 1.5,
+            px: 2.5,
+            background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+            borderBottom: '1px solid #cbd5e1',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
             <Box
-              key={item.id || idx}
               sx={{
-                position: 'relative',
+                width: 32,
+                height: 32,
+                borderRadius: '8px',
+                backgroundColor: '#e0f2fe',
                 display: 'flex',
-                alignItems: 'flex-start',
-                gap: 2,
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #bae6fd',
               }}
             >
-              {/* Node Circle */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: -32,
-                  top: 2,
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  backgroundColor: nodeBg,
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                  zIndex: 2,
-                }}
-              >
-                <NodeIcon sx={{ fontSize: 16 }} />
-              </Box>
-
-              <Paper
-                elevation={0}
-                sx={{
-                  flex: 1,
-                  p: 1.75,
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-                }}
-              >
-                <Stack
-                  direction='row'
-                  justifyContent='space-between'
-                  alignItems='center'
-                  flexWrap='wrap'
-                  gap={1}
-                >
-                  <Typography
-                    variant='subtitle2'
-                    sx={{
-                      fontWeight: 800,
-                      color: '#0f172a',
-                      fontSize: '0.88rem',
-                    }}
-                  >
-                    {item.gateDisplayName || item.gateName || `Node ${idx + 1}`}
-                  </Typography>
-                  {getActionChip(item.action)}
-                </Stack>
-
-                <Stack
-                  direction='row'
-                  spacing={2}
-                  alignItems='center'
-                  sx={{ mt: 1, mb: item.remark ? 1 : 0 }}
-                >
-                  <Typography
-                    variant='caption'
-                    sx={{ color: '#475569', fontWeight: 600 }}
-                  >
-                    By:{' '}
-                    <span style={{ color: '#0f172a', fontWeight: 700 }}>
-                      {item.actorUserId || 'User'}
-                    </span>{' '}
-                    ({item.actorRole || 'Role'})
-                  </Typography>
-                  <Typography variant='caption' sx={{ color: '#64748b' }}>
-                    {formatTimestamp(item.actionAt)}
-                  </Typography>
-                </Stack>
-
-                {item.remark && (
-                  <Typography
-                    variant='body2'
-                    sx={{
-                      fontSize: '0.78rem',
-                      color: '#334155',
-                      fontStyle: 'italic',
-                      mt: 0.5,
-                    }}
-                  >
-                    &quot;{item.remark}&quot;
-                  </Typography>
-                )}
-              </Paper>
+              <HistoryIcon sx={{ color: '#005eb8', fontSize: 20 }} />
             </Box>
-          )
-        })}
-      </Stack>
-    </Box>
-  )
-
-  // 4. TREE VIEW
-  const renderTreeView = () => (
-    <Stack spacing={1}>
-      {Object.entries(groupedTreeData).map(([gateName, items], gIdx) => (
-        <Accordion
-          key={gateName || gIdx}
-          defaultExpanded
-          elevation={0}
-          sx={{
-            border: '1px solid #cbd5e1',
-            borderRadius: '10px !important',
-            overflow: 'hidden',
-            '&:before': { display: 'none' },
-          }}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon sx={{ color: '#005eb8' }} />}
-            sx={{ backgroundColor: '#f1f5f9', minHeight: 44, px: 2 }}
-          >
-            <Stack direction='row' alignItems='center' spacing={1.25}>
-              <AccountTreeIcon sx={{ fontSize: 18, color: '#005eb8' }} />
+            <Box>
               <Typography
-                variant='subtitle2'
-                sx={{ fontWeight: 800, color: '#0f172a', fontSize: '0.88rem' }}
+                variant='h6'
+                sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}
               >
-                {gateName}
+                Audit Trail
               </Typography>
-              <Chip
-                size='small'
-                label={`${items.length} event${items.length > 1 ? 's' : ''}`}
-                sx={{
-                  height: 20,
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  backgroundColor: '#e2e8f0',
-                  color: '#334155',
-                }}
-              />
-            </Stack>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 1.5, backgroundColor: '#ffffff' }}>
-            <Stack spacing={1}>
-              {items.map((item, idx) => (
-                <Box
-                  key={item.id || idx}
-                  sx={{
-                    p: 1.25,
-                    borderRadius: '8px',
-                    backgroundColor: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                  }}
-                >
-                  <Stack
-                    direction='row'
-                    justifyContent='space-between'
-                    alignItems='center'
-                    flexWrap='wrap'
-                  >
-                    <Stack direction='row' spacing={1} alignItems='center'>
-                      {getActionChip(item.action)}
-                      <Typography
-                        variant='caption'
-                        sx={{ color: '#0f172a', fontWeight: 700 }}
-                      >
-                        {item.actorUserId} ({item.actorRole})
-                      </Typography>
-                    </Stack>
-                    <Typography variant='caption' sx={{ color: '#64748b' }}>
-                      {formatTimestamp(item.actionAt)}
-                    </Typography>
-                  </Stack>
-                  {item.remark && (
-                    <Typography
-                      variant='body2'
-                      sx={{
-                        fontSize: '0.78rem',
-                        color: '#334155',
-                        fontStyle: 'italic',
-                        mt: 0.75,
-                      }}
-                    >
-                      &quot;{item.remark}&quot;
-                    </Typography>
-                  )}
-                </Box>
-              ))}
-            </Stack>
-          </AccordionDetails>
-        </Accordion>
-      ))}
-    </Stack>
-  )
+              <Typography
+                variant='caption'
+                sx={{ color: '#475569', fontSize: '0.78rem', fontWeight: 500 }}
+              >
+                {siteName && (
+                  <>
+                    Site:{' '}
+                    <strong style={{ color: '#0f172a', fontWeight: 700 }}>
+                      {siteName}
+                    </strong>
+                    &nbsp;&bull;&nbsp;
+                  </>
+                )}
+                Plant:{' '}
+                <strong style={{ color: '#0f172a', fontWeight: 700 }}>
+                  {plantName}
+                </strong>
+                &nbsp;&bull;&nbsp; Year:{' '}
+                <strong style={{ color: '#0f172a', fontWeight: 700 }}>
+                  AOP {year}
+                </strong>
+              </Typography>
+            </Box>
+          </Box>
 
-  return (
-    <Dialog
-      open={Boolean(open)}
-      onClose={onClose}
-      maxWidth='md'
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: '12px',
-          boxShadow: '0 16px 40px rgba(15, 23, 42, 0.2)',
-          overflow: 'hidden',
-        },
-      }}
-    >
-      {/* Header */}
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          py: 1.5,
-          px: 2.5,
-          background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-          borderBottom: '1px solid #cbd5e1',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box
+          <Stack direction='row' alignItems='center' spacing={1}>
+            <Tooltip title='Export Audit Trail to Excel'>
+              <IconButton
+                onClick={handleExportExcel}
+                size='small'
+                sx={{
+                  color: '#005eb8',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  p: '6px',
+                  backgroundColor: '#ffffff',
+                  '&:hover': {
+                    backgroundColor: '#eff6ff',
+                    borderColor: '#93c5fd',
+                    color: '#004b93',
+                  },
+                }}
+              >
+                <FileDownloadIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+
+            <IconButton
+              onClick={onClose}
+              size='small'
+              sx={{
+                color: '#64748b',
+                '&:hover': { backgroundColor: '#e2e8f0', color: '#0f172a' },
+              }}
+            >
+              <CloseIcon fontSize='small' />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+
+        {/* Dialog Content */}
+        <DialogContent
+          sx={{
+            p: 2.5,
+            backgroundColor: '#f8fafc',
+            maxHeight: '65vh',
+            overflowY: 'auto',
+          }}
+        >
+          {loading ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 5,
+                gap: 1.5,
+              }}
+            >
+              <CircularProgress size={32} color='primary' />
+              <Typography
+                variant='body2'
+                sx={{ color: '#64748b', fontWeight: 500 }}
+              >
+                Loading audit trail records...
+              </Typography>
+            </Box>
+          ) : error ? (
+            <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
+              <Typography
+                variant='body2'
+                sx={{ color: '#d32f2f', fontWeight: 600 }}
+              >
+                {error}
+              </Typography>
+            </Box>
+          ) : history.length === 0 ? (
+            <Box sx={{ py: 5, textAlign: 'center' }}>
+              <HistoryIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
+              <Typography
+                variant='body2'
+                sx={{ color: '#64748b', fontWeight: 600 }}
+              >
+                No audit trail records found.
+              </Typography>
+              <Typography
+                variant='caption'
+                sx={{ color: '#94a3b8', display: 'block', mt: 0.5 }}
+              >
+                Decisions and submissions for this plant will appear here once
+                recorded.
+              </Typography>
+            </Box>
+          ) : (
+            renderTableView()
+          )}
+        </DialogContent>
+
+        <Divider />
+
+        <DialogActions sx={{ py: 1.25, px: 2.5, backgroundColor: '#ffffff' }}>
+          <Button
+            onClick={onClose}
+            variant='outlined'
+            size='small'
             sx={{
-              width: 32,
-              height: 32,
-              borderRadius: '8px',
-              backgroundColor: '#e0f2fe',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid #bae6fd',
-            }}
-          >
-            <HistoryIcon sx={{ color: '#005eb8', fontSize: 20 }} />
-          </Box>
-          <Box>
-            <Typography
-              variant='h6'
-              sx={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}
-            >
-              Workflow Audit Trail
-            </Typography>
-            <Stack
-              direction='row'
-              spacing={1}
-              alignItems='center'
-              sx={{ mt: 0.25 }}
-            >
-              <Chip
-                size='small'
-                icon={<FactoryIcon style={{ fontSize: 12 }} />}
-                label={plantName}
-                sx={{
-                  height: 20,
-                  fontSize: '0.68rem',
-                  backgroundColor: '#f0fdf4',
-                  color: '#15803d',
-                  border: '1px solid #bbf7d0',
-                }}
-              />
-              <Chip
-                size='small'
-                icon={<CalendarTodayIcon style={{ fontSize: 11 }} />}
-                label={`AOP ${year}`}
-                sx={{
-                  height: 20,
-                  fontSize: '0.68rem',
-                  backgroundColor: '#fff7ed',
-                  color: '#c2410c',
-                  border: '1px solid #ffedd5',
-                }}
-              />
-            </Stack>
-          </Box>
-        </Box>
-
-        <IconButton
-          onClick={onClose}
-          size='small'
-          sx={{
-            color: '#64748b',
-            '&:hover': { backgroundColor: '#e2e8f0', color: '#0f172a' },
-          }}
-        >
-          <CloseIcon fontSize='small' />
-        </IconButton>
-      </DialogTitle>
-
-      {/* Subheader Toolbar with 4 View Toggle Buttons */}
-      <Box
-        sx={{
-          px: 2.5,
-          py: 1.25,
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 1,
-        }}
-      >
-        <Typography
-          variant='caption'
-          sx={{
-            fontWeight: 700,
-            color: '#475569',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
-        >
-          Select Layout Presentation Mode:
-        </Typography>
-
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(e, newMode) => newMode && setViewMode(newMode)}
-          size='small'
-          sx={{
-            '& .MuiToggleButton-root': {
               textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              px: 1.5,
-              py: 0.5,
+              fontWeight: 600,
               color: '#475569',
               borderColor: '#cbd5e1',
-              '&.Mui-selected': {
-                backgroundColor: '#005eb8',
-                color: '#ffffff',
-                '&:hover': { backgroundColor: '#004b93' },
-              },
-            },
-          }}
-        >
-          <ToggleButton value='cards'>
-            <ViewAgendaIcon sx={{ fontSize: 16, mr: 0.6 }} />
-            Cards
-          </ToggleButton>
-          <ToggleButton value='table'>
-            <TableChartIcon sx={{ fontSize: 16, mr: 0.6 }} />
-            Table
-          </ToggleButton>
-          <ToggleButton value='timeline'>
-            <TimelineIcon sx={{ fontSize: 16, mr: 0.6 }} />
-            Timeline / Graph
-          </ToggleButton>
-          <ToggleButton value='tree'>
-            <AccountTreeIcon sx={{ fontSize: 16, mr: 0.6 }} />
-            Tree
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
-      {/* Content */}
-      <DialogContent
-        sx={{
-          p: 2.5,
-          backgroundColor: '#f8fafc',
-          maxHeight: '60vh',
-          overflowY: 'auto',
-        }}
-      >
-        {loading ? (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              py: 5,
-              gap: 1.5,
+              borderRadius: '6px',
+              px: 2.5,
+              '&:hover': { backgroundColor: '#f1f5f9', borderColor: '#94a3b8' },
             }}
           >
-            <CircularProgress size={32} color='primary' />
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dedicated Full Remark Dialog Popup */}
+      <Dialog
+        open={Boolean(selectedRemarkItem)}
+        onClose={() => setSelectedRemarkItem(null)}
+        maxWidth='sm'
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '10px',
+            p: 0.5,
+            boxShadow: '0 12px 32px rgba(15, 23, 42, 0.2)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            pb: 1,
+            pt: 1.5,
+            px: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CommentIcon sx={{ color: '#005eb8', fontSize: 20 }} />
             <Typography
-              variant='body2'
-              sx={{ color: '#64748b', fontWeight: 500 }}
+              variant='h6'
+              sx={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}
             >
-              Loading audit trail records...
+              Workflow Remark -{' '}
+              {selectedRemarkItem?.gateDisplayName ||
+                selectedRemarkItem?.gateName ||
+                'Stage'}
             </Typography>
           </Box>
-        ) : error ? (
-          <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
+          <IconButton size='small' onClick={() => setSelectedRemarkItem(null)}>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ px: 2, py: 1.5 }}>
+          <Box
+            sx={{
+              mb: 1.5,
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap',
+              backgroundColor: '#f1f5f9',
+              p: 1,
+              borderRadius: '6px',
+            }}
+          >
             <Typography
-              variant='body2'
-              sx={{ color: '#d32f2f', fontWeight: 600 }}
+              variant='caption'
+              sx={{ color: '#475569', fontWeight: 600 }}
             >
-              {error}
-            </Typography>
-          </Box>
-        ) : history.length === 0 ? (
-          <Box sx={{ py: 5, textCenter: 'center', textAlign: 'center' }}>
-            <HistoryIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
-            <Typography
-              variant='body2'
-              sx={{ color: '#64748b', fontWeight: 600 }}
-            >
-              No audit trail records found.
+              User:{' '}
+              <strong style={{ color: '#0f172a' }}>
+                {selectedRemarkItem?.actorUserId || '-'}
+              </strong>
             </Typography>
             <Typography
               variant='caption'
-              sx={{ color: '#94a3b8', display: 'block', mt: 0.5 }}
+              sx={{ color: '#475569', fontWeight: 600 }}
             >
-              Decisions and submissions for this plant will appear here once
-              recorded.
+              Role:{' '}
+              <strong style={{ color: '#0f172a' }}>
+                {selectedRemarkItem?.actorRole || '-'}
+              </strong>
+            </Typography>
+            <Typography
+              variant='caption'
+              sx={{ color: '#475569', fontWeight: 600 }}
+            >
+              Date &amp; Time:{' '}
+              <strong style={{ color: '#0f172a' }}>
+                {formatTimestamp(selectedRemarkItem?.actionAt)}
+              </strong>
             </Typography>
           </Box>
-        ) : (
-          <>
-            {viewMode === 'cards' && renderCardsView()}
-            {viewMode === 'table' && renderTableView()}
-            {viewMode === 'timeline' && renderTimelineView()}
-            {viewMode === 'tree' && renderTreeView()}
-          </>
-        )}
-      </DialogContent>
 
-      <Divider />
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2,
+              backgroundColor: '#f8fafc',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              maxHeight: '260px',
+              overflowY: 'auto',
+            }}
+          >
+            <Typography
+              variant='body2'
+              sx={{
+                fontSize: '0.88rem',
+                color: '#1e293b',
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap',
+                fontStyle: 'italic',
+              }}
+            >
+              &quot;{selectedRemarkItem?.remark}&quot;
+            </Typography>
+          </Paper>
+        </DialogContent>
 
-      <DialogActions sx={{ py: 1.25, px: 2.5, backgroundColor: '#ffffff' }}>
-        <Button
-          onClick={onClose}
-          variant='outlined'
-          size='small'
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            color: '#475569',
-            borderColor: '#cbd5e1',
-            borderRadius: '6px',
-            px: 2.5,
-            '&:hover': { backgroundColor: '#f1f5f9', borderColor: '#94a3b8' },
-          }}
-        >
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
+        <DialogActions sx={{ pt: 1.25, pb: 1.5, px: 2 }}>
+          <Button
+            size='small'
+            startIcon={<ContentCopyIcon sx={{ fontSize: 15 }} />}
+            onClick={() => {
+              if (selectedRemarkItem?.remark) {
+                navigator.clipboard.writeText(selectedRemarkItem.remark)
+              }
+            }}
+            sx={{
+              color: '#005eb8',
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+            }}
+          >
+            Copy Remark
+          </Button>
+          <Button
+            onClick={() => setSelectedRemarkItem(null)}
+            variant='contained'
+            size='small'
+            sx={{
+              backgroundColor: '#005eb8',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2.5,
+              borderRadius: '6px',
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   )
 }
 

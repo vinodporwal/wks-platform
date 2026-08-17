@@ -23,4 +23,7 @@ public interface CppSteamGenerationAssetRepository extends JpaRepository<CppStea
     
     @Query("SELECT p.displayName FROM CppSteamGenerationAsset p WHERE p.assetId = :assetId")
     Optional<String> findDisplayNameByAssetId(@Param("assetId") UUID assetId);
+
+    List<CppSteamGenerationAsset> findByLinkedPowerAssetFkIdAndCppPlantFkId(
+            UUID linkedPowerAssetFkId, UUID cppPlantFkId);
 }

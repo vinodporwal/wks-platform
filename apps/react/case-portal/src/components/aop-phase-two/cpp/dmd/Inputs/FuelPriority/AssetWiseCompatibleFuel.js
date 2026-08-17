@@ -26,26 +26,37 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-    jmdSelectedPlants,
-  } = dataGridStore
+  const { plantObject, siteObject, verticalObject, year, screenTitle } =
+    dataGridStore
   const AOP_YEAR = year?.selectedYear
+  const PLANT_ID = plantObject?.id
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Compatible_Fuel')
 
-  // const PLANT_ID_LIST = useMemo(
-  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-  //   [jmdSelectedPlants],
-  // )
-  const PLANT_ID = plantObject?.id
+  const PLANT_ID_LIST = useMemo(() => [PLANT_ID], [PLANT_ID])
+
   const getOptions = useCallback(
     (dataItem) => {
-      const plantFuels = plantFuelMap[dataItem?.plantName]
-      return plantFuels?.length ? plantFuels : fuelOptions
+      const plantEntry = plantFuelMap[dataItem?.plantName]
+      if (plantEntry) {
+        // plantFuelMap is now month-wise: { apr: [...], may: [...], ... }
+        // Flatten all months into a unique list for annual view
+        if (!Array.isArray(plantEntry)) {
+          const allFuels = []
+          Object.values(plantEntry).forEach((monthFuels) => {
+            if (Array.isArray(monthFuels)) {
+              monthFuels.forEach((fuel) => {
+                if (!allFuels.some((f) => f.value === fuel.value)) {
+                  allFuels.push(fuel)
+                }
+              })
+            }
+          })
+          return allFuels.length ? allFuels : fuelOptions
+        }
+        // Backward compat: if it's still a flat array
+        return plantEntry.length ? plantEntry : fuelOptions
+      }
+      return fuelOptions
     },
     [plantFuelMap, fuelOptions],
   )
@@ -102,10 +113,14 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
     try {
       const res = await InputApiService.getCompatibleFuelAssets(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
       )
 
-      const rawList = res?.data || []
+      const nonFuelAssetType = ['PRDS', 'STG']
+      const rawList =
+        res?.data?.filter(
+          (item) => !nonFuelAssetType.includes(item.assetType),
+        ) || []
 
       if (rawList.length === 0) {
         setRows([])
@@ -155,17 +170,17 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID])
+  }, [keycloak, PLANT_ID_LIST])
 
   useDebounce(
     () => {
-      if (PLANT_ID && fuelOptions?.length > 0) {
+      if (PLANT_ID_LIST?.length && fuelOptions?.length > 0) {
         fetchAssetCompatibleFuelData()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID, fuelOptions?.length, fetchAssetCompatibleFuelData],
+    [PLANT_ID_LIST, fuelOptions?.length, fetchAssetCompatibleFuelData],
   )
 
   const permissions = {
@@ -312,7 +327,8 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['assetType']}
+        groupBy={['plantName', 'assetType']}
+        defaultGridExpanded={false}
       />
     </Box>
   )

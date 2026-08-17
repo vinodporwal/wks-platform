@@ -116,74 +116,10 @@ const ProductionNormsBasisCoker = () => {
 
   // Handler for Load Norm Calculation button
   const handleLoadNormCalculation = async () => {
-    if (!startDate || !endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Please select both start date and end date',
-        severity: 'warning',
-        autoHide: true,
-      })
-      return
-    }
-
-    if (!PLANT_ID || !AOP_YEAR || !SITE_ID) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Missing required parameters',
-        severity: 'error',
-        autoHide: true,
-      })
-      return
-    }
-
-    setNormCalculationLoading(true)
-    try {
-      const periodFrom = formatDateForAPI(startDate)
-      const periodTo = formatDateForAPI(endDate)
-
-      const response =
-        await ProductionNormsApiService.loadButtonNormCalculation(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          SITE_ID,
-          periodFrom,
-          periodTo,
-        )
-
-      if (response?.code === 422) {
-        // Then show validation error after a delay
-        setTimeout(() => {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: response.message || 'Validation error occurred.',
-            severity: 'error',
-            autoHide: false,
-          })
-          setRefreshData(true)
-        }, 500)
-      } else {
-        // Code 200 - show only success notification
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message:
-            response?.message || 'Norm calculation completed successfully!',
-          severity: 'success',
-          autoHide: true,
-        })
-        setRefreshData(true)
-      }
-    } catch (error) {
-      console.error('Error in norm calculation:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Failed to calculate norms. Please try again.',
-        severity: 'error',
-        autoHide: true,
-      })
-    } finally {
-      setNormCalculationLoading(false)
-    }
+    setRefreshData(true)
+    setTimeout(() => {
+      setRefreshData(false)
+    }, 500)
   }
 
   const [start, end] = AOP_YEAR ? AOP_YEAR.split('-').map(Number) : [0, 0]
@@ -254,19 +190,36 @@ const ProductionNormsBasisCoker = () => {
           />
         )
       case 'Constants':
-        return <Constants startDate={startDate} endDate={endDate} />
+        return (
+          <Constants
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       case 'PIMS Throughput':
-        return <PIMSThroughput startDate={startDate} endDate={endDate} />
+        return (
+          <PIMSThroughput
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       case 'Manual Entry':
-        return <ManualEntry />
+        return <ManualEntry refreshData={refreshData} />
       case 'Historical Months':
-        return <HistoricalMonths startDate={startDate} endDate={endDate} />
+        return (
+          <HistoricalMonths
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       default:
         return null
     }
   }
 
-  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
@@ -276,7 +229,7 @@ const ProductionNormsBasisCoker = () => {
           isOldYear={isOldYear}
           isSummaryRequired={false}
           onDatesChange={handleDatesChange}
-          // onLoadNormCalculation={handleLoadNormCalculation}
+          onLoadNormCalculation={handleLoadNormCalculation}
           normCalculationLoading={normCalculationLoading}
         />
       </Stack>

@@ -11,7 +11,7 @@ import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const ManualEntry = () => {
+const ManualEntry = ({ refreshData }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -111,7 +111,7 @@ const ManualEntry = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, refreshData])
 
   const fetchData = async () => {
     setLoading(true)

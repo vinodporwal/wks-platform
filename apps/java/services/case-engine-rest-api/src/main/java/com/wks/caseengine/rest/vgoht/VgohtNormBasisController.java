@@ -218,4 +218,14 @@ public class VgohtNormBasisController {
         AOPMessageVM aopMessageVM = vgohtNormBasisServiceImpl.LoadButtonNormCalculation(UUID.fromString(plantId), aopYear, UUID.fromString(siteId), periodFrom, periodTo);
         return ResponseEntity.ok(aopMessageVM);
     }
+
+    @GetMapping("vgoht/norms-basis/production-demand")
+    public AOPMessageVM getProductionDemand(@RequestParam String year, @RequestParam UUID plantFKId) {
+        return vgohtNormBasisServiceImpl.getProductionDemand(year, plantFKId);
+    }
+
+    @PostMapping("vgoht/norms-basis/production-demand")
+    public AOPMessageVM saveProductionDemand(@RequestParam String year, @RequestParam UUID plantFKId, @RequestBody List<VgohtNormConfigurationDTO> productionDemandList) {
+        return vgohtNormBasisServiceImpl.saveProductionDemand(year, plantFKId, productionDemandList);
+    }
 }
