@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.WorkbookUtil;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -149,22 +150,43 @@ public class Utility {
 	}
 
 	public static String sanitizeSheetName(String name) {
-        if (name == null || name.trim().isEmpty()) return "Sheet";
-        String sanitized = name.replaceAll("[\\\\/\\?\\*:\\[\\]]", "_");
-        return sanitized.substring(0, Math.min(sanitized.length(), 31));
+        String sanitized = sanitizeCellString(name);
+        if (sanitized.trim().isEmpty()) return "Sheet";
+        return WorkbookUtil.createSafeSheetName(sanitized, '_');
     }
 
 	/**
-	 * Removes characters that are illegal in XML 1.0 from a cell string value.
-	 * Illegal ranges: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+FFFE, U+FFFF.
-	 * Tab (U+0009), LF (U+000A) and CR (U+000D) are legal and are preserved.
-	 * Apache POI does not validate these characters before writing them to the XML
-	 * parts of an .xlsx file, so passing an illegal character produces a corrupt
-	 * workbook that Excel refuses to open cleanly.
+	 * Removes characters that are illegal in XML 1.0, including unpaired UTF-16
+	 * surrogates, and enforces Excel's 32,767-character cell limit.
 	 */
 	public static String sanitizeCellString(String value) {
 		if (value == null) return "";
-		return value.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFE\\uFFFF]", "");
+
+		StringBuilder sanitized = new StringBuilder(Math.min(value.length(), 32767));
+		for (int offset = 0; offset < value.length();) {
+			int codePoint = value.codePointAt(offset);
+			offset += Character.charCount(codePoint);
+
+			if (!isValidXml10CodePoint(codePoint)) {
+				continue;
+			}
+
+			int charCount = Character.charCount(codePoint);
+			if (sanitized.length() + charCount > 32767) {
+				break;
+			}
+			sanitized.appendCodePoint(codePoint);
+		}
+		return sanitized.toString();
+	}
+
+	private static boolean isValidXml10CodePoint(int codePoint) {
+		return codePoint == 0x9
+				|| codePoint == 0xA
+				|| codePoint == 0xD
+				|| (codePoint >= 0x20 && codePoint <= 0xD7FF)
+				|| (codePoint >= 0xE000 && codePoint <= 0xFFFD)
+				|| (codePoint >= 0x10000 && codePoint <= 0x10FFFF);
 	}
 
     
