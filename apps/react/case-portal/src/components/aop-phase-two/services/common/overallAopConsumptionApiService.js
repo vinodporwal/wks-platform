@@ -7,6 +7,8 @@ export const OverallAopConsumptionApiService = {
   saveOverallAopConsumption,
   calculateOverallAopConsumption,
   exportOverallAopConsumption,
+  getOverallAopConsumptionYTD,
+  exportOverallAopConsumptionYTD,
 }
 
 // ========================|| Overall AOP Consumption APIs ||=====================================//
@@ -44,6 +46,40 @@ async function getGrades(keycloak, plantId, year) {
  */
 async function getOverallAopConsumption(keycloak, plantId, year, gradeId) {
   const baseUrl = `${Config.CaseEngineUrl}/task/overall-consumption`
+  const queryParams = new URLSearchParams({
+    plantId,
+    year,
+  })
+  if (gradeId) {
+    queryParams.append('gradeId', gradeId)
+  }
+  const url = `${baseUrl}?${queryParams.toString()}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+/**
+ * Get Overall AOP Consumption Data (grade-based)
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @param {string} gradeId - Grade ID (optional)
+ * @returns {Promise} Overall AOP consumption data
+ */
+async function getOverallAopConsumptionYTD(keycloak, plantId, year, gradeId) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/overall-consumption-ytd`
   const queryParams = new URLSearchParams({
     plantId,
     year,
@@ -143,6 +179,48 @@ async function exportOverallAopConsumption(
   screenName,
 ) {
   const url = `${Config.CaseEngineUrl}/task/overall-consumption-export-without-grades?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelExportTitle}_${screenName}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Export Overall AOP Consumption to Excel
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @param {string} excelExportTitle - File title prefix
+ * @param {string} screenName - Screen title suffix
+ * @returns {Promise}
+ */
+async function exportOverallAopConsumptionYTD(
+  keycloak,
+  plantId,
+  year,
+  excelExportTitle,
+  screenName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/overall-consumption-export-ytd?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
