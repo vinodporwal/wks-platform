@@ -1406,7 +1406,8 @@
                                         "key": "btnEventTrend",
                                         "type": "button",
                                         "input": true,
-                                        "tableView": false
+                                        "tableView": false,
+                                        "hidden": true
                                     },
                                     {
                                         "label": "Event Link",
@@ -1416,7 +1417,8 @@
                                         "key": "btnEventLink",
                                         "type": "button",
                                         "input": true,
-                                        "tableView": false
+                                        "tableView": false,
+                                        "hidden": true
                                     }
                                 ],
                                 "keyModified": true,

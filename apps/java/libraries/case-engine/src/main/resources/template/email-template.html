@@ -75,8 +75,8 @@
                 <th>Event Category</th>
                 <th>Fault Start Time Date</th>
                 <th>Fault End Time Date</th>
-                <th>Event Trend</th>
-                <th>Event Report</th>
+               <!-- <th>Event Trend</th>-->
+               <!-- <th>Event Report</th>-->
             </tr>
             </thead>
             <tbody>
@@ -86,7 +86,7 @@
                 <td th:text="${item.eventCategory}">Event Category</td>
                 <td th:text="${item.faultStart}">Fault Start Time Date</td>
                 <td th:text="${item.faultEnd}">Fault End Time Date</td>
-                <td>
+              <!--  <td>
                     <a th:if="${item.eventPkId != null && eventTrendUrlsMap[item.eventPkId] != null}"
                        th:href="${eventTrendUrlsMap[item.eventPkId]}"
                        style="background:#2F8B8B; color:#ffffff; padding:10px 20px;
@@ -101,7 +101,7 @@
                               text-decoration:none; border-radius:5px; display:inline-block;">
                                 Event Report
                             </a>
-                        </td>
+                        </td>-->
 
                     </tr>
                 </tbody>
