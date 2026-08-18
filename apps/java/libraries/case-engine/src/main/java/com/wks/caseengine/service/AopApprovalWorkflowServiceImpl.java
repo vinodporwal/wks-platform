@@ -307,20 +307,22 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         String auditAction = PREPARE.equals(resolvedGate) ? SUBMITTED : normalized;
         StepMeta gateMeta = steps.get(resolvedGate);
 
-        // One decision covers every role the caller holds at this gate. A gate fans
-        // out one task per approver role; when one person wears several of those
-        // hats, asking them to click Approve once per hat is noise, and hiding the
-        // button after the first click would strand the rest of their tasks with
-        // nobody able to complete them. So apply the decision to all of them at
-        // once, and audit each role separately so the trail still shows that every
-        // required role was accounted for.
+        // Approve: one role-slot only. Multi-instance gates (Functional Heads and
+        // any other 1..N role gate) keep a task per configured role; completing
+        // every role the caller currently holds would consume a later assignment
+        // they have not acted as. Reassignment mid-visit (remove role A, add role B)
+        // must still find B's open task.
         // Prepare: complete every multi-instance slot so one Submit advances.
         // Revert: any one reverter must leave the gate — complete remaining slots
         // (BPMN completionCondition also cancels them on new deployments; this
         // covers in-flight processes still on the old definition).
-        List<Task> toComplete = (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized))
-                ? allOpenTasksAtGate(openTasks, resolvedGate, taskId)
-                : tasksForCallerAtGate(openTasks, resolvedGate, taskId, callerRoles);
+        List<Task> toComplete;
+        if (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized)) {
+            toComplete = allOpenTasksAtGate(openTasks, resolvedGate, taskId);
+        } else {
+            Task target = resolveApproveTask(openTasks, resolvedGate, selected, callerRoles);
+            toComplete = target != null ? List.of(target) : List.of();
+        }
 
         // Replayed request: the caller has no open task left at this gate, so this
         // decision has already been applied (a double-clicked button, a retried
@@ -400,39 +402,47 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     }
 
     /**
-     * Every open task at {@code gateName} assigned to a role the caller holds,
-     * with the explicitly-selected task first. Empty when the caller has nothing
-     * left to act on there.
-     *
-     * <p>An empty result must mean "already decided", never "the lookup failed",
-     * or a replayed request would be indistinguishable from a first one. The
-     * caller must pass tasks from {@link #tasksForActing}, which throws on
-     * engine outage instead of silently yielding an empty list.</p>
+     * The single role-slot to complete for an approve. Prefer the selected task
+     * when the caller currently holds its assignee role; otherwise any open task
+     * at this gate assigned to a role they currently hold. Role-agnostic: a
+     * mid-visit reassignment to a different approver role still finds that role's
+     * remaining task.
      */
-    private List<Task> tasksForCallerAtGate(List<Task> openTasks, String gateName, String taskId,
+    private Task resolveApproveTask(List<Task> openTasks, String gateName, Task selected,
             List<String> callerRoles) {
-
-        List<Task> matched = new ArrayList<>();
-        Task selected = null;
-        Set<String> seen = new HashSet<>();
+        if (selected != null
+                && gateName.equals(stepNameForTask(selected.getTaskDefinitionKey()))
+                && holdsRole(callerRoles, selected.getAssignee())) {
+            return selected;
+        }
+        if (openTasks == null) {
+            return null;
+        }
         for (Task task : openTasks) {
-            if (task.getId() == null || !seen.add(task.getId())) {
+            if (task == null || task.getId() == null) {
                 continue;
             }
             if (!gateName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
                 continue;
             }
-            if (task.getId().equals(taskId)) {
-                selected = task;
-            } else if (callerRoles != null && task.getAssignee() != null
-                    && callerRoles.contains(task.getAssignee())) {
-                matched.add(task);
+            if (holdsRole(callerRoles, task.getAssignee())) {
+                return task;
             }
         }
-        if (selected != null) {
-            matched.add(0, selected);
+        return null;
+    }
+
+    /** Case-insensitive: JWT / Keycloak role names vs Camunda task assignee. */
+    private boolean holdsRole(List<String> callerRoles, String assignee) {
+        if (callerRoles == null || assignee == null || assignee.isBlank()) {
+            return false;
         }
-        return matched;
+        for (String role : callerRoles) {
+            if (role != null && role.equalsIgnoreCase(assignee)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -719,26 +729,21 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         Integer currentSeq = currentStep != null && meta.containsKey(currentStep) ? meta.get(currentStep).sequence : null;
         markStatuses(steps, currentSeq);
 
-        // One decision per person per gate visit — except Prepare/rework, where any
-        // preparer must be able to finish remaining multi-instance tasks and advance.
-        boolean alreadyActed = !PREPARE.equals(currentStep)
-                && auditService.hasActedInCurrentCycle(
-                        businessKey, currentStep, callerUserId, visitStartOf(tasks, currentStep));
-
-        // Actionable task = one whose assignee role is held by the caller, preferring
+        // Actionable when any currently held role still has an open task. Prefer
         // the current gate so a role match on a different step cannot win.
-        Task mine = null;
-        if (!alreadyActed) {
-            mine = tasks.stream()
-                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                    .filter(t -> currentStep == null
-                            || currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
-                    .findFirst()
-                    .orElseGet(() -> tasks.stream()
-                            .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                            .findFirst()
-                            .orElse(null));
-        }
+        // Eligibility is per remaining role, not per person: acting as one
+        // approver role must not block a later assignment to a different role at
+        // the same visit. Prepare/rework is unchanged — any preparer may finish
+        // remaining multi-instance slots below.
+        Task mine = tasks.stream()
+                .filter(t -> holdsRole(roles, t.getAssignee()))
+                .filter(t -> currentStep == null
+                        || currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
+                .findFirst()
+                .orElseGet(() -> tasks.stream()
+                        .filter(t -> holdsRole(roles, t.getAssignee()))
+                        .findFirst()
+                        .orElse(null));
         // After one preparer completes their multi-instance slot, peer prepare
         // tasks remain under other roles. Any preparer must still be able to
         // Submit and clear those so the plan advances to Gate 1.
@@ -835,26 +840,15 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 continue;
             }
 
+            // Open task for any currently held role is enough. A prior action at
+            // this gate under a different role (reassignment mid-visit) must not
+            // hide the remaining role's task.
             Task mine = tasks.stream()
-                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+                    .filter(t -> holdsRole(roles, t.getAssignee()))
                     .findFirst().orElse(null);
 
-            boolean isActionable = false;
-            Task targetTask = mine;
-
-            if (mine != null) {
-                String mineStep = stepNameForTask(mine.getTaskDefinitionKey());
-                boolean alreadyActed = !PREPARE.equals(mineStep)
-                        && auditService.hasActedInCurrentCycle(wf.getCaseId(), mineStep, callerUserId,
-                        visitStartOf(tasks, mineStep));
-                if (!alreadyActed) {
-                    isActionable = true;
-                }
-            }
-
-            if (!isActionable) {
-                targetTask = tasks.get(0);
-            }
+            boolean isActionable = mine != null;
+            Task targetTask = isActionable ? mine : tasks.get(0);
 
             String stepName = stepNameForTask(targetTask.getTaskDefinitionKey());
             StepMeta sm = stepName != null ? meta.get(stepName) : null;
@@ -1158,8 +1152,11 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     }
 
     private boolean rolesIntersect(List<String> a, List<String> b) {
+        if (a == null || b == null) {
+            return false;
+        }
         for (String r : a) {
-            if (b.contains(r)) {
+            if (holdsRole(b, r)) {
                 return true;
             }
         }

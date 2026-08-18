@@ -859,7 +859,7 @@ public class KeycloakUserService {
 			try {
 				existingInKeycloak = keycloak.realm(keycloakRealmName).roles().get(roleName).toRepresentation();
 			} catch (Exception ignored) {
-				// Role does not exist — proceed with creation
+				// Role does not exist ? proceed with creation
 			}
 
 			// Role already in Keycloak: still upsert DB (covers roles created before dual-write).
@@ -1109,6 +1109,53 @@ public class KeycloakUserService {
 		} catch (Exception ex) {
 			throw new Exception("Role deleted in Keycloak but failed to remove from DB: " + ex.getMessage(), ex);
 		}
+	}
+
+	/**
+	 * Live effective realm roles for an actor. Looks up by Keycloak user id
+	 * ({@code sub}) first, then by username. Empty on any failure so callers can
+	 * fall back to the JWT; a role change in admin must not depend on a token
+	 * refresh to become visible to AOP eligibility.
+	 */
+	public List<String> getEffectiveRealmRoleNames(String keycloakUserId, String username) {
+		try {
+			Keycloak keycloak = keycloakAdminClient.getInstance();
+			UserResource userResource = resolveUserResource(keycloak, keycloakUserId, username);
+			if (userResource == null) {
+				return Collections.emptyList();
+			}
+			List<RoleRepresentation> roles = userResource.roles().realmLevel().listEffective();
+			if (roles == null || roles.isEmpty()) {
+				return Collections.emptyList();
+			}
+			return roles.stream()
+					.map(RoleRepresentation::getName)
+					.filter(name -> name != null && !name.isBlank())
+					.collect(Collectors.toList());
+		} catch (Exception ex) {
+			return Collections.emptyList();
+		}
+	}
+
+	private UserResource resolveUserResource(Keycloak keycloak, String keycloakUserId, String username) {
+		if (keycloakUserId != null && !keycloakUserId.isBlank()) {
+			try {
+				UserResource byId = keycloak.realm(keycloakRealmName).users().get(keycloakUserId);
+				if (byId.toRepresentation() != null) {
+					return byId;
+				}
+			} catch (Exception ignored) {
+				// not a user id ? try username
+			}
+		}
+		if (username == null || username.isBlank()) {
+			return null;
+		}
+		UserRepresentation found = findUserByUsername(keycloak, username);
+		if (found == null || found.getId() == null) {
+			return null;
+		}
+		return keycloak.realm(keycloakRealmName).users().get(found.getId());
 	}
 
 	/**
