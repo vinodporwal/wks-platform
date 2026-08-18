@@ -701,10 +701,10 @@ public class PlantReportServiceImpl implements PlantReportService {
                 prevAOPCell.setCellValue(dto.getPrevAOP() != null ? dto.getPrevAOP() : 0.0);
                 prevAOPCell.setCellStyle(unlockedStyle);
 
-                // Col 4 - FY{prev} ACT (editable)
+                // Col 4 - FY{prev} ACT: locked+greyed when dto.isEditable==false, editable otherwise
                 Cell prevActualCell = row.createCell(4);
                 prevActualCell.setCellValue(dto.getPrevActual() != null ? dto.getPrevActual() : 0.0);
-                prevActualCell.setCellStyle(unlockedStyle);
+                prevActualCell.setCellStyle(!dto.isEditable() ? lockedStyle : unlockedStyle);
 
                 // Col 5 - FY{curr} Plan (editable)
                 Cell currentPlanCell = row.createCell(5);
@@ -1660,5 +1660,49 @@ public class PlantReportServiceImpl implements PlantReportService {
         }
         return null;
     }
+
+    @Override
+    public AOPMessageVM loadReliabilityPerformanceData(String plantId, String aopYear) {
+        
+
+        String procedureName = "Sp_LoadReliabilityPerformancePlant";
+
+        Integer result = executeLoadButtonSP(plantId, aopYear, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Load SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		return aopMessageVM;
+    }
+
+    @Override
+    public AOPMessageVM loadPlantSafetyPerformanceData(String plantId, String aopYear) {
+        
+
+        String procedureName = "Sp_LoadPlantSafetyPerformanceTargets";
+
+        Integer result = executeLoadButtonSP(plantId, aopYear, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Load SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		return aopMessageVM;
+    }
+
+    
+	public Integer executeLoadButtonSP( String plantId, String aopYear, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
+		}
+	}
 
 }
