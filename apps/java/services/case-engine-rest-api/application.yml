@@ -2,6 +2,9 @@ server:
    port: 8081
    servlet:
       context-path: /cm
+   tomcat:
+      max-http-header-size: ${SERVER_MAX_HTTP_HEADER_SIZE:16KB}
+      max-http-form-post-size: ${SERVER_MAX_HTTP_FORM_POST_SIZE:50MB}
 
 logging:
    level:
