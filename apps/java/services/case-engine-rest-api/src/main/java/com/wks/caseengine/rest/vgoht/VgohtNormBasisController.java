@@ -228,4 +228,33 @@ public class VgohtNormBasisController {
     public AOPMessageVM saveProductionDemand(@RequestParam String year, @RequestParam UUID plantFKId, @RequestBody List<VgohtNormConfigurationDTO> productionDemandList) {
         return vgohtNormBasisServiceImpl.saveProductionDemand(year, plantFKId, productionDemandList);
     }
+
+    @GetMapping(value="/vgoht/constant")
+    public AOPMessageVM getConfigurationDataWithTwoValues(@RequestParam String year, @RequestParam UUID plantFKId) {
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.getConfigurationDataWithTwoValues(year, plantFKId);
+    }
+
+    @PostMapping(value = "/vgoht/constant")
+    public AOPMessageVM saveConfigurationDataWithTwoValues(
+        @RequestParam String year,
+        @RequestParam UUID plantFKId,
+        @RequestBody List<VgohtNormConfigurationDTO> configurationDataList)  {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<VgohtNormConfigurationDTO> failedRecords = vgohtNormBasisServiceImpl.saveConfigurationDataWithTwoValues(year, plantFKId, configurationDataList);
+
+        if(failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "Configuration data saved successfully", null);
+        } else {
+            return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
+        }
+
+    }
 }
