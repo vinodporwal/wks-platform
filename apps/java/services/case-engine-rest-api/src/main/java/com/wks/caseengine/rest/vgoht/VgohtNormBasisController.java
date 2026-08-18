@@ -257,4 +257,45 @@ public class VgohtNormBasisController {
         }
 
     }
+
+    @GetMapping(value = "/vgoht/constant/export")
+    public ResponseEntity<byte[]> exportConfigurationDataWithTwoValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        try {
+            byte[] excelBytes = vgohtNormBasisServiceImpl
+                    .exportConfigurationDataWithTwoValues(year, plantFKId, false, null);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("norms_basis_two_values.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/vgoht/constant/import", consumes = "multipart/form-data")
+    public AOPMessageVM importConfigurationDataWithTwoValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId,
+            @RequestParam("file") MultipartFile file) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.importConfigurationDataWithTwoValues(year, plantFKId, file);
+    }
 }

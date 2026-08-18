@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1465,5 +1467,147 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 
 		return map;
+	}
+
+	// ─── Two-Value Configuration – Export ────────────────────────────────────────
+
+	public byte[] exportConfigurationDataWithTwoValues(
+			String year,
+			UUID plantFKId,
+			boolean isAfterSave,
+			List<VgohtNormConfigurationDTO> dtoList) {
+
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getConfigurationDataWithTwoValues(year, plantFKId);
+				dtoList = (List<VgohtNormConfigurationDTO>) result.getData();
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Norms Basis Constant");
+			int currentRow = 0;
+
+			// Visible columns: Particulars(0), UOM(1), EOR Value(2), SOR Value(3), Remark(4)
+			// Hidden column:   NormParameterFKId(5)
+			// After-save only: Status(6), Error Description(7)
+			List<String> headerNames = new ArrayList<>(Arrays.asList(
+					"Particulars", "UOM", "EOR Value", "SOR Value", "Remark", "NormParameterFKId"));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerNames.size(); col++) {
+				headerRow.createCell(col).setCellValue(headerNames.get(col));
+			}
+
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+
+				row.createCell(0).setCellValue(dto.getProductName() != null ? dto.getProductName() : "");
+				row.createCell(1).setCellValue(dto.getUOM() != null ? dto.getUOM() : "");
+				row.createCell(2).setCellValue(dto.getApr() != null ? dto.getApr() : 0.0);
+				row.createCell(3).setCellValue(dto.getMay() != null ? dto.getMay() : 0.0);
+				row.createCell(4).setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+				row.createCell(5).setCellValue(dto.getNormParameterFKId() != null ? dto.getNormParameterFKId() : "");
+
+				if (isAfterSave) {
+					row.createCell(6).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					row.createCell(7).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+				}
+			}
+
+			int totalCols = isAfterSave ? 8 : 6;
+			for (int col = 0; col < totalCols; col++) {
+				sheet.autoSizeColumn(col);
+			}
+
+			// Hide the NormParameterFKId column from end-users
+			sheet.setColumnHidden(5, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to export configuration data with two values", e);
+		}
+	}
+
+	// ─── Two-Value Configuration – Import ────────────────────────────────────────
+
+	@Transactional
+	public AOPMessageVM importConfigurationDataWithTwoValues(
+			String year,
+			UUID plantFKId,
+			MultipartFile file) {
+
+		if (file.isEmpty() || (file.getOriginalFilename() != null && !file.getOriginalFilename().endsWith(".xlsx"))) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+
+			Sheet sheet = workbook.getSheetAt(0);
+
+			if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+				throw new RuntimeException("Excel sheet is empty");
+			}
+
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			// Start from row 1 to skip the header
+			for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+				Row row = sheet.getRow(i);
+				if (row == null) continue;
+
+				String particulars    = getCellString(row.getCell(0));
+				String uom            = getCellString(row.getCell(1));
+				Cell   eorCell        = row.getCell(2);
+				Cell   sorCell        = row.getCell(3);
+				String remark         = getCellString(row.getCell(4));
+				String normParamFKId  = getCellString(row.getCell(5));
+
+				// Ignore completely empty rows
+				if (particulars.isEmpty() && uom.isEmpty()
+						&& getCellString(eorCell).isEmpty() && getCellString(sorCell).isEmpty()
+						&& remark.isEmpty() && normParamFKId.isEmpty()) {
+					continue;
+				}
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+				dto.setProductName(particulars);
+				dto.setUOM(uom);
+				dto.setApr(getCellDouble(eorCell));
+				dto.setMay(getCellDouble(sorCell));
+				dto.setRemarks(remark);
+				dto.setNormParameterFKId(normParamFKId);
+
+				dtoList.add(dto);
+			}
+
+			List<VgohtNormConfigurationDTO> failedRecords =
+					saveConfigurationDataWithTwoValues(year, plantFKId, dtoList);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = exportConfigurationDataWithTwoValues(year, plantFKId, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import configuration data with two values", ex);
+		}
 	}
 }
