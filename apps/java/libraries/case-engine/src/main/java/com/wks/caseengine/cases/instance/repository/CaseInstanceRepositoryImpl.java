@@ -173,7 +173,7 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 
 						jdbcTemplate.update(
 								"UPDATE c " +
-										"SET c.isDraft = 'o', c.updated_date = GETDATE() " +
+										"SET c.isDraft = 'o' " +
 										"FROM [CaseManagement].[dbo].[Cases] c " +
 										"CROSS APPLY OPENJSON(c.attributes) j " +
 										"WHERE c.business_key = ? " +
