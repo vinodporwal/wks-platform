@@ -415,22 +415,25 @@ const KendoDataTables = ({
     return Editor
   }, [permissions?.feedTypeOptions])
   const StableCurrentPlanEditCell = useMemo(() => {
-  const Editor = (props) => {
-    const { dataItem, tdProps, field } = props
-    if (!dataItem?.currentPlanEditable) {
-      // not editable for this row -> plain read-only cell, no input rendered
-      const value = dataItem[field]
-      return (
-        <td {...tdProps} title={value}>
-          {value}
-        </td>
-      )
+    const Editor = (props) => {
+      const { dataItem, tdProps, field } = props
+      if (!dataItem?.currentPlanEditable) {
+        const value = dataItem[field]
+        return (
+          <td
+            {...tdProps}
+            title={value}
+            className={`${tdProps?.className || ''} cell-readonly-greyed`.trim()}
+          >
+            {value}
+          </td>
+        )
+      }
+      return <NoSpinnerNumericEditor {...props} />
     }
-    return <NoSpinnerNumericEditor {...props} />
-  }
-  Editor.displayName = 'StableCurrentPlanEditCell'
-  return Editor
-}, []) // ✅ empty deps — created once, identity never changes, no remount while typing
+    Editor.displayName = 'StableCurrentPlanEditCell'
+    return Editor
+  }, [])
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -2962,7 +2965,6 @@ const KendoDataTables = ({
                   {permissions?.calculateBtnText || 'Calculate'}
                 </Button>
               )}
-        
 
               {permissions?.showLoadBtn && (
                 <Button
@@ -2976,17 +2978,13 @@ const KendoDataTables = ({
                     />
                   }
                   disabled={
-                    READ_ONLY ||
-                    (rows?.length === 0
-                      ? false
-                      : isButtonDisabled)
+                    READ_ONLY || (rows?.length === 0 ? false : isButtonDisabled)
                   }
                   className='btn-calculate'
                 >
                   {permissions?.loadBtnText || 'Load'}
                 </Button>
               )}
-
 
               {(permissions?.deleteAllBtn || permissions?.deleteMultiple) && (
                 <Button
@@ -4863,7 +4861,10 @@ const KendoDataTables = ({
                       )
                     }
 
-                    if (col?.field === 'prevActuals' || col?.field === 'actuals') {
+                    if (
+                      col?.field === 'prevActuals' ||
+                      col?.field === 'actuals'
+                    ) {
                       return (
                         <GridColumn
                           locked={col.locked || false}
@@ -4877,14 +4878,28 @@ const KendoDataTables = ({
                           headerClassName={isActive ? 'active-column' : ''}
                           cells={{
                             edit: { text: StableCurrentPlanEditCell },
-                            data: (props) => (
-                              <RedHighlightCell
-                                {...props}
-                                customModifiedCells={customModifiedCells}
-                                allRedCell={allRedCell}
-                                disableRedHighlight={disableRedHighlight}
-                              />
-                            ),
+                            data: (props) => {
+                              const isNotEditable =
+                                !props?.dataItem?.currentPlanEditable
+
+                              const mergedTdProps = isNotEditable
+                                ? {
+                                    ...props.tdProps,
+                                    className:
+                                      `${props.tdProps?.className || ''} cell-readonly-greyed`.trim(),
+                                  }
+                                : props.tdProps
+
+                              return (
+                                <RedHighlightCell
+                                  {...props}
+                                  tdProps={mergedTdProps}
+                                  customModifiedCells={customModifiedCells}
+                                  allRedCell={allRedCell}
+                                  disableRedHighlight={disableRedHighlight}
+                                />
+                              )
+                            },
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           columnMenu={ColumnMenuCheckboxFilter}

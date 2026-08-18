@@ -6,6 +6,7 @@ export const ReliabilityPerformancePlantWiseFunctionalApiService = {
   saveReliabilityPerformancePlantWise,
   getReliabilityPerformancePlantWise,
   importReliabilityPerformanceExcelPlantWise,
+  handleLoadReliabilityPlantwise,
 }
 
 async function getReliabilityPerformancePlantWise(keycloak, plantId, year, type) {
@@ -109,5 +110,20 @@ async function importReliabilityPerformanceExcelPlantWise(
   } catch (e) {
     console.error('Error importing Reliability Performance Excel:', e)
     return await Promise.reject(e)
+  }
+}
+async function handleLoadReliabilityPlantwise(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/reliability-performance-load-data-plant-wise?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,  
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
   }
 }
