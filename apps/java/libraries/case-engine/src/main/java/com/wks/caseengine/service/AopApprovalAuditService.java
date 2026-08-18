@@ -48,10 +48,11 @@ public interface AopApprovalAuditService {
     /**
      * Has this user already acted at this gate during the gate's current visit?
      *
-     * <p>One decision per person per gate visit: once someone approves or reverts
-     * at a gate, that gate offers them nothing further, even if they hold several
-     * of its approver roles. The plan re-entering the gate (after a revert) starts
-     * a fresh visit and they may act again.</p>
+     * <p>This is a user-level history query. Button eligibility is <em>not</em>
+     * based on it: a person who already acted as one approver role and is later
+     * assigned a different remaining role at the same gate must still be able to
+     * act as that role. The plan re-entering the gate (after a revert) starts a
+     * fresh visit.</p>
      *
      * @param visitStart when the gate's current tasks were created, i.e. when the
      *        plan entered this gate. Actions recorded after it belong to this
