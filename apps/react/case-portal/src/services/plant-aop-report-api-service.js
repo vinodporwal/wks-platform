@@ -25,6 +25,7 @@ export const PlantAopReportApiService = {
   importProfitImprovementInitiative,
   exportReliabilityImprovement,
   importReliabilityImprovement,
+  handleLoadPlantSafetyTarget,
 }
 async function getPlantsafetyPerformance(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/plant-report?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -539,6 +540,21 @@ async function importReliabilityImprovement(keycloak, PLANT_ID, AOP_YEAR, file) 
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error importing Reliability Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function handleLoadPlantSafetyTarget(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/plant-safety-target?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return Promise.reject(e)
   }
 }
