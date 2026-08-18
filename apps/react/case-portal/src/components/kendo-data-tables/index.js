@@ -2962,6 +2962,31 @@ const KendoDataTables = ({
                   {permissions?.calculateBtnText || 'Calculate'}
                 </Button>
               )}
+        
+
+              {permissions?.showLoadBtn && (
+                <Button
+                  variant='contained'
+                  onClick={handleLoad}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  disabled={
+                    READ_ONLY ||
+                    (rows?.length === 0
+                      ? false
+                      : isButtonDisabled)
+                  }
+                  className='btn-calculate'
+                >
+                  {permissions?.loadBtnText || 'Load'}
+                </Button>
+              )}
+
 
               {(permissions?.deleteAllBtn || permissions?.deleteMultiple) && (
                 <Button
@@ -4838,7 +4863,7 @@ const KendoDataTables = ({
                       )
                     }
 
-                    if (col?.field === 'prevActuals') {
+                    if (col?.field === 'prevActuals' || col?.field === 'actuals') {
                       return (
                         <GridColumn
                           locked={col.locked || false}
