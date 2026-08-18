@@ -227,7 +227,7 @@ export default function QualityPackagingNorms() {
       title: 'Remark',
       editable: true,
     },
-  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
+  ]
 
   const fetchQualityParameters = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) {
@@ -252,7 +252,7 @@ export default function QualityPackagingNorms() {
           actual: item.prevActual,
           proposedNorm: item.proposedNorm,
           normParameterTypeName: item.normParameterTypeName,
-          isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
+          isEditable: item.isEditable !== false,
           Particulars: item.normParameterTypeName,
           remark: item.remark,
           originalRemark: item.remark,

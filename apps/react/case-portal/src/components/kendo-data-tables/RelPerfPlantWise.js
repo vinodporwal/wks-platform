@@ -184,6 +184,7 @@ export default function RelPerfPlantWise() {
         masterId: row?.masterId,
         aopYear: row?.aopYear,
         plantId: row?.plantId,
+        isEditable: row?.isEditable,  
       }))
 
       const response = await ReliabilityPerformancePlantWiseFunctionalApiService.saveReliabilityPerformancePlantWise(
