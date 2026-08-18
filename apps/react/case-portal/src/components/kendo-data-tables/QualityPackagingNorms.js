@@ -1244,12 +1244,12 @@ export default function QualityPackagingNorms() {
   const adjustedPermissionsQuality = getAdjustedPermissionsQuality(
     {
       allAction: true,
-      saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
+      saveBtn: true,
       showTitleNameBusiness: true,
       titleName: 'Quality Parameters',
       adjustedPermissions: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
+      uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Quality_Parameters`,
       addButton: false,
       deleteButton: false,
