@@ -9,7 +9,12 @@ export const ReliabilityPerformancePlantWiseFunctionalApiService = {
   handleLoadReliabilityPlantwise,
 }
 
-async function getReliabilityPerformancePlantWise(keycloak, plantId, year, type) {
+async function getReliabilityPerformancePlantWise(
+  keycloak,
+  plantId,
+  year,
+  type,
+) {
   const baseUrl = `${Config.CaseEngineUrl}/task/reliability-performance-plant-wise`
   const queryParams = new URLSearchParams({
     plantId,
@@ -113,11 +118,11 @@ async function importReliabilityPerformanceExcelPlantWise(
   }
 }
 async function handleLoadReliabilityPlantwise(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/reliability-performance-load-data-plant-wise?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/reliability-performance-load?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,  
+    Authorization: `Bearer ${keycloak.token}`,
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })

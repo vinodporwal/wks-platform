@@ -152,8 +152,9 @@ export default function RelPerfPlantWise() {
         rowNo: index + 1,
         actuals: item.actual,
         originalRemark: item?.remarks || '',
-        // currentPlanEditable:
-        //     item?.isEditable === true || item?.isEditable === 'true',
+        isEditable: true,
+        currentPlanEditable:
+            item?.isEditable === true || item?.isEditable === 'true',
       }))
 
       setReliabilityRows(processedData1)

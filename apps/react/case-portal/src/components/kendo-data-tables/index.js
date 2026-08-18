@@ -435,6 +435,27 @@ const KendoDataTables = ({
     return Editor
   }, [])
 
+  const StableCurrentPlanEditCellWithUOMValidation = useMemo(() => {
+    const Editor = (props) => {
+      const { dataItem, tdProps, field } = props
+      if (!dataItem?.currentPlanEditable) {
+        const value = dataItem[field]
+        return (
+          <td
+            {...tdProps}
+            title={value}
+            className={`${tdProps?.className || ''} cell-readonly-greyed`.trim()}
+          >
+            {value}
+          </td>
+        )
+      }
+      return <NoSpinnerNumericEditorWithUOMValidation {...props} />
+    }
+    Editor.displayName = 'StableCurrentPlanEditCellWithUOMValidation'
+    return Editor
+  }, [])
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
@@ -4439,12 +4460,30 @@ const KendoDataTables = ({
                           headerClassName={numericHeaderClass(isActive, col)}
                           cells={{
                             edit: {
-                              text: NoSpinnerNumericEditorWithUOMValidation,
+                              text:
+                                col?.field === 'actuals' ||
+                                col?.field === 'prevActuals'
+                                  ? StableCurrentPlanEditCellWithUOMValidation
+                                  : NoSpinnerNumericEditorWithUOMValidation,
                             },
-                            data: (props) =>
-                              showThreeColors ? (
+                            data: (props) => {
+                              const isNotEditable =
+                                (col?.field === 'actuals' ||
+                                  col?.field === 'prevActuals') &&
+                                !props?.dataItem?.currentPlanEditable
+
+                              const mergedTdProps = isNotEditable
+                                ? {
+                                    ...props.tdProps,
+                                    className:
+                                      `${props.tdProps?.className || ''} cell-readonly-greyed`.trim(),
+                                  }
+                                : props.tdProps
+
+                              return showThreeColors ? (
                                 <RedHighlightCell2
                                   {...props}
+                                  tdProps={mergedTdProps}
                                   customModifiedCells={customModifiedCells}
                                   allRedCell={allRedCell}
                                   allRedCell2={allRedCell2}
@@ -4453,11 +4492,13 @@ const KendoDataTables = ({
                               ) : (
                                 <RedHighlightCell
                                   {...props}
+                                  tdProps={mergedTdProps}
                                   customModifiedCells={customModifiedCells}
                                   allRedCell={allRedCell}
                                   disableRedHighlight={disableRedHighlight}
                                 />
-                              ),
+                              )
+                            },
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           columnMenu={ColumnMenuCheckboxFilter}
