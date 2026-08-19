@@ -2,6 +2,7 @@ package com.wks.caseengine.aop;
 
 import org.camunda.bpm.engine.delegate.DelegateExecution;
 import org.camunda.bpm.engine.delegate.ExecutionListener;
+import org.camunda.bpm.engine.delegate.Expression;
 
 /**
  * After a GMS Head (Gate 5) rejection, Functional Heads (Gate 2) stay skipped
@@ -27,18 +28,19 @@ public class AopShortLoopListener implements ExecutionListener {
     public static final String ACTION_GATE3_REVERT = "GATE3_REVERT";
     public static final String ACTION_GATE3_APPROVE = "GATE3_APPROVE";
 
-    /** Injected from {@code camunda:field name="action"}. */
-    private String action;
+    /**
+     * Injected from {@code camunda:field name="action"}. Camunda supplies a
+     * {@link Expression} ({@code FixedValue}), not a String.
+     */
+    private Expression action;
 
-    public void setAction(String action) {
+    public void setAction(Expression action) {
         this.action = action;
     }
 
     @Override
     public void notify(DelegateExecution execution) {
-        String act = action != null && !action.isBlank()
-                ? action
-                : execution.getCurrentTransitionId();
+        String act = readAction(execution);
         if (act == null) {
             return;
         }
@@ -46,5 +48,18 @@ public class AopShortLoopListener implements ExecutionListener {
             execution.setVariable(VAR, ACTIVE);
         }
         // Gate 3 approve/revert must not clear the flag — skip lasts until approved.
+    }
+
+    private String readAction(DelegateExecution execution) {
+        if (action != null) {
+            Object val = action.getValue(execution);
+            if (val != null) {
+                String text = val.toString();
+                if (!text.isBlank()) {
+                    return text;
+                }
+            }
+        }
+        return execution.getCurrentTransitionId();
     }
 }
