@@ -1397,29 +1397,8 @@
                                         "spellcheck": true,
                                         "truncateMultipleSpaces": false,
                                         "defaultValue": null
-                                    },
-                                    {
-                                        "label": "Event Trend",
-                                        "action": "event",
-                                        "showValidations": false,
-                                        "theme": "primary",
-                                        "key": "btnEventTrend",
-                                        "type": "button",
-                                        "input": true,
-                                        "tableView": false,
-                                        "hidden":true
-                                    },
-                                    {
-                                        "label": "Event Link",
-                                        "action": "event",
-                                        "showValidations": false,
-                                        "theme": "primary",
-                                        "key": "btnEventLink",
-                                        "type": "button",
-                                        "input": true,
-                                        "tableView": false,
-                                        "hidden":true
                                     }
+                                  
                                 ],
                                 "keyModified": true,
                                 "id": "eu2kwsd",

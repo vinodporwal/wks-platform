@@ -151,7 +151,7 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	}
 
     @Override
-	@Scheduled(cron = "0 35 15 * * *", zone = "Asia/Kolkata")
+	@Scheduled(cron = "0 0 20 * * *", zone = "Asia/Kolkata")
 	public void findCasesWithDueDateGreaterThanNow() {
 		
 	commandContext.getSecurityContextTenantHolder().setTenantId(dbTenant);
