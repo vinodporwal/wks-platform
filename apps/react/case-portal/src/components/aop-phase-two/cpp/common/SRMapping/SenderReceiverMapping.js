@@ -787,14 +787,20 @@ const SenderReceiverMapping = () => {
           AOP_YEAR,
         )
       }
+      // Remove the row from local state (covers both saved + unsaved rows).
+      // No server refetch — keeps other unsaved local rows intact.
+      setRows((prev) => prev.filter((r) => r.id !== rowToDelete.id))
+      setOriginalRows((prev) => prev.filter((r) => r.id !== rowToDelete.id))
+      setModifiedCells((prev) => {
+        const next = { ...prev }
+        delete next[rowToDelete.id]
+        return next
+      })
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'SR Mapping deleted successfully!',
         severity: 'success',
       })
-      // Refetch authoritative state from the server (no optimistic local
-      // mutation needed).
-      await fetchData()
     } catch (error) {
       console.error('Error deleting SR mapping:', error)
       setSnackbarOpen(true)

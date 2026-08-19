@@ -9,6 +9,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { configurationAndReportManualEntryResponse } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const Configuration = () => {
   const keycloak = useSession()
@@ -31,6 +32,8 @@ const Configuration = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Configuration')
 
   const columns = [
     {
@@ -245,7 +248,7 @@ const Configuration = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
@@ -424,6 +427,7 @@ const Configuration = () => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

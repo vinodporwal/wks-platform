@@ -11,6 +11,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const formatDateForAPI = (date) => {
   if (!date) return ''
@@ -42,6 +43,8 @@ const PIMSThroughput = ({ startDate, endDate }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [revisionUpdated, setRevisionUpdated] = useState(false)
+
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_PIMS_Throughput')
 
   const columns = [
     {
@@ -127,7 +130,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
@@ -310,6 +313,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

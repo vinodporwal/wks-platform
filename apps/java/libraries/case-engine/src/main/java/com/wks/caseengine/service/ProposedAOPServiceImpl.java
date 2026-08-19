@@ -1,5 +1,6 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -34,14 +35,15 @@ import com.wks.caseengine.dto.ProposedAOPDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
-import com.wks.caseengine.entity.Sites;
-import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
 
 @Service
 public class ProposedAOPServiceImpl implements ProposedAOPService {
+
+	private static final double EXCEL_MAX_NUMBER = 9.99999999999999E307;
+	private static final double EXCEL_MIN_POSITIVE_NUMBER = 2.2250738585072014E-308;
 
 	@Autowired
 	private PlantsRepository plantsRepository;
@@ -217,17 +219,17 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		}
 	}
 
-	// --- Proposed AOP Export � Excel Builder -------------------------------------
+	// ─── Proposed AOP Export – Excel Builder ─────────────────────────────────────
 
 	@Override
 	public byte[] createProposedAOPExcel(UUID plantId, String aopYear, boolean isAfterSave,
 			List<ProposedAOPDTO> dtoList) {
-		try {
-			Workbook workbook = new XSSFWorkbook();
-
+		try (Workbook workbook = new XSSFWorkbook();
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			if (isAfterSave) {
 				// Error-report sheet: write all failed records into a single sheet
-				writeProposedAOPSheet(workbook, "Errors", dtoList, true);
+				writeProposedAOPSheet(workbook, "Errors",
+						dtoList != null ? dtoList : Collections.emptyList(), true);
 			} else {
 				// Normal export: one sheet per grade
 				Plants plants = plantsRepository.findById(plantId)
@@ -238,33 +240,80 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 						.orElseThrow(() -> new RuntimeException("Site not found")).getName();
 				String procedureName = verticalName + "_" + siteName + "_GetProposedAOP";
 
-				// AOPMessageVM gradesVM =
-				// aopConsumptionNormService.getConsumptionAOPGrades(aopYear,
-				// plantId.toString());
-
-				AOPMessageVM gradesVM = aopConsumptionNormService.getConsumptionAOPGrades(aopYear,
-						plantId.toString());
-
-				@SuppressWarnings("unchecked")
-				List<Map<String, Object>> gradeList = (List<Map<String, Object>>) gradesVM.getData();
-
+				List<Map<String, Object>> gradeList = getExportGradeList(aopYear, plantId);
 				for (Map<String, Object> grade : gradeList) {
-					UUID gradeId = UUID.fromString(grade.get("gradeId").toString());
-					String displayName = grade.get("displayName").toString();
+					UUID gradeId = UUID.fromString(requiredGradeValue(grade, "gradeId").toString());
+					String displayName = requiredGradeValue(grade, "displayName", "DisplayName").toString();
 					List<ProposedAOPDTO> gradeDtoList = fetchProposedAOPFromProcedure(plantId, aopYear, gradeId,
 							procedureName);
 					writeProposedAOPSheet(workbook, displayName, gradeDtoList, false);
 				}
+
+				// Excel considers a workbook with no worksheets invalid and repairs it
+				// when opened. This occurs when the grade view has no rows for a
+				// particular plant/year.
+				if (workbook.getNumberOfSheets() == 0) {
+					writeProposedAOPSheet(workbook, "No Data", Collections.emptyList(), false);
+				}
 			}
 
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
-			workbook.close();
-			return outputStream.toByteArray();
-
+			byte[] workbookBytes = outputStream.toByteArray();
+			validateGeneratedWorkbook(workbookBytes);
+			return workbookBytes;
 		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+			throw new RuntimeException("Failed to create Proposed AOP Excel workbook", e);
+		}
+	}
+
+	private List<Map<String, Object>> getExportGradeList(String aopYear, UUID plantId) {
+		List<Map<String, Object>> gradeList = extractGradeList(
+				aopConsumptionNormService.getConsumptionAOPGrades(aopYear, plantId.toString()));
+		if (!gradeList.isEmpty()) {
+			return gradeList;
+		}
+
+		// Preserve the existing consumption-grade source for working exports, but
+		// fall back to the screen-specific grade source when that view has no rows.
+		return extractGradeList(aopConsumptionNormService.getProposedAOPGrades(aopYear, plantId.toString()));
+	}
+
+	private List<Map<String, Object>> extractGradeList(AOPMessageVM gradesVM) {
+		if (gradesVM == null || !(gradesVM.getData() instanceof List<?> data)) {
+			return Collections.emptyList();
+		}
+
+		List<Map<String, Object>> gradeList = new ArrayList<>();
+		for (Object item : data) {
+			if (item instanceof Map<?, ?> map) {
+				Map<String, Object> grade = new HashMap<>();
+				map.forEach((key, value) -> grade.put(String.valueOf(key), value));
+				gradeList.add(grade);
+			}
+		}
+		return gradeList;
+	}
+
+	private Object requiredGradeValue(Map<String, Object> grade, String... keys) {
+		for (String key : keys) {
+			Object value = grade.get(key);
+			if (value != null && !value.toString().trim().isEmpty()) {
+				return value;
+			}
+		}
+		throw new IllegalArgumentException("Grade data is missing required field: " + String.join("/", keys));
+	}
+
+	private void validateGeneratedWorkbook(byte[] workbookBytes) {
+		try (Workbook validationWorkbook = new XSSFWorkbook(new ByteArrayInputStream(workbookBytes))) {
+			if (validationWorkbook.getNumberOfSheets() == 0) {
+				throw new IllegalStateException("Generated workbook has no worksheets");
+			}
+			for (int index = 0; index < validationWorkbook.getNumberOfSheets(); index++) {
+				validationWorkbook.getSheetAt(index).iterator();
+			}
+		} catch (Exception e) {
+			throw new IllegalStateException("Generated workbook package is invalid", e);
 		}
 	}
 
@@ -272,7 +321,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			List<ProposedAOPDTO> dtoList, boolean isAfterSave) {
 
 		boolean isAllGrade = "All Grade".equals(sheetName);
-		Sheet sheet = workbook.createSheet(Utility.sanitizeSheetName(sheetName));
+		Sheet sheet = workbook.createSheet(createUniqueSheetName(workbook, sheetName));
 		int currentRow = 0;
 
 		// Columns 0-5: visible editable/locked data
@@ -292,6 +341,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
 		CellStyle wrapUnlocked = Utility.createBorderedWrapUnlockedStyle(workbook);
 		CellStyle wrapLocked = Utility.createBorderedWrapLockedStyle(workbook);
+		CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
 
 		Row headerRow = sheet.createRow(currentRow++);
 		for (int col = 0; col < headerNames.size(); col++) {
@@ -312,18 +362,15 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			uomCell.setCellStyle(lockedStyle);
 
 			Cell lastFYCell = row.createCell(2);
-			if (dto.getLastFY() != null)
-				lastFYCell.setCellValue(dto.getLastFY());
+			setExcelCompatibleNumericValue(lastFYCell, dto.getLastFY());
 			lastFYCell.setCellStyle(lockedStyle);
 
 			Cell sysGenCell = row.createCell(3);
-			if (dto.getSysGrn() != null)
-				sysGenCell.setCellValue(dto.getSysGrn());
+			setExcelCompatibleNumericValue(sysGenCell, dto.getSysGrn());
 			sysGenCell.setCellStyle(lockedStyle);
 
 			Cell proposedCell = row.createCell(4);
-			if (dto.getProposed() != null)
-				proposedCell.setCellValue(dto.getProposed());
+			setExcelCompatibleNumericValue(proposedCell, dto.getProposed());
 			proposedCell.setCellStyle(isAllGrade ? lockedStyle : unlockedStyle);
 
 			Cell remarksCell = row.createCell(5);
@@ -358,11 +405,11 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			if (isAfterSave) {
 				Cell statusCell = row.createCell(12);
 				statusCell.setCellValue(Utility.sanitizeCellString(dto.getSaveStatus()));
-				statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+				statusCell.setCellStyle(borderedStyle);
 
 				Cell errCell = row.createCell(13);
 				errCell.setCellValue(Utility.sanitizeCellString(dto.getErrDescription()));
-				errCell.setCellStyle(Utility.createBorderedStyle(workbook));
+				errCell.setCellStyle(borderedStyle);
 			}
 
 			row.setHeight((short) -1);
@@ -387,7 +434,37 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		sheet.protectSheet("");
 	}
 
-	// --- Proposed AOP Import � Excel Reader --------------------------------------
+	private String createUniqueSheetName(Workbook workbook, String requestedName) {
+		String baseName = Utility.sanitizeSheetName(requestedName);
+		String candidate = baseName;
+		int sequence = 2;
+		while (workbook.getSheet(candidate) != null) {
+			String suffix = " (" + sequence++ + ")";
+			candidate = baseName.substring(0, Math.min(baseName.length(), 31 - suffix.length())) + suffix;
+		}
+		return candidate;
+	}
+
+	private void setExcelCompatibleNumericValue(Cell cell, Double value) {
+		if (value == null) {
+			return;
+		}
+
+		double absoluteValue = Math.abs(value);
+		boolean isExcelNumber = Double.isFinite(value)
+				&& absoluteValue <= EXCEL_MAX_NUMBER
+				&& (absoluteValue == 0 || absoluteValue >= EXCEL_MIN_POSITIVE_NUMBER);
+		if (isExcelNumber) {
+			cell.setCellValue(value);
+		} else {
+			// OOXML can contain Java doubles outside Excel's numeric range, but
+			// desktop Excel repairs those cells. Text preserves the source value
+			// and remains parseable by the existing import logic.
+			cell.setCellValue(Double.toString(value));
+		}
+	}
+
+	// ─── Proposed AOP Import – Excel Reader ──────────────────────────────────────
 
 	public List<ProposedAOPDTO> readProposedAOPExcel(InputStream inputStream) {
 		List<ProposedAOPDTO> resultList = new ArrayList<>();
@@ -522,8 +599,8 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		return resultList;
 	}
 
-	// --- Proposed AOP Import � API
-	// ------------------------------------------------
+	// ─── Proposed AOP Import – API
+	// ────────────────────────────────────────────────
 
 	@Override
 	@Transactional
