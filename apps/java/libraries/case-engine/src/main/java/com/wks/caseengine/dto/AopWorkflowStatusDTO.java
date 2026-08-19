@@ -38,4 +38,14 @@ public class AopWorkflowStatusDTO {
 
     private List<WorkflowStepsMasterDTO> steps;
     private AopViewerDTO viewer;
+
+    /**
+     * {@code NONE} | {@code AWAITING_PREPARER_CORRECTION} | {@code ACTIVE}.
+     * {@code ACTIVE} means this cycle originated from a GMS Head (Gate 5) rejection
+     * and Gate 2 will be skipped on the next Plant Manager approval.
+     */
+    private String shortLoopPhase;
+
+    /** e.g. "Awaiting Preparer correction" after a Gate 5 revert lands at Gate 3. */
+    private String statusTag;
 }

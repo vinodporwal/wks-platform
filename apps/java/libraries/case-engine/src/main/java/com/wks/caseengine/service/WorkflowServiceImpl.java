@@ -603,6 +603,16 @@ public class WorkflowServiceImpl implements WorkflowService {
 						item.setStatus("completed");
 					}
 				});
+		boolean seenOpen = false;
+		for (WorkflowStepsMasterDTO item : items) {
+			boolean completed = "completed".equalsIgnoreCase(item.getStatus());
+			if (seenOpen && completed) {
+				item.setStatus("pending");
+			}
+			if (!completed) {
+				seenOpen = true;
+			}
+		}
 		return items;
 	}
 
