@@ -245,7 +245,6 @@ const ProductionNormsBasis = () => {
           <Configuration
             startDate={startDate}
             endDate={endDate}
-            refreshData={refreshData}
           />
         )
       case 'Constants':
@@ -255,13 +254,18 @@ const ProductionNormsBasis = () => {
       case 'Report Manual Entry':
         return <ReportManualEntry startDate={startDate} endDate={endDate} />
       case 'Manual Entry':
-        return <ManualEntry startDate={startDate} endDate={endDate} />
+        return (
+          <ManualEntry
+            refreshData={refreshData}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        )
       case 'Historical Months':
         return (
           <HistoricalMonths
             startDate={startDate}
             endDate={endDate}
-            refreshData={refreshData}
           />
         )
       default:

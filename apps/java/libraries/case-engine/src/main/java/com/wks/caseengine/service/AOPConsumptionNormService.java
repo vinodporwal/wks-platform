@@ -18,5 +18,6 @@ public interface AOPConsumptionNormService {
 	public List<CalculatedConsumptionNormsDTO> getCalculatedConsumptionNorms(String year, String plantId);
 	public AOPMessageVM getConsumptionAOPGrades(String year,String plantId);
 	public AOPMessageVM getProposedAOPGrades(String year,String plantId);
-
+	public AOPMessageVM getAOPConsumptionNormWithYTD(String plantId,String year,String gradeId);
+	public byte[] exportOverallConsumptionWithYTD(String year, UUID plantFKId,boolean isAfterSave,List<AOPConsumptionNormDTO> dtoList);
 }

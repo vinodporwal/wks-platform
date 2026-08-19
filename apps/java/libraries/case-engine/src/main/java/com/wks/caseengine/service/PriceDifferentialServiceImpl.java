@@ -716,10 +716,10 @@ public class PriceDifferentialServiceImpl implements PriceDifferentialService{
 				    }
 				}else {
 					if(priceDifferentialTransactionDTO.getRemark()==null) {
-						priceDifferentialTransactionDTO.setErrDescription("Please add remark");
-						priceDifferentialTransactionDTO.setSaveStatus("Failed");
-				            failedList.add(priceDifferentialTransactionDTO);
-				            continue;
+						// priceDifferentialTransactionDTO.setErrDescription("Please add remark");
+						// priceDifferentialTransactionDTO.setSaveStatus("Failed");
+				        //     failedList.add(priceDifferentialTransactionDTO);
+				        //     continue;
 					}
 				}
 
