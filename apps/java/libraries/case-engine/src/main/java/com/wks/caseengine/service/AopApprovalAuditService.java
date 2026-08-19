@@ -68,9 +68,18 @@ public interface AopApprovalAuditService {
     /** True after Gate 5 approval ends the Camunda process ({@code toGate = COMPLETED}). */
     boolean hasCompleted(String caseId);
 
+    /** True if GMS Head (Gate 5) has rejected this plan at least once. */
+    boolean hasGate5Reverted(String caseId);
+
     /**
      * Roles that APPROVED or SUBMITTED at this gate during the current visit.
      * Roles still waiting on an open task are not included.
      */
     Set<String> approvedRolesInCurrentVisit(String caseId, String gateName, OffsetDateTime visitStart);
+
+    /**
+     * Timestamp of the most recent audit action for this plan, as ISO-8601.
+     * Null when the trail is empty.
+     */
+    String lastActionTakenDate(String caseId);
 }

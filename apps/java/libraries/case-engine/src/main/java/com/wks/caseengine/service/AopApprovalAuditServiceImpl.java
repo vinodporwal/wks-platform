@@ -133,6 +133,32 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean hasGate5Reverted(String caseId) {
+        if (caseId == null) {
+            return false;
+        }
+        // Newest first: a Gate 5 reject arms skip until this plan is fully approved.
+        // An older completed cycle on the same case id must not arm a new submit.
+        List<AopApprovalHistory> trail = auditRepository.findAllByCaseIdOrderByActionAtDesc(caseId);
+        if (trail == null || trail.isEmpty()) {
+            return false;
+        }
+        for (AopApprovalHistory row : trail) {
+            if (row == null) {
+                continue;
+            }
+            if ("COMPLETED".equals(row.getToGate())) {
+                return false;
+            }
+            if ("gate5".equals(row.getGateName()) && "REVERTED".equals(row.getAction())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Set<String> approvedRolesInCurrentVisit(String caseId, String gateName, OffsetDateTime visitStart) {
         if (caseId == null || gateName == null) {
             return Collections.emptySet();
@@ -154,6 +180,18 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
             }
         }
         return approved;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String lastActionTakenDate(String caseId) {
+        if (caseId == null || caseId.isBlank()) {
+            return null;
+        }
+        return auditRepository.findTopByCaseIdOrderByActionAtDesc(caseId)
+                .map(AopApprovalHistory::getActionAt)
+                .map(OffsetDateTime::toString)
+                .orElse(null);
     }
 
     private AopApprovalHistoryDTO toDTO(AopApprovalHistory h) {

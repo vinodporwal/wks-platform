@@ -43,5 +43,11 @@ public class AopPendingItemDTO {
     /** {@code pending} while the process is in flight; {@code completed} after Gate 5 approval. */
     private String status;
 
+    /**
+     * When the last audit action (submit / approve / revert / skip) was recorded
+     * for this plan. ISO-8601; null if the trail is empty.
+     */
+    private String actionTakenDate;
+
     private AopViewerDTO actions;
 }

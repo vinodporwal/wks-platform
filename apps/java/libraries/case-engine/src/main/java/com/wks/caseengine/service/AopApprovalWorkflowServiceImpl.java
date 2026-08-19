@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -22,6 +23,7 @@ import com.wks.bpm.engine.model.spi.ProcessInstance;
 import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.ProcessVariableType;
 import com.wks.bpm.engine.model.spi.Task;
+import com.wks.caseengine.aop.AopShortLoopListener;
 import com.wks.caseengine.dto.AopPendingItemDTO;
 import com.wks.caseengine.dto.AopStepRoleDTO;
 import com.wks.caseengine.dto.AopViewerDTO;
@@ -58,6 +60,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private static final String APPROVED = "APPROVED";
     private static final String REVERTED = "REVERTED";
     private static final String SUBMITTED = "SUBMITTED";
+    /** Recorded when Gate 2 is bypassed on a GMS Head (Gate 5) short-loop cycle. */
+    private static final String SKIPPED = "SKIPPED";
     /** Recorded as the destination when a decision ends the process. */
     private static final String COMPLETED = "COMPLETED";
     private static final String STATUS_PENDING = "pending";
@@ -176,6 +180,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         }
         vars.add(strVar("plantId", plantId));
         vars.add(strVar("year", year));
+        vars.add(strVar(AopShortLoopListener.VAR, AopShortLoopListener.NONE));
         if (remark != null && !remark.isBlank()) {
             vars.add(strVar("remark", remark.trim()));
         }
@@ -339,6 +344,17 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         List<ProcessVariable> vars = new ArrayList<>();
         vars.add(strVar("decision", normalized));
         vars.add(strVar("remark", remark != null ? remark : ""));
+        // Arm skip in the complete payload so Gate 2 stays skipped even if the
+        // BPMN sequence-flow listener is not on this deployment yet.
+        if ("gate5".equals(resolvedGate) && REVERTED.equals(normalized)) {
+            vars.add(strVar(AopShortLoopListener.VAR, AopShortLoopListener.ACTIVE));
+        }
+
+        String phaseBefore = readProcessVar(processInstanceId, AopShortLoopListener.VAR,
+                AopShortLoopListener.NONE);
+        if ("gate5".equals(resolvedGate) && REVERTED.equals(normalized)) {
+            phaseBefore = AopShortLoopListener.ACTIVE;
+        }
 
         List<UUID> auditIds = new ArrayList<>();
         if (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized)) {
@@ -393,8 +409,18 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         // from the decision alone would be a guess. Same gate back = still waiting
         // on that gate's other approvers.
         List<Task> remaining = safeFind(businessKey, processInstanceId);
+        String skipPhase = resolveSkipPhase(processInstanceId, businessKey, phaseBefore);
+        boolean healedSkip = skipArmedGate2(businessKey, processInstanceId, plantUuid, year, steps,
+                actorUserId, skipPhase, remaining);
+        remaining = healedSkip ? safeFind(businessKey, processInstanceId) : remaining;
         String destination = remaining.isEmpty() ? COMPLETED : currentStepOf(remaining, steps);
         auditService.completeToGate(auditIds, destination);
+
+        if (!healedSkip && APPROVED.equals(normalized) && "gate1".equals(resolvedGate)
+                && isSkipArmed(skipPhase, businessKey)
+                && "gate3".equals(destination)) {
+            recordGate2Skipped(businessKey, year, plantUuid, steps, actorUserId);
+        }
 
         // Notify the approvers of whatever gate is now active (skip the gate just
         // acted on, so parallel completions within a gate don't re-email it).
@@ -605,9 +631,112 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         return PREPARE_REWORK.equals(taskDefinitionKey) ? PREPARE : taskDefinitionKey;
     }
 
+    /**
+     * If GMS Head already rejected (short-loop armed) but Camunda still opened
+     * Functional Heads (typical of a process started on the old BPMN), auto-approve
+     * every Gate 2 slot so the token moves to Site Head.
+     *
+     * @return true when Gate 2 tasks were completed in this call
+     */
+    private boolean skipArmedGate2(String businessKey, String processInstanceId,
+            UUID plantUuid, String year, Map<String, StepMeta> steps, String actorUserId,
+            String shortLoopPhase, List<Task> tasks) {
+        if (!isSkipArmed(shortLoopPhase, businessKey) || tasks == null || tasks.isEmpty()) {
+            return false;
+        }
+        if (!"gate2".equals(currentStepOf(tasks, steps))) {
+            return false;
+        }
+        List<Task> gate2 = allOpenTasksAtGate(tasks, "gate2", null);
+        if (gate2.isEmpty()) {
+            return false;
+        }
+        List<ProcessVariable> vars = new ArrayList<>();
+        vars.add(strVar("decision", APPROVED));
+        vars.add(strVar("gate2Result", APPROVED));
+        vars.add(strVar("remark", "Skipped — short loop after GMS Head (Gate 5) rejection"));
+        vars.add(strVar(AopShortLoopListener.VAR, AopShortLoopListener.ACTIVE));
+        int completed = 0;
+        for (Task task : gate2) {
+            try {
+                processEngineClientFacade.complete(task.getId(), vars);
+                completed++;
+            } catch (Exception ex) {
+                log.warn("AOP: could not auto-skip Gate 2 task {} for {}: {}",
+                        task.getId(), businessKey, ex.getMessage());
+            }
+        }
+        if (completed == 0) {
+            return false;
+        }
+        recordGate2Skipped(businessKey, year, plantUuid, steps, actorUserId);
+        log.info("AOP: auto-skipped Gate 2 for {} (GMS Head short loop)", businessKey);
+        return true;
+    }
+
+    private boolean isSkipArmed(String shortLoopPhase, String businessKey) {
+        if (AopShortLoopListener.ACTIVE.equals(shortLoopPhase)
+                || AopShortLoopListener.AWAITING.equals(shortLoopPhase)) {
+            return true;
+        }
+        return auditService.hasGate5Reverted(businessKey);
+    }
+
+    private String resolveSkipPhase(String processInstanceId, String businessKey, String preferred) {
+        if (isSkipArmed(preferred, businessKey)) {
+            return AopShortLoopListener.ACTIVE;
+        }
+        String live = readProcessVar(processInstanceId, AopShortLoopListener.VAR, AopShortLoopListener.NONE);
+        return isSkipArmed(live, businessKey) ? AopShortLoopListener.ACTIVE : live;
+    }
+
     private ProcessVariable strVar(String name, String value) {
         return ProcessVariable.builder()
                 .name(name).value(value).type(ProcessVariableType.STRING.getValue()).build();
+    }
+
+    /**
+     * Audit that Gate 2 was bypassed so the stepper / trail treat it as completed
+     * for this short-loop cycle (GMS Head rejection only).
+     */
+    private void recordGate2Skipped(String businessKey, String year, UUID plantUuid,
+            Map<String, StepMeta> steps, String actorUserId) {
+        StepMeta g2 = steps.get("gate2");
+        auditService.record(businessKey, year, plantUuid, "gate2",
+                g2 != null ? g2.displayName : "Functional Heads",
+                g2 != null ? g2.sequence : Integer.valueOf(3),
+                SKIPPED, actorUserId, "SYSTEM",
+                "Skipped — short loop after GMS Head (Gate 5) rejection",
+                "gate1", "gate3");
+        log.info("AOP: Gate 2 skipped for {} (GMS Head short loop)", businessKey);
+    }
+
+    private String readProcessVar(String processInstanceId, String name, String fallback) {
+        if (processInstanceId == null || name == null) {
+            return fallback;
+        }
+        try {
+            ProcessVariable[] vars = processEngineClientFacade.findVariables(processInstanceId);
+            if (vars == null) {
+                return fallback;
+            }
+            for (ProcessVariable v : vars) {
+                if (v != null && name.equals(v.getName()) && v.getValue() != null) {
+                    String val = v.getValue().toString();
+                    if (!val.isBlank()) {
+                        return val;
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("AOP: could not read process variable {} on {}: {}",
+                    name, processInstanceId, ex.getMessage());
+        }
+        return fallback;
+    }
+
+    private static String statusTagForPhase(String phase) {
+        return AopShortLoopListener.AWAITING.equals(phase) ? AopShortLoopListener.STATUS_TAG : null;
     }
 
     private String businessKey(String plantId, String year) {
@@ -633,7 +762,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     /* ------------------------------------------------------- status + inbox */
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AopWorkflowStatusDTO getStatus(String plantId, String year, String callerUserId, List<String> callerRoles) {
         UUID plantUuid = UUID.fromString(plantId);
         Plants plant = plantsRepository.findById(plantUuid)
@@ -724,10 +853,24 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .build();
         }
 
-        List<Task> tasks = safeFind(businessKey, processInstanceId);
+        String skipPhase = resolveSkipPhase(processInstanceId, businessKey, null);
+        dto.shortLoopPhase(skipPhase).statusTag(statusTagForPhase(skipPhase));
+
+        List<Task> openTasks = safeFind(businessKey, processInstanceId);
+        if (skipArmedGate2(businessKey, processInstanceId, plantUuid, year, meta,
+                callerUserId, skipPhase, openTasks)) {
+            openTasks = safeFind(businessKey, processInstanceId);
+            skipPhase = AopShortLoopListener.ACTIVE;
+            dto.shortLoopPhase(skipPhase).statusTag(statusTagForPhase(skipPhase));
+            notifyNextGates(masterId, "gate2", meta, plant, year, businessKey, processInstanceId);
+        }
+        final List<Task> tasks = openTasks;
+        final String shortLoopPhase = skipPhase;
         String currentStep = currentStepOf(tasks, meta);
         Integer currentSeq = currentStep != null && meta.containsKey(currentStep) ? meta.get(currentStep).sequence : null;
         markStatuses(steps, currentSeq);
+        applyFunctionalHeadsSkipStatus(steps, currentStep, shortLoopPhase);
+        coerceCompletedAfterIncomplete(steps);
 
         // Actionable when any currently held role still has an open task. Prefer
         // the current gate so a role match on a different step cannot win.
@@ -764,6 +907,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     ? meta.get(actionGate).sequence : currentSeq;
             if (actionGate != null && !actionGate.equals(currentStep)) {
                 markStatuses(steps, actionSeq);
+                applyFunctionalHeadsSkipStatus(steps, actionGate, shortLoopPhase);
+                coerceCompletedAfterIncomplete(steps);
             }
             // Prepare / prepareRework is a submit step, not a gate decision.
             // Approvers see Approve+Revert; preparers only see Submit for Approval.
@@ -822,6 +967,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                         .taskId(null)
                         .listOfRoles(listOfRolesForStep(masterId, lastGate, wf.getCaseId(), List.of()))
                         .status(STATUS_COMPLETED)
+                        .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
                         .actions(AopViewerDTO.builder()
                                 .mode("READ_ONLY")
                                 .canApprove(false)
@@ -889,10 +1035,25 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .taskId(isActionable && mine != null ? mine.getId() : null)
                     .listOfRoles(listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks))
                     .status(STATUS_PENDING)
+                    .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
                     .actions(actions)
                     .build());
         }
+        items.sort(Comparator.comparing(
+                (AopPendingItemDTO item) -> parseActionTakenDate(item.getActionTakenDate()),
+                Comparator.nullsLast(Comparator.reverseOrder())));
         return items;
+    }
+
+    private static OffsetDateTime parseActionTakenDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
     }
 
     /**
@@ -1142,6 +1303,61 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 s.setStatus("inprogress");
             } else {
                 s.setStatus("pending");
+            }
+        }
+    }
+
+    /**
+     * Functional Heads stay pending until Plant Manager has approved in the GMS
+     * Head short-loop. Only then (current gate is Site Head or later) are they
+     * shown as completed/skipped. While still at Gate 2 the skip heal should
+     * already have moved the token; leave markStatuses as-is so we do not paint
+     * Pending over In progress.
+     */
+    private void applyFunctionalHeadsSkipStatus(List<WorkflowStepsMasterDTO> steps,
+            String currentStep, String shortLoopPhase) {
+        if (steps == null || !(AopShortLoopListener.ACTIVE.equals(shortLoopPhase)
+                || AopShortLoopListener.AWAITING.equals(shortLoopPhase))) {
+            return;
+        }
+        boolean afterPlantManager = "gate3".equals(currentStep)
+                || "gate4".equals(currentStep)
+                || "gate5".equals(currentStep)
+                || COMPLETED.equals(currentStep);
+        boolean beforePlantManager = PREPARE.equals(currentStep) || "gate1".equals(currentStep);
+        for (WorkflowStepsMasterDTO s : steps) {
+            if (s == null || !"gate2".equals(s.getName())) {
+                continue;
+            }
+            if (afterPlantManager) {
+                s.setStatus("completed");
+            } else if (beforePlantManager) {
+                s.setStatus("pending");
+            }
+        }
+        coerceCompletedAfterIncomplete(steps);
+    }
+
+    /**
+     * A later gate cannot show completed while an earlier one is still open.
+     * That is what made Functional Heads look completed while Prepare / Plant
+     * Manager were still in progress.
+     */
+    private void coerceCompletedAfterIncomplete(List<WorkflowStepsMasterDTO> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return;
+        }
+        List<WorkflowStepsMasterDTO> ordered = new ArrayList<>(steps);
+        ordered.sort(Comparator.comparingInt(
+                s -> s.getSequence() == null ? Integer.MAX_VALUE : s.getSequence()));
+        boolean seenOpen = false;
+        for (WorkflowStepsMasterDTO s : ordered) {
+            boolean completed = "completed".equalsIgnoreCase(s.getStatus());
+            if (seenOpen && completed) {
+                s.setStatus("pending");
+            }
+            if (!completed) {
+                seenOpen = true;
             }
         }
     }
