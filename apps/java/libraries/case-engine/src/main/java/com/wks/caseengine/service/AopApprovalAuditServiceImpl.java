@@ -182,6 +182,18 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
         return approved;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String lastActionTakenDate(String caseId) {
+        if (caseId == null || caseId.isBlank()) {
+            return null;
+        }
+        return auditRepository.findTopByCaseIdOrderByActionAtDesc(caseId)
+                .map(AopApprovalHistory::getActionAt)
+                .map(OffsetDateTime::toString)
+                .orElse(null);
+    }
+
     private AopApprovalHistoryDTO toDTO(AopApprovalHistory h) {
         return AopApprovalHistoryDTO.builder()
                 .id(h.getId() != null ? h.getId().toString() : null)

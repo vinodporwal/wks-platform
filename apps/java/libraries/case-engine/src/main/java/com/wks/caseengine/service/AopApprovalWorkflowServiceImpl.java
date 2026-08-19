@@ -967,6 +967,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                         .taskId(null)
                         .listOfRoles(listOfRolesForStep(masterId, lastGate, wf.getCaseId(), List.of()))
                         .status(STATUS_COMPLETED)
+                        .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
                         .actions(AopViewerDTO.builder()
                                 .mode("READ_ONLY")
                                 .canApprove(false)
@@ -1034,10 +1035,25 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .taskId(isActionable && mine != null ? mine.getId() : null)
                     .listOfRoles(listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks))
                     .status(STATUS_PENDING)
+                    .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
                     .actions(actions)
                     .build());
         }
+        items.sort(Comparator.comparing(
+                (AopPendingItemDTO item) -> parseActionTakenDate(item.getActionTakenDate()),
+                Comparator.nullsLast(Comparator.reverseOrder())));
         return items;
+    }
+
+    private static OffsetDateTime parseActionTakenDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
     }
 
     /**

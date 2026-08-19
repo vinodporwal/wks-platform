@@ -76,4 +76,10 @@ public interface AopApprovalAuditService {
      * Roles still waiting on an open task are not included.
      */
     Set<String> approvedRolesInCurrentVisit(String caseId, String gateName, OffsetDateTime visitStart);
+
+    /**
+     * Timestamp of the most recent audit action for this plan, as ISO-8601.
+     * Null when the trail is empty.
+     */
+    String lastActionTakenDate(String caseId);
 }
