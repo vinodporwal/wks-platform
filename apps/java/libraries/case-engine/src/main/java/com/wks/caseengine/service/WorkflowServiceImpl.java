@@ -277,6 +277,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public Map<String, Object> getWorkFlow(String plantId, String year) {
 		Map<String, Object> map = new HashMap<>();
 
@@ -286,12 +287,13 @@ public class WorkflowServiceImpl implements WorkflowService {
 			List<WorkflowYearDTO> workflowList = new ArrayList<>();
 			for (Object[] row : results) {
 				WorkflowYearDTO dto = new WorkflowYearDTO();
-				dto.setParticulates(row[0] != null ? row[0].toString() : null);
-				dto.setUom(row[1] != null ? row[1].toString() : null);
-				dto.setFyAop(row[2] != null ? row[2].toString() : null);
-				dto.setFyActual(row[3] != null ? row[3].toString() : null);
-				dto.setSyAop(row[4] != null ? row[4].toString() : null);
-				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setParticulates(row[1] != null ? row[1].toString() : null);
+				dto.setUom(row[2] != null ? row[2].toString() : null);
+				dto.setFyAop(row[3] != null ? row[3].toString() : null);
+				dto.setFyActual(row[4] != null ? row[4].toString() : null);
+				dto.setSyAop(row[5] != null ? row[5].toString() : null);
+				dto.setRemark(row[6] != null ? row[6].toString() : "");
 				dto.setAopYear(year);
 				workflowList.add(dto);
 			}
@@ -307,12 +309,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
-			// Never 500 the screen for missing Annual AOP Cost SPs.
-			log.error("getWorkFlow failed for plant {} year {}: {}", plantId, year, ex.getMessage());
-			map.put("headers", List.of("particulates", "uom", "fyAop", "fyActual", "syAop", "remark"));
-			map.put("keys", List.of("particulates", "uom", "fyAop", "fyActual", "syAop", "remark", "aopYear"));
-			map.put("results", new ArrayList<>());
-			return map;
+			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
 
@@ -328,12 +325,13 @@ public class WorkflowServiceImpl implements WorkflowService {
 			List<WorkflowYearDTO> workflowList = new ArrayList<>();
 			for (Object[] row : results) {
 				WorkflowYearDTO dto = new WorkflowYearDTO();
-				dto.setParticulates(row[0] != null ? row[0].toString() : null);
-				dto.setUom(row[1] != null ? row[1].toString() : null);
-				dto.setFyAop(row[2] != null ? row[2].toString() : null);
-				dto.setFyActual(row[3] != null ? row[3].toString() : null);
-				dto.setSyAop(row[4] != null ? row[4].toString() : null);
-				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setParticulates(row[1] != null ? row[1].toString() : null);
+				dto.setUom(row[2] != null ? row[2].toString() : null);
+				dto.setFyAop(row[3] != null ? row[3].toString() : null);
+				dto.setFyActual(row[4] != null ? row[4].toString() : null);
+				dto.setSyAop(row[5] != null ? row[5].toString() : null);
+				dto.setRemark(row[6] != null ? row[6].toString() : "");
 				dto.setAopYear(year);
 				workflowList.add(dto);
 			}
@@ -360,78 +358,25 @@ public class WorkflowServiceImpl implements WorkflowService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getData(String plantId, String aopYear) {
 		try {
-			return executeAnnualAopCostQuery(plantId, aopYear);
+			String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
+			// Prepare native SQL call with parameters
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManagerDB2.createNativeQuery(sql);
+
+			// Set parameters
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
-			// Missing SP must not take down the AOP Approval screen.
-			log.error("GetAnnualAOPCost failed for plant {} year {}: {}", plantId, aopYear, ex.getMessage());
-			return new ArrayList<>();
+			throw new RuntimeException("Failed to fetch data", ex);
 		}
-	}
-
-	/**
-	 * Annual AOP Cost is loaded/calculated on the primary AOP DB
-	 * ({@link #calculateExpressionWorkFlow} uses {@code dataSource}). Reading via
-	 * JDBC (not JPA) so a missing SP cannot mark a surrounding transaction
-	 * rollback-only and 500 {@code GET /task/work-flow}.
-	 */
-	private List<Object[]> executeAnnualAopCostQuery(String plantId, String aopYear) {
-		List<String> candidates = annualAopCostProcedureCandidates(plantId);
-		Exception last = null;
-		for (String procedureName : candidates) {
-			String callableSql = "{call " + procedureName + "(?, ?)}";
-			try (Connection conn = dataSource.getConnection();
-					CallableStatement stmt = conn.prepareCall(callableSql)) {
-				stmt.setString(1, plantId);
-				stmt.setString(2, aopYear);
-				boolean hasResultSet = stmt.execute();
-				while (!hasResultSet && stmt.getUpdateCount() != -1) {
-					hasResultSet = stmt.getMoreResults();
-				}
-				List<Object[]> rows = new ArrayList<>();
-				if (hasResultSet) {
-					try (ResultSet rs = stmt.getResultSet()) {
-						ResultSetMetaData meta = rs.getMetaData();
-						int cols = meta.getColumnCount();
-						while (rs.next()) {
-							Object[] row = new Object[cols];
-							for (int i = 1; i <= cols; i++) {
-								row[i - 1] = rs.getObject(i);
-							}
-							rows.add(row);
-						}
-					}
-				}
-				return rows;
-			} catch (Exception ex) {
-				last = ex;
-				log.warn("Annual AOP Cost SP '{}' failed for plant {}: {}", procedureName, plantId, ex.getMessage());
-			}
-		}
-		if (last != null) {
-			throw new RuntimeException("Failed to fetch Annual AOP Cost data", last);
-		}
-		return new ArrayList<>();
-	}
-
-	private List<String> annualAopCostProcedureCandidates(String plantId) {
-		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
-				.orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-				.orElseThrow(() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
-		Sites site = siteRepository.findById(plant.getSiteFkId())
-				.orElseThrow(() -> new RuntimeException("Site not found for ID: " + plant.getSiteFkId()));
-		String verticalName = vertical.getName();
-		String siteName = site.getName();
-		// Match Load SP naming used by calculateExpressionWorkFlow:
-		// {vertical}_{site}_LoadAnnualAOPCost — prefer the same prefix for Get.
-		List<String> names = new ArrayList<>();
-		names.add(verticalName + "_" + siteName + "_GetAnnualAOPCost");
-		names.add("GetAnnualAOPCost");
-		return names;
 	}
 	
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
@@ -489,39 +434,39 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	public List<String> getHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
-		List<String> candidates = annualAopCostProcedureCandidates(plantId);
+		String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
 
-		for (String procedureName : candidates) {
-			String callableSql = "{call " + procedureName + "(?, ?)}";
-			try (Connection conn = dataSource.getConnection();
-					CallableStatement stmt = conn.prepareCall(callableSql)) {
+		String callableSql = "{call " + procedureName + "(?, ?)}";
 
-				stmt.setString(1, plantId);
-				stmt.setString(2, aopYear);
+		try (Connection conn = db2DataSource.getConnection();
+				CallableStatement stmt = conn.prepareCall(callableSql)) {
 
-				boolean hasResultSet = stmt.execute();
+			stmt.setString(1, plantId);
+			stmt.setString(2, aopYear);
 
-				while (!hasResultSet && stmt.getUpdateCount() != -1) {
-					hasResultSet = stmt.getMoreResults();
-				}
+			boolean hasResultSet = stmt.execute();
 
-				if (hasResultSet) {
-					try (ResultSet rs = stmt.getResultSet()) {
-						ResultSetMetaData metaData = rs.getMetaData();
-						int columnCount = metaData.getColumnCount();
-						for (int i = 1; i <= columnCount; i++) {
-							headers.add(metaData.getColumnLabel(i));
-						}
+			// Move forward until we find a result set
+			while (!hasResultSet && stmt.getUpdateCount() != -1) {
+				hasResultSet = stmt.getMoreResults();
+			}
+
+			// If a result set is found, get metadata and headers
+			if (hasResultSet) {
+				try (ResultSet rs = stmt.getResultSet()) {
+					ResultSetMetaData metaData = rs.getMetaData();
+					int columnCount = metaData.getColumnCount();
+
+					for (int i = 1; i <= columnCount; i++) {
+						headers.add(metaData.getColumnLabel(i));
 					}
 				}
-				return headers;
-			} catch (SQLException e) {
-				log.warn("Annual AOP Cost headers via '{}' failed for plant {}: {}",
-						procedureName, plantId, e.getMessage());
 			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to fetch headers", e);
 		}
 
-		headers.addAll(List.of("particulates", "uom", "fyAop", "fyActual", "syAop", "remark"));
 		return headers;
 	}
 
@@ -688,55 +633,32 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager")
 	public AOPMessageVM saveAnnualAOPData(String plantId, List<WorkflowYearDTO> workflowYearDTOList) {
-		try {
+	
 			for (WorkflowYearDTO workflowYearDTO : workflowYearDTOList) {
-				System.out.println("workflowYearDTO.getParticulates()" + workflowYearDTO.getParticulates());
-				System.out.println("workflowYearDTO.getFyAop()" + workflowYearDTO.getFyAop());
-				List<AnnualAOPCostDB2> list = annualAOPCostRepository
-						.findAllByAopYearAndPlantFkIdAndParticulatesAndAopType(
-								workflowYearDTO.getAopYear(),
-								UUID.fromString(plantId),
-								workflowYearDTO.getParticulates(),
-								"Remark");
-				if (list.isEmpty()) {
-					if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
-						// annualAOPCost.setRemark(null);
-					} else {
-						AnnualAOPCostDB2 annualAOPCost = new AnnualAOPCostDB2();
-						annualAOPCost.setParticulates(workflowYearDTO.getParticulates());
-						annualAOPCost.setAopYear(workflowYearDTO.getAopYear());
-						annualAOPCost.setAopType("Remark");
-						annualAOPCost.setRemark(workflowYearDTO.getRemark());
-						annualAOPCost.setPlantFkId(UUID.fromString(plantId));
-
-						annualAOPCostRepository.save(annualAOPCost);
-					}
-				} else {
-					for (AnnualAOPCostDB2 annualAOPCost : list) {
-						// System.out.println("id:"+id);
-						// Optional<AnnualAOPCost> AnnualAOPCostOp =
-						// annualAOPCostRepository.findById(id);
-						// if (AnnualAOPCostOp != null) {
-						// AnnualAOPCost annualAOPCost = AnnualAOPCostOp.get();
-						if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
-							annualAOPCost.setRemark(null);
-						} else {
-							annualAOPCost.setRemark(workflowYearDTO.getRemark());
-						}
-
-						annualAOPCostRepository.save(annualAOPCost);
-					}
+				
+				Optional<AnnualAOPCostDB2> existingAnnualAOPCost = annualAOPCostRepository.findById(UUID.fromString(workflowYearDTO.getId()));
+					
+				if (!existingAnnualAOPCost.isPresent()) { 
+					throw new RuntimeException("Annual AOP Cost not found for ID: " + workflowYearDTO.getId());
 				}
-			}
+
+				AnnualAOPCostDB2 annualAOPCost = existingAnnualAOPCost.get();
+			
+					
+							annualAOPCost.setRemark(workflowYearDTO.getRemark());
+						
+
+						annualAOPCostRepository.save(annualAOPCost);
+					}
+				
 			AOPMessageVM response = new AOPMessageVM();
 			response.setCode(200);
 			response.setMessage("Remarks updated successfully.");
 			return response;
 
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to save data", ex);
-		}
+		
 
 	}
 

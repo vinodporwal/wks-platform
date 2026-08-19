@@ -7,7 +7,6 @@ import { useSession } from 'SessionStoreContext'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const PIMSThroughput = ({ startDate, endDate }) => {
@@ -32,7 +31,6 @@ const PIMSThroughput = ({ startDate, endDate }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const [revisionUpdated, setRevisionUpdated] = useState(false)
 
   const formatDateForAPI = (date) => {
     if (!date) return ''
@@ -46,26 +44,149 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     {
       field: 'displayName',
       title: 'Particulars',
-      widthT: 250,
-      minWidth: 200,
+      widthT: 350,
+      minWidth: 280,
       type: 'text',
       editable: false,
       hidden: false,
+      locked: true,
     },
     {
       field: 'uom',
       title: 'UOM',
-      widthT: 80,
-      minWidth: 60,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'attributeValue',
-      title: 'Value',
-      editable: true,
       widthT: 100,
       minWidth: 80,
+      type: 'text',
+      editable: false,
+      locked: true,
+    },
+    {
+      field: 'apr',
+      title: headerMap[4],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'may',
+      title: headerMap[5],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'jun',
+      title: headerMap[6],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'jul',
+      title: headerMap[7],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'aug',
+      title: headerMap[8],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'sep',
+      title: headerMap[9],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'oct',
+      title: headerMap[10],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'nov',
+      title: headerMap[11],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'dec',
+      title: headerMap[12],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'jan',
+      title: headerMap[1],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'feb',
+      title: headerMap[2],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number1',
+      format: valueFormat,
+    },
+    {
+      field: 'mar',
+      title: headerMap[3],
+      editable: true,
+      widthT: 130,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -74,7 +195,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     {
       field: 'remarks',
       title: 'Remarks',
-      widthT: 250,
+      widthT: 300,
       type: 'textarea',
       editable: true,
       minWidth: 250,
@@ -85,7 +206,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConfigurationData()
     }
-  }, [PLANT_ID, AOP_YEAR, revisionUpdated])
+  }, [PLANT_ID, AOP_YEAR])
 
   const fetchConfigurationData = async () => {
     setLoading(true)
@@ -117,7 +238,6 @@ const PIMSThroughput = ({ startDate, endDate }) => {
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
-      setRevisionUpdated(false)
     }
   }
 
@@ -182,7 +302,20 @@ const PIMSThroughput = ({ startDate, endDate }) => {
       return
     }
 
-    const fieldsToCheck = ['attributeValue']
+    const fieldsToCheck = [
+      'apr',
+      'may',
+      'jun',
+      'jul',
+      'aug',
+      'sep',
+      'oct',
+      'nov',
+      'dec',
+      'jan',
+      'feb',
+      'mar',
+    ]
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
@@ -344,14 +477,6 @@ const PIMSThroughput = ({ startDate, endDate }) => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <RevButtonSection
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        snackbarData={snackbarData}
-        setSnackbarData={setSnackbarData}
-        revisionUpdated={revisionUpdated}
-        setRevisionUpdated={setRevisionUpdated}
-      />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

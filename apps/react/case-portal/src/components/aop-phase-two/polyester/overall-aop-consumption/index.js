@@ -139,7 +139,7 @@ const OverallAopConsumption = () => {
     ]
     if (isFilament) {
       defaultColumns.push({
-        field: 'avgOfAllMonths',
+        field: 'ytd',
         title: 'YTD',
         editable: false,
         type: 'number1',
@@ -237,19 +237,17 @@ const OverallAopConsumption = () => {
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const fetchData = useCallback(
-    async (selectedGrade) => {
+    async () => {
       if (!PLANT_ID || !AOP_YEAR) return
-      // if (!selectedGrade) {
-      //   setRows([])
-      //   return
-      // }
       setLoading(true)
       try {
+        const verticalWiseAPI = {
+          'staple (psf)':OverallAopConsumptionApiService.getOverallAopConsumption,
+          'filament (pfy)':OverallAopConsumptionApiService.getOverallAopConsumptionYTD,
+          'pet-py':OverallAopConsumptionApiService.getOverallAopConsumption,
+        }
         const response =
-          await OverallAopConsumptionApiService.getOverallAopConsumption(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
+          await verticalWiseAPI[VERTICAL_NAME?.toLowerCase()](keycloak, PLANT_ID, AOP_YEAR,
             null,
           )
         if (response?.code === 200) {
@@ -435,8 +433,13 @@ const OverallAopConsumption = () => {
       severity: 'success',
     })
     try {
+      const verticalWiseAPI = {
+        'staple (psf)':OverallAopConsumptionApiService.exportOverallAopConsumption,
+        'filament (pfy)':OverallAopConsumptionApiService.exportOverallAopConsumptionYTD,
+        'pet-py':OverallAopConsumptionApiService.exportOverallAopConsumption,
+      }
       const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}`
-      await OverallAopConsumptionApiService.exportOverallAopConsumption(
+      await verticalWiseAPI[VERTICAL_NAME?.toLowerCase()](
         keycloak,
         PLANT_ID,
         AOP_YEAR,

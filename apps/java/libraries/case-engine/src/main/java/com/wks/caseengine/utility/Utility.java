@@ -9,13 +9,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.security.core.Authentication;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.WorkbookUtil;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -84,6 +88,8 @@ public class Utility {
         return unlockedStyle;
     }
 	
+
+
 	public static CellStyle createBoldBorderedStyle(Workbook workbook) {
 		CellStyle style = createBorderedStyle(workbook);
 		Font font = workbook.createFont();
@@ -91,13 +97,66 @@ public class Utility {
 		style.setFont(font);
 		return style;
 	}
+
+	public static CellStyle decimalStyleForAOPReport(Workbook workbook) {
+		DataFormat dataFormat = workbook.createDataFormat();
+		CellStyle decimalStyle = workbook.createCellStyle();
+		workbook.createCellStyle();
+		decimalStyle.setDataFormat(
+				dataFormat.getFormat("0.00"));
+
+		// if (borders) {
+		decimalStyle.setBorderTop(BorderStyle.THIN);
+		decimalStyle.setBorderBottom(BorderStyle.THIN);
+		decimalStyle.setBorderLeft(BorderStyle.THIN);
+		decimalStyle.setBorderRight(BorderStyle.THIN);
+		decimalStyle.setAlignment(HorizontalAlignment.CENTER);
+		decimalStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+		return decimalStyle;
+	}
+
+	public static CellStyle getIntegerStyleForAOPReport(Workbook workbook) {
+		DataFormat dataFormat = workbook.createDataFormat();
+		CellStyle decimalStyle = workbook.createCellStyle();
+		workbook.createCellStyle();
+		CellStyle integerStyle = workbook.createCellStyle();
+        integerStyle.setDataFormat(
+                dataFormat.getFormat("0")
+        );
+		// if (borders) {
+		decimalStyle.setBorderTop(BorderStyle.THIN);
+		decimalStyle.setBorderBottom(BorderStyle.THIN);
+		decimalStyle.setBorderLeft(BorderStyle.THIN);
+		decimalStyle.setBorderRight(BorderStyle.THIN);
+		decimalStyle.setAlignment(HorizontalAlignment.CENTER);
+		decimalStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+		return decimalStyle;
+	}
+
 	
+	public static CellStyle createBorderedStyleForAOPReport(Workbook wb) {
+		CellStyle style = wb.createCellStyle();
+		style.setBorderBottom(BorderStyle.THIN);
+		style.setBorderTop(BorderStyle.THIN);
+		style.setBorderLeft(BorderStyle.THIN);
+		style.setBorderRight(BorderStyle.THIN);
+		style.setAlignment(HorizontalAlignment.CENTER);
+		style.setVerticalAlignment(VerticalAlignment.CENTER);
+
+		return style;
+	}
+
+	  
+
 	public static CellStyle createBorderedStyle(Workbook wb) {
 		CellStyle style = wb.createCellStyle();
 		style.setBorderBottom(BorderStyle.THIN);
 		style.setBorderTop(BorderStyle.THIN);
 		style.setBorderLeft(BorderStyle.THIN);
 		style.setBorderRight(BorderStyle.THIN);
+		//style.setAlignment(HorizontalAlignment.CENTER);
+		//style.setVerticalAlignment(VerticalAlignment.CENTER);
+
 		return style;
 	}
 
@@ -138,33 +197,73 @@ public class Utility {
 		style.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
 		return style;
 	}
-	
 
+	
+	public static CellStyle createBoldStyleForAOPReport(Workbook wb) {
+		Font font = wb.createFont();
+		font.setBold(true);
+		CellStyle style = wb.createCellStyle();
+		style.setFont(font);
+		style.setAlignment(HorizontalAlignment.CENTER);
+		style.setVerticalAlignment(VerticalAlignment.CENTER);
+		style.setBorderBottom(BorderStyle.THIN);
+		style.setBorderTop(BorderStyle.THIN);
+		style.setBorderLeft(BorderStyle.THIN);
+		style.setBorderRight(BorderStyle.THIN);
+		return style;
+	}
 	public static CellStyle createBoldStyle(Workbook wb) {
 		Font font = wb.createFont();
 		font.setBold(true);
 		CellStyle style = wb.createCellStyle();
 		style.setFont(font);
+		//style.setAlignment(HorizontalAlignment.CENTER);
+		//style.setVerticalAlignment(VerticalAlignment.CENTER);
+		style.setBorderBottom(BorderStyle.THIN);
+		style.setBorderTop(BorderStyle.THIN);
+		style.setBorderLeft(BorderStyle.THIN);
+		style.setBorderRight(BorderStyle.THIN);
 		return style;
 	}
 
 	public static String sanitizeSheetName(String name) {
-        if (name == null || name.trim().isEmpty()) return "Sheet";
-        String sanitized = name.replaceAll("[\\\\/\\?\\*:\\[\\]]", "_");
-        return sanitized.substring(0, Math.min(sanitized.length(), 31));
+        String sanitized = sanitizeCellString(name);
+        if (sanitized.trim().isEmpty()) return "Sheet";
+        return WorkbookUtil.createSafeSheetName(sanitized, '_');
     }
 
 	/**
-	 * Removes characters that are illegal in XML 1.0 from a cell string value.
-	 * Illegal ranges: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+FFFE, U+FFFF.
-	 * Tab (U+0009), LF (U+000A) and CR (U+000D) are legal and are preserved.
-	 * Apache POI does not validate these characters before writing them to the XML
-	 * parts of an .xlsx file, so passing an illegal character produces a corrupt
-	 * workbook that Excel refuses to open cleanly.
+	 * Removes characters that are illegal in XML 1.0, including unpaired UTF-16
+	 * surrogates, and enforces Excel's 32,767-character cell limit.
 	 */
 	public static String sanitizeCellString(String value) {
 		if (value == null) return "";
-		return value.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFE\\uFFFF]", "");
+
+		StringBuilder sanitized = new StringBuilder(Math.min(value.length(), 32767));
+		for (int offset = 0; offset < value.length();) {
+			int codePoint = value.codePointAt(offset);
+			offset += Character.charCount(codePoint);
+
+			if (!isValidXml10CodePoint(codePoint)) {
+				continue;
+			}
+
+			int charCount = Character.charCount(codePoint);
+			if (sanitized.length() + charCount > 32767) {
+				break;
+			}
+			sanitized.appendCodePoint(codePoint);
+		}
+		return sanitized.toString();
+	}
+
+	private static boolean isValidXml10CodePoint(int codePoint) {
+		return codePoint == 0x9
+				|| codePoint == 0xA
+				|| codePoint == 0xD
+				|| (codePoint >= 0x20 && codePoint <= 0xD7FF)
+				|| (codePoint >= 0xE000 && codePoint <= 0xFFFD)
+				|| (codePoint >= 0x10000 && codePoint <= 0x10FFFF);
 	}
 
     

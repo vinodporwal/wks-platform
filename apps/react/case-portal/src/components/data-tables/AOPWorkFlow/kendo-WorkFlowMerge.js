@@ -76,8 +76,13 @@ const WorkFlowMerge = () => {
   const handleWorkflowReleaseSync = async (actionType) => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
-      if (actionType === 'SUBMIT') {
-        await ReleaseAPIService.releaseAOPReport(keycloak, PLANT_ID, AOP_YEAR)
+      if (actionType === 'SUBMIT' || actionType === 'APPROVE') {
+        // 1st check whether it is already released, release only if not already released
+        await ReleaseAPIService.ensureReleaseIfNotReleased(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
         dispatch(setIsReleased({ isReleased: 1 }))
       } else if (actionType === 'REJECT') {
         await ReleaseAPIService.deleteReleaseAOPByPlantAndYear(
@@ -507,7 +512,8 @@ const WorkFlowMerge = () => {
       cols[remarkIdx] = remarkColumn(handleRemarkCellClick)
     }
 
-    return cols
+    // Hide the Id column from the UI
+    return cols.filter((c) => c.field !== 'Id')
     // The column is considered numeric if:
     // - It's a valid number (including empty values)
   }
@@ -808,11 +814,15 @@ const WorkFlowMerge = () => {
         actorRole: aopRole,
       })
 
-      // Sync Release status & Redux state based on action
+      // Sync Release status & Redux state based on action (at every approval / submit / reject)
       if (decision === 'REVERTED') {
         await handleWorkflowReleaseSync('REJECT')
-      } else if (workflowActionConfig?.type === 'SUBMIT' || aopGate === 'prepare') {
-        await handleWorkflowReleaseSync('SUBMIT')
+      } else if (
+        decision === 'APPROVED' ||
+        workflowActionConfig?.type === 'SUBMIT' ||
+        aopGate === 'prepare'
+      ) {
+        await handleWorkflowReleaseSync('APPROVE')
       }
 
       setSnackbarData({
@@ -942,8 +952,15 @@ const WorkFlowMerge = () => {
   }
   const saveChanges = async () => {
     try {
-      // console.log(rows, 'workflowDto')
-      await AOPWorkFlowService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
+      const payload = rows.map((row) => {
+        const { id, path, inEdit, ...rest } = row
+        return rest
+      })
+      await AOPWorkFlowService.saveAnnualWorkFlowData(
+        keycloak,
+        payload,
+        PLANT_ID,
+      )
       setSnackbarData({
         message: 'Data Saved Successfully!',
         severity: 'success',

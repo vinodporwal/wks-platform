@@ -5,7 +5,7 @@ export const ReleaseAPIService = {
   // AOP Approval Flow Release APIs
   getReleaseAOPStatus,
   releaseAOPReport,
-  deleteReleaseAOP,
+  ensureReleaseIfNotReleased,
   deleteReleaseAOPByPlantAndYear,
 }
 
@@ -80,60 +80,67 @@ async function releaseAOPReport(keycloak, plantId, year) {
 }
 
 /**
- * Delete Release AOP
- * Deletes the released AOP record for the given release ID.
+ * Ensure AOP Report is released (checks first, only releases if not already released)
  * @param {Object} keycloak - Keycloak session
- * @param {string} id - Release Record ID
- * @returns {Promise}
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
  */
-async function deleteReleaseAOP(keycloak, id) {
-  const url = `${Config.CaseEngineUrl}/task/release-aop?id=${encodeURIComponent(id)}`
-
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-
+async function ensureReleaseIfNotReleased(keycloak, plantId, year) {
+  if (!plantId || !year) return false
   try {
-    const resp = await fetch(url, {
-      method: 'DELETE',
-      headers,
-    })
+    const statusRes = await getReleaseAOPStatus(keycloak, plantId, year)
+    const isAlreadyReleased =
+      statusRes &&
+      (statusRes.isReleased === 1 ||
+        statusRes.isReleased === true ||
+        statusRes.status === 'RELEASED' ||
+        (Array.isArray(statusRes) && statusRes.length > 0) ||
+        (statusRes.data &&
+          Array.isArray(statusRes.data) &&
+          statusRes.data.length > 0))
 
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
+    if (!isAlreadyReleased) {
+      await releaseAOPReport(keycloak, plantId, year)
+      return true
     }
-
-    return json(keycloak, resp)
+    return false
   } catch (e) {
-    console.error('Error deleting release AOP:', e)
-    return await Promise.reject(e)
+    console.error('Error in ensureReleaseIfNotReleased, attempting release:', e)
+    try {
+      await releaseAOPReport(keycloak, plantId, year)
+      return true
+    } catch (relErr) {
+      console.error('Error calling releaseAOPReport fallback:', relErr)
+      return false
+    }
   }
 }
 
 /**
- * Delete Release AOP by Plant ID and Year
- * Fetches the active release record for plant & year, then calls delete.
+ * Delete Release AOP by Plant and Year
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
  */
 async function deleteReleaseAOPByPlantAndYear(keycloak, plantId, year) {
   try {
-    const statusResp = await getReleaseAOPStatus(keycloak, plantId, year)
-    let releaseId = null
-
-    if (Array.isArray(statusResp?.data) && statusResp.data.length > 0) {
-      releaseId = statusResp.data[0].id || statusResp.data[0].Id
-    } else if (statusResp?.data?.id || statusResp?.data?.Id) {
-      releaseId = statusResp.data.id || statusResp.data.Id
+    const statusRes = await getReleaseAOPStatus(keycloak, plantId, year)
+    const list =
+      statusRes?.data || (Array.isArray(statusRes) ? statusRes : [])
+    for (const item of list) {
+      const id = item?.id || item?.Id
+      if (id) {
+        const url = `${Config.CaseEngineUrl}/task/release-aop?id=${encodeURIComponent(id)}`
+        const headers = {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+        }
+        await fetch(url, { method: 'DELETE', headers })
+      }
     }
-
-    if (releaseId) {
-      return await deleteReleaseAOP(keycloak, releaseId)
-    }
-    return null
   } catch (e) {
-    console.error('Error in deleteReleaseAOPByPlantAndYear:', e)
-    return null
+    console.error('Error deleting release AOP by plant and year:', e)
   }
 }
 

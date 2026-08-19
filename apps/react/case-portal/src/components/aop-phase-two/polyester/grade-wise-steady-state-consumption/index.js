@@ -1,20 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  IconButton,
-} from '@mui/material'
-import { styled } from '@mui/material/styles'
-import CloseIcon from '@mui/icons-material/Close'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import { SteadyStateConsumptionApiService } from '../../services/polyester/steadyStateConsumptionApiService'
@@ -23,6 +10,7 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import ValidationErrorDialog from './ValidationErrorDialog'
+import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 
 const GradeWiseSteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -113,7 +101,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'april',
       title: headerMap[4],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -121,7 +109,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'may',
       title: headerMap[5],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -129,7 +117,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'june',
       title: headerMap[6],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -137,7 +125,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'july',
       title: headerMap[7],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -145,7 +133,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'august',
       title: headerMap[8],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -153,7 +141,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'september',
       title: headerMap[9],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -161,7 +149,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'october',
       title: headerMap[10],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -169,7 +157,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'november',
       title: headerMap[11],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -177,7 +165,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'december',
       title: headerMap[12],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -185,7 +173,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'january',
       title: headerMap[1],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -193,7 +181,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'february',
       title: headerMap[2],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -201,7 +189,7 @@ const GradeWiseSteadyStateConsumption = () => {
       field: 'march',
       title: headerMap[3],
       minWidth: 120,
-      type: 'number1',
+      type: 'row-based',
       editable: true,
       format: valueFormat,
     },
@@ -271,6 +259,8 @@ const GradeWiseSteadyStateConsumption = () => {
           id: `${index}`,
           originalRemark: item.remarks,
           Particulars: item.normParameterTypeDisplayName,
+          isEditable: isFilament ? item.isEditable : true,
+          type: 'number1',
         }))
 
         setRows(formattedData)
@@ -661,7 +651,7 @@ const GradeWiseSteadyStateConsumption = () => {
     <Box>
       <LoaderBackdrop open={!!loading} />
 
-      <AdvanceKendoTable
+      <RowBasedKendoTable
         columns={columns}
         rows={rows}
         setRows={setRows}

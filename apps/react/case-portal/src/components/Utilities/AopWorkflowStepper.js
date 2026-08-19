@@ -51,9 +51,13 @@ export const formatRoleName = (roleStr) => {
     .replace(/-/g, ' ')
     .split(' ')
     .map((word) => {
+      if (!word) return ''
       const wLower = word.toLowerCase()
-      if (['cts', 'fca', 'gms', 'bpc', 'ldpe', 'meg', 'eoeg'].includes(wLower)) {
-        return wLower.toUpperCase()
+      if (
+        word.length === 3 ||
+        ['ldpe', 'meg', 'eoeg'].includes(wLower)
+      ) {
+        return word.toUpperCase()
       }
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     })

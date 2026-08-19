@@ -90,7 +90,7 @@ export default function RelPerfPlantWise() {
       minWidth: 100,
     },
     {
-      field: 'actual',
+      field: 'actuals',
       title: `FY${startYear ? startYear.slice(-2) : ''} Actual`,
       editable: true,
       type: 'numberWithUOMValidation',
@@ -138,19 +138,24 @@ export default function RelPerfPlantWise() {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      var data = await ReliabilityPerformancePlantWiseFunctionalApiService.getReliabilityPerformancePlantWise(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        'Reliability Performance',
-      )
+      var data =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.getReliabilityPerformancePlantWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'Reliability Performance',
+        )
 
       const processedData1 = data.data.map((item, index) => ({
         ...item,
         id: item?.id || index,
         idFromAPI: item?.id,
         rowNo: index + 1,
+        actuals: item.actual,
         originalRemark: item?.remarks || '',
+        isEditable: true,
+        currentPlanEditable:
+          item?.isEditable === true || item?.isEditable === 'true',
       }))
 
       setReliabilityRows(processedData1)
@@ -168,7 +173,7 @@ export default function RelPerfPlantWise() {
   const saveReliabilityPerformance = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
-        actual: row?.actual,
+        actual: row?.actuals,
         aop: row?.aop,
         bestAchieved: row?.bestAchieved,
         id: row?.idFromAPI || null,
@@ -180,12 +185,14 @@ export default function RelPerfPlantWise() {
         masterId: row?.masterId,
         aopYear: row?.aopYear,
         plantId: row?.plantId,
+        isEditable: row?.isEditable,
       }))
 
-      const response = await ReliabilityPerformancePlantWiseFunctionalApiService.saveReliabilityPerformancePlantWise(
-        payloadData,
-        keycloak,
-      )
+      const response =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.saveReliabilityPerformancePlantWise(
+          payloadData,
+          keycloak,
+        )
 
       setSnackbarOpenReliabilityPerformance(true)
       setSnackbarDataReliabilityPerformance({
@@ -286,12 +293,13 @@ export default function RelPerfPlantWise() {
     try {
       let response
 
-      response = await ReliabilityPerformancePlantWiseFunctionalApiService.importReliabilityPerformanceExcelPlantWise(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        rawFile,
-      )
+      response =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.importReliabilityPerformanceExcelPlantWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpenReliabilityPerformance(true)
@@ -346,6 +354,42 @@ export default function RelPerfPlantWise() {
   const handleExcelUpload = (rawFile) => {
     saveReliabilityPerformanceExcelFile(rawFile)
   }
+  const handleLoad = async () => {
+    setLoading(true)
+    try {
+      const data =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.handleLoadReliabilityPlantwise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      if (data || data == 0) {
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpenReliabilityPerformance(true)
+      setSnackbarDataReliabilityPerformance({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <>
@@ -377,9 +421,11 @@ export default function RelPerfPlantWise() {
           ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_Reliability_Performance`,
           downloadExcelBtn: true,
           uploadExcelBtn: true,
+          showLoadBtn: true,
         }}
         columns={reliabilityPerformanceColumns}
         saveChanges={saveChangesReliabilityPerformance}
+        handleLoad={handleLoad}
         downloadExcelForConfiguration={() =>
           exportReliabilityExcel(
             keycloak,

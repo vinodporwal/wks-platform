@@ -117,6 +117,7 @@ export default function useApprovalsInbox(onClose) {
             item.gateDisplayName || item.gateName || '',
           ).toLowerCase()
           const role = String(item.assignedRole || '').toLowerCase()
+          const dateStr = String(item.actionTakenDate || '').toLowerCase()
           const modeStr =
             item.actions?.mode === 'ACTION'
               ? 'approval pending action required'
@@ -128,6 +129,7 @@ export default function useApprovalsInbox(onClose) {
             year.includes(term) ||
             stage.includes(term) ||
             role.includes(term) ||
+            dateStr.includes(term) ||
             modeStr.includes(term)
           )
         })
@@ -164,11 +166,36 @@ export default function useApprovalsInbox(onClose) {
         }
       }
 
+      const isCompleted =
+        item.status === 'completed' ||
+        item.gateName === 'COMPLETED' ||
+        String(item.gateDisplayName || '').toLowerCase().includes('approved')
+      const isAction = item.actions?.mode === 'ACTION'
+      const statusModeStr = isCompleted
+        ? 'Approved'
+        : isAction
+        ? 'Approval Pending'
+        : 'In Progress'
+      const stageStr = isCompleted
+        ? 'All Approved'
+        : item.gateDisplayName || item.gateName || 'Pending'
+
       return {
         ...item,
         siteId: sid,
         verticalId: v_id,
         expanded: Boolean(expandedRows[rowId]),
+        statusMode: statusModeStr,
+        gateDisplayName: stageStr,
+        formattedActionDate: item.actionTakenDate
+          ? new Date(item.actionTakenDate).toLocaleString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '-',
       }
     })
   }, [items, searchTerm, expandedRows, sitesData])

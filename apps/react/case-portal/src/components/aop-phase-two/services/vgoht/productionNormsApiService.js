@@ -13,6 +13,10 @@ export const ProductionNormsApiService = {
   // Constants APIs
   getConstantsData,
   saveConstantsData,
+  getConstantsDataEORSOR,
+  saveConstantsDataEORSOR,
+  importConstantsExcelEORSOR,
+  exportConstantsExcelEORSOR,
   importConstantsExcel,
   exportConstantsExcel,
 
@@ -125,13 +129,14 @@ async function importConfigurationExcel(file, keycloak, plantId, year) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} excelName - Excel file name
  * @returns {Promise} Export response
  */
-async function exportConfigurationExcel(keycloak, plantId, year) {
+async function exportConfigurationExcel(keycloak, plantId, year, excelName) {
   return ImportExportApiService.exportExcelData(keycloak, {
     endpoint: `vgoht/production-norms/configuration/export/${plantId}/${year}`,
     queryParams: {},
-    fileName: `VGOHT_Production_Norms_Configuration_${year}.xlsx`,
+    fileName: excelName,
     method: 'GET',
   })
 }
@@ -264,6 +269,32 @@ async function getConstantsData(keycloak, plantId, year) {
 }
 
 /**
+ * Get Production Norms Constants EOR SOR data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Constants data
+ */
+async function getConstantsDataEORSOR(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/constant?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
  * Save Production Norms Constants data
  * @param {Object} keycloak - Keycloak session
  * @param {string} year - AOP Year
@@ -283,7 +314,51 @@ async function saveConstantsData(
   periodTo,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const url = `${Config.CaseEngineUrl}/taskvgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Production Norms Constants EOR SOR data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {string} plantId - Plant ID
+ * @param {string} siteId - Site ID
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
+ * @param {Array} payload - Data to save
+ * @returns {Promise} Save response
+ */
+async function saveConstantsDataEORSOR(
+  keycloak,
+  year,
+  plantId,
+  siteId,
+  periodFrom,
+  periodTo,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/constant?year=${year}&plantFKId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -338,14 +413,57 @@ async function importConstantsExcel(
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} excelName - Excel file name
  * @returns {Promise} Export response
  */
-async function exportConstantsExcel(keycloak, plantId, year) {
+async function exportConstantsExcel(keycloak, plantId, year, excelName) {
   return exportExcelData(
     keycloak,
     'vgoht/norms-basis/constant/export',
     { year: year, plantFKId: plantId },
-    `VGOHT_Production_Norms_Constants_${year}.xlsx`,
+    excelName,
+  )
+}
+/**
+ * Import Constants EOR SOR Excel file
+ * @param {File} file - Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
+ * @returns {Promise} Import response
+ */
+async function importConstantsExcelEORSOR(
+  file,
+  keycloak,
+  plantId,
+  year,
+  periodFrom,
+  periodTo,
+) {
+  return saveExcelData(file, keycloak, 'vgoht/constant/import', {
+    year: year,
+    plantFKId: plantId,
+    periodFrom: periodFrom,
+    periodTo: periodTo,
+  })
+}
+
+/**
+ * Export Constants EOR SOR Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @param {string} excelName - Excel file name
+ * @returns {Promise} Export response
+ */
+async function exportConstantsExcelEORSOR(keycloak, plantId, year, excelName) {
+  return exportExcelData(
+    keycloak,
+    'vgoht/constant/export',
+    { year: year, plantFKId: plantId },
+    excelName,
   )
 }
 
@@ -484,13 +602,14 @@ async function importPIMSThroughputExcel(file, keycloak, plantId, year) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} excelName - Excel file name
  * @returns {Promise} Export response
  */
-async function exportPIMSThroughputExcel(keycloak, plantId, year) {
+async function exportPIMSThroughputExcel(keycloak, plantId, year, excelName) {
   return ImportExportApiService.exportExcelData(keycloak, {
     endpoint: `production-norms/pims-throughput/export/${plantId}/${year}`,
     queryParams: {},
-    fileName: `Production_Norms_PIMS_Throughput_${year}.xlsx`,
+    fileName: excelName,
     method: 'GET',
   })
 }

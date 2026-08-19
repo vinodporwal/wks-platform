@@ -1,6 +1,7 @@
 import React from 'react'
 import {
   Box,
+  Button,
   IconButton,
   InputAdornment,
   Stack,
@@ -11,6 +12,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import ClearIcon from '@mui/icons-material/Clear'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
 
 /**
  * Top Action Toolbar Header component for Approvals screen
@@ -24,6 +26,7 @@ export default function ApprovalsHeader({
   setSearchTerm,
   load,
   loading,
+  onExportExcel,
 }) {
   return (
     <Stack
@@ -178,6 +181,34 @@ export default function ApprovalsHeader({
             ) : null,
           }}
         />
+
+        {/* Export Excel Action Button */}
+        {typeof onExportExcel === 'function' && (
+          <Tooltip title='Export to Excel'>
+            <Button
+              variant='outlined'
+              size='small'
+              onClick={onExportExcel}
+              startIcon={<FileDownloadIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                textTransform: 'none',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#005eb8',
+                borderColor: '#cbd5e1',
+                backgroundColor: '#ffffff',
+                height: '34px',
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  borderColor: '#005eb8',
+                  backgroundColor: '#f0f7ff',
+                },
+              }}
+            >
+              Export Excel
+            </Button>
+          </Tooltip>
+        )}
 
         {/* Refresh Action Button */}
         <Tooltip title='Refresh Inbox'>

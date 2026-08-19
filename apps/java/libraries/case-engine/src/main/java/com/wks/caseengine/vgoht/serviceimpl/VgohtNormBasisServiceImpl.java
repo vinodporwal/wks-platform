@@ -5,9 +5,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -338,6 +342,27 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		
 	}
 
+	@Transactional
+	public List<VgohtNormConfigurationDTO> saveConfigurationDataWithTwoValues(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
+
+		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingConstantData(year, dtoList);
+
+		List<VgohtNormConfigurationDTO> failedRecords = validateConstantRemarks(dtoList, existingMap);
+
+		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
+	
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				if (failedIds.contains(dto.getNormParameterFKId())) continue;
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getApr()), dto.getRemarks(), 4);
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getMay()), dto.getRemarks(), 5);
+				
+			}
+
+		return failedRecords;
+
+		
+	}
+
 	private void saveProductionDemandValues(String normParameterId, String year, String value, String remarks, int month) {
 		String sql = """
 			MERGE INTO NormAttributeTransactions AS target
@@ -361,6 +386,109 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		query.setParameter("remarks", remarks);
 		query.setParameter("month", month);
 		query.executeUpdate();
+	}
+
+	private void saveConfigurationData(String normParameterId, String year, String value, String remarks, int month) {
+		String sql = """
+			MERGE INTO NormAttributeTransactions AS target
+			USING (SELECT :normParameterId AS NormParameter_FK_Id,
+						:year AS AuditYear) AS source
+			ON target.NormParameter_FK_Id = source.NormParameter_FK_Id
+			AND target.AuditYear = source.AuditYear
+			AND target.AOPMonth = :month
+			WHEN MATCHED THEN
+				UPDATE SET AttributeValue = :value,
+						Remarks = :remarks
+			WHEN NOT MATCHED THEN
+				INSERT (Id, NormParameter_FK_Id, AuditYear, AOPMonth, AttributeValue, Remarks)
+				VALUES (NEWID(), :normParameterId, :year, :month, :value, :remarks);
+		""";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("normParameterId", normParameterId);
+		query.setParameter("year", year);
+		query.setParameter("value", value);
+		query.setParameter("remarks", remarks);
+		query.setParameter("month", month);
+		query.executeUpdate();
+	}
+
+	private List<VgohtNormConfigurationDTO> validateConstantRemarks(
+			List<VgohtNormConfigurationDTO> dtoList,
+			Map<String, VgohtNormConfigurationDTO> existingMap) {
+
+		List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+
+		for (VgohtNormConfigurationDTO dto : dtoList) {
+
+			VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
+
+			double existingApr = (existing != null && existing.getApr() != null) ? existing.getApr() : 0.0;
+			double existingOct = (existing != null && existing.getMay() != null) ? existing.getMay() : 0.0;
+			String existingRemarks = (existing != null && existing.getRemarks() != null) ? existing.getRemarks().trim() : "";
+
+			double incomingApr = dto.getApr() != null ? dto.getApr() : 0.0;
+			double incomingOct = dto.getMay() != null ? dto.getMay() : 0.0;
+			String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+			boolean aprChanged = Double.compare(incomingApr, existingApr) != 0;
+			boolean octChanged = Double.compare(incomingOct, existingOct) != 0;
+
+			if ((aprChanged || octChanged) && incomingRemarks.equals(existingRemarks)) {
+				dto.setSaveStatus("FAILED");
+				dto.setErrDescription("Please update remarks.");
+				failedRecords.add(dto);
+			}
+		}
+
+		return failedRecords;
+	}
+
+	private Map<String, VgohtNormConfigurationDTO> fetchExistingConstantData(
+			String year,
+			List<VgohtNormConfigurationDTO> dtoList) {
+
+		List<String> normParameterIds = dtoList.stream()
+				.map(VgohtNormConfigurationDTO::getNormParameterFKId)
+				.filter(id -> id != null && !id.isEmpty())
+				.collect(Collectors.toList());
+
+		if (normParameterIds.isEmpty()) {
+			return new HashMap<>();
+		}
+
+		String inClause = normParameterIds.stream()
+				.map(id -> "'" + id + "'")
+				.collect(Collectors.joining(", "));
+
+		String sql = "SELECT NP.Id, " +
+				"MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr, " +
+				"MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May, " +
+				"MAX(NAT.Remarks) AS Remarks " +
+				"FROM NormParameters NP " +
+				"LEFT JOIN NormAttributeTransactions NAT " +
+				"    ON NAT.NormParameter_FK_Id = NP.Id " +
+				"    AND NAT.AuditYear = :year " +
+				"WHERE NP.Id IN (" + inClause + ") " +
+				"GROUP BY NP.Id";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("year", year);
+
+		@SuppressWarnings("unchecked")
+		List<Object[]> results = query.getResultList();
+		Map<String, VgohtNormConfigurationDTO> existingMap = new HashMap<>();
+
+		for (Object[] row : results) {
+			VgohtNormConfigurationDTO existing = new VgohtNormConfigurationDTO();
+			existing.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+			existing.setApr(parseDouble(row[1]));
+			existing.setMay(parseDouble(row[2]));
+			existing.setRemarks(row[3] != null ? row[3].toString() : "");
+			existingMap.put(existing.getNormParameterFKId(), existing);
+		}
+
+		return existingMap;
 	}
 
 
@@ -889,6 +1017,81 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 	}
 
+	public AOPMessageVM getConfigurationDataWithTwoValues(String year, UUID plantFKId) {
+
+		try {
+
+			String sql = """
+				SELECT
+					NP.Id AS NormParameter_FK_Id,
+					NP.DisplayName,
+
+					MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr,
+					MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May,
+
+					MAX(NAT.Remarks) AS Remarks,
+					NP.UOM,
+					MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
+					NP.Type
+
+				FROM NormParameters NP
+				JOIN NormParameterType NPT
+					ON NP.NormParameterType_FK_Id = NPT.Id
+
+				LEFT JOIN NormAttributeTransactions NAT
+					ON NAT.NormParameter_FK_Id = NP.Id
+					AND NAT.AuditYear = :year
+
+				WHERE NP.Plant_FK_Id = :plantFKId
+					AND NPT.Name = 'Constant'
+
+				GROUP BY
+					NP.Id,
+					NP.DisplayName,
+					NP.DisplayOrder,
+					NP.UOM,
+					NP.Type
+
+				ORDER BY NP.DisplayOrder
+				""";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("year", year);
+			query.setParameter("plantFKId", plantFKId);
+
+			List<Object[]> resultList = query.getResultList();
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+				dto.setProductName(row[1] != null ? row[1].toString() : "");
+
+				dto.setApr(parseDouble(row[2]));
+				dto.setMay(parseDouble(row[3]));
+
+				dto.setRemarks(row[4] != null ? row[4].toString() : "");
+				dto.setUOM(row[5] != null ? row[5].toString() : "");
+				dto.setTypeDisplayName(row[6] != null ? row[6].toString() : "");
+				dto.setType(row[7] != null ? row[7].toString() : "");
+
+				dtoList.add(dto);
+			}
+
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setData(dtoList);
+			response.setMessage("Monthly values fetched successfully");
+
+			return response;
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to fetch monthly values", e);
+		}
+	}
+
 	public Double parseDouble(Object value) {
 
 		if (value == null) {
@@ -1264,5 +1467,147 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 
 		return map;
+	}
+
+	// ─── Two-Value Configuration – Export ────────────────────────────────────────
+
+	public byte[] exportConfigurationDataWithTwoValues(
+			String year,
+			UUID plantFKId,
+			boolean isAfterSave,
+			List<VgohtNormConfigurationDTO> dtoList) {
+
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getConfigurationDataWithTwoValues(year, plantFKId);
+				dtoList = (List<VgohtNormConfigurationDTO>) result.getData();
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Norms Basis Constant");
+			int currentRow = 0;
+
+			// Visible columns: Particulars(0), UOM(1), EOR Value(2), SOR Value(3), Remark(4)
+			// Hidden column:   NormParameterFKId(5)
+			// After-save only: Status(6), Error Description(7)
+			List<String> headerNames = new ArrayList<>(Arrays.asList(
+					"Particulars", "UOM", "EOR Value", "SOR Value", "Remark", "NormParameterFKId"));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerNames.size(); col++) {
+				headerRow.createCell(col).setCellValue(headerNames.get(col));
+			}
+
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+
+				row.createCell(0).setCellValue(dto.getProductName() != null ? dto.getProductName() : "");
+				row.createCell(1).setCellValue(dto.getUOM() != null ? dto.getUOM() : "");
+				row.createCell(2).setCellValue(dto.getApr() != null ? dto.getApr() : 0.0);
+				row.createCell(3).setCellValue(dto.getMay() != null ? dto.getMay() : 0.0);
+				row.createCell(4).setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+				row.createCell(5).setCellValue(dto.getNormParameterFKId() != null ? dto.getNormParameterFKId() : "");
+
+				if (isAfterSave) {
+					row.createCell(6).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					row.createCell(7).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+				}
+			}
+
+			int totalCols = isAfterSave ? 8 : 6;
+			for (int col = 0; col < totalCols; col++) {
+				sheet.autoSizeColumn(col);
+			}
+
+			// Hide the NormParameterFKId column from end-users
+			sheet.setColumnHidden(5, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to export configuration data with two values", e);
+		}
+	}
+
+	// ─── Two-Value Configuration – Import ────────────────────────────────────────
+
+	@Transactional
+	public AOPMessageVM importConfigurationDataWithTwoValues(
+			String year,
+			UUID plantFKId,
+			MultipartFile file) {
+
+		if (file.isEmpty() || (file.getOriginalFilename() != null && !file.getOriginalFilename().endsWith(".xlsx"))) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+
+			Sheet sheet = workbook.getSheetAt(0);
+
+			if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+				throw new RuntimeException("Excel sheet is empty");
+			}
+
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			// Start from row 1 to skip the header
+			for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+				Row row = sheet.getRow(i);
+				if (row == null) continue;
+
+				String particulars    = getCellString(row.getCell(0));
+				String uom            = getCellString(row.getCell(1));
+				Cell   eorCell        = row.getCell(2);
+				Cell   sorCell        = row.getCell(3);
+				String remark         = getCellString(row.getCell(4));
+				String normParamFKId  = getCellString(row.getCell(5));
+
+				// Ignore completely empty rows
+				if (particulars.isEmpty() && uom.isEmpty()
+						&& getCellString(eorCell).isEmpty() && getCellString(sorCell).isEmpty()
+						&& remark.isEmpty() && normParamFKId.isEmpty()) {
+					continue;
+				}
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+				dto.setProductName(particulars);
+				dto.setUOM(uom);
+				dto.setApr(getCellDouble(eorCell));
+				dto.setMay(getCellDouble(sorCell));
+				dto.setRemarks(remark);
+				dto.setNormParameterFKId(normParamFKId);
+
+				dtoList.add(dto);
+			}
+
+			List<VgohtNormConfigurationDTO> failedRecords =
+					saveConfigurationDataWithTwoValues(year, plantFKId, dtoList);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = exportConfigurationDataWithTwoValues(year, plantFKId, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import configuration data with two values", ex);
+		}
 	}
 }
