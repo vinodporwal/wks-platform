@@ -4,12 +4,14 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.crude.repository.NormBasisRepository;
 import com.wks.caseengine.crude.service.NormBasisService;
@@ -319,24 +321,101 @@ public List<NormBasisDTO> getPIMSThroughput(UUID plantId, String aopYear) {
         procedureName = "[RIL.AOP.Refinery].[dbo].[" + procedureName + "]";
     }
 
-    return fetchNormBasisFromProcedure(plantId, aopYear, procedureName);
+    String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+    return jdbcTemplate.query(sql, (rs, rowNum) -> {
+        NormBasisDTO.NormBasisDTOBuilder builder = NormBasisDTO.builder()
+            .id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
+            .name(rs.getString("DisplayName"))
+            .displayName(rs.getString("DisplayName"))
+            .uom(rs.getString("UOM"))
+            .remarks(hasColumn(rs, "Remarks") ? rs.getString("Remarks") : null)
+            .type(hasColumn(rs, "Type") ? rs.getString("Type") : null)
+            .normParameterType(hasColumn(rs, "NormParameterType") ? rs.getString("NormParameterType") : null)
+            .displayOrder(hasColumn(rs, "DisplayOrder") ? rs.getString("DisplayOrder") : null)
+            .isEditable(hasColumn(rs, "IsEditable") && rs.getBoolean("IsEditable"))
+            .config(hasColumn(rs, "Config") ? rs.getString("Config") : null);
+
+        if (hasColumn(rs, "AttributeValue")) builder.attributeValue(rs.getString("AttributeValue"));
+        if (hasColumn(rs, "Apr")) builder.apr(rs.getString("Apr"));
+        if (hasColumn(rs, "May")) builder.may(rs.getString("May"));
+        if (hasColumn(rs, "Jun")) builder.jun(rs.getString("Jun"));
+        if (hasColumn(rs, "Jul")) builder.jul(rs.getString("Jul"));
+        if (hasColumn(rs, "Aug")) builder.aug(rs.getString("Aug"));
+        if (hasColumn(rs, "Sep")) builder.sep(rs.getString("Sep"));
+        if (hasColumn(rs, "Oct")) builder.oct(rs.getString("Oct"));
+        if (hasColumn(rs, "Nov")) builder.nov(rs.getString("Nov"));
+        if (hasColumn(rs, "Dec")) builder.dec(rs.getString("Dec"));
+        if (hasColumn(rs, "Jan")) builder.jan(rs.getString("Jan"));
+        if (hasColumn(rs, "Feb")) builder.feb(rs.getString("Feb"));
+        if (hasColumn(rs, "Mar")) builder.mar(rs.getString("Mar"));
+
+        return builder.build();
+    }, plantId.toString(), aopYear);
 }
 
-
+private boolean hasColumn(java.sql.ResultSet rs, String columnName) {
+    try {
+        rs.findColumn(columnName);
+        return true;
+    } catch (java.sql.SQLException e) {
+        return false;
+    }
+}
 
 @Override
+@Transactional
 public void updatePimsThroughput(List<NormBasisDTO> normBasisDTOs, UUID plantId, String aopYear, UUID siteId, String periodFrom, String periodTo) {
-   
-    List<Object[]> updates = new ArrayList<>();
-
-    for(NormBasisDTO normBasisDTO : normBasisDTOs) {
-        updates.add(new Object[]{normBasisDTO.getAttributeValue(), normBasisDTO.getRemarks(), normBasisDTO.getId()});
+    if (normBasisDTOs == null || normBasisDTOs.isEmpty()) {
+        return;
     }
 
-    if(updates.size() > 0) {
-        String sql = "update NormAttributeTransactions set AttributeValue = ?, Remarks = ? where Id = ?";
-        jdbcTemplate.batchUpdate(sql, updates);
-    }
+    Map<Integer, java.util.function.Function<NormBasisDTO, String>> monthGetters = new java.util.LinkedHashMap<>();
+    monthGetters.put(4, NormBasisDTO::getApr);
+    monthGetters.put(5, NormBasisDTO::getMay);
+    monthGetters.put(6, NormBasisDTO::getJun);
+    monthGetters.put(7, NormBasisDTO::getJul);
+    monthGetters.put(8, NormBasisDTO::getAug);
+    monthGetters.put(9, NormBasisDTO::getSep);
+    monthGetters.put(10, NormBasisDTO::getOct);
+    monthGetters.put(11, NormBasisDTO::getNov);
+    monthGetters.put(12, NormBasisDTO::getDec);
+    monthGetters.put(1, NormBasisDTO::getJan);
+    monthGetters.put(2, NormBasisDTO::getFeb);
+    monthGetters.put(3, NormBasisDTO::getMar);
 
+    for (NormBasisDTO dto : normBasisDTOs) {
+        UUID normParamId = dto.getId();
+        if (normParamId == null) {
+            continue;
+        }
+
+        // If month values exist in DTO, save each month
+        boolean hasMonthValues = dto.getApr() != null || dto.getMay() != null || dto.getJun() != null ||
+                                 dto.getJul() != null || dto.getAug() != null || dto.getSep() != null ||
+                                 dto.getOct() != null || dto.getNov() != null || dto.getDec() != null ||
+                                 dto.getJan() != null || dto.getFeb() != null || dto.getMar() != null;
+
+        if (hasMonthValues) {
+            for (Map.Entry<Integer, java.util.function.Function<NormBasisDTO, String>> entry : monthGetters.entrySet()) {
+                int month = entry.getKey();
+                String value = entry.getValue().apply(dto);
+                String remarks = dto.getRemarks();
+
+                String checkSql = "SELECT COUNT(1) FROM NormAttributeTransactions WHERE NormParameter_FK_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, normParamId, month, aopYear);
+
+                if (count != null && count > 0) {
+                    String updateSql = "UPDATE NormAttributeTransactions SET AttributeValue = ?, Remarks = ? WHERE NormParameter_FK_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                    jdbcTemplate.update(updateSql, value, remarks, normParamId, month, aopYear);
+                } else {
+                    String insertSql = "INSERT INTO NormAttributeTransactions (Id, NormParameter_FK_Id, AuditYear, AOPMonth, AttributeValue, Remarks) VALUES (NEWID(), ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql, normParamId, aopYear, month, value, remarks);
+                }
+            }
+        } else if (dto.getAttributeValue() != null) {
+            String sql = "UPDATE NormAttributeTransactions SET AttributeValue = ?, Remarks = ? WHERE Id = ?";
+            jdbcTemplate.update(sql, dto.getAttributeValue(), dto.getRemarks(), dto.getId());
+        }
+    }
 }
 }

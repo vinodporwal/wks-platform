@@ -360,7 +360,7 @@ public class PlantReportServiceImpl implements PlantReportService {
                     .id(UUID.fromString(rs.getString("Id")))
                     .initiativeDescription(rs.getString("InitiativeDescription"))
                     .cost(rs.getDouble("Cost"))
-                    .outcome(rs.getDouble("Outcome"))
+                    .outcome(rs.getString("Outcome"))
                     .recommendation(rs.getString("Recommendation"))
                     .targetDate(rs.getDate("TargetDate"))
                     .remark(rs.getString("Remark"))
@@ -1489,7 +1489,7 @@ public class PlantReportServiceImpl implements PlantReportService {
                     String initiativeDescription = getStringCellValueReliability(row.getCell(1), dto);
                     String recommendation = getStringCellValueReliability(row.getCell(2), dto);
                     Double cost = getNumericCellValueReliability(row.getCell(3), dto);
-                    Double outcome = getNumericCellValueReliability(row.getCell(4), dto);
+                    String outcome = getStringCellValueReliability(row.getCell(4), dto);
                     Date targetDate = getDateCellValueReliability(row.getCell(5), dto);
                     String remark = getStringCellValueReliability(row.getCell(6), dto);
                     String idStr = getStringCellValueReliability(row.getCell(7), dto);
