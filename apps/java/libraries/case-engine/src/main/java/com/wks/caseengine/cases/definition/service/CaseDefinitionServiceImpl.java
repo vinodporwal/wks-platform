@@ -511,7 +511,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 					CasesAndEventsMapping mapping = new CasesAndEventsMapping();
 					mapping.setCaseNo(caseDetails.getCaseNo());
 					casesAndEventsMappingRepository.save(mapping);
-					System.out.println("EventId of is: " + eventId + " for case No: " + caseDetails.getCaseNo());
 				}
 				log.info("SQL Server CasesAndEventsMappingRepository persistence completed successfully: caseNo={}, eventCount={}",
 						caseDetails.getCaseNo(), caseData.getEventIds().size());
@@ -547,7 +546,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				"**************************************sending Emails part*************************************************");
 		System.out.println("************************************ Is Draft" + caseData.getIsDraft());
 		attributeValue = attributeValue.replace("\\\"", "\"");
-		System.out.println("Attribute Value: " + attributeValue);
 
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
@@ -1220,7 +1218,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        boolean updated = false; // Track if updates are made
 	        for (Attribute attribute : caseDetails.getAttributes()) {
 	            String attributeValue = attribute.getValue();
-	            System.out.println("Case No: " + caseDetails.getCaseNo() + " :: Attribute: " + attributeValue);
 	            JsonNode rootNode = objectMapper.readTree(attributeValue);
 	            JsonNode recommendationNode = rootNode.path("dataGrid1");
 	            if (recommendationNode.isArray()) {
