@@ -340,12 +340,12 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 				        }
 				    }
 				}else {
-					if(qualityTransactionDTO.getRemark()==null) {
-						 qualityTransactionDTO.setErrDescription("Please add remark");
-				            qualityTransactionDTO.setSaveStatus("Failed");
-				            failedList.add(qualityTransactionDTO);
-				            continue;
-					}
+					// if(qualityTransactionDTO.getRemark()==null) {
+					// 	 qualityTransactionDTO.setErrDescription("Please add remark");
+				    //         qualityTransactionDTO.setSaveStatus("Failed");
+				    //         failedList.add(qualityTransactionDTO);
+				    //         continue;
+					// }
 				}
 				
 				qualityTransaction.setRemark(qualityTransactionDTO.getRemark());
