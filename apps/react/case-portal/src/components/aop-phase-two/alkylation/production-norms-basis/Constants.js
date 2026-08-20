@@ -279,7 +279,10 @@ const Constants = ({ startDate, endDate }) => {
           const blob = new Blob([bytes], {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           })
-          downloadBlobExcel(blob, `Constants_Errors_${new Date().getTime()}.xlsx`)
+          downloadBlobExcel(
+            blob,
+            `Constants_Errors_${new Date().getTime()}.xlsx`,
+          )
 
           setSnackbarOpen(true)
           setSnackbarData({
@@ -328,7 +331,7 @@ const Constants = ({ startDate, endDate }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        EXCEL_NAME
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

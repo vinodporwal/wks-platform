@@ -134,7 +134,6 @@ const ProductionNormsBasisAlkylation = () => {
 
     setNormCalculationLoading(true)
     try {
-
       // After load succeeds, trigger calculateManualProduction
       await ProductionNormsApiService.calculateManualProduction(
         keycloak,
@@ -145,12 +144,12 @@ const ProductionNormsBasisAlkylation = () => {
       )
       setSnackbarOpen(false)
       setSnackbarData({
-        message: response?.message || 'Norm calculation completed successfully!',
+        message:
+          response?.message || 'Norm calculation completed successfully!',
         severity: 'success',
         autoHide: true,
       })
       setRefreshData(true)
-
     } catch (error) {
       console.error('Error in norm calculation:', error)
       setSnackbarOpen(false)
@@ -195,8 +194,6 @@ const ProductionNormsBasisAlkylation = () => {
       return tabId
     })
     .filter((tab) => tab !== null)
-
-
 
   const renderTab = () => {
     if (!tabs.length || !availableTabs.length) {

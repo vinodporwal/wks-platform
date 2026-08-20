@@ -29,10 +29,7 @@ const OverallAopConsumptionAlkylation = () => {
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const EXCEL_NAME = generateExcelName(
-      dataGridStore,
-      'Overall AOP Consumption',
-    )
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Overall AOP Consumption')
 
   const columns = [
     {

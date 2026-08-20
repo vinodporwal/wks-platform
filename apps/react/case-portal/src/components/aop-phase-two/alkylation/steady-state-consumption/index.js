@@ -36,7 +36,10 @@ const SteadyStateConsumptionAlkylation = () => {
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Steady State Consumption')
+  const EXCEL_NAME = generateExcelName(
+    dataGridStore,
+    'Steady State Consumption',
+  )
 
   const columns = [
     {
@@ -429,7 +432,10 @@ const SteadyStateConsumptionAlkylation = () => {
           const blob = new Blob([bytes], {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           })
-          downloadBlobExcel(blob, `Steady_State_Consumption_Errors_${new Date().getTime()}.xlsx`)
+          downloadBlobExcel(
+            blob,
+            `Steady_State_Consumption_Errors_${new Date().getTime()}.xlsx`,
+          )
           setSnackbarOpen(true)
           setSnackbarData({
             message:
@@ -500,7 +506,7 @@ const SteadyStateConsumptionAlkylation = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}
