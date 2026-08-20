@@ -18,6 +18,7 @@ import NaphthaLimsDataSet from './NaphthaLimsDataSet'
 import NaphthaHMDComponent from './NaphthaHMDComponent'
 import ModeSelection from './ModeSelection'
 import SpyroInputMinMax from './SpyroInputMinMax'
+import MXODataComponent from './MXOData'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -1302,7 +1303,8 @@ const CrackerConfig = () => {
                   />
                 </Box>
               )
-
+            case 'MXO Data':
+              return <MXODataComponent />;
             default:
               return null
           }
