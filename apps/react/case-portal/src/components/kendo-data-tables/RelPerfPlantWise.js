@@ -71,7 +71,7 @@ export default function RelPerfPlantWise() {
       type: 'number',
       minWidth: 70,
     },
-    { field: 'parameter', title: 'Parameter', editable: false, minWidth: 100 },
+    { field: 'parameter', title: 'Parameter', editable: false, minWidth: 200 },
     { field: 'uom', title: 'UOM', editable: false, widthT: 70, minWidth: 100 },
     {
       field: 'bestAchieved',
@@ -103,20 +103,23 @@ export default function RelPerfPlantWise() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
-      minWidth: 100,
+      // minWidth: 100,
     },
-    { field: 'limit', title: 'Limit', editable: true, minWidth: 100 },
     {
-      field: 'rationale',
-      title: 'Rationale / Reasons for Changes',
-      editable: true,
-      minWidth: 100,
+      field: 'limit', title: 'Limit', editable: true
+      // , minWidth: 100 
     },
+    // {
+    //   field: 'rationale',
+    //   title: 'Rationale / Reasons for Changes',
+    //   editable: true,
+    //   minWidth: 100,
+    // },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
-      minWidth: 100,
+      // minWidth: 100,
     },
   ]
 
