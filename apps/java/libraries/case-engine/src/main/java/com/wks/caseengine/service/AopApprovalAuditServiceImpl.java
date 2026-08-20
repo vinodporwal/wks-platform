@@ -100,7 +100,10 @@ public class AopApprovalAuditServiceImpl implements AopApprovalAuditService {
     @Transactional(readOnly = true)
     public List<AopApprovalHistoryDTO> getAuditTrail(UUID plantFkId, String year) {
         return auditRepository.findAllByPlantFkIdAndYearOrderByActionAtAsc(plantFkId, year)
-                .stream().map(this::toDTO).collect(Collectors.toList());
+                .stream()
+                .filter(row -> row != null && !"SKIPPED".equalsIgnoreCase(row.getAction()))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
