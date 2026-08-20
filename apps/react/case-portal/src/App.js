@@ -165,6 +165,11 @@ const App = () => {
 
     if (!isAdmin) {
       menu.items = menu.items.filter(item => item.id !== 'management');
+
+      // Restrict workspace group to Cases only for non-admin users
+      menu.items[1].children = menu.items[1].children.filter(
+        child => child.id === 'case-list'
+      );
     }
   
 
