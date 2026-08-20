@@ -14,7 +14,6 @@ import AuditTrailDialog from 'components/data-tables/AOPWorkFlow/AopMyApprovals/
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { setIsReleased } from 'store/reducers/dataGridStore'
-import ReleaseAPIService from 'components/aop-phase-two/services/common/releaseAPIService'
 import { DataService } from 'services/DataService'
 import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
 import { useSession } from 'SessionStoreContext'
@@ -78,14 +77,14 @@ const WorkFlowMerge = () => {
     try {
       if (actionType === 'SUBMIT' || actionType === 'APPROVE') {
         // 1st check whether it is already released, release only if not already released
-        await ReleaseAPIService.ensureReleaseIfNotReleased(
+        await DataService.ensureReleaseIfNotReleased(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
         dispatch(setIsReleased({ isReleased: 1 }))
       } else if (actionType === 'REJECT') {
-        await ReleaseAPIService.deleteReleaseAOPByPlantAndYear(
+        await DataService.deleteReleaseAOPByPlantAndYear(
           keycloak,
           PLANT_ID,
           AOP_YEAR,

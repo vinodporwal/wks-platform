@@ -219,6 +219,10 @@ export const DataService = {
   getCatChemCalculationDataWithoutGrade,
   getOtherFurnanceDetails,
   saveOtherFurnanceDetails,
+  getReleaseAOPStatus,
+  releaseAOPReport,
+  ensureReleaseIfNotReleased,
+  deleteReleaseAOPByPlantAndYear,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4311,6 +4315,60 @@ async function releaseAOPReport(keycloak, plantId, year) {
     return await Promise.reject(e)
   }
 }
+
+async function ensureReleaseIfNotReleased(keycloak, plantId, year) {
+  if (!plantId || !year) return false
+  try {
+    const statusRes = await getReleaseAOPStatus(keycloak, plantId, year)
+    const isAlreadyReleased =
+      statusRes &&
+      (statusRes.isReleased === 1 ||
+        statusRes.isReleased === true ||
+        statusRes.status === 'RELEASED' ||
+        (Array.isArray(statusRes) && statusRes.length > 0) ||
+        (statusRes.data &&
+          Array.isArray(statusRes.data) &&
+          statusRes.data.length > 0))
+
+    if (!isAlreadyReleased) {
+      await releaseAOPReport(keycloak, plantId, year)
+      return true
+    }
+    return false
+  } catch (e) {
+    console.error('Error in ensureReleaseIfNotReleased, attempting release:', e)
+    try {
+      await releaseAOPReport(keycloak, plantId, year)
+      return true
+    } catch (relErr) {
+      console.error('Error calling releaseAOPReport fallback:', relErr)
+      return false
+    }
+  }
+}
+
+async function deleteReleaseAOPByPlantAndYear(keycloak, plantId, year) {
+  try {
+    const statusRes = await getReleaseAOPStatus(keycloak, plantId, year)
+    const list =
+      statusRes?.data || (Array.isArray(statusRes) ? statusRes : [])
+    for (const item of list) {
+      const id = item?.id || item?.Id
+      if (id) {
+        const url = `${Config.CaseEngineUrl}/task/release-aop?id=${encodeURIComponent(id)}`
+        const headers = {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${keycloak.token}`,
+        }
+        await fetch(url, { method: 'DELETE', headers })
+      }
+    }
+  } catch (e) {
+    console.error('Error deleting release AOP by plant and year:', e)
+  }
+}
+
 async function loadNaphthaData(
   keycloak,
   type,
