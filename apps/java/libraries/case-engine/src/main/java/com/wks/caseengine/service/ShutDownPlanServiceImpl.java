@@ -1713,7 +1713,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            }
 
 	                            if (overlapsFile ) {
-	                            	if(!(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP"))) {
+	                            	if(!( vertical.getName().equalsIgnoreCase("PP"))) {
 	                            		dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription(
 	                                        "The maintenance period overlaps with an already validated period in the file.");
@@ -1777,10 +1777,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            throw new IllegalStateException("Calculated negative duration.");
 	                        }
 
-	                        double durationInDecimalHours = (double) totalMinutes / 60.0;
-							if(peHmd) {
-								durationInDecimalHours = convertMinutesToHoursMinutes(totalMinutes);
-							}
+	                      //  double durationInDecimalHours = (double) totalMinutes / 60.0;
+							
+							double	durationInDecimalHours = convertMinutesToHoursMinutes(totalMinutes);
+							
 	                        dto.setDurationInHrs(durationInDecimalHours);
 	                    } catch (Exception e) {
 	                        if (!alreadyFailed) { 
@@ -2458,7 +2458,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 									throw new IllegalStateException("Calculated negative duration.");
 								}
 
-								double durationInDecimalHours = (double) totalMinutes / 60.0;
+								// double durationInDecimalHours = (double) totalMinutes / 60.0;
+								double durationInDecimalHours = convertMinutesToHoursMinutes(totalMinutes);
 								dto.setDurationInHrs(durationInDecimalHours);
 
 							} catch (Exception e) {
@@ -3152,6 +3153,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd;
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
+		boolean pta = verticalName.equalsIgnoreCase("PTA");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		//boolean gasifier=  verticalName.equalsIgnoreCase("PCG") && (site.getName().equalsIgnoreCase("DTA") || site.getName().equalsIgnoreCase("SEZ"))  && (plant.getName().equalsIgnoreCase("GASIFIER") || plant.getName().equalsIgnoreCase("SRU"));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
@@ -3506,18 +3508,38 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 									.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1);
 							Date entityEndDate = plantMaintenanceTransaction.getMaintEndDateTime();
 							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
-							if (!(entityEndDate != null && dtoEndDate != null
-									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
-								if(!elastomer || !filament || !staple) {
+							boolean datesChanged;
+
+							// for pta compare month value only 
+							if (pta) {
+								datesChanged = !isSameDate(entityEndDate, dtoEndDate);
+							} else {
+								datesChanged = !(entityEndDate != null
+										&& dtoEndDate != null
+										&& entityEndDate.compareTo(dtoEndDate) == 0);
+							}
+
+							if (datesChanged) {
+								if (!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
 							plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 							Date entityStartDate = plantMaintenanceTransaction.getMaintStartDateTime();
 							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
-							if (!(entityStartDate != null && dtoStartDate != null
-									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
-								if(!elastomer || !filament || !staple) {
+
+							boolean startDateChanged;
+
+							if (pta) {
+								startDateChanged = !isSameDate(entityStartDate, dtoStartDate);
+							} else {
+								startDateChanged = !(entityStartDate != null
+										&& dtoStartDate != null
+										&& entityStartDate.compareTo(dtoStartDate) == 0);
+							}
+
+							if (startDateChanged) {
+								if (!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
@@ -3587,6 +3609,21 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		long minutes = totalMinutes % 60;
 	
 		return Double.parseDouble(String.format("%d.%02d", hours, minutes));
+	}
+
+	private boolean isSameDate(Date date1, Date date2) {
+		if (date1 == null || date2 == null) {
+			return date1 == date2;
+		}
+	
+		Calendar cal1 = Calendar.getInstance();
+		Calendar cal2 = Calendar.getInstance();
+	
+		cal1.setTime(date1);
+		cal2.setTime(date2);
+	
+		return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)
+				&& cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
 	}
 
 	private void updateSlowdownActivities(ShutDownPlanDTO shutDownPlanDTO, PlantMaintenanceTransaction plantMaintenanceTransaction, UUID plantId) {  

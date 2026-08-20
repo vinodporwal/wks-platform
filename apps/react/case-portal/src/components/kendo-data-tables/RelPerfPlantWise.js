@@ -138,12 +138,13 @@ export default function RelPerfPlantWise() {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      var data = await ReliabilityPerformancePlantWiseFunctionalApiService.getReliabilityPerformancePlantWise(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        'Reliability Performance',
-      )
+      var data =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.getReliabilityPerformancePlantWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'Reliability Performance',
+        )
 
       const processedData1 = data.data.map((item, index) => ({
         ...item,
@@ -154,7 +155,7 @@ export default function RelPerfPlantWise() {
         originalRemark: item?.remarks || '',
         isEditable: true,
         currentPlanEditable:
-            item?.isEditable === true || item?.isEditable === 'true',
+          item?.isEditable === true || item?.isEditable === 'true',
       }))
 
       setReliabilityRows(processedData1)
@@ -184,13 +185,14 @@ export default function RelPerfPlantWise() {
         masterId: row?.masterId,
         aopYear: row?.aopYear,
         plantId: row?.plantId,
-        isEditable: row?.isEditable,  
+        isEditable: row?.isEditable,
       }))
 
-      const response = await ReliabilityPerformancePlantWiseFunctionalApiService.saveReliabilityPerformancePlantWise(
-        payloadData,
-        keycloak,
-      )
+      const response =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.saveReliabilityPerformancePlantWise(
+          payloadData,
+          keycloak,
+        )
 
       setSnackbarOpenReliabilityPerformance(true)
       setSnackbarDataReliabilityPerformance({
@@ -291,12 +293,13 @@ export default function RelPerfPlantWise() {
     try {
       let response
 
-      response = await ReliabilityPerformancePlantWiseFunctionalApiService.importReliabilityPerformanceExcelPlantWise(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        rawFile,
-      )
+      response =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.importReliabilityPerformanceExcelPlantWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpenReliabilityPerformance(true)
@@ -352,37 +355,41 @@ export default function RelPerfPlantWise() {
     saveReliabilityPerformanceExcelFile(rawFile)
   }
   const handleLoad = async () => {
-      try {
-        const data = await ReliabilityPerformancePlantWiseFunctionalApiService.handleLoadReliabilityPlantwise(
+    setLoading(true)
+    try {
+      const data =
+        await ReliabilityPerformancePlantWiseFunctionalApiService.handleLoadReliabilityPlantwise(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-        if (data || data == 0) {
-          setSnackbarOpenReliabilityPerformance(true)
-          setSnackbarDataReliabilityPerformance({
-            message: 'Data refreshed successfully!',
-            severity: 'success',
-          })
-          fetchData()
-        } else {
-          setSnackbarOpenReliabilityPerformance(true)
-          setSnackbarDataReliabilityPerformance({
-            message: 'Data Refresh Falied!',
-            severity: 'error',
-          })
-        }
-  
-        return data
-      } catch (error) {
+      if (data || data == 0) {
         setSnackbarOpenReliabilityPerformance(true)
         setSnackbarDataReliabilityPerformance({
-          message: error.message || 'An error occurred',
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'Data Refresh Falied!',
           severity: 'error',
         })
-        console.error('Error!', error)
       }
+
+      return data
+    } catch (error) {
+      setSnackbarOpenReliabilityPerformance(true)
+      setSnackbarDataReliabilityPerformance({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
   return (
     <>

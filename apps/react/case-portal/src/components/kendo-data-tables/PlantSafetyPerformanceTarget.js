@@ -257,6 +257,7 @@ export default function PlantSafetyPerformanceTarget() {
   const handleCalculate = () => {}
   const handleCalculateP = () => {}
   const handleLoad = async () => {
+    setLoading(true) 
     try {
       const data = await PlantAopReportApiService.handleLoadPlantSafetyTarget(
         keycloak,
@@ -286,6 +287,8 @@ export default function PlantSafetyPerformanceTarget() {
         severity: 'error',
       })
       console.error('Error!', error)
+    } finally {
+      setLoading(false)
     }
   }
 

@@ -88,11 +88,9 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
       {
         field: 'outcome',
         title: 'Expected Outcome',
-        widthT: 80,
+        widthT: 150,
         editable: true,
         minWidth: 100,
-        type: 'number',
-        format: '{0:0.000}',
       },
       {
         field: 'targetDate',
@@ -127,6 +125,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
           sNo: index + 1,
           isEditable: item?.isEditable,
           cost: item.cost,
+          outcome: item.outcome,
           responsibility: item.remark,
         }))
 
@@ -184,7 +183,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
         cost: item.cost != null && item.cost !== '' ? Number(item.cost) : null,
-        outcome: item.outcome != null && item.outcome !== '' ? Number(item.outcome) : null,
+        outcome: item.outcome != null && item.outcome !== '' ? String(item.outcome).trim() : null,
         recommendation: item.recommendation || null,
         targetDate: toLocalDateString(item.targetDate) || null,
         remark: item.responsibility || null,
