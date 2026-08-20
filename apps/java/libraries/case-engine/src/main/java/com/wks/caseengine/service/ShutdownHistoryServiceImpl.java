@@ -14,6 +14,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,24 +137,46 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	@Override
-	public AOPMessageVM saveShutdownHistory(String year, String plantFKId,
+	public List<ShutdownHistoryConfigDTO> saveShutdownHistory(String year, String plantFKId,
 			List<ShutdownHistoryConfigDTO> shutdownHistoryConfigDTOs) {
 		try {
-			List<ShutdownHistoryConfig> list = new ArrayList<ShutdownHistoryConfig>();
+			List<ShutdownHistoryConfigDTO> failedRecords = new ArrayList<ShutdownHistoryConfigDTO>();
 			UUID plantId = UUID.fromString(plantFKId);
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
 			Plants plant = plantsRepository.findById(plantId).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
+			Set<Integer> validTypeOfSDValues = fetchValidTypeOfSDValues(plantFKId, year);
+			Set<String> validYears = buildValidYearSet(year);
+
 			for (ShutdownHistoryConfigDTO shutdownHistoryConfigDTO : shutdownHistoryConfigDTOs) {
-				ShutdownHistoryConfig shutdownHistoryConfig=null;
-				if(shutdownHistoryConfigDTO.getId()!=null) {
-					Optional<ShutdownHistoryConfig> shutdownHistoryConfigOpt=shutdownHistoryConfigRepository.findById(shutdownHistoryConfigDTO.getId());
-					if(shutdownHistoryConfigOpt.isPresent()) {
-						shutdownHistoryConfig=shutdownHistoryConfigOpt.get();
+
+				 validateShutdownHistoryYear(shutdownHistoryConfigDTO, validYears);
+				 validateShutdownHistoryTypeOfSD(shutdownHistoryConfigDTO, validTypeOfSDValues);
+
+				 if("Failed".equals(shutdownHistoryConfigDTO.getSaveStatus())) {
+					failedRecords.add(shutdownHistoryConfigDTO);
+					continue;
+				 }
+				
+
+				ShutdownHistoryConfig shutdownHistoryConfig = null;
+				if (shutdownHistoryConfigDTO.getId() != null) {
+					Optional<ShutdownHistoryConfig> shutdownHistoryConfigOpt = shutdownHistoryConfigRepository.findById(shutdownHistoryConfigDTO.getId());
+					if (shutdownHistoryConfigOpt.isPresent()) {
+						shutdownHistoryConfig = shutdownHistoryConfigOpt.get();
+
+						 validateShutdownHistoryRemark(shutdownHistoryConfig, shutdownHistoryConfigDTO);
+
+						 if("Failed".equals(shutdownHistoryConfigDTO.getSaveStatus())) {
+							failedRecords.add(shutdownHistoryConfigDTO);
+							continue;
+						 }
+					
+
 						shutdownHistoryConfig.setModifiedOn(new Date());
 					}
-				}else {
+				} else {
 					shutdownHistoryConfig = new ShutdownHistoryConfig();
 					shutdownHistoryConfig.setCreatedOn(new Date());
 				}
@@ -163,8 +187,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 				shutdownHistoryConfig.setYear(shutdownHistoryConfigDTO.getYear());
 				shutdownHistoryConfig.setPlantFKId(plantId);
 				shutdownHistoryConfig.setTypeOfSD(shutdownHistoryConfigDTO.getTypeOfSD());
-				list.add(shutdownHistoryConfigRepository.save(shutdownHistoryConfig));
-				
+				shutdownHistoryConfigRepository.save(shutdownHistoryConfig);
 			}
 			
 			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("shutdown-history-config");
@@ -178,11 +201,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 				aopCalculationRepository.save(aopCalculation);
 			}
 
-			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			aopMessageVM.setCode(200);
-			aopMessageVM.setData(list);
-			aopMessageVM.setMessage("Data updated successfully");
-			return aopMessageVM;
+			return failedRecords;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			
@@ -1294,6 +1313,102 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		};
 	}
 
+	// ─── saveShutdownHistory – Validation helpers ────────────────────────────────
+
+	private void validateShutdownHistoryRemark(ShutdownHistoryConfig existing,
+			ShutdownHistoryConfigDTO incoming) {
+		boolean monthChanged    = !Objects.equals(existing.getMonth(),    incoming.getMonth());
+		boolean yearChanged     = !Objects.equals(existing.getYear(),     incoming.getYear());
+		boolean typeOfSDChanged = !Objects.equals(existing.getTypeOfSD(), incoming.getTypeOfSD());
+		boolean anyBusinessFieldChanged = monthChanged || yearChanged || typeOfSDChanged;
+
+		String existingRemark = existing.getRemark() != null ? existing.getRemark() : "";
+		String incomingRemark = incoming.getRemark()  != null ? incoming.getRemark()  : "";
+		boolean remarkChanged = !existingRemark.equals(incomingRemark);
+
+		if (anyBusinessFieldChanged && !remarkChanged) {
+			incoming.setSaveStatus("Failed");
+			incoming.setErrDescription("Please update remark");
+		}
+	}
+
+
+	@SuppressWarnings("unchecked")
+	private Set<Integer> fetchValidTypeOfSDValues(String plantFKId, String year) {
+		Set<Integer> validValues = new HashSet<>();
+		try {
+			AOPMessageVM result = getTypeOfSD(plantFKId, year);
+			if (result != null && result.getData() != null) {
+				List<Map<String, Object>> types = (List<Map<String, Object>>) result.getData();
+				for (Map<String, Object> type : types) {
+					Object value = type.get("value");
+					if (value instanceof Integer) {
+						validValues.add((Integer) value);
+					} else if (value != null) {
+						try {
+							validValues.add(Integer.parseInt(value.toString()));
+						} catch (NumberFormatException ignored) {}
+					}
+				}
+			}
+		} catch (Exception ignored) {}
+		return validValues;
+	}
+
+
+	private void validateShutdownHistoryTypeOfSD(ShutdownHistoryConfigDTO dto, Set<Integer> validTypeOfSDValues) {
+		if (dto.getTypeOfSD() == null || validTypeOfSDValues.isEmpty()) {
+			return;
+		}
+		if (!validTypeOfSDValues.contains(dto.getTypeOfSD())) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Invalid Type of SD value");
+		}
+	}
+
+	/**
+	 * Builds the set of valid year strings (e.g. "2026", "2025" … "2021") from
+	 * the AOP year parameter that is in "YYYY-YY" format (e.g. "2026-27"). The
+	 * start year and the previous 5 years are included (6 values total).
+	 */
+	private Set<String> buildValidYearSet(String aopYear) {
+		int currentStartYear;
+		try {
+			currentStartYear = Integer.parseInt(aopYear.split("-")[0].trim());
+		} catch (Exception e) {
+			currentStartYear = LocalDate.now().getYear();
+		}
+		Set<String> validYears = new HashSet<>();
+		for (int i = 0; i <= 5; i++) {
+			validYears.add(String.valueOf(currentStartYear - i));
+		}
+		return validYears;
+	}
+
+
+	private void validateShutdownHistoryYear(ShutdownHistoryConfigDTO dto, Set<String> validYears) {
+		if (dto.getYear() == null || dto.getYear().trim().isEmpty()) {
+			return;
+		}
+		if (!validYears.contains(dto.getYear().trim())) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Invalid Year value: " + dto.getYear() + ". Valid values are: " + validYears);
+		}
+	}
+
+	
+	private ShutdownHistoryConfig buildFailedShutdownHistoryRecord(ShutdownHistoryConfigDTO dto, UUID plantId) {
+		ShutdownHistoryConfig record = new ShutdownHistoryConfig();
+		record.setId(dto.getId());
+		record.setMonth(dto.getMonth());
+		record.setYear(dto.getYear());
+		record.setAopYear(dto.getAopYear());
+		record.setRemark(dto.getRemark());
+		record.setPlantFKId(plantId);
+		record.setTypeOfSD(dto.getTypeOfSD());
+		return record;
+	}
+
 	
 	private String validateRemark(String id, Map<String, Object> incoming) {
 		try {
@@ -1413,8 +1528,251 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		return null;
 	}
 
+	// ─── Shutdown History – Export Excel ─────────────────────────────────────────
+
+	private static final String[] SD_MONTH_NAMES = {
+		"January", "February", "March", "April", "May", "June",
+		"July", "August", "September", "October", "November", "December"
+	};
+
+	private String sdMonthName(Integer month) {
+		if (month == null || month < 1 || month > 12) return "";
+		return SD_MONTH_NAMES[month - 1];
+	}
+
+	private Integer sdMonthNumber(String name) {
+		if (name == null || name.isEmpty()) return null;
+		for (int i = 0; i < SD_MONTH_NAMES.length; i++) {
+			if (SD_MONTH_NAMES[i].equalsIgnoreCase(name.trim())) return i + 1;
+		}
+		try {
+			return (int) Math.round(Double.parseDouble(name.trim()));
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	private String sdTypeOfSDLabel(Integer days) {
+		if (days == null) return "";
+		return days + " Days";
+	}
+
+	private Integer sdTypeOfSDValue(String label) {
+		if (label == null || label.isEmpty()) return null;
+		String digits = label.replaceAll("[^0-9]", "").trim();
+		if (digits.isEmpty()) return null;
+		try {
+			return Integer.parseInt(digits);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public byte[] createShutdownHistoryExcel(String plantId, String year, boolean isAfterSave,
+			List<ShutdownHistoryConfigDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getShutdownHistory(plantId, year);
+				@SuppressWarnings("unchecked")
+				List<ShutdownHistoryConfigDTO> fetched = (List<ShutdownHistoryConfigDTO>) result.getData();
+				dtoList = fetched;
+			}
+
+			// Visible cols 0-3: Month, Year, Type of SD (Days), Remark
+			// Hidden  col  4  : Id
+			// isAfterSave adds cols 5-6: Status, Error Description
+			List<String> headerNames = new ArrayList<>(Arrays.asList(
+					"Month", "Year", "Type of SD (Days)", "Remark", "Id"));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+				CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+
+				Sheet sheet = workbook.createSheet("Shutdown History");
+				Row headerRow = sheet.createRow(0);
+				for (int col = 0; col < headerNames.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerNames.get(col));
+					cell.setCellStyle(headerStyle);
+				}
+
+				int rowIdx = 1;
+				for (ShutdownHistoryConfigDTO dto : dtoList) {
+					Row row = sheet.createRow(rowIdx++);
+
+					// Col 0 – Month (full name, e.g. "January")
+					Cell c0 = row.createCell(0);
+					c0.setCellValue(sdMonthName(dto.getMonth()));
+					c0.setCellStyle(borderStyle);
+
+					// Col 1 – Year
+					Cell c1 = row.createCell(1);
+					c1.setCellValue(dto.getYear() != null ? dto.getYear() : "");
+					c1.setCellStyle(borderStyle);
+
+					// Col 2 – Type of SD (Days) (e.g. "5 Days")
+					Cell c2 = row.createCell(2);
+					c2.setCellValue(sdTypeOfSDLabel(dto.getTypeOfSD()));
+					c2.setCellStyle(borderStyle);
+
+					// Col 3 – Remark
+					Cell c3 = row.createCell(3);
+					c3.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+					c3.setCellStyle(borderStyle);
+
+					// Col 4 – Id (hidden, used during import for updates)
+					Cell c4 = row.createCell(4);
+					c4.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
+					c4.setCellStyle(borderStyle);
+
+					if (isAfterSave) {
+						Cell c5 = row.createCell(5);
+						c5.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+						c5.setCellStyle(borderStyle);
+
+						Cell c6 = row.createCell(6);
+						c6.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+						c6.setCellStyle(borderStyle);
+					}
+				}
+
+				int totalCols = isAfterSave ? 7 : 5;
+				for (int col = 0; col < totalCols; col++) {
+					sheet.autoSizeColumn(col);
+				}
+				sheet.setColumnHidden(4, true);
+
+				workbook.write(baos);
+				return baos.toByteArray();
+			}
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to export shutdown history", ex);
+		}
+	}
+
+	// ─── Shutdown History – Import Excel ─────────────────────────────────────────
+
+	@Override
+	public AOPMessageVM importShutdownHistoryExcel(String year, String plantId, MultipartFile file) {
+		if (file.isEmpty() || (file.getOriginalFilename() != null && !file.getOriginalFilename().endsWith(".xlsx"))) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+			List<ShutdownHistoryConfigDTO> data = readShutdownHistoryExcel(file, plantId, year);
+		
+				
+			List<ShutdownHistoryConfigDTO> failedRecords = saveShutdownHistory(year, plantId, data);
+	
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = createShutdownHistoryExcel(plantId, year, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		
+	}
+
+	private List<ShutdownHistoryConfigDTO> readShutdownHistoryExcel(MultipartFile file, String plantId, String year) {
+		List<ShutdownHistoryConfigDTO> resultList = new ArrayList<>();
+		DataFormatter fmt = new DataFormatter();
+
+		try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+			Sheet sheet = workbook.getSheetAt(0);
+			if (sheet == null) {
+				return resultList;
+			}
+			int lastRow = sheet.getLastRowNum();
+			for (int r = 1; r <= lastRow; r++) {
+				Row row = sheet.getRow(r);
+				if (row == null) continue;
+
+				String monthStr    = getShutdownHistoryCellStr(row, 0, fmt);
+				String yearStr     = getShutdownHistoryCellStr(row, 1, fmt);
+				String typeOfSDStr = getShutdownHistoryCellStr(row, 2, fmt);
+				String remark      = getShutdownHistoryCellStr(row, 3, fmt);
+				String idStr       = getShutdownHistoryCellStr(row, 4, fmt);
+
+				// Skip completely empty rows
+				if (monthStr.isEmpty() && yearStr.isEmpty() && typeOfSDStr.isEmpty() && remark.isEmpty()) {
+					continue;
+				}
+
+				ShutdownHistoryConfigDTO dto = new ShutdownHistoryConfigDTO();
+				String err = null;
+
+				// Col 0 – Month (full name → integer)
+				if (!monthStr.isEmpty()) {
+					Integer monthNum = sdMonthNumber(monthStr);
+					if (monthNum == null) {
+						err = "Invalid Month value: " + monthStr;
+					} else {
+						dto.setMonth(monthNum);
+					}
+				}
+
+				// Col 1 – Year
+				dto.setYear(yearStr.isEmpty() ? null : yearStr);
+
+				// Col 2 – Type of SD (Days) ("X Days" → integer)
+				if (!typeOfSDStr.isEmpty()) {
+					Integer days = sdTypeOfSDValue(typeOfSDStr);
+					if (days == null) {
+						if (err == null) err = "Invalid Type of SD value: " + typeOfSDStr;
+					} else {
+						dto.setTypeOfSD(days);
+					}
+				}
+
+				// Col 3 – Remark
+				dto.setRemark(remark.isEmpty() ? null : remark);
+
+				// Col 4 – Id (hidden; present = update, absent = insert)
+				if (!idStr.isEmpty()) {
+					try {
+						dto.setId(UUID.fromString(idStr));
+					} catch (IllegalArgumentException e) {
+						// treat as new record if UUID is malformed
+					}
+				}
+
+				// aopYear and plantId come from request parameters
+				dto.setAopYear(year);
+				dto.setPlantId(plantId);
+
+				if (err != null) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(err);
+				}
+
+				resultList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Shutdown History Excel", e);
+		}
+		return resultList;
+	}
+
+	private String getShutdownHistoryCellStr(Row row, int col, DataFormatter fmt) {
+		Cell cell = row.getCell(col);
+		return cell == null ? "" : fmt.formatCellValue(cell).trim();
+	}
+
 	private byte[] buildShutdownHistoryConfigErrorExcel(List<String> headers, List<String[]> failedRows,
-			List<String> errors) {
+		List<String> errors) {
 		try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			Sheet sheet = workbook.createSheet("Errors");
 			CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
