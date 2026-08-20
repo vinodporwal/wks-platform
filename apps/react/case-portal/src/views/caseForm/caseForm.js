@@ -87,6 +87,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [isCommentEnabled, setIsCommentEnabled] = useState(true);
   const [isAttachmentEnabled, setIsAttachmentEnabled] = useState(true);
   const [isDraft, setIsDraft] = useState(true);
+  const [isAnalysisOnlyUser, setIsAnalysisOnlyUser] = useState(false);
 
 const initialDataRef = useRef(null);
 const isFormReadyRef = useRef(false);
@@ -327,8 +328,37 @@ const handleFormChange = (submission) => {
         if(accountStore.isManagerUser(keycloak)){
           shouldDisable = shouldDisableAnalysis = shouldDisableValueRealization = false;
         }
+
+        const isAnalysisOnly =
+          shouldDisable &&
+          !shouldDisableAnalysis &&
+          shouldDisableValueRealization;
+
+        console.log('===== ANALYSIS PERMISSION DEBUG =====');
+        console.log('currentUserName:', currentUserName);
+        console.log('currentUserEmail:', currentUserEmail);
+        console.log('caseOwner:', caseData?.owner?.email);
+        console.log('caseAssignedTo:', parsedAttributeValue.caseAssignedTo);
+        console.log('analysisTeamEmails:', analysisTeamEmails);
+        console.log('shouldDisable:', shouldDisable);
+        console.log('shouldDisableAnalysis:', shouldDisableAnalysis);
+        console.log('shouldDisableValueRealization:', shouldDisableValueRealization);
+        console.log('isManager:', accountStore.isManagerUser(keycloak));
+        console.log('isAnalysisOnly:', isAnalysisOnly);
+        console.log('isDraft:', isDraft);
+        console.log('=====================================');
+
+        setIsAnalysisOnlyUser(isAnalysisOnly);
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
+
+        if (isAnalysisOnly) {
+          level1.components?.forEach((component) => {
+            if (component.key !== 'panel5') {
+              component.disabled = true;
+            }
+        });
+}
 
         if (shouldDisable && shouldDisableAnalysis && shouldDisableValueRealization) {
           // Disable the top-level component
@@ -410,7 +440,7 @@ const handleFormChange = (submission) => {
             caseDetails1?.columns?.forEach((column) => {
               column?.components?.forEach((component) => {
                 if (component.id !== caseStatus?.id) {
-                  if (component.id === analysisTeam?.id && !shouldDisableAnalysis) {
+                  if (component.id === analysisTeam?.id && !shouldDisableAnalysis && !isAnalysisOnly) {
                     console.log('Unlocking Analysis Team dropdown for Analysis Team member.');
                     component.disabled = false;
                   } else {
@@ -1895,6 +1925,7 @@ const handleFormChange = (submission) => {
 
     const labelMap = createLabelMapFromStructure(structure)
     const getLabel = (key) => labelMap[key] || key || ''
+    const assetPath = typeof containerData.path === 'string' ? containerData.path.trim() : ''
 
     const caseCauseCategoryLabel = getCategoryLabel(
       containerData.caseCauseCategory,
@@ -1974,6 +2005,16 @@ const handleFormChange = (submission) => {
             fontSize: 8.5,
             margin: [3, 0, 3, 5],
           },
+          ...(assetPath
+            ? [{
+                text: [
+                  { text: `${getLabel('path')}: `, bold: true },
+                  { text: assetPath},
+                ],
+                fontSize: 8.5,
+                margin: [3, 0, 3, 5],
+              }]
+            : []),
           ...pdfDataGrid(containerData.dataGrid2, getLabel, true),
         ],
         false,
