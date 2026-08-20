@@ -1713,7 +1713,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            }
 
 	                            if (overlapsFile ) {
-	                            	if(!(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP"))) {
+	                            	if(!( vertical.getName().equalsIgnoreCase("PP"))) {
 	                            		dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription(
 	                                        "The maintenance period overlaps with an already validated period in the file.");
