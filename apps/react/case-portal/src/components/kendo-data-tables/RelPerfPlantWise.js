@@ -107,12 +107,6 @@ export default function RelPerfPlantWise() {
     },
     { field: 'limit', title: 'Limit', editable: true, minWidth: 100 },
     {
-      field: 'rationale',
-      title: 'Rationale / Reasons for Changes',
-      editable: true,
-      minWidth: 100,
-    },
-    {
       field: 'remarks',
       title: 'Remarks',
       editable: true,

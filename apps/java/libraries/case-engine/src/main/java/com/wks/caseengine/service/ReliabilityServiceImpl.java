@@ -581,8 +581,8 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 
 			 while (rowIterator.hasNext()) {
 				 Row row = rowIterator.next();
-				 // tableId moved to col 14 in the plant-wise export (col 13 is now isEditable)
-				 Cell tableIdCell = row.getCell(14, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				 // tableId is at col 13 in the plant-wise export (col 12 is isEditable)
+				 Cell tableIdCell = row.getCell(13, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 				 if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
 					 continue;
 				 }
@@ -602,8 +602,8 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 					 dto.setAopYear(year);
 					 dto.setAop(getNumericCellValue(row.getCell(4), dto));
 
-					 // col 13: isEditable flag (Boolean cell written by the plant-wise export)
-					 Cell isEditableCell = row.getCell(13, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+					 // col 12: isEditable flag (Boolean cell written by the plant-wise export)
+					 Cell isEditableCell = row.getCell(12, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 					 boolean isEditable = isEditableCell != null
 							 && isEditableCell.getCellType() == CellType.BOOLEAN
 							 && isEditableCell.getBooleanCellValue();
@@ -617,23 +617,22 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 
 					 dto.setPlann(getNumericCellValue(row.getCell(6), dto));
 					 dto.setLimit(getStringCellValue(row.getCell(7), dto));
-					 dto.setRationale(getStringCellValue(row.getCell(8), dto));
-					 dto.setRemarks(getStringCellValue(row.getCell(9), dto));
+					 dto.setRemarks(getStringCellValue(row.getCell(8), dto));
 
-					 String id = getStringCellValue(row.getCell(10), dto);
+					 String id = getStringCellValue(row.getCell(9), dto);
 					 if (id != null && !id.trim().isEmpty()) {
 						 dto.setId(id.trim());
 					 } else {
 						 dto.setId(null);
 					 }
 
-					 String masterIdVal = getStringCellValue(row.getCell(11), dto);
+					 String masterIdVal = getStringCellValue(row.getCell(10), dto);
 					 dto.setMasterId((masterIdVal != null && !masterIdVal.trim().isEmpty()) ? masterIdVal.trim() : null);
 
-					 String reportTypeVal = getStringCellValue(row.getCell(12), dto);
+					 String reportTypeVal = getStringCellValue(row.getCell(11), dto);
 					 dto.setReportType((reportTypeVal != null && !reportTypeVal.trim().isEmpty()) ? reportTypeVal.trim() : null);
 
-					 dto.setTableId(getStringCellValue(row.getCell(14), dto));
+					 dto.setTableId(getStringCellValue(row.getCell(13), dto));
 
 				 } catch (Exception e) {
 					 e.printStackTrace();
@@ -1440,7 +1439,8 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 					 if(!Objects.equals(reliabilityPerformance.getLimit(), reliabilityPerformanceDto.getLimit())) {
 						valueChanged = true;
 					 }
-					 if(!Objects.equals(reliabilityPerformance.getRationale(), reliabilityPerformanceDto.getRationale())) {
+					 if(reliabilityPerformanceDto.getRationale() != null
+							 && !Objects.equals(reliabilityPerformance.getRationale(), reliabilityPerformanceDto.getRationale())) {
 						valueChanged = true;
 					 }
 					 if(!Objects.equals(reliabilityPerformance.getRemarks(), reliabilityPerformanceDto.getRemarks())) {
@@ -1476,7 +1476,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 				reliabilityPerformance.setBestAchieved(reliabilityPerformanceDto.getBestAchieved());
 				reliabilityPerformance.setLimit(reliabilityPerformanceDto.getLimit());
 				reliabilityPerformance.setPlann(reliabilityPerformanceDto.getPlann());
-				reliabilityPerformance.setRationale(reliabilityPerformanceDto.getRationale());
+				if(reliabilityPerformanceDto.getRationale() != null) {
+					reliabilityPerformance.setRationale(reliabilityPerformanceDto.getRationale());
+				}
 				reliabilityPerformance.setRemarks(reliabilityPerformanceDto.getRemarks());
 				reliabilityPerformance.setUpdatedBy(Utility.getUserName());
 				reliabilityPerformances.add(reliabilityPerformancePlantRepository.save(reliabilityPerformance));
@@ -1545,10 +1547,10 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		                    headersOuterTitles.get(0).add("Error Description");
 		                    List<Integer> hiddenColumns = (List<Integer>) table.get("hiddenColumns");
 		                    if (hiddenColumns != null) {
-		                        // getJsonPlantWise uses [10,11,12,13,14]; remove both 13 (isEditable) and 14 (tableId)
-		                        // so that saveStatus (col 13) and errDescription (col 14) remain visible
+		                        // getJsonPlantWise uses [9,10,11,12,13]; remove both 12 (isEditable) and 13 (tableId)
+		                        // so that saveStatus (col 12) and errDescription (col 13) remain visible
+		                        hiddenColumns.remove(Integer.valueOf(12));
 		                        hiddenColumns.remove(Integer.valueOf(13));
-		                        hiddenColumns.remove(Integer.valueOf(14));
 		                    }
 		                }
 		            } else {
@@ -1602,7 +1604,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	   String getJsonPlantWise() {
 		    return "{\r\n" + //
 		            "    \"ReliabilityPerformance\": {\r\n" + //
-		            "        \"columnCount\":11,\r\n" + //
+		            "        \"columnCount\":10,\r\n" + //
 		            "        \"tables\": [\r\n" + //
 		            "            {\r\n" + //
 		            "                \"startRow\": 0,\r\n" + //
@@ -1615,7 +1617,6 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "\t\t\t\t\t\"actual\", \r\n" + //
 		            "\t\t\t\t\t\"plann\", \r\n" + //
 		            "\t\t\t\t\t\"limit\", \r\n" + //
-		            "\t\t\t\t\t\"rationale\", \r\n" + //
 		            "\t\t\t\t\t\"remarks\", \r\n" + //
 		            "\t\t\t\t\t\"id\", \r\n" + //
 		            "\t\t\t\t\t\"masterId\", \r\n" + //
@@ -1634,9 +1635,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"Parameter\",\r\n" + //
 		            "                    \"UOM\",\r\n" + //
 		            "                    \"Best Achieved\",\r\n" + //
-		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + //
+		            "                    \"Limit\",\"Remarks\"]],\r\n" + //
 		            "                \"rows\": [],\r\n" + //
-		            "                \"hiddenColumns\":[10,11,12,13,14],\r\n" + //
+		            "                \"hiddenColumns\":[9,10,11,12,13],\r\n" + //
 		            "                \"lockedColumn\":5,\r\n" + //
 		            "                \"styles\": {\r\n" + //
 		            "                    \"boldColumns\": [\r\n" + //
@@ -1660,7 +1661,6 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "\t\t\t\t\t\"actual\", \r\n" + //
 		            "\t\t\t\t\t\"plann\", \r\n" + //
 		            "\t\t\t\t\t\"limit\", \r\n" + //
-		            "\t\t\t\t\t\"rationale\", \r\n" + //
 		            "\t\t\t\t\t\"remarks\", \r\n" + //
 		            "\t\t\t\t\t\"id\", \r\n" + //
 		            "\t\t\t\t\t\"masterId\", \r\n" + //
@@ -1679,9 +1679,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"Parameter\",\r\n" + //
 		            "                    \"UOM\",\r\n" + //
 		            "                    \"Best Achieved\",\r\n" + //
-		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + //
+		            "                    \"Limit\",\"Remarks\"]],\r\n" + //
 		            "                \"rows\": [],\r\n" + //
-		            "                \"hiddenColumns\":[10,11,12,13],\r\n" + //
+		            "                \"hiddenColumns\":[9,10,11,12],\r\n" + //
 		            "                \"styles\": {\r\n" + //
 		            "                    \"boldColumns\": [\r\n" + //
 		            "                        0\r\n" + //
@@ -1693,8 +1693,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"rows\": []\r\n" + //
 		            "                }\r\n" + //
 		            "            },\r\n" + //
-
-                    "               {\r\n" + //
+		            "            {\r\n" + //
 		            "                \"startRow\": 0,\r\n" + //
 		            "                \"headers\": [\r\n" + //
 		            "\t\t\t\t\t\"rowNo\", \r\n" + //
@@ -1705,7 +1704,6 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "\t\t\t\t\t\"actual\", \r\n" + //
 		            "\t\t\t\t\t\"plann\", \r\n" + //
 		            "\t\t\t\t\t\"limit\", \r\n" + //
-		            "\t\t\t\t\t\"rationale\", \r\n" + //
 		            "\t\t\t\t\t\"remarks\", \r\n" + //
 		            "\t\t\t\t\t\"id\", \r\n" + //
 		            "\t\t\t\t\t\"masterId\", \r\n" + //
@@ -1724,9 +1722,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"Parameter\",\r\n" + //
 		            "                    \"UOM\",\r\n" + //
 		            "                    \"Best Achieved\",\r\n" + //
-		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + //
+		            "                    \"Limit\",\"Remarks\"]],\r\n" + //
 		            "                \"rows\": [],\r\n" + //
-		            "                \"hiddenColumns\":[10,11,12,13],\r\n" + //
+		            "                \"hiddenColumns\":[9,10,11,12],\r\n" + //
 		            "                \"styles\": {\r\n" + //
 		            "                    \"boldColumns\": [\r\n" + //
 		            "                        0\r\n" + //
