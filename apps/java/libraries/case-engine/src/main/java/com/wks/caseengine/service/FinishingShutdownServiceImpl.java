@@ -21,7 +21,9 @@ import java.util.UUID;
 import com.wks.caseengine.repository.ReportShutdownSlowdownPlanRepository;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -417,8 +419,6 @@ public class FinishingShutdownServiceImpl implements FinishingShutdownService {
 				throw new IllegalArgumentException("Workbook has no sheets");
 			}
 			DataFormatter fmt = new DataFormatter();
-			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-			sdf.setLenient(false);
 			int lastRow = sheet.getLastRowNum();
 
 			for (int r = 1; r <= lastRow; r++) {
@@ -447,44 +447,44 @@ public class FinishingShutdownServiceImpl implements FinishingShutdownService {
 					try {
 						dto.setYear(Integer.parseInt(yearStr));
 					} catch (NumberFormatException e) {
-						err = "Invalid Year: " + yearStr;
+						if (err == null) err = "Invalid Year: " + yearStr;
 					}
 				}
 
 				// Month (full name → integer)
-				if (err == null && !monthStr.isEmpty()) {
+				if (!monthStr.isEmpty()) {
 					Integer monthNum = fsMonthNumber(monthStr);
 					if (monthNum == null) {
-						err = "Invalid Month: " + monthStr;
+						if (err == null) err = "Invalid Month: " + monthStr;
 					} else {
 						dto.setMonth(monthNum);
 					}
 				}
 
 				// Shutdown Hours (HH:mm or H.MM → H.MM double)
-				if (err == null && !hoursStr.isEmpty()) {
+				if (!hoursStr.isEmpty()) {
 					try {
 						dto.setShutdownHours(parseFsShutdownHours(hoursStr));
 					} catch (Exception e) {
-						err = "Invalid Shutdown Hours: " + hoursStr + " (expected HH:mm or H.MM, e.g. 05:30 or 5.3)";
+						if (err == null) err = "Invalid Shutdown Hours: " + hoursStr + " (expected HH:mm or H.MM, e.g. 05:30 or 5.3)";
 					}
 				}
 
-				// Shutdown Date (dd-MM-yyyy)
-				if (err == null && !dateStr.isEmpty()) {
-					try {
-						dto.setShutdownDate(sdf.parse(dateStr));
-					} catch (Exception e) {
-						err = "Invalid Shutdown Date: " + dateStr + " (expected dd-MM-yyyy)";
-					}
+				// Shutdown Date – handles numeric Excel date cells (e.g. 29/01/2026) as well
+				// as text cells formatted as dd/MM/yyyy or dd-MM-yyyy
+				Date parsedDate = parseFsShutdownDate(row, 3, fmt);
+				if (parsedDate != null) {
+					dto.setShutdownDate(parsedDate);
+				} else if (!dateStr.isEmpty()) {
+					if (err == null) err = "Invalid Shutdown Date: " + dateStr + " (expected dd/MM/yyyy)";
 				}
 
-				// Category
-				if (err == null && !catStr.isEmpty()) {
+				// Category – always parsed so its value is preserved in the error file
+				if (!catStr.isEmpty()) {
 					try {
 						dto.setCategory(Integer.parseInt(catStr));
 					} catch (NumberFormatException e) {
-						err = "Invalid Category: " + catStr;
+						if (err == null) err = "Invalid Category: " + catStr;
 					}
 				}
 
@@ -542,6 +542,38 @@ public class FinishingShutdownServiceImpl implements FinishingShutdownService {
 	private String getFsCellStr(Row row, int col, DataFormatter fmt) {
 		Cell cell = row.getCell(col);
 		return cell == null ? "" : fmt.formatCellValue(cell).trim();
+	}
+
+	/**
+	 * Reads a shutdown date from an Excel cell, handling both numeric date cells
+	 * (where Excel stores the date as a serial number) and text cells.
+	 *
+	 * <p>Priority:
+	 * <ol>
+	 *   <li>Numeric cell with date formatting → {@code cell.getDateCellValue()} (exact, locale-free)</li>
+	 *   <li>Text/formula cell → tries {@code dd/MM/yyyy} then {@code dd-MM-yyyy}</li>
+	 * </ol>
+	 * Returns {@code null} when the cell is empty or no format matches.
+	 */
+	private Date parseFsShutdownDate(Row row, int col, DataFormatter fmt) {
+		Cell cell = row.getCell(col);
+		if (cell == null) return null;
+
+		if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+			return cell.getDateCellValue();
+		}
+
+		String str = fmt.formatCellValue(cell).trim();
+		if (str.isEmpty()) return null;
+
+		for (String pattern : new String[]{"dd/MM/yyyy", "dd-MM-yyyy"}) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+				sdf.setLenient(false);
+				return sdf.parse(str);
+			} catch (Exception ignored) {}
+		}
+		return null;
 	}
 
 	// ─── saveFinishingShutdown – Validation helpers ───────────────────────────────
