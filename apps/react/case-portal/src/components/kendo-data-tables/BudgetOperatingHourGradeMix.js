@@ -711,6 +711,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       titleName: 'Gradewise Hours Allocation',
       showCalculate: true,
       showCalculateVisibility: aopCalculationSubGrade.length > 0,
+      calculateBtnText: 'Reset',
     },
     isOldYear,
   )
