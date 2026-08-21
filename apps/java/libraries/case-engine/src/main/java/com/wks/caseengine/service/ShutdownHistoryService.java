@@ -23,7 +23,7 @@ public interface ShutdownHistoryService {
 
 	public AOPMessageVM getSlowdownHistory(String plantId, String year);
 
-	public AOPMessageVM saveSlowdownHistory(String year, String plantFKId,
+	public List<SlowdownHistoryConfigDTO> saveSlowdownHistory(String year, String plantFKId,
 			List<SlowdownHistoryConfigDTO> slowdownHistoryConfigDTOs);
 
 	public AOPMessageVM deleteSlowdownHistory(UUID id);	
@@ -46,5 +46,9 @@ public interface ShutdownHistoryService {
 	byte[] createShutdownHistoryExcel(String plantId, String year, boolean isAfterSave, List<ShutdownHistoryConfigDTO> dtoList);
 
 	AOPMessageVM importShutdownHistoryExcel(String year, String plantId, MultipartFile file);
+
+	byte[] createSlowdownHistoryExcel(String plantId, String year, boolean isAfterSave, List<SlowdownHistoryConfigDTO> dtoList);
+
+	AOPMessageVM importSlowdownHistoryExcel(String year, String plantId, MultipartFile file);
 
 }

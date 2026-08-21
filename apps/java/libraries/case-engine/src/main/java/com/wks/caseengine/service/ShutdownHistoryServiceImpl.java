@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,7 +28,9 @@ import org.hibernate.Session;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -311,28 +314,54 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		}
 	}
 
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	@Override
-	public AOPMessageVM saveSlowdownHistory(String year, String plantFKId,
+	public List<SlowdownHistoryConfigDTO> saveSlowdownHistory(String year, String plantFKId,
 			List<SlowdownHistoryConfigDTO> dtos) {
 
+		List<SlowdownHistoryConfigDTO> failedRecords = new ArrayList<>();
 		try {
 			UUID plantId = UUID.fromString(plantFKId);
-			List<SlowdownHistoryConfig> list = new ArrayList<>();
 
 			for (SlowdownHistoryConfigDTO dto : dtos) {
 
-				SlowdownHistoryConfig entity=null;
+				if ("Failed".equals(dto.getSaveStatus())) {
+					failedRecords.add(dto);
+					continue;
+				}
 
-				if(dto.getId()!=null) {
+				validateSlowdownMandatoryFields(dto);
+
+				if ("Failed".equals(dto.getSaveStatus())) {
+					failedRecords.add(dto);
+					continue;
+				}
+
+				validateSlowdownDates(dto, year);
+
+				if ("Failed".equals(dto.getSaveStatus())) {
+					failedRecords.add(dto);
+					continue;
+				}
+
+				SlowdownHistoryConfig entity = null;
+
+				if (dto.getId() != null) {
 					Optional<SlowdownHistoryConfig> opt = slowdownHistoryConfigRepository.findById(dto.getId());
 					if (opt.isPresent()) {
 						entity = opt.get();
+
+						validateSlowdownRemark(entity, dto);
+
+						if ("Failed".equals(dto.getSaveStatus())) {
+							failedRecords.add(dto);
+							continue;
+						}
+					} else {
+						entity = new SlowdownHistoryConfig();
 					}
-				}
-				 else {
+				} else {
 					entity = new SlowdownHistoryConfig();
-					
 				}
 
 				entity.setDescription(dto.getDescription());
@@ -347,10 +376,10 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 				entity.setUpdatedBy(Utility.getUserName());
 				entity.setPlantFkId(plantId);
 
-				list.add(slowdownHistoryConfigRepository.save(entity));
+				slowdownHistoryConfigRepository.save(entity);
 			}
 
-			return new AOPMessageVM(200, "Saved Successfully", list);
+			return failedRecords;
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1821,5 +1850,466 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to build error workbook", e);
 		}
+	}
+
+	// ─── saveSlowdownHistory – Validation helpers ────────────────────────────────
+
+	private void validateSlowdownMandatoryFields(SlowdownHistoryConfigDTO dto) {
+		List<String> missingFields = new ArrayList<>();
+
+		if (dto.getDescription() == null || dto.getDescription().trim().isEmpty()) {
+			missingFields.add("Description");
+		}
+		if (dto.getMaintStartDateTime() == null) {
+			missingFields.add("MaintStartDateTime");
+		}
+		if (dto.getMaintEndDateTime() == null) {
+			missingFields.add("MaintEndDateTime");
+		}
+		if (dto.getDurationInMins() == null) {
+			missingFields.add("DurationInMins");
+		}
+		if (dto.getMaintForMonth() == null) {
+			missingFields.add("MaintForMonth");
+		}
+		if (dto.getRate() == null) {
+			missingFields.add("Rate");
+		}
+
+		if (!missingFields.isEmpty()) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Mandatory field(s) missing: " + String.join(", ", missingFields));
+		}
+	}
+
+	/**
+	 * Validates that MaintStartDateTime is not after MaintEndDateTime, and that
+	 * both fall within the April–March fiscal range implied by the AOP year
+	 * parameter (e.g. "2026-27" → 2026-04-01 to 2027-03-31).
+	 */
+	private void validateSlowdownDates(SlowdownHistoryConfigDTO dto, String aopYear) {
+		Date start = dto.getMaintStartDateTime();
+		Date end   = dto.getMaintEndDateTime();
+
+		if (start != null && end != null && start.after(end)) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("MaintStartDateTime cannot be greater than MaintEndDateTime");
+			return;
+		}
+
+		LocalDate[] range = buildSlowdownYearDateRange(aopYear);
+		if (range == null) {
+			return;
+		}
+		LocalDate rangeStart = range[0];
+		LocalDate rangeEnd   = range[1];
+
+		if (start != null) {
+			LocalDate startLocal = sldToLocalDate(start);
+			if (startLocal.isBefore(rangeStart) || startLocal.isAfter(rangeEnd)) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("MaintStartDateTime (" + startLocal + ") is outside the allowed range ["
+						+ rangeStart + " to " + rangeEnd + "] for year " + aopYear);
+				return;
+			}
+		}
+
+		if (end != null) {
+			LocalDate endLocal = sldToLocalDate(end);
+			if (endLocal.isBefore(rangeStart) || endLocal.isAfter(rangeEnd)) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("MaintEndDateTime (" + endLocal + ") is outside the allowed range ["
+						+ rangeStart + " to " + rangeEnd + "] for year " + aopYear);
+			}
+		}
+	}
+
+	/**
+	 * Builds the fiscal year date range from an AOP year string in "YYYY-YY"
+	 * format (e.g. "2026-27"). Returns [April 1 of start year, March 31 of end
+	 * year], or {@code null} if the format cannot be parsed.
+	 */
+	private LocalDate[] buildSlowdownYearDateRange(String aopYear) {
+		try {
+			int startYear = Integer.parseInt(aopYear.split("-")[0].trim());
+			int endYear   = startYear + 1;
+			return new LocalDate[]{
+					LocalDate.of(startYear, 4, 1),
+					LocalDate.of(endYear, 3, 31)
+			};
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private void validateSlowdownRemark(SlowdownHistoryConfig existing, SlowdownHistoryConfigDTO incoming) {
+		boolean descriptionChanged        = !Objects.equals(existing.getDescription(),   incoming.getDescription());
+		boolean maintStartDateTimeChanged = !Objects.equals(
+				sldToLocalDate(existing.getMaintStartDateTime()), sldToLocalDate(incoming.getMaintStartDateTime()));
+		boolean maintEndDateTimeChanged   = !Objects.equals(
+				sldToLocalDate(existing.getMaintEndDateTime()),   sldToLocalDate(incoming.getMaintEndDateTime()));
+		boolean durationChanged           = !Objects.equals(existing.getDurationInMins(), incoming.getDurationInMins());
+		boolean maintForMonthChanged      = !Objects.equals(existing.getMaintForMonth(),  incoming.getMaintForMonth());
+		boolean rateChanged               = !Objects.equals(existing.getRate(),           incoming.getRate());
+
+		boolean anyBusinessFieldChanged = descriptionChanged || maintStartDateTimeChanged || maintEndDateTimeChanged
+				|| durationChanged || maintForMonthChanged || rateChanged;
+
+		String existingRemarks = existing.getRemarks() != null ? existing.getRemarks() : "";
+		String incomingRemarks = incoming.getRemarks()  != null ? incoming.getRemarks()  : "";
+		boolean remarkChanged  = !existingRemarks.equals(incomingRemarks);
+
+		if (anyBusinessFieldChanged && !remarkChanged) {
+			incoming.setSaveStatus("Failed");
+			incoming.setErrDescription("Please update remark");
+		}
+	}
+
+	private LocalDate sldToLocalDate(Date date) {
+		if (date == null) return null;
+		return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	}
+
+	// ─── Slowdown History – Export / Import Excel ─────────────────────────────────
+
+	private static final List<String> SLD_EXCEL_HEADERS = Arrays.asList(
+			"Slowdown Desc", "SD - From", "SD - To", "Duration (Hrs)", "Rate", "Remarks", "Id");
+
+	private static final int SLD_HIDDEN_COL = 6;
+
+	/**
+	 * Formats durationInMins (integer minutes) as "HH:mm", e.g. 1440 → "24:00".
+	 */
+	private String formatSlowdownDuration(Integer durationInMins) {
+		if (durationInMins == null) return "";
+		int h = durationInMins / 60;
+		int m = durationInMins % 60;
+		return String.format("%02d:%02d", h, m);
+	}
+
+	/**
+	 * Parses a user-supplied duration string to integer minutes.
+	 * Accepted formats: "05:30", "5.3" (H.MM – single-digit decimal is right-padded,
+	 * so 5.3 = 5h 30m), "0:45", "0.45", "24", "24:00".
+	 */
+	private Integer parseSlowdownDurationToMins(String input) {
+		if (input == null || input.trim().isEmpty()) return null;
+		input = input.trim();
+		if (input.contains(":")) {
+			String[] parts = input.split(":", 2);
+			int h = Integer.parseInt(parts[0].trim());
+			int m = parts[1].trim().isEmpty() ? 0 : Integer.parseInt(parts[1].trim());
+			return h * 60 + m;
+		}
+		if (input.contains(".")) {
+			String[] parts = input.split("\\.", 2);
+			int h = Integer.parseInt(parts[0].trim());
+			String minStr = parts[1].trim();
+			if (minStr.length() == 1) minStr = minStr + "0"; // "5.3" → 30 min
+			int m = Integer.parseInt(minStr);
+			return h * 60 + m;
+		}
+		// Plain integer → treat as whole hours
+		return (int) Math.round(Double.parseDouble(input) * 60);
+	}
+
+	/**
+	 * Reads a datetime value from an Excel cell, gracefully handling:
+	 * <ul>
+	 *   <li>Numeric Excel date/datetime cells (both date-only and date+time serial)</li>
+	 *   <li>Text cells with "dd-MM-yyyy hh:mm a" (12-hr AM/PM as shown in screenshot)</li>
+	 *   <li>Text cells with "dd-MM-yyyy HH:mm" (24-hr without AM/PM)</li>
+	 *   <li>The same two patterns with "/" separators</li>
+	 * </ul>
+	 */
+	private Date parseSlowdownDateTime(Row row, int col, DataFormatter fmt) {
+		Cell cell = row.getCell(col);
+		if (cell == null) return null;
+
+		if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+			return cell.getDateCellValue();
+		}
+
+		String str = fmt.formatCellValue(cell).trim();
+		if (str.isEmpty()) return null;
+
+		for (String pattern : new String[]{
+				"dd-MM-yyyy hh:mm a", "dd-MM-yyyy HH:mm",
+				"dd/MM/yyyy hh:mm a", "dd/MM/yyyy HH:mm",
+				"dd-MM-yyyy", "dd/MM/yyyy"}) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
+				sdf.setLenient(false);
+				return sdf.parse(str);
+			} catch (Exception ignored) {}
+		}
+		return null;
+	}
+
+	/**
+	 * Converts the raw Map list returned by {@link #getSlowdownHistory} into a
+	 * typed {@link SlowdownHistoryConfigDTO} list for use by the export method.
+	 */
+	private List<SlowdownHistoryConfigDTO> convertSlowdownMapsToDto(List<Map<String, Object>> mapList) {
+		List<SlowdownHistoryConfigDTO> result = new ArrayList<>();
+		if (mapList == null) return result;
+		for (Map<String, Object> map : mapList) {
+			SlowdownHistoryConfigDTO dto = new SlowdownHistoryConfigDTO();
+			Object idObj = map.get("id");
+			if (idObj != null && !idObj.toString().isEmpty()) {
+				try { dto.setId(UUID.fromString(idObj.toString())); } catch (Exception ignored) {}
+			}
+			dto.setDescription(map.get("description") != null ? map.get("description").toString() : null);
+			Object startObj = map.get("maintStartDateTime");
+			if (startObj instanceof Date) dto.setMaintStartDateTime((Date) startObj);
+			Object endObj = map.get("maintEndDateTime");
+			if (endObj instanceof Date) dto.setMaintEndDateTime((Date) endObj);
+			Object durationObj = map.get("durationInMins");
+			if (durationObj != null) {
+				try { dto.setDurationInMins(Integer.parseInt(durationObj.toString())); } catch (Exception ignored) {}
+			}
+			Object maintMonthObj = map.get("maintForMonth");
+			if (maintMonthObj != null) {
+				try { dto.setMaintForMonth(Integer.parseInt(maintMonthObj.toString())); } catch (Exception ignored) {}
+			}
+			dto.setAuditYear(map.get("auditYear") != null ? map.get("auditYear").toString() : null);
+			Object rateObj = map.get("rate");
+			if (rateObj != null) {
+				try { dto.setRate(Double.parseDouble(rateObj.toString())); } catch (Exception ignored) {}
+			}
+			dto.setRemarks(map.get("remarks") != null ? map.get("remarks").toString() : null);
+			Object plantObj = map.get("plantFkId");
+			if (plantObj != null && !plantObj.toString().isEmpty()) {
+				try { dto.setPlantFkId(UUID.fromString(plantObj.toString())); } catch (Exception ignored) {}
+			}
+			result.add(dto);
+		}
+		return result;
+	}
+
+	@Override
+	public byte[] createSlowdownHistoryExcel(String plantId, String year, boolean isAfterSave,
+			List<SlowdownHistoryConfigDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getSlowdownHistory(plantId, year);
+				@SuppressWarnings("unchecked")
+				List<Map<String, Object>> dataList = (List<Map<String, Object>>) result.getData();
+				dtoList = convertSlowdownMapsToDto(dataList);
+			}
+
+			List<String> headerNames = new ArrayList<>(SLD_EXCEL_HEADERS);
+			if (isAfterSave) {
+				headerNames.add("Save Status");
+				headerNames.add("Error Description");
+			}
+
+			try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+				CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+
+				Sheet sheet = workbook.createSheet("Slowdown History");
+				Row headerRow = sheet.createRow(0);
+				for (int i = 0; i < headerNames.size(); i++) {
+					Cell cell = headerRow.createCell(i);
+					cell.setCellValue(headerNames.get(i));
+					cell.setCellStyle(headerStyle);
+				}
+
+				SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.ENGLISH);
+				int rowIdx = 1;
+				for (SlowdownHistoryConfigDTO dto : dtoList) {
+					Row row = sheet.createRow(rowIdx++);
+
+					// Col 0 – Slowdown Desc
+					Cell c0 = row.createCell(0);
+					c0.setCellValue(dto.getDescription() != null ? dto.getDescription() : "");
+					c0.setCellStyle(borderStyle);
+
+					// Col 1 – SD - From (maintStartDateTime)
+					Cell c1 = row.createCell(1);
+					c1.setCellValue(dto.getMaintStartDateTime() != null ? sdf.format(dto.getMaintStartDateTime()) : "");
+					c1.setCellStyle(borderStyle);
+
+					// Col 2 – SD - To (maintEndDateTime)
+					Cell c2 = row.createCell(2);
+					c2.setCellValue(dto.getMaintEndDateTime() != null ? sdf.format(dto.getMaintEndDateTime()) : "");
+					c2.setCellStyle(borderStyle);
+
+					// Col 3 – Duration (Hrs): durationInMins → "HH:mm"
+					Cell c3 = row.createCell(3);
+					c3.setCellValue(formatSlowdownDuration(dto.getDurationInMins()));
+					c3.setCellStyle(borderStyle);
+
+					// Col 4 – Rate
+					Cell c4 = row.createCell(4);
+					c4.setCellValue(dto.getRate() != null ? dto.getRate().toString() : "");
+					c4.setCellStyle(borderStyle);
+
+					// Col 5 – Remarks
+					Cell c5 = row.createCell(5);
+					c5.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+					c5.setCellStyle(borderStyle);
+
+					// Col 6 – Id (hidden; used by import to identify existing records)
+					Cell c6 = row.createCell(6);
+					c6.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
+					c6.setCellStyle(borderStyle);
+
+					if (isAfterSave) {
+						Cell c7 = row.createCell(7);
+						c7.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+						c7.setCellStyle(borderStyle);
+
+						Cell c8 = row.createCell(8);
+						c8.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+						c8.setCellStyle(borderStyle);
+					}
+				}
+
+				for (int i = 0; i < headerNames.size(); i++) {
+					sheet.autoSizeColumn(i);
+				}
+				sheet.setColumnHidden(SLD_HIDDEN_COL, true);
+
+				workbook.write(baos);
+				return baos.toByteArray();
+			}
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to export slowdown history", ex);
+		}
+	}
+
+	// ─── Slowdown History – Import Excel ─────────────────────────────────────────
+
+	@Override
+	public AOPMessageVM importSlowdownHistoryExcel(String year, String plantId, MultipartFile file) {
+		if (file.isEmpty() || (file.getOriginalFilename() != null && !file.getOriginalFilename().endsWith(".xlsx"))) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		List<SlowdownHistoryConfigDTO> allDtos = readSlowdownHistoryExcel(file, plantId, year);
+
+		if (allDtos.isEmpty()) {
+			AOPMessageVM vm = new AOPMessageVM();
+			vm.setCode(400);
+			vm.setMessage("No data rows found in file");
+			return vm;
+		}
+
+		List<SlowdownHistoryConfigDTO> failedRecords = saveSlowdownHistory(year, plantId, allDtos);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		if (!failedRecords.isEmpty()) {
+			byte[] fileByteArray = createSlowdownHistoryExcel(plantId, year, true, failedRecords);
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Partial data has been saved. " + failedRecords.size() + " row(s) failed.");
+			aopMessageVM.setData(Base64.getEncoder().encodeToString(fileByteArray));
+		} else {
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("All data has been saved");
+		}
+		return aopMessageVM;
+	}
+
+	private List<SlowdownHistoryConfigDTO> readSlowdownHistoryExcel(MultipartFile file, String plantId, String year) {
+		List<SlowdownHistoryConfigDTO> result = new ArrayList<>();
+		DataFormatter fmt = new DataFormatter();
+
+		try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+			Sheet sheet = workbook.getSheetAt(0);
+			if (sheet == null) return result;
+
+			int lastRow = sheet.getLastRowNum();
+			for (int r = 1; r <= lastRow; r++) {
+				Row row = sheet.getRow(r);
+				if (row == null) continue;
+
+				String descStr     = getSldCellStr(row, 0, fmt);
+				String fromStr     = getSldCellStr(row, 1, fmt);
+				String toStr       = getSldCellStr(row, 2, fmt);
+				String durationStr = getSldCellStr(row, 3, fmt);
+				String rateStr     = getSldCellStr(row, 4, fmt);
+				String remarkStr   = getSldCellStr(row, 5, fmt);
+				String idStr       = getSldCellStr(row, 6, fmt);
+
+				// Skip completely empty rows (the hidden Id column is not considered)
+				if (descStr.isEmpty() && fromStr.isEmpty() && toStr.isEmpty()
+						&& durationStr.isEmpty() && rateStr.isEmpty() && remarkStr.isEmpty()) {
+					continue;
+				}
+
+				SlowdownHistoryConfigDTO dto = new SlowdownHistoryConfigDTO();
+				String err = null;
+
+				// Col 0 – Slowdown Desc
+				dto.setDescription(descStr.isEmpty() ? null : descStr);
+
+				// Col 1 – SD - From: handles numeric Excel datetime and text (12-hr or 24-hr)
+				Date startDate = parseSlowdownDateTime(row, 1, fmt);
+				if (startDate != null) {
+					dto.setMaintStartDateTime(startDate);
+				} else if (!fromStr.isEmpty()) {
+					err = "Invalid SD - From value: " + fromStr;
+				}
+
+				// Col 2 – SD - To
+				Date endDate = parseSlowdownDateTime(row, 2, fmt);
+				if (endDate != null) {
+					dto.setMaintEndDateTime(endDate);
+				} else if (!toStr.isEmpty()) {
+					if (err == null) err = "Invalid SD - To value: " + toStr;
+				}
+
+				// Col 3 – Duration (Hrs): "05:30", "5.3", "0:45", "0.45", "24", "24:00"
+				if (!durationStr.isEmpty()) {
+					try {
+						dto.setDurationInMins(parseSlowdownDurationToMins(durationStr));
+					} catch (Exception e) {
+						if (err == null)
+							err = "Invalid Duration value: " + durationStr + " (expected HH:mm or H.MM, e.g. 05:30 or 5.3)";
+					}
+				}
+
+				// Col 4 – Rate
+				if (!rateStr.isEmpty()) {
+					try {
+						dto.setRate(Double.parseDouble(rateStr));
+					} catch (NumberFormatException e) {
+						if (err == null) err = "Invalid Rate value: " + rateStr;
+					}
+				}
+
+				// Col 5 – Remarks
+				dto.setRemarks(remarkStr.isEmpty() ? null : remarkStr);
+
+				// Col 6 – Id (hidden; present = update, absent = insert)
+				if (!idStr.isEmpty()) {
+					try {
+						dto.setId(UUID.fromString(idStr));
+					} catch (IllegalArgumentException e) {
+						// malformed UUID – treat as new record
+					}
+				}
+
+				dto.setAuditYear(year);
+
+				if (err != null) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(err);
+				}
+
+				result.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Slowdown History Excel", e);
+		}
+		return result;
+	}
+
+	private String getSldCellStr(Row row, int col, DataFormatter fmt) {
+		Cell cell = row.getCell(col);
+		return cell == null ? "" : fmt.formatCellValue(cell).trim();
 	}
 }

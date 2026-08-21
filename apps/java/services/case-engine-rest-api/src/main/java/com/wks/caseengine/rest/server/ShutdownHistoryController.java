@@ -121,12 +121,41 @@ public class ShutdownHistoryController {
 			@RequestParam String plantFKId,
 			@RequestBody List<SlowdownHistoryConfigDTO> slowdownHistoryConfigDTOs) {
 
-		return shutdownHistoryService.saveSlowdownHistory(year, plantFKId, slowdownHistoryConfigDTOs);
+		List<SlowdownHistoryConfigDTO> failedRecords = shutdownHistoryService.saveSlowdownHistory(year, plantFKId, slowdownHistoryConfigDTOs);
+		if(failedRecords.isEmpty()) {
+			return new AOPMessageVM(200, "Data updated successfully", null);
+		}else {
+			return new AOPMessageVM(400, "Data updated successfully", failedRecords);
+		}
 	}
 
 	@DeleteMapping(value = "/slowdown-history")
 	public AOPMessageVM deleteSlowdownHistory(@RequestParam UUID id) {
 		return shutdownHistoryService.deleteSlowdownHistory(id);
+	}
+
+	@GetMapping(value = "/slowdown-history-export-excel")
+	public ResponseEntity<byte[]> exportSlowdownHistoryExcel(@RequestParam String plantId,
+			@RequestParam String year) {
+		try {
+			byte[] excelBytes = shutdownHistoryService.createSlowdownHistoryExcel(plantId, year, false, null);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("slowdown-history.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/slowdown-history-import-excel", consumes = "multipart/form-data")
+	public AOPMessageVM importSlowdownHistoryExcel(@RequestParam String year, @RequestParam String plantId,
+			@RequestParam("file") MultipartFile file) {
+		return shutdownHistoryService.importSlowdownHistoryExcel(year, plantId, file);
 	}
 	
 	@GetMapping(value = "/shutdown-history-config-export-excel")
