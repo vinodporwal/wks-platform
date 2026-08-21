@@ -149,8 +149,21 @@ const ElastomerShutDown = ({ permissions }) => {
         return
       }
       // Validate required fields
-      const requiredFields = ['remarks', 'year']
-      const validationMessage = validateFields(data, requiredFields)
+      const dataForValidation = data.map((row) => ({
+        ...row,
+        'Shutdown Hours': row.durationInHrs,
+        'Shutdown Date': row.shutdownDate,
+        Category: row.category,
+      }))
+      const requiredFields = [
+        'year',
+        'monthly',
+        'Shutdown Hours',
+        'Shutdown Date',
+        'Category',
+        'remarks',
+      ]
+      const validationMessage = validateFields(dataForValidation, requiredFields)
       if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1053,7 +1066,7 @@ const ElastomerShutDown = ({ permissions }) => {
       editable: true,
     },
     {
-      field: 'category',
+      field: 'category', 
       title: 'Category',
       type: 'Categorydropdown',
       editable: true,
