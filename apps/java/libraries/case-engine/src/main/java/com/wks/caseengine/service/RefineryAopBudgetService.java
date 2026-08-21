@@ -33,9 +33,9 @@ public interface RefineryAopBudgetService {
     public AOPMessageVM importRefinerySlowdownExcel(String plantId, String aopYear, MultipartFile file);
     public AOPMessageVM deleteRefinerySlowdownData(String id);
     public AOPMessageVM getRefineryBudgetUomDropdown(String plantId);
-    public AOPMessageVM getProfitCenterData(String siteId, String aopYear);
+    public AOPMessageVM getProfitCenterData(String siteId, String aopYear, String siteName);
     public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear);
-    public AOPMessageVM getProfitCenterUomDropdown(String siteId);
+    public AOPMessageVM getProfitCenterUomDropdown(String siteId, String siteName);
     public AOPMessageVM deleteProfitCenterData(String id, String aopYear);
     public AOPMessageVM getThroughputNorms(String siteId, String aopYear);
     public List<ThroughputNormsDTO> saveThroughputNorms(List<ThroughputNormsDTO> throughputNormsDTOs, String aopYear);

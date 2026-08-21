@@ -9,8 +9,8 @@ export const JswBudgetSourceAPIService = {
 
 }
 
-async function getJswBudgetSourceData(keycloak, SITE_ID, year) {
-     let url = `${Config.CaseEngineUrl}/task/profit-center-data?siteId=${SITE_ID}&aopYear=${year}`
+async function getJswBudgetSourceData(keycloak, SITE_ID, year, siteName) {
+     let url = `${Config.CaseEngineUrl}/task/profit-center-data?siteId=${SITE_ID}&aopYear=${year}${siteName ? `&siteName=${encodeURIComponent(siteName)}` : ''}`
      const headers = {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -50,8 +50,8 @@ async function saveJswBudgetSourceData(
           return await Promise.reject(e)
      }
 }
-async function getDropdownUnit(keycloak, SITE_ID) {
-     let url = `${Config.CaseEngineUrl}/task/profit-center-uom-dropdown?siteId=${SITE_ID}`
+async function getDropdownUnit(keycloak, SITE_ID, siteName) {
+     let url = `${Config.CaseEngineUrl}/task/profit-center-uom-dropdown?siteId=${SITE_ID}${siteName ? `&siteName=${encodeURIComponent(siteName)}` : ''}`
      const headers = {
           Accept: 'application/json',
           'Content-Type': 'application/json',

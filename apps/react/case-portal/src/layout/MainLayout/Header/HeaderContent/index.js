@@ -185,6 +185,10 @@ export default function HeaderContent({ keycloak, navigation }) {
     '/refinery-aop-budget/shutdown',
     '/refinery-aop-budget/slowdown',
     '/refinery-aop-budget/other-document-upload',
+    '/jw-budget/jw-unit',
+    '/jw-budget/throughput-norms',
+    '/jw-budget/jw-budget-source-dta',
+    '/jw-budget/jw-budget-source',
   ].includes(location.pathname)
 
   // Individual dropdown visibility ? extends HIDE_DASHBOARD_DROPDOWN with utils.js config
