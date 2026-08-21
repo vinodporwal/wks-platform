@@ -163,6 +163,13 @@ public class FinishingShutdownServiceImpl implements FinishingShutdownService {
 	                continue;
 	            }
 
+	            validateFinishingShutdownMandatoryFields(dto);
+
+	            if ("Failed".equals(dto.getSaveStatus())) {
+	                failedRecords.add(dto);
+	                continue;
+	            }
+
 	            validateFinishingShutdownYear(dto, validYears);
 	            validateFinishingShutdownCategory(dto);
 
@@ -595,6 +602,19 @@ public class FinishingShutdownServiceImpl implements FinishingShutdownService {
 			validYears.add(String.valueOf(currentStartYear - i));
 		}
 		return validYears;
+	}
+
+	private void validateFinishingShutdownMandatoryFields(FinishingShutdownConfigDTO dto) {
+		List<String> missing = new ArrayList<>();
+		if (dto.getYear() == null) missing.add("Year");
+		if (dto.getMonth() == null) missing.add("Month");
+		if (dto.getShutdownHours() == null) missing.add("Shutdown Hours");
+		if (dto.getShutdownDate() == null) missing.add("Shutdown Date");
+		if (dto.getCategory() == null) missing.add("Category");
+		if (!missing.isEmpty()) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Mandatory field(s) missing: " + String.join(", ", missing));
+		}
 	}
 
 	private void validateFinishingShutdownYear(FinishingShutdownConfigDTO dto, Set<String> validYears) {

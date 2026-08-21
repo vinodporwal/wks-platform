@@ -152,10 +152,11 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 			Set<Integer> validTypeOfSDValues = fetchValidTypeOfSDValues(plantFKId, year);
 			Set<String> validYears = buildValidYearSet(year);
 
-			for (ShutdownHistoryConfigDTO shutdownHistoryConfigDTO : shutdownHistoryConfigDTOs) {
+		for (ShutdownHistoryConfigDTO shutdownHistoryConfigDTO : shutdownHistoryConfigDTOs) {
 
-				 validateShutdownHistoryYear(shutdownHistoryConfigDTO, validYears);
-				 validateShutdownHistoryTypeOfSD(shutdownHistoryConfigDTO, validTypeOfSDValues);
+			 validateShutdownHistoryMandatoryFields(shutdownHistoryConfigDTO);
+			 validateShutdownHistoryYear(shutdownHistoryConfigDTO, validYears);
+			 validateShutdownHistoryTypeOfSD(shutdownHistoryConfigDTO, validTypeOfSDValues);
 
 				 if("Failed".equals(shutdownHistoryConfigDTO.getSaveStatus())) {
 					failedRecords.add(shutdownHistoryConfigDTO);
@@ -1343,6 +1344,24 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 	}
 
 	// ─── saveShutdownHistory – Validation helpers ────────────────────────────────
+
+	private void validateShutdownHistoryMandatoryFields(ShutdownHistoryConfigDTO dto) {
+		List<String> missing = new ArrayList<>();
+		if (dto.getMonth() == null) {
+			missing.add("month");
+		}
+		if (dto.getYear() == null || dto.getYear().trim().isEmpty()) {
+			missing.add("year");
+		}
+		if (dto.getTypeOfSD() == null) {
+			missing.add("typeOfSD");
+		}
+		if (!missing.isEmpty()) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Mandatory field(s) missing: " + String.join(", ", missing));
+		}
+	}
+
 
 	private void validateShutdownHistoryRemark(ShutdownHistoryConfig existing,
 			ShutdownHistoryConfigDTO incoming) {
