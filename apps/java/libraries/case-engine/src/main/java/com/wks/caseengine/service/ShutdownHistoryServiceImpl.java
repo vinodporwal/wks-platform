@@ -1869,9 +1869,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		if (dto.getDurationInMins() == null) {
 			missingFields.add("DurationInMins");
 		}
-		if (dto.getMaintForMonth() == null) {
-			missingFields.add("MaintForMonth");
-		}
+	
 		if (dto.getRate() == null) {
 			missingFields.add("Rate");
 		}
