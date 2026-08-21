@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/crude/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
@@ -98,12 +98,9 @@ const PIMSThroughput = ({ startDate, endDate }) => {
 
       if (res?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 
-      console.log('Configuration data:', res)
       const formattedData = res?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
@@ -113,8 +110,6 @@ const PIMSThroughput = ({ startDate, endDate }) => {
       setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching configuration data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
       setRevisionUpdated(false)

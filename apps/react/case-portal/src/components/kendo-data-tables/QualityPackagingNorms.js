@@ -299,7 +299,7 @@ export default function QualityPackagingNorms() {
         remark: item.remark,
         Particulars: item.normParameterTypeName,
         unit: '%',
-        isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
+        isEditable: item.isEditable !== false,
       }))
       setPriceDiffRows(mappedPriceDiffRows)
     } catch (err) {
@@ -523,7 +523,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       minWidth: 100,
     },
-  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
+  ]
 
   const packagingColumns = [
     {
@@ -1276,13 +1276,13 @@ export default function QualityPackagingNorms() {
   const peopleInitiativePermissionDifferential =
     getAdjustedPermissionDifferential(
       {
-        saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
+        saveBtn: true,
         allAction: true,
         showTitleNameBusiness: true,
         titleName: 'Price Differential As Percentage wrt Quality',
         adjustedPermissions: true,
         downloadExcelBtn: true,
-        uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
+        uploadExcelBtn: true,
         ExcelName: `${lowerVertName}_Price_Differential`,
         addButton: false,
         deleteButton: false,

@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
-import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/crude/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
-import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
-const PIMSThroughput = ({ startDate, endDate }) => {
+const ManualEntry = ({ startDate, endDate }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -25,47 +23,54 @@ const PIMSThroughput = ({ startDate, endDate }) => {
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
-  const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = customValueFormatterPhaseTwo(5)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const [revisionUpdated, setRevisionUpdated] = useState(false)
-
-  const formatDateForAPI = (date) => {
-    if (!date) return ''
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const columns = [
     {
-      field: 'displayName',
+      field: 'type',
+      title: 'Type',
+      widthT: 100,
+      minWidth: 100,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'normParameterFKId',
+      title: 'normParameterFKId',
+      widthT: 100,
+      minWidth: 100,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'productName',
       title: 'Particulars',
-      widthT: 250,
-      minWidth: 200,
+      widthT: 300,
+      minWidth: 250,
       type: 'text',
       editable: false,
       hidden: false,
     },
     {
-      field: 'uom',
+      field: 'UOM',
       title: 'UOM',
-      widthT: 80,
-      minWidth: 60,
+      widthT: 120,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
     {
-      field: 'attributeValue',
+      field: 'value',
       title: 'Value',
       editable: true,
-      widthT: 100,
-      minWidth: 80,
+      widthT: 150,
+      minWidth: 120,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -73,53 +78,56 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     },
     {
       field: 'remarks',
-      title: 'Remarks',
-      widthT: 250,
+      title: 'Remark',
+      widthT: 350,
       type: 'textarea',
       editable: true,
-      minWidth: 250,
+      minWidth: 300,
     },
   ]
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchConfigurationData()
-    }
-  }, [PLANT_ID, AOP_YEAR, revisionUpdated])
-
-  const fetchConfigurationData = async () => {
+  const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await ProductionNormsApiService.getPIMSThroughputData(
+      const result = await ProductionNormsApiService.getManualEntryData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
+      const res = Array.isArray(result) ? result : result?.data || []
 
       if (res?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-
-      console.log('Configuration data:', res)
-      const formattedData = res?.map((item, index) => ({
+      const ConfigTypeNameData = res?.filter(
+        (item) => item.ConfigTypeName === 'Manual Entry',
+      )
+      const formattedData = ConfigTypeNameData?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
-        id: item?.id || index + 1,
+        originalRemark: item.remarks,
+        id: index + 1,
+        idFromApi: item.id,
+        value: item.apr || 0,
+        type: item?.TypeDisplayName || item?.typeDisplayName,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching configuration data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+      console.error('Error fetching constants data:', error)
+      setRows([])
+      setOriginalRows([])
     } finally {
       setLoading(false)
-      setRevisionUpdated(false)
     }
   }
+
+  useEffect(() => {
+    if (PLANT_ID && AOP_YEAR) {
+      fetchData()
+    }
+  }, [PLANT_ID, AOP_YEAR])
 
   const permissions = {
     showAction: true,
@@ -129,36 +137,23 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
+    ExcelName: `Production_Norms_Manual_Entry_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'PIMS Throughput',
+    titleName: 'Manual Entry',
+  }
+
+  const formatDateForAPI = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const saveChanges = async () => {
     setLoading(true)
-
-    // Validate required parameters
-    if (!startDate || !endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Start date and end date are required.',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
-
-    if (!SITE_ID) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Site ID is required.',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
 
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
@@ -182,12 +177,12 @@ const PIMSThroughput = ({ startDate, endDate }) => {
       return
     }
 
-    const fieldsToCheck = ['attributeValue']
+    const fieldsToCheck = ['value', 'remarks']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'displayName',
+      'productName',
     )
 
     if (validationError) {
@@ -200,21 +195,18 @@ const PIMSThroughput = ({ startDate, endDate }) => {
       return
     }
 
-    const payload = modifiedData
+    const payload = modifiedData?.map((row) => ({
+      ...row,
+      id: row.idFromApi,
+      apr: row.value || row.apr || 0,
+      remarks: row.remarks || '',
+    }))
     try {
-      const periodFrom = formatDateForAPI(startDate)
-      const periodTo = formatDateForAPI(endDate)
-
-      console.log('Saving PIMS Throughput data:', payload)
-
-      const response = await ProductionNormsApiService.savePIMSThroughputData(
+      const response = await ProductionNormsApiService.saveManualEntryData(
         keycloak,
         AOP_YEAR,
-        payload,
         PLANT_ID,
-        SITE_ID,
-        periodFrom,
-        periodTo,
+        payload,
       )
 
       setModifiedCells({})
@@ -223,8 +215,9 @@ const PIMSThroughput = ({ startDate, endDate }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      fetchData()
     } catch (error) {
-      console.error('Error saving configuration data:', error)
+      console.error('Error saving constants data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -238,13 +231,28 @@ const PIMSThroughput = ({ startDate, endDate }) => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      return
+    }
+
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.importConfigurationExcel(
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
+      const response = await ProductionNormsApiService.importManualEntryExcel(
         file,
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        periodFrom,
+        periodTo,
       )
 
       if (response?.code === 200) {
@@ -253,7 +261,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchConfigurationData()
+        await fetchData()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -268,7 +276,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Configuration_Errors_${new Date().getTime()}.xlsx`
+          link.download = `Production_Norms_Manual_Entry_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -281,7 +289,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchConfigurationData()
+          await fetchData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -317,7 +325,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     })
 
     try {
-      await ProductionNormsApiService.exportConfigurationExcel(
+      await ProductionNormsApiService.exportManualEntryExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -327,7 +335,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Configuration data:', error)
+      console.error('Error exporting Constants data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -340,18 +348,9 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <RevButtonSection
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        snackbarData={snackbarData}
-        setSnackbarData={setSnackbarData}
-        revisionUpdated={revisionUpdated}
-        setRevisionUpdated={setRevisionUpdated}
-      />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
@@ -374,8 +373,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // customHeight={60}
-        groupBy={['normParameterType']}
+        groupBy={['type']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
@@ -387,4 +385,4 @@ const PIMSThroughput = ({ startDate, endDate }) => {
   )
 }
 
-export default PIMSThroughput
+export default ManualEntry

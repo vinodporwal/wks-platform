@@ -150,12 +150,18 @@ import CatalystChecmicalsCalculation from 'components/kendo-data-tables/Catalyst
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
 import MaterialGroupedSelection from 'components/kendo-data-tables/MaterialGroupedSelection'
 
-// Vertical MEROX
+// Vertical MEROX Started
 import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
 import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
 import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
 import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 // Vertical MEROX Ended
+
+// Vertical ALKYLATION Started
+import SteadyStateConsumptionAlkylation from 'components/aop-phase-two/alkylation/steady-state-consumption'
+import OverallAopConsumptionAlkylation from 'components/aop-phase-two/alkylation/overall-aop-consumption'
+import ProductionNormsBasisAlkylation from 'components/aop-phase-two/alkylation/production-norms-basis'
+// Vertical ALKYLATION Ended
 
 // PCG
 import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
@@ -1116,6 +1122,33 @@ export const MainRoutes = (
             ),
           },
           //Vertical MEROX Ended
+
+          //Vertical ALKYLATION Started
+          {
+            path: 'production-norms-basis-alkylation',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-alkylation'>
+                <ProductionNormsBasisAlkylation />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-alkylation',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-alkylation'>
+                <SteadyStateConsumptionAlkylation />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-alkylation',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-alkylation'>
+                <OverallAopConsumptionAlkylation />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical ALKYLATION Ended
 
           //Vertical PCG Started
           {
