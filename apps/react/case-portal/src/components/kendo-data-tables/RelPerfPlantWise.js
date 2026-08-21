@@ -66,17 +66,20 @@ export default function RelPerfPlantWise() {
     {
       field: 'rowNo',
       title: 'S.No.',
+      widthT: 70,
       editable: false,
       type: 'number',
+      minWidth: 70,
     },
-    { field: 'parameter', title: 'Parameter', editable: false },
-    { field: 'uom', title: 'UOM', editable: false },
+    { field: 'parameter', title: 'Parameter', editable: false, minWidth: 200 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 70, minWidth: 100 },
     {
       field: 'bestAchieved',
       title: 'Best Achieved',
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
     {
       field: 'aop',
@@ -84,6 +87,7 @@ export default function RelPerfPlantWise() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
     {
       field: 'actuals',
@@ -91,6 +95,7 @@ export default function RelPerfPlantWise() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
     {
       field: 'plann',
@@ -98,12 +103,23 @@ export default function RelPerfPlantWise() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      // minWidth: 100,
     },
-    { field: 'limit', title: 'Limit', editable: true },
+    {
+      field: 'limit', title: 'Limit', editable: true
+      // , minWidth: 100 
+    },
+    // {
+    //   field: 'rationale',
+    //   title: 'Rationale / Reasons for Changes',
+    //   editable: true,
+    //   minWidth: 100,
+    // },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
+      // minWidth: 100,
     },
   ]
 
