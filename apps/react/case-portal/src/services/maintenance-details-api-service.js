@@ -33,6 +33,10 @@ export const MaintenanceDetailsApiService = {
   StreamHoursExport,
   saveStreamHoursImport,
   getPercentageDeviation,
+  exportFinishingShutdownExcel,
+  importFinishingShutdownExcel,
+  exportShutdownHistoryExcel,
+  importShutdownHistoryExcel,
 }
 
 async function getCrackerMaintenanceData(keycloak, PLANT_ID, AOP_YEAR) {
