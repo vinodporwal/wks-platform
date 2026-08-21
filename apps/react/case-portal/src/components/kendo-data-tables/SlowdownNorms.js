@@ -730,7 +730,9 @@ const SlowdownNorms = () => {
           ? `Slowdown Consumption (Norms/Quantity)`
           : IS_PE_PP_VERTICAL_NMD_LLDPE
             ? 'Total Loss'
-            :IS_PTA_PMD_PIA?`Slowdown Consumption`:`${SCREEN_NAME}`,
+            : IS_PTA_PMD_PIA
+              ? `Slowdown Consumption (Norms)`
+              : `${SCREEN_NAME}`,
     },
     isOldYear,
   )

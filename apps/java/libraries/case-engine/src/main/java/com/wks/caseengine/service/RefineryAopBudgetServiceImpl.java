@@ -1717,9 +1717,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     }
 
     @Override
-    public AOPMessageVM getProfitCenterData(String siteId, String aopYear) {
+    public AOPMessageVM getProfitCenterData(String siteId, String aopYear, String siteName) {
         try {
-            String sql = "EXEC Sp_ProfitCenter @siteId = ?, @aopyear = ?";
+            String sql = "EXEC Sp_ProfitCenter @siteId = ?, @aopyear = ?, @siteName = ?";
             List<ProfitCenterDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 ProfitCenterDTO.builder()
                     .id(rs.getString("Id"))
@@ -1739,7 +1739,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .nov(rs.getString("Nov"))
                     .dec(rs.getString("Dec"))
                     .build(),
-                siteId, aopYear);
+                siteId, aopYear, siteName != null ? siteName : "");
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);
@@ -1835,10 +1835,10 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     }
 
     @Override
-    public AOPMessageVM getProfitCenterUomDropdown(String siteId) {
+    public AOPMessageVM getProfitCenterUomDropdown(String siteId, String siteName) {
         try {
-            String sql = "EXEC Sp_GetProfitCenterUomDropdown @siteId = ?";
-            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, siteId);
+            String sql = "EXEC Sp_GetProfitCenterUomDropdown @siteId = ?, @siteName = ?";
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, siteId, siteName != null ? siteName : "");
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);

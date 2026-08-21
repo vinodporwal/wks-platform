@@ -184,8 +184,8 @@ public class RefineryAopBudgetController {
     }
 
     @GetMapping("/profit-center-data")
-    public AOPMessageVM getProfitCenterData(@RequestParam String siteId, @RequestParam String aopYear) {
-        return refineryAopBudgetService.getProfitCenterData(siteId, aopYear);
+    public AOPMessageVM getProfitCenterData(@RequestParam String siteId, @RequestParam String aopYear, @RequestParam(required = false) String siteName) {
+        return refineryAopBudgetService.getProfitCenterData(siteId, aopYear, siteName);
     }
 
     @PostMapping("/profit-center-data")
@@ -199,8 +199,8 @@ public class RefineryAopBudgetController {
     }
 
     @GetMapping("/profit-center-uom-dropdown")
-    public AOPMessageVM getProfitCenterUomDropdown(@RequestParam String siteId) {
-        return refineryAopBudgetService.getProfitCenterUomDropdown(siteId);
+    public AOPMessageVM getProfitCenterUomDropdown(@RequestParam String siteId, @RequestParam(required = false) String siteName) {
+        return refineryAopBudgetService.getProfitCenterUomDropdown(siteId, siteName);
     }
 
     @DeleteMapping("/profit-center-data")

@@ -13,7 +13,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { JswBudgetSourceAPIService } from 'components/aop-phase-two/services/crude/jwBudgetSourceAPIService'
 import { getUnitOptions } from './helpers'
 
-const JwBudgetScreen = () => {
+const JwBudgetScreenDTA = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year } = dataGridStore
@@ -209,7 +209,7 @@ const JwBudgetScreen = () => {
       const response = await JswBudgetSourceAPIService.getDropdownUnit(
         keycloak,
         SITE_ID,
-        'SEZ',
+        'DTA',
       )
       const data = response?.data || response?.result || response || []
       const formattedOptions = Array.isArray(data)
@@ -305,7 +305,7 @@ const JwBudgetScreen = () => {
         keycloak,
         SITE_ID,
         AOP_YEAR,
-        'SEZ',
+        'DTA',
       )
       const data = response?.data || []
       const formattedData = data?.map((item, index) => ({
@@ -320,7 +320,7 @@ const JwBudgetScreen = () => {
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching SEZ JobWork Throughput data:', error)
+      console.error('Error fetching DTA Net Throughput data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error fetching data',
@@ -407,7 +407,7 @@ const JwBudgetScreen = () => {
       isFetchedRef.current = false
       await fetchData()
     } catch (error) {
-      console.error('Error saving SEZ JobWork Throughput data:', error)
+      console.error('Error saving DTA Net Throughput data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
@@ -477,10 +477,10 @@ const JwBudgetScreen = () => {
     showExport: false,
     showImport: false,
     showCalculate: false,
-    ExcelName: `SEZ JobWork Throughput_${AOP_YEAR}`,
+    ExcelName: `DTA Net Throughput_${AOP_YEAR}`,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'SEZ JobWork Throughput',
+    titleName: 'DTA Net Throughput',
     showDropdown: false,
     remarksEditable: true,
   }
@@ -517,4 +517,4 @@ const JwBudgetScreen = () => {
   )
 }
 
-export default JwBudgetScreen
+export default JwBudgetScreenDTA

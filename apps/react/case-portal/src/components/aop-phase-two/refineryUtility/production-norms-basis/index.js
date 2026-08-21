@@ -12,6 +12,7 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/mer
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import Constants from './Constants'
 import PIMSThroughput from './PIMSThroughput'
+import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
 import ProductionDemands from './ProductionDemand'
 
 const ProductionNormsBasis = () => {
@@ -232,6 +233,10 @@ const ProductionNormsBasis = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
+      case 'PIMS Monthly Throughput':
+      case 'pims-monthly-throughput':
+      case 'pims-monthly-throughtput':
+        return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       case 'Production Demand':
         return <ProductionDemands/>  
       default:
