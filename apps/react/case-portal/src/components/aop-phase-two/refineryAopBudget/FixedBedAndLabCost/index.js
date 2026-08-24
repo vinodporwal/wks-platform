@@ -18,6 +18,7 @@ import {
   getCostCenterDescriptionById,
   getMasterIdByDescription,
 } from './helpers'
+import { CostCenterSelectCellEditor } from './CostCenterSelectCellEditor'
 
 const MONTH_FIELDS = [
   'apr',
@@ -92,9 +93,10 @@ const FixedBedAndLabCostScreen = () => {
     {
       field: 'costCenterDescription',
       title: 'Cost Center Description',
-      widthT: 320,
-      minWidth: 240,
-      type: 'select',
+      widthT: 420,
+      minWidth: 360,
+      type: 'customSelect',
+      cellEditor: CostCenterSelectCellEditor,
       editable: !READ_ONLY,
       locked: true,
       dynamicOptions: true,
@@ -229,13 +231,13 @@ const FixedBedAndLabCostScreen = () => {
       const hasReleaseRecord = Array.isArray(response?.data)
         ? response.data.length > 0
         : response?.data &&
-          typeof response.data === 'object' &&
-          Object.keys(response.data).length > 0
+        typeof response.data === 'object' &&
+        Object.keys(response.data).length > 0
 
       const isReleasedVal =
         hasReleaseRecord ||
-        response?.data?.isReleased === 1 ||
-        response?.isReleased === 1
+          response?.data?.isReleased === 1 ||
+          response?.isReleased === 1
           ? 1
           : 0
 
@@ -290,8 +292,8 @@ const FixedBedAndLabCostScreen = () => {
           isEditable: READ_ONLY
             ? false
             : item.isEditable !== undefined
-            ? item.isEditable
-            : true,
+              ? item.isEditable
+              : true,
         }
       })
 
@@ -330,15 +332,20 @@ const FixedBedAndLabCostScreen = () => {
 
     // 1) VALIDATION: No duplicate dropdown selection
     if (field === 'costCenterDescription') {
-      const selectedId = getMasterIdByDescription(value, costCenterDropdown)
-      const selectedDesc = getCostCenterDescriptionById(selectedId, costCenterDropdown)
+      const valStr =
+        typeof value === 'object'
+          ? value?.value || value?.label || value?.displayLabel || ''
+          : String(value || '')
+
+      const selectedId = getMasterIdByDescription(valStr, costCenterDropdown)
+      const selectedDesc = getCostCenterDescriptionById(selectedId, costCenterDropdown) || valStr
 
       // Check if this cost center is already selected in another row
       const isDuplicate = rows.some(
         (r) =>
-          r.id !== rowId &&
-          ((r.masterId && r.masterId === selectedId) ||
-            (r.costCenterDescription && r.costCenterDescription === selectedDesc))
+          String(r.id) !== String(rowId) &&
+          ((r.masterId && selectedId && String(r.masterId).toLowerCase() === String(selectedId).toLowerCase()) ||
+            (r.costCenterDescription && String(r.costCenterDescription).toLowerCase() === String(selectedDesc).toLowerCase()))
       )
 
       if (isDuplicate) {
@@ -352,6 +359,7 @@ const FixedBedAndLabCostScreen = () => {
 
       updatedRow.masterId = selectedId
       updatedRow.costCenterDescription = selectedDesc
+      updatedRow[field] = selectedDesc
     }
 
     setRows((prevRows) =>
@@ -603,7 +611,7 @@ const FixedBedAndLabCostScreen = () => {
   }
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 0 }}>
       <LoaderBackdrop open={!!loading} />
       <AdvanceKendoTable
         columns={columns}

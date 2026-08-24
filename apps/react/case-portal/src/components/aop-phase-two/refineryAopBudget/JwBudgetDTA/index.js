@@ -12,6 +12,7 @@ import { SteadyStateConsumptionApiService } from '../../services/crude/steadySta
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { JswBudgetSourceAPIService } from 'components/aop-phase-two/services/crude/jwBudgetSourceAPIService'
 import { getUnitOptions } from './helpers'
+import { JwSelectCellEditor } from './JwSelectCellEditor'
 
 const JwBudgetScreenDTA = () => {
   const keycloak = useSession()
@@ -61,7 +62,8 @@ const JwBudgetScreenDTA = () => {
       title: 'Unit',
       widthT: 250,
       minWidth: 200,
-      type: 'select',
+      type: 'customSelect',
+      cellEditor: JwSelectCellEditor,
       dynamicOptions: true,
       getOptions: (dataItem) => getUnitOptions(dataItem, unitDropdown, rows),
       editable: true,
@@ -228,8 +230,43 @@ const JwBudgetScreenDTA = () => {
     }
   }
 
+  // Ensure every new row gets a unique ID so multiple blank rows never collide
+  const customAddRow = () => {
+    const uniqueId = `new_row_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    const newRow = {
+      id: uniqueId,
+      unit: '',
+      normParameterTypeDisplayName: '',
+      uom: '',
+      UOM: '',
+      unitId: '',
+      unitFKId: '',
+      normParameterFKId: '',
+      isNew: true,
+      isEditable: true,
+      apr: '',
+      may: '',
+      jun: '',
+      jul: '',
+      aug: '',
+      sep: '',
+      oct: '',
+      nov: '',
+      dec: '',
+      jan: '',
+      feb: '',
+      mar: '',
+      remarks: '',
+    }
+    setRows((prev) => [newRow, ...prev])
+  }
+
   const handleCustomItemChange = (e, setRowsState, setModifiedCellsState) => {
     const { dataItem, field, value } = e
+    if (!dataItem) return
+
+    const rowId = dataItem.id
+
     if (field === 'unit') {
       const valStr =
         typeof value === 'object'
@@ -247,44 +284,28 @@ const JwBudgetScreenDTA = () => {
         const unitIdVal = selectedObj.unitId || selectedObj.id || ''
         const unitLabel = selectedObj.label || selectedObj.value || valStr
 
-        dataItem.unit = unitLabel
-        dataItem.uom = uomVal
-        dataItem.UOM = uomVal
-        dataItem.unitId = unitIdVal
-        dataItem.unitFKId = unitIdVal
-        dataItem.normParameterFKId = unitIdVal
+        const updatedRow = {
+          ...dataItem,
+          unit: unitLabel,
+          uom: uomVal,
+          UOM: uomVal,
+          unitId: unitIdVal,
+          unitFKId: unitIdVal,
+          normParameterFKId: unitIdVal,
+          inEdit: true,
+        }
 
         setRowsState((prev) =>
-          prev.map((r) =>
-            String(r.id) === String(dataItem.id)
-              ? {
-                  ...r,
-                  unit: unitLabel,
-                  uom: uomVal,
-                  UOM: uomVal,
-                  unitId: unitIdVal,
-                  unitFKId: unitIdVal,
-                  normParameterFKId: unitIdVal,
-                }
-              : r,
-          ),
+          prev.map((r) => (String(r.id) === String(rowId) ? updatedRow : r)),
         )
 
-        setModifiedCellsState((prev) => {
-          const rowId = dataItem.id
-          const previousModified = prev[rowId] || {}
-          const updatedRow = {
-            ...dataItem,
-            ...previousModified,
-            unit: unitLabel,
-            uom: uomVal,
-            UOM: uomVal,
-            unitId: unitIdVal,
-            unitFKId: unitIdVal,
-            normParameterFKId: unitIdVal,
-          }
-          return { ...prev, [rowId]: updatedRow }
-        })
+        setModifiedCellsState((prev) => ({
+          ...prev,
+          [rowId]: {
+            ...(prev[rowId] || {}),
+            ...updatedRow,
+          },
+        }))
       }
     }
   }
@@ -496,6 +517,7 @@ const JwBudgetScreenDTA = () => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         deleteRowData={deleteRowData}
+        customAddRow={customAddRow}
         customItemChange={handleCustomItemChange}
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}

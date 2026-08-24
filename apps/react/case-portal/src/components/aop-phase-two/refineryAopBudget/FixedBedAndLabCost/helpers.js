@@ -4,25 +4,28 @@
 
 /**
  * Format raw dropdown data from API into standard options
+ * Uses displayLabel (e.g. "10L_1010061 - JM Club Township") for both value & label.
  * @param {Array} rawList
- * @returns {Array} Formatted options [{ label, value, masterId, costCenterCode, costCenterDescription, displayLabel }]
+ * @returns {Array} Formatted options
  */
 export const formatCostCenterDropdownOptions = (rawList = []) => {
   if (!Array.isArray(rawList)) return []
 
   return rawList.map((item) => {
-    const id = item.masterId || item.value || item.id || ''
-    const desc = item.costCenterDescription || item.label || ''
+    const id = item.masterId || item.id || item.value || ''
+    const rawDesc = item.costCenterDescription || item.label || ''
     const code = item.costCenterCode || item.costCenter || ''
-    const displayLabel = item.displayLabel || (desc ? (code ? `${code} - ${desc}` : desc) : code)
+    const displayLabel = item.displayLabel || (rawDesc ? (code ? `${code} - ${rawDesc}` : rawDesc) : code)
 
     return {
-      value: id,
-      masterId: id,
+      value: displayLabel,
       label: displayLabel,
       displayLabel: displayLabel,
+      id: id,
+      masterId: id,
       costCenterCode: code,
-      costCenterDescription: desc,
+      costCenterDescription: displayLabel,
+      rawDescription: rawDesc,
     }
   })
 }
@@ -39,7 +42,8 @@ export const getCostCenterOptions = (dataItem, costCenterOptions = [], existingR
   if (!Array.isArray(costCenterOptions)) return []
 
   // Other rows excluding current active row
-  const otherRows = (existingRows || []).filter((r) => r.id !== dataItem?.id)
+  const currentRowId = String(dataItem?.id || '')
+  const otherRows = (existingRows || []).filter((r) => String(r.id || '') !== currentRowId)
 
   const usedIdentifiers = new Set()
 
@@ -53,17 +57,23 @@ export const getCostCenterOptions = (dataItem, costCenterOptions = [], existingR
     if (r.costCenterDescription) {
       usedIdentifiers.add(String(r.costCenterDescription).trim().toLowerCase())
     }
+    if (r.displayLabel) {
+      usedIdentifiers.add(String(r.displayLabel).trim().toLowerCase())
+    }
   })
 
+  const currentMasterId = String(dataItem?.masterId || '').trim().toLowerCase()
+  const currentCostCenterDesc = String(dataItem?.costCenterDescription || dataItem?.displayLabel || '').trim().toLowerCase()
+
   return costCenterOptions.filter((opt) => {
-    const valKey = String(opt.value || opt.masterId || '').trim().toLowerCase()
-    const descKey = String(opt.costCenterDescription || opt.label || '').trim().toLowerCase()
-    const dispKey = String(opt.displayLabel || '').trim().toLowerCase()
+    const masterIdKey = String(opt.masterId || opt.id || '').trim().toLowerCase()
+    const descKey = String(opt.rawDescription || '').trim().toLowerCase()
+    const dispKey = String(opt.displayLabel || opt.label || opt.value || '').trim().toLowerCase()
 
     // If current row already has this item selected, keep it visible in its own dropdown
     const isCurrentRowSelection =
-      (dataItem?.masterId && String(dataItem.masterId).trim().toLowerCase() === valKey) ||
-      (dataItem?.costCenterDescription && String(dataItem.costCenterDescription).trim().toLowerCase() === descKey)
+      (currentMasterId && currentMasterId === masterIdKey) ||
+      (currentCostCenterDesc && (currentCostCenterDesc === dispKey || (descKey && currentCostCenterDesc === descKey)))
 
     if (isCurrentRowSelection) {
       return true
@@ -71,15 +81,15 @@ export const getCostCenterOptions = (dataItem, costCenterOptions = [], existingR
 
     // Exclude if already chosen in any other row
     return (
-      !usedIdentifiers.has(valKey) &&
-      !usedIdentifiers.has(descKey) &&
-      !usedIdentifiers.has(dispKey)
+      (!masterIdKey || !usedIdentifiers.has(masterIdKey)) &&
+      (!dispKey || !usedIdentifiers.has(dispKey)) &&
+      (!descKey || !usedIdentifiers.has(descKey))
     )
   })
 }
 
 /**
- * Helper to find cost center description from MasterId
+ * Helper to find cost center displayLabel from MasterId
  * @param {string} masterId
  * @param {Array} costCenterOptions
  * @returns {string}
@@ -89,14 +99,15 @@ export const getCostCenterDescriptionById = (masterId, costCenterOptions = []) =
   const searchKey = String(masterId).trim().toLowerCase()
   const match = costCenterOptions.find(
     (opt) =>
-      String(opt.value || '').trim().toLowerCase() === searchKey ||
-      String(opt.masterId || '').trim().toLowerCase() === searchKey
+      String(opt.masterId || '').trim().toLowerCase() === searchKey ||
+      String(opt.id || '').trim().toLowerCase() === searchKey ||
+      String(opt.value || '').trim().toLowerCase() === searchKey
   )
-  return match?.costCenterDescription || match?.label || masterId
+  return match?.displayLabel || match?.label || match?.costCenterDescription || masterId
 }
 
 /**
- * Helper to find MasterId from cost center description, label, or ID
+ * Helper to find MasterId from cost center displayLabel, description, label, or ID
  * @param {string} descriptionOrId
  * @param {Array} costCenterOptions
  * @returns {string}
@@ -106,11 +117,14 @@ export const getMasterIdByDescription = (descriptionOrId, costCenterOptions = []
   const searchKey = String(descriptionOrId).trim().toLowerCase()
   const match = costCenterOptions.find(
     (opt) =>
+      String(opt.displayLabel || '').trim().toLowerCase() === searchKey ||
+      String(opt.label || '').trim().toLowerCase() === searchKey ||
       String(opt.value || '').trim().toLowerCase() === searchKey ||
       String(opt.masterId || '').trim().toLowerCase() === searchKey ||
+      String(opt.id || '').trim().toLowerCase() === searchKey ||
       String(opt.costCenterDescription || '').trim().toLowerCase() === searchKey ||
-      String(opt.label || '').trim().toLowerCase() === searchKey ||
-      String(opt.displayLabel || '').trim().toLowerCase() === searchKey
+      String(opt.rawDescription || '').trim().toLowerCase() === searchKey ||
+      String(opt.costCenterCode || '').trim().toLowerCase() === searchKey
   )
-  return match?.masterId || match?.value || descriptionOrId
+  return match?.masterId || match?.id || match?.value || descriptionOrId
 }
