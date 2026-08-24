@@ -11,8 +11,8 @@ import {
   formatUnitDropdownOptions,
   formatMaterialDropdownOptions,
   getMaterialOptions,
+  getUnitOptions,
   formatNormsInitialRows,
-  getUniqueUnitsToFetch,
 } from './helpers'
 
 const ThroughputNormsScreen = () => {
@@ -55,6 +55,8 @@ const ThroughputNormsScreen = () => {
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
+  const [materialOptions, setMaterialOptions] = useState([])
+
   // Fetch Unit dropdown using getDropdownUnit API
   const fetchUnitDropdown = useCallback(async () => {
     if (!SITE_ID) return []
@@ -73,50 +75,31 @@ const ThroughputNormsScreen = () => {
     }
   }, [keycloak, SITE_ID])
 
-  // Fetch Material dropdown for a specific profitId (unitId) or unitName using getNormsMaterialDropdown API
-  const fetchMaterialDropdownForUnit = useCallback(
-    async (profitId, unitName) => {
-      if ((!profitId && !unitName) || !SITE_ID) return []
-      const cacheKey = profitId || unitName
-      if (materialDropdownMapRef.current[cacheKey]) {
-        return materialDropdownMapRef.current[cacheKey]
-      }
-      try {
-        const response =
-          await ThroughputNormsApiService.getNormsMaterialDropdown(
-            keycloak,
-            SITE_ID,
-            profitId || '',
-          )
-        const data = response?.data || response?.result || response || []
-        const rawList = Array.isArray(data) ? data : []
+  // Fetch all Material options without unit restriction (SEZ)
+  const fetchAllMaterials = useCallback(async () => {
+    try {
+      const response = await ThroughputNormsApiService.getNormsMaterialDropdown(
+        keycloak,
+        'SEZ',
+        SITE_ID || '',
+      )
+      const data = response?.data || response?.result || response || []
+      const rawList = Array.isArray(data) ? data : []
+      const formatted = formatMaterialDropdownOptions(rawList)
+      setMaterialOptions(formatted)
+      return formatted
+    } catch (error) {
+      console.error('Error fetching all material options:', error)
+      return []
+    }
+  }, [keycloak, SITE_ID])
 
-        const formatted = formatMaterialDropdownOptions(
-          rawList,
-          profitId,
-          unitName,
-        )
-
-        setMaterialDropdownMap((prev) => {
-          const next = { ...prev }
-          if (profitId) next[profitId] = formatted
-          if (unitName) next[unitName] = formatted
-          return next
-        })
-        if (profitId) materialDropdownMapRef.current[profitId] = formatted
-        if (unitName) materialDropdownMapRef.current[unitName] = formatted
-        return formatted
-      } catch (error) {
-        console.error(
-          'Error fetching material dropdown for profitId:',
-          profitId,
-          error,
-        )
-        return []
-      }
-    },
-    [keycloak, SITE_ID],
-  )
+  useEffect(() => {
+    if (SITE_ID) {
+      fetchUnitDropdown()
+      fetchAllMaterials()
+    }
+  }, [SITE_ID, fetchUnitDropdown, fetchAllMaterials])
 
   const columns = [
     {
@@ -135,7 +118,8 @@ const ThroughputNormsScreen = () => {
       widthT: 250,
       minWidth: 200,
       type: 'select',
-      options: unitDropdown,
+      dynamicOptions: true,
+      getOptions: (dataItem) => getUnitOptions(dataItem, unitDropdown, rows),
       editable: true,
       locked: true,
     },
@@ -149,7 +133,7 @@ const ThroughputNormsScreen = () => {
       getOptions: (dataItem) =>
         getMaterialOptions(
           dataItem,
-          materialDropdownMap,
+          materialOptions,
           materialDropdownMapRef,
           rows,
         ),
@@ -305,17 +289,27 @@ const ThroughputNormsScreen = () => {
           selectedObj.unitId || selectedObj.profitId || selectedObj.id
         const unitLabel = selectedObj.label || selectedObj.value || valStr
 
-        // Fetch materials for selected unitId / profitId
-        if (unitIdVal) {
-          await fetchMaterialDropdownForUnit(unitIdVal, unitLabel)
+        // Check if this (Unit + current Material) already exists in another row
+        const currentMaterial = String(dataItem.displayName || '').trim().toLowerCase()
+        if (currentMaterial) {
+          const isDuplicate = rows.some((r) =>
+            String(r.id) !== String(dataItem.id) &&
+            String(r.unit || '').trim().toLowerCase() === String(unitLabel).trim().toLowerCase() &&
+            String(r.displayName || '').trim().toLowerCase() === currentMaterial
+          )
+          if (isDuplicate) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `"${dataItem.displayName}" is already added under Unit "${unitLabel}"! Each Unit + Material Code combination must be unique.`,
+              severity: 'warning',
+            })
+            return
+          }
         }
 
         dataItem.unit = unitLabel
         dataItem.unitId = unitIdVal
         dataItem.profitId = unitIdVal
-        dataItem.displayName = ''
-        dataItem.uom = ''
-        dataItem.UOM = ''
 
         setRowsState((prev) =>
           prev.map((r) =>
@@ -325,9 +319,6 @@ const ThroughputNormsScreen = () => {
                 unit: unitLabel,
                 unitId: unitIdVal,
                 profitId: unitIdVal,
-                displayName: '',
-                uom: '',
-                UOM: '',
               }
               : r,
           ),
@@ -342,9 +333,6 @@ const ThroughputNormsScreen = () => {
             unit: unitLabel,
             unitId: unitIdVal,
             profitId: unitIdVal,
-            displayName: '',
-            uom: '',
-            UOM: '',
           }
           return { ...prev, [rowId]: updatedRow }
         })
@@ -354,18 +342,8 @@ const ThroughputNormsScreen = () => {
         typeof value === 'object'
           ? value?.value || value?.label || ''
           : String(value || '')
-      const profitId =
-        dataItem?.unitId ||
-        dataItem?.profitId ||
-        dataItem?.profitCenter_FK_Id ||
-        dataItem?.profitCenterFkId
-      const unitName = dataItem?.unit || dataItem?.Unit
-      const options =
-        materialDropdownMapRef.current[profitId] ||
-        materialDropdownMapRef.current[unitName] ||
-        []
 
-      const selectedMaterial = options.find(
+      const selectedMaterial = materialOptions.find(
         (opt) =>
           String(opt.value || '').toLowerCase() === valStr.toLowerCase() ||
           String(opt.label || '').toLowerCase() === valStr.toLowerCase() ||
@@ -375,9 +353,27 @@ const ThroughputNormsScreen = () => {
       if (selectedMaterial) {
         const mId = selectedMaterial.materialId || selectedMaterial.id
         const dName = selectedMaterial.label || selectedMaterial.value || valStr
-        const uId = selectedMaterial.unitId || profitId
-        const uName = selectedMaterial.unit || dataItem.unit
-        const uomVal = selectedMaterial.uom || ''
+        const uId = dataItem.unitId || dataItem.profitId || selectedMaterial.unitId
+        const uName = dataItem.unit || selectedMaterial.unit
+        const uomVal = selectedMaterial.uom || dataItem.uom || ''
+
+        // Check if this (Unit + selected Material) already exists in another row
+        const targetUnit = String(uName || '').trim().toLowerCase()
+        if (targetUnit) {
+          const isDuplicate = rows.some((r) =>
+            String(r.id) !== String(dataItem.id) &&
+            String(r.unit || '').trim().toLowerCase() === targetUnit &&
+            String(r.displayName || '').trim().toLowerCase() === String(dName).trim().toLowerCase()
+          )
+          if (isDuplicate) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `"${dName}" is already added under Unit "${uName}"! Each Unit + Material Code combination must be unique.`,
+              severity: 'warning',
+            })
+            return
+          }
+        }
 
         // Set materialId as id for inserted record
         dataItem.id = mId
@@ -449,20 +445,14 @@ const ThroughputNormsScreen = () => {
 
       const response = await ThroughputNormsApiService.getThroughputNorms(
         keycloak,
-        SITE_ID,
+        'SEZ',
         AOP_YEAR,
+        SITE_ID || '',
       )
       const data = response?.data || []
       const formattedData = formatNormsInitialRows(data, unitsList)
 
-      // Pre-fetch material options for all distinct units in the loaded rows
-      const uniqueUnitsToFetch = getUniqueUnitsToFetch(formattedData)
-
-      await Promise.all(
-        uniqueUnitsToFetch.map((u) =>
-          fetchMaterialDropdownForUnit(u.profitId, u.unitName),
-        ),
-      )
+      await fetchAllMaterials()
 
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -509,7 +499,7 @@ const ThroughputNormsScreen = () => {
       return
     }
 
-    // Validation: Material Name (displayName) and Unit are mandatory to fill
+    // Validation 1: Material Name (displayName) and Unit are mandatory to fill
     const invalidRow = data.find(
       (row) =>
         !row.unit || !row.displayName || String(row.displayName).trim() === '',
@@ -517,11 +507,31 @@ const ThroughputNormsScreen = () => {
     if (invalidRow) {
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Material Name (Display Name) is mandatory to fill!',
+        message: 'Material Name (Display Name) and Unit are mandatory to fill!',
         severity: 'error',
       })
       setLoading(false)
       return
+    }
+
+    // Validation 2: Check for duplicate (Unit + Material Code) across all rows in table
+    const seenCombos = new Set()
+    for (const r of rows) {
+      const uKey = String(r.unit || '').trim().toLowerCase()
+      const mKey = String(r.displayName || '').trim().toLowerCase()
+      if (uKey && mKey) {
+        const comboKey = `${uKey}___${mKey}`
+        if (seenCombos.has(comboKey)) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Duplicate detected: "${r.displayName}" under Unit "${r.unit}". Each Unit + Material Code combination must be unique!`,
+            severity: 'warning',
+          })
+          setLoading(false)
+          return
+        }
+        seenCombos.add(comboKey)
+      }
     }
 
     const payloadData = data.map((row) => ({
