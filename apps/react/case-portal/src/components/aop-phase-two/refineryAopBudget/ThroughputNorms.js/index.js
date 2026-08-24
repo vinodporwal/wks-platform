@@ -14,6 +14,7 @@ import {
   getUnitOptions,
   formatNormsInitialRows,
 } from './helpers'
+import { ThroughputNormsSelectCellEditor } from './ThroughputNormsSelectCellEditor'
 
 const ThroughputNormsScreen = () => {
   const keycloak = useSession()
@@ -117,7 +118,8 @@ const ThroughputNormsScreen = () => {
       title: 'Unit',
       widthT: 250,
       minWidth: 200,
-      type: 'select',
+      type: 'customSelect',
+      cellEditor: ThroughputNormsSelectCellEditor,
       dynamicOptions: true,
       getOptions: (dataItem) => getUnitOptions(dataItem, unitDropdown, rows),
       editable: true,
@@ -128,7 +130,8 @@ const ThroughputNormsScreen = () => {
       title: 'Material Code',
       widthT: 250,
       minWidth: 200,
-      type: 'select',
+      type: 'customSelect',
+      cellEditor: ThroughputNormsSelectCellEditor,
       dynamicOptions: true,
       getOptions: (dataItem) =>
         getMaterialOptions(
@@ -265,12 +268,47 @@ const ThroughputNormsScreen = () => {
     }
   }, [SITE_ID, fetchUnitDropdown])
 
+  // Ensure every new row gets a unique ID so multiple blank rows never collide
+  const customAddRow = () => {
+    const uniqueId = `new_row_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    const newRow = {
+      id: uniqueId,
+      materialId: '',
+      unitId: '',
+      profitId: '',
+      unit: '',
+      displayName: '',
+      uom: '',
+      UOM: '',
+      isNew: true,
+      isEditable: true,
+      apr: '',
+      may: '',
+      jun: '',
+      jul: '',
+      aug: '',
+      sep: '',
+      oct: '',
+      nov: '',
+      dec: '',
+      jan: '',
+      feb: '',
+      mar: '',
+      remarks: '',
+    }
+    setRows((prev) => [newRow, ...prev])
+  }
+
   const handleCustomItemChange = async (
     e,
     setRowsState,
     setModifiedCellsState,
   ) => {
     const { dataItem, field, value } = e
+    if (!dataItem) return
+
+    const rowId = dataItem.id
+
     if (field === 'unit') {
       const valStr =
         typeof value === 'object'
@@ -293,7 +331,7 @@ const ThroughputNormsScreen = () => {
         const currentMaterial = String(dataItem.displayName || '').trim().toLowerCase()
         if (currentMaterial) {
           const isDuplicate = rows.some((r) =>
-            String(r.id) !== String(dataItem.id) &&
+            String(r.id) !== String(rowId) &&
             String(r.unit || '').trim().toLowerCase() === String(unitLabel).trim().toLowerCase() &&
             String(r.displayName || '').trim().toLowerCase() === currentMaterial
           )
@@ -307,35 +345,25 @@ const ThroughputNormsScreen = () => {
           }
         }
 
-        dataItem.unit = unitLabel
-        dataItem.unitId = unitIdVal
-        dataItem.profitId = unitIdVal
+        const updatedRow = {
+          ...dataItem,
+          unit: unitLabel,
+          unitId: unitIdVal,
+          profitId: unitIdVal,
+          inEdit: true,
+        }
 
         setRowsState((prev) =>
-          prev.map((r) =>
-            String(r.id) === String(dataItem.id)
-              ? {
-                ...r,
-                unit: unitLabel,
-                unitId: unitIdVal,
-                profitId: unitIdVal,
-              }
-              : r,
-          ),
+          prev.map((r) => (String(r.id) === String(rowId) ? updatedRow : r)),
         )
 
-        setModifiedCellsState((prev) => {
-          const rowId = dataItem.id
-          const previousModified = prev[rowId] || {}
-          const updatedRow = {
-            ...dataItem,
-            ...previousModified,
-            unit: unitLabel,
-            unitId: unitIdVal,
-            profitId: unitIdVal,
-          }
-          return { ...prev, [rowId]: updatedRow }
-        })
+        setModifiedCellsState((prev) => ({
+          ...prev,
+          [rowId]: {
+            ...(prev[rowId] || {}),
+            ...updatedRow,
+          },
+        }))
       }
     } else if (field === 'displayName') {
       const valStr =
@@ -361,7 +389,7 @@ const ThroughputNormsScreen = () => {
         const targetUnit = String(uName || '').trim().toLowerCase()
         if (targetUnit) {
           const isDuplicate = rows.some((r) =>
-            String(r.id) !== String(dataItem.id) &&
+            String(r.id) !== String(rowId) &&
             String(r.unit || '').trim().toLowerCase() === targetUnit &&
             String(r.displayName || '').trim().toLowerCase() === String(dName).trim().toLowerCase()
           )
@@ -375,56 +403,29 @@ const ThroughputNormsScreen = () => {
           }
         }
 
-        // Set materialId as id for inserted record
-        dataItem.id = mId
-        dataItem.materialId = mId
-        dataItem.displayName = dName
-        dataItem.unitId = uId
-        dataItem.profitId = uId
-        dataItem.unit = uName
-        dataItem.uom = uomVal
-        dataItem.UOM = uomVal
+        const updatedRow = {
+          ...dataItem,
+          materialId: mId,
+          displayName: dName,
+          unitId: uId,
+          profitId: uId,
+          unit: uName,
+          uom: uomVal,
+          UOM: uomVal,
+          inEdit: true,
+        }
 
         setRowsState((prev) =>
-          prev.map((r) =>
-            String(r.id) === String(e.dataItem.id) || r === dataItem
-              ? {
-                ...r,
-                id: mId,
-                materialId: mId,
-                displayName: dName,
-                unitId: uId,
-                profitId: uId,
-                unit: uName,
-                uom: uomVal,
-                UOM: uomVal,
-              }
-              : r,
-          ),
+          prev.map((r) => (String(r.id) === String(rowId) ? updatedRow : r)),
         )
 
-        setModifiedCellsState((prev) => {
-          const rowKey = mId || dataItem.id
-          const previousModified = prev[e.dataItem.id] || prev[rowKey] || {}
-          const updatedRow = {
-            ...dataItem,
-            ...previousModified,
-            id: mId,
-            materialId: mId,
-            displayName: dName,
-            unitId: uId,
-            profitId: uId,
-            unit: uName,
-            uom: uomVal,
-            UOM: uomVal,
-          }
-          const copy = { ...prev }
-          if (e.dataItem.id !== mId) {
-            delete copy[e.dataItem.id]
-          }
-          copy[rowKey] = updatedRow
-          return copy
-        })
+        setModifiedCellsState((prev) => ({
+          ...prev,
+          [rowId]: {
+            ...(prev[rowId] || {}),
+            ...updatedRow,
+          },
+        }))
       }
     }
   }
@@ -667,6 +668,7 @@ const ThroughputNormsScreen = () => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         deleteRowData={deleteRowData}
+        customAddRow={customAddRow}
         customItemChange={handleCustomItemChange}
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}

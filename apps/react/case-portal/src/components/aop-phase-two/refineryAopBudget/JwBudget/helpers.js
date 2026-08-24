@@ -7,28 +7,27 @@
  * @returns {Array} Filtered unit options for the current row
  */
 export const getUnitOptions = (dataItem, unitDropdown = [], rows = []) => {
+     if (!Array.isArray(unitDropdown)) return []
+
      const currentUnit = String(dataItem?.unit || dataItem?.Unit || '').trim().toLowerCase()
-     const currentUnitId = String(dataItem?.unitId || dataItem?.id || '').trim().toLowerCase()
      const currentRowId = String(dataItem?.id || '')
 
      const selectedUnitsInOtherRows = new Set()
-     rows.forEach((r) => {
+     const rowList = Array.isArray(rows) ? rows : []
+     rowList.forEach((r) => {
           const rRowId = String(r.id || '')
           const rUnit = String(r.unit || r.Unit || '').trim().toLowerCase()
-          const rUnitId = String(r.unitId || r.id || '').trim().toLowerCase()
 
-          if (rRowId !== currentRowId) {
-               if (rUnit) selectedUnitsInOtherRows.add(rUnit)
-               if (rUnitId) selectedUnitsInOtherRows.add(rUnitId)
+          if (rRowId !== currentRowId && rUnit) {
+               selectedUnitsInOtherRows.add(rUnit)
           }
      })
 
      return unitDropdown.filter((opt) => {
           const optLabel = String(opt.label || opt.value || '').trim().toLowerCase()
-          const optVal = String(opt.value || opt.id || opt.unitId || '').trim().toLowerCase()
+          const optVal = String(opt.value || opt.unit || '').trim().toLowerCase()
 
           if (currentUnit && (optLabel === currentUnit || optVal === currentUnit)) return true
-          if (currentUnitId && (optLabel === currentUnitId || optVal === currentUnitId)) return true
 
           return !selectedUnitsInOtherRows.has(optLabel) && !selectedUnitsInOtherRows.has(optVal)
      })
