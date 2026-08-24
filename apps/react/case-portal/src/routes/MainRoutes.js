@@ -200,6 +200,7 @@ import JwBudgetScreenDTA from 'components/aop-phase-two/refineryAopBudget/JwBudg
 import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
+import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index'
 
 // Naphthasplitter Ended
 
@@ -443,6 +444,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='jw-unit'>
                 <JwUnitScreen />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'fixed-bed-and-lab-cost',
+            element: (
+              <PrivateRoute routeId='fixed-bed-and-lab-cost'>
+                <FixedBedAndLabCostScreen />
               </PrivateRoute>
             ),
           },
