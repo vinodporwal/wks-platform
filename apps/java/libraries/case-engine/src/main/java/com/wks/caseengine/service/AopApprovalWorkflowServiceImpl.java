@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,6 +96,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private AopApprovalAuditService auditService;
     @Autowired
     private AopWorkflowNotificationService notificationService;
+    @Autowired
+    private KeycloakUserService keycloakUserService;
 
     @Override
     @Transactional
@@ -946,6 +949,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         if (roles.isEmpty()) {
             return items;
         }
+        Map<String, List<UserRepresentation>> usersByRole = new HashMap<>();
         for (Workflow wf : workflowRepository.findAllByCaseDefIdAndIsDeletedFalse(CASE_DEF_ID)) {
             Plants plant = wf.getPlantFKId() != null ? plantsRepository.findById(wf.getPlantFKId()).orElse(null) : null;
             UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
@@ -953,9 +957,10 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
 
             if (auditService.hasCompleted(wf.getCaseId())) {
                 String lastGate = GATES.get(GATES.size() - 1);
+                String plantId = wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null;
                 items.add(AopPendingItemDTO.builder()
                         .caseId(wf.getCaseId())
-                        .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
+                        .plantId(plantId)
                         .plantName(plant != null ? plant.getName() : null)
                         .siteName(siteName(wf.getSiteFKId()))
                         .verticalName(verticalName(wf.getVerticalFKId()))
@@ -968,6 +973,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                         .listOfRoles(listOfRolesForStep(masterId, lastGate, wf.getCaseId(), List.of()))
                         .status(STATUS_COMPLETED)
                         .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
+                        .pendingWith(List.of())
                         .actions(AopViewerDTO.builder()
                                 .mode("READ_ONLY")
                                 .canApprove(false)
@@ -1021,9 +1027,11 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                         .roles(roles).build();
             }
 
+            String plantId = wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null;
+            List<AopStepRoleDTO> stepRoles = listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks);
             items.add(AopPendingItemDTO.builder()
                     .caseId(wf.getCaseId())
-                    .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
+                    .plantId(plantId)
                     .plantName(plant != null ? plant.getName() : null)
                     .siteName(siteName(wf.getSiteFKId()))
                     .verticalName(verticalName(wf.getVerticalFKId()))
@@ -1033,9 +1041,10 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .sequence(sm != null ? sm.sequence : null)
                     .assignedRole(targetTask.getAssignee())
                     .taskId(isActionable && mine != null ? mine.getId() : null)
-                    .listOfRoles(listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks))
+                    .listOfRoles(stepRoles)
                     .status(STATUS_PENDING)
                     .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
+                    .pendingWith(pendingWithUsernames(stepName, stepRoles, plantId, usersByRole))
                     .actions(actions)
                     .build());
         }
@@ -1054,6 +1063,79 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         } catch (DateTimeParseException ex) {
             return null;
         }
+    }
+
+    /**
+     * Usernames holding the current step's roles. Functional Heads only include
+     * roles that have not approved yet in this visit.
+     */
+    private List<String> pendingWithUsernames(String stepName, List<AopStepRoleDTO> stepRoles,
+            String plantId, Map<String, List<UserRepresentation>> usersByRole) {
+        LinkedHashSet<String> usernames = new LinkedHashSet<>();
+        if (stepRoles == null || stepRoles.isEmpty()) {
+            return new ArrayList<>();
+        }
+        boolean functionalHeads = "gate2".equals(stepName);
+        for (AopStepRoleDTO stepRole : stepRoles) {
+            if (stepRole == null || stepRole.getRole() == null || stepRole.getRole().isBlank()) {
+                continue;
+            }
+            if (functionalHeads && stepRole.isApproved()) {
+                continue;
+            }
+            for (UserRepresentation user : usersWithRole(stepRole.getRole(), usersByRole)) {
+                if (user == null || user.getUsername() == null || user.getUsername().isBlank()) {
+                    continue;
+                }
+                if (!userAssignedToPlant(user, plantId)) {
+                    continue;
+                }
+                usernames.add(user.getUsername());
+            }
+        }
+        return new ArrayList<>(usernames);
+    }
+
+    private List<UserRepresentation> usersWithRole(String role,
+            Map<String, List<UserRepresentation>> usersByRole) {
+        if (usersByRole.containsKey(role)) {
+            return usersByRole.get(role);
+        }
+        List<UserRepresentation> users = List.of();
+        try {
+            List<UserRepresentation> fetched = keycloakUserService.getUsersWithRole(role);
+            if (fetched != null) {
+                users = fetched;
+            }
+        } catch (Exception ex) {
+            log.warn("AOP my-pending: could not resolve users for role {}: {}", role, ex.getMessage());
+        }
+        usersByRole.put(role, users);
+        return users;
+    }
+
+    /**
+     * Keep inbox names scoped to this plant when the user has a plants mapping.
+     * Users with no plants attribute are still included (role match only).
+     */
+    private static boolean userAssignedToPlant(UserRepresentation user, String plantId) {
+        if (plantId == null || plantId.isBlank()) {
+            return true;
+        }
+        if (user.getAttributes() == null || !user.getAttributes().containsKey("plants")) {
+            return true;
+        }
+        List<String> plantsAttr = user.getAttributes().get("plants");
+        if (plantsAttr == null || plantsAttr.isEmpty()) {
+            return true;
+        }
+        String needle = plantId.toLowerCase();
+        for (String raw : plantsAttr) {
+            if (raw != null && raw.toLowerCase().contains(needle)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

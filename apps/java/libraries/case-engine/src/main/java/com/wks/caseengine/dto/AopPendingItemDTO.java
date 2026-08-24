@@ -49,5 +49,11 @@ public class AopPendingItemDTO {
      */
     private String actionTakenDate;
 
+    /**
+     * Usernames of people who hold the current step's role(s). For Functional
+     * Heads ({@code gate2}), only still-pending roles are included.
+     */
+    private List<String> pendingWith;
+
     private AopViewerDTO actions;
 }
