@@ -62,8 +62,12 @@ const ConfigurationAccordian = ({
   const isHTSEZVGOHT3 = useMemo(() => {
     return (
       VERTICAL_NAME === 'hydrotreater' &&
-      SITE_NAME === 'sez' &&
-      PLANT_NAME === 'vgoht-3'
+      (SITE_NAME === 'sez' &&
+      PLANT_NAME === 'vgoht-3') ||
+      (SITE_NAME === 'dta' &&
+      PLANT_NAME === 'dht1') ||
+      (SITE_NAME === 'dta' &&
+      PLANT_NAME === 'dht2')
     )
   }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 

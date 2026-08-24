@@ -31,8 +31,12 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const valueFormat = customValueFormatterPhaseTwo(5)
   const isEorSor =
-    siteObject?.name?.toLowerCase() === 'sez' &&
-    plantObject?.name?.toLowerCase() === 'vgoht-3'
+    (siteObject?.name?.toLowerCase() === 'sez' &&
+    plantObject?.name?.toLowerCase() === 'vgoht-3') ||
+    (siteObject?.name?.toLowerCase() === 'dta' &&
+    plantObject?.name?.toLowerCase() === 'dht1') ||
+    (siteObject?.name?.toLowerCase() === 'dta' &&
+    plantObject?.name?.toLowerCase() === 'dht2')
 
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
 
