@@ -19,7 +19,7 @@ export const formatCostCenterDropdownOptions = (rawList = []) => {
     return {
       value: id,
       masterId: id,
-      label: desc || displayLabel,
+      label: displayLabel,
       displayLabel: displayLabel,
       costCenterCode: code,
       costCenterDescription: desc,
