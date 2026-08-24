@@ -1854,9 +1854,10 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
 
     @Override
-    public AOPMessageVM getThroughputNorms(String siteId, String aopYear) {
+    public AOPMessageVM getThroughputNorms(String siteName, String aopYear) {
         try {
-            String sql = "EXEC Sp_GetThroughputNorms @SiteId = ?, @AOPYear = ?";
+            String effectiveSiteName = (siteName != null && !siteName.trim().isEmpty()) ? siteName : "SEZ";
+            String sql = "EXEC Sp_GetThroughputNorms @siteName = ?, @AOPYear = ?";
 
             List<ThroughputNormsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 ThroughputNormsDTO.builder()
@@ -1880,7 +1881,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .feb(rs.getString("Feb"))
                     .mar(rs.getString("Mar"))
                     .build(),
-                siteId, aopYear);
+                effectiveSiteName, aopYear);
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);
@@ -1978,9 +1979,10 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     }
 
     @Override
-    public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId) {
+    public AOPMessageVM getNormsMaterialDropdown(String siteName) {
         try {
-            String sql = "EXEC Sp_GetNormsMaterialDropdown @siteId = ?, @profitId = ?";
+            String effectiveSiteName = (siteName != null && !siteName.trim().isEmpty()) ? siteName : "SEZ";
+            String sql = "EXEC Sp_GetNormsMaterialDropdown @siteName = ?";
 
             List<NormsMaterialDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 NormsMaterialDropdownDTO.builder()
@@ -1989,9 +1991,8 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .unit(rs.getString("Unit"))
                     .displayName(rs.getString("DisplayName"))
                     .uom(rs.getString("UOM"))
-        
                     .build(),
-                siteId, profitId);
+                effectiveSiteName);
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);

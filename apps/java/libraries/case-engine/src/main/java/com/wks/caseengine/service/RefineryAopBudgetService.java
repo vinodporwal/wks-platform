@@ -40,10 +40,10 @@ public interface RefineryAopBudgetService {
     public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear);
     public AOPMessageVM getProfitCenterUomDropdown(String siteId, String siteName);
     public AOPMessageVM deleteProfitCenterData(String id, String aopYear);
-    public AOPMessageVM getThroughputNorms(String siteId, String aopYear);
+    public AOPMessageVM getThroughputNorms(String siteName, String aopYear);
     public List<ThroughputNormsDTO> saveThroughputNorms(List<ThroughputNormsDTO> throughputNormsDTOs, String aopYear);
     public AOPMessageVM deleteThroughputNorms(String materialId, String unitId, String aopYear);
-    public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId);
+    public AOPMessageVM getNormsMaterialDropdown(String siteName);
     public AOPMessageVM getJwUnit(String siteId, String aopYear);
     public List<JwUnitDTO> saveJwUnit(List<JwUnitDTO> jwUnitDTOs, String aopYear);
     public AOPMessageVM getFixedBedAndLabCostData(String aopYear);

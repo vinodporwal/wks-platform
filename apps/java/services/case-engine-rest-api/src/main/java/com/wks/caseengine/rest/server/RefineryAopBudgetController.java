@@ -210,8 +210,10 @@ public class RefineryAopBudgetController {
     }
 
     @GetMapping("/throughput-norms")
-    public AOPMessageVM getThroughputNorms(@RequestParam String siteId, @RequestParam String aopYear) {
-        return refineryAopBudgetService.getThroughputNorms(siteId, aopYear);
+    public AOPMessageVM getThroughputNorms(@RequestParam(required = false) String siteId,
+                                          @RequestParam(required = false, defaultValue = "SEZ") String siteName,
+                                          @RequestParam String aopYear) {
+        return refineryAopBudgetService.getThroughputNorms(siteName, aopYear);
     }
 
     @PostMapping("/throughput-norms")
@@ -230,8 +232,9 @@ public class RefineryAopBudgetController {
     }
 
     @GetMapping("/norms-material-dropdown")
-    public AOPMessageVM getNormsMaterialDropdown(@RequestParam String siteId, @RequestParam String profitId) {
-        return refineryAopBudgetService.getNormsMaterialDropdown(siteId, profitId);
+    public AOPMessageVM getNormsMaterialDropdown(@RequestParam(required = false) String siteId,
+                                                @RequestParam(required = false, defaultValue = "SEZ") String siteName) {
+        return refineryAopBudgetService.getNormsMaterialDropdown(siteName);
     }
 
     @GetMapping("/jw-unit")
