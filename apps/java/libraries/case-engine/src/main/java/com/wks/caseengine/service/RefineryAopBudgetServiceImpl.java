@@ -41,6 +41,8 @@ import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.JwUnitDTO;
+import com.wks.caseengine.dto.FixedBedAndLabCostDTO;
+import com.wks.caseengine.dto.FixedBedCostCenterDropdownDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
@@ -2097,5 +2099,181 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             }
         }
         return failedRecords;
+    }
+
+    @Override
+    public AOPMessageVM getFixedBedAndLabCostData(String aopYear) {
+        try {
+            String sql = "EXEC dbo.SP_GetFixedBedAndLabCostData @AopYear = ?";
+
+            List<FixedBedAndLabCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                java.sql.ResultSetMetaData meta = rs.getMetaData();
+                int colCount = meta.getColumnCount();
+                Set<String> cols = new HashSet<>();
+                for (int i = 1; i <= colCount; i++) {
+                    cols.add(meta.getColumnLabel(i).toLowerCase());
+                }
+
+                String masterId = cols.contains("masterid") ? rs.getString("MasterId") : null;
+                String transactionId = cols.contains("transactionid") ? rs.getString("TransactionId") : null;
+
+                return FixedBedAndLabCostDTO.builder()
+                    .id(transactionId != null ? transactionId : masterId)
+                    .masterId(masterId)
+                    .account(cols.contains("account") ? rs.getString("Account") : null)
+                    .profitCenter(cols.contains("profitcenter") ? rs.getString("ProfitCenter") : null)
+                    .plant(cols.contains("plant") ? rs.getString("Plant") : null)
+                    .unit(cols.contains("unit") ? rs.getString("Unit") : null)
+                    .costCenter(cols.contains("costcenter") ? rs.getString("CostCenter") : null)
+                    .costCenterDescription(cols.contains("costcenterdescription") ? rs.getString("CostCenterDescription") : null)
+                    .material(cols.contains("material") ? rs.getString("Material") : null)
+                    .uom(cols.contains("uom") ? rs.getString("UOM") : null)
+                    .unitDescription(cols.contains("unitdescription") ? rs.getString("UnitDescription") : null)
+                    .displayOrder(cols.contains("displayorder") && rs.getObject("DisplayOrder") != null ? rs.getDouble("DisplayOrder") : null)
+                    .aopYear(cols.contains("aopyear") ? rs.getString("AopYear") : aopYear)
+                    .apr(cols.contains("apr") && rs.getObject("Apr") != null ? rs.getDouble("Apr") : 0.0)
+                    .may(cols.contains("may") && rs.getObject("May") != null ? rs.getDouble("May") : 0.0)
+                    .jun(cols.contains("jun") && rs.getObject("Jun") != null ? rs.getDouble("Jun") : 0.0)
+                    .jul(cols.contains("jul") && rs.getObject("Jul") != null ? rs.getDouble("Jul") : 0.0)
+                    .aug(cols.contains("aug") && rs.getObject("Aug") != null ? rs.getDouble("Aug") : 0.0)
+                    .sep(cols.contains("sep") && rs.getObject("Sep") != null ? rs.getDouble("Sep") : 0.0)
+                    .oct(cols.contains("oct") && rs.getObject("Oct") != null ? rs.getDouble("Oct") : 0.0)
+                    .nov(cols.contains("nov") && rs.getObject("Nov") != null ? rs.getDouble("Nov") : 0.0)
+                    .dec(cols.contains("dec") && rs.getObject("Dec") != null ? rs.getDouble("Dec") : 0.0)
+                    .jan(cols.contains("jan") && rs.getObject("Jan") != null ? rs.getDouble("Jan") : 0.0)
+                    .feb(cols.contains("feb") && rs.getObject("Feb") != null ? rs.getDouble("Feb") : 0.0)
+                    .mar(cols.contains("mar") && rs.getObject("Mar") != null ? rs.getDouble("Mar") : 0.0)
+                    .totalAmount(cols.contains("totalamount") && rs.getObject("TotalAmount") != null ? rs.getDouble("TotalAmount") : 0.0)
+                    .remarks(cols.contains("remarks") ? rs.getString("Remarks") : null)
+                    .isEditable(cols.contains("iseditable") && rs.getObject("IsEditable") != null ? rs.getBoolean("IsEditable") : true)
+                    .isActive(cols.contains("isactive") && rs.getObject("IsActive") != null ? rs.getBoolean("IsActive") : true)
+                    .isTransactionExists(transactionId != null)
+                    .build();
+            }, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Fixed Bed and Lab Cost data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getFixedBedCostCentersDropdowns() {
+        try {
+            String sql = "EXEC dbo.Sp_GetFixedBedCostCentersDropdowns";
+
+            List<FixedBedCostCenterDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                FixedBedCostCenterDropdownDTO.builder()
+                    .masterId(rs.getString("MasterId"))
+                    .value(rs.getString("value"))
+                    .label(rs.getString("label"))
+                    .displayLabel(rs.getString("DisplayLabel"))
+                    .costCenterCode(rs.getString("CostCenterCode"))
+                    .costCenterDescription(rs.getString("CostCenterDescription"))
+                    .displayOrder(rs.getObject("DisplayOrder") != null ? rs.getDouble("DisplayOrder") : null)
+                    .build());
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Cost Center dropdown fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Cost Center dropdown data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<FixedBedAndLabCostDTO> saveFixedBedAndLabCostData(List<FixedBedAndLabCostDTO> dtos, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<FixedBedAndLabCostDTO> failedRecords = new ArrayList<>();
+
+        for (FixedBedAndLabCostDTO dto : dtos) {
+            try {
+                String masterId = dto.getMasterId();
+                String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
+
+                if (year == null) {
+                    continue;
+                }
+
+                // If masterId is null (new entry), find or create the master record
+                if (masterId == null || masterId.isEmpty() || masterId.startsWith("new_row_")) {
+                    String desc = dto.getCostCenterDescription();
+                    if (desc != null && !desc.isEmpty()) {
+                        List<String> existingIds = jdbcTemplate.queryForList(
+                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FixedBedAndLabCostMaster WHERE CostCenterDescription = ? OR CostCenter = ?",
+                            String.class, desc, desc
+                        );
+                        if (!existingIds.isEmpty()) {
+                            masterId = existingIds.get(0);
+                        } else {
+                            // Create new master record
+                            masterId = UUID.randomUUID().toString();
+                            jdbcTemplate.update(
+                                "INSERT INTO dbo.FixedBedAndLabCostMaster (Id, Account, CostCenterDescription, IsActive, IsEditable) VALUES (?, ?, ?, 1, 1)",
+                                masterId, desc, desc
+                            );
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+
+                String checkSql = "SELECT COUNT(1) FROM dbo.FixedBedAndLabCostTransaction " +
+                                  "WHERE MasterId = ? AND AopYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, masterId, year);
+
+                if (count > 0) {
+                    String updateSql = "UPDATE dbo.FixedBedAndLabCostTransaction " +
+                                       "SET Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                       "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
+                                       "WHERE MasterId = ? AND AopYear = ?";
+                    jdbcTemplate.update(updateSql,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy,
+                        masterId, year);
+                } else {
+                    String insertSql = "INSERT INTO dbo.FixedBedAndLabCostTransaction " +
+                                       "(Id, MasterId, AopYear, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, " +
+                                       "Remarks, CreatedAt, CreatedBy) " +
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
+                    jdbcTemplate.update(insertSql,
+                        masterId, year,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy);
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+        return failedRecords;
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteFixedBedAndLabCost(String masterId, String aopYear) {
+        try {
+            String sql = "DELETE FROM dbo.FixedBedAndLabCostTransaction WHERE MasterId = ? AND AopYear = ?";
+            int rowsAffected = jdbcTemplate.update(sql, masterId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage(rowsAffected > 0 ? "Record deleted successfully" : "Record not found to delete");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete Fixed Bed and Lab Cost transaction", e);
+        }
     }
 }

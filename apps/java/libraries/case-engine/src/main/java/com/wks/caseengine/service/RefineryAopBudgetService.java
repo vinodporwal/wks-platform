@@ -15,6 +15,9 @@ import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
+import com.wks.caseengine.dto.FixedBedAndLabCostDTO;
+import com.wks.caseengine.dto.FixedBedCostCenterDropdownDTO;
+
 public interface RefineryAopBudgetService {
     
     public AOPMessageVM getPlantCapacitiesTranscation(String plantId, String aopYear);
@@ -43,4 +46,9 @@ public interface RefineryAopBudgetService {
     public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId);
     public AOPMessageVM getJwUnit(String siteId, String aopYear);
     public List<JwUnitDTO> saveJwUnit(List<JwUnitDTO> jwUnitDTOs, String aopYear);
+    public AOPMessageVM getFixedBedAndLabCostData(String aopYear);
+    public AOPMessageVM getFixedBedCostCentersDropdowns();
+    public List<FixedBedAndLabCostDTO> saveFixedBedAndLabCostData(List<FixedBedAndLabCostDTO> dtos, String aopYear);
+    public AOPMessageVM deleteFixedBedAndLabCost(String masterId, String aopYear);
 }
+

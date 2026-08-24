@@ -24,6 +24,7 @@ import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.JwUnitDTO;
+import com.wks.caseengine.dto.FixedBedAndLabCostDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.service.RefineryAopBudgetService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -247,4 +248,30 @@ public class RefineryAopBudgetController {
             return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
         }
     }
+
+    @GetMapping("/fixed-bed-and-lab-cost")
+    public AOPMessageVM getFixedBedAndLabCost(@RequestParam String aopYear) {
+        return refineryAopBudgetService.getFixedBedAndLabCostData(aopYear);
+    }
+
+    @GetMapping("/fixed-bed-cost-centers-dropdown")
+    public AOPMessageVM getFixedBedCostCentersDropdowns() {
+        return refineryAopBudgetService.getFixedBedCostCentersDropdowns();
+    }
+
+    @PostMapping("/fixed-bed-and-lab-cost")
+    public AOPMessageVM saveFixedBedAndLabCost(@RequestBody List<FixedBedAndLabCostDTO> fixedBedAndLabCostDTOs, @RequestParam(required = false) String aopYear) {
+        List<FixedBedAndLabCostDTO> failedRecords = refineryAopBudgetService.saveFixedBedAndLabCostData(fixedBedAndLabCostDTOs, aopYear);
+        if (failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "All data has been saved", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
+        }
+    }
+
+    @DeleteMapping("/fixed-bed-and-lab-cost")
+    public AOPMessageVM deleteFixedBedAndLabCost(@RequestParam String masterId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.deleteFixedBedAndLabCost(masterId, aopYear);
+    }
 }
+
