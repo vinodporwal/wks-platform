@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.time.Month;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -38,6 +39,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +49,7 @@ import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.FeedTypeFlowMappingDTO;
+import com.wks.caseengine.dto.MXOReprocessingDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -112,6 +115,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 	@Autowired
 	private ConfigurationService configurationService;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	private static final Pattern UUID_PATTERN = 
 		    Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
@@ -2976,4 +2982,151 @@ session.doWork(connection -> {
 	private String formatTitle(String columnName) {
 		return columnName.replace("_", " ");
 	}
+
+	@Override
+    @Transactional
+    public AOPMessageVM getMXOReprocessingData(String plantId, String aopYear) {
+        try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadMXOReprocessing";
+
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = ?, @aopYear = ?";
+
+            List<MXOReprocessingDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                MXOReprocessingDTO.builder()
+                    .month(rs.getString("Month"))
+					.mode(rs.getString("Mode"))
+                    .mXOGeneration_tph(rs.getDouble("MXOgeneration_TPM"))
+                    .onstream_hrs(rs.getDouble("Onstream_hrs"))
+                    .mXOgeneration_TPM(rs.getDouble("MXOgeneration_TPM"))
+                    .mXODowntime_hrs(rs.getDouble("MXODowntime_hrs"))
+                    .maxMXOReprocessingRate_tph(rs.getDouble("MaxMXOReprocessingRate_tph"))
+					.aopYear("AOPYear")
+					.mXODowntimeInHrsId(rs.getString("MXO Downtime in hrs Id"))
+					.maxMXOReprocessingRateInTphId(rs.getString("Max MXO Reprocessing rate in tph Id"))
+					.remarks(rs.getString("Remarks"))
+                    .build(), plantId, aopYear);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+	@Override
+	public List<MXOReprocessingDTO> updateMXOReprocessingData(List<MXOReprocessingDTO> mXOReprocessingDTOList, String plantFKId, String year) {
+	
+		List<MXOReprocessingDTO> failedRecords = new ArrayList<>();
+		
+		for (MXOReprocessingDTO dto : mXOReprocessingDTOList) {
+
+			if(dto.getMXODowntimeInHrsId() == null || dto.getMXODowntimeInHrsId().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MXODowntimeInHrsId is required");
+				failedRecords.add(dto);
+				continue;
+			}
+			if(dto.getMaxMXOReprocessingRateInTphId() == null || dto.getMaxMXOReprocessingRateInTphId().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MaxMXOReprocessingRateInTphId is required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			if(dto.getMonth() == null || dto.getMonth().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("Month is required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			Integer monthInInteger = getMonthNumber(dto.getMonth());
+		
+	       
+			 
+        String mXODowntimeInHrsId = dto.getMXODowntimeInHrsId();
+		String maxMXOReprocessingRateInTphId = dto.getMaxMXOReprocessingRateInTphId();
+
+		saveDataForMXOReprocessing(UUID.fromString(mXODowntimeInHrsId), monthInInteger, dto.getMXODowntime_hrs(), dto.getRemarks(), plantFKId, year);
+		saveDataForMXOReprocessing(UUID.fromString(maxMXOReprocessingRateInTphId), monthInInteger, dto.getMaxMXOReprocessingRate_tph(), dto.getRemarks(), plantFKId, year);
+
+	
+
+		}
+
+		return failedRecords;
+
+	}
+
+   @Transactional
+	public void saveDataForMXOReprocessing(UUID normParameterFKId, Integer i, Double attributeValue, String remark, String plantId,
+		String year) {
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setAttributeValueVersion("V1");
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+
+
+public int getMonthNumber(String monthName) {
+    if (monthName == null || monthName.trim().isEmpty()) {
+        throw new IllegalArgumentException("Month name cannot be null or empty");
+    }
+
+    String month = monthName.trim();
+
+    // Full month name
+    if (month.length() > 3) {
+        return Month.valueOf(month.toUpperCase()).getValue();
+    }
+
+    // 3-letter month abbreviation
+    String shortMonth = month.substring(0, 1).toUpperCase()
+            + month.substring(1).toLowerCase();
+
+    for (Month m : Month.values()) {
+        if (m.name().substring(0, 3).equalsIgnoreCase(shortMonth)) {
+            return m.getValue();
+        }
+    }
+
+    throw new IllegalArgumentException("Invalid month: " + monthName);
+}
+
+
+
 }
