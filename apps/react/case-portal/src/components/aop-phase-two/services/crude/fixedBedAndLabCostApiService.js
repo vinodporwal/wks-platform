@@ -4,6 +4,8 @@ import { json } from 'services/request'
 export const FixedBedAndLabCostApiService = {
   getFixedBedAndLabCostData,
   getFixedBedCostCentersDropdown,
+  getFBSCCostCenterDropdown,
+  getFBSCMaterialDropdown,
   saveFixedBedAndLabCostData,
   deleteFixedBedAndLabCostData,
   exportFixedBedAndLabCost,
@@ -35,7 +37,30 @@ async function getFixedBedAndLabCostData(keycloak, year) {
  * 2) Dropdown API - Sp_GetFixedBedCostCentersDropdowns
  */
 async function getFixedBedCostCentersDropdown(keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/fixed-bed-cost-centers-dropdown`
+  return getFBSCCostCenterDropdown(keycloak)
+}
+
+async function getFBSCCostCenterDropdown(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/fbsc-cost-center-dropdown`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getFBSCMaterialDropdown(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/fbsc-material-dropdown`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

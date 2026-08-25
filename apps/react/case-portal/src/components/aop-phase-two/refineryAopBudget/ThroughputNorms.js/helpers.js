@@ -38,7 +38,7 @@ export const formatMaterialDropdownOptions = (rawList = []) => {
      const formatted = []
      const seenMaterialKeys = new Set()
      rawList.forEach((item) => {
-          const dName = item?.displayName || item?.DisplayName || item?.name || ''
+          const dName = item?.displayName || item?.DisplayName || item?.materialName || item?.MaterialName || item?.name || ''
           const mId = item?.materialId || item?.MaterialId || item?.id || item?.Id || dName
           const key = String(dName).trim().toLowerCase()
           if (dName && !seenMaterialKeys.has(key)) {
@@ -203,14 +203,18 @@ export const formatNormsInitialRows = (data = [], unitsList = []) => {
                matchedUnit?.id ||
                ''
 
+          const matId = item?.materialId || item?.id || ''
+          const uniqueRowId = `row_${matId}_${resolvedUnitId}_${index}_${Date.now()}`
+
           return {
                ...item,
-               id: item?.id || item?.materialId || index + 1,
-               materialId: item?.materialId || item?.id,
+               id: uniqueRowId,
+               originalMaterialId: matId,
+               materialId: matId,
                unit: uName,
                unitId: resolvedUnitId,
                profitId: resolvedUnitId,
-               displayName: item.displayName || item.DisplayName || '',
+               displayName: item.displayName || item.DisplayName || item.materialCode || '',
                uom: item.uom || item.UOM || '',
                UOM: item.UOM || item.uom || '',
                remarks: item.remarks || '',

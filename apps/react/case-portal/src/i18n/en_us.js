@@ -125,9 +125,9 @@ const defs = {
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
     jwBudget: 'Job Work Budget',
-    jwBudgetSource: 'SEZ JobWork Throughput',
+    jwBudgetSource: 'SEZ Job Work Throughput',
     jwBudgetSourceDTA: 'DTA Net Throughput',
-    throughputNorms: 'SEZ JobWork Norms',
+    throughputNorms: 'SEZ Job Work Norms',
     fixedBedAndLabCost: 'Fixed Bed and Lab Cost',
 
     //SSRS
@@ -370,7 +370,7 @@ const defs = {
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
         jwBudgetSource: 'Job Work Throughput',
-        throughputNorms: 'SEZ JobWork Norms',
+        throughputNorms: 'SEZ Job Work Norms',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',

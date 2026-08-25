@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -30,19 +30,12 @@ const ThroughputNormsScreen = () => {
   const AOP_YEAR = year?.selectedYear || year
   const VERTICAL_ID = verticalObject?.id
 
-  const isFetchedRef = useRef(false)
-
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
   const [unitDropdown, setUnitDropdown] = useState([])
-  const [materialDropdownMap, setMaterialDropdownMap] = useState({})
-  const materialDropdownMapRef = useRef({})
-
-  useEffect(() => {
-    materialDropdownMapRef.current = materialDropdownMap
-  }, [materialDropdownMap])
+  const [materialOptions, setMaterialOptions] = useState([])
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -56,18 +49,20 @@ const ThroughputNormsScreen = () => {
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
-  const [materialOptions, setMaterialOptions] = useState([])
+  const unitDropdownRef = React.useRef([])
 
-  // Fetch Unit dropdown using getDropdownUnit API
+  // 1. API Call: Fetch Unit dropdown options
   const fetchUnitDropdown = useCallback(async () => {
     if (!SITE_ID) return []
     try {
       const response = await ThroughputNormsApiService.getDropdownUnit(
         keycloak,
         SITE_ID,
+        'SEZ',
       )
       const data = response?.data || response?.result || response || []
       const formattedOptions = formatUnitDropdownOptions(data)
+      unitDropdownRef.current = formattedOptions
       setUnitDropdown(formattedOptions)
       return formattedOptions
     } catch (error) {
@@ -76,8 +71,8 @@ const ThroughputNormsScreen = () => {
     }
   }, [keycloak, SITE_ID])
 
-  // Fetch all Material options without unit restriction (SEZ)
-  const fetchAllMaterials = useCallback(async () => {
+  // 2. API Call: Fetch Material Code dropdown options
+  const fetchMaterialDropdown = useCallback(async () => {
     try {
       const response = await ThroughputNormsApiService.getNormsMaterialDropdown(
         keycloak,
@@ -90,17 +85,53 @@ const ThroughputNormsScreen = () => {
       setMaterialOptions(formatted)
       return formatted
     } catch (error) {
-      console.error('Error fetching all material options:', error)
+      console.error('Error fetching material dropdown options:', error)
       return []
     }
   }, [keycloak, SITE_ID])
 
+  // Load Dropdowns when SITE_ID changes
   useEffect(() => {
     if (SITE_ID) {
       fetchUnitDropdown()
-      fetchAllMaterials()
+      fetchMaterialDropdown()
     }
-  }, [SITE_ID, fetchUnitDropdown, fetchAllMaterials])
+  }, [SITE_ID, fetchUnitDropdown, fetchMaterialDropdown])
+
+  // 3. API Call: Fetch Table Data (GET)
+  const fetchTableData = useCallback(async () => {
+    if (!SITE_ID || !PLANT_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setLoading(true)
+    try {
+      const response = await ThroughputNormsApiService.getThroughputNorms(
+        keycloak,
+        'SEZ',
+        AOP_YEAR,
+        SITE_ID || '',
+      )
+      const data = response?.data || []
+      const formattedData = formatNormsInitialRows(data, unitDropdownRef.current)
+      setRows(formattedData)
+      setOriginalRows(formattedData)
+    } catch (error) {
+      console.error('Error fetching SEZ JobWork Norms data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error fetching data',
+        severity: 'error',
+      })
+      setRows([])
+      setOriginalRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, SITE_ID, PLANT_ID, VERTICAL_ID, AOP_YEAR])
+
+  // Load Table Data when SITE_ID / AOP_YEAR changes
+  useEffect(() => {
+    fetchTableData()
+  }, [fetchTableData])
 
   const columns = [
     {
@@ -134,12 +165,7 @@ const ThroughputNormsScreen = () => {
       cellEditor: ThroughputNormsSelectCellEditor,
       dynamicOptions: true,
       getOptions: (dataItem) =>
-        getMaterialOptions(
-          dataItem,
-          materialOptions,
-          materialDropdownMapRef,
-          rows,
-        ),
+        getMaterialOptions(dataItem, materialOptions, null, rows),
       editable: true,
       locked: true,
     },
@@ -260,15 +286,17 @@ const ThroughputNormsScreen = () => {
       editable: true,
       format: valueFormat,
     },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   widthT: 250,
+    //   minWidth: 180,
+    //   type: 'text',
+    //   editable: true,
+    // },
   ]
 
-  useEffect(() => {
-    if (SITE_ID) {
-      fetchUnitDropdown()
-    }
-  }, [SITE_ID, fetchUnitDropdown])
-
-  // Ensure every new row gets a unique ID so multiple blank rows never collide
+  // Add new empty row
   const customAddRow = () => {
     const uniqueId = `new_row_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     const newRow = {
@@ -381,12 +409,10 @@ const ThroughputNormsScreen = () => {
       if (selectedMaterial) {
         const mId = selectedMaterial.materialId || selectedMaterial.id
         const dName = selectedMaterial.label || selectedMaterial.value || valStr
-        const uId = dataItem.unitId || dataItem.profitId || selectedMaterial.unitId
-        const uName = dataItem.unit || selectedMaterial.unit
         const uomVal = selectedMaterial.uom || dataItem.uom || ''
 
         // Check if this (Unit + selected Material) already exists in another row
-        const targetUnit = String(uName || '').trim().toLowerCase()
+        const targetUnit = String(dataItem.unit || '').trim().toLowerCase()
         if (targetUnit) {
           const isDuplicate = rows.some((r) =>
             String(r.id) !== String(rowId) &&
@@ -396,7 +422,7 @@ const ThroughputNormsScreen = () => {
           if (isDuplicate) {
             setSnackbarOpen(true)
             setSnackbarData({
-              message: `"${dName}" is already added under Unit "${uName}"! Each Unit + Material Code combination must be unique.`,
+              message: `"${dName}" is already added under Unit "${dataItem.unit}"! Each Unit + Material Code combination must be unique.`,
               severity: 'warning',
             })
             return
@@ -407,9 +433,6 @@ const ThroughputNormsScreen = () => {
           ...dataItem,
           materialId: mId,
           displayName: dName,
-          unitId: uId,
-          profitId: uId,
-          unit: uName,
           uom: uomVal,
           UOM: uomVal,
           inEdit: true,
@@ -430,51 +453,7 @@ const ThroughputNormsScreen = () => {
     }
   }
 
-  useEffect(() => {
-    if (SITE_ID && AOP_YEAR && !isFetchedRef.current) {
-      isFetchedRef.current = true
-      fetchData()
-    }
-  }, [SITE_ID, AOP_YEAR])
-
-  const fetchData = useCallback(async () => {
-    if (!SITE_ID || !PLANT_ID || !VERTICAL_ID || !AOP_YEAR) return
-
-    setLoading(true)
-    try {
-      const unitsList = await fetchUnitDropdown()
-
-      const response = await ThroughputNormsApiService.getThroughputNorms(
-        keycloak,
-        'SEZ',
-        AOP_YEAR,
-        SITE_ID || '',
-      )
-      const data = response?.data || []
-      const formattedData = formatNormsInitialRows(data, unitsList)
-
-      await fetchAllMaterials()
-
-      setRows(formattedData)
-      setOriginalRows(formattedData)
-    } catch (error) {
-      console.error('Error fetching SEZ JobWork Norms data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching data',
-        severity: 'error',
-      })
-      setRows([])
-      setOriginalRows([])
-    } finally {
-      setLoading(false)
-    }
-  }, [keycloak, SITE_ID, PLANT_ID, VERTICAL_ID, AOP_YEAR])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
+  // 4. API Call: Save / Update Data (POST)
   const saveChanges = async () => {
     setLoading(true)
 
@@ -500,7 +479,7 @@ const ThroughputNormsScreen = () => {
       return
     }
 
-    // Validation 1: Material Name (displayName) and Unit are mandatory to fill
+    // Validation 1: Material Name (displayName) and Unit are mandatory
     const invalidRow = data.find(
       (row) =>
         !row.unit || !row.displayName || String(row.displayName).trim() === '',
@@ -515,7 +494,22 @@ const ThroughputNormsScreen = () => {
       return
     }
 
-    // Validation 2: Check for duplicate (Unit + Material Code) across all rows in table
+    // Validation 2: Remarks mandatory for modified rows (Commented)
+    // for (const row of data) {
+    //   const remarksVal = (row.remarks || '').trim()
+    //   const desc = row.displayName || row.unit || 'Row'
+    //   if (!remarksVal) {
+    //     setSnackbarOpen(true)
+    //     setSnackbarData({
+    //       message: `Remarks is mandatory for: "${desc}". Please provide remarks!`,
+    //       severity: 'warning',
+    //     })
+    //     setLoading(false)
+    //     return
+    //   }
+    // }
+
+    // Validation 3: Check for duplicate (Unit + Material Code)
     const seenCombos = new Set()
     for (const r of rows) {
       const uKey = String(r.unit || '').trim().toLowerCase()
@@ -535,27 +529,33 @@ const ThroughputNormsScreen = () => {
       }
     }
 
-    const payloadData = data.map((row) => ({
-      id: row.id || row.materialId,
-      materialId: row.materialId || row.id,
-      unitId: row.unitId || row.profitId,
-      unit: row.unit,
-      displayName: row.displayName,
-      uom: row.uom || row.UOM || '',
-      jan: Number(row.jan || 0),
-      feb: Number(row.feb || 0),
-      mar: Number(row.mar || 0),
-      apr: Number(row.apr || 0),
-      may: Number(row.may || 0),
-      jun: Number(row.jun || 0),
-      jul: Number(row.jul || 0),
-      aug: Number(row.aug || 0),
-      sep: Number(row.sep || 0),
-      oct: Number(row.oct || 0),
-      nov: Number(row.nov || 0),
-      dec: Number(row.dec || 0),
-      remarks: row.remarks || '',
-    }))
+    const payloadData = data.map((row) => {
+      const origId =
+        row.originalMaterialId ||
+        (!String(row.id).startsWith('new_row_') && !String(row.id).startsWith('row_') ? row.id : '')
+      const currentMaterialId = row.materialId || origId || ''
+      return {
+        id: origId || null,
+        materialId: currentMaterialId,
+        unitId: row.unitId || row.profitId,
+        unit: row.unit,
+        displayName: row.displayName,
+        uom: row.uom || row.UOM || '',
+        jan: Number(row.jan || 0),
+        feb: Number(row.feb || 0),
+        mar: Number(row.mar || 0),
+        apr: Number(row.apr || 0),
+        may: Number(row.may || 0),
+        jun: Number(row.jun || 0),
+        jul: Number(row.jul || 0),
+        aug: Number(row.aug || 0),
+        sep: Number(row.sep || 0),
+        oct: Number(row.oct || 0),
+        nov: Number(row.nov || 0),
+        dec: Number(row.dec || 0),
+        remarks: row.remarks || '',
+      }
+    })
 
     try {
       await ThroughputNormsApiService.saveThroughputNorms(
@@ -572,8 +572,7 @@ const ThroughputNormsScreen = () => {
       setModifiedCells({})
       setOriginalRows([])
       setRows([])
-      isFetchedRef.current = false
-      await fetchData()
+      await fetchTableData()
     } catch (error) {
       console.error('Error saving SEZ JobWork Norms data:', error)
       setSnackbarOpen(true)
@@ -603,18 +602,17 @@ const ThroughputNormsScreen = () => {
       })
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Record deleted successfully!',
+        message: 'Row removed successfully!',
         severity: 'success',
       })
       return
     }
 
-    const materialId = dataItem.materialId || dataItem.id
-    const unitId = dataItem.unitId || dataItem.profitId
-
-    setLoading(true)
     try {
-      await ThroughputNormsApiService.deleteThroughputNormsData(
+      setLoading(true)
+      const materialId = dataItem.materialId || dataItem.id
+      const unitId = dataItem.unitId || dataItem.profitId
+      await ThroughputNormsApiService.deleteThroughputNorms(
         keycloak,
         materialId,
         unitId,
@@ -625,8 +623,7 @@ const ThroughputNormsScreen = () => {
         message: 'Record deleted successfully!',
         severity: 'success',
       })
-      isFetchedRef.current = false
-      await fetchData()
+      await fetchTableData()
     } catch (error) {
       console.error('Error deleting record:', error)
       setSnackbarOpen(true)
@@ -642,6 +639,7 @@ const ThroughputNormsScreen = () => {
   const permissions = {
     showAction: true,
     addButton: true,
+    addBtnName: 'Add Item',
     deleteButton: true,
     editButton: true,
     saveBtn: true,
@@ -678,7 +676,7 @@ const ThroughputNormsScreen = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={setCurrentRowId}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

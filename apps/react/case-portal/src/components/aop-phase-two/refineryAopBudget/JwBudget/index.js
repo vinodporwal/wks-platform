@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo, {
-  customValueFormatterPhaseTwo,
-} from '../../common/ValueFormatterPhaseTwo'
-import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
-import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
+import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { JswBudgetSourceAPIService } from 'components/aop-phase-two/services/crude/jwBudgetSourceAPIService'
 import { getUnitOptions } from './helpers'
@@ -196,9 +192,15 @@ const JwBudgetScreen = () => {
       editable: true,
       format: valueFormat,
     },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   widthT: 250,
+    //   minWidth: 180,
+    //   type: 'text',
+    //   editable: true,
+    // },
   ]
-
-  const dummyRows = []
 
   useEffect(() => {
     if (SITE_ID) {
@@ -310,13 +312,6 @@ const JwBudgetScreen = () => {
     }
   }
 
-  useEffect(() => {
-    if (SITE_ID && AOP_YEAR && !isFetchedRef.current) {
-      isFetchedRef.current = true
-      fetchData()
-    }
-  }, [SITE_ID, AOP_YEAR])
-
   const fetchData = useCallback(async () => {
     if (!SITE_ID || !PLANT_ID || !VERTICAL_ID || !AOP_YEAR) return
 
@@ -383,6 +378,21 @@ const JwBudgetScreen = () => {
       return
     }
 
+    // VALIDATION: Remarks mandatory for modified rows (Commented)
+    // for (const row of data) {
+    //   const remarksVal = (row.remarks || '').trim()
+    //   const desc = row.unit || 'Row'
+    //   if (!remarksVal) {
+    //     setSnackbarOpen(true)
+    //     setSnackbarData({
+    //       message: `Remarks is mandatory for: "${desc}". Please provide remarks!`,
+    //       severity: 'warning',
+    //     })
+    //     setLoading(false)
+    //     return
+    //   }
+    // }
+
     const payloadData = data.map((row) => {
       const matched = unitDropdown.find(
         (opt) =>
@@ -391,9 +401,15 @@ const JwBudgetScreen = () => {
           opt.id === row.unit ||
           opt.unitId === row.unitId,
       )
+      const actualUnitId =
+        row.unitId ||
+        matched?.unitId ||
+        matched?.id ||
+        (!String(row.id).startsWith('new_row_') ? row.id : '')
+
       return {
         ...row,
-        id: row.id || matched?.unitId || matched?.id,
+        id: actualUnitId,
         uom: row.uom || row.UOM || matched?.uom || '',
         jan: row.jan || 0,
         feb: row.feb || 0,
@@ -407,6 +423,7 @@ const JwBudgetScreen = () => {
         oct: row.oct || 0,
         nov: row.nov || 0,
         dec: row.dec || 0,
+        remarks: row.remarks || '',
       }
     })
 
@@ -425,7 +442,6 @@ const JwBudgetScreen = () => {
       setModifiedCells({})
       setOriginalRows([])
       setRows([])
-      isFetchedRef.current = false
       await fetchData()
     } catch (error) {
       console.error('Error saving SEZ JobWork Throughput data:', error)
@@ -456,31 +472,31 @@ const JwBudgetScreen = () => {
       })
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Record deleted successfully!',
+        message: 'Row deleted successfully!',
         severity: 'success',
       })
       return
     }
 
-    setLoading(true)
     try {
-      await JswBudgetSourceAPIService.deleteJwBudgetData(
+      setLoading(true)
+      const recordId = dataItem.unitId || dataItem.id
+      await JswBudgetSourceAPIService.deleteJswBudgetSourceData(
         keycloak,
-        dataItem.id,
+        recordId,
         AOP_YEAR,
       )
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Record deleted successfully!',
+        message: 'Row deleted successfully!',
         severity: 'success',
       })
-      isFetchedRef.current = false
       await fetchData()
     } catch (error) {
       console.error('Error deleting record:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Failed to delete record. Please try again.',
+        message: 'Error deleting record!',
         severity: 'error',
       })
     } finally {
@@ -491,6 +507,7 @@ const JwBudgetScreen = () => {
   const permissions = {
     showAction: true,
     addButton: true,
+    addBtnName: 'Add Item',
     deleteButton: true,
     editButton: true,
     saveBtn: true,
@@ -527,13 +544,12 @@ const JwBudgetScreen = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={setCurrentRowId}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        //customHeight={70}
       />
     </Box>
   )

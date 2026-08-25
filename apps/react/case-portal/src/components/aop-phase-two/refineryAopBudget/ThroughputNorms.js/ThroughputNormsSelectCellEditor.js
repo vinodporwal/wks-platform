@@ -30,9 +30,13 @@ export const ThroughputNormsSelectCellEditor = ({
       opts.find((opt) => {
         const v = String(opt[valueField] || opt.value || opt.label || '').trim().toLowerCase()
         const t = String(opt[textField] || opt.label || opt.displayName || '').trim().toLowerCase()
+        return v === target || t === target
+      }) ||
+      opts.find((opt) => {
         const m = String(opt.materialId || opt.unitId || opt.id || '').trim().toLowerCase()
-        return v === target || t === target || (m && m === target)
-      }) || null
+        return m && m === target
+      }) ||
+      null
     )
   }
 
