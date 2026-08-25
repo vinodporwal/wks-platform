@@ -12,9 +12,19 @@
   role to a gate needs no BPMN change.
 
   Routing:
+    gate1 APPROVED + shortLoopPhase==ACTIVE -> gate3 (skip Gate 2; stepper marks Gate 2 completed)
+    gate1 APPROVED (otherwise)              -> gate2
     gate1..gate4 REVERTED -> prepareRework (CTS Lead / Production Manager) -> gate1
-    gate5        REVERTED -> gate3 (Site Head)
+    gate5        REVERTED -> gate3 (Site Head), shortLoopPhase=AWAITING_PREPARER_CORRECTION
     gate5        APPROVED -> Approved (Release / BPC-Board)
+
+  Gate 5 short loop (GMS Head reject only — Gate 2 is skipped in THIS cycle only):
+    gate5 REVERT -> gate3 (tagged Awaiting Preparer correction)
+    gate3 REVERT while AWAITING -> prepareRework, shortLoopPhase=ACTIVE
+    prepareRework -> gate1
+    gate1 APPROVE while ACTIVE -> skip gate2, go to gate3
+    gate3 REVERT while ACTIVE  -> prepareRework, shortLoopPhase=NONE (full chain next)
+    gate3 APPROVE              -> gate4, shortLoopPhase=NONE
 
   Runtime wiring (Camunda 7 runs standalone; Spring beans in case-engine are NOT
   reachable from the engine, so in-engine logic is a plain c7-plugins class and
@@ -85,11 +95,17 @@
 
     <bpmn:exclusiveGateway id="gw1" name="Gate 1 decision" default="Flow_gw1_revert">
       <bpmn:incoming>Flow_gate1_gw1</bpmn:incoming>
+      <bpmn:outgoing>Flow_gw1_short_loop</bpmn:outgoing>
       <bpmn:outgoing>Flow_gw1_approve</bpmn:outgoing>
       <bpmn:outgoing>Flow_gw1_revert</bpmn:outgoing>
     </bpmn:exclusiveGateway>
+    <!-- Skip Gate 2 only after a GMS Head (Gate 5) rejection short-loop. Evaluated
+         first so it wins over the normal Gate 1 → Gate 2 path. -->
+    <bpmn:sequenceFlow id="Flow_gw1_short_loop" sourceRef="gw1" targetRef="gate3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate1Result == 'APPROVED' &amp;&amp; shortLoopPhase != null &amp;&amp; shortLoopPhase == 'ACTIVE'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_gw1_approve" sourceRef="gw1" targetRef="gate2">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate1Result == 'APPROVED'}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate1Result == 'APPROVED' &amp;&amp; (shortLoopPhase == null || shortLoopPhase != 'ACTIVE')}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_gw1_revert" sourceRef="gw1" targetRef="prepareRework" />
 
@@ -132,6 +148,7 @@
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_gw2_approve</bpmn:incoming>
       <bpmn:incoming>Flow_gw5_revert</bpmn:incoming>
+      <bpmn:incoming>Flow_gw1_short_loop</bpmn:incoming>
       <bpmn:outgoing>Flow_gate3_gw3</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics isSequential="false"
           camunda:collection="gate3RoleList" camunda:elementVariable="role">
@@ -146,9 +163,20 @@
       <bpmn:outgoing>Flow_gw3_revert</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_gw3_approve" sourceRef="gw3" targetRef="gate4">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="take" class="com.wks.caseengine.aop.AopShortLoopListener">
+          <camunda:field name="action"><camunda:string>GATE3_APPROVE</camunda:string></camunda:field>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate3Result == 'APPROVED'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_gw3_revert" sourceRef="gw3" targetRef="prepareRework" />
+    <bpmn:sequenceFlow id="Flow_gw3_revert" sourceRef="gw3" targetRef="prepareRework">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="take" class="com.wks.caseengine.aop.AopShortLoopListener">
+          <camunda:field name="action"><camunda:string>GATE3_REVERT</camunda:string></camunda:field>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+    </bpmn:sequenceFlow>
 
     <!-- ===================== Gate 4 : GMS Business Head ===================== -->
     <bpmn:userTask id="gate4" name="Gate 4 - GMS Business Head"
@@ -205,7 +233,13 @@
     <bpmn:sequenceFlow id="Flow_gw5_approve" sourceRef="gw5" targetRef="Event_aop_approved">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${gate5Result == 'APPROVED'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_gw5_revert" sourceRef="gw5" targetRef="gate3" />
+    <bpmn:sequenceFlow id="Flow_gw5_revert" sourceRef="gw5" targetRef="gate3">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="take" class="com.wks.caseengine.aop.AopShortLoopListener">
+          <camunda:field name="action"><camunda:string>GATE5_REVERT</camunda:string></camunda:field>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+    </bpmn:sequenceFlow>
 
     <!-- ===================== Rework (Preparer) ===================== -->
     <!-- Rework has a single outgoing flow (back to gate1), so it needs no gate
@@ -340,7 +374,7 @@
         <di:waypoint x="715" y="120" />
       </bpmndi:BPMNEdge>
 
-      <!-- rework -> gate1 (re-enter), and gate5 revert -> gate3 (Site Head) -->
+      <!-- rework -> gate1 (re-enter), gate5 revert -> gate3, and gate1 short-loop -> gate3 -->
       <bpmndi:BPMNEdge id="Flow_rework_gate1_di" bpmnElement="Flow_rework_gate1">
         <di:waypoint x="690" y="120" />
         <di:waypoint x="690" y="60" />
@@ -351,6 +385,12 @@
         <di:waypoint x="1415" y="343" />
         <di:waypoint x="1415" y="430" />
         <di:waypoint x="790" y="430" />
+        <di:waypoint x="790" y="358" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_gw1_short_loop_di" bpmnElement="Flow_gw1_short_loop">
+        <di:waypoint x="415" y="343" />
+        <di:waypoint x="415" y="470" />
+        <di:waypoint x="790" y="470" />
         <di:waypoint x="790" y="358" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>

@@ -24,4 +24,16 @@ public class NormBasisDTO {
     private String normParameterType;
     private String displayOrder;
     private boolean isEditable;
+    private String apr;
+    private String may;
+    private String jun;
+    private String jul;
+    private String aug;
+    private String sep;
+    private String oct;
+    private String nov;
+    private String dec;
+    private String jan;
+    private String feb;
+    private String mar;
 }

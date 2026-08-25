@@ -2671,25 +2671,29 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         List<STGHeatRateDTO> dtos = getSTGHeatRateByAssetId(assetId, financialYear);
         if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
             UUID assetUUID = UUID.fromString(assetId);
-            Map<Double, Double> proposedHeatRateMap = calculateProposedSTGHeatRates(assetUUID, startDate, endDate, plantIds);
+            Map<Double, Double> proposedHeatRateMap = calculateProposedSTGHeatRates(assetUUID, startDate, endDate, plantIds, financialYear);
             for (STGHeatRateDTO dto : dtos) {
+                // Always set proposedHeatRate: use map value if available, else 0.0
+                // This ensures the field is always present in the JSON response
                 Double proposedHeatRate = proposedHeatRateMap.get(dto.getStgLoad());
-                if (proposedHeatRate != null) {
-                    dto.setProposedHeatRate(proposedHeatRate);
-                }
+                dto.setProposedHeatRate(proposedHeatRate != null ? proposedHeatRate : 0.0);
             }
         }
         return dtos;
     }
 
-    private Map<Double, Double> calculateProposedSTGHeatRates(UUID assetId, String startDate, String endDate, List<UUID> plantIds) {
+    private Map<Double, Double> calculateProposedSTGHeatRates(UUID assetId, String startDate, String endDate,
+            List<UUID> plantIds, String aopYear) {
         String plantIdsStr = "";
         if (plantIds != null && !plantIds.isEmpty()) {
             plantIdsStr = plantIds.stream()
                     .map(UUID::toString)
                     .collect(java.util.stream.Collectors.joining(","));
         }
-        String sql = "EXEC CPP_CalculateCommonSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?, @AssetId = ?, @PlantIds = ?";
+        // @FinancialYear is passed so the SP can look up CPPPowerAssetCapacity
+        // to determine MinLoad, MaxLoad, and LoadInterval dynamically
+        String sql = "EXEC CPP_CalculateCommonSTGHeatRate_ByDateRange " +
+                     "@StartDate = ?, @EndDate = ?, @AssetId = ?, @PlantIds = ?, @FinancialYear = ?";
         Map<Double, Double> proposedHeatRateMap = new HashMap<>();
         try {
             jdbcTemplate.query(sql,
@@ -2700,7 +2704,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                             proposedHeatRateMap.put(stgLoad, heatRate);
                         }
                     },
-                    startDate, endDate, assetId.toString(), plantIdsStr);
+                    startDate, endDate, assetId.toString(), plantIdsStr, aopYear);
         } catch (Exception e) {
             logger.error("[JMDHeatRate] Error calling STG stored procedure: {}", e.getMessage(), e);
         }

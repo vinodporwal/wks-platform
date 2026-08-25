@@ -48,10 +48,11 @@ public interface AopApprovalAuditService {
     /**
      * Has this user already acted at this gate during the gate's current visit?
      *
-     * <p>One decision per person per gate visit: once someone approves or reverts
-     * at a gate, that gate offers them nothing further, even if they hold several
-     * of its approver roles. The plan re-entering the gate (after a revert) starts
-     * a fresh visit and they may act again.</p>
+     * <p>This is a user-level history query. Button eligibility is <em>not</em>
+     * based on it: a person who already acted as one approver role and is later
+     * assigned a different remaining role at the same gate must still be able to
+     * act as that role. The plan re-entering the gate (after a revert) starts a
+     * fresh visit.</p>
      *
      * @param visitStart when the gate's current tasks were created, i.e. when the
      *        plan entered this gate. Actions recorded after it belong to this
@@ -67,9 +68,18 @@ public interface AopApprovalAuditService {
     /** True after Gate 5 approval ends the Camunda process ({@code toGate = COMPLETED}). */
     boolean hasCompleted(String caseId);
 
+    /** True if GMS Head (Gate 5) has rejected this plan at least once. */
+    boolean hasGate5Reverted(String caseId);
+
     /**
      * Roles that APPROVED or SUBMITTED at this gate during the current visit.
      * Roles still waiting on an open task are not included.
      */
     Set<String> approvedRolesInCurrentVisit(String caseId, String gateName, OffsetDateTime visitStart);
+
+    /**
+     * Timestamp of the most recent audit action for this plan, as ISO-8601.
+     * Null when the trail is empty.
+     */
+    String lastActionTakenDate(String caseId);
 }

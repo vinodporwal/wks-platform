@@ -43,5 +43,17 @@ public class AopPendingItemDTO {
     /** {@code pending} while the process is in flight; {@code completed} after Gate 5 approval. */
     private String status;
 
+    /**
+     * When the last audit action (submit / approve / revert / skip) was recorded
+     * for this plan. ISO-8601; null if the trail is empty.
+     */
+    private String actionTakenDate;
+
+    /**
+     * Usernames of people who hold the current step's role(s). For Functional
+     * Heads ({@code gate2}), only still-pending roles are included.
+     */
+    private List<String> pendingWith;
+
     private AopViewerDTO actions;
 }

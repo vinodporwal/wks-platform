@@ -1,5 +1,9 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { Box, Snackbar, Alert } from '@mui/material'
+import {
+  ExcelExport,
+  ExcelExportColumn,
+} from '@progress/kendo-react-excel-export'
 import useApprovalsInbox from './useApprovalsInbox'
 import { getApprovalsColumns } from './approvalsColumns'
 import ApprovalsHeader from './ApprovalsHeader'
@@ -11,6 +15,8 @@ import './AopMyApprovals.css'
  * "My Approvals" inbox — displays pending AOP workflows with row-expandable stepper.
  */
 const AopMyApprovals = ({ onClose }) => {
+  const excelExportRef = useRef(null)
+
   const {
     items,
     loading,
@@ -38,6 +44,12 @@ const AopMyApprovals = ({ onClose }) => {
     handleOpenAudit,
   )
 
+  const handleExportExcel = () => {
+    if (excelExportRef.current) {
+      excelExportRef.current.save(filteredItems)
+    }
+  }
+
   const isCompletedRow = (i) =>
     i.status === 'completed' ||
     i.status === 'approved' ||
@@ -64,7 +76,26 @@ const AopMyApprovals = ({ onClose }) => {
         setSearchTerm={setSearchTerm}
         load={load}
         loading={loading}
+        onExportExcel={handleExportExcel}
       />
+
+      {/* Hidden Excel Exporter */}
+      <ExcelExport
+        data={filteredItems}
+        fileName={`Plant_AOP_Budget_Status_${new Date().toISOString().slice(0, 10)}.xlsx`}
+        ref={excelExportRef}
+      >
+        <ExcelExportColumn field='year' title='AOP Year' width={120} />
+        <ExcelExportColumn field='siteName' title='Site' width={120} />
+        <ExcelExportColumn field='plantName' title='Plant' width={180} />
+        <ExcelExportColumn field='gateDisplayName' title='Stage' width={180} />
+        <ExcelExportColumn field='statusMode' title='Status' width={160} />
+        <ExcelExportColumn
+          field='formattedActionDate'
+          title='ACTION AT'
+          width={180}
+        />
+      </ExcelExport>
 
       <Box className='aop-my-approvals-kendo-wrapper' sx={{ pt: 0.5 }}>
         <ApprovalsGrid

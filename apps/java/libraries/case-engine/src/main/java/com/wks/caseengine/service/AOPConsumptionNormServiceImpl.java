@@ -213,6 +213,79 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getAOPConsumptionNormWithYTD(String plantId, String year,String gradeId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		
+		try {
+			List<Object[]> resultList =null;
+			String procedureName = vertical.getName()+"_"+site.getName()+"_"+"AOPConsumptionNorms";
+			
+			resultList= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+			
+			 
+			List<AOPConsumptionNormDTO> aOPConsumptionNormDTOList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+				AOPConsumptionNormDTO dto = new AOPConsumptionNormDTO();
+
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setSiteFkId(row[1] != null ? row[1].toString() : null);
+				dto.setVerticalFkId(row[2] != null ? row[2].toString() : null);
+				dto.setAopCaseId(row[3] != null ? row[3].toString() : null);
+				dto.setAopStatus(row[4] != null ? row[4].toString() : null);
+				dto.setAopRemarks(row[5] != null ? row[5].toString() : null);
+				
+				
+					
+					dto.setMaterialFkId(row[6] != null ? row[6].toString() : null);
+					dto.setJan(row[7] != null ? Double.valueOf(row[7].toString()) : null);
+					dto.setFeb(row[8] != null ? Double.valueOf(row[8].toString()) : null);
+					dto.setMarch(row[9] != null ? Double.valueOf(row[9].toString()) : null);
+					dto.setApril(row[10] != null ? Double.valueOf(row[10].toString()) : null);
+					dto.setMay(row[11] != null ? Double.valueOf(row[11].toString()) : null);
+					dto.setJune(row[12] != null ? Double.valueOf(row[12].toString()) : null);
+					dto.setJuly(row[13] != null ? Double.valueOf(row[13].toString()) : null);
+					dto.setAug(row[14] != null ? Double.valueOf(row[14].toString()) : null);
+					dto.setSep(row[15] != null ? Double.valueOf(row[15].toString()) : null);
+					dto.setOct(row[16] != null ? Double.valueOf(row[16].toString()) : null);
+					dto.setNov(row[17] != null ? Double.valueOf(row[17].toString()) : null);
+					dto.setDec(row[18] != null ? Double.valueOf(row[18].toString()) : null);
+					dto.setAopYear(row[19] != null ? row[19].toString() : null);
+					dto.setPlantFkId(row[20] != null ? row[20].toString() : null);
+					dto.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
+					dto.setUOM(row[22] != null ? row[22].toString() : null);
+					dto.setIsEditable(row[23] != null ? Boolean.valueOf(row[23].toString()) : null);
+					dto.setProductName(row[24] != null ? row[24].toString() : null);
+					dto.setSapCode(row[25] != null ? row[25].toString() : "");
+					dto.setYtd(row[26] != null ? Double.valueOf(row[26].toString()) : null);
+		
+				aOPConsumptionNormDTOList.add(dto);
+			}
+			Map<String, Object> map = new HashMap<>(); 
+			
+			List<AopCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"consumption-aop");
+			map.put("aopConsumptionNormDTOList", aOPConsumptionNormDTOList);
+			map.put("aopCalculation", aopCalculation);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+
+
+	
 	
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
@@ -502,6 +575,132 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 				
 			
 			
+			try {
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] exportOverallConsumptionWithYTD(String year, UUID plantFKId, boolean isAfterSave, List<AOPConsumptionNormDTO> dtoList) {
+		try {
+			Workbook workbook = new XSSFWorkbook();
+			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+
+			String sheetName = Utility.sanitizeSheetName("Overall Consumption");
+
+			AOPMessageVM aopMessageVM = null;
+			List<AOPConsumptionNormDTO> currentDtoList = new ArrayList<>();
+			List<Boolean> isEditable = new ArrayList<>();
+			if (!isAfterSave) {
+				aopMessageVM = getAOPConsumptionNormWithYTD(plantFKId.toString(), year, null);
+			}
+			if (aopMessageVM != null && aopMessageVM.getData() != null) {
+				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+				currentDtoList = (List<AOPConsumptionNormDTO>) responseMap.get("aopConsumptionNormDTOList");
+			} else if (isAfterSave) {
+				currentDtoList = dtoList.stream().collect(Collectors.toList());
+			}
+
+			Sheet sheet = workbook.createSheet(sheetName);
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+			for (AOPConsumptionNormDTO dto : currentDtoList) {
+				List<Object> list = new ArrayList<>();
+				list.add(dto.getNormParameterTypeDisplayName());
+				list.add(dto.getProductName());
+				list.add(dto.getUOM());
+				list.add(dto.getApril());
+				list.add(dto.getMay());
+				list.add(dto.getJune());
+				list.add(dto.getJuly());
+				list.add(dto.getAug());
+				list.add(dto.getSep());
+				list.add(dto.getOct());
+				list.add(dto.getNov());
+				list.add(dto.getDec());
+				list.add(dto.getJan());
+				list.add(dto.getFeb());
+				list.add(dto.getMarch());
+				list.add(dto.getYtd());
+				list.add(dto.getId());
+				isEditable.add(dto.getIsEditable());
+
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Type");
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			List<String> monthsList = Utility.getAcademicYearMonths(year);
+			innerHeaders.addAll(monthsList);
+			innerHeaders.add("YTD");
+			innerHeaders.add("Id");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+
+			for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+				List<Object> rowData = rows.get(rowIndex);
+				boolean isRowEditable = true;
+
+				if (rowIndex < isEditable.size() && isEditable.get(rowIndex) != null) {
+					isRowEditable = isEditable.get(rowIndex);
+				}
+
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+
+					if (isRowEditable) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedStyle);
+					}
+				}
+			}
+			// YTD is at index 15; Id shifts to index 16 — hide the Id column
+			sheet.setColumnHidden(16, true);
+
 			try {
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				workbook.write(outputStream);

@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import com.wks.bpm.engine.model.spi.ProcessInstance;
 import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.ProcessVariableType;
 import com.wks.bpm.engine.model.spi.Task;
+import com.wks.caseengine.aop.AopShortLoopListener;
 import com.wks.caseengine.dto.AopPendingItemDTO;
 import com.wks.caseengine.dto.AopStepRoleDTO;
 import com.wks.caseengine.dto.AopViewerDTO;
@@ -58,6 +61,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private static final String APPROVED = "APPROVED";
     private static final String REVERTED = "REVERTED";
     private static final String SUBMITTED = "SUBMITTED";
+    /** Recorded when Gate 2 is bypassed on a GMS Head (Gate 5) short-loop cycle. */
+    private static final String SKIPPED = "SKIPPED";
     /** Recorded as the destination when a decision ends the process. */
     private static final String COMPLETED = "COMPLETED";
     private static final String STATUS_PENDING = "pending";
@@ -91,6 +96,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     private AopApprovalAuditService auditService;
     @Autowired
     private AopWorkflowNotificationService notificationService;
+    @Autowired
+    private KeycloakUserService keycloakUserService;
 
     @Override
     @Transactional
@@ -176,6 +183,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         }
         vars.add(strVar("plantId", plantId));
         vars.add(strVar("year", year));
+        vars.add(strVar(AopShortLoopListener.VAR, AopShortLoopListener.NONE));
         if (remark != null && !remark.isBlank()) {
             vars.add(strVar("remark", remark.trim()));
         }
@@ -307,20 +315,22 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         String auditAction = PREPARE.equals(resolvedGate) ? SUBMITTED : normalized;
         StepMeta gateMeta = steps.get(resolvedGate);
 
-        // One decision covers every role the caller holds at this gate. A gate fans
-        // out one task per approver role; when one person wears several of those
-        // hats, asking them to click Approve once per hat is noise, and hiding the
-        // button after the first click would strand the rest of their tasks with
-        // nobody able to complete them. So apply the decision to all of them at
-        // once, and audit each role separately so the trail still shows that every
-        // required role was accounted for.
+        // Approve: one role-slot only. Multi-instance gates (Functional Heads and
+        // any other 1..N role gate) keep a task per configured role; completing
+        // every role the caller currently holds would consume a later assignment
+        // they have not acted as. Reassignment mid-visit (remove role A, add role B)
+        // must still find B's open task.
         // Prepare: complete every multi-instance slot so one Submit advances.
         // Revert: any one reverter must leave the gate — complete remaining slots
         // (BPMN completionCondition also cancels them on new deployments; this
         // covers in-flight processes still on the old definition).
-        List<Task> toComplete = (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized))
-                ? allOpenTasksAtGate(openTasks, resolvedGate, taskId)
-                : tasksForCallerAtGate(openTasks, resolvedGate, taskId, callerRoles);
+        List<Task> toComplete;
+        if (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized)) {
+            toComplete = allOpenTasksAtGate(openTasks, resolvedGate, taskId);
+        } else {
+            Task target = resolveApproveTask(openTasks, resolvedGate, selected, callerRoles);
+            toComplete = target != null ? List.of(target) : List.of();
+        }
 
         // Replayed request: the caller has no open task left at this gate, so this
         // decision has already been applied (a double-clicked button, a retried
@@ -337,6 +347,17 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         List<ProcessVariable> vars = new ArrayList<>();
         vars.add(strVar("decision", normalized));
         vars.add(strVar("remark", remark != null ? remark : ""));
+        // Arm skip in the complete payload so Gate 2 stays skipped even if the
+        // BPMN sequence-flow listener is not on this deployment yet.
+        if ("gate5".equals(resolvedGate) && REVERTED.equals(normalized)) {
+            vars.add(strVar(AopShortLoopListener.VAR, AopShortLoopListener.ACTIVE));
+        }
+
+        String phaseBefore = readProcessVar(processInstanceId, AopShortLoopListener.VAR,
+                AopShortLoopListener.NONE);
+        if ("gate5".equals(resolvedGate) && REVERTED.equals(normalized)) {
+            phaseBefore = AopShortLoopListener.ACTIVE;
+        }
 
         List<UUID> auditIds = new ArrayList<>();
         if (PREPARE.equals(resolvedGate) || REVERTED.equals(normalized)) {
@@ -391,8 +412,18 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         // from the decision alone would be a guess. Same gate back = still waiting
         // on that gate's other approvers.
         List<Task> remaining = safeFind(businessKey, processInstanceId);
+        String skipPhase = resolveSkipPhase(processInstanceId, businessKey, phaseBefore);
+        boolean healedSkip = skipArmedGate2(businessKey, processInstanceId, plantUuid, year, steps,
+                actorUserId, skipPhase, remaining);
+        remaining = healedSkip ? safeFind(businessKey, processInstanceId) : remaining;
         String destination = remaining.isEmpty() ? COMPLETED : currentStepOf(remaining, steps);
         auditService.completeToGate(auditIds, destination);
+
+        if (!healedSkip && APPROVED.equals(normalized) && "gate1".equals(resolvedGate)
+                && isSkipArmed(skipPhase, businessKey)
+                && "gate3".equals(destination)) {
+            recordGate2Skipped(businessKey, year, plantUuid, steps, actorUserId);
+        }
 
         // Notify the approvers of whatever gate is now active (skip the gate just
         // acted on, so parallel completions within a gate don't re-email it).
@@ -400,39 +431,47 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     }
 
     /**
-     * Every open task at {@code gateName} assigned to a role the caller holds,
-     * with the explicitly-selected task first. Empty when the caller has nothing
-     * left to act on there.
-     *
-     * <p>An empty result must mean "already decided", never "the lookup failed",
-     * or a replayed request would be indistinguishable from a first one. The
-     * caller must pass tasks from {@link #tasksForActing}, which throws on
-     * engine outage instead of silently yielding an empty list.</p>
+     * The single role-slot to complete for an approve. Prefer the selected task
+     * when the caller currently holds its assignee role; otherwise any open task
+     * at this gate assigned to a role they currently hold. Role-agnostic: a
+     * mid-visit reassignment to a different approver role still finds that role's
+     * remaining task.
      */
-    private List<Task> tasksForCallerAtGate(List<Task> openTasks, String gateName, String taskId,
+    private Task resolveApproveTask(List<Task> openTasks, String gateName, Task selected,
             List<String> callerRoles) {
-
-        List<Task> matched = new ArrayList<>();
-        Task selected = null;
-        Set<String> seen = new HashSet<>();
+        if (selected != null
+                && gateName.equals(stepNameForTask(selected.getTaskDefinitionKey()))
+                && holdsRole(callerRoles, selected.getAssignee())) {
+            return selected;
+        }
+        if (openTasks == null) {
+            return null;
+        }
         for (Task task : openTasks) {
-            if (task.getId() == null || !seen.add(task.getId())) {
+            if (task == null || task.getId() == null) {
                 continue;
             }
             if (!gateName.equals(stepNameForTask(task.getTaskDefinitionKey()))) {
                 continue;
             }
-            if (task.getId().equals(taskId)) {
-                selected = task;
-            } else if (callerRoles != null && task.getAssignee() != null
-                    && callerRoles.contains(task.getAssignee())) {
-                matched.add(task);
+            if (holdsRole(callerRoles, task.getAssignee())) {
+                return task;
             }
         }
-        if (selected != null) {
-            matched.add(0, selected);
+        return null;
+    }
+
+    /** Case-insensitive: JWT / Keycloak role names vs Camunda task assignee. */
+    private boolean holdsRole(List<String> callerRoles, String assignee) {
+        if (callerRoles == null || assignee == null || assignee.isBlank()) {
+            return false;
         }
-        return matched;
+        for (String role : callerRoles) {
+            if (role != null && role.equalsIgnoreCase(assignee)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -595,9 +634,112 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         return PREPARE_REWORK.equals(taskDefinitionKey) ? PREPARE : taskDefinitionKey;
     }
 
+    /**
+     * If GMS Head already rejected (short-loop armed) but Camunda still opened
+     * Functional Heads (typical of a process started on the old BPMN), auto-approve
+     * every Gate 2 slot so the token moves to Site Head.
+     *
+     * @return true when Gate 2 tasks were completed in this call
+     */
+    private boolean skipArmedGate2(String businessKey, String processInstanceId,
+            UUID plantUuid, String year, Map<String, StepMeta> steps, String actorUserId,
+            String shortLoopPhase, List<Task> tasks) {
+        if (!isSkipArmed(shortLoopPhase, businessKey) || tasks == null || tasks.isEmpty()) {
+            return false;
+        }
+        if (!"gate2".equals(currentStepOf(tasks, steps))) {
+            return false;
+        }
+        List<Task> gate2 = allOpenTasksAtGate(tasks, "gate2", null);
+        if (gate2.isEmpty()) {
+            return false;
+        }
+        List<ProcessVariable> vars = new ArrayList<>();
+        vars.add(strVar("decision", APPROVED));
+        vars.add(strVar("gate2Result", APPROVED));
+        vars.add(strVar("remark", "Skipped — short loop after GMS Head (Gate 5) rejection"));
+        vars.add(strVar(AopShortLoopListener.VAR, AopShortLoopListener.ACTIVE));
+        int completed = 0;
+        for (Task task : gate2) {
+            try {
+                processEngineClientFacade.complete(task.getId(), vars);
+                completed++;
+            } catch (Exception ex) {
+                log.warn("AOP: could not auto-skip Gate 2 task {} for {}: {}",
+                        task.getId(), businessKey, ex.getMessage());
+            }
+        }
+        if (completed == 0) {
+            return false;
+        }
+        recordGate2Skipped(businessKey, year, plantUuid, steps, actorUserId);
+        log.info("AOP: auto-skipped Gate 2 for {} (GMS Head short loop)", businessKey);
+        return true;
+    }
+
+    private boolean isSkipArmed(String shortLoopPhase, String businessKey) {
+        if (AopShortLoopListener.ACTIVE.equals(shortLoopPhase)
+                || AopShortLoopListener.AWAITING.equals(shortLoopPhase)) {
+            return true;
+        }
+        return auditService.hasGate5Reverted(businessKey);
+    }
+
+    private String resolveSkipPhase(String processInstanceId, String businessKey, String preferred) {
+        if (isSkipArmed(preferred, businessKey)) {
+            return AopShortLoopListener.ACTIVE;
+        }
+        String live = readProcessVar(processInstanceId, AopShortLoopListener.VAR, AopShortLoopListener.NONE);
+        return isSkipArmed(live, businessKey) ? AopShortLoopListener.ACTIVE : live;
+    }
+
     private ProcessVariable strVar(String name, String value) {
         return ProcessVariable.builder()
                 .name(name).value(value).type(ProcessVariableType.STRING.getValue()).build();
+    }
+
+    /**
+     * Audit that Gate 2 was bypassed so the stepper / trail treat it as completed
+     * for this short-loop cycle (GMS Head rejection only).
+     */
+    private void recordGate2Skipped(String businessKey, String year, UUID plantUuid,
+            Map<String, StepMeta> steps, String actorUserId) {
+        StepMeta g2 = steps.get("gate2");
+        auditService.record(businessKey, year, plantUuid, "gate2",
+                g2 != null ? g2.displayName : "Functional Heads",
+                g2 != null ? g2.sequence : Integer.valueOf(3),
+                SKIPPED, actorUserId, "SYSTEM",
+                "Skipped — short loop after GMS Head (Gate 5) rejection",
+                "gate1", "gate3");
+        log.info("AOP: Gate 2 skipped for {} (GMS Head short loop)", businessKey);
+    }
+
+    private String readProcessVar(String processInstanceId, String name, String fallback) {
+        if (processInstanceId == null || name == null) {
+            return fallback;
+        }
+        try {
+            ProcessVariable[] vars = processEngineClientFacade.findVariables(processInstanceId);
+            if (vars == null) {
+                return fallback;
+            }
+            for (ProcessVariable v : vars) {
+                if (v != null && name.equals(v.getName()) && v.getValue() != null) {
+                    String val = v.getValue().toString();
+                    if (!val.isBlank()) {
+                        return val;
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("AOP: could not read process variable {} on {}: {}",
+                    name, processInstanceId, ex.getMessage());
+        }
+        return fallback;
+    }
+
+    private static String statusTagForPhase(String phase) {
+        return AopShortLoopListener.AWAITING.equals(phase) ? AopShortLoopListener.STATUS_TAG : null;
     }
 
     private String businessKey(String plantId, String year) {
@@ -623,7 +765,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
     /* ------------------------------------------------------- status + inbox */
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AopWorkflowStatusDTO getStatus(String plantId, String year, String callerUserId, List<String> callerRoles) {
         UUID plantUuid = UUID.fromString(plantId);
         Plants plant = plantsRepository.findById(plantUuid)
@@ -714,31 +856,40 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .build();
         }
 
-        List<Task> tasks = safeFind(businessKey, processInstanceId);
+        String skipPhase = resolveSkipPhase(processInstanceId, businessKey, null);
+        dto.shortLoopPhase(skipPhase).statusTag(statusTagForPhase(skipPhase));
+
+        List<Task> openTasks = safeFind(businessKey, processInstanceId);
+        if (skipArmedGate2(businessKey, processInstanceId, plantUuid, year, meta,
+                callerUserId, skipPhase, openTasks)) {
+            openTasks = safeFind(businessKey, processInstanceId);
+            skipPhase = AopShortLoopListener.ACTIVE;
+            dto.shortLoopPhase(skipPhase).statusTag(statusTagForPhase(skipPhase));
+            notifyNextGates(masterId, "gate2", meta, plant, year, businessKey, processInstanceId);
+        }
+        final List<Task> tasks = openTasks;
+        final String shortLoopPhase = skipPhase;
         String currentStep = currentStepOf(tasks, meta);
         Integer currentSeq = currentStep != null && meta.containsKey(currentStep) ? meta.get(currentStep).sequence : null;
         markStatuses(steps, currentSeq);
+        applyFunctionalHeadsSkipStatus(steps, currentStep, shortLoopPhase);
+        coerceCompletedAfterIncomplete(steps);
 
-        // One decision per person per gate visit — except Prepare/rework, where any
-        // preparer must be able to finish remaining multi-instance tasks and advance.
-        boolean alreadyActed = !PREPARE.equals(currentStep)
-                && auditService.hasActedInCurrentCycle(
-                        businessKey, currentStep, callerUserId, visitStartOf(tasks, currentStep));
-
-        // Actionable task = one whose assignee role is held by the caller, preferring
+        // Actionable when any currently held role still has an open task. Prefer
         // the current gate so a role match on a different step cannot win.
-        Task mine = null;
-        if (!alreadyActed) {
-            mine = tasks.stream()
-                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                    .filter(t -> currentStep == null
-                            || currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
-                    .findFirst()
-                    .orElseGet(() -> tasks.stream()
-                            .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
-                            .findFirst()
-                            .orElse(null));
-        }
+        // Eligibility is per remaining role, not per person: acting as one
+        // approver role must not block a later assignment to a different role at
+        // the same visit. Prepare/rework is unchanged — any preparer may finish
+        // remaining multi-instance slots below.
+        Task mine = tasks.stream()
+                .filter(t -> holdsRole(roles, t.getAssignee()))
+                .filter(t -> currentStep == null
+                        || currentStep.equals(stepNameForTask(t.getTaskDefinitionKey())))
+                .findFirst()
+                .orElseGet(() -> tasks.stream()
+                        .filter(t -> holdsRole(roles, t.getAssignee()))
+                        .findFirst()
+                        .orElse(null));
         // After one preparer completes their multi-instance slot, peer prepare
         // tasks remain under other roles. Any preparer must still be able to
         // Submit and clear those so the plan advances to Gate 1.
@@ -759,6 +910,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     ? meta.get(actionGate).sequence : currentSeq;
             if (actionGate != null && !actionGate.equals(currentStep)) {
                 markStatuses(steps, actionSeq);
+                applyFunctionalHeadsSkipStatus(steps, actionGate, shortLoopPhase);
+                coerceCompletedAfterIncomplete(steps);
             }
             // Prepare / prepareRework is a submit step, not a gate decision.
             // Approvers see Approve+Revert; preparers only see Submit for Approval.
@@ -796,6 +949,7 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         if (roles.isEmpty()) {
             return items;
         }
+        Map<String, List<UserRepresentation>> usersByRole = new HashMap<>();
         for (Workflow wf : workflowRepository.findAllByCaseDefIdAndIsDeletedFalse(CASE_DEF_ID)) {
             Plants plant = wf.getPlantFKId() != null ? plantsRepository.findById(wf.getPlantFKId()).orElse(null) : null;
             UUID masterId = resolveWorkflowMasterId(wf.getVerticalFKId());
@@ -803,9 +957,10 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
 
             if (auditService.hasCompleted(wf.getCaseId())) {
                 String lastGate = GATES.get(GATES.size() - 1);
+                String plantId = wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null;
                 items.add(AopPendingItemDTO.builder()
                         .caseId(wf.getCaseId())
-                        .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
+                        .plantId(plantId)
                         .plantName(plant != null ? plant.getName() : null)
                         .siteName(siteName(wf.getSiteFKId()))
                         .verticalName(verticalName(wf.getVerticalFKId()))
@@ -817,6 +972,8 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                         .taskId(null)
                         .listOfRoles(listOfRolesForStep(masterId, lastGate, wf.getCaseId(), List.of()))
                         .status(STATUS_COMPLETED)
+                        .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
+                        .pendingWith(List.of())
                         .actions(AopViewerDTO.builder()
                                 .mode("READ_ONLY")
                                 .canApprove(false)
@@ -835,26 +992,15 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                 continue;
             }
 
+            // Open task for any currently held role is enough. A prior action at
+            // this gate under a different role (reassignment mid-visit) must not
+            // hide the remaining role's task.
             Task mine = tasks.stream()
-                    .filter(t -> t.getAssignee() != null && roles.contains(t.getAssignee()))
+                    .filter(t -> holdsRole(roles, t.getAssignee()))
                     .findFirst().orElse(null);
 
-            boolean isActionable = false;
-            Task targetTask = mine;
-
-            if (mine != null) {
-                String mineStep = stepNameForTask(mine.getTaskDefinitionKey());
-                boolean alreadyActed = !PREPARE.equals(mineStep)
-                        && auditService.hasActedInCurrentCycle(wf.getCaseId(), mineStep, callerUserId,
-                        visitStartOf(tasks, mineStep));
-                if (!alreadyActed) {
-                    isActionable = true;
-                }
-            }
-
-            if (!isActionable) {
-                targetTask = tasks.get(0);
-            }
+            boolean isActionable = mine != null;
+            Task targetTask = isActionable ? mine : tasks.get(0);
 
             String stepName = stepNameForTask(targetTask.getTaskDefinitionKey());
             StepMeta sm = stepName != null ? meta.get(stepName) : null;
@@ -881,9 +1027,11 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                         .roles(roles).build();
             }
 
+            String plantId = wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null;
+            List<AopStepRoleDTO> stepRoles = listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks);
             items.add(AopPendingItemDTO.builder()
                     .caseId(wf.getCaseId())
-                    .plantId(wf.getPlantFKId() != null ? wf.getPlantFKId().toString() : null)
+                    .plantId(plantId)
                     .plantName(plant != null ? plant.getName() : null)
                     .siteName(siteName(wf.getSiteFKId()))
                     .verticalName(verticalName(wf.getVerticalFKId()))
@@ -893,12 +1041,101 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
                     .sequence(sm != null ? sm.sequence : null)
                     .assignedRole(targetTask.getAssignee())
                     .taskId(isActionable && mine != null ? mine.getId() : null)
-                    .listOfRoles(listOfRolesForStep(masterId, stepName, wf.getCaseId(), tasks))
+                    .listOfRoles(stepRoles)
                     .status(STATUS_PENDING)
+                    .actionTakenDate(auditService.lastActionTakenDate(wf.getCaseId()))
+                    .pendingWith(pendingWithUsernames(stepName, stepRoles, plantId, usersByRole))
                     .actions(actions)
                     .build());
         }
+        items.sort(Comparator.comparing(
+                (AopPendingItemDTO item) -> parseActionTakenDate(item.getActionTakenDate()),
+                Comparator.nullsLast(Comparator.reverseOrder())));
         return items;
+    }
+
+    private static OffsetDateTime parseActionTakenDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Usernames holding the current step's roles. Functional Heads only include
+     * roles that have not approved yet in this visit.
+     */
+    private List<String> pendingWithUsernames(String stepName, List<AopStepRoleDTO> stepRoles,
+            String plantId, Map<String, List<UserRepresentation>> usersByRole) {
+        LinkedHashSet<String> usernames = new LinkedHashSet<>();
+        if (stepRoles == null || stepRoles.isEmpty()) {
+            return new ArrayList<>();
+        }
+        boolean functionalHeads = "gate2".equals(stepName);
+        for (AopStepRoleDTO stepRole : stepRoles) {
+            if (stepRole == null || stepRole.getRole() == null || stepRole.getRole().isBlank()) {
+                continue;
+            }
+            if (functionalHeads && stepRole.isApproved()) {
+                continue;
+            }
+            for (UserRepresentation user : usersWithRole(stepRole.getRole(), usersByRole)) {
+                if (user == null || user.getUsername() == null || user.getUsername().isBlank()) {
+                    continue;
+                }
+                if (!userAssignedToPlant(user, plantId)) {
+                    continue;
+                }
+                usernames.add(user.getUsername());
+            }
+        }
+        return new ArrayList<>(usernames);
+    }
+
+    private List<UserRepresentation> usersWithRole(String role,
+            Map<String, List<UserRepresentation>> usersByRole) {
+        if (usersByRole.containsKey(role)) {
+            return usersByRole.get(role);
+        }
+        List<UserRepresentation> users = List.of();
+        try {
+            List<UserRepresentation> fetched = keycloakUserService.getUsersWithRole(role);
+            if (fetched != null) {
+                users = fetched;
+            }
+        } catch (Exception ex) {
+            log.warn("AOP my-pending: could not resolve users for role {}: {}", role, ex.getMessage());
+        }
+        usersByRole.put(role, users);
+        return users;
+    }
+
+    /**
+     * Keep inbox names scoped to this plant when the user has a plants mapping.
+     * Users with no plants attribute are still included (role match only).
+     */
+    private static boolean userAssignedToPlant(UserRepresentation user, String plantId) {
+        if (plantId == null || plantId.isBlank()) {
+            return true;
+        }
+        if (user.getAttributes() == null || !user.getAttributes().containsKey("plants")) {
+            return true;
+        }
+        List<String> plantsAttr = user.getAttributes().get("plants");
+        if (plantsAttr == null || plantsAttr.isEmpty()) {
+            return true;
+        }
+        String needle = plantId.toLowerCase();
+        for (String raw : plantsAttr) {
+            if (raw != null && raw.toLowerCase().contains(needle)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1152,14 +1389,72 @@ public class AopApprovalWorkflowServiceImpl implements AopApprovalWorkflowServic
         }
     }
 
+    /**
+     * Functional Heads stay pending until Plant Manager has approved in the GMS
+     * Head short-loop. Only then (current gate is Site Head or later) are they
+     * shown as completed/skipped. While still at Gate 2 the skip heal should
+     * already have moved the token; leave markStatuses as-is so we do not paint
+     * Pending over In progress.
+     */
+    private void applyFunctionalHeadsSkipStatus(List<WorkflowStepsMasterDTO> steps,
+            String currentStep, String shortLoopPhase) {
+        if (steps == null || !(AopShortLoopListener.ACTIVE.equals(shortLoopPhase)
+                || AopShortLoopListener.AWAITING.equals(shortLoopPhase))) {
+            return;
+        }
+        boolean afterPlantManager = "gate3".equals(currentStep)
+                || "gate4".equals(currentStep)
+                || "gate5".equals(currentStep)
+                || COMPLETED.equals(currentStep);
+        boolean beforePlantManager = PREPARE.equals(currentStep) || "gate1".equals(currentStep);
+        for (WorkflowStepsMasterDTO s : steps) {
+            if (s == null || !"gate2".equals(s.getName())) {
+                continue;
+            }
+            if (afterPlantManager) {
+                s.setStatus("completed");
+            } else if (beforePlantManager) {
+                s.setStatus("pending");
+            }
+        }
+        coerceCompletedAfterIncomplete(steps);
+    }
+
+    /**
+     * A later gate cannot show completed while an earlier one is still open.
+     * That is what made Functional Heads look completed while Prepare / Plant
+     * Manager were still in progress.
+     */
+    private void coerceCompletedAfterIncomplete(List<WorkflowStepsMasterDTO> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return;
+        }
+        List<WorkflowStepsMasterDTO> ordered = new ArrayList<>(steps);
+        ordered.sort(Comparator.comparingInt(
+                s -> s.getSequence() == null ? Integer.MAX_VALUE : s.getSequence()));
+        boolean seenOpen = false;
+        for (WorkflowStepsMasterDTO s : ordered) {
+            boolean completed = "completed".equalsIgnoreCase(s.getStatus());
+            if (seenOpen && completed) {
+                s.setStatus("pending");
+            }
+            if (!completed) {
+                seenOpen = true;
+            }
+        }
+    }
+
     private List<String> activeRoles(UUID masterId, String stepName) {
         List<String> roles = workflowStepRolesRepository.findActiveRolesByWorkflowMasterAndStepName(masterId, stepName);
         return roles != null ? roles : new ArrayList<>();
     }
 
     private boolean rolesIntersect(List<String> a, List<String> b) {
+        if (a == null || b == null) {
+            return false;
+        }
         for (String r : a) {
-            if (b.contains(r)) {
+            if (holdsRole(b, r)) {
                 return true;
             }
         }

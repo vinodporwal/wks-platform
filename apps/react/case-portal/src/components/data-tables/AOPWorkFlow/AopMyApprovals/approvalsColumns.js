@@ -10,7 +10,25 @@ import BadgeIcon from '@mui/icons-material/Badge'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import HourglassTopIcon from '@mui/icons-material/HourglassTop'
 import RuleIcon from '@mui/icons-material/Rule'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { RoleApprovalsTooltip, formatRoleName } from 'components/Utilities/AopWorkflowStepper'
+
+export const formatActionDate = (ts) => {
+  if (!ts) return '-'
+  try {
+    const date = new Date(ts)
+    if (isNaN(date.getTime())) return String(ts)
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return String(ts)
+  }
+}
 
 /**
  * Calculates dynamic column width based on maximum character length of row values
@@ -35,6 +53,8 @@ export const getColumnWidth = (
       else if (field === 'verticalName')
         val = row.verticalName || row.vertical || ''
       else if (field === 'year') val = String(row.year || '')
+      else if (field === 'actionTakenDate')
+        val = formatActionDate(row.actionTakenDate)
       else if (field === 'gateDisplayName') {
         const isCompleted =
           row.status === 'completed' ||
@@ -307,6 +327,46 @@ export const getApprovalsColumns = (
   //     )
   //   },
   // },
+  {
+    field: 'actionTakenDate',
+    title: 'ACTION AT',
+    minWidth: getColumnWidth(
+      'actionTakenDate',
+      'ACTION AT',
+      filteredItems,
+      items,
+      160,
+    ),
+    editable: false,
+    cell: (props) => {
+      const val = props.dataItem?.actionTakenDate
+      const formatted = formatActionDate(val)
+      return (
+        <td style={{ padding: '6px 12px' }}>
+          {val ? (
+            <Chip
+              size='small'
+              icon={
+                <AccessTimeIcon style={{ fontSize: 13, color: '#475569' }} />
+              }
+              label={formatted}
+              sx={{
+                backgroundColor: '#f8fafc',
+                color: '#334155',
+                fontSize: '11px',
+                fontWeight: 500,
+                border: '1px solid #cbd5e1',
+              }}
+            />
+          ) : (
+            <Typography variant='caption' sx={{ color: '#94a3b8' }}>
+              -
+            </Typography>
+          )}
+        </td>
+      )
+    },
+  },
   {
     field: 'action',
     title: 'Action',

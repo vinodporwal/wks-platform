@@ -46,4 +46,7 @@ public interface AopApprovalHistoryRepository extends JpaRepository<AopApprovalH
 
     /** True once Gate 5 approval has finished the process ({@code toGate = COMPLETED}). */
     boolean existsByCaseIdAndToGate(String caseId, String toGate);
+
+    /** Most recent audit row for this workflow, if any. */
+    Optional<AopApprovalHistory> findTopByCaseIdOrderByActionAtDesc(String caseId);
 }

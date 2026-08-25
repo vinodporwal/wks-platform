@@ -124,10 +124,17 @@ const OnOffSwitchEditCell = (props) => {
 }
 
 const FeedTypeDisplayCell = (props) => {
-  const { dataItem, field, tdProps, column, customModifiedCells: propModifiedCells } = props
+  const {
+    dataItem,
+    field,
+    tdProps,
+    column,
+    customModifiedCells: propModifiedCells,
+  } = props
   const value = dataItem[field]
   const rowId = dataItem.id
-  const customModifiedCells = propModifiedCells || column?.customModifiedCells || {}
+  const customModifiedCells =
+    propModifiedCells || column?.customModifiedCells || {}
   const isEdited = Object.prototype.hasOwnProperty.call(
     customModifiedCells?.[rowId] || {},
     field,
@@ -407,6 +414,48 @@ const KendoDataTables = ({
     Editor.displayName = 'StableFeedTypeOrNumericEditor'
     return Editor
   }, [permissions?.feedTypeOptions])
+  const StableCurrentPlanEditCell = useMemo(() => {
+    const Editor = (props) => {
+      const { dataItem, tdProps, field } = props
+      if (!dataItem?.currentPlanEditable) {
+        const value = dataItem[field]
+        return (
+          <td
+            {...tdProps}
+            title={value}
+            className={`${tdProps?.className || ''} cell-readonly-greyed`.trim()}
+          >
+            {value}
+          </td>
+        )
+      }
+      return <NoSpinnerNumericEditor {...props} />
+    }
+    Editor.displayName = 'StableCurrentPlanEditCell'
+    return Editor
+  }, [])
+
+  const StableCurrentPlanEditCellWithUOMValidation = useMemo(() => {
+    const Editor = (props) => {
+      const { dataItem, tdProps, field } = props
+      if (!dataItem?.currentPlanEditable) {
+        const value = dataItem[field]
+        return (
+          <td
+            {...tdProps}
+            title={value}
+            className={`${tdProps?.className || ''} cell-readonly-greyed`.trim()}
+          >
+            {value}
+          </td>
+        )
+      }
+      return <NoSpinnerNumericEditorWithUOMValidation {...props} />
+    }
+    Editor.displayName = 'StableCurrentPlanEditCellWithUOMValidation'
+    return Editor
+  }, [])
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
@@ -2938,6 +2987,26 @@ const KendoDataTables = ({
                 </Button>
               )}
 
+              {permissions?.showLoadBtn && (
+                <Button
+                  variant='contained'
+                  onClick={handleLoad}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  disabled={
+                    READ_ONLY || (rows?.length === 0 ? false : isButtonDisabled)
+                  }
+                  className='btn-calculate'
+                >
+                  {permissions?.loadBtnText || 'Load'}
+                </Button>
+              )}
+
               {(permissions?.deleteAllBtn || permissions?.deleteMultiple) && (
                 <Button
                   variant='contained'
@@ -4391,12 +4460,30 @@ const KendoDataTables = ({
                           headerClassName={numericHeaderClass(isActive, col)}
                           cells={{
                             edit: {
-                              text: NoSpinnerNumericEditorWithUOMValidation,
+                              text:
+                                col?.field === 'actuals' ||
+                                col?.field === 'prevActuals'
+                                  ? StableCurrentPlanEditCellWithUOMValidation
+                                  : NoSpinnerNumericEditorWithUOMValidation,
                             },
-                            data: (props) =>
-                              showThreeColors ? (
+                            data: (props) => {
+                              const isNotEditable =
+                                (col?.field === 'actuals' ||
+                                  col?.field === 'prevActuals') &&
+                                !props?.dataItem?.currentPlanEditable
+
+                              const mergedTdProps = isNotEditable
+                                ? {
+                                    ...props.tdProps,
+                                    className:
+                                      `${props.tdProps?.className || ''} cell-readonly-greyed`.trim(),
+                                  }
+                                : props.tdProps
+
+                              return showThreeColors ? (
                                 <RedHighlightCell2
                                   {...props}
+                                  tdProps={mergedTdProps}
                                   customModifiedCells={customModifiedCells}
                                   allRedCell={allRedCell}
                                   allRedCell2={allRedCell2}
@@ -4405,11 +4492,13 @@ const KendoDataTables = ({
                               ) : (
                                 <RedHighlightCell
                                   {...props}
+                                  tdProps={mergedTdProps}
                                   customModifiedCells={customModifiedCells}
                                   allRedCell={allRedCell}
                                   disableRedHighlight={disableRedHighlight}
                                 />
-                              ),
+                              )
+                            },
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           columnMenu={ColumnMenuCheckboxFilter}
@@ -4812,6 +4901,55 @@ const KendoDataTables = ({
                         />
                       )
                     }
+
+                    if (
+                      col?.field === 'prevActuals' ||
+                      col?.field === 'actuals'
+                    ) {
+                      return (
+                        <GridColumn
+                          locked={col.locked || false}
+                          key={col?.field}
+                          field={col?.field}
+                          title={col?.title || col?.headerName}
+                          width={setWidth(col?.minWidth || 150)}
+                          hidden={col?.hidden}
+                          className='k-number-right'
+                          editable={true}
+                          headerClassName={isActive ? 'active-column' : ''}
+                          cells={{
+                            edit: { text: StableCurrentPlanEditCell },
+                            data: (props) => {
+                              const isNotEditable =
+                                !props?.dataItem?.currentPlanEditable
+
+                              const mergedTdProps = isNotEditable
+                                ? {
+                                    ...props.tdProps,
+                                    className:
+                                      `${props.tdProps?.className || ''} cell-readonly-greyed`.trim(),
+                                  }
+                                : props.tdProps
+
+                              return (
+                                <RedHighlightCell
+                                  {...props}
+                                  tdProps={mergedTdProps}
+                                  customModifiedCells={customModifiedCells}
+                                  allRedCell={allRedCell}
+                                  disableRedHighlight={disableRedHighlight}
+                                />
+                              )
+                            },
+                            headerCell: SimpleHeaderWithTooltip,
+                          }}
+                          columnMenu={ColumnMenuCheckboxFilter}
+                          filter='numeric'
+                          format={col?.format}
+                        />
+                      )
+                    }
+
                     if (col?.type === 'number') {
                       return (
                         <GridColumn
