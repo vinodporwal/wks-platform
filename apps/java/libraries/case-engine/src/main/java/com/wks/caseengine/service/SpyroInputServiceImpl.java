@@ -2892,8 +2892,63 @@ session.doWork(connection -> {
 		});
 	}
 
-		// Helper method to map SQL data types to frontend types
-		private String getFrontendType(String sqlTypeName) {
+	public byte[] createNapthaSummaryExcel(String plantId, String year, String reportType) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_RunLengthDataSet";
+
+			List<Map<String, Object>> columnMetadata = getNapthaSummaryDataSetColumnMetadata(plantId, year, reportType, storedProcedure);
+			List<Object[]> rows = getNapthaSummaryDataSetData(plantId, year, reportType, storedProcedure);
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Naptha Summary");
+
+			// Header row using formatted column titles
+			Row headerRow = sheet.createRow(0);
+			for (int col = 0; col < columnMetadata.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue((String) columnMetadata.get(col).get("title"));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			// Data rows
+			for (int rowIdx = 0; rowIdx < rows.size(); rowIdx++) {
+				Object[] rowData = rows.get(rowIdx);
+				Row row = sheet.createRow(rowIdx + 1);
+				for (int col = 0; col < rowData.length; col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData[col];
+					if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+					cell.setCellStyle(Utility.createBorderedStyle(workbook));
+				}
+			}
+
+			// Auto-size all columns
+			for (int col = 0; col < columnMetadata.size(); col++) {
+				sheet.autoSizeColumn(col);
+			}
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// Helper method to map SQL data types to frontend types
+	private String getFrontendType(String sqlTypeName) {
 			switch (sqlTypeName.toUpperCase()) {
 				case "VARCHAR":
 				case "NVARCHAR":

@@ -52,4 +52,6 @@ public interface SpyroInputService {
 
 	AOPMessageVM getNapthaSummaryDataSet(String plantId, String year, String reportType);
 
+	byte[] createNapthaSummaryExcel(String plantId, String year, String reportType);
+
 }
