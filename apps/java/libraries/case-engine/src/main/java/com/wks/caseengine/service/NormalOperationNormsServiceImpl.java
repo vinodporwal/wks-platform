@@ -7,6 +7,8 @@ import jakarta.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.hibernate.Session;
+
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
@@ -56,6 +58,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -241,6 +247,185 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	@Override
+	public AOPMessageVM getSteadyStateNorms( String year, String plantId,String gradeId,String mode){
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			List<Object[]> results = getSteadyStateNormsData(plantId, year);
+
+			List<String> columnNames = getSteadyStateNormsColumns(plantId, year);
+
+			List<Map<String, Object>> resultList = new ArrayList<>();
+
+			for (Object[] row : results) {
+				Map<String, Object> rowMap = new LinkedHashMap<>();
+				for (int i = 0; i < columnNames.size(); i++) {
+					rowMap.put(columnNames.get(i), row[i]);
+				}
+				resultList.add(rowMap);
+			}
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("data", resultList);
+			data.put("columns", getSteadyStateNormsColumnMetadata(plantId, year));
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(data);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getSteadyStateNormsData(String plantId, String FinYear) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure = "[" + vertical.getName() + "_" + site.getName() + "_GetGradewiseSteadyStateNorms]";
+
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @FinYear = :FinYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("siteId", site.getId());
+			query.setParameter("verticalId", vertical.getId());
+			query.setParameter("FinYear", FinYear);
+			
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<String> getSteadyStateNormsColumns(String plantId, String FinYear) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = "[" + vertical.getName() + "_" + site.getName() + "_GetGradewiseSteadyStateNorms]";
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = ?, @siteId = ?, @verticalId = ?, @FinYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, site.getId().toString());
+				ps.setString(3, vertical.getId().toString());
+				ps.setString(4, FinYear);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	public List<Map<String, Object>> getSteadyStateNormsColumnMetadata(String plantId, String FinYear) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = "[" + vertical.getName() + "_" + site.getName() + "_GetGradewiseSteadyStateNorms]";
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = ?, @siteId = ?, @verticalId = ?, @FinYear = ?";
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, site.getId().toString());
+				ps.setString(3, vertical.getId().toString());
+				ps.setString(4, FinYear);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", formatTitle(columnName));
+						columnInfo.put("editable", false);
+						columnInfo.put("type", getFrontendType(columnType));
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
+	
+	// Helper method to format column titles
+		private String formatTitle(String columnName) {
+			return columnName.replace("_", " ");
+		}
+
+		// Helper method to map SQL data types to frontend types
+		private String getFrontendType(String sqlTypeName) {
+		    if (sqlTypeName == null) {
+		        return "string";
+		    }
+
+		    switch (sqlTypeName.toUpperCase()) {
+		        case "VARCHAR":
+		        case "NVARCHAR":
+		        case "CHAR":
+		        case "TEXT":
+		        case "NTEXT":
+		        case "UUID":
+		        case "UNIQUEIDENTIFIER":
+		            return "string";
+		            
+		        case "INT":
+		        case "TINYINT":
+		        case "BIGINT":
+		        case "SMALLINT":
+		        case "DECIMAL":
+		        case "FLOAT":
+		        case "DOUBLE":
+		        case "NUMERIC":
+		        case "REAL":
+		            return "number";
+		            
+		        case "DATE":
+		        case "DATETIME":
+		        case "DATETIME2":
+		        case "TIMESTAMP":
+		            return "date";
+		            
+		        case "BIT":
+		        case "BOOLEAN":
+		            return "boolean";
+		            
+		        default:
+		            return "string";
+		    }
+		}
 
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
