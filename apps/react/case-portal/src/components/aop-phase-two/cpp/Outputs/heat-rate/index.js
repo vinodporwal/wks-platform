@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -11,11 +11,28 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 const HeatRate = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { siteObject, verticalObject, year, screenTitle } = dataGridStore
+  const {
+    siteObject,
+    plantObject,
+    verticalObject,
+    year,
+    screenTitle,
+    jmdSelectedPlants,
+  } = dataGridStore
 
-  const SITE_ID = siteObject?.id
+  const PLANT_ID = plantObject?.id
+  const lowerSiteName = siteObject?.name?.toLowerCase()
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Final_Heat_Rate')
+
+  // Build plant ID list: JMD uses all selected plants, otherwise single plant
+  const PLANT_ID_LIST = useMemo(
+    () =>
+      lowerSiteName === 'jmd'
+        ? jmdSelectedPlants?.map((plant) => plant.id) || []
+        : [PLANT_ID],
+    [jmdSelectedPlants, lowerSiteName, PLANT_ID],
+  )
 
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -81,12 +98,12 @@ const HeatRate = () => {
   ]
 
   const fetchData = useCallback(async () => {
-    if (!SITE_ID || !AOP_YEAR) return
+    if (!PLANT_ID_LIST?.length || !AOP_YEAR) return
     setLoading(true)
     try {
       const response = await OutputApiService.getFinalHeatRate(
         keycloak,
-        SITE_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       const data = response?.data || []
@@ -101,16 +118,16 @@ const HeatRate = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, SITE_ID, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
   useDebounce(
     () => {
-      if (SITE_ID && AOP_YEAR) {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
         fetchData()
       }
     },
     1000,
-    [SITE_ID, AOP_YEAR],
+    [PLANT_ID_LIST, AOP_YEAR],
   )
 
   const permissions = {
@@ -137,7 +154,7 @@ const HeatRate = () => {
     try {
       await OutputApiService.exportFinalHeatRateExcel(
         keycloak,
-        SITE_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
       )

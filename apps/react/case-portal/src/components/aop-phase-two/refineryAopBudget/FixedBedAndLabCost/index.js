@@ -14,9 +14,9 @@ import { FixedBedAndLabCostApiService } from 'components/aop-phase-two/services/
 import ReleaseAPIService from 'components/aop-phase-two/services/common/releaseAPIService'
 import {
   formatCostCenterDropdownOptions,
+  formatMaterialDropdownOptions,
   getCostCenterOptions,
-  getCostCenterDescriptionById,
-  getMasterIdByDescription,
+  getMaterialOptions,
 } from './helpers'
 import { CostCenterSelectCellEditor } from './CostCenterSelectCellEditor'
 
@@ -52,6 +52,7 @@ const FixedBedAndLabCostScreen = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [costCenterDropdown, setCostCenterDropdown] = useState([])
+  const [materialDropdown, setMaterialDropdown] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -70,10 +71,10 @@ const FixedBedAndLabCostScreen = () => {
   const valueFormat = customValueFormatterPhaseTwo(2)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
-  // 1. Fetch Cost Center Dropdown options (Sp_GetFixedBedCostCentersDropdowns)
+  // 1. Fetch Cost Center Dropdown options (Sp_GetFBSCCostCenterDropdown)
   const fetchCostCenterDropdown = useCallback(async () => {
     try {
-      const response = await FixedBedAndLabCostApiService.getFixedBedCostCentersDropdown(keycloak)
+      const response = await FixedBedAndLabCostApiService.getFBSCCostCenterDropdown(keycloak)
       const data = response?.data || response?.result || response || []
       const formatted = formatCostCenterDropdownOptions(data)
       setCostCenterDropdown(formatted)
@@ -84,23 +85,63 @@ const FixedBedAndLabCostScreen = () => {
     }
   }, [keycloak])
 
+  // 2. Fetch Material & UOM Dropdown options (Sp_GetFBSCMaterialDropdown)
+  const fetchMaterialDropdown = useCallback(async () => {
+    try {
+      const response = await FixedBedAndLabCostApiService.getFBSCMaterialDropdown(keycloak)
+      const data = response?.data || response?.result || response || []
+      const formatted = formatMaterialDropdownOptions(data)
+      setMaterialDropdown(formatted)
+      return formatted
+    } catch (error) {
+      console.error('Error fetching material dropdown options:', error)
+      return []
+    }
+  }, [keycloak])
+
   useEffect(() => {
     fetchCostCenterDropdown()
-  }, [fetchCostCenterDropdown])
+    fetchMaterialDropdown()
+  }, [fetchCostCenterDropdown, fetchMaterialDropdown])
 
-  // 2. Grid Columns definition: Cost Center Description (Select) + 12 Months + Remarks
+  // 3. Grid Columns definition:
+  // Column 1: Cost Center Description (Select)
+  // Column 2: Material (Select)
+  // Column 3: UOM (Read-only, auto-fetched)
+  // 12 Months + Remarks
   const columns = [
     {
       field: 'costCenterDescription',
       title: 'Cost Center Description',
-      widthT: 420,
-      minWidth: 360,
+      widthT: 380,
+      minWidth: 320,
       type: 'customSelect',
       cellEditor: CostCenterSelectCellEditor,
       editable: !READ_ONLY,
       locked: true,
       dynamicOptions: true,
       getOptions: (dataItem) => getCostCenterOptions(dataItem, costCenterDropdown, rows),
+    },
+    {
+      field: 'material',
+      title: 'Material',
+      widthT: 220,
+      minWidth: 180,
+      type: 'customSelect',
+      cellEditor: CostCenterSelectCellEditor,
+      editable: !READ_ONLY,
+      locked: true,
+      dynamicOptions: true,
+      getOptions: (dataItem) => getMaterialOptions(dataItem, materialDropdown, rows),
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      widthT: 100,
+      minWidth: 90,
+      type: 'text',
+      editable: false,
+      locked: true,
     },
     {
       field: 'apr',
@@ -210,14 +251,14 @@ const FixedBedAndLabCostScreen = () => {
       editable: !READ_ONLY,
       format: valueFormat,
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      widthT: 250,
-      minWidth: 180,
-      type: 'text',
-      editable: !READ_ONLY,
-    },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   widthT: 250,
+    //   minWidth: 180,
+    //   type: 'text',
+    //   editable: !READ_ONLY,
+    // },
   ]
 
   const getIsReleasedStatus = useCallback(async () => {
@@ -254,7 +295,7 @@ const FixedBedAndLabCostScreen = () => {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR, dispatch])
 
-  // 3. GET API - SP_GetFixedBedAndLabCostData
+  // 4. GET API - SP_GetFixedBedAndLabCostData
   const fetchData = useCallback(async () => {
     if (!AOP_YEAR) return
     setLoading(true)
@@ -268,18 +309,23 @@ const FixedBedAndLabCostScreen = () => {
         : response?.data?.list || response?.result || []
 
       const formattedData = rawList.map((item, index) => {
-        const rowId = item.masterId || item.id || `row_${index}`
-        const desc = item.costCenterDescription || item.costCenter || ''
+        const rowId = item.id || `row_${index}`
+        const desc = item.costCenterDescription || ''
+        const mat = item.material || ''
+        const uom = item.uom || ''
 
         return {
           ...item,
           id: rowId,
-          masterId: item.masterId || item.id,
+          costCenterMasterId: item.costCenterMasterId || null,
+          materialMasterId: item.materialMasterId || null,
           costCenterDescription: desc,
-          apr: Number(item.apr ?? item.april ?? 0),
+          material: mat,
+          uom: uom,
+          apr: Number(item.apr ?? 0),
           may: Number(item.may ?? 0),
-          jun: Number(item.jun ?? item.june ?? 0),
-          jul: Number(item.jul ?? item.july ?? 0),
+          jun: Number(item.jun ?? 0),
+          jul: Number(item.jul ?? 0),
           aug: Number(item.aug ?? 0),
           sep: Number(item.sep ?? 0),
           oct: Number(item.oct ?? 0),
@@ -287,13 +333,9 @@ const FixedBedAndLabCostScreen = () => {
           dec: Number(item.dec ?? 0),
           jan: Number(item.jan ?? 0),
           feb: Number(item.feb ?? 0),
-          mar: Number(item.mar ?? item.march ?? 0),
+          mar: Number(item.mar ?? 0),
           remarks: item.remarks || '',
-          isEditable: READ_ONLY
-            ? false
-            : item.isEditable !== undefined
-              ? item.isEditable
-              : true,
+          isEditable: !READ_ONLY,
         }
       })
 
@@ -316,7 +358,7 @@ const FixedBedAndLabCostScreen = () => {
     }
   }, [AOP_YEAR, fetchData])
 
-  // Custom Item Change with Duplicate Dropdown Selection Prevention
+  // Custom Item Change: Handles Cost Center, Material (auto-fetch UOM), Months, Remarks
   const handleCustomItemChange = (e) => {
     if (READ_ONLY) return
     const { dataItem, field, value } = e
@@ -330,36 +372,54 @@ const FixedBedAndLabCostScreen = () => {
       inEdit: true,
     }
 
-    // 1) VALIDATION: No duplicate dropdown selection
+    // 1) Cost Center Description change
     if (field === 'costCenterDescription') {
       const valStr =
         typeof value === 'object'
-          ? value?.value || value?.label || value?.displayLabel || ''
+          ? value?.value || value?.label || value?.costCenterDescription || ''
           : String(value || '')
 
-      const selectedId = getMasterIdByDescription(valStr, costCenterDropdown)
-      const selectedDesc = getCostCenterDescriptionById(selectedId, costCenterDropdown) || valStr
-
-      // Check if this cost center is already selected in another row
-      const isDuplicate = rows.some(
-        (r) =>
-          String(r.id) !== String(rowId) &&
-          ((r.masterId && selectedId && String(r.masterId).toLowerCase() === String(selectedId).toLowerCase()) ||
-            (r.costCenterDescription && String(r.costCenterDescription).toLowerCase() === String(selectedDesc).toLowerCase()))
+      const matchedOpt = costCenterDropdown.find(
+        (opt) =>
+          opt.costCenterDescription === valStr ||
+          opt.value === valStr ||
+          opt.label === valStr ||
+          opt.id === valStr ||
+          opt.costCenterMasterId === valStr
       )
 
-      if (isDuplicate) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `"${selectedDesc}" is already selected in another row!`,
-          severity: 'warning',
-        })
-        return
-      }
+      const selectedId = matchedOpt?.costCenterMasterId || matchedOpt?.id || valStr
+      const selectedDesc = matchedOpt?.costCenterDescription || matchedOpt?.label || valStr
 
-      updatedRow.masterId = selectedId
+      updatedRow.costCenterMasterId = selectedId
       updatedRow.costCenterDescription = selectedDesc
       updatedRow[field] = selectedDesc
+    }
+
+    // 2) Material change -> Auto update UOM and materialMasterId
+    if (field === 'material') {
+      const valStr =
+        typeof value === 'object'
+          ? value?.value || value?.label || value?.material || ''
+          : String(value || '')
+
+      const matchedOpt = materialDropdown.find(
+        (opt) =>
+          opt.material === valStr ||
+          opt.value === valStr ||
+          opt.label === valStr ||
+          opt.id === valStr ||
+          opt.materialMasterId === valStr
+      )
+
+      const selectedId = matchedOpt?.materialMasterId || matchedOpt?.id || valStr
+      const selectedMat = matchedOpt?.material || matchedOpt?.label || valStr
+      const selectedUom = matchedOpt?.uom || ''
+
+      updatedRow.materialMasterId = selectedId
+      updatedRow.material = selectedMat
+      updatedRow.uom = selectedUom
+      updatedRow[field] = selectedMat
     }
 
     setRows((prevRows) =>
@@ -382,11 +442,11 @@ const FixedBedAndLabCostScreen = () => {
     setRemarkDialogOpen(true)
   }
 
-  // Delete row handler (calls DELETE API if persisted, otherwise removes from state)
+  // Delete row handler
   const deleteRowData = async (dataItem) => {
     if (!dataItem || READ_ONLY) return
 
-    const masterId = dataItem.masterId || dataItem.id
+    const recordId = dataItem.id || dataItem.transactionId || dataItem.masterId
 
     // If new unsaved row, remove locally
     if (dataItem.isNew || String(dataItem.id).startsWith('new_row_')) {
@@ -409,7 +469,7 @@ const FixedBedAndLabCostScreen = () => {
     try {
       await FixedBedAndLabCostApiService.deleteFixedBedAndLabCostData(
         keycloak,
-        masterId,
+        recordId,
         AOP_YEAR,
       )
       setSnackbarOpen(true)
@@ -430,7 +490,7 @@ const FixedBedAndLabCostScreen = () => {
     }
   }
 
-  // 4. SAVE API with Duplicate and Remarks Validations
+  // 5. SAVE API
   const saveChanges = async () => {
     if (READ_ONLY) return
     setLoading(true)
@@ -447,102 +507,68 @@ const FixedBedAndLabCostScreen = () => {
         return
       }
 
-      // -------------------------------------------------------------
-      // VALIDATION 1: Check Cost Center selection & No Duplicate Rows
-      // -------------------------------------------------------------
-      const seenMasterIds = new Set()
+      // VALIDATION 1: Cost Center & Material Selection
       for (const row of rows) {
-        const mId =
-          row.masterId ||
-          getMasterIdByDescription(row.costCenterDescription, costCenterDropdown)
-
-        if (!mId || !row.costCenterDescription) {
+        if (!row.costCenterDescription) {
           setSnackbarOpen(true)
           setSnackbarData({
-            message: 'Please select a Cost Center for all rows before saving!',
+            message: 'Please select a Cost Center Description for all rows before saving!',
             severity: 'warning',
           })
           setLoading(false)
           return
         }
-
-        if (seenMasterIds.has(mId)) {
-          const desc =
-            getCostCenterDescriptionById(mId, costCenterDropdown) ||
-            row.costCenterDescription ||
-            mId
+        if (!row.material) {
           setSnackbarOpen(true)
           setSnackbarData({
-            message: `Duplicate Cost Center detected: "${desc}". Each Cost Center can only be added once!`,
+            message: `Please select a Material for Cost Center: "${row.costCenterDescription}" before saving!`,
             severity: 'warning',
           })
           setLoading(false)
           return
-        }
-        seenMasterIds.add(mId)
-      }
-
-      // -------------------------------------------------------------
-      // VALIDATION 2: Remarks Validation for all modified / added rows
-      // -------------------------------------------------------------
-      for (const row of modifiedData) {
-        const remarksVal = (row.remarks || '').trim()
-        const desc =
-          row.costCenterDescription ||
-          getCostCenterDescriptionById(row.masterId, costCenterDropdown) ||
-          'Row'
-
-        if (!remarksVal) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `Remarks is mandatory for: "${desc}". Please provide remarks!`,
-            severity: 'warning',
-          })
-          setLoading(false)
-          return
-        }
-
-        // For existing rows, check that remarks was updated
-        const origRow = originalRows.find((orig) => orig.id === row.id || orig.masterId === row.masterId)
-        if (origRow) {
-          const origRemarks = (origRow.remarks || '').trim()
-          const dataWasUpdated = MONTH_FIELDS.some(
-            (field) => Number(row[field] || 0) !== Number(origRow[field] || 0)
-          )
-          if (dataWasUpdated && origRemarks && remarksVal === origRemarks) {
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: `Please update the remarks for "${desc}" to reflect the new changes!`,
-              severity: 'warning',
-            })
-            setLoading(false)
-            return
-          }
         }
       }
 
-      // -------------------------------------------------------------
-      // Prepare Payload & Save
-      // -------------------------------------------------------------
+      // VALIDATION 2: Remarks Mandatory for modified rows (Commented)
+      // for (const row of modifiedData) {
+      //   const remarksVal = (row.remarks || '').trim()
+      //   const desc = row.costCenterDescription || 'Row'
+      //   if (!remarksVal) {
+      //     setSnackbarOpen(true)
+      //     setSnackbarData({
+      //       message: `Remarks is mandatory for: "${desc}". Please provide remarks!`,
+      //       severity: 'warning',
+      //     })
+      //     setLoading(false)
+      //     return
+      //   }
+      // }
+
+      // Prepare Payload
       const payload = modifiedData.map((row) => {
-        const isNewEntry =
-          row.isNew === true ||
-          (row.id && String(row.id).startsWith('new_row_')) ||
-          row.isTransactionExists === false
+        // Resolve Cost Center Master Id
+        let resolvedCostCenterMasterId = row.costCenterMasterId
+        if (!resolvedCostCenterMasterId || String(resolvedCostCenterMasterId).startsWith('new_row_')) {
+          const matchCC = costCenterDropdown.find(
+            (c) => c.costCenterDescription === row.costCenterDescription
+          )
+          resolvedCostCenterMasterId = matchCC?.costCenterMasterId || matchCC?.id || null
+        }
 
-        const resolvedMasterId =
-          row.masterId ||
-          getMasterIdByDescription(row.costCenterDescription, costCenterDropdown)
-
-        const resolvedCostCenterDesc =
-          getCostCenterDescriptionById(resolvedMasterId, costCenterDropdown) ||
-          row.costCenterDescription ||
-          ''
+        // Resolve Material Master Id
+        let resolvedMaterialMasterId = row.materialMasterId
+        if (!resolvedMaterialMasterId || String(resolvedMaterialMasterId).startsWith('new_row_')) {
+          const matchMat = materialDropdown.find((m) => m.material === row.material)
+          resolvedMaterialMasterId = matchMat?.materialMasterId || matchMat?.id || null
+        }
 
         return {
-          id: isNewEntry ? null : (row.transactionId || (!String(row.id).startsWith('new_row_') ? row.id : null)),
-          masterId: resolvedMasterId,
-          costCenterDescription: resolvedCostCenterDesc,
+          id: row.id && !String(row.id).startsWith('new_row_') ? row.id : null,
+          costCenterMasterId: resolvedCostCenterMasterId,
+          materialMasterId: resolvedMaterialMasterId,
+          costCenterDescription: row.costCenterDescription || '',
+          material: row.material || '',
+          uom: row.uom || '',
           aopYear: AOP_YEAR,
           apr: Number(row.apr || 0),
           may: Number(row.may || 0),

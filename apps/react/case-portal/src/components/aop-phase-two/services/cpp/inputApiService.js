@@ -78,6 +78,12 @@ export const InputApiService = {
   savePricesData,
   savePricesExcel,
   exportPricesExcel,
+
+  // Stand By Load APIs
+  getStandByLoadData,
+  saveStandByLoadData,
+  saveStandByLoadExcel,
+  exportStandByLoadExcel,
 }
 
 function buildHeaders(keycloak) {
@@ -1468,6 +1474,87 @@ async function executeConfiguration(executionDetailDtoList, keycloak) {
     return data
   } catch (e) {
     console.error('Error saving configuration execution:', e)
+    return Promise.reject(e)
+  }
+}
+
+// ========================|| Stand By Load APIs ||=====================================//
+
+// GET /task/standby-load?plantIds=...&aopYear=...
+async function getStandByLoadData(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/standby-load?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = buildHeaders(keycloak)
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching standby load data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/standby-load?plantIds=...&aopYear=...
+async function saveStandByLoadData(keycloak, plantIds, aopYear, payload) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/standby-load?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = buildHeaders(keycloak)
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving standby load data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/standby-load/export?plantIds=...&aopYear=...
+async function exportStandByLoadExcel(keycloak, plantIds, aopYear, EXCEL_NAME) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'standby-load/export',
+    queryParams: { plantIds: plantIdArray.join(','), aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/standby-load/import?plantIds=...&aopYear=... (multipart)
+async function saveStandByLoadExcel(file, keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/standby-load/import?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    const responseData = await json(keycloak, resp)
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return responseData
+  } catch (e) {
+    console.error(`Error importing Stand By Load Excel:`, e)
     return Promise.reject(e)
   }
 }

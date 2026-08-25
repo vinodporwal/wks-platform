@@ -199,7 +199,7 @@ public class RefineryAopBudgetController {
         }
     }
 
-    @GetMapping("/profit-center-uom-dropdown")
+    @GetMapping("/unit-dropdown")
     public AOPMessageVM getProfitCenterUomDropdown(@RequestParam String siteId, @RequestParam(required = false) String siteName) {
         return refineryAopBudgetService.getProfitCenterUomDropdown(siteId, siteName);
     }
@@ -260,6 +260,16 @@ public class RefineryAopBudgetController {
     @GetMapping("/fixed-bed-cost-centers-dropdown")
     public AOPMessageVM getFixedBedCostCentersDropdowns() {
         return refineryAopBudgetService.getFixedBedCostCentersDropdowns();
+    }
+
+    @GetMapping("/fbsc-cost-center-dropdown")
+    public AOPMessageVM getFBSCCostCenterDropdown() {
+        return refineryAopBudgetService.getFBSCCostCenterDropdown();
+    }
+
+    @GetMapping("/fbsc-material-dropdown")
+    public AOPMessageVM getFBSCMaterialDropdown() {
+        return refineryAopBudgetService.getFBSCMaterialDropdown();
     }
 
     @PostMapping("/fixed-bed-and-lab-cost")

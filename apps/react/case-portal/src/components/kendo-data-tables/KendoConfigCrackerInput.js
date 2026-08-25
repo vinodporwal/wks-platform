@@ -18,6 +18,7 @@ import NaphthaLimsDataSet from './NaphthaLimsDataSet'
 import NaphthaHMDComponent from './NaphthaHMDComponent'
 import ModeSelection from './ModeSelection'
 import SpyroInputMinMax from './SpyroInputMinMax'
+import NaphthaSummaryHmd from './NaphthaSummary'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -1175,6 +1176,14 @@ const CrackerConfig = () => {
                 return (
                   <Box key={currentTabDisplay}>
                     <NaphthaHMDComponent />
+                  </Box>
+                )
+              }
+            case 'NaphthaSummary':
+              if (IS_CRACKER_HMD) {
+                return (
+                  <Box key={currentTabDisplay}>
+                    <NaphthaSummaryHmd/>
                   </Box>
                 )
               }

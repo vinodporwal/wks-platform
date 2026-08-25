@@ -12,20 +12,13 @@ import lombok.NoArgsConstructor;
 public class FixedBedAndLabCostDTO {
 
     private String id;
-    private String masterId;
+    private String costCenterMasterId;
+    private String materialMasterId;
     private String aopYear;
 
-    private String account;
-    private String profitCenter;
-    private String plant;
-    private String unit;
-    private String costCenter;
     private String costCenterDescription;
     private String material;
     private String uom;
-    private String unitDescription;
-    private String subDescription;
-    private Double displayOrder;
 
     private Double apr;
     private Double may;
@@ -39,12 +32,8 @@ public class FixedBedAndLabCostDTO {
     private Double jan;
     private Double feb;
     private Double mar;
-    private Double totalAmount;
 
     private String remarks;
-    private Boolean isEditable;
-    private Boolean isActive;
-    private Boolean isTransactionExists;
 
     private String saveStatus;
     private String errorMessage;

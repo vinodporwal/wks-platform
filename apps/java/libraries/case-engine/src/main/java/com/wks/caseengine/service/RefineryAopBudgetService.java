@@ -48,6 +48,8 @@ public interface RefineryAopBudgetService {
     public List<JwUnitDTO> saveJwUnit(List<JwUnitDTO> jwUnitDTOs, String aopYear);
     public AOPMessageVM getFixedBedAndLabCostData(String aopYear);
     public AOPMessageVM getFixedBedCostCentersDropdowns();
+    public AOPMessageVM getFBSCCostCenterDropdown();
+    public AOPMessageVM getFBSCMaterialDropdown();
     public List<FixedBedAndLabCostDTO> saveFixedBedAndLabCostData(List<FixedBedAndLabCostDTO> dtos, String aopYear);
     public AOPMessageVM deleteFixedBedAndLabCost(String masterId, String aopYear);
 }
