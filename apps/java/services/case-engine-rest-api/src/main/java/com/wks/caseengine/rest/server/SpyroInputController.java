@@ -191,5 +191,10 @@ public class SpyroInputController {
 		return spyroInputService.importSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, file);
 	}
 
+	@GetMapping(value="/naptha-summary")
+	public AOPMessageVM getNapthaSummaryDataSet(@RequestParam String plantId,@RequestParam String year, @RequestParam String reportType) {
+		return spyroInputService.getNapthaSummaryDataSet(plantId,year,reportType);
+	}
+
 }
 

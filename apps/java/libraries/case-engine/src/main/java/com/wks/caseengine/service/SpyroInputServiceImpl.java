@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +19,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -2767,5 +2770,155 @@ session.doWork(connection -> {
 					.build();
 			normAttributeTransactionsRepository.save(newRecord);
 		}
+	}
+
+	@Override
+	public AOPMessageVM getNapthaSummaryDataSet(String plantId, String year, String reportType){
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_RunLengthDataSet";
+
+			List<Object[]> results = getNapthaSummaryDataSetData(plantId, year, reportType, storedProcedure);
+
+			List<String> columnNames = getNapthaSummaryDataSetColumns(plantId, year, reportType, storedProcedure);
+
+			List<Map<String, Object>> resultList = new ArrayList<>();
+
+			for (Object[] row : results) {
+				Map<String, Object> rowMap = new LinkedHashMap<>();
+				for (int i = 0; i < columnNames.size(); i++) {
+					rowMap.put(columnNames.get(i), row[i]);
+				}
+				resultList.add(rowMap);
+			}
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("data", resultList);
+			data.put("columns", getNapthaSummaryDataSetColumnMetadata(plantId, year, reportType, storedProcedure));
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(data);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+
+	}
+
+	public List<Object[]> getNapthaSummaryDataSetData(String plantId, String aopYear, String reportType, String storedProcedure) {
+		try {
+		
+
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("reportType", reportType);
+			
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<String> getNapthaSummaryDataSetColumns(String plantId, String aopYear, String reportType, String storedProcedure) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+	
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = ?, @aopYear = ?, @reportType = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, aopYear);
+				ps.setString(3, reportType);
+				
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	public List<Map<String, Object>> getNapthaSummaryDataSetColumnMetadata(String plantId, String aopYear, String reportType, String storedProcedure) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+		
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = ?, @aopYear = ?, @reportType = ?";
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, aopYear);
+				ps.setString(3, reportType);
+				
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", formatTitle(columnName));
+						columnInfo.put("editable", false);
+						columnInfo.put("type", getFrontendType(columnType));
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
+
+		// Helper method to map SQL data types to frontend types
+		private String getFrontendType(String sqlTypeName) {
+			switch (sqlTypeName.toUpperCase()) {
+				case "VARCHAR":
+				case "NVARCHAR":
+				case "CHAR":
+					return "string";
+				case "INT":
+				case "TINYINT":
+				case "BIGINT":
+				case "SMALLINT":
+				case "DECIMAL":
+				case "FLOAT":
+				case "DOUBLE":
+				case "NUMERIC":
+					return "number";
+				case "DATE":
+				case "DATETIME":
+				case "DATETIME2":
+					return "date";
+				default:
+					return "string";
+			}
+		}
+
+		// Helper method to format column titles
+	private String formatTitle(String columnName) {
+		return columnName.replace("_", " ");
 	}
 }
