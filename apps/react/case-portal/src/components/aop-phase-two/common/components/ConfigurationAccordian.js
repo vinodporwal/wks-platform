@@ -59,15 +59,18 @@ const ConfigurationAccordian = ({
   const SITE_NAME = siteObject?.name?.toLowerCase() || ''
   const PLANT_NAME = plantObject?.name?.toLowerCase() || ''
 
-  const isHTSEZVGOHT3 = useMemo(() => {
-    return (
-      VERTICAL_NAME === 'hydrotreater' &&
-      (SITE_NAME === 'sez' &&
-      PLANT_NAME === 'vgoht-3') ||
-      (SITE_NAME === 'dta' &&
-      PLANT_NAME === 'dht1') ||
-      (SITE_NAME === 'dta' &&
-      PLANT_NAME === 'dht2')
+  const isEORSORDATE = useMemo(() => {
+    const validConfigs = [
+      { vertical: 'hydrotreater', site: 'sez', plant: 'vgoht-4' },
+      { vertical: 'hydrotreater', site: 'sez', plant: 'vgoht-3' },
+      { vertical: 'hydrotreater', site: 'dta', plant: 'dht1' },
+      { vertical: 'hydrotreater', site: 'dta', plant: 'dht2' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.vertical === VERTICAL_NAME &&
+        config.site === SITE_NAME &&
+        config.plant === PLANT_NAME
     )
   }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
@@ -560,7 +563,7 @@ const ConfigurationAccordian = ({
                     {renderDatePickerPill('Start Date', startDate, setStartDate, startShow, setStartShow, 'start-date')}
                     {renderDatePickerPill('End Date', endDate, setEndDate, endShow, setEndShow, 'end-date')}
                   </Stack>
-                  {isHTSEZVGOHT3 && (<Stack
+                  {isEORSORDATE && (<Stack
                     direction='row'
                     sx={{ columnGap: 1, rowGap: 0 }}
                     alignItems='center'
@@ -646,7 +649,7 @@ const ConfigurationAccordian = ({
     sorEndDate,
     sorStartShow,
     sorEndShow,
-    isHTSEZVGOHT3,
+    isEORSORDATE,
     summary,
     configurationExecutionDetails,
     isOldYear,
