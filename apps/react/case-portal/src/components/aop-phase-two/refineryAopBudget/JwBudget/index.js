@@ -336,7 +336,7 @@ const JwBudgetScreen = () => {
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching SEZ JobWork Throughput data:', error)
+      console.error('Error fetching SEZ Job Work Throughput data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error fetching data',
@@ -444,7 +444,7 @@ const JwBudgetScreen = () => {
       setRows([])
       await fetchData()
     } catch (error) {
-      console.error('Error saving SEZ JobWork Throughput data:', error)
+      console.error('Error saving SEZ Job Work Throughput data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
@@ -515,10 +515,10 @@ const JwBudgetScreen = () => {
     showExport: false,
     showImport: false,
     showCalculate: false,
-    ExcelName: `SEZ JobWork Throughput_${AOP_YEAR}`,
+    ExcelName: `SEZ Job Work Throughput_${AOP_YEAR}`,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'SEZ JobWork Throughput',
+    titleName: 'SEZ Job Work Throughput',
     showDropdown: false,
     remarksEditable: true,
   }

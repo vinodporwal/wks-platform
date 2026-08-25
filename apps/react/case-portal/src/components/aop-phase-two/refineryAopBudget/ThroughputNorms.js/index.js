@@ -115,7 +115,7 @@ const ThroughputNormsScreen = () => {
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching SEZ JobWork Norms data:', error)
+      console.error('Error fetching SEZ Job Work Norms data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error fetching data',
@@ -574,7 +574,7 @@ const ThroughputNormsScreen = () => {
       setRows([])
       await fetchTableData()
     } catch (error) {
-      console.error('Error saving SEZ JobWork Norms data:', error)
+      console.error('Error saving SEZ Job Work Norms data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
@@ -647,10 +647,10 @@ const ThroughputNormsScreen = () => {
     showExport: false,
     showImport: false,
     showCalculate: false,
-    ExcelName: `SEZ JobWork Norms_${AOP_YEAR}`,
+    ExcelName: `SEZ Job Work Norms_${AOP_YEAR}`,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'SEZ JobWork Norms',
+    titleName: 'SEZ Job Work Norms',
     showDropdown: false,
     remarksEditable: true,
   }
