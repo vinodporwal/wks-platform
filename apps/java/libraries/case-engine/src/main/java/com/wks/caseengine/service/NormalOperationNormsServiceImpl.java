@@ -249,38 +249,40 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 	
 	@Override
-	public AOPMessageVM getSteadyStateNorms( String year, String plantId,String gradeId,String mode){
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		try {
-			List<Object[]> results = getSteadyStateNormsData(plantId, year);
+	public AOPMessageVM getSteadyStateNorms(String year, String plantId, String gradeId, String mode) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<Object[]> results = getSteadyStateNormsData(plantId, year);
+	        List<String> columnNames = getSteadyStateNormsColumns(plantId, year);
 
-			List<String> columnNames = getSteadyStateNormsColumns(plantId, year);
+	        // 1. Map raw row data
+	        List<Map<String, Object>> resultList = new ArrayList<>();
+	        for (Object[] row : results) {
+	            Map<String, Object> rowMap = new LinkedHashMap<>();
+	            for (int i = 0; i < columnNames.size(); i++) {
+	                rowMap.put(columnNames.get(i), row[i]);
+	            }
+	            resultList.add(rowMap);
+	        }
 
-			List<Map<String, Object>> resultList = new ArrayList<>();
+	        // 2. Generate Metadata with mapped Display Names
+	        List<Map<String, Object>> columnMetadata = getSteadyStateNormsColumnMetadata(plantId, year, columnNames);
 
-			for (Object[] row : results) {
-				Map<String, Object> rowMap = new LinkedHashMap<>();
-				for (int i = 0; i < columnNames.size(); i++) {
-					rowMap.put(columnNames.get(i), row[i]);
-				}
-				resultList.add(rowMap);
-			}
+	        Map<String, Object> data = new HashMap<>();
+	        data.put("data", resultList);
+	        data.put("columns", columnMetadata);
 
-			Map<String, Object> data = new HashMap<>();
-			data.put("data", resultList);
-			data.put("columns", getSteadyStateNormsColumnMetadata(plantId, year));
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(data);
+	        return aopMessageVM;
 
-			aopMessageVM.setCode(200);
-			aopMessageVM.setMessage("SP Executed successfully");
-			aopMessageVM.setData(data);
-			return aopMessageVM;
-
-		} catch (IllegalArgumentException e) {
-			throw new RestInvalidArgumentException("Invalid UUID format ", e);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new RuntimeException("Failed to fetch data", ex);
-		}
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
 	}
 
 	public List<Object[]> getSteadyStateNormsData(String plantId, String FinYear) {
@@ -343,43 +345,85 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		});
 	}
 
-	public List<Map<String, Object>> getSteadyStateNormsColumnMetadata(String plantId, String FinYear) {
-		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
-			List<Map<String, Object>> columnMetadata = new ArrayList<>();
-			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
-					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-			Sites site = siteRepository.findById(plant.getSiteFkId())
-					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	public List<Map<String, Object>> getSteadyStateNormsColumnMetadata(String plantId, String FinYear, List<String> columnNames) {
+	    // 1. Identify which column names are valid UUIDs
+	    List<UUID> normParameterUuids = new ArrayList<>();
+	    for (String colName : columnNames) {
+	        if (isValidUUID(colName)) {
+	            normParameterUuids.add(UUID.fromString(colName));
+	        }
+	    }
 
-			String storedProcedure = "[" + vertical.getName() + "_" + site.getName() + "_GetGradewiseSteadyStateNorms]";
-			String sql = "EXEC " + storedProcedure
-					+ " @plantId = ?, @siteId = ?, @verticalId = ?, @FinYear = ?";
-			try (PreparedStatement ps = connection.prepareStatement(sql)) {
-				ps.setString(1, plantId);
-				ps.setString(2, site.getId().toString());
-				ps.setString(3, vertical.getId().toString());
-				ps.setString(4, FinYear);
-				try (ResultSet rs = ps.executeQuery()) {
-					ResultSetMetaData rsMetaData = rs.getMetaData();
-					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
-						Map<String, Object> columnInfo = new HashMap<>();
-						String columnName = rsMetaData.getColumnLabel(i);
-						String columnType = rsMetaData.getColumnTypeName(i);
+	    // 2. Fetch DisplayNames in bulk from NormParameters table
+	    Map<String, String> displayNameMap = new HashMap<>();
+	    if (!normParameterUuids.isEmpty()) {
+	        List<NormParameters> normParams = normParametersRepository.findAllById(normParameterUuids);
+	        for (NormParameters param : normParams) {
+	            displayNameMap.put(param.getId().toString().toLowerCase(), param.getDisplayName());
+	        }
+	    }
 
-						columnInfo.put("field", columnName);
-						columnInfo.put("title", formatTitle(columnName));
-						columnInfo.put("editable", false);
-						columnInfo.put("type", getFrontendType(columnType));
-						columnMetadata.add(columnInfo);
-					}
-				}
-			}
-			return columnMetadata;
-		});
+	    // 3. Retrieve database column types via Metadata and build final column definitions
+	    return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+	        List<Map<String, Object>> columnMetadata = new ArrayList<>();
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+	        String storedProcedure = "[" + vertical.getName() + "_" + site.getName() + "_GetGradewiseSteadyStateNorms]";
+	        String sql = "EXEC " + storedProcedure
+	                + " @plantId = ?, @siteId = ?, @verticalId = ?, @FinYear = ?";
+
+	        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+	            ps.setString(1, plantId);
+	            ps.setString(2, site.getId().toString());
+	            ps.setString(3, vertical.getId().toString());
+	            ps.setString(4, FinYear);
+
+	            try (ResultSet rs = ps.executeQuery()) {
+	                ResultSetMetaData rsMetaData = rs.getMetaData();
+	                for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+	                    Map<String, Object> columnInfo = new HashMap<>();
+	                    String columnName = rsMetaData.getColumnLabel(i);
+	                    String columnType = rsMetaData.getColumnTypeName(i);
+
+	                    // Check if this column is a UUID and has a mapped DisplayName
+	                    String title;
+	                    if (isValidUUID(columnName) && displayNameMap.containsKey(columnName.toLowerCase())) {
+	                        title = displayNameMap.get(columnName.toLowerCase());
+	                    } else {
+	                        title = formatTitle(columnName);
+	                    }
+
+	                    columnInfo.put("field", columnName);
+	                    columnInfo.put("title", title);
+	                    columnInfo.put("editable", false);
+	                    columnInfo.put("type", getFrontendType(columnType));
+	                    columnMetadata.add(columnInfo);
+	                }
+	            }
+	        }
+	        return columnMetadata;
+	    });
 	}
-	
+
+	/**
+	 * Helper utility to validate whether a column header is a standard UUID string.
+	 */
+	private boolean isValidUUID(String str) {
+	    if (str == null || str.trim().isEmpty()) {
+	        return false;
+	    }
+	    try {
+	        UUID.fromString(str);
+	        return true;
+	    } catch (IllegalArgumentException e) {
+	        return false;
+	    }
+	}	
 	// Helper method to format column titles
 		private String formatTitle(String columnName) {
 			return columnName.replace("_", " ");
