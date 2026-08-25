@@ -219,8 +219,7 @@ export const DataService = {
   getCatChemCalculationDataWithoutGrade,
   getOtherFurnanceDetails,
   saveOtherFurnanceDetails,
-  getReleaseAOPStatus,
-  releaseAOPReport,
+
   ensureReleaseIfNotReleased,
   deleteReleaseAOPByPlantAndYear,
 }
