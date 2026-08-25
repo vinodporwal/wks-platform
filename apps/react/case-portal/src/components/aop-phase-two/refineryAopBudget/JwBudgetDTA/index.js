@@ -1,22 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Box } from '@mui/material'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from '../../common/ValueFormatterPhaseTwo'
+import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
+import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { ThroughputNormsApiService } from 'components/aop-phase-two/services/crude/throughputNormsApiService'
-import {
-  formatUnitDropdownOptions,
-  formatMaterialDropdownOptions,
-  getMaterialOptions,
-  getUnitOptions,
-  formatNormsInitialRows,
-} from './helpers'
-import { ThroughputNormsSelectCellEditor } from './ThroughputNormsSelectCellEditor'
+import { JswBudgetSourceAPIService } from 'components/aop-phase-two/services/crude/jwBudgetSourceAPIService'
+import { getUnitOptions } from './helpers'
+import { JwSelectCellEditor } from './JwSelectCellEditor'
 
-const ThroughputNormsScreen = () => {
+const JwBudgetScreenDTA = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year } = dataGridStore
@@ -29,7 +27,6 @@ const ThroughputNormsScreen = () => {
     plantObject?.siteFKId
   const AOP_YEAR = year?.selectedYear || year
   const VERTICAL_ID = verticalObject?.id
-
   const isFetchedRef = useRef(false)
 
   const [loading, setLoading] = useState(false)
@@ -37,13 +34,6 @@ const ThroughputNormsScreen = () => {
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
   const [unitDropdown, setUnitDropdown] = useState([])
-  const [materialDropdownMap, setMaterialDropdownMap] = useState({})
-  const materialDropdownMapRef = useRef({})
-
-  useEffect(() => {
-    materialDropdownMapRef.current = materialDropdownMap
-  }, [materialDropdownMap])
-
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -55,52 +45,6 @@ const ThroughputNormsScreen = () => {
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
-
-  const [materialOptions, setMaterialOptions] = useState([])
-
-  // Fetch Unit dropdown using getDropdownUnit API
-  const fetchUnitDropdown = useCallback(async () => {
-    if (!SITE_ID) return []
-    try {
-      const response = await ThroughputNormsApiService.getDropdownUnit(
-        keycloak,
-        SITE_ID,
-      )
-      const data = response?.data || response?.result || response || []
-      const formattedOptions = formatUnitDropdownOptions(data)
-      setUnitDropdown(formattedOptions)
-      return formattedOptions
-    } catch (error) {
-      console.error('Error fetching unit dropdown options:', error)
-      return []
-    }
-  }, [keycloak, SITE_ID])
-
-  // Fetch all Material options without unit restriction (SEZ)
-  const fetchAllMaterials = useCallback(async () => {
-    try {
-      const response = await ThroughputNormsApiService.getNormsMaterialDropdown(
-        keycloak,
-        'SEZ',
-        SITE_ID || '',
-      )
-      const data = response?.data || response?.result || response || []
-      const rawList = Array.isArray(data) ? data : []
-      const formatted = formatMaterialDropdownOptions(rawList)
-      setMaterialOptions(formatted)
-      return formatted
-    } catch (error) {
-      console.error('Error fetching all material options:', error)
-      return []
-    }
-  }, [keycloak, SITE_ID])
-
-  useEffect(() => {
-    if (SITE_ID) {
-      fetchUnitDropdown()
-      fetchAllMaterials()
-    }
-  }, [SITE_ID, fetchUnitDropdown, fetchAllMaterials])
 
   const columns = [
     {
@@ -119,29 +63,21 @@ const ThroughputNormsScreen = () => {
       widthT: 250,
       minWidth: 200,
       type: 'customSelect',
-      cellEditor: ThroughputNormsSelectCellEditor,
+      cellEditor: JwSelectCellEditor,
       dynamicOptions: true,
       getOptions: (dataItem) => getUnitOptions(dataItem, unitDropdown, rows),
       editable: true,
       locked: true,
     },
     {
-      field: 'displayName',
-      title: 'Material Code',
+      field: 'normParameterTypeDisplayName',
+      title: 'Type',
       widthT: 250,
       minWidth: 200,
-      type: 'customSelect',
-      cellEditor: ThroughputNormsSelectCellEditor,
-      dynamicOptions: true,
-      getOptions: (dataItem) =>
-        getMaterialOptions(
-          dataItem,
-          materialOptions,
-          materialDropdownMapRef,
-          rows,
-        ),
-      editable: true,
+      type: 'text',
+      editable: false,
       locked: true,
+      hidden: true,
     },
     {
       field: 'uom',
@@ -262,24 +198,50 @@ const ThroughputNormsScreen = () => {
     },
   ]
 
+  const dummyRows = []
+
   useEffect(() => {
     if (SITE_ID) {
       fetchUnitDropdown()
     }
-  }, [SITE_ID, fetchUnitDropdown])
+  }, [SITE_ID])
+
+  const fetchUnitDropdown = async () => {
+    try {
+      const response = await JswBudgetSourceAPIService.getDropdownUnit(
+        keycloak,
+        SITE_ID,
+        'DTA',
+      )
+      const data = response?.data || response?.result || response || []
+      const formattedOptions = Array.isArray(data)
+        ? data.map((item) => ({
+            label:
+              item?.Unit || item?.unit || item?.name || item?.displayName || '',
+            value: item?.Unit || item?.unit || item?.id || item?.Id || '',
+            id: item?.Id || item?.id,
+            unitId: item?.Id || item?.id,
+            uom: item?.UOM || item?.uom || '',
+          }))
+        : []
+      setUnitDropdown(formattedOptions)
+    } catch (error) {
+      console.error('Error fetching unit dropdown options:', error)
+    }
+  }
 
   // Ensure every new row gets a unique ID so multiple blank rows never collide
   const customAddRow = () => {
     const uniqueId = `new_row_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     const newRow = {
       id: uniqueId,
-      materialId: '',
-      unitId: '',
-      profitId: '',
       unit: '',
-      displayName: '',
+      normParameterTypeDisplayName: '',
       uom: '',
       UOM: '',
+      unitId: '',
+      unitFKId: '',
+      normParameterFKId: '',
       isNew: true,
       isEditable: true,
       apr: '',
@@ -299,11 +261,7 @@ const ThroughputNormsScreen = () => {
     setRows((prev) => [newRow, ...prev])
   }
 
-  const handleCustomItemChange = async (
-    e,
-    setRowsState,
-    setModifiedCellsState,
-  ) => {
+  const handleCustomItemChange = (e, setRowsState, setModifiedCellsState) => {
     const { dataItem, field, value } = e
     if (!dataItem) return
 
@@ -321,97 +279,19 @@ const ThroughputNormsScreen = () => {
           String(opt.id || '').toLowerCase() === valStr.toLowerCase() ||
           String(opt.unitId || '').toLowerCase() === valStr.toLowerCase(),
       )
-
       if (selectedObj) {
-        const unitIdVal =
-          selectedObj.unitId || selectedObj.profitId || selectedObj.id
+        const uomVal = selectedObj.uom || ''
+        const unitIdVal = selectedObj.unitId || selectedObj.id || ''
         const unitLabel = selectedObj.label || selectedObj.value || valStr
-
-        // Check if this (Unit + current Material) already exists in another row
-        const currentMaterial = String(dataItem.displayName || '').trim().toLowerCase()
-        if (currentMaterial) {
-          const isDuplicate = rows.some((r) =>
-            String(r.id) !== String(rowId) &&
-            String(r.unit || '').trim().toLowerCase() === String(unitLabel).trim().toLowerCase() &&
-            String(r.displayName || '').trim().toLowerCase() === currentMaterial
-          )
-          if (isDuplicate) {
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: `"${dataItem.displayName}" is already added under Unit "${unitLabel}"! Each Unit + Material Code combination must be unique.`,
-              severity: 'warning',
-            })
-            return
-          }
-        }
 
         const updatedRow = {
           ...dataItem,
           unit: unitLabel,
-          unitId: unitIdVal,
-          profitId: unitIdVal,
-          inEdit: true,
-        }
-
-        setRowsState((prev) =>
-          prev.map((r) => (String(r.id) === String(rowId) ? updatedRow : r)),
-        )
-
-        setModifiedCellsState((prev) => ({
-          ...prev,
-          [rowId]: {
-            ...(prev[rowId] || {}),
-            ...updatedRow,
-          },
-        }))
-      }
-    } else if (field === 'displayName') {
-      const valStr =
-        typeof value === 'object'
-          ? value?.value || value?.label || ''
-          : String(value || '')
-
-      const selectedMaterial = materialOptions.find(
-        (opt) =>
-          String(opt.value || '').toLowerCase() === valStr.toLowerCase() ||
-          String(opt.label || '').toLowerCase() === valStr.toLowerCase() ||
-          String(opt.id || '').toLowerCase() === valStr.toLowerCase(),
-      )
-
-      if (selectedMaterial) {
-        const mId = selectedMaterial.materialId || selectedMaterial.id
-        const dName = selectedMaterial.label || selectedMaterial.value || valStr
-        const uId = dataItem.unitId || dataItem.profitId || selectedMaterial.unitId
-        const uName = dataItem.unit || selectedMaterial.unit
-        const uomVal = selectedMaterial.uom || dataItem.uom || ''
-
-        // Check if this (Unit + selected Material) already exists in another row
-        const targetUnit = String(uName || '').trim().toLowerCase()
-        if (targetUnit) {
-          const isDuplicate = rows.some((r) =>
-            String(r.id) !== String(rowId) &&
-            String(r.unit || '').trim().toLowerCase() === targetUnit &&
-            String(r.displayName || '').trim().toLowerCase() === String(dName).trim().toLowerCase()
-          )
-          if (isDuplicate) {
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: `"${dName}" is already added under Unit "${uName}"! Each Unit + Material Code combination must be unique.`,
-              severity: 'warning',
-            })
-            return
-          }
-        }
-
-        const updatedRow = {
-          ...dataItem,
-          materialId: mId,
-          displayName: dName,
-          unitId: uId,
-          profitId: uId,
-          unit: uName,
           uom: uomVal,
           UOM: uomVal,
+          unitId: unitIdVal,
+          unitFKId: unitIdVal,
+          normParameterFKId: unitIdVal,
           inEdit: true,
         }
 
@@ -442,23 +322,26 @@ const ThroughputNormsScreen = () => {
 
     setLoading(true)
     try {
-      const unitsList = await fetchUnitDropdown()
-
-      const response = await ThroughputNormsApiService.getThroughputNorms(
+      const response = await JswBudgetSourceAPIService.getJswBudgetSourceData(
         keycloak,
-        'SEZ',
+        SITE_ID,
         AOP_YEAR,
-        SITE_ID || '',
+        'DTA',
       )
       const data = response?.data || []
-      const formattedData = formatNormsInitialRows(data, unitsList)
-
-      await fetchAllMaterials()
-
+      const formattedData = data?.map((item, index) => ({
+        ...item,
+        unit: item.unit || item.Unit || '',
+        uom: item.uom || item.UOM || '',
+        UOM: item.UOM || item.uom || '',
+        remarks: item.remarks || '',
+        id: item?.id || index + 1,
+        isEditable: true,
+      }))
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching SEZ JobWork Norms data:', error)
+      console.error('Error fetching DTA Net Throughput data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error fetching data',
@@ -500,67 +383,37 @@ const ThroughputNormsScreen = () => {
       return
     }
 
-    // Validation 1: Material Name (displayName) and Unit are mandatory to fill
-    const invalidRow = data.find(
-      (row) =>
-        !row.unit || !row.displayName || String(row.displayName).trim() === '',
-    )
-    if (invalidRow) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Material Name (Display Name) and Unit are mandatory to fill!',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
-
-    // Validation 2: Check for duplicate (Unit + Material Code) across all rows in table
-    const seenCombos = new Set()
-    for (const r of rows) {
-      const uKey = String(r.unit || '').trim().toLowerCase()
-      const mKey = String(r.displayName || '').trim().toLowerCase()
-      if (uKey && mKey) {
-        const comboKey = `${uKey}___${mKey}`
-        if (seenCombos.has(comboKey)) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `Duplicate detected: "${r.displayName}" under Unit "${r.unit}". Each Unit + Material Code combination must be unique!`,
-            severity: 'warning',
-          })
-          setLoading(false)
-          return
-        }
-        seenCombos.add(comboKey)
+    const payloadData = data.map((row) => {
+      const matched = unitDropdown.find(
+        (opt) =>
+          opt.value === row.unit ||
+          opt.label === row.unit ||
+          opt.id === row.unit ||
+          opt.unitId === row.unitId,
+      )
+      return {
+        ...row,
+        id: row.id || matched?.unitId || matched?.id,
+        uom: row.uom || row.UOM || matched?.uom || '',
+        jan: row.jan || 0,
+        feb: row.feb || 0,
+        mar: row.mar || 0,
+        apr: row.apr || 0,
+        may: row.may || 0,
+        jun: row.jun || 0,
+        jul: row.jul || 0,
+        aug: row.aug || 0,
+        sep: row.sep || 0,
+        oct: row.oct || 0,
+        nov: row.nov || 0,
+        dec: row.dec || 0,
       }
-    }
-
-    const payloadData = data.map((row) => ({
-      id: row.id || row.materialId,
-      materialId: row.materialId || row.id,
-      unitId: row.unitId || row.profitId,
-      unit: row.unit,
-      displayName: row.displayName,
-      uom: row.uom || row.UOM || '',
-      jan: Number(row.jan || 0),
-      feb: Number(row.feb || 0),
-      mar: Number(row.mar || 0),
-      apr: Number(row.apr || 0),
-      may: Number(row.may || 0),
-      jun: Number(row.jun || 0),
-      jul: Number(row.jul || 0),
-      aug: Number(row.aug || 0),
-      sep: Number(row.sep || 0),
-      oct: Number(row.oct || 0),
-      nov: Number(row.nov || 0),
-      dec: Number(row.dec || 0),
-      remarks: row.remarks || '',
-    }))
+    })
 
     try {
-      await ThroughputNormsApiService.saveThroughputNorms(
-        keycloak,
+      await JswBudgetSourceAPIService.saveJswBudgetSourceData(
         payloadData,
+        keycloak,
         AOP_YEAR,
       )
 
@@ -575,7 +428,7 @@ const ThroughputNormsScreen = () => {
       isFetchedRef.current = false
       await fetchData()
     } catch (error) {
-      console.error('Error saving SEZ JobWork Norms data:', error)
+      console.error('Error saving DTA Net Throughput data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
@@ -609,15 +462,11 @@ const ThroughputNormsScreen = () => {
       return
     }
 
-    const materialId = dataItem.materialId || dataItem.id
-    const unitId = dataItem.unitId || dataItem.profitId
-
     setLoading(true)
     try {
-      await ThroughputNormsApiService.deleteThroughputNormsData(
+      await JswBudgetSourceAPIService.deleteJwBudgetData(
         keycloak,
-        materialId,
-        unitId,
+        dataItem.id,
         AOP_YEAR,
       )
       setSnackbarOpen(true)
@@ -649,10 +498,10 @@ const ThroughputNormsScreen = () => {
     showExport: false,
     showImport: false,
     showCalculate: false,
-    ExcelName: `SEZ JobWork Norms_${AOP_YEAR}`,
+    ExcelName: `DTA Net Throughput_${AOP_YEAR}`,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'SEZ JobWork Norms',
+    titleName: 'DTA Net Throughput',
     showDropdown: false,
     remarksEditable: true,
   }
@@ -678,15 +527,16 @@ const ThroughputNormsScreen = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        //customHeight={70}
       />
     </Box>
   )
 }
 
-export default ThroughputNormsScreen
+export default JwBudgetScreenDTA

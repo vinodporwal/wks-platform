@@ -281,15 +281,27 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 					failedList.add(peopleInitiativeDTO);
 					continue;
 				}
-				PeopleInitiative peopleInitiative =null;
-				if(peopleInitiativeDTO.getId()!=null) {
-					Optional<PeopleInitiative> peopleInitiativeOpt=peopleInitiativeRepository.findById(UUID.fromString(peopleInitiativeDTO.getId()));
-					if(peopleInitiativeOpt.isPresent()) {
-						peopleInitiative=peopleInitiativeOpt.get();
+				PeopleInitiative peopleInitiative = null;
+				boolean isNew = false;
+
+				if (peopleInitiativeDTO.getId() != null && !peopleInitiativeDTO.getId().trim().isEmpty()
+						&& !peopleInitiativeDTO.getId().equalsIgnoreCase("null")
+						&& !peopleInitiativeDTO.getId().startsWith("temp-")
+						&& !peopleInitiativeDTO.getId().startsWith("people-initiative-temp-")) {
+					try {
+						Optional<PeopleInitiative> peopleInitiativeOpt = peopleInitiativeRepository.findById(UUID.fromString(peopleInitiativeDTO.getId().trim()));
+						if (peopleInitiativeOpt.isPresent()) {
+							peopleInitiative = peopleInitiativeOpt.get();
+						}
+					} catch (Exception ignored) {
 					}
-				}else {
-					peopleInitiative=new PeopleInitiative();
 				}
+
+				if (peopleInitiative == null) {
+					peopleInitiative = new PeopleInitiative();
+					isNew = true;
+				}
+
 				peopleInitiative.setInitiative(peopleInitiativeDTO.getInitiative());
 				peopleInitiative.setAopYear(year);
 				peopleInitiative.setOutcome(peopleInitiativeDTO.getOutcome());
@@ -298,6 +310,14 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 				peopleInitiative.setPlantId(plantId);
 				peopleInitiative.setRemark(peopleInitiativeDTO.getRemark());
 				peopleInitiative.setTargetDate(peopleInitiativeDTO.getTargetDate());
+
+				Date now = new Date();
+				if (isNew) {
+					peopleInitiative.setCreatedOn(now);
+				} else {
+					peopleInitiative.setModifiedOn(now);
+				}
+
 				peopleInitiativeRepository.save(peopleInitiative);
 			}
 			
