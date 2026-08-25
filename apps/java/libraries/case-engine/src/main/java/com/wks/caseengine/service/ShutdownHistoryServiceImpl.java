@@ -338,7 +338,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					continue;
 				}
 
-				validateSlowdownDates(dto, year);
+			//	validateSlowdownDates(dto, year);
 
 				if ("Failed".equals(dto.getSaveStatus())) {
 					failedRecords.add(dto);

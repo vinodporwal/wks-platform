@@ -30,9 +30,20 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const valueFormat = customValueFormatterPhaseTwo(5)
-  const isEorSor =
-    siteObject?.name?.toLowerCase() === 'sez' &&
-    plantObject?.name?.toLowerCase() === 'vgoht-3'
+
+  const isEorSor = useMemo(() => {
+    const validConfigs = [
+      { site: 'sez', plant: 'vgoht-4' },
+      { site: 'sez', plant: 'vgoht-3' },
+      { site: 'dta', plant: 'dht1' },
+      { site: 'dta', plant: 'dht2' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.site === siteObject?.name?.toLowerCase() &&
+        config.plant === plantObject?.name?.toLowerCase()
+    )
+  }, [siteObject?.name, plantObject?.name])
 
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
 

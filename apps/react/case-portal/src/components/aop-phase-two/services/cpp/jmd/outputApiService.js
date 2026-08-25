@@ -19,12 +19,13 @@ function buildPlantIdsParam(plantIds) {
 }
 
 // ===================== || FINAL HEAT RATE OUTPUT APIs || ===================== //
-// GET /task/jmd/final-heat-rate?siteId=...&aopYear=...
-// Returns aggregated final heat rate rows across all asset types for the given site.
+// GET /task/jmd/final-heat-rate?plantIds=...&aopYear=...
+// Returns aggregated final heat rate rows across all asset types for the given plant(s).
 // Each row is expected to contain: siteName, cppPlantName, assetType, assetName,
 // utilityId, load, finalHeatRate.
-async function getFinalHeatRate(keycloak, siteId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/jmd/final-heat-rate?siteId=${siteId}&aopYear=${aopYear}`
+async function getFinalHeatRate(keycloak, plantIds, aopYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/final-heat-rate?plantIds=${queryParams}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -42,9 +43,15 @@ async function getFinalHeatRate(keycloak, siteId, aopYear) {
   }
 }
 
-// GET /task/jmd/final-heat-rate/export?siteId=...&aopYear=...
-async function exportFinalHeatRateExcel(keycloak, siteId, aopYear, EXCEL_NAME) {
-  const url = `${Config.CaseEngineUrl}/task/jmd/final-heat-rate/export?siteId=${siteId}&aopYear=${aopYear}`
+// GET /task/jmd/final-heat-rate/export?plantIds=...&aopYear=...
+async function exportFinalHeatRateExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/final-heat-rate/export?plantIds=${queryParams}&aopYear=${aopYear}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

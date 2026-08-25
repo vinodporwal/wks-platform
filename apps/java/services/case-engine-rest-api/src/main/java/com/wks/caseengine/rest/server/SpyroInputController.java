@@ -191,5 +191,32 @@ public class SpyroInputController {
 		return spyroInputService.importSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, file);
 	}
 
+	@GetMapping(value="/naptha-summary")
+	public AOPMessageVM getNapthaSummaryDataSet(@RequestParam String plantId,@RequestParam String year, @RequestParam String reportType) {
+		return spyroInputService.getNapthaSummaryDataSet(plantId,year,reportType);
+	}
+
+	@GetMapping(value = "/naptha-summary-export")
+	public ResponseEntity<byte[]> exportNapthaSummary(
+			@RequestParam String plantId,
+			@RequestParam String year,
+			@RequestParam String reportType) {
+		try {
+			byte[] excelBytes = spyroInputService.createNapthaSummaryExcel(plantId, year, reportType);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("NapthaSummary.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
 }
 

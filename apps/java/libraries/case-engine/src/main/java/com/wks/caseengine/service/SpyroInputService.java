@@ -50,4 +50,8 @@ public interface SpyroInputService {
 
 	AOPMessageVM updateSpyroInputDataValue(List<SpyroInputDTO> spyroInputDTOList, String plantFKId, String year, String key);
 
+	AOPMessageVM getNapthaSummaryDataSet(String plantId, String year, String reportType);
+
+	byte[] createNapthaSummaryExcel(String plantId, String year, String reportType);
+
 }

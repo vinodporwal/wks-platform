@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
@@ -43,14 +44,14 @@ public class JMDOutputHeatRateServiceImpl implements JMDOutputHeatRateService {
 
     @Override
     @Transactional
-    public AOPMessageVM getHeatRateSummary(UUID siteId, String financialYear) {
-        logger.info("[JMDOutputHeatRate] GET - siteId: {}, financialYear: {}", siteId, financialYear);
+    public AOPMessageVM getHeatRateSummary(List<UUID> plantIds, String financialYear) {
+        logger.info("[JMDOutputHeatRate] GET - plantIds: {}, financialYear: {}", plantIds, financialYear);
         AOPMessageVM vm = new AOPMessageVM();
 
         try {
-            if (siteId == null) {
+            if (plantIds == null || plantIds.isEmpty()) {
                 vm.setCode(400);
-                vm.setMessage("siteId cannot be null");
+                vm.setMessage("plantIds cannot be null or empty");
                 vm.setData(new ArrayList<>());
                 return vm;
             }
@@ -62,16 +63,20 @@ public class JMDOutputHeatRateServiceImpl implements JMDOutputHeatRateService {
                 return vm;
             }
 
+            String plantIdsCsv = plantIds.stream()
+                    .map(UUID::toString)
+                    .collect(Collectors.joining(","));
+
             StoredProcedureQuery sp = entityManager
                     .createStoredProcedureQuery("dbo.CPP_GetHeatRateSummary")
-                    .registerStoredProcedureParameter("SiteId", String.class, ParameterMode.IN)
+                    .registerStoredProcedureParameter("PlantIds", String.class, ParameterMode.IN)
                     .registerStoredProcedureParameter("FinancialYear", String.class, ParameterMode.IN);
 
-            sp.setParameter("SiteId", siteId.toString());
+            sp.setParameter("PlantIds", plantIdsCsv);
             sp.setParameter("FinancialYear", financialYear);
 
-            logger.info("Executing stored procedure dbo.CPP_GetHeatRateSummary for siteId: {}, financialYear: {}",
-                    siteId, financialYear);
+            logger.info("Executing stored procedure dbo.CPP_GetHeatRateSummary for plantIds: {}, financialYear: {}",
+                    plantIdsCsv, financialYear);
             sp.execute();
 
             @SuppressWarnings("unchecked")
@@ -100,11 +105,11 @@ public class JMDOutputHeatRateServiceImpl implements JMDOutputHeatRateService {
     }
 
     @Override
-    public byte[] exportHeatRateSummary(UUID siteId, String financialYear) throws IOException {
-        logger.info("[JMDOutputHeatRate] EXPORT - siteId: {}, financialYear: {}", siteId, financialYear);
+    public byte[] exportHeatRateSummary(List<UUID> plantIds, String financialYear) throws IOException {
+        logger.info("[JMDOutputHeatRate] EXPORT - plantIds: {}, financialYear: {}", plantIds, financialYear);
 
         try {
-            AOPMessageVM result = getHeatRateSummary(siteId, financialYear);
+            AOPMessageVM result = getHeatRateSummary(plantIds, financialYear);
 
             List<HeatRateSummaryDTO> dtoList = new ArrayList<>();
             if (result.getData() instanceof List) {
