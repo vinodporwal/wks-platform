@@ -271,7 +271,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        Map<String, Object> data = new HashMap<>();
 	        data.put("data", resultList);
 	        data.put("columns", columnMetadata);
+	        Map<String, Object> map = new HashMap<>();
 
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "normal-op-norms");
+			data.put("aopCalculation", aopCalculation);
 	        aopMessageVM.setCode(200);
 	        aopMessageVM.setMessage("SP Executed successfully");
 	        aopMessageVM.setData(data);
