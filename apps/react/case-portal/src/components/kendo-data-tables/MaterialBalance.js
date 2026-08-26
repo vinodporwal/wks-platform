@@ -78,7 +78,9 @@ const MaterialBalance = ({ permissions }) => {
             Remarks: item?.Remarks || '',
             originalRemark: item?.Remarks || '',
             isEditable:
-              IS_CRACKER_HMD || IS_AROMATICS_HMD ? true : item?.isEditable,
+              IS_CRACKER_HMD || IS_AROMATICS_HMD
+                ? true
+                : item?.IsEditable || item?.isEditable,
             ParticularG:
               item?.Type && String(item.Type).trim() ? item.Type : 'MatBal',
           }),

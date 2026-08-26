@@ -19,6 +19,7 @@ import NaphthaHMDComponent from './NaphthaHMDComponent'
 import ModeSelection from './ModeSelection'
 import SpyroInputMinMax from './SpyroInputMinMax'
 import NaphthaSummaryHmd from './NaphthaSummary'
+import MxoRegeneration from './MxoRegeneration'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -1184,6 +1185,14 @@ const CrackerConfig = () => {
                 return (
                   <Box key={currentTabDisplay}>
                     <NaphthaSummaryHmd/>
+                  </Box>
+                )
+              }
+            case 'MXO Data':
+              if (IS_CRACKER_HMD) {
+                return (
+                  <Box key={currentTabDisplay}>
+                    <MxoRegeneration />  
                   </Box>
                 )
               }
