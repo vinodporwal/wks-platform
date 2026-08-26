@@ -13,6 +13,7 @@ public interface NormalOperationNormsService {
 	
 	public AOPMessageVM getNormalOperationNormsData( String year, String plantId,String gradeId,String mode);
 	public AOPMessageVM getSteadyStateNorms( String year, String plantId,String gradeId,String mode);
+	public AOPMessageVM updateSteadyStateNorms( String plantId,  String year, List<Map<String, Object>> payloadList);
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData( List<MCUNormsValueDTO> mCUNormsValueDTOList, UUID plantFKId, String year,String gradeId, boolean isFromExcel);
 	public AOPMessageVM calculateExpressionConsumptionNorms(String year,String plantId);
 	public AOPMessageVM loadGradeWiseConsumptionNorms(String year,String plantId);

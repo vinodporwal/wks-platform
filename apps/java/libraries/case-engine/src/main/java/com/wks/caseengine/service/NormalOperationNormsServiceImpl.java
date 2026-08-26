@@ -22,6 +22,7 @@ import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.dto.MCUNormsValueDTO;
 import com.wks.caseengine.dto.ModeWiseNormsDTO;
 import com.wks.caseengine.dto.NormConfigurationDTO;
+import com.wks.caseengine.dto.SteadyStateNormDTO;
 import com.wks.caseengine.dto.ValidationErrorDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.MCUNormsValue;
@@ -870,6 +871,198 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            return 0.0;
 	        }
 	    }
+	   
+	   public AOPMessageVM updateSteadyStateNorms(String plantId, String year, List<Map<String, Object>> payloadList) {
+		    // Step 1: Convert payload to DTO list
+		    List<SteadyStateNormDTO> dtos = processPayload(payloadList);
+
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+
+		    List<MCUNormsValueGrade> mcuNormsValueGrades = new ArrayList<>();
+		    List<SteadyStateNormDTO> failedList = new ArrayList<>();
+
+		    for (SteadyStateNormDTO steadyStateNormDTO : dtos) {
+		        // Skip already marked failed items
+		        if (steadyStateNormDTO.getSaveStatus() != null && steadyStateNormDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+		            failedList.add(steadyStateNormDTO);
+		            continue;
+		        }
+
+		        UUID materialId = UUID.fromString(steadyStateNormDTO.getMaterialFkId());
+		        UUID gradeId = UUID.fromString(steadyStateNormDTO.getGradeId());
+
+		        Optional<MCUNormsValueGrade> opt = mcuNormsValueGradeRepository.findByMaterialGradeAndFinancialYear(
+		                materialId, gradeId, year, UUID.fromString(plantId)
+		        );
+
+		        String newRemark = steadyStateNormDTO.getRemarks() != null ? steadyStateNormDTO.getRemarks().trim() : "";
+
+		        if (opt.isPresent()) {
+		            MCUNormsValueGrade existing = opt.get();
+		            String existingRemark = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
+
+		            // 1. Check if remark is empty/null
+		            if (newRemark.isEmpty()) {
+		                steadyStateNormDTO.setSaveStatus("Failed");
+		                steadyStateNormDTO.setErrDescription("Remark is mandatory to update an existing record.");
+		                failedList.add(steadyStateNormDTO);
+		                continue;
+		            }
+
+		            // 2. Check if monthly values changed
+		            boolean isValueChanged = isAnyMonthValueChanged(existing, steadyStateNormDTO);
+		            boolean isRemarkChanged = !existingRemark.equalsIgnoreCase(newRemark);
+
+		            // 3. If value changed, remark MUST be updated
+		            if (isValueChanged && !isRemarkChanged) {
+		                steadyStateNormDTO.setSaveStatus("Failed");
+		                steadyStateNormDTO.setErrDescription("Value has changed; please provide an updated remark.");
+		                failedList.add(steadyStateNormDTO);
+		                continue;
+		            }
+
+		            // 4. Update fields if value or remark changed
+		            if (isValueChanged || isRemarkChanged) {
+		                setMonthlyValues(existing, steadyStateNormDTO);
+		                existing.setRemarks(newRemark);
+		                existing.setModifiedOn(new Date());
+		                existing.setUpdatedBy(Utility.getUserName());
+		                mcuNormsValueGrades.add(existing);
+		            }
+		        } else {
+		            // New Record Insertion
+		            MCUNormsValueGrade newEntity = new MCUNormsValueGrade();
+		            setMonthlyValues(newEntity, steadyStateNormDTO);
+
+		            newEntity.setRemarks(newRemark);
+		            newEntity.setCreatedOn(new Date());
+		            newEntity.setModifiedOn(new Date());
+		            newEntity.setFinancialYear(year);
+		            newEntity.setGradeFkId(gradeId);
+		            newEntity.setMaterialFkId(materialId);
+		            newEntity.setMcuVersion("V1");
+		            newEntity.setNormParameterTypeFkId(UUID.fromString(steadyStateNormDTO.getNormParameterTypeFkId()));
+		            newEntity.setPlantFkId(UUID.fromString(plantId));
+		            newEntity.setSiteFkId(site.getId());
+		            newEntity.setUpdatedBy(Utility.getUserName());
+		            newEntity.setVerticalFkId(vertical.getId());
+
+		            mcuNormsValueGrades.add(newEntity);
+		        }
+		    }
+
+		    if (!mcuNormsValueGrades.isEmpty()) {
+		        mcuNormsValueGradeRepository.saveAll(mcuNormsValueGrades);
+
+		        List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
+		        for (ScreenMapping screenMapping : screenMappingList) {
+		            AopCalculation aopCalculation = new AopCalculation();
+		            aopCalculation.setAopYear(year);
+		            aopCalculation.setIsChanged(true);
+		            aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+		            aopCalculation.setPlantId(plant.getId());
+		            aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+		            aopCalculationRepository.save(aopCalculation);
+		        }
+		    }
+
+		    AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    aopMessageVM.setCode(failedList.isEmpty() ? 200 : 207); // 207 Multi-Status if partial failure
+		    
+		    Map<String, Object> responseData = new HashMap<>();
+		    responseData.put("updatedList", mcuNormsValueGrades);
+		    responseData.put("failedList", failedList);
+
+		    aopMessageVM.setData(responseData);
+		    aopMessageVM.setMessage(failedList.isEmpty() ? "Data updated successfully" : "Processed with some validation errors");
+		    return aopMessageVM;
+		}
+	   
+	// Helper 1: Sets monthly values onto the entity
+	   private void setMonthlyValues(MCUNormsValueGrade entity, SteadyStateNormDTO dto) {
+	       entity.setApril(dto.getApril());
+	       entity.setMay(dto.getMay());
+	       entity.setJune(dto.getJune());
+	       entity.setJuly(dto.getJuly());
+	       entity.setAugust(dto.getAugust());
+	       entity.setSeptember(dto.getSeptember());
+	       entity.setOctober(dto.getOctober());
+	       entity.setNovember(dto.getNovember());
+	       entity.setDecember(dto.getDecember());
+	       entity.setJanuary(dto.getJanuary());
+	       entity.setFebruary(dto.getFebruary());
+	       entity.setMarch(dto.getMarch());
+	   }
+
+	   // Helper 2: Null-safe month-by-month value comparison
+	   private boolean isAnyMonthValueChanged(MCUNormsValueGrade existing, SteadyStateNormDTO dto) {
+	       return isDoubleChanged(existing.getApril(), dto.getApril()) ||
+	              isDoubleChanged(existing.getMay(), dto.getMay()) ||
+	              isDoubleChanged(existing.getJune(), dto.getJune()) ||
+	              isDoubleChanged(existing.getJuly(), dto.getJuly()) ||
+	              isDoubleChanged(existing.getAugust(), dto.getAugust()) ||
+	              isDoubleChanged(existing.getSeptember(), dto.getSeptember()) ||
+	              isDoubleChanged(existing.getOctober(), dto.getOctober()) ||
+	              isDoubleChanged(existing.getNovember(), dto.getNovember()) ||
+	              isDoubleChanged(existing.getDecember(), dto.getDecember()) ||
+	              isDoubleChanged(existing.getJanuary(), dto.getJanuary()) ||
+	              isDoubleChanged(existing.getFebruary(), dto.getFebruary()) ||
+	              isDoubleChanged(existing.getMarch(), dto.getMarch());
+	   }
+
+	   // Helper 3: Safely compares two Double values handling nulls
+	   private boolean isDoubleChanged(Double val1, Double val2) {
+	       if (val1 == null && val2 == null) return false;
+	       if (val1 == null || val2 == null) return true;
+	       return Double.compare(val1, val2) != 0;
+	   }
+	   
+	   public List<SteadyStateNormDTO> processPayload(List<Map<String, Object>> payloadList) {
+		    List<SteadyStateNormDTO> dtoList = new ArrayList<>();
+
+		    // Set of standard fixed keys in the payload to ignore during dynamic UUID extraction
+		    Set<String> knownFixedKeys = Set.of(
+		        "Site_FK_Id", "Plant_FK_ID", "Vertical_FK_Id", "Material_FK_Id",
+		        "FinancialYear", "Remarks", "CreatedOn", "ModifiedOn", "MCUVersion",
+		        "UpdatedBy", "NormParameterTypeId", "NormParameterTypeName",
+		        "NormParameterTypeDisplayName", "UOM", "IsEditable", "ProductName",
+		        "SAPMaterialCode", "NormParameterDisplayOrder", "WtAvg"
+		    );
+
+		    for (Map<String, Object> map : payloadList) {
+		        String materialFkId = (String) map.get("Material_FK_Id");
+		        String normParameterTypeId = (String) map.get("NormParameterTypeId");
+		        String remarks = (String) map.get("Remarks");
+
+		        for (Map.Entry<String, Object> entry : map.entrySet()) {
+		            String key = entry.getKey();
+		            Object value = entry.getValue();
+
+		            // If key is not in fixed payload keys and value is numeric, treat it as a Grade ID
+		            if (!knownFixedKeys.contains(key) && value != null) {
+		                Double gradeValue = null;
+		                if (value instanceof Number) {
+		                    gradeValue = ((Number) value).doubleValue();
+		                }
+
+		                SteadyStateNormDTO dto = SteadyStateNormDTO.builder()
+		                        .materialFkId(materialFkId)
+		                        .normParameterTypeFkId(normParameterTypeId)
+		                        .remarks(remarks)
+		                        .gradeId(key) // Grade UUID
+		                        .april(gradeValue) // Map value to target month field
+		                        .build();
+
+		                dtoList.add(dto);
+		            }
+		        }
+		    }
+
+		    return dtoList;
+		}
+	   
 	@Override
 	public AOPMessageVM saveNormalOperationNormsDataPolyester(List<MCUNormsValueDTO> mCUNormsValueDTOList,
 	        UUID plantFKId, String year, String gradeId, boolean isFromExcel) {

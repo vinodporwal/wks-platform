@@ -45,6 +45,11 @@ public class NormalOperationNormsController {
 	    return normalOperationNormsService.getSteadyStateNorms(year, plantId, gradeId,mode);
 	}
 	
+	@PostMapping(value="/steady-state-norms-dynamic")
+	public AOPMessageVM updateSteadyStateNorms(@RequestParam String plantId, @RequestParam String year, @RequestBody List<Map<String, Object>> payloadList){
+		return normalOperationNormsService.updateSteadyStateNorms(plantId,year,payloadList);		
+	}
+	
 	@GetMapping(value="/normal-operation/norms/grades")
 	public AOPMessageVM getNormalOperationNormsGrades(@RequestParam String year,@RequestParam String plantId){
 		return	normalOperationNormsService.getNormalOperationNormsGrades(year, plantId);
