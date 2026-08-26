@@ -55,7 +55,7 @@ const MxoRegeneration = ({ permissions }) => {
         field: 'monthLabel',
         title: 'Month',
         width: 100,
-        minWidth: 90,
+        minWidth: 95,
         editable: false,
       },
       {
@@ -68,8 +68,8 @@ const MxoRegeneration = ({ permissions }) => {
       {
         field: 'mXOGeneration_tph',
         title: 'MXO Generation in tph',
-        width: 220,
-        minWidth: 220,
+        width: 215,
+        minWidth: 210,
         type: 'number',
         align: 'right',
         format: '{0:0.00}',
@@ -83,13 +83,13 @@ const MxoRegeneration = ({ permissions }) => {
         type: 'number',
         align: 'right',
         format: '{0:0.00}',
-        editable: !READ_ONLY,
+        editable: true,
       },
       {
         field: 'mXOgeneration_TPM',
         title: 'MXO generation (TPM)',
-        width: 220,
-        minWidth: 220,
+        width: 215,
+        minWidth: 210,
         type: 'number',
         align: 'right',
         format: '{0:0.00}',
@@ -108,19 +108,19 @@ const MxoRegeneration = ({ permissions }) => {
       {
         field: 'maxMXOReprocessingRate_tph',
         title: 'Max MXO Reprocessing rate in tph',
-        width: 320,
-        minWidth: 320,
+        width: 310,
+        minWidth: 305,
         type: 'number',
         align: 'right',
         format: '{0:0.00}',
-        editable: !READ_ONLY,
+        editable: true,
       },
       {
         field: 'remarks',
         title: 'Remark',
-        width: 140,
-        minWidth: 130,
-        editable: !READ_ONLY,
+        width: 175,
+        minWidth: 170,
+        editable: true,
       },
     ],
     [READ_ONLY],
@@ -247,7 +247,7 @@ const MxoRegeneration = ({ permissions }) => {
         maxMXOReprocessingRate_tph: Number(
           row.maxMXOReprocessingRate_tph ?? row.MaxMXOReprocessingRate_tph ?? 0,
         ),
-        aopYear: row.aopYear || AOP_YEAR,
+        aopYear: AOP_YEAR,
         mXODowntimeInHrsId:
           row.mXODowntimeInHrsId ||
           row.mxoDowntimeInHrsId ||
