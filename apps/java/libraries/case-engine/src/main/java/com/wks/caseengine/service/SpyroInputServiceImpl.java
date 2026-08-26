@@ -2788,7 +2788,7 @@ session.doWork(connection -> {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_RunLengthDataSet";
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetNaphthaSummary";
 
 			List<Object[]> results = getNapthaSummaryDataSetData(plantId, year, reportType, storedProcedure);
 
