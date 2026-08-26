@@ -3032,6 +3032,19 @@ session.doWork(connection -> {
 		
 		for (MXOReprocessingDTO dto : mXOReprocessingDTOList) {
 
+			if(dto.getMXODowntimeInHrsId() == null || dto.getMaxMXOReprocessingRateInTphId() == null) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MXODowntimeInHrsId and MaxMXOReprocessingRateInTphId are required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			if(dto.getMXODowntimeInHrsId().isBlank() || dto.getMaxMXOReprocessingRateInTphId().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MXODowntimeInHrsId and MaxMXOReprocessingRateInTphId are required");
+				failedRecords.add(dto);
+				continue;
+			}
 
 			if(dto.getMonth() == null || dto.getMonth().isBlank()) {
 				dto.setSaveStatus("Failed");
@@ -3070,7 +3083,7 @@ session.doWork(connection -> {
 
 	NormAttributeTransactions normAttributeTransactions;
 
-	if (existingRecord.isPresent() && normParameterFKId != null) {
+	if (existingRecord.isPresent()) {
 		normAttributeTransactions = existingRecord.get();
 		normAttributeTransactions.setModifiedOn(new Date());
 	} else {
