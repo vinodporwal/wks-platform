@@ -875,7 +875,10 @@ const ShutdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
-      showCalulcationPromt: IS_PE_C2 || lowerVertName === 'pta' ? true : false,
+      showCalulcationPromt:
+        IS_PE_C2 || lowerVertName === 'pta' || lowerVertName === 'cracker'
+          ? true
+          : false,
 
       showNote:
         lowerVertName === 'meg' ||

@@ -187,6 +187,7 @@ const CrackerConfig = () => {
           : true,
       hideRemarkForNonEditableRows: true,
       makePagable: currentTabDisplay !== 'Composition',
+      showCalulcationPromt: lowerVertName === 'cracker',
     },
     isOldYear,
   )
