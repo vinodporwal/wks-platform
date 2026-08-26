@@ -3032,18 +3032,6 @@ session.doWork(connection -> {
 		
 		for (MXOReprocessingDTO dto : mXOReprocessingDTOList) {
 
-			if(dto.getMXODowntimeInHrsId() == null || dto.getMXODowntimeInHrsId().isBlank()) {
-				dto.setSaveStatus("Failed");
-				dto.setErrorMessage("MXODowntimeInHrsId is required");
-				failedRecords.add(dto);
-				continue;
-			}
-			if(dto.getMaxMXOReprocessingRateInTphId() == null || dto.getMaxMXOReprocessingRateInTphId().isBlank()) {
-				dto.setSaveStatus("Failed");
-				dto.setErrorMessage("MaxMXOReprocessingRateInTphId is required");
-				failedRecords.add(dto);
-				continue;
-			}
 
 			if(dto.getMonth() == null || dto.getMonth().isBlank()) {
 				dto.setSaveStatus("Failed");
@@ -3059,8 +3047,11 @@ session.doWork(connection -> {
         String mXODowntimeInHrsId = dto.getMXODowntimeInHrsId();
 		String maxMXOReprocessingRateInTphId = dto.getMaxMXOReprocessingRateInTphId();
 
-		saveDataForMXOReprocessing(UUID.fromString(mXODowntimeInHrsId), monthInInteger, dto.getMXODowntime_hrs(), dto.getRemarks(), plantFKId, year);
-		saveDataForMXOReprocessing(UUID.fromString(maxMXOReprocessingRateInTphId), monthInInteger, dto.getMaxMXOReprocessingRate_tph(), dto.getRemarks(), plantFKId, year);
+	UUID	mXODowntimeInHrsIdUUID =  mXODowntimeInHrsId != null ? UUID.fromString(mXODowntimeInHrsId) : null;
+	UUID	maxMXOReprocessingRateInTphIdUUID = maxMXOReprocessingRateInTphId != null ? UUID.fromString(maxMXOReprocessingRateInTphId) : null;
+
+		saveDataForMXOReprocessing(mXODowntimeInHrsIdUUID, monthInInteger, dto.getMXODowntime_hrs(), dto.getRemarks(), plantFKId, year);
+		saveDataForMXOReprocessing(maxMXOReprocessingRateInTphIdUUID, monthInInteger, dto.getMaxMXOReprocessingRate_tph(), dto.getRemarks(), plantFKId, year);
 
 	
 
@@ -3079,7 +3070,7 @@ session.doWork(connection -> {
 
 	NormAttributeTransactions normAttributeTransactions;
 
-	if (existingRecord.isPresent()) {
+	if (existingRecord.isPresent() && normParameterFKId != null) {
 		normAttributeTransactions = existingRecord.get();
 		normAttributeTransactions.setModifiedOn(new Date());
 	} else {
