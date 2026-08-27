@@ -261,7 +261,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        for (Object[] row : results) {
 	            Map<String, Object> rowMap = new LinkedHashMap<>();
 	            for (int i = 0; i < columnNames.size(); i++) {
-	                rowMap.put(columnNames.get(i), row[i]);
+	                String colName = columnNames.get(i);
+	                Object value = row[i];
+
+	                // Convert null to empty string for "Remarks" or UUID-based column names
+	                if (value == null && ("Remarks".equalsIgnoreCase(colName) || isValidUUID(colName))) {
+	                    value = "";
+	                }
+
+	                rowMap.put(colName, value);
 	            }
 	            resultList.add(rowMap);
 	        }
@@ -272,11 +280,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        Map<String, Object> data = new HashMap<>();
 	        data.put("data", resultList);
 	        data.put("columns", columnMetadata);
-	        Map<String, Object> map = new HashMap<>();
 
-			List<AopCalculation> aopCalculation = aopCalculationRepository
-					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "normal-op-norms");
-			data.put("aopCalculation", aopCalculation);
+	        List<AopCalculation> aopCalculation = aopCalculationRepository
+	                .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "normal-op-norms");
+	        data.put("aopCalculation", aopCalculation);
+
 	        aopMessageVM.setCode(200);
 	        aopMessageVM.setMessage("SP Executed successfully");
 	        aopMessageVM.setData(data);
@@ -289,7 +297,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        throw new RuntimeException("Failed to fetch data", ex);
 	    }
 	}
-
+	
 	public List<Object[]> getSteadyStateNormsData(String plantId, String FinYear) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -932,6 +940,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		                mcuNormsValueGrades.add(existing);
 		            }
 		        } else {
+		        	if (newRemark.isEmpty()) {
+		                steadyStateNormDTO.setSaveStatus("Failed");
+		                steadyStateNormDTO.setErrDescription("Remark is mandatory for creating a new record.");
+		                failedList.add(steadyStateNormDTO);
+		                continue;
+		            }
 		            // New Record Insertion
 		            MCUNormsValueGrade newEntity = new MCUNormsValueGrade();
 		            setMonthlyValues(newEntity, steadyStateNormDTO);
@@ -948,7 +962,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		            newEntity.setSiteFkId(site.getId());
 		            newEntity.setUpdatedBy(Utility.getUserName());
 		            newEntity.setVerticalFkId(vertical.getId());
-
+		            
 		            mcuNormsValueGrades.add(newEntity);
 		        }
 		    }
