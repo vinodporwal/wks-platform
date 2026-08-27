@@ -2286,14 +2286,10 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					if (err == null) err = "Invalid SD - To value: " + toStr;
 				}
 
-				// Col 3 – Duration (Hrs): "05:30", "5.3", "0:45", "0.45", "24", "24:00"
-				if (!durationStr.isEmpty()) {
-					try {
-						dto.setDurationInMins(parseSlowdownDurationToMins(durationStr));
-					} catch (Exception e) {
-						if (err == null)
-							err = "Invalid Duration value: " + durationStr + " (expected HH:mm or H.MM, e.g. 05:30 or 5.3)";
-					}
+				// DurationInMins is derived from MaintStartDateTime and MaintEndDateTime
+				if (startDate != null && endDate != null) {
+					long diffMillis = endDate.getTime() - startDate.getTime();
+					dto.setDurationInMins((int) (diffMillis / (1000 * 60)));
 				}
 
 				// Col 4 – Rate
