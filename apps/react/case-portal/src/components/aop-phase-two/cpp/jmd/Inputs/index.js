@@ -14,6 +14,7 @@ import ImportPower from './ImportPowerMain/index'
 import SRMapping from '../../common/SRMapping/index'
 import InputNorms from './InputNorms/index'
 import SpinningMargin from '../../common/SpinningMargin/index'
+import Prices from '../../common/Prices/index'
 import useConfigurationTabs from 'components/aop-phase-two/common/hooks/useConfigurationTabs'
 
 const InputsJMD = () => {
@@ -52,6 +53,8 @@ const InputsJMD = () => {
         return <AssetCapacity />
       case 'Spinning Margin':
         return <SpinningMargin />
+      case 'Prices':
+        return <Prices />
       case 'Heat Rate':
         return <HeatRate />
       case 'SR Mapping':

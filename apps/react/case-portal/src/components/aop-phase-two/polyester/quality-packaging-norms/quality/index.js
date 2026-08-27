@@ -9,9 +9,9 @@ const Quality = () => {
       <Box>
         <QualityParameters />
       </Box>
-      <Box sx={{ mt: 3 }}>
+      {/* <Box sx={{ mt: 3 }}>
         <PriceDifferential />
-      </Box>
+      </Box> */}
     </Box>
   )
 }

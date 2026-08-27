@@ -3,7 +3,7 @@ import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import { validateRowDataWithoutRemarks, validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
@@ -37,6 +37,17 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       { site: 'sez', plant: 'vgoht-3' },
       { site: 'dta', plant: 'dht1' },
       { site: 'dta', plant: 'dht2' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.site === siteObject?.name?.toLowerCase() &&
+        config.plant === plantObject?.name?.toLowerCase()
+    )
+  }, [siteObject?.name, plantObject?.name])
+
+  const isNotRequiredRemarkValidation = useMemo(() => {
+    const validConfigs = [
+      { site: 'dta', plant: 'hnuu' },
     ]
     return validConfigs.some(
       (config) =>
@@ -236,12 +247,28 @@ const Constants = ({ startDate, endDate, refreshData }) => {
     }
 
     const fieldsToCheck = isEorSor ? ['apr', 'may'] : ['value']
-    const validationError = validateRowDataWithRemarks(
-      data,
-      originalRows,
-      fieldsToCheck,
-      'productName',
-    )
+    let validationError
+    if (
+      isNotRequiredRemarkValidation &&
+      data.some((row) => {
+        const typeStr = row.type || ''
+        return typeStr.toLowerCase() === 'filter criteria'
+      })
+    ) {
+      validationError = validateRowDataWithoutRemarks(
+        data,
+        originalRows,
+        fieldsToCheck,
+        'productName',
+      )
+    } else {
+      validationError = validateRowDataWithRemarks(
+        data,
+        originalRows,
+        fieldsToCheck,
+        'productName',
+      )
+    }
 
     if (validationError) {
       setSnackbarOpen(true)
@@ -258,7 +285,6 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
-      console.log('Saving constants data:', payload)
 
       const response = isEorSor
         ? await ProductionNormsApiService.saveConstantsDataEORSOR(
