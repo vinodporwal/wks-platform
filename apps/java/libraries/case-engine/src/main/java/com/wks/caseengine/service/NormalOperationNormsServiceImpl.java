@@ -615,6 +615,173 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	    return null;
 	}
 	
+	@Transactional
+	@Override
+	public AOPMessageVM importSteadyStateNorms(String year, String plantId, MultipartFile file) {
+	    try {
+	        // 1. Read Excel file and convert to dynamic data list with row-level validations
+	        List<Map<String, Object>> payloadList = readSteadyStateNorms(file.getInputStream(), plantId, year);
+
+	        // 2. Call existing save/update business logic
+	        AOPMessageVM aopMessageVM = updateSteadyStateNorms(plantId, year, payloadList);
+
+	        // 3. Filter failed records (either from Excel validation or DB processing validation)
+	        List<Map<String, Object>> failedList = payloadList.stream()
+	                .filter(m -> "Failed".equalsIgnoreCase((String) m.get("saveStatus")))
+	                .collect(Collectors.toList());
+
+	        // 4. Handle response & error Excel generation
+	        if (!failedList.isEmpty()) {
+	            byte[] fileByteArray = exportSteadyStateNormsDynamic(year, plantId, true, failedList);
+	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+
+	            aopMessageVM.setData(base64File);
+	            aopMessageVM.setCode(400);
+	            aopMessageVM.setMessage("Partial data saved. Please check the downloaded file for errors.");
+	        } else {
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("All data has been saved successfully.");
+	        }
+
+	        return aopMessageVM;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new RuntimeException("Import process failed: " + e.getMessage());
+	    }
+	}
+
+	public List<Map<String, Object>> readSteadyStateNorms(InputStream inputStream, String plantId, String year) {
+	    List<Map<String, Object>> payloadList = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        int totalRows = sheet.getLastRowNum();
+
+	        Row headerRow = sheet.getRow(0);
+	        if (headerRow == null) return payloadList;
+
+	        // Fetch DB metadata titles to map headers back to actual Keys/UUIDs
+	        List<String> rawColumnNames = getSteadyStateNormsColumns(plantId, year);
+	        List<Map<String, Object>> metadataList = getSteadyStateNormsColumnMetadata(plantId, year, rawColumnNames);
+
+	        // Build Title -> Key Map (Reverse lookup for dynamic UUID headers and system fields)
+	        Map<String, String> titleToFieldMap = new HashMap<>();
+	        for (Map<String, Object> meta : metadataList) {
+	            String field = (String) meta.get("field");
+	            String title = (String) meta.get("title");
+	            if (title != null && !title.isEmpty()) {
+	                titleToFieldMap.put(title.trim().toLowerCase(), field);
+	            }
+	            titleToFieldMap.put(field.trim().toLowerCase(), field);
+	        }
+
+	        // Parse Header Row
+	        List<String> mappedKeys = new ArrayList<>();
+	        for (int j = 0; j < headerRow.getLastCellNum(); j++) {
+	            String headerTitle = getStringCellValue(headerRow.getCell(j));
+	            if (headerTitle == null || headerTitle.trim().isEmpty()) {
+	                mappedKeys.add("Column_" + j);
+	                continue;
+	            }
+
+	            String trimmedHeader = headerTitle.trim();
+	            if (trimmedHeader.equalsIgnoreCase("Particulars")) {
+	                mappedKeys.add("MaterialFKId");
+	            } else {
+	                String mappedField = titleToFieldMap.getOrDefault(trimmedHeader.toLowerCase(), trimmedHeader);
+	                mappedKeys.add(mappedField);
+	            }
+	        }
+
+	        // Iterate data rows (skip header index 0)
+	        for (int i = 1; i <= totalRows; i++) {
+	            Row row = sheet.getRow(i);
+	            if (row == null) continue;
+
+	            // Skip total/summary row at the bottom if present
+	            Cell firstCell = row.getCell(0);
+	            String firstCellValue = getStringCellValue(firstCell);
+	            if (firstCellValue != null && firstCellValue.equalsIgnoreCase("Total")) {
+	                continue;
+	            }
+
+	            Map<String, Object> rowData = new LinkedHashMap<>();
+	            boolean rowError = false;
+	            StringBuilder rowErrorMsg = new StringBuilder("Error at row " + (i + 1) + ": ");
+
+	            try {
+	                for (int j = 0; j < mappedKeys.size(); j++) {
+	                    String key = mappedKeys.get(j);
+	                    Cell cell = row.getCell(j);
+	                    Object value;
+
+	                    if ("MaterialFKId".equalsIgnoreCase(key) || "SAPMaterialCode".equalsIgnoreCase(key) 
+	                            || "UOM".equalsIgnoreCase(key) || "Remarks".equalsIgnoreCase(key) 
+	                            || "saveStatus".equalsIgnoreCase(key) || "errDescription".equalsIgnoreCase(key)) {
+	                        value = getStringCellValue(cell);
+	                    } else if ("WtAvg".equalsIgnoreCase(key)) {
+	                        value = getNumericCellValue(cell);
+	                    } else {
+	                        // Dynamic UUID columns (monthly values / numeric values)
+	                        value = getNumericCellValue(cell);
+	                    }
+
+	                    // Numeric validation sample (customize numeric bounds if needed)
+	                    if (value instanceof Number && !isValidUUID(key)) {
+	                        double numVal = ((Number) value).doubleValue();
+	                        if (numVal < 0) {
+	                            rowError = true;
+	                            rowErrorMsg.append("[").append(key).append("] value cannot be negative. ");
+	                        }
+	                    }
+
+	                    rowData.put(key, value);
+	                }
+
+	                if (rowError) {
+	                    rowData.put("saveStatus", "Failed");
+	                    rowData.put("errDescription", rowErrorMsg.toString());
+	                } else {
+	                    rowData.put("saveStatus", "Success");
+	                }
+
+	            } catch (Exception e) {
+	                rowData.put("saveStatus", "Failed");
+	                rowData.put("errDescription", "Error at row " + (i + 1) + ": " + e.getMessage());
+	            }
+
+	            payloadList.add(rowData);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return payloadList;
+	}
+
+	// Utility Cell Value Helper Methods (Ensure these exist or reuse your project's helper utility)
+	private String getStringCellValue(Cell cell) {
+	    if (cell == null) return null;
+	    cell.setCellType(CellType.STRING);
+	    return cell.getStringCellValue().trim();
+	}
+
+	private Double getNumericCellValue(Cell cell) {
+	    if (cell == null) return null;
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } else if (cell.getCellType() == CellType.STRING) {
+	        try {
+	            return Double.parseDouble(cell.getStringCellValue().trim());
+	        } catch (NumberFormatException e) {
+	            return null;
+	        }
+	    }
+	    return null;
+	}
+	
 	/**
 	 * Helper utility to validate whether a column header is a standard UUID string.
 	 */
