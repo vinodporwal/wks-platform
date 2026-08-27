@@ -338,7 +338,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					continue;
 				}
 
-			//	validateSlowdownDates(dto, year);
+				validateSlowdownDates(dto, year, plantFKId);
 
 				if ("Failed".equals(dto.getSaveStatus())) {
 					failedRecords.add(dto);
@@ -1899,63 +1899,64 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		}
 	}
 
-	/**
-	 * Validates that MaintStartDateTime is not after MaintEndDateTime, and that
-	 * both fall within the April–March fiscal range implied by the AOP year
-	 * parameter (e.g. "2026-27" → 2026-04-01 to 2027-03-31).
-	 */
-	private void validateSlowdownDates(SlowdownHistoryConfigDTO dto, String aopYear) {
+	
+	private void validateSlowdownDates(SlowdownHistoryConfigDTO dto, String aopYear, String plantFkId) {
 		Date start = dto.getMaintStartDateTime();
 		Date end   = dto.getMaintEndDateTime();
 
-		if (start != null && end != null && start.after(end)) {
+		AOPMessageVM configResult = configurationService.getConfigurationExecution(aopYear, plantFkId);
+		if (configResult == null || configResult.getData() == null) {
 			dto.setSaveStatus("Failed");
-			dto.setErrDescription("MaintStartDateTime cannot be greater than MaintEndDateTime");
+			dto.setErrDescription("Configuration execution data not found for the given year and plant");
 			return;
 		}
 
-		LocalDate[] range = buildSlowdownYearDateRange(aopYear);
-		if (range == null) {
+		@SuppressWarnings("unchecked")
+		List<Map<String, Object>> configData = (List<Map<String, Object>>) configResult.getData();
+
+		LocalDate configStartDate = null;
+		LocalDate configEndDate   = null;
+		DateTimeFormatter configFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+		for (Map<String, Object> entry : configData) {
+			Object nameObj  = entry.get("Name");
+			Object valueObj = entry.get("AttributeValue");
+			if (nameObj == null || valueObj == null) continue;
+			String name  = nameObj.toString();
+			String value = valueObj.toString().trim();
+			if (value.isEmpty()) continue;
+			try {
+				if ("StartDate".equalsIgnoreCase(name)) {
+					configStartDate = LocalDate.parse(value, configFmt);
+				} else if ("EndDate".equalsIgnoreCase(name)) {
+					configEndDate = LocalDate.parse(value, configFmt);
+				}
+			} catch (Exception ignored) {}
+		}
+
+		if (configStartDate == null || configEndDate == null) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("StartDate or EndDate not found in configuration execution data");
 			return;
 		}
-		LocalDate rangeStart = range[0];
-		LocalDate rangeEnd   = range[1];
 
 		if (start != null) {
 			LocalDate startLocal = sldToLocalDate(start);
-			if (startLocal.isBefore(rangeStart) || startLocal.isAfter(rangeEnd)) {
+			if (startLocal.isBefore(configStartDate) || startLocal.isAfter(configEndDate)) {
 				dto.setSaveStatus("Failed");
 				dto.setErrDescription("MaintStartDateTime (" + startLocal + ") is outside the allowed range ["
-						+ rangeStart + " to " + rangeEnd + "] for year " + aopYear);
+						+ configStartDate + " to " + configEndDate + "]");
 				return;
 			}
 		}
 
 		if (end != null) {
 			LocalDate endLocal = sldToLocalDate(end);
-			if (endLocal.isBefore(rangeStart) || endLocal.isAfter(rangeEnd)) {
+			if (endLocal.isBefore(configStartDate) || endLocal.isAfter(configEndDate)) {
 				dto.setSaveStatus("Failed");
 				dto.setErrDescription("MaintEndDateTime (" + endLocal + ") is outside the allowed range ["
-						+ rangeStart + " to " + rangeEnd + "] for year " + aopYear);
+						+ configStartDate + " to " + configEndDate + "]");
 			}
-		}
-	}
-
-	/**
-	 * Builds the fiscal year date range from an AOP year string in "YYYY-YY"
-	 * format (e.g. "2026-27"). Returns [April 1 of start year, March 31 of end
-	 * year], or {@code null} if the format cannot be parsed.
-	 */
-	private LocalDate[] buildSlowdownYearDateRange(String aopYear) {
-		try {
-			int startYear = Integer.parseInt(aopYear.split("-")[0].trim());
-			int endYear   = startYear + 1;
-			return new LocalDate[]{
-					LocalDate.of(startYear, 4, 1),
-					LocalDate.of(endYear, 3, 31)
-			};
-		} catch (Exception e) {
-			return null;
 		}
 	}
 
