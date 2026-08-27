@@ -274,11 +274,9 @@ const GradeWiseSteadyStateConsumption = () => {
 
   // Re-fetch data & validate when selectedGradeId changes
   useEffect(() => {
-    if (selectedGradeId) {
       // fetchData(selectedGradeId)
       if (!isFilament) validateGradeNorms(selectedGradeId)
-    }
-  }, [selectedGradeId, isFilament, validateGradeNorms])
+  }, [isFilament, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -497,12 +495,12 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarData({ message: 'Importing data...', severity: 'info' })
     try {
       const response =
-        await SteadyStateConsumptionApiService.importSteadyStateConsumptionByGrade(
+        await SteadyStateConsumptionApiService.importSteadyStateConsumptionDynamic(
           file,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          selectedGradeId,
+          // selectedGradeId,
         )
 
       let isWeightedAverageError = false

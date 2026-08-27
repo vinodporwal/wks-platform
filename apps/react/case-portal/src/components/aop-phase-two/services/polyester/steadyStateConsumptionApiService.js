@@ -14,6 +14,7 @@ export const SteadyStateConsumptionApiService = {
   saveGradeWiseSteadyStateConsumption,
   saveDynamicSteadyStateConsumption,
   exportSteadyStateConsumptionDynamic,
+  importSteadyStateConsumptionDynamic,
   // Generic (kept for backward compat)
   getSteadyStateConsumptionWithColumns,
   saveSteadyStateConsumption,
@@ -546,5 +547,33 @@ async function exportSteadyStateConsumptionDynamic(
   } catch (e) {
     console.error('Error exporting steady state norms (PE all grades):', e)
     return Promise.reject(e)
+  }
+}
+
+/**
+ * Import Steady State Consumption Dynamic
+ * Endpoint: POST /task/steady-state-norms-import-dynamic?plantId=&year=&gradeId=
+ */
+async function importSteadyStateConsumptionDynamic(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  gradeId,
+) {
+  let url = `${Config.CaseEngineUrl}/task/steady-state-norms-import-dynamic?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  if (gradeId) url += `&gradeId=${gradeId}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body: formData })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

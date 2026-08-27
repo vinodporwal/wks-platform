@@ -72,6 +72,15 @@ public class NormalOperationNormsController {
 	    }
 	}
 	
+	@PostMapping(value = "/steady-state-norms-import-dynamic", consumes = "multipart/form-data")
+	public AOPMessageVM importSteadyStateNorms(
+	        @RequestParam("plantId") String plantId,
+	        @RequestParam("year") String year,
+	        @RequestParam("file") MultipartFile file
+	) {
+	    return normalOperationNormsService.importSteadyStateNorms(year, plantId, file);
+	}
+	
 	@PostMapping(value="/steady-state-norms-dynamic")
 	public AOPMessageVM updateSteadyStateNorms(@RequestParam String plantId, @RequestParam String year, @RequestBody List<Map<String, Object>> payloadList){
 		return normalOperationNormsService.updateSteadyStateNorms(plantId,year,payloadList);		
