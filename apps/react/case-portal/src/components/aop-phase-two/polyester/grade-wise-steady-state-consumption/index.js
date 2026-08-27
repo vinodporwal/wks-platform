@@ -208,7 +208,8 @@ const GradeWiseSteadyStateConsumption = () => {
           ...item,
           idFromApi: item.id || item.Material_FK_Id,
           id: `${index}`,
-          originalRemark: item.remarks,
+          originalRemark: item.Remarks,
+          remarks: item.Remarks,
           productName: item.Particulars || item.ProductName,
           normParameterTypeDisplayName:
             item.NormParameterTypeDisplayName || item.TypeDisplayName,
@@ -462,7 +463,7 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel export started!', severity: 'info' })
     try {
-      await SteadyStateConsumptionApiService.exportSteadyStateConsumptionPE(
+      await SteadyStateConsumptionApiService.exportSteadyStateConsumptionDynamic(
         keycloak,
         PLANT_ID,
         AOP_YEAR,

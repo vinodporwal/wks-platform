@@ -13,6 +13,7 @@ export const SteadyStateConsumptionApiService = {
   importSteadyStateConsumptionByGrade,
   saveGradeWiseSteadyStateConsumption,
   saveDynamicSteadyStateConsumption,
+  exportSteadyStateConsumptionDynamic,
   // Generic (kept for backward compat)
   getSteadyStateConsumptionWithColumns,
   saveSteadyStateConsumption,
@@ -513,3 +514,37 @@ async function saveDynamicSteadyStateConsumption(
   }
 }
 
+/**
+ * Export Steady State Consumption
+ * Endpoint: GET /task/steady-state-norms-export-dynamic?year=&plantId=
+ */
+async function exportSteadyStateConsumptionDynamic(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/steady-state-norms-export-dynamic?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok)
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting steady state norms (PE all grades):', e)
+    return Promise.reject(e)
+  }
+}

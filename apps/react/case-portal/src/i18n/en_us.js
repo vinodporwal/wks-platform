@@ -42,6 +42,7 @@ const defs = {
     productDemand: 'Business Demand',
     shutdownPlan: 'Shutdown/TA Activities',
     shutdownNorms: 'Shutdown Consumption (Quantity)',
+    shutdownConsumptionNorms: 'Shutdown Consumption Norms',
     slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
     normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
     normalOpNormsGradeWise:
@@ -295,6 +296,7 @@ const defs = {
         productDemand: 'Business Demand',
         shutdownPlan: 'Shutdown Activities',
         shutdownNorms: 'Shutdown Consumption (Quantity)',
+        shutdownConsumptionNorms: 'Shutdown Consumption Norms',
         normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
         normalOpNormsGradeWise:
           'Grade Wise Steady State Consumption (Norm/Quantity)',
