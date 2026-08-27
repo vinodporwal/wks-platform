@@ -2008,7 +2008,8 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 	/**
 	 * Parses a user-supplied duration string to integer minutes.
 	 * Accepted formats: "05:30", "5.3" (H.MM – single-digit decimal is right-padded,
-	 * so 5.3 = 5h 30m), "0:45", "0.45", "24", "24:00".
+	 * so 5.3 = 5h 30m), "0:45", "0.45", "24", "24:00",
+	 * "HH:mm:ss" (seconds are ignored/discarded, e.g. "05:30:10" → 5h 30m).
 	 */
 	private Integer parseSlowdownDurationToMins(String input) {
 		if (input == null || input.trim().isEmpty()) return null;
@@ -2016,7 +2017,12 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		if (input.contains(":")) {
 			String[] parts = input.split(":", 2);
 			int h = Integer.parseInt(parts[0].trim());
-			int m = parts[1].trim().isEmpty() ? 0 : Integer.parseInt(parts[1].trim());
+			// Strip trailing ":ss" if present (HH:mm:ss format) – seconds are discarded.
+			String minPart = parts[1].trim();
+			if (minPart.contains(":")) {
+				minPart = minPart.split(":", 2)[0].trim();
+			}
+			int m = minPart.isEmpty() ? 0 : Integer.parseInt(minPart);
 			return h * 60 + m;
 		}
 		if (input.contains(".")) {
