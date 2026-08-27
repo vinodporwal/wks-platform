@@ -672,6 +672,7 @@ const ConsumptionNorms = () => {
       saveBtn: false,
       showCalculate: true,
       allAction: true,
+      showCalulcationPromt: lowerVertName === 'cracker',
       dontClearGradeOnCalculate: true,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
