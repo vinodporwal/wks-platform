@@ -213,7 +213,12 @@ const GradeWiseSteadyStateConsumption = () => {
           productName: item.Particulars || item.ProductName,
           normParameterTypeDisplayName:
             item.NormParameterTypeDisplayName || item.TypeDisplayName,
-          isEditable:  true,
+          isEditable:
+            typeof item.IsEditable === 'number'
+              ? item.IsEditable === 0
+                ? false
+                : true
+              : item.IsEditable,
           type: 'number1',
           sapCode: item.SAPMaterialCode,
         }))
@@ -303,15 +308,15 @@ const GradeWiseSteadyStateConsumption = () => {
       'productName',
     )
 
-    // if (validationError) {
-    //   setSnackbarOpen(true)
-    //   setSnackbarData({
-    //     message: validationError,
-    //     severity: 'error',
-    //   })
-    //   setLoading(false)
-    //   return
-    // }
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     try {
