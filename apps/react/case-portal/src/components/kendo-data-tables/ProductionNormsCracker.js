@@ -762,6 +762,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           showNote: true,
           showTitleNameBusiness: true,
           titleName: 'Month wise Production plan',
+          showCalulcationPromt: lowerVertName === 'cracker',
           showCalculateVisibility:
             calculationObject && Object.keys(calculationObject).length > 0,
           saveBtn: false,
@@ -796,6 +797,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           downloadExcelBtnFromUI: true,
           ExcelName: `${EXCEL_NAME_OTHER_PRODUCTION}`,
           showCalculateVisibility: true,
+          showCalulcationPromt: lowerVertName === 'cracker',
         },
         isOldYear,
       ),

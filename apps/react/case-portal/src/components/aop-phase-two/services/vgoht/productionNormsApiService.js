@@ -314,7 +314,7 @@ async function saveConstantsData(
   periodTo,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/taskvgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

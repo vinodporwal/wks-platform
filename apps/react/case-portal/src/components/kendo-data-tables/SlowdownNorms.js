@@ -721,6 +721,7 @@ const SlowdownNorms = () => {
       marginBottom: IS_PE_PP || IS_ELASTOMER_JMD_HIIR ? true : false,
 
       ExcelName: `${EXCEL_EXPORT_TITLE}-Slowdown Consumption`,
+      showCalulcationPromt: lowerVertName === 'cracker',
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
 

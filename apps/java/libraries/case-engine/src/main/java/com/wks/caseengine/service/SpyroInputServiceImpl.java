@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.time.Month;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -38,6 +39,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +49,7 @@ import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.FeedTypeFlowMappingDTO;
+import com.wks.caseengine.dto.MXOReprocessingDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -112,6 +115,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 	@Autowired
 	private ConfigurationService configurationService;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	private static final Pattern UUID_PATTERN = 
 		    Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
@@ -978,7 +984,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 					dto.setJan(getNumericCellValue(row.getCell(11), dto));
 					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					// col 14 = weightAverage ? display/export only, not imported
+					// col 14 = weightAverage � display/export only, not imported
 					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
 					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
 					dto.setTableId(getStringCellValue(row.getCell(17), dto));
@@ -1255,7 +1261,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 					dto.setUom(getStringCellValue(row.getCell(1), dto));
 
 					if (SINGLE_VALUE_TABLE_IDS.contains(tableIdValue)) {
-						// V2 single-value layout: col 2 = "Value" ? april only
+						// V2 single-value layout: col 2 = "Value" → april only
 						dto.setApr(getNumericCellValue(row.getCell(2), dto));
 						// cols 3-13 are intentionally blank; all other months remain null
 						dto.setRemarks(getStringCellValue(row.getCell(14), dto));
@@ -2390,7 +2396,7 @@ session.doWork(connection -> {
 		
 	}
 
-	// --- SpyroInput MinMax Export -------------------------------------------------
+	// ─── SpyroInput MinMax Export ─────────────────────────────────────────────────
 
 	@Override
 	public byte[] createSpyroInputMinMaxExcel(String plantId, String siteId, String verticalId, String aopYear,
@@ -2403,7 +2409,7 @@ session.doWork(connection -> {
 				dtoList = (List<SpyroInputMinMaxDTO>) dataMap.get("resultList");
 			}
 
-			// Derive short-year suffix from aopYear e.g. "2026-27" ? "26", "27"
+			// Derive short-year suffix from aopYear e.g. "2026-27" → "26", "27"
 			String[] yearParts = aopYear.split("-");
 			String startYearShort = yearParts[0].substring(2);
 			String endYearShort = yearParts[1];
@@ -2437,7 +2443,7 @@ session.doWork(connection -> {
 			CellStyle dataStyle      = Utility.createBorderedStyle(workbook);
 			dataStyle.setLocked(false);
 
-			// -- Grey locked styles for Weighted Average columns -------------------
+			// ── Grey locked styles for Weighted Average columns ───────────────────
 			// Header row: bold, centred, grey fill, locked
 			CellStyle greyBoldCenteredStyle = workbook.createCellStyle();
 			Font greyBoldFont = workbook.createFont();
@@ -2477,7 +2483,7 @@ session.doWork(connection -> {
 			greyDataStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 			greyDataStyle.setLocked(true);
 
-			// -- Row 0: top-level merged headers ----------------------------------
+			// ── Row 0: top-level merged headers ──────────────────────────────────
 			Row headerRow0 = sheet.createRow(0);
 
 			Cell particularsCell = headerRow0.createCell(0);
@@ -2503,7 +2509,7 @@ session.doWork(connection -> {
 			waCell.setCellStyle(greyBoldCenteredStyle);
 			sheet.addMergedRegion(new CellRangeAddress(0, 0, 26, 27));
 
-			// -- Row 1: sub-headers (Min/Max) --------------------------------------
+			// ── Row 1: sub-headers (Min/Max) ──────────────────────────────────────
 			Row headerRow1 = sheet.createRow(1);
 
 			for (int m = 0; m < 12; m++) {
@@ -2540,7 +2546,7 @@ session.doWork(connection -> {
 				errHdr.setCellStyle(subHeaderStyle);
 			}
 
-			// -- Data rows ---------------------------------------------------------
+			// ── Data rows ─────────────────────────────────────────────────────────
 			int currentRow = 2;
 			for (SpyroInputMinMaxDTO dto : dtoList) {
 				Row row = sheet.createRow(currentRow++);
@@ -2604,7 +2610,7 @@ session.doWork(connection -> {
 				}
 			}
 
-			// -- Column widths & hidden columns ------------------------------------
+			// ── Column widths & hidden columns ────────────────────────────────────
 			int totalCols = isAfterSave ? 32 : 30;
 			for (int col = 0; col < totalCols; col++) {
 				sheet.autoSizeColumn(col);
@@ -2627,7 +2633,7 @@ session.doWork(connection -> {
 		}
 	}
 
-	// --- SpyroInput MinMax Excel Reader (helper) ----------------------------------
+	// ─── SpyroInput MinMax Excel Reader (helper) ──────────────────────────────────
 
 	private List<SpyroInputMinMaxDTO> readSpyroInputMinMaxExcel(InputStream inputStream) {
 		List<SpyroInputMinMaxDTO> resultList = new ArrayList<>();
@@ -2713,7 +2719,7 @@ session.doWork(connection -> {
 		return val != null ? val.trim() : "";
 	}
 
-	// --- SpyroInput MinMax Import -------------------------------------------------
+	// ─── SpyroInput MinMax Import ─────────────────────────────────────────────────
 
 	@Override
 	@Transactional
@@ -2782,7 +2788,7 @@ session.doWork(connection -> {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_RunLengthDataSet";
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetNaphthaSummary";
 
 			List<Object[]> results = getNapthaSummaryDataSetData(plantId, year, reportType, storedProcedure);
 
@@ -2976,4 +2982,155 @@ session.doWork(connection -> {
 	private String formatTitle(String columnName) {
 		return columnName.replace("_", " ");
 	}
+
+	@Override
+    @Transactional
+    public AOPMessageVM getMXOReprocessingData(String plantId, String aopYear) {
+        try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadMXOReprocessing";
+
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = ?, @aopYear = ?";
+
+            List<MXOReprocessingDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                MXOReprocessingDTO.builder()
+                    .month(rs.getString("Month"))
+					.mode(rs.getString("Mode"))
+                    .mXOGeneration_tph(rs.getDouble("MXOgeneration_TPM"))
+                    .onstream_hrs(rs.getDouble("Onstream_hrs"))
+                    .mXOgeneration_TPM(rs.getDouble("MXOgeneration_TPM"))
+                    .mXODowntime_hrs(rs.getDouble("MXODowntime_hrs"))
+                    .maxMXOReprocessingRate_tph(rs.getDouble("MaxMXOReprocessingRate_tph"))
+					.aopYear("AOPYear")
+					.mXODowntimeInHrsId(rs.getString("MXO Downtime in hrs Id"))
+					.maxMXOReprocessingRateInTphId(rs.getString("Max MXO Reprocessing rate in tph Id"))
+					.remarks(rs.getString("Remarks"))
+                    .build(), plantId, aopYear);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+	@Override
+	public List<MXOReprocessingDTO> updateMXOReprocessingData(List<MXOReprocessingDTO> mXOReprocessingDTOList, String plantFKId, String year) {
+	
+		List<MXOReprocessingDTO> failedRecords = new ArrayList<>();
+		
+		for (MXOReprocessingDTO dto : mXOReprocessingDTOList) {
+
+			if(dto.getMXODowntimeInHrsId() == null || dto.getMaxMXOReprocessingRateInTphId() == null) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MXODowntimeInHrsId and MaxMXOReprocessingRateInTphId are required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			if(dto.getMXODowntimeInHrsId().isBlank() || dto.getMaxMXOReprocessingRateInTphId().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MXODowntimeInHrsId and MaxMXOReprocessingRateInTphId are required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			if(dto.getMonth() == null || dto.getMonth().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("Month is required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			Integer monthInInteger = getMonthNumber(dto.getMonth());
+		
+	       
+			 
+        String mXODowntimeInHrsId = dto.getMXODowntimeInHrsId();
+		String maxMXOReprocessingRateInTphId = dto.getMaxMXOReprocessingRateInTphId();
+
+	UUID	mXODowntimeInHrsIdUUID =  mXODowntimeInHrsId != null ? UUID.fromString(mXODowntimeInHrsId) : null;
+	UUID	maxMXOReprocessingRateInTphIdUUID = maxMXOReprocessingRateInTphId != null ? UUID.fromString(maxMXOReprocessingRateInTphId) : null;
+
+		saveDataForMXOReprocessing(mXODowntimeInHrsIdUUID, monthInInteger, dto.getMXODowntime_hrs(), dto.getRemarks(), plantFKId, year);
+		saveDataForMXOReprocessing(maxMXOReprocessingRateInTphIdUUID, monthInInteger, dto.getMaxMXOReprocessingRate_tph(), dto.getRemarks(), plantFKId, year);
+
+	
+
+		}
+
+		return failedRecords;
+
+	}
+
+   @Transactional
+	public void saveDataForMXOReprocessing(UUID normParameterFKId, Integer i, Double attributeValue, String remark, String plantId,
+		String year) {
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setAttributeValueVersion("V1");
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+
+
+public int getMonthNumber(String monthName) {
+    if (monthName == null || monthName.trim().isEmpty()) {
+        throw new IllegalArgumentException("Month name cannot be null or empty");
+    }
+
+    String month = monthName.trim();
+
+    // Full month name
+    if (month.length() > 3) {
+        return Month.valueOf(month.toUpperCase()).getValue();
+    }
+
+    // 3-letter month abbreviation
+    String shortMonth = month.substring(0, 1).toUpperCase()
+            + month.substring(1).toLowerCase();
+
+    for (Month m : Month.values()) {
+        if (m.name().substring(0, 3).equalsIgnoreCase(shortMonth)) {
+            return m.getValue();
+        }
+    }
+
+    throw new IllegalArgumentException("Invalid month: " + monthName);
+}
+
+
+
 }

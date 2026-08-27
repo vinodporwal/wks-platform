@@ -34,6 +34,10 @@ export const ProductionNormsApiService = {
   calculateLIMSData,
   getAOPCombinedData,
   MonthwiseProductionExportCombinedLineWise,
+  NaphthaSummaryData,
+  exportNapthaSummary,
+  getMxoRegenerationData,
+  saveMxoRegenerationData,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -695,5 +699,97 @@ export async function MonthwiseProductionExportCombinedLineWise(
       e,
     )
     return Promise.reject(e)
+  }
+}
+async function NaphthaSummaryData(keycloak, reportType, PLANT_ID, AOP_YEAR) {
+  let url = `${Config.CaseEngineUrl}/task/naptha-summary?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${reportType}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function exportNapthaSummary(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  reportType,
+  fileName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/naptha-summary-export?plantId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}&reportType=${encodeURIComponent(reportType)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = fileName ? `${fileName}` : 'Naphtha_Summary.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Naphtha Summary Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getMxoRegenerationData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/mxo-reprocessing-data?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error getting MXO Regeneration data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveMxoRegenerationData(PLANT_ID, PAYLOAD, keycloak, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/mxo-reprocessing-data?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(PAYLOAD),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error saving MXO Regeneration data:', e)
+    return await Promise.reject(e)
   }
 }
