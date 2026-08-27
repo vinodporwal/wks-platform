@@ -256,7 +256,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        List<Object[]> results = getSteadyStateNormsData(plantId, year);
 	        List<String> columnNames = getSteadyStateNormsColumns(plantId, year);
 
-	        // 1. Map raw row data
 	        List<Map<String, Object>> resultList = new ArrayList<>();
 	        for (Object[] row : results) {
 	            Map<String, Object> rowMap = new LinkedHashMap<>();
@@ -264,7 +263,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                String colName = columnNames.get(i);
 	                Object value = row[i];
 
-	                // Convert null to empty string for "Remarks" or UUID-based column names
+	                
 	                if (value == null && ("Remarks".equalsIgnoreCase(colName) || isValidUUID(colName))) {
 	                    value = "";
 	                }
@@ -274,7 +273,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            resultList.add(rowMap);
 	        }
 
-	        // 2. Generate Metadata with mapped Display Names
+	        
 	        List<Map<String, Object>> columnMetadata = getSteadyStateNormsColumnMetadata(plantId, year, columnNames);
 
 	        Map<String, Object> data = new HashMap<>();
@@ -359,7 +358,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 
 	public List<Map<String, Object>> getSteadyStateNormsColumnMetadata(String plantId, String FinYear, List<String> columnNames) {
-	    // 1. Identify which column names are valid UUIDs
+	    
 	    List<UUID> normParameterUuids = new ArrayList<>();
 	    for (String colName : columnNames) {
 	        if (isValidUUID(colName)) {
@@ -367,7 +366,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        }
 	    }
 
-	    // 2. Fetch DisplayNames in bulk from NormParameters table
+	    
 	    Map<String, String> displayNameMap = new HashMap<>();
 	    if (!normParameterUuids.isEmpty()) {
 	        List<NormParameters> normParams = normParametersRepository.findAllById(normParameterUuids);
@@ -376,7 +375,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        }
 	    }
 
-	    // 3. Retrieve database column types via Metadata and build final column definitions
+	    
 	    return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 	        List<Map<String, Object>> columnMetadata = new ArrayList<>();
 	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -403,7 +402,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    String columnName = rsMetaData.getColumnLabel(i);
 	                    String columnType = rsMetaData.getColumnTypeName(i);
 
-	                    // Check if this column is a UUID and has a mapped DisplayName
+	                    
 	                    String title;
 	                    if (isValidUUID(columnName) && displayNameMap.containsKey(columnName.toLowerCase())) {
 	                        title = displayNameMap.get(columnName.toLowerCase());
@@ -422,7 +421,200 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        return columnMetadata;
 	    });
 	}
+	
+	@Override
+	public byte[] exportSteadyStateNormsDynamic(String year, String plantId, boolean isAfterSave, List<Map<String, Object>> dynamicData) {
+	    try {
+	       
+	        if (!isAfterSave) {
+	            List<Object[]> results = getSteadyStateNormsData(plantId, year);
+	            List<String> rawColumnNames = getSteadyStateNormsColumns(plantId, year);
 
+	            dynamicData = new ArrayList<>();
+	            for (Object[] row : results) {
+	                Map<String, Object> rowMap = new LinkedHashMap<>();
+	                for (int i = 0; i < rawColumnNames.size(); i++) {
+	                    String colName = rawColumnNames.get(i);
+	                    Object value = row[i];
+	                    if (value == null && ("Remarks".equalsIgnoreCase(colName) || isValidUUID(colName))) {
+	                        value = "";
+	                    }
+	                    rowMap.put(colName, value);
+	                }
+	                dynamicData.add(rowMap);
+	            }
+	        }
+
+	        if (dynamicData == null || dynamicData.isEmpty()) {
+	            return null;
+	        }
+
+	        List<String> rawHeaders = new ArrayList<>(dynamicData.get(0).keySet());
+
+	       
+	        List<Map<String, Object>> metadataList = getSteadyStateNormsColumnMetadata(plantId, year, rawHeaders);
+
+	        Map<String, String> fieldToTitleMap = new HashMap<>();
+	        for (Map<String, Object> meta : metadataList) {
+	            String field = (String) meta.get("field");
+	            String title = (String) meta.get("title");
+	            fieldToTitleMap.put(field, title != null ? title : field);
+	        }
+
+	       
+	        Map<UUID, String> normParamsDisplayNameMap = new HashMap<>();
+	        List<UUID> materialFkIds = new ArrayList<>();
+
+	        for (Map<String, Object> row : dynamicData) {
+	            
+	            Object matFkVal = row.entrySet().stream()
+	                    .filter(e -> e.getKey().replaceAll("[_ ]", "").equalsIgnoreCase("MaterialFKId"))
+	                    .map(Map.Entry::getValue)
+	                    .findFirst()
+	                    .orElse(null);
+
+	            if (matFkVal != null && isValidUUID(matFkVal.toString())) {
+	                materialFkIds.add(UUID.fromString(matFkVal.toString()));
+	            }
+	        }
+
+	        if (!materialFkIds.isEmpty()) {
+	            List<NormParameters> normParamsList = normParametersRepository.findAllById(materialFkIds);
+	            for (NormParameters param : normParamsList) {
+	                normParamsDisplayNameMap.put(param.getId(), param.getDisplayName());
+	            }
+	        }
+
+	       
+	        List<String> dynamicUuidHeaders = new ArrayList<>();
+	        String matFkKey = null;
+	        String sapCodeKey = null;
+	        String uomKey = null;
+	        String wtAvgKey = null;
+	        String remarksKey = null;
+
+	        for (String key : rawHeaders) {
+	            String sanitizedKey = key.replaceAll("[_ ]", "");
+	            if (sanitizedKey.equalsIgnoreCase("MaterialFKId")) {
+	                matFkKey = key; // Captures exact key present in the map (e.g., "Material_FK_Id")
+	            } else if (sanitizedKey.equalsIgnoreCase("SAPMaterialCode")) {
+	                sapCodeKey = key;
+	            } else if (sanitizedKey.equalsIgnoreCase("UOM")) {
+	                uomKey = key;
+	            } else if (sanitizedKey.equalsIgnoreCase("WtAvg")) {
+	                wtAvgKey = key;
+	            } else if (sanitizedKey.equalsIgnoreCase("Remarks")) {
+	                remarksKey = key;
+	            } else if (isValidUUID(key)) {
+	                dynamicUuidHeaders.add(key);
+	            }
+	        }
+
+	       
+	        List<String> orderedKeys = new ArrayList<>();
+	        orderedKeys.add("PARTICULARS_HEADER"); 
+	        if (sapCodeKey != null) orderedKeys.add(sapCodeKey);
+	        if (uomKey != null) orderedKeys.add(uomKey);
+	        orderedKeys.addAll(dynamicUuidHeaders);
+	        if (wtAvgKey != null) orderedKeys.add(wtAvgKey);
+	        if (remarksKey != null) orderedKeys.add(remarksKey);
+
+	        
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Steady State Norms");
+
+	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+	        CellStyle totalStyle = Utility.createBoldBorderedStyle(workbook);
+
+	        
+	        Row headerRow = sheet.createRow(0);
+	        for (int i = 0; i < orderedKeys.size(); i++) {
+	            Cell cell = headerRow.createCell(i);
+	            String key = orderedKeys.get(i);
+	            
+	            String displayHeader;
+	            if ("PARTICULARS_HEADER".equals(key)) {
+	                displayHeader = "Particulars";
+	            } else if (fieldToTitleMap.containsKey(key)) {
+	                displayHeader = fieldToTitleMap.get(key);
+	            } else {
+	                displayHeader = formatTitle(key);
+	            }
+
+	            cell.setCellValue(displayHeader);
+	            cell.setCellStyle(headerStyle);
+	        }
+
+	       
+	        Map<String, Double> totalsMap = new HashMap<>();
+	        int rowIdx = 1;
+
+	        for (Map<String, Object> rowData : dynamicData) {
+	            Row row = sheet.createRow(rowIdx++);
+	            for (int colIdx = 0; colIdx < orderedKeys.size(); colIdx++) {
+	                String key = orderedKeys.get(colIdx);
+	                Cell cell = row.createCell(colIdx);
+
+	                if ("PARTICULARS_HEADER".equals(key)) {
+	                   
+	                    Object matFkVal = matFkKey != null ? rowData.get(matFkKey) : null;
+	                    
+	                    if (matFkVal != null && isValidUUID(matFkVal.toString())) {
+	                        UUID uuidKey = UUID.fromString(matFkVal.toString());
+	                        cell.setCellValue(normParamsDisplayNameMap.getOrDefault(uuidKey, matFkVal.toString()));
+	                    } else {
+	                        cell.setCellValue("");
+	                    }
+	                } else {
+	                    Object value = rowData.get(key);
+
+	                    if (value instanceof Number) {
+	                        double val = ((Number) value).doubleValue();
+	                        cell.setCellValue(val);
+	                        totalsMap.put(key, totalsMap.getOrDefault(key, 0.0) + val);
+	                    } else if (value != null) {
+	                        cell.setCellValue(value.toString());
+	                    } else {
+	                        cell.setCellValue("");
+	                    }
+	                }
+	            }
+	        }
+
+	       
+	        Row totalRow = sheet.createRow(rowIdx);
+	        for (int i = 0; i < orderedKeys.size(); i++) {
+	            String key = orderedKeys.get(i);
+	            Cell cell = totalRow.createCell(i);
+	            cell.setCellStyle(totalStyle);
+
+	            if ("PARTICULARS_HEADER".equals(key)) {
+	                cell.setCellValue("Total");
+	            } else if (totalsMap.containsKey(key)) {
+	                cell.setCellValue(totalsMap.get(key));
+	            } else {
+	                cell.setCellValue("");
+	            }
+	        }
+
+	       
+	        for (int i = 0; i < orderedKeys.size(); i++) {
+	            sheet.autoSizeColumn(i);
+	        }
+
+	       
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+
+	        return outputStream.toByteArray();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	
 	/**
 	 * Helper utility to validate whether a column header is a standard UUID string.
 	 */
@@ -437,12 +629,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        return false;
 	    }
 	}	
-	// Helper method to format column titles
+
 		private String formatTitle(String columnName) {
 			return columnName.replace("_", " ");
 		}
 
-		// Helper method to map SQL data types to frontend types
+		
 		private String getFrontendType(String sqlTypeName) {
 		    if (sqlTypeName == null) {
 		        return "string";
@@ -881,7 +1073,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	    }
 	   
 	   public AOPMessageVM updateSteadyStateNorms(String plantId, String year, List<Map<String, Object>> payloadList) {
-		    // Step 1: Convert payload to DTO list
+		    
 		    List<SteadyStateNormDTO> dtos = processPayload(payloadList);
 
 		    Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
@@ -892,7 +1084,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		    List<SteadyStateNormDTO> failedList = new ArrayList<>();
 
 		    for (SteadyStateNormDTO steadyStateNormDTO : dtos) {
-		        // Skip already marked failed items
+		        
 		        if (steadyStateNormDTO.getSaveStatus() != null && steadyStateNormDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 		            failedList.add(steadyStateNormDTO);
 		            continue;
@@ -911,7 +1103,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		            MCUNormsValueGrade existing = opt.get();
 		            String existingRemark = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
 
-		            // 1. Check if remark is empty/null
+		          
 		            if (newRemark.isEmpty()) {
 		                steadyStateNormDTO.setSaveStatus("Failed");
 		                steadyStateNormDTO.setErrDescription("Remark is mandatory to update an existing record.");
@@ -919,11 +1111,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		                continue;
 		            }
 
-		            // 2. Check if monthly values changed
+		            
 		            boolean isValueChanged = isAnyMonthValueChanged(existing, steadyStateNormDTO);
 		            boolean isRemarkChanged = !existingRemark.equalsIgnoreCase(newRemark);
 
-		            // 3. If value changed, remark MUST be updated
+		            
 		            if (isValueChanged && !isRemarkChanged) {
 		                steadyStateNormDTO.setSaveStatus("Failed");
 		                steadyStateNormDTO.setErrDescription("Value has changed; please provide an updated remark.");
@@ -931,7 +1123,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		                continue;
 		            }
 
-		            // 4. Update fields if value or remark changed
+		            
 		            if (isValueChanged || isRemarkChanged) {
 		                setMonthlyValues(existing, steadyStateNormDTO);
 		                existing.setRemarks(newRemark);
@@ -946,7 +1138,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		                failedList.add(steadyStateNormDTO);
 		                continue;
 		            }
-		            // New Record Insertion
+		           
 		            MCUNormsValueGrade newEntity = new MCUNormsValueGrade();
 		            setMonthlyValues(newEntity, steadyStateNormDTO);
 
@@ -994,7 +1186,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		    return aopMessageVM;
 		}
 	   
-	// Helper 1: Sets monthly values onto the entity
+
 	   private void setMonthlyValues(MCUNormsValueGrade entity, SteadyStateNormDTO dto) {
 	       entity.setApril(dto.getApril());
 	       entity.setMay(dto.getMay());
@@ -1010,7 +1202,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	       entity.setMarch(dto.getMarch());
 	   }
 
-	   // Helper 2: Null-safe month-by-month value comparison
+	   
 	   private boolean isAnyMonthValueChanged(MCUNormsValueGrade existing, SteadyStateNormDTO dto) {
 	       return isDoubleChanged(existing.getApril(), dto.getApril()) ||
 	              isDoubleChanged(existing.getMay(), dto.getMay()) ||
@@ -1026,7 +1218,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	              isDoubleChanged(existing.getMarch(), dto.getMarch());
 	   }
 
-	   // Helper 3: Safely compares two Double values handling nulls
+	   
 	   private boolean isDoubleChanged(Double val1, Double val2) {
 	       if (val1 == null && val2 == null) return false;
 	       if (val1 == null || val2 == null) return true;
@@ -1036,7 +1228,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	   public List<SteadyStateNormDTO> processPayload(List<Map<String, Object>> payloadList) {
 		    List<SteadyStateNormDTO> dtoList = new ArrayList<>();
 
-		    // Set of standard fixed keys in the payload to ignore during dynamic UUID extraction
+		   
 		    Set<String> knownFixedKeys = Set.of(
 		        "Site_FK_Id", "Plant_FK_ID", "Vertical_FK_Id", "Material_FK_Id",
 		        "FinancialYear", "Remarks", "CreatedOn", "ModifiedOn", "MCUVersion",
@@ -1054,7 +1246,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		            String key = entry.getKey();
 		            Object value = entry.getValue();
 
-		            // If key is not in fixed payload keys and value is numeric, treat it as a Grade ID
+		            
 		            if (!knownFixedKeys.contains(key) && value != null) {
 		                Double gradeValue = null;
 		                if (value instanceof Number) {
@@ -1065,8 +1257,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		                        .materialFkId(materialFkId)
 		                        .normParameterTypeFkId(normParameterTypeId)
 		                        .remarks(remarks)
-		                        .gradeId(key) // Grade UUID
-		                        .april(gradeValue) // Map value to target month field
+		                        .gradeId(key) 
+		                        .april(gradeValue) 
 		                        .build();
 
 		                dtoList.add(dto);
