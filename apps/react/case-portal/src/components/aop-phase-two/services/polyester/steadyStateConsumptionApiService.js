@@ -12,8 +12,9 @@ export const SteadyStateConsumptionApiService = {
   exportSteadyStateConsumptionPE,
   importSteadyStateConsumptionByGrade,
   saveGradeWiseSteadyStateConsumption,
+  saveDynamicSteadyStateConsumption,
   // Generic (kept for backward compat)
-  getSteadyStateConsumption,
+  getSteadyStateConsumptionWithColumns,
   saveSteadyStateConsumption,
   exportSteadyStateConsumption,
   importSteadyStateConsumption,
@@ -278,8 +279,8 @@ async function importSteadyStateConsumptionByGrade(
 
 // ========================|| Generic / Staple endpoints (kept for backward compat) ||=====================================//
 
-async function getSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/staple/steady-state-norms`
+async function getSteadyStateConsumptionWithColumns(keycloak, plantId, year) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-dynamic`
   const queryParams = new URLSearchParams({ year, plantId })
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {
@@ -481,3 +482,34 @@ async function saveGradeWiseSteadyStateConsumption(
     return await Promise.reject(e)
   }
 }
+
+/**
+ * Save Dynamic Steady State Consumption
+ * Endpoint: POST /task/steady-state-norms-dynamic?year=&plantId=
+ */
+async function saveDynamicSteadyStateConsumption(
+  PLANT_ID,
+  payload,
+  keycloak,
+  AOP_YEAR,
+) {
+  const queryParams = new URLSearchParams({ year: AOP_YEAR, plantId: PLANT_ID })
+  const url = `${Config.CaseEngineUrl}/task/steady-state-norms-dynamic?${queryParams.toString()}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+

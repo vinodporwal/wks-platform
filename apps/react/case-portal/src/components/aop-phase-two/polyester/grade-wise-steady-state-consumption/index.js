@@ -12,6 +12,48 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import ValidationErrorDialog from './ValidationErrorDialog'
 import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 
+const staticInitialColumns = [
+  {
+    field: 'id',
+    title: 'Id',
+    minWidth: 200,
+    type: 'text',
+    editable: false,
+    locked: true,
+    hidden: true,
+  },
+  {
+    field: 'productName',
+    title: 'Particulars',
+    minWidth: 200,
+    type: 'text',
+    editable: false,
+    locked: true,
+  },
+  {
+    field: 'normParameterTypeDisplayName',
+    title: 'Type',
+    minWidth: 200,
+    type: 'text',
+    editable: false,
+    locked: true,
+    hidden: true,
+  },
+  {
+    field: 'sapCode',
+    title: 'SAP Code',
+    minWidth: 120,
+    type: 'text',
+    editable: false,
+  },
+  {
+    field: 'UOM',
+    title: 'UOM',
+    minWidth: 100,
+    type: 'text',
+    editable: false,
+  },
+]
 const GradeWiseSteadyStateConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -56,151 +98,7 @@ const GradeWiseSteadyStateConsumption = () => {
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
-  const columns = [
-    {
-      field: 'id',
-      title: 'Id',
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-      hidden: true,
-    },
-    {
-      field: 'productName',
-      title: 'Particulars',
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'normParameterTypeDisplayName',
-      title: 'Type',
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-      hidden: true,
-    },
-    {
-      field: 'sapCode',
-      title: 'SAP Code',
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      minWidth: 100,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'april',
-      title: headerMap[4],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'june',
-      title: headerMap[6],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'july',
-      title: headerMap[7],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'august',
-      title: headerMap[8],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'september',
-      title: headerMap[9],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'october',
-      title: headerMap[10],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'november',
-      title: headerMap[11],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'december',
-      title: headerMap[12],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'january',
-      title: headerMap[1],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'february',
-      title: headerMap[2],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'march',
-      title: headerMap[3],
-      minWidth: 120,
-      type: 'row-based',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      minWidth: 220,
-      type: 'textarea',
-      editable: true,
-    },
-  ]
+  const [columns, setColumns] = useState(staticInitialColumns)
 
   // ===================== Fetch Grade Dropdown =====================
 
@@ -235,32 +133,88 @@ const GradeWiseSteadyStateConsumption = () => {
   // ===================== Fetch Main Data (requires gradeId) =====================
 
   const fetchData = useCallback(
-    async (gradeId) => {
+    async () => {
       if (!PLANT_ID || !AOP_YEAR) return
-      if (!gradeId) return
 
       setLoading(true)
       setRows([])
       try {
-        let response =
-          await SteadyStateConsumptionApiService.getSteadyStateConsumptionByGrade(
-            keycloak,
-            gradeId,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+        let response = await SteadyStateConsumptionApiService.getSteadyStateConsumptionWithColumns(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+        if (response?.data?.columns) {
+          const excludedColumns = [
+            'Material_FK_Id',
+            'Site_FK_Id',
+            'Plant_FK_ID',
+            'Vertical_FK_Id',
+            'Material',
+            'FinancialYear',
+            'NormParameterDisplayOrder',
+            'TypeDisplayName',
+            'SAPMaterialCode',
+            'UOM',
+            'IsEditable',
+            'FinancialYear',
+            'Remarks',
+            'CreatedOn',
+            'ModifiedOn',
+            'MCUVersion',
+            'UpdatedBy',
+            'NormParameterTypeId',
+            'NormParameterTypeName',
+            'NormParameterTypeDisplayName',
+            'ProductName',
+          ]
+
+          const dynamicApiColumns = response.data.columns
+            .filter((col) => !excludedColumns.includes(col.field))
+            .map((col) => {
+              let colDef = {
+                ...col,
+                minWidth: 150,
+                editable: true,
+                type: col.type === 'number' ? 'row-based' : 'text',
+              }
+              if (col.type === 'number') {
+                colDef.format = valueFormat
+              }
+              return colDef
+            })
+
+          const remarksColumn = {
+            field: 'remarks',
+            title: 'Remark',
+            minWidth: 220,
+            type: 'textarea',
+            editable: true,
+          }
+
+          setColumns([
+            ...staticInitialColumns,
+            ...dynamicApiColumns,
+            remarksColumn,
+          ])
+        }
 
         setCalculationObject(response?.data?.aopCalculation || [])
 
-        const mappedData = response?.data?.mcuNormsValueDTOList || []
+        const mappedData =
+          response?.data?.data || response?.data?.mcuNormsValueDTOList || []
         const formattedData = mappedData.map((item, index) => ({
           ...item,
-          idFromApi: item.id,
+          idFromApi: item.id || item.Material_FK_Id,
           id: `${index}`,
           originalRemark: item.remarks,
-          Particulars: item.normParameterTypeDisplayName,
-          isEditable: isFilament ? item.isEditable : true,
+          productName: item.Particulars || item.ProductName,
+          normParameterTypeDisplayName:
+            item.NormParameterTypeDisplayName || item.TypeDisplayName,
+          isEditable:  true,
           type: 'number1',
+          sapCode: item.SAPMaterialCode,
         }))
 
         setRows(formattedData)
@@ -309,16 +263,16 @@ const GradeWiseSteadyStateConsumption = () => {
     setOriginalRows([])
     setGrades([])
     setSelectedGradeId(null)
-    Promise.all([fetchGrades()])
-  }, [PLANT_ID, AOP_YEAR])
+    Promise.all([fetchData()])
+  }, [PLANT_ID, AOP_YEAR, fetchData])
 
   // Re-fetch data & validate when selectedGradeId changes
   useEffect(() => {
     if (selectedGradeId) {
-      fetchData(selectedGradeId)
+      // fetchData(selectedGradeId)
       if (!isFilament) validateGradeNorms(selectedGradeId)
     }
-  }, [selectedGradeId, isFilament, fetchData, validateGradeNorms])
+  }, [selectedGradeId, isFilament, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -328,20 +282,19 @@ const GradeWiseSteadyStateConsumption = () => {
       return
     }
 
-    const fieldsToCheck = [
-      'april',
-      'may',
-      'june',
-      'july',
-      'august',
-      'september',
-      'october',
-      'november',
-      'december',
-      'january',
-      'february',
-      'march',
-    ]
+    const fieldsToCheck = columns
+      .filter(
+        (col) =>
+          ![
+            'id',
+            'productName',
+            'normParameterTypeDisplayName',
+            'sapCode',
+            'UOM',
+            'remarks'
+          ].includes(col.field)
+      )
+      .map((col) => col.field)
     const validationError = validateRowDataWithRemarks(
       modifiedData,
       originalRows,
@@ -349,53 +302,55 @@ const GradeWiseSteadyStateConsumption = () => {
       'productName',
     )
 
-    if (validationError) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: validationError,
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
+    // if (validationError) {
+    //   setSnackbarOpen(true)
+    //   setSnackbarData({
+    //     message: validationError,
+    //     severity: 'error',
+    //   })
+    //   setLoading(false)
+    //   return
+    // }
 
     setLoading(true)
     try {
-      const payload = modifiedData.map((row) => ({
-        april: row.april || null,
-        may: row.may || null,
-        june: row.june || null,
-        july: row.july || null,
-        august: row.august || null,
-        september: row.september || null,
-        october: row.october || null,
-        november: row.november || null,
-        december: row.december || null,
-        january: row.january || null,
-        february: row.february || null,
-        march: row.march || null,
-        remark: row.remarks,
-        remarks: row.remarks,
-        financialYear: AOP_YEAR,
-        plantId: PLANT_ID,
-        normParameterId: row.normParameterId,
-        id: row.idFromApi || null,
-        materialFkId: row.materialFkId || null,
-        mcuVersion: row.mcuVersion || null,
-        plantFkId: row.plantFkId || null,
-        siteFkId: row.siteFkId || null,
-        verticalFkId: row.verticalFkId || null,
-        unit: row.unit || null,
-        normParameterTypeId: row.normParameterTypeId || null,
-        gradeId: row.gradeId || selectedGradeId || null,
-      }))
+      const payload = modifiedData.map((row) => {
+        const rowPayload = {
+          Site_FK_Id: row.Site_FK_Id || null,
+          Plant_FK_ID: row.Plant_FK_ID || PLANT_ID,
+          Vertical_FK_Id: row.Vertical_FK_Id || null,
+          Material_FK_Id: row.Material_FK_Id || null,
+          FinancialYear: row.FinancialYear || AOP_YEAR,
+          Remarks: row.remarks || '', // Send exactly 'Remarks' as backend expects
+          CreatedOn: row.CreatedOn || null,
+          ModifiedOn: row.ModifiedOn || null,
+          MCUVersion: row.MCUVersion || null,
+          UpdatedBy: row.UpdatedBy || null,
+          NormParameterTypeId: row.NormParameterTypeId || null,
+          NormParameterTypeName: row.NormParameterTypeName || null,
+          NormParameterTypeDisplayName: row.NormParameterTypeDisplayName || null,
+          UOM: row.UOM || '',
+          IsEditable: row.IsEditable !== undefined ? row.IsEditable : null,
+          ProductName: row.ProductName || null,
+          SAPMaterialCode: row.SAPMaterialCode || null,
+          NormParameterDisplayOrder: row.NormParameterDisplayOrder || null,
+          WtAvg: row.WtAvg !== undefined ? row.WtAvg : null,
+        }
+        
+        // Append all dynamic grade values as keys
+        fieldsToCheck.forEach((field) => {
+          const val = row[field]
+          rowPayload[field] = (val === '' || val === null || val === undefined) ? '' : Number(val)
+        })
+        
+        return rowPayload
+      })
 
       const response =
-        await SteadyStateConsumptionApiService.saveGradeWiseSteadyStateConsumption(
+        await SteadyStateConsumptionApiService.saveDynamicSteadyStateConsumption(
           PLANT_ID,
           payload,
           keycloak,
-          selectedGradeId,
           AOP_YEAR,
         )
 
@@ -456,7 +411,7 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarData({ message: 'Calculating...', severity: 'info' })
     try {
       let data;
-      if (isFilament){
+      if (isFilament) {
         data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPolyester(
           PLANT_ID,
           SITE_ID,
@@ -464,8 +419,8 @@ const GradeWiseSteadyStateConsumption = () => {
           AOP_YEAR,
           keycloak,
         )
-      } else{
-       data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
+      } else {
+        data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
           PLANT_ID,
           SITE_ID,
           VERTICAL_ID,
@@ -480,7 +435,7 @@ const GradeWiseSteadyStateConsumption = () => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        await fetchGrades()
+        // await fetchGrades()
         await fetchData(selectedGradeId)
       } else {
         setSnackbarOpen(true)
@@ -633,7 +588,7 @@ const GradeWiseSteadyStateConsumption = () => {
     showTitle: true,
     titleName: 'Grade Wise Steady State Consumption (Norm/Quantity)',
     // Grade dropdown (showG → showDropdown: true for PE)
-    showDropdown: true,
+    showDropdown: false,
     remarksEditable: true,
     marginBottom: true,
   }
