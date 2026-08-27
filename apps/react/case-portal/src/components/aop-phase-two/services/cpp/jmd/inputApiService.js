@@ -110,6 +110,12 @@ export const InputApiService = {
   saveMarginData,
   exportMarginExcel,
   saveMarginExcel,
+
+  // Used in: common/Prices/index.js
+  getPricesData,
+  savePricesData,
+  exportPricesExcel,
+  savePricesExcel,
 }
 
 // ===================== ||Shutdown and Operational hrs APIs || ===================== //
@@ -1812,6 +1818,79 @@ async function saveMarginExcel(file, keycloak, plantIds, aopYear) {
     file,
     keycloak,
     'jmd/spinning-margin/import',
+    null,
+    null,
+    {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+    },
+  )
+}
+
+// ========================|| Prices APIs ||=====================================//
+
+// GET /task/jmd/cpp-norm-prices?plantIds=...&aopYear=...
+async function getPricesData(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/jmd/cpp-norm-prices?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching prices data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/cpp-norm-prices?plantIds=...&aopYear=...
+async function savePricesData(keycloak, plantIds, aopYear, payload) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/jmd/cpp-norm-prices?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving prices data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/cpp-norm-prices/export?plantIds=...&aopYear=...
+async function exportPricesExcel(keycloak, plantIds, aopYear, EXCEL_NAME) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/cpp-norm-prices/export',
+    queryParams: { plantIds: plantIdArray.join(','), aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/cpp-norm-prices/import?plantIds=...&aopYear=... (multipart)
+async function savePricesExcel(file, keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(
+    file,
+    keycloak,
+    'jmd/cpp-norm-prices/import',
     null,
     null,
     {

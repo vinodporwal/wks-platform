@@ -19,6 +19,7 @@ import NaphthaHMDComponent from './NaphthaHMDComponent'
 import ModeSelection from './ModeSelection'
 import SpyroInputMinMax from './SpyroInputMinMax'
 import NaphthaSummaryHmd from './NaphthaSummary'
+import MxoRegeneration from './MxoRegeneration'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -176,16 +177,17 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
-          currentTabDisplay == 'External Streams'
+        currentTabDisplay == 'External Streams'
           ? false
           : true,
       downloadExcelBtn:
         currentTabDisplay == 'Constant' ||
-          currentTabDisplay == 'External Streams'
+        currentTabDisplay == 'External Streams'
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
       makePagable: currentTabDisplay !== 'Composition',
+      showCalulcationPromt: lowerVertName === 'cracker',
     },
     isOldYear,
   )
@@ -225,8 +227,9 @@ const CrackerConfig = () => {
               ? 'Naphtha'
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
-                : (currentTabDisplay === 'Hydrogenation' || currentTabDisplay === 'Recovery') &&
-                  lowerSiteName === 'c2'
+                : (currentTabDisplay === 'Hydrogenation' ||
+                      currentTabDisplay === 'Recovery') &&
+                    lowerSiteName === 'c2'
                   ? 'cracker_c2_recovery'
                   : lowerSiteName === 'c2'
                     ? 'cracker_c2'
@@ -1179,11 +1182,21 @@ const CrackerConfig = () => {
                   </Box>
                 )
               }
+              break
             case 'NaphthaSummary':
               if (IS_CRACKER_HMD) {
                 return (
                   <Box key={currentTabDisplay}>
-                    <NaphthaSummaryHmd/>
+                    <NaphthaSummaryHmd />
+                  </Box>
+                )
+              }
+              break
+            case 'MXO Data':
+              if (IS_CRACKER_HMD) {
+                return (
+                  <Box key={currentTabDisplay}>
+                    <MxoRegeneration />
                   </Box>
                 )
               }

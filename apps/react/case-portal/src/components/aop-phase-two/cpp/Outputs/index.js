@@ -9,6 +9,7 @@ import HeatRate from './heat-rate'
 import SRMapping from './sr-mapping'
 import QtyCostReport from './qty-cost-report'
 import Summary from './Summary'
+import AverageAssetLoading from './average-asset-loading'
 
 const Outputs = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -36,6 +37,8 @@ const Outputs = () => {
         return <SRMapping />
       case 'Norm Cost Report':
         return <QtyCostReport />
+      case 'Average Asset Loading':
+        return <AverageAssetLoading />
       case 'Summary':
         return <Summary />
       default:

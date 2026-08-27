@@ -2788,7 +2788,7 @@ session.doWork(connection -> {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_RunLengthDataSet";
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetNaphthaSummary";
 
 			List<Object[]> results = getNapthaSummaryDataSetData(plantId, year, reportType, storedProcedure);
 
@@ -3032,15 +3032,16 @@ session.doWork(connection -> {
 		
 		for (MXOReprocessingDTO dto : mXOReprocessingDTOList) {
 
-			if(dto.getMXODowntimeInHrsId() == null || dto.getMXODowntimeInHrsId().isBlank()) {
+			if(dto.getMXODowntimeInHrsId() == null || dto.getMaxMXOReprocessingRateInTphId() == null) {
 				dto.setSaveStatus("Failed");
-				dto.setErrorMessage("MXODowntimeInHrsId is required");
+				dto.setErrorMessage("MXODowntimeInHrsId and MaxMXOReprocessingRateInTphId are required");
 				failedRecords.add(dto);
 				continue;
 			}
-			if(dto.getMaxMXOReprocessingRateInTphId() == null || dto.getMaxMXOReprocessingRateInTphId().isBlank()) {
+
+			if(dto.getMXODowntimeInHrsId().isBlank() || dto.getMaxMXOReprocessingRateInTphId().isBlank()) {
 				dto.setSaveStatus("Failed");
-				dto.setErrorMessage("MaxMXOReprocessingRateInTphId is required");
+				dto.setErrorMessage("MXODowntimeInHrsId and MaxMXOReprocessingRateInTphId are required");
 				failedRecords.add(dto);
 				continue;
 			}
@@ -3059,8 +3060,11 @@ session.doWork(connection -> {
         String mXODowntimeInHrsId = dto.getMXODowntimeInHrsId();
 		String maxMXOReprocessingRateInTphId = dto.getMaxMXOReprocessingRateInTphId();
 
-		saveDataForMXOReprocessing(UUID.fromString(mXODowntimeInHrsId), monthInInteger, dto.getMXODowntime_hrs(), dto.getRemarks(), plantFKId, year);
-		saveDataForMXOReprocessing(UUID.fromString(maxMXOReprocessingRateInTphId), monthInInteger, dto.getMaxMXOReprocessingRate_tph(), dto.getRemarks(), plantFKId, year);
+	UUID	mXODowntimeInHrsIdUUID =  mXODowntimeInHrsId != null ? UUID.fromString(mXODowntimeInHrsId) : null;
+	UUID	maxMXOReprocessingRateInTphIdUUID = maxMXOReprocessingRateInTphId != null ? UUID.fromString(maxMXOReprocessingRateInTphId) : null;
+
+		saveDataForMXOReprocessing(mXODowntimeInHrsIdUUID, monthInInteger, dto.getMXODowntime_hrs(), dto.getRemarks(), plantFKId, year);
+		saveDataForMXOReprocessing(maxMXOReprocessingRateInTphIdUUID, monthInInteger, dto.getMaxMXOReprocessingRate_tph(), dto.getRemarks(), plantFKId, year);
 
 	
 

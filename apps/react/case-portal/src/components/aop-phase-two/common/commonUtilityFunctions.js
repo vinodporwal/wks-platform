@@ -88,6 +88,64 @@ export const validateRowDataWithRemarks = (
   return ''
 }
 
+// Validation function that bypasses the remarks requirement, but ensures updated fieldsToCheck are not empty
+export const validateRowDataWithoutRemarks = (
+  data,
+  originalRows,
+  fieldsToCheck = [
+    'april',
+    'may',
+    'june',
+    'july',
+    'aug',
+    'sept',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
+  ],
+  displayFieldName,
+) => {
+  const invalidRows = data.filter((row) => {
+    const originalRow = originalRows.find((orig) => orig.id === row.id)
+
+    // For new rows, verify at least the required fields are filled
+    if (!originalRow) {
+      return fieldsToCheck.some(
+        (field) => row[field] === '' || row[field] === null || row[field] === undefined
+      )
+    }
+
+    // Check if any data field was updated
+    const dataWasUpdated = fieldsToCheck.some((field) => {
+      return row[field] !== originalRow[field]
+    })
+
+    // If data was updated, ensure the updated fields are not left empty
+    if (dataWasUpdated) {
+      return fieldsToCheck.some((field) => {
+        if (row[field] !== originalRow[field]) {
+          return row[field] === '' || row[field] === null || row[field] === undefined
+        }
+        return false
+      })
+    }
+
+    return false
+  })
+
+  if (invalidRows.length > 0) {
+    const displayNames = invalidRows
+      .map((row) => row[displayFieldName] || `Row ${row.id}`)
+      .join(', ')
+    return `Values cannot be empty for: ${displayNames}`
+  }
+
+  return ''
+}
+
 // Validation function for nested fields: Check if any nested field is updated, remarks must be filled and different from original
 export const validateNestedRowDataWithRemarks = (
   data,
