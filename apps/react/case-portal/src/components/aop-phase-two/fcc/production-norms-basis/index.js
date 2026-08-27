@@ -10,6 +10,7 @@ import Constants from './Constants'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
 import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
+import JWAvgNorms from 'components/aop-phase-two/crude/production-norms-basis/JWAvgNorms'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/fcc/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ReportManualEntry from './ReportManualEntry'
@@ -248,7 +249,10 @@ const ProductionNormsBasisFCC = () => {
       case 'pims-monthly-throughput':
       case 'pims-monthly-throughtput':
         return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
+      case 'Job Work Avg Norms':
+        return <JWAvgNorms />
       case 'Manual Entry':
+      case 'Report Manual Entry':
         return <ReportManualEntry startDate={startDate} endDate={endDate} />
 
       default:
