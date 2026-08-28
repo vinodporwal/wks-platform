@@ -1,5 +1,6 @@
 package com.wks.caseengine.rest.cpp;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,14 +27,14 @@ public class JMDOutputHeatRateController {
 
     @GetMapping("/jmd/final-heat-rate")
     public ResponseEntity<?> getFinalHeatRate(
-            @RequestParam UUID siteId,
+            @RequestParam List<UUID> plantIds,
             @RequestParam String aopYear
     ) {
         try {
             log.info("=== GET JMD Final Heat Rate Request ===");
-            log.info("SiteId: {}, AOPYear: {}", siteId, aopYear);
+            log.info("PlantIds: {}, AOPYear: {}", plantIds, aopYear);
 
-            AOPMessageVM result = jmdOutputHeatRateService.getHeatRateSummary(siteId, aopYear);
+            AOPMessageVM result = jmdOutputHeatRateService.getHeatRateSummary(plantIds, aopYear);
 
             log.info("=== GET JMD Final Heat Rate Response ===");
             log.info("Response Code: {}", result.getCode());
@@ -52,14 +53,14 @@ public class JMDOutputHeatRateController {
 
     @GetMapping("/jmd/final-heat-rate/export")
     public ResponseEntity<byte[]> exportFinalHeatRate(
-            @RequestParam UUID siteId,
+            @RequestParam List<UUID> plantIds,
             @RequestParam String aopYear) {
 
-        log.info("[GET /jmd/final-heat-rate/export] Request received - siteId: {}, aopYear: {}",
-                siteId, aopYear);
+        log.info("[GET /jmd/final-heat-rate/export] Request received - plantIds: {}, aopYear: {}",
+                plantIds, aopYear);
 
         try {
-            byte[] excelData = jmdOutputHeatRateService.exportHeatRateSummary(siteId, aopYear);
+            byte[] excelData = jmdOutputHeatRateService.exportHeatRateSummary(plantIds, aopYear);
 
             if (excelData == null) {
                 log.error("[GET /jmd/final-heat-rate/export] Failed to generate Excel file");

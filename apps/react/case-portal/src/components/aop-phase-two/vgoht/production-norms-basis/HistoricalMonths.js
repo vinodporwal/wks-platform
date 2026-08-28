@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { ProductionNormsApiService } from '../../services/vgoht/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
@@ -152,6 +150,7 @@ const HistoricalMonths = ({ startDate, endDate, refreshData }) => {
         PLANT_ID,
         formattedFrom,
         formattedTo,
+        'Historical Months',
       )
 
       const apiResponse = response?.data || {}
@@ -286,6 +285,7 @@ const HistoricalMonths = ({ startDate, endDate, refreshData }) => {
         formattedFrom,
         formattedTo,
         convertedData,
+        'Historical Months'
       )
 
       // If we reach here, save was successful

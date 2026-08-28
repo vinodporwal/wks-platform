@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { Box } from '@mui/material'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { Box, Button, Dialog, DialogActions, DialogContent } from '@mui/material'
 import ReleaseDialog from 'components/aop-phase-two/common/components/ReleaseDialog'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -14,6 +14,7 @@ import { DataService } from 'services/DataService'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
+import MaterialGroupedSelectionGrid from '../material-grouped-selection/MaterialGroupedSelectionGrid'
 
 const OverallAopConsumption = () => {
   const dispatch = useDispatch()
@@ -39,7 +40,7 @@ const OverallAopConsumption = () => {
   const SCREEN_NAME = screenTitle?.title
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
-
+  const isFilament = VERTICAL_NAME?.toLowerCase() === 'filament (pfy)'
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const valueFormat = ValueFormatterConsumption()
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -54,6 +55,7 @@ const OverallAopConsumption = () => {
   const [gradeId, setGradeId] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
   const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+  const [openMaterialGroupedSelectionDialog, setOpenMaterialGroupedSelectionDialog] = useState(false)
 
   // Release states
   const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
@@ -82,58 +84,73 @@ const OverallAopConsumption = () => {
     { field: 'march', key: 3, title: 'March' },
   ]
 
-  const columns = [
-    {
-      field: 'Particulars',
-      title: 'Type',
-      editable: false,
-      hidden: true,
-      minWidth: 100,
-    },
-    {
-      field: 'productName',
-      title: 'Particulars',
-      editable: false,
-      minWidth: 200,
-    },
-    {
-      field: 'sapCode',
-      title: 'SAP Code',
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      editable: false,
-      minWidth: 100,
-    },
-    ...monthsConfig.map((m) => ({
-      field: m.field,
-      title: headerMap[m.key] || m.title,
-      editable: false,
-      type: 'number1',
-      format: valueFormat,
-      minWidth: 120,
-    })),
-    // {
-    //   field: 'avgOfAllMonths',
-    //   title: 'YTD',
-    //   editable: false,
-    //   type: 'number1',
-    //   hidden: true,
-    //   format: valueFormat,
-    //   minWidth: 120,
-    // },
-    // {
-    //   field: 'aopRemarks',
-    //   title: 'Remark',
-    //   type: 'textarea',
-    //   editable: true,
-    //   minWidth: 160,
-    // },
-  ]
+  const columns = useMemo(() => {
+    const defaultColumns = [
+      {
+        field: 'Particulars',
+        title: 'Type',
+        editable: false,
+        hidden: true,
+        minWidth: 100,
+      },
+      {
+        field: 'productName',
+        title: 'Particulars',
+        editable: false,
+        minWidth: 200,
+      },
+      {
+        field: 'sapCode',
+        title: 'SAP Code',
+        minWidth: 120,
+        type: 'text',
+        editable: false,
+      },
+      {
+        field: 'UOM',
+        title: 'UOM',
+        editable: false,
+        minWidth: 100,
+      },
+      ...monthsConfig.map((m) => ({
+        field: m.field,
+        title: headerMap[m.key] || m.title,
+        editable: false,
+        type: 'number1',
+        format: valueFormat,
+        minWidth: 120,
+      })),
+      // {
+      //   field: 'avgOfAllMonths',
+      //   title: 'YTD',
+      //   editable: false,
+      //   type: 'number1',
+      //   hidden: true,
+      //   format: valueFormat,
+      //   minWidth: 120,
+      // },
+      // {
+      //   field: 'aopRemarks',
+      //   title: 'Remark',
+      //   type: 'textarea',
+      //   editable: true,
+      //   minWidth: 160,
+      // },
+    ]
+    if (isFilament) {
+      defaultColumns.push({
+        field: 'ytd',
+        title: 'YTD',
+        editable: false,
+        type: 'number1',
+        hidden: false,
+        format: valueFormat,
+        minWidth: 120,
+      })
+    }
+
+    return defaultColumns
+  }, [isFilament])
 
   const getIsReleased = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -220,19 +237,17 @@ const OverallAopConsumption = () => {
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const fetchData = useCallback(
-    async (selectedGrade) => {
+    async () => {
       if (!PLANT_ID || !AOP_YEAR) return
-      // if (!selectedGrade) {
-      //   setRows([])
-      //   return
-      // }
       setLoading(true)
       try {
+        const verticalWiseAPI = {
+          'staple (psf)':OverallAopConsumptionApiService.getOverallAopConsumption,
+          'filament (pfy)':OverallAopConsumptionApiService.getOverallAopConsumptionYTD,
+          'pet-py':OverallAopConsumptionApiService.getOverallAopConsumption,
+        }
         const response =
-          await OverallAopConsumptionApiService.getOverallAopConsumption(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
+          await verticalWiseAPI[VERTICAL_NAME?.toLowerCase()](keycloak, PLANT_ID, AOP_YEAR,
             null,
           )
         if (response?.code === 200) {
@@ -372,7 +387,11 @@ const OverallAopConsumption = () => {
     VERTICAL_ID,
   ])
 
-  const handleCalculate = async () => {
+  const handleCalculate = () => {
+    setOpenMaterialGroupedSelectionDialog(true)
+  }
+
+  const handleCallCalculate = async () => {
     setLoading(true)
     try {
       const data =
@@ -414,8 +433,13 @@ const OverallAopConsumption = () => {
       severity: 'success',
     })
     try {
+      const verticalWiseAPI = {
+        'staple (psf)':OverallAopConsumptionApiService.exportOverallAopConsumption,
+        'filament (pfy)':OverallAopConsumptionApiService.exportOverallAopConsumptionYTD,
+        'pet-py':OverallAopConsumptionApiService.exportOverallAopConsumption,
+      }
       const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}`
-      await OverallAopConsumptionApiService.exportOverallAopConsumption(
+      await verticalWiseAPI[VERTICAL_NAME?.toLowerCase()](
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -546,6 +570,45 @@ const OverallAopConsumption = () => {
         closeReleaseDialogBox={closeReleaseDialogBox}
         submitConfirmation={submitConfirmation}
       />
+      <Dialog
+        open={openMaterialGroupedSelectionDialog}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setOpenMaterialGroupedSelectionDialog(false)
+          }
+        }}
+        maxWidth="md"
+        fullWidth
+        disableScrollLock
+        disableEnforceFocus={true}
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 1,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 1 }}>
+          <MaterialGroupedSelectionGrid
+            onSaveSuccess={async () => {
+              setOpenMaterialGroupedSelectionDialog(false)
+              await handleCallCalculate()
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 1.5, pb: 1 }}>
+          <Button
+            onClick={() => setOpenMaterialGroupedSelectionDialog(false)}
+            variant="contained"
+            className="btn-no"
+            sx={{ textTransform: 'none' }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

@@ -131,6 +131,8 @@ export const buildConfigurationPayload = (
   configurationExecutionDetails,
   PLANT_ID,
   AOP_YEAR,
+  sorStartDate,
+  sorEndDate,
 ) => {
   const startDateObj = configurationExecutionDetails.find(
     (item) => item.Name === 'StartDate',
@@ -138,12 +140,18 @@ export const buildConfigurationPayload = (
   const endDateObj = configurationExecutionDetails.find(
     (item) => item.Name === 'EndDate',
   )
+  const sorStartDateObj = configurationExecutionDetails.find(
+    (item) => item.Name === 'SORStartDate',
+  )
+  const sorEndDateObj = configurationExecutionDetails.find(
+    (item) => item.Name === 'SOREndDate',
+  )
 
   if (!startDateObj?.Id || !endDateObj?.Id) {
     return null
   }
 
-  return [
+  let buildPayload = [
     {
       apr: formatDate(startDate),
       UOM: '',
@@ -163,6 +171,27 @@ export const buildConfigurationPayload = (
       plantId: PLANT_ID,
     },
   ]
+  if (sorStartDateObj?.Id && sorEndDateObj?.Id) {
+    buildPayload.push({
+      apr: formatDate(sorStartDate),
+      UOM: '',
+      auditYear: AOP_YEAR,
+      normParameterFKId: sorStartDateObj?.NormParameter_FK_Id,
+      remarks: 'Initiated',
+      id: sorStartDateObj?.Id || null,
+      plantId: PLANT_ID,
+    })
+    buildPayload.push({
+      apr: formatDate(sorEndDate),
+      UOM: '',
+      auditYear: AOP_YEAR,
+      normParameterFKId: sorEndDateObj?.NormParameter_FK_Id,
+      remarks: 'Initiated',
+      id: sorEndDateObj?.Id || null,
+      plantId: PLANT_ID,
+    })
+  }
+  return buildPayload
 }
 
 /**

@@ -7,8 +7,9 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import useConfigurationTabs from 'components/aop-phase-two/common/hooks/useConfigurationTabs'
 import HeatRate from './heat-rate'
 import SRMapping from './sr-mapping'
-import SummaryJMD from '../jmd/Summary'
-import QtyCostReportJMD from '../jmd/qty-cost-report'
+import QtyCostReport from './qty-cost-report'
+import Summary from './Summary'
+import AverageAssetLoading from './average-asset-loading'
 
 const Outputs = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -35,9 +36,11 @@ const Outputs = () => {
       case 'SR Mapping':
         return <SRMapping />
       case 'Norm Cost Report':
-        return <QtyCostReportJMD />
+        return <QtyCostReport />
+      case 'Average Asset Loading':
+        return <AverageAssetLoading />
       case 'Summary':
-        return <SummaryJMD />
+        return <Summary />
       default:
         return null
     }

@@ -201,7 +201,7 @@ const CrakcerProductionConst = () => {
         editable: true,
         type: 'number',
         widthT: 120,
-        format: FORMATE_VALUE,
+        format: valueFormat,
         minWidth: 100,
       },
       {
@@ -564,6 +564,7 @@ const CrakcerProductionConst = () => {
           plantID={PLANT_ID}
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}
+          enableDateDurationCalculation={true}
         />
       </Box>
       <Notification

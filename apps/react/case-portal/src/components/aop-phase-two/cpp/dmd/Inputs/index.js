@@ -16,6 +16,7 @@ import InputNorms from './InputNorms/index'
 import SpinningMargin from '../../common/SpinningMargin/index'
 import SRMapping from '../../common/SRMapping/index'
 import useConfigurationTabs from 'components/aop-phase-two/common/hooks/useConfigurationTabs'
+import StandByLoad from './StandByLoad'
 
 const InputsDMD = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -67,6 +68,8 @@ const InputsDMD = () => {
         return <ExportAvailability />
       case 'Prices':
         return <Prices />
+      case 'Stand By Load':
+        return <StandByLoad />
       default:
         return null
     }

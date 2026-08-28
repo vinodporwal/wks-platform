@@ -2404,7 +2404,7 @@ continue;
 				String procedure=verticalName+"_"+site.getName()+"_svhEquivalent_Calculation";
 				executeProcedure(procedure, plantFKId, year);
 			}
-
+  
 			if (aromaticsHmd) {
 				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 						.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
@@ -2854,7 +2854,8 @@ existingRecord = normAttributeTransactionsRepository
   }
 }
 
-	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
+// ref: saveData | seperate method to allow empty remarks for new records.
+	void saveDataForOtherCost(NormParameters normParameter, Integer i, String year, Double attributeValue,
 		ConfigurationDTO configurationDTO, String plantFKId) {
 
 	Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
@@ -2883,7 +2884,6 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 					 ? configurationDTO.getRemarks().trim() 
 					 : "";
   
-  boolean isRemarkEmpty = newRemark.isEmpty();
 
   if (existingRecord.isPresent()) {
 	  NormAttributeTransactions entity = existingRecord.get();
@@ -2892,11 +2892,6 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 
 	  boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
 	  boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
-
-	  if (isRemarkEmpty) {
-		  setError(configurationDTO, "Remark is mandatory to update an existing record.");
-		  return;
-	  }
 
 	  if (isValueChanged && !isRemarkChanged) {
 		  setError(configurationDTO, "Value has changed; please provide a updated remark.");
@@ -2916,11 +2911,6 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 		  return; 
 	  }
 
-	  if (isRemarkEmpty) {
-		  setError(configurationDTO, "Remark is mandatory for new records.");
-		  return;
-	  }
-
 	  NormAttributeTransactions newEntity = new NormAttributeTransactions();
 	  newEntity.setNormParameterFKId(normParameter.getId());
 	  newEntity.setAopMonth(i);
@@ -2935,6 +2925,89 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 	  
 	  normAttributeTransactionsRepository.save(newEntity);
   }
+}
+
+void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
+	ConfigurationDTO configurationDTO, String plantFKId) {
+
+Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
+Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
+			   ? getVersion(year, UUID.fromString(plantFKId)) 
+			   : "V1";
+
+boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
+
+Optional<NormAttributeTransactions> existingRecord;
+if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
+  existingRecord = normAttributeTransactionsRepository
+	  .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+
+// existingRecord = normAttributeTransactionsRepository
+// 	.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+} else {
+  existingRecord = normAttributeTransactionsRepository
+	  .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+}
+
+String newValue = (attributeValue != null) ? attributeValue.toString() : "0.0";
+String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
+				 ? configurationDTO.getRemarks().trim() 
+				 : "";
+
+boolean isRemarkEmpty = newRemark.isEmpty();
+
+if (existingRecord.isPresent()) {
+  NormAttributeTransactions entity = existingRecord.get();
+  String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "0.0";
+  String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+
+  boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
+  boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
+
+  if (isRemarkEmpty) {
+	  setError(configurationDTO, "Remark is mandatory to update an existing record.");
+	  return;
+  }
+
+  if (isValueChanged && !isRemarkChanged) {
+	  setError(configurationDTO, "Value has changed; please provide a updated remark.");
+	  return;
+  }
+
+  if (isValueChanged || isRemarkChanged) {
+	  entity.setAttributeValue(newValue);
+	  entity.setRemarks(newRemark);
+	  entity.setModifiedOn(new Date());
+	  normAttributeTransactionsRepository.save(entity);
+  }
+} 
+else {
+// allow 0.0 for PVC DMD
+  if ( !pvcDmd && "0.0".equals(newValue)) {
+	  return; 
+  }
+
+  if (isRemarkEmpty) {
+	  setError(configurationDTO, "Remark is mandatory for new records.");
+	  return;
+  }
+
+  NormAttributeTransactions newEntity = new NormAttributeTransactions();
+  newEntity.setNormParameterFKId(normParameter.getId());
+  newEntity.setAopMonth(i);
+  newEntity.setAuditYear(year);
+  newEntity.setAttributeValueVersion(version);
+  newEntity.setUserName(Utility.getUserName());
+  newEntity.setCreatedOn(new Date());
+  newEntity.setModifiedOn(new Date());
+  
+  newEntity.setAttributeValue(newValue);
+  newEntity.setRemarks(newRemark);
+  
+  normAttributeTransactionsRepository.save(newEntity);
+}
 }
 
 		private void setError(ConfigurationDTO dto, String message) {
@@ -6230,7 +6303,7 @@ boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsI
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(configurationDTO, i);
 					configurationDTO.setVertical(verticalName);
-					saveData(optionNormParameters.get(), i, year, attributeValue, configurationDTO, plantFKId);
+					saveDataForOtherCost(optionNormParameters.get(), i, year, attributeValue, configurationDTO, plantFKId);
 					if (configurationDTO.getSaveStatus() != null
 							&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 						failedList.add(configurationDTO);

@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const JCBFuel = () => {
+const PIMSThroughput = ({ startDate, endDate }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -20,21 +21,31 @@ const JCBFuel = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, screenTitle } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
   const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [revisionUpdated, setRevisionUpdated] = useState(false)
+
+  const formatDateForAPI = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   const columns = [
     {
-      field: 'fuel',
-      title: 'Fuel',
+      field: 'displayName',
+      title: 'Particulars',
       widthT: 250,
       minWidth: 200,
       type: 'text',
@@ -44,146 +55,17 @@ const JCBFuel = () => {
     {
       field: 'uom',
       title: 'UOM',
-      widthT: 100,
-      minWidth: 100,
+      widthT: 80,
+      minWidth: 60,
       type: 'text',
       editable: false,
     },
     {
-      field: 'fuelCategory',
-      title: 'Fuel Category',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'apr',
-      title: headerMap[4],
+      field: 'attributeValue',
+      title: 'Value',
       editable: true,
       widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -201,58 +83,36 @@ const JCBFuel = () => {
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
-      fetchFuelAvailabilityData()
+      fetchConfigurationData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, revisionUpdated])
 
-  const fetchFuelAvailabilityData = async () => {
+  const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getFuelAvailabilityDataJCB(
+      const res = await ProductionNormsApiService.getPIMSThroughputData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
-      // Fallback to default data if API returns empty
-      // const res = defaultData
 
       if (res?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 
-      console.log('Fuel Availability data:', res)
       const formattedData = res?.map((item, index) => ({
-        id: item?.id || index + 1,
-        fuel: item.fuelName,
-        fuelCategory: item.fuelCategory,
-        uom: item.uom,
-        apr: item.apr,
-        may: item.may,
-        jun: item.jun,
-        jul: item.jul,
-        aug: item.aug,
-        sep: item.sep,
-        oct: item.oct,
-        nov: item.nov,
-        dec: item.dec,
-        jan: item.jan,
-        feb: item.feb,
-        mar: item.mar,
+        ...item,
         remarks: item.remarks || '',
-        cppId: item.cppId,
-        financialYear: item.financialYear,
+        id: item?.id || index + 1,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching fuel availability data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+      console.error('Error fetching configuration data:', error)
     } finally {
       setLoading(false)
+      setRevisionUpdated(false)
     }
   }
 
@@ -264,15 +124,36 @@ const JCBFuel = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Net Calorific Value - ${AOP_YEAR}`,
+    ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Net Calorific Value (NCV)',
+    titleName: 'PIMS Throughput',
   }
 
   const saveChanges = async () => {
     setLoading(true)
+
+    // Validate required parameters
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Start date and end date are required.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    if (!SITE_ID) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Site ID is required.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
 
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
@@ -296,25 +177,12 @@ const JCBFuel = () => {
       return
     }
 
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
+    const fieldsToCheck = ['attributeValue']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'fuel',
+      'displayName',
     )
 
     if (validationError) {
@@ -327,37 +195,21 @@ const JCBFuel = () => {
       return
     }
 
-    // Map UI fields back to API format
-    const payload = modifiedData.map((item) => ({
-      id: item.id,
-      cppId: item.cppId || PLANT_ID,
-      fuelName: item.fuel,
-      fuelCategory: item.fuelCategory,
-      uom: item.uom,
-      apr: item.apr,
-      may: item.may,
-      jun: item.jun,
-      jul: item.jul,
-      aug: item.aug,
-      sep: item.sep,
-      oct: item.oct,
-      nov: item.nov,
-      dec: item.dec,
-      jan: item.jan,
-      feb: item.feb,
-      mar: item.mar,
-      financialYear: item.financialYear || AOP_YEAR,
-      remarks: item.remarks || '',
-    }))
-
+    const payload = modifiedData
     try {
-      console.log('Saving fuel availability data:', payload)
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
 
-      const response = await InputApiService.saveFuelAvailabilityDataJCB(
+      console.log('Saving PIMS Throughput data:', payload)
+
+      const response = await ProductionNormsApiService.savePIMSThroughputData(
         keycloak,
-        PLANT_ID,
         AOP_YEAR,
         payload,
+        PLANT_ID,
+        SITE_ID,
+        periodFrom,
+        periodTo,
       )
 
       setModifiedCells({})
@@ -367,7 +219,7 @@ const JCBFuel = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error saving fuel availability data:', error)
+      console.error('Error saving configuration data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -383,19 +235,20 @@ const JCBFuel = () => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveFuelAvailabilityExcelJCB(
+      const response = await ProductionNormsApiService.importConfigurationExcel(
         file,
         keycloak,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
-      // Success case - code 0 means success
-      if (response?.code === 0) {
-        await fetchFuelAvailabilityData()
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
+        await fetchConfigurationData()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -410,7 +263,7 @@ const JCBFuel = () => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Fuel_Availability_Errors_${new Date().getTime()}.xlsx`
+          link.download = `Configuration_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -423,7 +276,7 @@ const JCBFuel = () => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchFuelAvailabilityData()
+          await fetchConfigurationData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -459,7 +312,7 @@ const JCBFuel = () => {
     })
 
     try {
-      await InputApiService.exportFuelAvailabilityExcelJCB(
+      await ProductionNormsApiService.exportConfigurationExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -469,7 +322,7 @@ const JCBFuel = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Fuel Availability data:', error)
+      console.error('Error exporting Configuration data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -486,6 +339,14 @@ const JCBFuel = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
+      <RevButtonSection
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        snackbarData={snackbarData}
+        setSnackbarData={setSnackbarData}
+        revisionUpdated={revisionUpdated}
+        setRevisionUpdated={setRevisionUpdated}
+      />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
@@ -509,6 +370,7 @@ const JCBFuel = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         // customHeight={60}
+        groupBy={['normParameterType']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
@@ -520,4 +382,4 @@ const JCBFuel = () => {
   )
 }
 
-export default JCBFuel
+export default PIMSThroughput

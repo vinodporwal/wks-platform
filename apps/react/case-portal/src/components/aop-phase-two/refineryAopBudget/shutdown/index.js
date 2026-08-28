@@ -193,7 +193,7 @@ const Shutdown = ({ permissions }) => {
         const month = date.getMonth()
         const daysInMonth = new Date(year, month + 1, 0).getDate()
         const currentDay = date.getDate()
-        const remainingDays = daysInMonth - currentDay + 1
+        const remainingDays = daysInMonth - currentDay
 
         if (Number(row.sdTotalDurationDays) > remainingDays) {
           const rowIndex = rows.findIndex((r) => r.id === row.id)

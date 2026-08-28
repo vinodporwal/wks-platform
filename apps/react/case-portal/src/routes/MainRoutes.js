@@ -138,6 +138,7 @@ import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-p
 import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
 import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
 import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
+import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -149,12 +150,18 @@ import CatalystChecmicalsCalculation from 'components/kendo-data-tables/Catalyst
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
 import MaterialGroupedSelection from 'components/kendo-data-tables/MaterialGroupedSelection'
 
-// Vertical MEROX
+// Vertical MEROX Started
 import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
 import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
 import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
 import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 // Vertical MEROX Ended
+
+// Vertical ALKYLATION Started
+import SteadyStateConsumptionAlkylation from 'components/aop-phase-two/alkylation/steady-state-consumption'
+import OverallAopConsumptionAlkylation from 'components/aop-phase-two/alkylation/overall-aop-consumption'
+import ProductionNormsBasisAlkylation from 'components/aop-phase-two/alkylation/production-norms-basis'
+// Vertical ALKYLATION Ended
 
 // PCG
 import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
@@ -169,6 +176,7 @@ import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consum
 
 // Vertical Refinery Utility
 import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
+import ShutdownConsumptionRefinery from 'components/aop-phase-two/refineryUtility/shutdown-consumption/index'
 import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
 import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
@@ -189,6 +197,7 @@ import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/Othe
 import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
 import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
+import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 
 // Naphthasplitter Ended
 
@@ -411,6 +420,17 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'throughput-norms',
+            element: (
+              <PrivateRoute routeId='throughput-norms'>
+                <ThroughputNormsScreen />
+              </PrivateRoute>
+            ),
+          },
+
+
+
         ],
         // REFINERY AOP BUDGET Ended],
       },
@@ -1058,6 +1078,15 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'configuration-other-cost-polyester',
+            element: (
+              <PrivateRoute routeId='configuration-other-cost-polyester'>
+                <ConfigurationOtherCostPolyester />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical STAPLE (Polyester) Ended ****************************
 
           //Vertical MEROX Started
@@ -1086,6 +1115,33 @@ export const MainRoutes = (
             ),
           },
           //Vertical MEROX Ended
+
+          //Vertical ALKYLATION Started
+          {
+            path: 'production-norms-basis-alkylation',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-alkylation'>
+                <ProductionNormsBasisAlkylation />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-alkylation',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-alkylation'>
+                <SteadyStateConsumptionAlkylation />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-alkylation',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-alkylation'>
+                <OverallAopConsumptionAlkylation />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical ALKYLATION Ended
 
           //Vertical PCG Started
           {
@@ -1160,6 +1216,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='steady-state-consumption-refinery'>
                 <SteadyStateConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-refinery',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-refinery'>
+                <ShutdownConsumptionRefinery />
               </PrivateRoute>
             ),
           },
