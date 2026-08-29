@@ -5,7 +5,10 @@ import {
 import { SlowdownNormsMegColumns } from 'components/colums/MegColums'
 import { SlowdownNormsPeColumns } from 'components/colums/PeColums'
 import { SlowdownNormsPpColumns } from 'components/colums/PpColums'
-import { SlowdownNormsPtaColumns } from 'components/colums/PtaColums'
+import {
+  SlowdownNormsPtaColumns,
+  SlowdownConsumptionPtaPmdPiaColumns,
+} from 'components/colums/PtaColums'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 import { shouldLockColumn } from 'utils/columnLockUtils'
@@ -28,7 +31,11 @@ const getSlowdownNormsColDef = ({ headerMap, slowdownMonths, valueFormat }) => {
   const vertName = dataGridStore.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
   const lowerSiteName = dataGridStore.siteObject?.name?.toLowerCase()
-
+  const lowerPlantName = dataGridStore.plantObject?.name?.toLowerCase()
+  const IS_PTA_PMD_PIA =
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'pmd' &&
+    lowerPlantName === 'pia'
   let safeShutdownMonths = Array.isArray(slowdownMonths) ? slowdownMonths : []
 
   const cacheKey = `${lowerVertName}_${JSON.stringify(headerMap)}_${safeShutdownMonths.join(',')}`
@@ -39,6 +46,8 @@ const getSlowdownNormsColDef = ({ headerMap, slowdownMonths, valueFormat }) => {
   let cols = []
   if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
     cols = SlowdownNormsElastomerJmdColumns
+  } else if (IS_PTA_PMD_PIA) {
+    cols = SlowdownConsumptionPtaPmdPiaColumns
   } else {
     cols = VERTICAL_COLDEFS_MAP[lowerVertName] || []
   }
