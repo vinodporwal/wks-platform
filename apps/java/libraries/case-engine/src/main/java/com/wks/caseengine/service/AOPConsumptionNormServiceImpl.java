@@ -91,6 +91,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		boolean elastomerhmdsbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 		boolean staple = vertical.getName().equalsIgnoreCase("STAPLE");
 		boolean filament = vertical.getName().equalsIgnoreCase("Filament");
+		boolean chemical = vertical.getName().equalsIgnoreCase("Chemical");
 		boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("pmd") && plant.getName().equalsIgnoreCase("pia");
 		Boolean withGrade=false;
 		if(elastomerhmdsbr || pvc) {
@@ -174,14 +175,14 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					dto.setUOM(row[22] != null ? row[22].toString() : null);
 					dto.setIsEditable(row[23] != null ? Boolean.valueOf(row[23].toString()) : null);
 					dto.setProductName(row[24] != null ? row[24].toString() : null);
-					if(staple || filament || ptapmdpia){
+					if(staple || filament){
 					dto.setSapCode(row[25] != null ? row[25].toString() : "");
 					}
 					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						dto.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : null);
 						
 					}
-					if(vertical.getName().equalsIgnoreCase("Chemical")) {
+					if(chemical || ptapmdpia) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
 					
