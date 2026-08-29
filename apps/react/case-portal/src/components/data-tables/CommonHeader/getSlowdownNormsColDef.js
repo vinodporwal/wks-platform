@@ -5,7 +5,10 @@ import {
 import { SlowdownNormsMegColumns } from 'components/colums/MegColums'
 import { SlowdownNormsPeColumns } from 'components/colums/PeColums'
 import { SlowdownNormsPpColumns } from 'components/colums/PpColums'
-import { SlowdownNormsPtaColumns } from 'components/colums/PtaColums'
+import {
+  SlowdownNormsPtaColumns,
+  SlowdownConsumptionPtaPmdPiaColumns,
+} from 'components/colums/PtaColums'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 import { shouldLockColumn } from 'utils/columnLockUtils'
@@ -43,7 +46,7 @@ const getSlowdownNormsColDef = ({ headerMap, slowdownMonths, valueFormat }) => {
   let cols = []
   if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
     cols = SlowdownNormsElastomerJmdColumns
-  }else if(IS_PTA_PMD_PIA){
+  } else if (IS_PTA_PMD_PIA) {
     cols = SlowdownConsumptionPtaPmdPiaColumns
   } else {
     cols = VERTICAL_COLDEFS_MAP[lowerVertName] || []
