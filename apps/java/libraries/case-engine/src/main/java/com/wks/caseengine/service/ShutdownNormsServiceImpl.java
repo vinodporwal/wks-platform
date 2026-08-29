@@ -2392,13 +2392,13 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	        lockedGrayStyle.setBorderLeft(BorderStyle.THIN);
 	        lockedGrayStyle.setBorderRight(BorderStyle.THIN);
 
-	        // col 0: Sap Code, col 1: Type, col 2: Particulars, col 3: UOM,
+	        // col 0: Type, col 1: Particulars, col 2: UOM, col 3: Sap Code (read-only),
 	        // col 4-15: months, col 16: Remarks, col 17: Id (hidden), col 18: Material Id (hidden)
 	        List<String> innerHeaders = new ArrayList<>();
-	        innerHeaders.add("Sap Code");
 	        innerHeaders.add("Type");
 	        innerHeaders.add("Particulars");
 	        innerHeaders.add("UOM");
+	        innerHeaders.add("Sap Code");
 
 	        List<String> monthsList = getAcademicYearMonths(year);
 	        innerHeaders.addAll(monthsList);
@@ -2424,10 +2424,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	            Row row = sheet.createRow(currentRow++);
 
 	            List<Object> rowData = new ArrayList<>();
-	            rowData.add(dto.getSapCode());
 	            rowData.add(dto.getNormParameterTypeDisplayName());
 	            rowData.add(dto.getProductName());
 	            rowData.add(dto.getUOM());
+	            rowData.add(dto.getSapCode());
 	            rowData.add(dto.getApril());
 	            rowData.add(dto.getMay());
 	            rowData.add(dto.getJune());
@@ -2562,10 +2562,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 	                ShutdownNormsValueDTO dto = new ShutdownNormsValueDTO();
 	                try {
-	                    // col 0 (Sap Code) is read-only display — skipped, not stored
-	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(1), dto));
-	                    dto.setProductName(getStringCellValue(row.getCell(2), dto));
-	                    dto.setUOM(getStringCellValue(row.getCell(3), dto));
+	                    // col 0: Type, col 1: Particulars, col 2: UOM, col 3: Sap Code (read-only, skipped)
+	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                    dto.setProductName(getStringCellValue(row.getCell(1), dto));
+	                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
 	                    dto.setFinancialYear(year);
 
 	                    dto.setApril(getNumericCellValue(row.getCell(4), dto));
@@ -2632,10 +2632,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 	                ShutdownNormsValueDTO dto = new ShutdownNormsValueDTO();
 	                try {
-	                    // col 0 (Sap Code) is read-only display — skipped, not stored
-	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(1), dto));
-	                    dto.setProductName(getStringCellValue(row.getCell(2), dto));
-	                    dto.setUOM(getStringCellValue(row.getCell(3), dto));
+	                    // col 0: Type, col 1: Particulars, col 2: UOM, col 3: Sap Code (read-only, skipped)
+	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                    dto.setProductName(getStringCellValue(row.getCell(1), dto));
+	                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
 	                    dto.setFinancialYear(year);
 
 	                    if (activeMonths.contains(4))  dto.setApril(getNumericCellValue(row.getCell(4), dto));

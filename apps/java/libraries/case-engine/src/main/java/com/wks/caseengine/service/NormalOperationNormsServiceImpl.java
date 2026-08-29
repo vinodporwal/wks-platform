@@ -3617,21 +3617,20 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						continue;
 					}
 
-					MCUNormsValueDTO dto = new MCUNormsValueDTO();
-					try {
-						// col 0 is Sap Code — read-only display column, not stored
-						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(1), dto));
+				MCUNormsValueDTO dto = new MCUNormsValueDTO();
+				try {
+					dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 
-						String productName = getStringCellValue(row.getCell(2), dto);
-						String materialFkId = materialMap.get(Utility.sanitizeSheetName(productName));
-						dto.setProductName(productName);
-						dto.setMaterialFkId(materialFkId);
+					String productName = getStringCellValue(row.getCell(1), dto);
+					String materialFkId = materialMap.get(Utility.sanitizeSheetName(productName));
+					dto.setProductName(productName);
+					dto.setMaterialFkId(materialFkId);
 
-						dto.setUOM(getStringCellValue(row.getCell(3), dto));
+					dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
-						dto.setFinancialYear(year);
-						dto.setPlantFkId(plantFKId.toString());
-						dto.setApril(getNumericCellValue(row.getCell(4), dto));
+					dto.setFinancialYear(year);
+					dto.setPlantFkId(plantFKId.toString());
+					dto.setApril(getNumericCellValue(row.getCell(4), dto));
 						dto.setMay(getNumericCellValue(row.getCell(5), dto));
 						dto.setJune(getNumericCellValue(row.getCell(6), dto));
 						dto.setJuly(getNumericCellValue(row.getCell(7), dto));
@@ -3677,17 +3676,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 				while (rowIterator.hasNext()) {
 					Row row = rowIterator.next();
-					MCUNormsValueDTO dto = new MCUNormsValueDTO();
+				MCUNormsValueDTO dto = new MCUNormsValueDTO();
 
-					try {
-						// col 0 is Sap Code — read-only display column, not stored
-						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(1), dto));
-						dto.setProductName(getStringCellValue(row.getCell(2), dto));
+				try {
+					dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+					dto.setProductName(getStringCellValue(row.getCell(1), dto));
 
-						if ("Total Fuel".equalsIgnoreCase(dto.getProductName())) {
-							// placeholder — same as readConfigurations
-						} else {
-							dto.setApril(getNumericCellValue(row.getCell(4), dto));
+					if ("Total Fuel".equalsIgnoreCase(dto.getProductName())) {
+						// placeholder — same as readConfigurations
+					} else {
+						dto.setApril(getNumericCellValue(row.getCell(4), dto));
 							dto.setMay(getNumericCellValue(row.getCell(5), dto));
 							dto.setJune(getNumericCellValue(row.getCell(6), dto));
 							dto.setJuly(getNumericCellValue(row.getCell(7), dto));
@@ -3700,20 +3698,20 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							dto.setFebruary(getNumericCellValue(row.getCell(14), dto));
 							dto.setMarch(getNumericCellValue(row.getCell(15), dto));
 						}
-						dto.setUOM(getStringCellValue(row.getCell(3), dto));
+					dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
-						dto.setFinancialYear(year);
+					dto.setFinancialYear(year);
 
-						if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
-							dto.setWtAverage(getNumericCellValue(row.getCell(16), dto));
-							dto.setRemarks(getStringCellValue(row.getCell(17), dto));
-							dto.setId(getStringCellValue(row.getCell(18), dto));
-						} else {
-							dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-							dto.setId(getStringCellValue(row.getCell(17), dto));
-						}
+					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
+						dto.setWtAverage(getNumericCellValue(row.getCell(16), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(17), dto));
+						dto.setId(getStringCellValue(row.getCell(18), dto));
+					} else {
+						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+						dto.setId(getStringCellValue(row.getCell(17), dto));
+					}
 
-					} catch (Exception e) {
+				} catch (Exception e) {
 						e.printStackTrace();
 						dto.setErrDescription(e.getMessage());
 						dto.setSaveStatus("Failed");
@@ -4503,13 +4501,13 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			remarksUnlockedStyle.setBorderRight(BorderStyle.THIN);
 			remarksUnlockedStyle.setWrapText(true);
 
-			for (MCUNormsValueDTO dto : dtoList) {
-				List<Object> list = new ArrayList<>();
-				list.add(dto.getSapCode());
-				list.add(dto.getNormParameterTypeDisplayName());
-				list.add(dto.getProductName());
-				list.add(dto.getUOM());
-				list.add(dto.getApril());
+		for (MCUNormsValueDTO dto : dtoList) {
+			List<Object> list = new ArrayList<>();
+			list.add(dto.getNormParameterTypeDisplayName());
+			list.add(dto.getProductName());
+			list.add(dto.getUOM());
+			list.add(dto.getSapCode());
+			list.add(dto.getApril());
 				list.add(dto.getMay());
 				list.add(dto.getJune());
 				list.add(dto.getJuly());
@@ -4534,11 +4532,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				rows.add(list);
 			}
 
-			List<String> innerHeaders = new ArrayList<>();
-			innerHeaders.add("Sap Code");
-			innerHeaders.add("Type");
-			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
+		List<String> innerHeaders = new ArrayList<>();
+		innerHeaders.add("Type");
+		innerHeaders.add("Particulars");
+		innerHeaders.add("UOM");
+		innerHeaders.add("Sap Code");
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
 			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
@@ -4551,49 +4549,52 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				innerHeaders.add("Error Description");
 			}
 
-			int remarksColIndex = innerHeaders.indexOf("Remarks");
-			int idColIndex = innerHeaders.indexOf("Id");
+		int remarksColIndex = innerHeaders.indexOf("Remarks");
+		int idColIndex = innerHeaders.indexOf("Id");
+		int sapCodeColIndex = innerHeaders.indexOf("Sap Code");
 
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
+		List<List<String>> headers = new ArrayList<>();
+		headers.add(innerHeaders);
 
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+		for (List<String> headerRowData : headers) {
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerRowData.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerRowData.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+		}
+		for (List<Object> rowData : rows) {
+			boolean isRowEditable = true;
+			if (isEditable.get(currentRow - 1) != null) {
+				isRowEditable = isEditable.get(currentRow - 1);
+			}
+
+			Row row = sheet.createRow(currentRow++);
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row.createCell(col);
+				Object value = rowData.get(col);
+
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else {
+					cell.setCellValue("");
+				}
+				if (col == remarksColIndex) {
+					cell.setCellStyle(isRowEditable ? remarksUnlockedStyle : remarksLockedStyle);
+				} else if (col == sapCodeColIndex) {
+					cell.setCellStyle(lockedStyle);
+				} else if (isRowEditable) {
+					cell.setCellStyle(unlockedStyle);
+				} else {
+					cell.setCellStyle(lockedStyle);
 				}
 			}
-			for (List<Object> rowData : rows) {
-				boolean isRowEditable = true;
-				if (isEditable.get(currentRow - 1) != null) {
-					isRowEditable = isEditable.get(currentRow - 1);
-				}
-
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
-
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue());
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
-					if (col == remarksColIndex) {
-						cell.setCellStyle(isRowEditable ? remarksUnlockedStyle : remarksLockedStyle);
-					} else if (isRowEditable) {
-						cell.setCellStyle(unlockedStyle);
-					} else {
-						cell.setCellStyle(lockedStyle);
-					}
-				}
-			}
+		}
 
 			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
 				sheet.setColumnHidden(18, true);
