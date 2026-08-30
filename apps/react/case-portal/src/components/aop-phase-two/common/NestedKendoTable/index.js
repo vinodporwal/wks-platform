@@ -185,9 +185,9 @@ const NestedKendoTable = ({
   const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
 
   const initialGroup = Array.isArray(groupBy)
-    ? groupBy.map((field) => ({ field }))
+    ? groupBy.map((field) => ({ field, dir: undefined }))
     : groupBy
-      ? [{ field: groupBy }]
+      ? [{ field: groupBy, dir: undefined }]
       : []
 
   const toggleGrid = () => {
