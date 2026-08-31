@@ -14,6 +14,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 public interface ShutDownPlanService {
 	
 	public List<ShutDownPlanDTO> findMaintenanceDetailsByPlantIdAndType(UUID plantId,String maintenanceTypeName, String year);
+	public List<ShutDownPlanDTO> findMaintenanceDetailsWithValueByPlantIdAndType(UUID plantId,String maintenanceTypeName, String year);
 	byte[] shutdownExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
 			List<ShutDownPlanDTO> mapForExcel);
 	byte[] shutdownNonProductExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,

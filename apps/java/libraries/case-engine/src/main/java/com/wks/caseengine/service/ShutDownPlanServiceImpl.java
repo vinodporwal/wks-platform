@@ -188,6 +188,51 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		}
 	}
 
+	@Override
+	public List<ShutDownPlanDTO> findMaintenanceDetailsWithValueByPlantIdAndType(UUID plantId, String maintenanceTypeName,
+			String year) {
+		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
+		try {
+			List<Object[]> listOfSite = shutDownPlanRepository
+					.findMaintenanceDetailsWithValueByPlantIdAndType(maintenanceTypeName, plantId.toString(), year);
+			for (Object[] result : listOfSite) {
+				ShutDownPlanDTO dto = new ShutDownPlanDTO();
+				dto.setDiscription((String) result[0]);
+				dto.setMaintStartDateTime((Date) result[1]);
+				dto.setMaintEndDateTime((Date) result[2]);
+				dto.setDurationInMins(result[3] != null ? ((Integer) result[3]) : null);
+				if (result[3] != null) {
+					int totalMinutes = (Integer) result[3];
+					int hours = totalMinutes / 60;
+					int minutes = totalMinutes % 60;
+					double durationInHrs = hours + (minutes / 100.0);
+					dto.setDurationInHrs(durationInHrs);
+				}
+				dto.setProduct((String) result[6]);
+				// FOR ID : pmt.Id
+				dto.setId(result[5] != null ? result[5].toString() : null);
+				if ((String) result[7] != null) {
+					dto.setRemark((String) result[7]);
+				} else {
+					dto.setRemark(null);
+				}
+				dto.setDisplayOrder(result[8] != null ? ((Integer) result[8]) : null);
+				dto.setLineId(result[9] != null ? result[9].toString() : null);
+				if (dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+					dto.setLineDisplayName(getLineDisplayNameByLineId(plantId, dto.getLineId()));
+				}
+				dto.setShutdownRate(result[10] != null ? result[10].toString() : null);
+				dto.setRate(result[11] != null ? (Double) result[11] : null);
+				dtoList.add(dto);
+			}
+			return dtoList;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	private CellStyle createDateTimeStyle(Workbook workbook, String excelFormat) {
 		CellStyle style = workbook.createCellStyle();
 		CreationHelper createHelper = workbook.getCreationHelper();
