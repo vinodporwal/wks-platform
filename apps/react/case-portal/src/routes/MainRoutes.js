@@ -139,6 +139,7 @@ import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slo
 import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
 import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
 import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
+import ProductGradeSelection from 'components/aop-phase-two/polyester/product-grade-selection/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -1083,6 +1084,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='configuration-other-cost-polyester'>
                 <ConfigurationOtherCostPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'product-grade-selection-polyester',
+            element: (
+              <PrivateRoute routeId='product-grade-selection-polyester'>
+                <ProductGradeSelection />
               </PrivateRoute>
             ),
           },
