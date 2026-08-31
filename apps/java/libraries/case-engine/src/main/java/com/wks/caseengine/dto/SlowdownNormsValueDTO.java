@@ -47,7 +47,6 @@ public class SlowdownNormsValueDTO {
     private Boolean isEditable;
     private String productName;
     private String gradeId;
-    private String sapCode;
     private String saveStatus;
   	private String errDescription;
 }

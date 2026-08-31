@@ -39,7 +39,5 @@ public interface NormalOperationNormsService {
 	public AOPMessageVM checkAllGradeNormsPolyester(UUID fromString, String year, String gradeId);
 	public AOPMessageVM calculateNormalOpsNormsPolyester(String aopYear, String plantId, String siteId, String verticalId);
 
-	public byte[] createExcelWithSapCode(String year, UUID plantFKId, boolean isAfterSave, List<MCUNormsValueDTO> dtoList, String mode, String gradeId);
-	public AOPMessageVM importExcelWithSapCode(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode);
 
 }

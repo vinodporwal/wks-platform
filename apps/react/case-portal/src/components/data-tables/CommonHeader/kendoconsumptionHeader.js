@@ -6,7 +6,6 @@ import productionColDefs1 from '../../../assets/kendo_consumption_aop_cracker.js
 import productionColCrackerC2Defs from '../../../assets/kendo_consumption_aop_cracker_c2.json'
 import productionColDefsVcm from '../../../assets/kendo_consumption_aop_vcm.json'
 import productionColDefsPta from '../../../assets/kendo_consumption_aop_pta.json'
-import productionColDefsPtaPmdPia from '../../../assets/kendo_consumption_pta_pmd_pia.json'
 import productionColDefsChemical from '../../../assets/kendo_consumption_aop_chemical.json'
 // import productionColDefsVcmDmd from '../../../assets/kendo_consumption_aop_vcmdmd.json'
 import { shouldLockColumn } from 'utils/columnLockUtils'
@@ -19,8 +18,8 @@ const getEnhancedColDefs = ({
   valueFormat,
 }) => {
   let colDefs = productionColDefs
-  const IS_PTA_PMD_PIA=lowerVertName === 'pta' && lowerSiteName=== 'pmd' && lowerPlantName === 'pia'
 
+  // console.log('lowerVertName', lowerVertName)
   if (lowerVertName === 'cracker' && lowerSiteName === 'c2') {
     colDefs = productionColCrackerC2Defs
   } else if (
@@ -45,9 +44,7 @@ const getEnhancedColDefs = ({
     )
   ) {
     colDefs = productionColDefsElastomer
-  } else if (IS_PTA_PMD_PIA) {
-    colDefs = productionColDefsPtaPmdPia
-  }else if (lowerVertName === 'pta') {
+  } else if (lowerVertName === 'pta') {
     colDefs = productionColDefsPta
   } else if (lowerVertName === 'vcm') {
     colDefs = productionColDefsVcm
