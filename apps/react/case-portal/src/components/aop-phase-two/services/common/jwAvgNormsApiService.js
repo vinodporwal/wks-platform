@@ -71,15 +71,41 @@ async function saveJobWorkAvgNormsData(keycloak, payload) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} [fileName] - Download file name
  * @returns {Promise}
  */
-async function exportJobWorkAvgNormsExcel(keycloak, plantId, year) {
-  return ImportExportApiService.exportExcelData(keycloak, {
-    endpoint: `job-work-avg-norms/export`,
-    queryParams: { plantId, aopYear: year },
-    fileName: `Job_Work_Avg_Norms_${year}.xlsx`,
-    method: 'GET',
-  })
+async function exportJobWorkAvgNormsExcel(keycloak, plantId, year, fileName) {
+  const queryParams = { plantId, aopYear: year }
+  const queryString = new URLSearchParams(queryParams).toString()
+  const url = `${Config.CaseEngineUrl}/task/job-work-avg-norms/export${queryString ? `?${queryString}` : ''}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Failed to export Excel: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = fileName || `Job_Work_Avg_Norms_${year}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error in exportJobWorkAvgNormsExcel:', e)
+    return Promise.reject(e)
+  }
 }
 
 /**

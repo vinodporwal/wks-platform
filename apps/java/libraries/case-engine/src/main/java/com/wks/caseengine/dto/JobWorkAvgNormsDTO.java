@@ -29,4 +29,8 @@ public class JobWorkAvgNormsDTO {
     private Double value;
     private String remarks;
     private String plantName;
+    private String status;
+    private String saveStatus;
+    private String errorDescription;
+    private String errDescription;
 }

@@ -19,11 +19,15 @@ const JWAvgNorms = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, oldYear } = dataGridStore
+  const { plantObject, year, oldYear, verticalObject, siteObject } = dataGridStore
   const PLANT_ID = plantObject?.id
+  const PLANT_NAME = plantObject?.name || ''
+  const VERTICAL_NAME = verticalObject?.name || ''
+  const SITE_NAME = siteObject?.name || ''
   const AOP_YEAR = year?.selectedYear
   const IS_OLD_YEAR = oldYear?.oldYear
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_Job_Work_Avg_Norms`
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -82,22 +86,17 @@ const JWAvgNorms = () => {
     {
       field: 'materialGroup',
       title: 'Material Group',
-      widthT: 150,
-      minWidth: 120,
-      type: 'customAction',
-      className: 'k-text-center',
-      headerClassName: 'k-text-center',
-      cell: (cellProps) => (
-        <td
-          style={{
-            textAlign: 'center',
-            padding: '8px',
-            backgroundColor: '#ffffff',
-          }}
-        >
-          {cellProps.dataItem.materialGroup}
-        </td>
-      ),
+      widthT: 180,
+      minWidth: 140,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'groupDisplayName',
+      title: 'Group Name',
+      widthT: 180,
+      minWidth: 140,
+      type: 'text',
       editable: false,
     },
     {
@@ -192,7 +191,7 @@ const JWAvgNorms = () => {
     saveBtn: !READ_ONLY,
     allAction: true,
     showExport: true,
-    ExcelName: `Job_Work_Avg_Norms_${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showImport: !READ_ONLY,
     showTitleNameBusiness: true,
     showTitle: true,
@@ -288,10 +287,12 @@ const JWAvgNorms = () => {
 
   const handleExport = async () => {
     try {
+      const fileName = `${EXCEL_NAME}.xlsx`
       await JWAvgNormsApiService.exportJobWorkAvgNormsExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        fileName,
       )
     } catch (error) {
       console.error('Error exporting JW Avg Norms Excel:', error)
@@ -321,6 +322,42 @@ const JWAvgNorms = () => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
+        await fetchJWAvgNormsData()
+      } else if (response?.code === 400 && response?.data) {
+        try {
+          const base64Data = response.data
+          const binaryString = window.atob(base64Data)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          const blob = new Blob([bytes], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `Job_Work_Avg_Norms_Errors_${Date.now()}.xlsx`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message:
+              response?.message ||
+              'Validation errors found. Error file downloaded.',
+            severity: 'error',
+          })
+        } catch (downloadErr) {
+          console.error('Error downloading error Excel file:', downloadErr)
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response?.message || 'Failed to import Excel file.',
+            severity: 'error',
+          })
+        }
         await fetchJWAvgNormsData()
       } else {
         setSnackbarOpen(true)
