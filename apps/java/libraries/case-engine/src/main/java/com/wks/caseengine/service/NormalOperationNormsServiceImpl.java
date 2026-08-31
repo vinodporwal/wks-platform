@@ -488,6 +488,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        String uomKey = null;
 	        String wtAvgKey = null;
 	        String remarksKey = null;
+	        String isEditableKey = null;
 
 	        for (String key : rawHeaders) {
 	            String sanitizedKey = key.replaceAll("[_ ]", "");
@@ -503,6 +504,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                wtAvgKey = key;
 	            } else if (sanitizedKey.equalsIgnoreCase("Remarks")) {
 	                remarksKey = key;
+	            } else if (sanitizedKey.equalsIgnoreCase("IsEditable")) {
+	                isEditableKey = key;
 	            } else if (isValidUUID(key)) {
 	                dynamicUuidHeaders.add(key);
 	            }
@@ -527,14 +530,19 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        if (normParamTypeKey != null) {
 	            hiddenKeys.add(normParamTypeKey);
 	        }
+	        if (isEditableKey != null) {
+	            hiddenKeys.add(isEditableKey);
+	        }
 
 	        int visibleColumnCount = orderedKeys.size();
 
 	        Workbook workbook = new XSSFWorkbook();
 	        Sheet sheet = workbook.createSheet("Steady State Norms");
+	        sheet.protectSheet("secret_password");
 
 	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
-	        CellStyle totalStyle = Utility.createBoldBorderedStyle(workbook);
+	        CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+	        CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
 
 	        
 	        Row headerRow = sheet.createRow(0);
@@ -566,13 +574,19 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        }
 
 	        
-	        Map<String, Double> totalsMap = new HashMap<>();
 	        int rowIdx = 1;
 
 	        for (Map<String, Object> rowData : dynamicData) {
 	            Row row = sheet.createRow(rowIdx++);
 
-	            
+	            boolean isRowEditable = true;
+	            if (isEditableKey != null) {
+	                Object editableVal = rowData.get(isEditableKey);
+	                if (editableVal != null) {
+	                    isRowEditable = Boolean.parseBoolean(editableVal.toString());
+	                }
+	            }
+
 	            for (int colIdx = 0; colIdx < visibleColumnCount; colIdx++) {
 	                String key = orderedKeys.get(colIdx);
 	                Cell cell = row.createCell(colIdx);
@@ -589,15 +603,14 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    Object value = rowData.get(key);
 
 	                    if (value instanceof Number) {
-	                        double val = ((Number) value).doubleValue();
-	                        cell.setCellValue(val);
-	                        totalsMap.put(key, totalsMap.getOrDefault(key, 0.0) + val);
+	                        cell.setCellValue(((Number) value).doubleValue());
 	                    } else if (value != null) {
 	                        cell.setCellValue(value.toString());
 	                    } else {
 	                        cell.setCellValue("");
 	                    }
 	                }
+	                cell.setCellStyle(isRowEditable ? unlockedStyle : lockedStyle);
 	            }
 
 	           
@@ -618,29 +631,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    cell.setCellValue("");
 	                }
 	            }
-	        }
-
-	        
-	        Row totalRow = sheet.createRow(rowIdx);
-	        for (int i = 0; i < visibleColumnCount; i++) {
-	            String key = orderedKeys.get(i);
-	            Cell cell = totalRow.createCell(i);
-	            cell.setCellStyle(totalStyle);
-
-	            if ("PARTICULARS_HEADER".equals(key)) {
-	                cell.setCellValue("Total");
-	            } else if (totalsMap.containsKey(key)) {
-	                cell.setCellValue(totalsMap.get(key));
-	            } else {
-	                cell.setCellValue("");
-	            }
-	        }
-
-	        
-	        for (int i = 0; i < hiddenKeys.size(); i++) {
-	            Cell cell = totalRow.createCell(visibleColumnCount + i);
-	            cell.setCellStyle(totalStyle);
-	            cell.setCellValue("");
 	        }
 
 	       
