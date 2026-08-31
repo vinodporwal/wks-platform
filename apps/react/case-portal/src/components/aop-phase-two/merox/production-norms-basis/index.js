@@ -14,6 +14,7 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/mer
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
 import ManualEntryDyanamic from './ManualEntryDyanamic'
+import JWAvgNorms from 'components/aop-phase-two/crude/production-norms-basis/JWAvgNorms'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -237,6 +238,8 @@ const ProductionNormsBasis = () => {
       case 'pims-monthly-throughput':
       case 'pims-monthly-throughtput':
         return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
+      case 'Job Work Avg Norms':
+        return <JWAvgNorms />
       case 'Manual Entry':
         return (
           <ManualEntryWrapper

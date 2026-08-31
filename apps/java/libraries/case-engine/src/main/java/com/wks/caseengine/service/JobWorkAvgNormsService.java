@@ -13,5 +13,6 @@ public interface JobWorkAvgNormsService {
     AOPMessageVM getJobWorkAvgNormsData(UUID plantId, String aopYear);
     AOPMessageVM saveJobWorkAvgNormsData(List<JobWorkAvgNormsDTO> dtoList);
     byte[] exportJobWorkAvgNormsExcel(UUID plantId, String aopYear);
+    byte[] exportJobWorkAvgNormsExcel(UUID plantId, String aopYear, boolean isAfterSave, List<JobWorkAvgNormsDTO> list);
     AOPMessageVM importJobWorkAvgNormsExcel(UUID plantId, String aopYear, MultipartFile file);
 }

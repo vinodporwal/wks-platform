@@ -6,6 +6,7 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/coker/overallAopConsumptionApiService'
+import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumptionCoker = () => {
@@ -23,6 +24,12 @@ const OverallAopConsumptionCoker = () => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
+    useReleaseAOP({
+      setSnackbarOpen,
+      setSnackbarData,
+    })
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -266,6 +273,8 @@ const OverallAopConsumptionCoker = () => {
     allAction: true,
     downloadExcelBtnFromUI: true,
     showCalculate: true,
+    showReleaseBtn: true,
+    isReleaseDisabled: isReleaseDisabled,
     ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
     showImport: false,
     showTitleNameBusiness: true,
@@ -286,6 +295,8 @@ const OverallAopConsumptionCoker = () => {
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleCalculate={handleCalculate}
+        handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
@@ -299,6 +310,8 @@ const OverallAopConsumptionCoker = () => {
           defaultPageSize: 100,
         }}
       />
+
+      {ReleaseDialogComponent}
     </Box>
   )
 }
