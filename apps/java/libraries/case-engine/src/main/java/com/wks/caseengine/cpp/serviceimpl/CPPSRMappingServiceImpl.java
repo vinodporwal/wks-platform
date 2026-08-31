@@ -400,6 +400,96 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         return response;
     }
 
+    // ── Export SR Mapping by Plant ────────────────────────────────────────────
+
+    @Override
+    public byte[] exportSRMappingByPlant(String plantIds, String financialYear) {
+        logger.info("[Export SR Mapping By Plant] plantIds: {}, financialYear: {}", plantIds, financialYear);
+        try {
+            AOPMessageVM response = getSRMappingByPlant(plantIds, financialYear);
+
+            @SuppressWarnings("unchecked")
+            List<SRMappingDTO> dtoList = (List<SRMappingDTO>) response.getData();
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            return buildSRMappingByPlantExcel(dtoList);
+        } catch (Exception e) {
+            logger.error("[Export SR Mapping By Plant] Error: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private byte[] buildSRMappingByPlantExcel(List<SRMappingDTO> dtoList) throws Exception {
+        org.apache.poi.ss.usermodel.Workbook workbook = new XSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("CPP_SRMapping");
+
+        CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle dataStyle   = ExcelStyles.createDataStyle(workbook);
+
+        // ── Header row ───────────────────────────────────────────────────────
+        List<String> headers = new ArrayList<>();
+        headers.add("Sender Plant Name");
+        headers.add("Sender Plant Code");
+        headers.add("Sender Utility Name");
+        headers.add("Sender Utility Code");
+        headers.add("Sender Utility UOM");
+        headers.add("Sender Cost Center Name");
+        headers.add("Sender Cost Center Code");
+        headers.add("Receiver Plant Name");
+        headers.add("Receiver Plant Code");
+        headers.add("Receiver Utility Name");
+        headers.add("Receiver Utility Code");
+        headers.add("Receiver Utility UOM");
+        headers.add("Receiver Cost Center Name");
+        headers.add("Receiver Cost Center Code");
+        headers.add("Remarks");
+        // Hidden ID column (last)
+        headers.add("id");
+
+        Row headerRow = sheet.createRow(0);
+        for (int c = 0; c < headers.size(); c++) {
+            ExcelCells.setString(headerRow.createCell(c), headers.get(c), headerStyle);
+        }
+
+        // ── Data rows ────────────────────────────────────────────────────────
+        int rowNum = 1;
+        for (SRMappingDTO dto : dtoList) {
+            Row row = sheet.createRow(rowNum++);
+            int col = 0;
+
+            ExcelCells.setString(row.createCell(col++), dto.getSenderPlantName(),       dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderPlantCode(),       dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderUtilityName(),     dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderUtilityCode(),     dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderUtilityUOM(),      dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderCostCenterName(),  dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getSenderCostCenterCode(),  dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverPlantName(),     dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverPlantCode(),     dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverUtilityName(),   dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverUtilityCode(),   dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverUtilityUOM(),    dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverCostCenterName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getReceiverCostCenterCode(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getRemarks(),               dataStyle);
+            // Hidden id (last column)
+            ExcelCells.setString(row.createCell(col++),
+                    dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+        }
+
+        // Auto-size visible columns, then hide the id column
+        ExcelColumns.autoSize(sheet, headers.size(), -1);
+        int idColIndex = headers.size() - 1;
+        ExcelColumns.hideColumns(sheet, idColIndex);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        workbook.write(baos);
+        workbook.close();
+        return baos.toByteArray();
+    }
+
     /** Null-safe string from result-set row. */
     private String str(Map<String, Object> row, String key) {
         Object val = row.get(key);

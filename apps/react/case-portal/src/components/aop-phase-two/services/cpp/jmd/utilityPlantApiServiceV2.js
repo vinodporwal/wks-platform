@@ -670,8 +670,8 @@ async function exportSRMappingExcel(keycloak, plantFkIds, aopYear) {
   const queryParams = plantIdArray.map((id) => id).join(',')
 
   return exportExcelData(keycloak, {
-    endpoint: `sr-mapping/export?aopYear=${aopYear}&plantFkId=${queryParams}`,
-    queryParams: {},
+    endpoint: `sr-mapping/by-plant/export`,
+    queryParams: { plantIds: queryParams, financialYear: aopYear },
     fileName: `CPP_SRMapping_${aopYear}.xlsx`,
     method: 'GET',
   })
