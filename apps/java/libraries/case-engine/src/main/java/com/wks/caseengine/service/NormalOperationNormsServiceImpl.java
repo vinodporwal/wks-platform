@@ -425,7 +425,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	@Override
 	public byte[] exportSteadyStateNormsDynamic(String year, String plantId, boolean isAfterSave, List<Map<String, Object>> dynamicData) {
 	    try {
-	       
 	        if (!isAfterSave) {
 	            List<Object[]> results = getSteadyStateNormsData(plantId, year);
 	            List<String> rawColumnNames = getSteadyStateNormsColumns(plantId, year);
@@ -451,7 +450,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	        List<String> rawHeaders = new ArrayList<>(dynamicData.get(0).keySet());
 
-	       
 	        List<Map<String, Object>> metadataList = getSteadyStateNormsColumnMetadata(plantId, year, rawHeaders);
 
 	        Map<String, String> fieldToTitleMap = new HashMap<>();
@@ -461,12 +459,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            fieldToTitleMap.put(field, title != null ? title : field);
 	        }
 
-	       
 	        Map<UUID, String> normParamsDisplayNameMap = new HashMap<>();
 	        List<UUID> materialFkIds = new ArrayList<>();
 
 	        for (Map<String, Object> row : dynamicData) {
-	            
 	            Object matFkVal = row.entrySet().stream()
 	                    .filter(e -> e.getKey().replaceAll("[_ ]", "").equalsIgnoreCase("MaterialFKId"))
 	                    .map(Map.Entry::getValue)
@@ -485,9 +481,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            }
 	        }
 
-	       
 	        List<String> dynamicUuidHeaders = new ArrayList<>();
 	        String matFkKey = null;
+	        String normParamTypeKey = null;
 	        String sapCodeKey = null;
 	        String uomKey = null;
 	        String wtAvgKey = null;
@@ -496,7 +492,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        for (String key : rawHeaders) {
 	            String sanitizedKey = key.replaceAll("[_ ]", "");
 	            if (sanitizedKey.equalsIgnoreCase("MaterialFKId")) {
-	                matFkKey = key; // Captures exact key present in the map (e.g., "Material_FK_Id")
+	                matFkKey = key;
+	            } else if (sanitizedKey.equalsIgnoreCase("NormParameterTypeId") || sanitizedKey.equalsIgnoreCase("NormParameterTypeFKId")) {
+	                normParamTypeKey = key;
 	            } else if (sanitizedKey.equalsIgnoreCase("SAPMaterialCode")) {
 	                sapCodeKey = key;
 	            } else if (sanitizedKey.equalsIgnoreCase("UOM")) {
@@ -510,16 +508,28 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            }
 	        }
 
-	       
+	        if (normParamTypeKey == null && matFkKey != null) {
+	            normParamTypeKey = "NormParameterTypeId";
+	        }
+
 	        List<String> orderedKeys = new ArrayList<>();
 	        orderedKeys.add("PARTICULARS_HEADER"); 
 	        if (sapCodeKey != null) orderedKeys.add(sapCodeKey);
 	        if (uomKey != null) orderedKeys.add(uomKey);
-	        orderedKeys.addAll(dynamicUuidHeaders);
+	        orderedKeys.addAll(dynamicUuidHeaders); // Visible dynamic Grade columns
 	        if (wtAvgKey != null) orderedKeys.add(wtAvgKey);
 	        if (remarksKey != null) orderedKeys.add(remarksKey);
 
-	        
+	        List<String> hiddenKeys = new ArrayList<>();
+	        if (matFkKey != null) {
+	            hiddenKeys.add(matFkKey);
+	        }
+	        if (normParamTypeKey != null) {
+	            hiddenKeys.add(normParamTypeKey);
+	        }
+
+	        int visibleColumnCount = orderedKeys.size();
+
 	        Workbook workbook = new XSSFWorkbook();
 	        Sheet sheet = workbook.createSheet("Steady State Norms");
 
@@ -528,10 +538,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	        
 	        Row headerRow = sheet.createRow(0);
-	        for (int i = 0; i < orderedKeys.size(); i++) {
+
+	        
+	        for (int i = 0; i < visibleColumnCount; i++) {
 	            Cell cell = headerRow.createCell(i);
 	            String key = orderedKeys.get(i);
-	            
+
 	            String displayHeader;
 	            if ("PARTICULARS_HEADER".equals(key)) {
 	                displayHeader = "Particulars";
@@ -545,20 +557,28 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            cell.setCellStyle(headerStyle);
 	        }
 
-	       
+	        
+	        for (int i = 0; i < hiddenKeys.size(); i++) {
+	            int colIdx = visibleColumnCount + i;
+	            Cell cell = headerRow.createCell(colIdx);
+	            cell.setCellValue(hiddenKeys.get(i));
+	            cell.setCellStyle(headerStyle);
+	        }
+
+	        
 	        Map<String, Double> totalsMap = new HashMap<>();
 	        int rowIdx = 1;
 
 	        for (Map<String, Object> rowData : dynamicData) {
 	            Row row = sheet.createRow(rowIdx++);
-	            for (int colIdx = 0; colIdx < orderedKeys.size(); colIdx++) {
+
+	            
+	            for (int colIdx = 0; colIdx < visibleColumnCount; colIdx++) {
 	                String key = orderedKeys.get(colIdx);
 	                Cell cell = row.createCell(colIdx);
 
 	                if ("PARTICULARS_HEADER".equals(key)) {
-	                   
 	                    Object matFkVal = matFkKey != null ? rowData.get(matFkKey) : null;
-	                    
 	                    if (matFkVal != null && isValidUUID(matFkVal.toString())) {
 	                        UUID uuidKey = UUID.fromString(matFkVal.toString());
 	                        cell.setCellValue(normParamsDisplayNameMap.getOrDefault(uuidKey, matFkVal.toString()));
@@ -579,11 +599,30 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    }
 	                }
 	            }
+
+	           
+	            for (int i = 0; i < hiddenKeys.size(); i++) {
+	                int colIdx = visibleColumnCount + i;
+	                String key = hiddenKeys.get(i);
+	                Cell cell = row.createCell(colIdx);
+
+	                Object value = rowData.get(key);
+	                // Fallback: If NormParameterTypeId value is missing in map, reuse MaterialFKId
+	                if (value == null && "NormParameterTypeId".equalsIgnoreCase(key) && matFkKey != null) {
+	                    value = rowData.get(matFkKey);
+	                }
+
+	                if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }
+	            }
 	        }
 
-	       
+	        
 	        Row totalRow = sheet.createRow(rowIdx);
-	        for (int i = 0; i < orderedKeys.size(); i++) {
+	        for (int i = 0; i < visibleColumnCount; i++) {
 	            String key = orderedKeys.get(i);
 	            Cell cell = totalRow.createCell(i);
 	            cell.setCellStyle(totalStyle);
@@ -597,12 +636,23 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            }
 	        }
 
-	       
-	        for (int i = 0; i < orderedKeys.size(); i++) {
-	            sheet.autoSizeColumn(i);
+	        
+	        for (int i = 0; i < hiddenKeys.size(); i++) {
+	            Cell cell = totalRow.createCell(visibleColumnCount + i);
+	            cell.setCellStyle(totalStyle);
+	            cell.setCellValue("");
 	        }
 
 	       
+	        for (int i = 0; i < visibleColumnCount; i++) {
+	            sheet.autoSizeColumn(i);
+	        }
+
+	        for (int i = 0; i < hiddenKeys.size(); i++) {
+	            int colIdx = visibleColumnCount + i;
+	            sheet.setColumnHidden(colIdx, true);
+	        }
+
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
 	        workbook.close();
@@ -661,82 +711,145 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        Row headerRow = sheet.getRow(0);
 	        if (headerRow == null) return payloadList;
 
-	        // Fetch DB metadata titles to map headers back to actual Keys/UUIDs
+	        int totalCols = headerRow.getLastCellNum();
+
+	        
 	        List<String> rawColumnNames = getSteadyStateNormsColumns(plantId, year);
 	        List<Map<String, Object>> metadataList = getSteadyStateNormsColumnMetadata(plantId, year, rawColumnNames);
 
-	        // Build Title -> Key Map (Reverse lookup for dynamic UUID headers and system fields)
 	        Map<String, String> titleToFieldMap = new HashMap<>();
 	        for (Map<String, Object> meta : metadataList) {
 	            String field = (String) meta.get("field");
 	            String title = (String) meta.get("title");
-	            if (title != null && !title.isEmpty()) {
+	            if (title != null && !title.trim().isEmpty()) {
 	                titleToFieldMap.put(title.trim().toLowerCase(), field);
 	            }
-	            titleToFieldMap.put(field.trim().toLowerCase(), field);
+	            if (field != null) {
+	                titleToFieldMap.put(field.trim().toLowerCase(), field);
+	            }
 	        }
 
-	        // Parse Header Row
-	        List<String> mappedKeys = new ArrayList<>();
-	        for (int j = 0; j < headerRow.getLastCellNum(); j++) {
+	       
+	        int materialFkColIndex = -1;
+	        int normParamTypeColIndex = -1;
+
+	        for (int j = 0; j < totalCols; j++) {
 	            String headerTitle = getStringCellValue(headerRow.getCell(j));
-	            if (headerTitle == null || headerTitle.trim().isEmpty()) {
-	                mappedKeys.add("Column_" + j);
-	                continue;
-	            }
+	            if (headerTitle == null) continue;
+	            String sanitized = headerTitle.trim().replaceAll("[_ ]", "");
 
-	            String trimmedHeader = headerTitle.trim();
-	            if (trimmedHeader.equalsIgnoreCase("Particulars")) {
-	                mappedKeys.add("MaterialFKId");
-	            } else {
-	                String mappedField = titleToFieldMap.getOrDefault(trimmedHeader.toLowerCase(), trimmedHeader);
-	                mappedKeys.add(mappedField);
+	            if (sanitized.equalsIgnoreCase("MaterialFKId")) {
+	                materialFkColIndex = j;
+	            } else if (sanitized.equalsIgnoreCase("NormParameterTypeId") || sanitized.equalsIgnoreCase("NormParameterTypeFKId")) {
+	                normParamTypeColIndex = j;
 	            }
 	        }
 
-	        // Iterate data rows (skip header index 0)
+	        UUID plantUuid = (plantId != null && isValidUUID(plantId)) ? UUID.fromString(plantId) : null;
+
+	        
 	        for (int i = 1; i <= totalRows; i++) {
 	            Row row = sheet.getRow(i);
 	            if (row == null) continue;
 
-	            // Skip total/summary row at the bottom if present
 	            Cell firstCell = row.getCell(0);
 	            String firstCellValue = getStringCellValue(firstCell);
-	            if (firstCellValue != null && firstCellValue.equalsIgnoreCase("Total")) {
+
+	            
+	            if (firstCellValue != null && firstCellValue.trim().equalsIgnoreCase("Total")) {
 	                continue;
 	            }
+
+	            
+	            String matFkValStr = materialFkColIndex != -1 ? getStringCellValue(row.getCell(materialFkColIndex)) : null;
+	            String normParamTypeValStr = normParamTypeColIndex != -1 ? getStringCellValue(row.getCell(normParamTypeColIndex)) : matFkValStr;
+
+	            UUID normParamTypeFkId = (normParamTypeValStr != null && isValidUUID(normParamTypeValStr))
+	                    ? UUID.fromString(normParamTypeValStr)
+	                    : null;
 
 	            Map<String, Object> rowData = new LinkedHashMap<>();
 	            boolean rowError = false;
 	            StringBuilder rowErrorMsg = new StringBuilder("Error at row " + (i + 1) + ": ");
 
 	            try {
-	                for (int j = 0; j < mappedKeys.size(); j++) {
-	                    String key = mappedKeys.get(j);
-	                    Cell cell = row.getCell(j);
-	                    Object value;
+	               
+	                for (int j = 0; j < totalCols; j++) {
+	                    String headerTitle = getStringCellValue(headerRow.getCell(j));
+	                    if (headerTitle == null || headerTitle.trim().isEmpty()) {
+	                        continue;
+	                    }
 
-	                    if ("MaterialFKId".equalsIgnoreCase(key) || "SAPMaterialCode".equalsIgnoreCase(key) 
-	                            || "UOM".equalsIgnoreCase(key) || "Remarks".equalsIgnoreCase(key) 
-	                            || "saveStatus".equalsIgnoreCase(key) || "errDescription".equalsIgnoreCase(key)) {
+	                    String trimmedHeader = headerTitle.trim();
+	                    String sanitized = trimmedHeader.replaceAll("[_ ]", "");
+	                    Cell cell = row.getCell(j);
+	                    String mappedKey = null;
+	                    Object value = null;
+
+	                   
+	                    if (sanitized.equalsIgnoreCase("Particulars")) {
+	                        mappedKey = "PARTICULARS_DISPLAY";
 	                        value = getStringCellValue(cell);
-	                    } else if ("WtAvg".equalsIgnoreCase(key)) {
+	                    } else if (sanitized.equalsIgnoreCase("SAPMaterialCode")) {
+	                        mappedKey = "SAPMaterialCode";
+	                        value = getStringCellValue(cell);
+	                    } else if (sanitized.equalsIgnoreCase("UOM")) {
+	                        mappedKey = "UOM";
+	                        value = getStringCellValue(cell);
+	                    } else if (sanitized.equalsIgnoreCase("WtAvg")) {
+	                        mappedKey = "WtAvg";
 	                        value = getNumericCellValue(cell);
+	                    } else if (sanitized.equalsIgnoreCase("Remarks")) {
+	                        mappedKey = "Remarks";
+	                        value = getStringCellValue(cell);
+	                    } else if (sanitized.equalsIgnoreCase("MaterialFKId")) {
+	                        mappedKey = "Material_FK_Id";
+	                        value = getStringCellValue(cell);
+	                    } else if (sanitized.equalsIgnoreCase("NormParameterTypeId") || sanitized.equalsIgnoreCase("NormParameterTypeFKId")) {
+	                        mappedKey = "NormParameterTypeId";
+	                        value = getStringCellValue(cell);
 	                    } else {
-	                        // Dynamic UUID columns (monthly values / numeric values)
+	                        // Title lookup via metadata map
+	                        String mappedField = titleToFieldMap.get(trimmedHeader.toLowerCase());
+
+	                        if (mappedField != null && isValidUUID(mappedField)) {
+	                            mappedKey = mappedField; // UUID field from metadata
+	                        } else {
+	                            // Dynamic Grade Header Title: Search NormParameters by displayName, normParameterTypeFkId, and plantFkId
+	                            NormParameters matchedNormParam = null;
+	                            if (normParamTypeFkId != null && plantUuid != null) {
+	                                matchedNormParam = normParametersRepository
+	                                        .findByDisplayNameAndNormParameterTypeFkIdAndPlantFkId(trimmedHeader, normParamTypeFkId, plantUuid);
+	                            }
+
+	                            if (matchedNormParam != null && matchedNormParam.getId() != null) {
+	                                mappedKey = matchedNormParam.getId().toString();
+	                            } else {
+	                                mappedKey = trimmedHeader; // Fallback to raw header string
+	                            }
+	                        }
+
 	                        value = getNumericCellValue(cell);
 	                    }
 
-	                    // Numeric validation sample (customize numeric bounds if needed)
-	                    if (value instanceof Number && !isValidUUID(key)) {
+	                    // Numeric validation for grade/weight values
+	                    if (value instanceof Number && !isValidUUID(mappedKey) && !mappedKey.equalsIgnoreCase("WtAvg")) {
 	                        double numVal = ((Number) value).doubleValue();
 	                        if (numVal < 0) {
 	                            rowError = true;
-	                            rowErrorMsg.append("[").append(key).append("] value cannot be negative. ");
+	                            rowErrorMsg.append("[").append(trimmedHeader).append("] value cannot be negative. ");
 	                        }
 	                    }
 
-	                    rowData.put(key, value);
+	                    rowData.put(mappedKey, value);
+	                }
+
+	                // Guarantee hidden ID keys exist in output payload map
+	                if (!rowData.containsKey("Material_FK_Id") && matFkValStr != null) {
+	                    rowData.put("Material_FK_Id", matFkValStr);
+	                }
+	                if (!rowData.containsKey("NormParameterTypeId") && normParamTypeValStr != null) {
+	                    rowData.put("NormParameterTypeId", normParamTypeValStr);
 	                }
 
 	                if (rowError) {
@@ -760,25 +873,56 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	    return payloadList;
 	}
-
 	// Utility Cell Value Helper Methods (Ensure these exist or reuse your project's helper utility)
 	private String getStringCellValue(Cell cell) {
 	    if (cell == null) return null;
-	    cell.setCellType(CellType.STRING);
-	    return cell.getStringCellValue().trim();
+
+	    String value = "";
+	    CellType type = cell.getCellType();
+
+	    if (type == CellType.FORMULA) {
+	        type = cell.getCachedFormulaResultType();
+	    }
+
+	    if (type == CellType.STRING) {
+	        value = cell.getStringCellValue();
+	    } else if (type == CellType.NUMERIC) {
+	        // Formats numbers properly (e.g. integer IDs won't end up with ".0")
+	        DataFormatter formatter = new DataFormatter();
+	        value = formatter.formatCellValue(cell);
+	    } else if (type == CellType.BOOLEAN) {
+	        value = String.valueOf(cell.getBooleanCellValue());
+	    }
+
+	    if (value == null || value.trim().isEmpty()) {
+	        return null;
+	    }
+
+	    return value.trim();
 	}
 
 	private Double getNumericCellValue(Cell cell) {
 	    if (cell == null) return null;
-	    if (cell.getCellType() == CellType.NUMERIC) {
+
+	    CellType type = cell.getCellType();
+	    if (type == CellType.FORMULA) {
+	        type = cell.getCachedFormulaResultType();
+	    }
+
+	    if (type == CellType.NUMERIC) {
 	        return cell.getNumericCellValue();
-	    } else if (cell.getCellType() == CellType.STRING) {
+	    } else if (type == CellType.STRING) {
+	        String val = cell.getStringCellValue();
+	        if (val == null || val.trim().isEmpty()) {
+	            return null; // Blank strings treated as null
+	        }
 	        try {
-	            return Double.parseDouble(cell.getStringCellValue().trim());
+	            return Double.parseDouble(val.trim());
 	        } catch (NumberFormatException e) {
 	            return null;
 	        }
 	    }
+
 	    return null;
 	}
 	
@@ -1239,120 +1383,136 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        }
 	    }
 	   
+	   @Transactional
+	   @Override
 	   public AOPMessageVM updateSteadyStateNorms(String plantId, String year, List<Map<String, Object>> payloadList) {
-		    
-		    List<SteadyStateNormDTO> dtos = processPayload(payloadList);
+	       
+	       List<SteadyStateNormDTO> dtos = processPayload(payloadList);
 
-		    Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
-		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
-		    Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+	       Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+	       Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
+	       Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
-		    List<MCUNormsValueGrade> mcuNormsValueGrades = new ArrayList<>();
-		    List<SteadyStateNormDTO> failedList = new ArrayList<>();
+	       List<MCUNormsValueGrade> mcuNormsValueGrades = new ArrayList<>();
+	       List<SteadyStateNormDTO> failedList = new ArrayList<>();
 
-		    for (SteadyStateNormDTO steadyStateNormDTO : dtos) {
-		        
-		        if (steadyStateNormDTO.getSaveStatus() != null && steadyStateNormDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
-		            failedList.add(steadyStateNormDTO);
-		            continue;
-		        }
+	       for (SteadyStateNormDTO steadyStateNormDTO : dtos) {
+	           
+	           if (steadyStateNormDTO.getSaveStatus() != null && steadyStateNormDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+	               failedList.add(steadyStateNormDTO);
+	               continue;
+	           }
 
-		        UUID materialId = UUID.fromString(steadyStateNormDTO.getMaterialFkId());
-		        UUID gradeId = UUID.fromString(steadyStateNormDTO.getGradeId());
+	           UUID materialId = UUID.fromString(steadyStateNormDTO.getMaterialFkId());
+	           UUID gradeId = UUID.fromString(steadyStateNormDTO.getGradeId());
 
-		        Optional<MCUNormsValueGrade> opt = mcuNormsValueGradeRepository.findByMaterialGradeAndFinancialYear(
-		                materialId, gradeId, year, UUID.fromString(plantId)
-		        );
+	           Optional<MCUNormsValueGrade> opt = mcuNormsValueGradeRepository.findByMaterialGradeAndFinancialYear(
+	                   materialId, gradeId, year, UUID.fromString(plantId)
+	           );
 
-		        String newRemark = steadyStateNormDTO.getRemarks() != null ? steadyStateNormDTO.getRemarks().trim() : "";
+	           String newRemark = steadyStateNormDTO.getRemarks() != null ? steadyStateNormDTO.getRemarks().trim() : "";
 
-		        if (opt.isPresent()) {
-		            MCUNormsValueGrade existing = opt.get();
-		            String existingRemark = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
+	           if (opt.isPresent()) {
+	               MCUNormsValueGrade existing = opt.get();
+	               String existingRemark = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
 
-		          
-		            if (newRemark.isEmpty()) {
-		                steadyStateNormDTO.setSaveStatus("Failed");
-		                steadyStateNormDTO.setErrDescription("Remark is mandatory to update an existing record.");
-		                failedList.add(steadyStateNormDTO);
-		                continue;
-		            }
+	               if (newRemark.isEmpty()) {
+	                   steadyStateNormDTO.setSaveStatus("Failed");
+	                   steadyStateNormDTO.setErrDescription("Remark is mandatory to update an existing record.");
+	                   failedList.add(steadyStateNormDTO);
+	                   continue;
+	               }
 
-		            
-		            boolean isValueChanged = isAnyMonthValueChanged(existing, steadyStateNormDTO);
-		            boolean isRemarkChanged = !existingRemark.equalsIgnoreCase(newRemark);
+	               boolean isValueChanged = isAnyMonthValueChanged(existing, steadyStateNormDTO);
+	               boolean isRemarkChanged = !existingRemark.equalsIgnoreCase(newRemark);
 
-		            
-		            if (isValueChanged && !isRemarkChanged) {
-		                steadyStateNormDTO.setSaveStatus("Failed");
-		                steadyStateNormDTO.setErrDescription("Value has changed; please provide an updated remark.");
-		                failedList.add(steadyStateNormDTO);
-		                continue;
-		            }
+	               if (isValueChanged && !isRemarkChanged) {
+	                   steadyStateNormDTO.setSaveStatus("Failed");
+	                   steadyStateNormDTO.setErrDescription("Value has changed; please provide an updated remark.");
+	                   failedList.add(steadyStateNormDTO);
+	                   continue;
+	               }
 
-		            
-		            if (isValueChanged || isRemarkChanged) {
-		                setMonthlyValues(existing, steadyStateNormDTO);
-		                existing.setRemarks(newRemark);
-		                existing.setModifiedOn(new Date());
-		                existing.setUpdatedBy(Utility.getUserName());
-		                mcuNormsValueGrades.add(existing);
-		            }
-		        } else {
-		        	if (newRemark.isEmpty()) {
-		                steadyStateNormDTO.setSaveStatus("Failed");
-		                steadyStateNormDTO.setErrDescription("Remark is mandatory for creating a new record.");
-		                failedList.add(steadyStateNormDTO);
-		                continue;
-		            }
-		           
-		            MCUNormsValueGrade newEntity = new MCUNormsValueGrade();
-		            setMonthlyValues(newEntity, steadyStateNormDTO);
+	               if (isValueChanged || isRemarkChanged) {
+	                   setMonthlyValues(existing, steadyStateNormDTO);
+	                   existing.setRemarks(newRemark);
+	                   existing.setModifiedOn(new Date());
+	                   existing.setUpdatedBy(Utility.getUserName());
+	                   mcuNormsValueGrades.add(existing);
+	               }
+	           } else {
+	               // Check if all monthly values are null in the incoming DTO
+	               boolean areAllMonthsNull = steadyStateNormDTO.getApril() == null &&
+	                       steadyStateNormDTO.getMay() == null &&
+	                       steadyStateNormDTO.getJune() == null &&
+	                       steadyStateNormDTO.getJuly() == null &&
+	                       steadyStateNormDTO.getAugust() == null &&
+	                       steadyStateNormDTO.getSeptember() == null &&
+	                       steadyStateNormDTO.getOctober() == null &&
+	                       steadyStateNormDTO.getNovember() == null &&
+	                       steadyStateNormDTO.getDecember() == null &&
+	                       steadyStateNormDTO.getJanuary() == null &&
+	                       steadyStateNormDTO.getFebruary() == null &&
+	                       steadyStateNormDTO.getMarch() == null;
 
-		            newEntity.setRemarks(newRemark);
-		            newEntity.setCreatedOn(new Date());
-		            newEntity.setModifiedOn(new Date());
-		            newEntity.setFinancialYear(year);
-		            newEntity.setGradeFkId(gradeId);
-		            newEntity.setMaterialFkId(materialId);
-		            newEntity.setMcuVersion("V1");
-		            newEntity.setNormParameterTypeFkId(UUID.fromString(steadyStateNormDTO.getNormParameterTypeFkId()));
-		            newEntity.setPlantFkId(UUID.fromString(plantId));
-		            newEntity.setSiteFkId(site.getId());
-		            newEntity.setUpdatedBy(Utility.getUserName());
-		            newEntity.setVerticalFkId(vertical.getId());
-		            
-		            mcuNormsValueGrades.add(newEntity);
-		        }
-		    }
+	               // Skip creation and validation if no monthly data exists for this grade
+	               if (areAllMonthsNull) {
+	                   continue;
+	               }
 
-		    if (!mcuNormsValueGrades.isEmpty()) {
-		        mcuNormsValueGradeRepository.saveAll(mcuNormsValueGrades);
+	               if (newRemark.isEmpty()) {
+	                   steadyStateNormDTO.setSaveStatus("Failed");
+	                   steadyStateNormDTO.setErrDescription("Remark is mandatory for creating a new record.");
+	                   failedList.add(steadyStateNormDTO);
+	                   continue;
+	               }
+	               
+	               MCUNormsValueGrade newEntity = new MCUNormsValueGrade();
+	               setMonthlyValues(newEntity, steadyStateNormDTO);
 
-		        List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
-		        for (ScreenMapping screenMapping : screenMappingList) {
-		            AopCalculation aopCalculation = new AopCalculation();
-		            aopCalculation.setAopYear(year);
-		            aopCalculation.setIsChanged(true);
-		            aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
-		            aopCalculation.setPlantId(plant.getId());
-		            aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
-		            aopCalculationRepository.save(aopCalculation);
-		        }
-		    }
+	               newEntity.setRemarks(newRemark);
+	               newEntity.setCreatedOn(new Date());
+	               newEntity.setModifiedOn(new Date());
+	               newEntity.setFinancialYear(year);
+	               newEntity.setGradeFkId(gradeId);
+	               newEntity.setMaterialFkId(materialId);
+	               newEntity.setMcuVersion("V1");
+	               newEntity.setNormParameterTypeFkId(UUID.fromString(steadyStateNormDTO.getNormParameterTypeFkId()));
+	               newEntity.setPlantFkId(UUID.fromString(plantId));
+	               newEntity.setSiteFkId(site.getId());
+	               newEntity.setUpdatedBy(Utility.getUserName());
+	               newEntity.setVerticalFkId(vertical.getId());
+	               
+	               mcuNormsValueGrades.add(newEntity);
+	           }
+	       }
 
-		    AOPMessageVM aopMessageVM = new AOPMessageVM();
-		    aopMessageVM.setCode(failedList.isEmpty() ? 200 : 207); // 207 Multi-Status if partial failure
-		    
-		    Map<String, Object> responseData = new HashMap<>();
-		    responseData.put("updatedList", mcuNormsValueGrades);
-		    responseData.put("failedList", failedList);
+	       if (!mcuNormsValueGrades.isEmpty()) {
+	           mcuNormsValueGradeRepository.saveAll(mcuNormsValueGrades);
 
-		    aopMessageVM.setData(responseData);
-		    aopMessageVM.setMessage(failedList.isEmpty() ? "Data updated successfully" : "Processed with some validation errors");
-		    return aopMessageVM;
-		}
-	   
+	           List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
+	           for (ScreenMapping screenMapping : screenMappingList) {
+	               AopCalculation aopCalculation = new AopCalculation();
+	               aopCalculation.setAopYear(year);
+	               aopCalculation.setIsChanged(true);
+	               aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+	               aopCalculation.setPlantId(plant.getId());
+	               aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+	               aopCalculationRepository.save(aopCalculation);
+	           }
+	       }
+
+	       AOPMessageVM aopMessageVM = new AOPMessageVM();
+	       aopMessageVM.setCode(failedList.isEmpty() ? 200 : 207); // 207 Multi-Status if partial failure
+	       
+	       Map<String, Object> responseData = new HashMap<>();
+	       responseData.put("updatedList", mcuNormsValueGrades);
+	       responseData.put("failedList", failedList);
+
+	       aopMessageVM.setData(responseData);
+	       aopMessageVM.setMessage(failedList.isEmpty() ? "Data updated successfully" : "Processed with some validation errors");
+	       return aopMessageVM;
+	   }	   
 
 	   private void setMonthlyValues(MCUNormsValueGrade entity, SteadyStateNormDTO dto) {
 	       entity.setApril(dto.getApril());
@@ -1395,26 +1555,38 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	   public List<SteadyStateNormDTO> processPayload(List<Map<String, Object>> payloadList) {
 		    List<SteadyStateNormDTO> dtoList = new ArrayList<>();
 
-		   
+		    // Set of metadata keys to ignore when picking Grade UUID columns
 		    Set<String> knownFixedKeys = Set.of(
-		        "Site_FK_Id", "Plant_FK_ID", "Vertical_FK_Id", "Material_FK_Id",
+		        "Site_FK_Id", "Plant_FK_ID", "Vertical_FK_Id", "Material_FK_Id", "MaterialFKId",
 		        "FinancialYear", "Remarks", "CreatedOn", "ModifiedOn", "MCUVersion",
 		        "UpdatedBy", "NormParameterTypeId", "NormParameterTypeName",
 		        "NormParameterTypeDisplayName", "UOM", "IsEditable", "ProductName",
-		        "SAPMaterialCode", "NormParameterDisplayOrder", "WtAvg"
+		        "SAPMaterialCode", "NormParameterDisplayOrder", "WtAvg",
+		        "PARTICULARS_DISPLAY", "saveStatus", "errDescription"
 		    );
 
 		    for (Map<String, Object> map : payloadList) {
+		        // Extract Material_FK_Id (fallback to NormParameterTypeId if necessary)
 		        String materialFkId = (String) map.get("Material_FK_Id");
+		        if (materialFkId == null) {
+		            materialFkId = (String) map.get("MaterialFKId");
+		        }
+		        
 		        String normParameterTypeId = (String) map.get("NormParameterTypeId");
+		        if (normParameterTypeId == null) {
+		            normParameterTypeId = materialFkId; // Fallback to Material_FK_Id
+		        }
+		        
 		        String remarks = (String) map.get("Remarks");
+		        String saveStatus = (String) map.get("saveStatus");
+		        String errDescription = (String) map.get("errDescription");
 
 		        for (Map.Entry<String, Object> entry : map.entrySet()) {
 		            String key = entry.getKey();
 		            Object value = entry.getValue();
 
-		            
-		            if (!knownFixedKeys.contains(key) && value != null) {
+		            // Only pick dynamic grade columns whose keys are valid UUIDs
+		            if (!knownFixedKeys.contains(key) && isValidUUID(key)) {
 		                Double gradeValue = null;
 		                if (value instanceof Number) {
 		                    gradeValue = ((Number) value).doubleValue();
@@ -1424,8 +1596,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		                        .materialFkId(materialFkId)
 		                        .normParameterTypeFkId(normParameterTypeId)
 		                        .remarks(remarks)
-		                        .gradeId(key) 
-		                        .april(gradeValue) 
+		                        .gradeId(key) // Key is the Grade_FK_Id UUID
+		                        .april(gradeValue) // Or map monthly values accordingly
+		                        .saveStatus(saveStatus)
+		                        .errDescription(errDescription)
 		                        .build();
 
 		                dtoList.add(dto);
