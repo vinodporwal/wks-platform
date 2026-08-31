@@ -826,6 +826,7 @@ const SenderReceiverMapping = () => {
       allAction: true,
       disableActionButtons: !isSRMappingRole,
       downloadExcelBtnFromUI: false,
+      showExport: true,
       ExcelName: 'Sender Receiver Mapping',
       showImport: false,
       showTitleNameBusiness: true,
