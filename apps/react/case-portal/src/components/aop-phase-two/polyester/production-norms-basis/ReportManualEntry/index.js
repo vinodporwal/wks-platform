@@ -7,6 +7,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const ManualEntry = ({ startDate, endDate }) => {
   const keycloak = useSession()
@@ -23,6 +24,7 @@ const ManualEntry = ({ startDate, endDate }) => {
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production Norms BasisManual Entry')
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -101,6 +103,7 @@ const ManualEntry = ({ startDate, endDate }) => {
         id: index + 1,
         idFromApi: item.id,
         value: item.apr || 0,
+        type: item?.TypeDisplayName || item?.typeDisplayName,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -188,7 +191,7 @@ const ManualEntry = ({ startDate, endDate }) => {
     const payload = modifiedData?.map((row) => ({
       ...row,
       id: row.idFromApi,
-      value: row.value || row.apr || 0,
+      apr: row.value || row.apr || 0,
       remarks: row.remarks || '',
     }))
     try {
@@ -321,6 +324,7 @@ const ManualEntry = ({ startDate, endDate }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

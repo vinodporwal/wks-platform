@@ -176,7 +176,7 @@ const GradeWiseSteadyStateConsumption = () => {
               let colDef = {
                 ...col,
                 minWidth: 150,
-                editable: true,
+                editable: col.field === 'WtAvg' ? false : true,
                 type: col.type === 'number' ? 'row-based' : 'text',
               }
               if (col.type === 'number') {
