@@ -27,6 +27,9 @@ public interface ShutDownPlanService {
 	public AOPMessageVM importLineShutdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importLineShutdownPP(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importNonProductShutdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
+	byte[] shutdownNonProductExportWithValue(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
+			List<ShutDownPlanDTO> mapForExcel);
+	public AOPMessageVM importNonProductShutdownWithValue(String year, UUID plantId, String maintenanceTypeName, MultipartFile file);
 	public List<ShutDownPlanDTO> saveShutdownPlantData(UUID plantId,List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public List<ShutDownPlanDTO> saveShutdownPlantDataC2(UUID plantId,List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public UUID findPlantMaintenanceId(String productName);
