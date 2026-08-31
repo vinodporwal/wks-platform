@@ -176,7 +176,6 @@ const ProductionNormsBasis = () => {
     }
   }
 
-  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
