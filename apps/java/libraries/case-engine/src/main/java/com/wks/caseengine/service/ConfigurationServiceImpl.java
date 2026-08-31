@@ -370,9 +370,22 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	@Override
 	public byte[] createManualEntryExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList) {
 		try {
+
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
 			
 			if (!isAfterSave) {
 				dtoList = (List<ConfigurationDTO>) getConfigurationData(year, plantFKId,null).getData();
+			}
+
+			// for filament export only manual entry
+			if(filament) { 
+				dtoList = dtoList.stream()
+        .filter(dto -> "Manual Entry".equals(dto.getConfigTypeName()))
+        .collect(Collectors.toList());
 			}
 			
 			List<Boolean> isEditable = new ArrayList<>();
