@@ -3,11 +3,15 @@ package com.wks.caseengine.service;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -169,6 +173,11 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
 
     @Override
     public byte[] exportJobWorkAvgNormsExcel(UUID plantId, String aopYear) {
+        return exportJobWorkAvgNormsExcel(plantId, aopYear, false, null);
+    }
+
+    @Override
+    public byte[] exportJobWorkAvgNormsExcel(UUID plantId, String aopYear, boolean isAfterSave, List<JobWorkAvgNormsDTO> dtoList) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Job Work Avg Norms");
 
@@ -181,12 +190,20 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
             headerStyle.setFont(headerFont);
             headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
 
-            // Grey Locked Data Cell Style (for Unit, SAP MAT Code, Description, Material Group)
+            // Grey Locked Data Cell Style (for Unit, SAP MAT Code, Description, Material Group, Group Name, Status, Error Description)
             CellStyle greyLockedStyle = workbook.createCellStyle();
             greyLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             greyLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             greyLockedStyle.setLocked(true);
+            greyLockedStyle.setBorderTop(BorderStyle.THIN);
+            greyLockedStyle.setBorderBottom(BorderStyle.THIN);
+            greyLockedStyle.setBorderLeft(BorderStyle.THIN);
+            greyLockedStyle.setBorderRight(BorderStyle.THIN);
 
             // White Editable Data Cell Style (for JW Avg Norms)
             CellStyle whiteEditableStyle = workbook.createCellStyle();
@@ -194,31 +211,44 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
             whiteEditableStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             whiteEditableStyle.setLocked(false);
             whiteEditableStyle.setAlignment(HorizontalAlignment.RIGHT);
+            whiteEditableStyle.setBorderTop(BorderStyle.THIN);
+            whiteEditableStyle.setBorderBottom(BorderStyle.THIN);
+            whiteEditableStyle.setBorderLeft(BorderStyle.THIN);
+            whiteEditableStyle.setBorderRight(BorderStyle.THIN);
 
             // Headers without UOM and Remarks
-            String[] headers = {
+            List<String> headerNames = new ArrayList<>(Arrays.asList(
                 "Unit",
                 "SAP MAT Code",
                 "Cat-Chem Material Description",
                 "JW Avg Norms",
-                "Material Group"
-            };
+                "Material Group",
+                "Group Name"
+            ));
+
+            if (isAfterSave) {
+                headerNames.add("Status");
+                headerNames.add("Error Description");
+            }
 
             Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < headers.length; i++) {
+            for (int i = 0; i < headerNames.size(); i++) {
                 Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
+                cell.setCellValue(headerNames.get(i));
                 cell.setCellStyle(headerStyle);
             }
 
-            // Fetch data
-            AOPMessageVM response = getJobWorkAvgNormsData(plantId, aopYear);
-            @SuppressWarnings("unchecked")
-            List<JobWorkAvgNormsDTO> list = (List<JobWorkAvgNormsDTO>) response.getData();
+            // Fetch data if not provided
+            if (!isAfterSave || dtoList == null) {
+                AOPMessageVM response = getJobWorkAvgNormsData(plantId, aopYear);
+                @SuppressWarnings("unchecked")
+                List<JobWorkAvgNormsDTO> list = (List<JobWorkAvgNormsDTO>) response.getData();
+                dtoList = list;
+            }
 
             int rowIdx = 1;
-            if (list != null) {
-                for (JobWorkAvgNormsDTO dto : list) {
+            if (dtoList != null) {
+                for (JobWorkAvgNormsDTO dto : dtoList) {
                     Row row = sheet.createRow(rowIdx++);
 
                     // 0: Unit (Grey & Locked)
@@ -233,7 +263,7 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
 
                     // 2: Cat-Chem Material Description (Grey & Locked)
                     Cell c2 = row.createCell(2);
-                    c2.setCellValue(dto.getMaterialDisplayName() != null ? dto.getMaterialDisplayName() : "");
+                    c2.setCellValue(dto.getMaterialDisplayName() != null ? dto.getMaterialDisplayName() : (dto.getMaterialName() != null ? dto.getMaterialName() : ""));
                     c2.setCellStyle(greyLockedStyle);
 
                     // 3: JW Avg Norms (White & Editable)
@@ -250,15 +280,35 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
                     Cell c4 = row.createCell(4);
                     c4.setCellValue(hasGroup ? "YES" : "NO");
                     c4.setCellStyle(greyLockedStyle);
+
+                    // 5: Group Name (Grey & Locked)
+                    Cell c5 = row.createCell(5);
+                    c5.setCellValue(dto.getGroupDisplayName() != null ? dto.getGroupDisplayName() : "");
+                    c5.setCellStyle(greyLockedStyle);
+
+                    // If after save, add Status and Error Description
+                    if (isAfterSave) {
+                        Cell c6 = row.createCell(6);
+                        String statusStr = dto.getSaveStatus() != null ? dto.getSaveStatus() : (dto.getStatus() != null ? dto.getStatus() : "");
+                        c6.setCellValue(statusStr);
+                        c6.setCellStyle(greyLockedStyle);
+
+                        Cell c7 = row.createCell(7);
+                        String errStr = dto.getErrDescription() != null ? dto.getErrDescription() : (dto.getErrorDescription() != null ? dto.getErrorDescription() : "");
+                        c7.setCellValue(errStr);
+                        c7.setCellStyle(greyLockedStyle);
+                    }
                 }
             }
 
-            for (int i = 0; i < headers.length; i++) {
+            for (int i = 0; i < headerNames.size(); i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            // Protect sheet with empty password so locked cells cannot be edited, but unlocked cells (JW Avg Norms) can
-            sheet.protectSheet("");
+            if (!isAfterSave) {
+                // Protect sheet with empty password so locked cells cannot be edited, but unlocked cells (JW Avg Norms) can
+                sheet.protectSheet("");
+            }
 
             workbook.write(out);
             return out.toByteArray();
@@ -279,10 +329,10 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
 
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
-            if (sheet == null) {
+            if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
                 return AOPMessageVM.builder()
                     .code(400)
-                    .message("The Excel file has no sheets.")
+                    .message("The Excel file has no sheets or rows.")
                     .build();
             }
 
@@ -291,59 +341,165 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
             @SuppressWarnings("unchecked")
             List<JobWorkAvgNormsDTO> existingList = (List<JobWorkAvgNormsDTO>) response.getData();
 
-            Map<String, JobWorkAvgNormsDTO> matCodeMap = existingList.stream()
-                .filter(dto -> dto.getSapMatCode() != null)
-                .collect(Collectors.toMap(
-                    dto -> dto.getSapMatCode().trim(),
-                    dto -> dto,
-                    (existing, duplicate) -> existing
-                ));
+            Map<String, JobWorkAvgNormsDTO> matCodeMap = new HashMap<>();
+            if (existingList != null) {
+                for (JobWorkAvgNormsDTO dto : existingList) {
+                    if (dto.getSapMatCode() != null) {
+                        matCodeMap.put(dto.getSapMatCode().trim().toLowerCase(), dto);
+                    }
+                }
+            }
 
-            List<JobWorkAvgNormsDTO> saveList = new ArrayList<>();
+            List<JobWorkAvgNormsDTO> importedList = new ArrayList<>();
+            List<JobWorkAvgNormsDTO> toSaveList = new ArrayList<>();
+            List<JobWorkAvgNormsDTO> failedList = new ArrayList<>();
 
-            int rowCount = sheet.getPhysicalNumberOfRows();
-            for (int r = 1; r < rowCount; r++) {
+            int lastRow = sheet.getLastRowNum();
+            for (int r = 1; r <= lastRow; r++) {
                 Row row = sheet.getRow(r);
                 if (row == null) continue;
 
+                // Column 0: Unit
+                String plantName = getCellValueAsString(row.getCell(0));
                 // Column 1: SAP MAT Code
-                Cell sapMatCell = row.getCell(1);
-                String sapMatCode = getCellValueAsString(sapMatCell);
-                if (sapMatCode == null || sapMatCode.trim().isEmpty()) {
+                String sapMatCode = getCellValueAsString(row.getCell(1));
+                // Column 2: Material Description
+                String matDescription = getCellValueAsString(row.getCell(2));
+                // Column 4: Material Group
+                String materialGroup = getCellValueAsString(row.getCell(4));
+                // Column 5: Group Name
+                String groupName = getCellValueAsString(row.getCell(5));
+
+                // Check if the entire row is blank
+                Cell valCell = row.getCell(3);
+                String valStr = getCellValueAsString(valCell);
+                if ((sapMatCode == null || sapMatCode.trim().isEmpty())
+                        && (matDescription == null || matDescription.trim().isEmpty())
+                        && (valStr == null || valStr.trim().isEmpty())) {
                     continue;
                 }
 
-                JobWorkAvgNormsDTO matchDto = matCodeMap.get(sapMatCode.trim());
+                JobWorkAvgNormsDTO dto = new JobWorkAvgNormsDTO();
+                dto.setPlantName(plantName);
+                dto.setSapMatCode(sapMatCode);
+                dto.setMaterialDisplayName(matDescription);
+                dto.setGroupDisplayName(groupName);
+                dto.setAopYear(aopYear);
+
+                // Match with master data by SAP MAT Code
+                JobWorkAvgNormsDTO matchDto = sapMatCode != null ? matCodeMap.get(sapMatCode.trim().toLowerCase()) : null;
+
                 if (matchDto == null) {
+                    dto.setSaveStatus("Failed");
+                    dto.setStatus("Failed");
+                    dto.setErrDescription("SAP MAT Code '" + (sapMatCode != null ? sapMatCode : "") + "' not found in master data for plant.");
+                    dto.setErrorDescription(dto.getErrDescription());
+                    failedList.add(dto);
+                    importedList.add(dto);
                     continue;
                 }
 
-                // Column 3: JW Avg Norms
-                Cell valueCell = row.getCell(3);
-                Double value = getCellValueAsDouble(valueCell);
+                // Copy master attributes
+                dto.setMaterialId(matchDto.getMaterialId());
+                dto.setPlantId(matchDto.getPlantId());
+                dto.setPlantName(matchDto.getPlantName());
+                dto.setGroupFkId(matchDto.getGroupFkId());
+                dto.setGroupDisplayName(matchDto.getGroupDisplayName());
+                dto.setMaterialDisplayName(matchDto.getMaterialDisplayName());
+                dto.setRemarks(matchDto.getRemarks());
 
-                JobWorkAvgNormsDTO updateDto = new JobWorkAvgNormsDTO();
-                updateDto.setMaterialId(matchDto.getMaterialId());
-                updateDto.setAopYear(aopYear);
-                updateDto.setValue(value);
-                updateDto.setRemarks(matchDto.getRemarks());
+                // Number Validation on Column 3: JW Avg Norms
+                Double value = null;
+                String errorMsg = null;
 
-                saveList.add(updateDto);
+                if (valCell != null && valCell.getCellType() != CellType.BLANK) {
+                    if (valCell.getCellType() == CellType.NUMERIC) {
+                        value = valCell.getNumericCellValue();
+                        if (value < 0) {
+                            errorMsg = "JW Avg Norms value cannot be negative.";
+                        }
+                    } else if (valCell.getCellType() == CellType.STRING) {
+                        String str = valCell.getStringCellValue().trim();
+                        if (!str.isEmpty()) {
+                            try {
+                                value = Double.parseDouble(str);
+                                if (value < 0) {
+                                    errorMsg = "JW Avg Norms value cannot be negative.";
+                                }
+                            } catch (NumberFormatException nfe) {
+                                errorMsg = "Invalid number format for JW Avg Norms: '" + str + "'";
+                            }
+                        }
+                    } else if (valCell.getCellType() == CellType.FORMULA) {
+                        try {
+                            value = valCell.getNumericCellValue();
+                            if (value < 0) {
+                                errorMsg = "JW Avg Norms value cannot be negative.";
+                            }
+                        } catch (Exception e) {
+                            try {
+                                String formulaStr = valCell.getStringCellValue().trim();
+                                value = Double.parseDouble(formulaStr);
+                                if (value < 0) {
+                                    errorMsg = "JW Avg Norms value cannot be negative.";
+                                }
+                            } catch (Exception ex) {
+                                errorMsg = "Invalid formula value for JW Avg Norms.";
+                            }
+                        }
+                    } else {
+                        errorMsg = "Invalid cell data format for JW Avg Norms.";
+                    }
+                }
+
+                dto.setValue(value);
+
+                if (errorMsg != null) {
+                    dto.setSaveStatus("Failed");
+                    dto.setStatus("Failed");
+                    dto.setErrDescription(errorMsg);
+                    dto.setErrorDescription(errorMsg);
+                    failedList.add(dto);
+                } else {
+                    dto.setSaveStatus("Success");
+                    dto.setStatus("Success");
+                    toSaveList.add(dto);
+                }
+
+                importedList.add(dto);
             }
 
-            if (saveList.isEmpty()) {
+            if (importedList.isEmpty()) {
                 return AOPMessageVM.builder()
                     .code(400)
-                    .message("No matching records found in Excel file.")
+                    .message("No records found in Excel file.")
                     .build();
             }
 
-            saveJobWorkAvgNormsData(saveList);
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
 
-            return AOPMessageVM.builder()
-                .code(200)
-                .message("Successfully imported " + saveList.size() + " Job Work Avg Norms records.")
-                .build();
+            if (!failedList.isEmpty()) {
+                // Save valid records partially if any exist
+                if (!toSaveList.isEmpty()) {
+                    saveJobWorkAvgNormsData(toSaveList);
+                }
+
+                // Generate Error File with Status and Error Description columns
+                byte[] fileByteArray = exportJobWorkAvgNormsExcel(plantId, aopYear, true, importedList);
+                String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Import failed with " + failedList.size() + " validation errors. Please check the downloaded error file.");
+            } else {
+                saveJobWorkAvgNormsData(toSaveList);
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("Successfully imported " + toSaveList.size() + " Job Work Avg Norms records.");
+            }
+
+            return aopMessageVM;
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Failed to import Job Work Avg Norms excel: " + e.getMessage(), e);
         }
@@ -352,7 +508,7 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return null;
         if (cell.getCellType() == CellType.STRING) {
-            return cell.getStringCellValue();
+            return cell.getStringCellValue() != null ? cell.getStringCellValue().trim() : null;
         } else if (cell.getCellType() == CellType.NUMERIC) {
             long longVal = (long) cell.getNumericCellValue();
             double doubleVal = cell.getNumericCellValue();
@@ -362,22 +518,11 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
             return String.valueOf(doubleVal);
         } else if (cell.getCellType() == CellType.BOOLEAN) {
             return String.valueOf(cell.getBooleanCellValue());
-        }
-        return null;
-    }
-
-    private Double getCellValueAsDouble(Cell cell) {
-        if (cell == null) return null;
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return cell.getNumericCellValue();
-        } else if (cell.getCellType() == CellType.STRING) {
-            String str = cell.getStringCellValue();
-            if (str != null && !str.trim().isEmpty()) {
-                try {
-                    return Double.parseDouble(str.trim());
-                } catch (NumberFormatException nfe) {
-                    return null;
-                }
+        } else if (cell.getCellType() == CellType.FORMULA) {
+            try {
+                return cell.getStringCellValue() != null ? cell.getStringCellValue().trim() : null;
+            } catch (Exception e) {
+                return String.valueOf(cell.getNumericCellValue());
             }
         }
         return null;
