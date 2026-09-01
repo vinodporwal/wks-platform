@@ -689,7 +689,7 @@ public byte[] shutdownNonProductExportWithValue(String year, String plantId, Str
 		}
 
 		innerHeaders.add("Duration (hrs)");
-		innerHeaders.add("Quality(TPH)"); // new column before Shutdown Basis
+		innerHeaders.add("Quantity(TPH)"); // new column before Shutdown Basis
 		innerHeaders.add("Shutdown Basis");
 		innerHeaders.add("Id");
 		if (isAfterSave) {
@@ -2153,9 +2153,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 
-				boolean refinery = vertical.getName().equalsIgnoreCase("Refinery");
+				boolean refineryUtility= vertical.getName().equalsIgnoreCase("RefineryUtility");
 
-				boolean skipDuplicateDescValidation = refinery;
+				boolean skipDuplicateDescValidation = refineryUtility;
 
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 
