@@ -173,9 +173,9 @@ const ShutDownColumns = [
   },
   {
     field: 'rate',
-    title: 'Values',
+    title: 'Quantity (TPH)',
     editable: true,
-    minWidth: 55,
+    minWidth: 90,
   },
   {
     field: 'remark',
@@ -233,19 +233,14 @@ const ShutdownPlan = () => {
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
       const formatted = arr.map((item, index) => {
-        const startDate = item.maintStartDateTime
-          ? item?.maintStartDateTime
-          : null
-        const endDate = item.maintEndDateTime ? item?.maintEndDateTime : null
-
         return {
           ...item,
           idFromApi: item?.id,
           id: index,
           originalRemark: item.remark,
           inEdit: false,
-          maintStartDateTime: startDate,
-          maintEndDateTime: endDate,
+          maintStartDateTime: new Date(item?.maintStartDateTime),
+          maintEndDateTime: new Date(item?.maintEndDateTime),
           discription: item.discription,
           durationInHrs: item?.durationInHrs || '',
           rate: item?.rate ?? item?.shutdownRate ?? '',
@@ -311,7 +306,13 @@ const ShutdownPlan = () => {
   }, [AOP_YEAR, keycloak, PLANT_ID])
 
   // ─── Save ─────────────────────────────────────────────────────────────────────
-
+  function addTimeOffset(dateTime) {
+    if (!dateTime) return null
+    const date = new Date(dateTime)
+    date.setUTCHours(date.getUTCHours() + 5)
+    date.setUTCMinutes(date.getUTCMinutes() + 30)
+    return date
+  }
   const saveChanges = useCallback(async () => {
     const data = Object.values(modifiedCells)
 
@@ -442,7 +443,7 @@ const ShutdownPlan = () => {
         record.isError = true
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Values is required for all records.',
+          message: 'Quantity (TPH) is required for all records.',
           severity: 'error',
         })
         return
@@ -474,8 +475,8 @@ const ShutdownPlan = () => {
         const [h = '00', m = '00'] = String(v).split('.')
         return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
       })(),
-      maintStartDateTime: row.maintStartDateTime || null,
-      maintEndDateTime: row.maintEndDateTime || null,
+      maintStartDateTime: addTimeOffset(row.maintStartDateTime) || null,
+      maintEndDateTime: addTimeOffset(row.maintEndDateTime) || null,
       month: row.monthly || row.month, // Use month field
       audityear: AOP_YEAR,
       id: row.idFromApi || null,
