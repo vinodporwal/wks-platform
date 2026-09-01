@@ -1209,10 +1209,8 @@ def dispatch_steam(
             if i == 0:
                 # Lowest grade: include byproduct credit
                 net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + byproduct_low_steam
-            elif g == top_grade:
-                # Top grade (SHP): the U4U loop cascade already baked the PRDS
-                # letdown into shp_process via dispatch_demands, so do NOT add
-                # prev_letdown again — that would double-count HP→SHP PRDS.
+            elif g == top_grade or (plant_id == _DTA_PLANT_ID and g == "hp"):
+                # Top-grade and DTA HP PRDS consumption is already present in U4U demand.
                 net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
             else:
                 net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
@@ -1228,26 +1226,13 @@ def dispatch_steam(
 
         # Adjust the cascade for DTA STG extraction (Option A)
         if stg_totals:
-            norm_hp_per_mp = None
-            norm_shp_per_hp = None
-            for step in cascade:
-                produces = step["produces"].replace(" Steam_Dis", "").lower()
-                consumes = step["consumes"].replace(" Steam_Dis", "").lower()
-                if produces == "mp" and consumes == "hp":
-                    norm_hp_per_mp = step["norm"]
-                elif produces == "hp" and consumes == "shp":
-                    norm_shp_per_hp = step["norm"]
-
             mp_ext = stg_totals.get("mp_extraction_mt", 0.0)
             hp_ext = stg_totals.get("hp_extraction_mt", 0.0)
 
             if "mp" in net_by_grade and mp_ext:
                 net_by_grade["mp"] = max(0.0, net_by_grade["mp"] - mp_ext)
-            if "hp" in net_by_grade:
-                hp_reduction = hp_ext
-                if norm_hp_per_mp and mp_ext:
-                    hp_reduction += mp_ext * norm_hp_per_mp
-                net_by_grade["hp"] = max(0.0, net_by_grade["hp"] - hp_reduction)
+            if "hp" in net_by_grade and hp_ext:
+                net_by_grade["hp"] = max(0.0, net_by_grade["hp"] - hp_ext)
 
             # Recalculate letdown for adjusted grades (cascade unchanged)
             for i, g in enumerate(grade_prefixes):
@@ -1256,17 +1241,6 @@ def dispatch_steam(
                     letdown_by_grade[g] = max(0.0, net_by_grade[g]) * norm
                 else:
                     letdown_by_grade[g] = 0.0
-
-            if top_grade in net_by_grade:
-                shp_saved = 0.0
-                if hp_ext and norm_shp_per_hp:
-                    shp_saved += hp_ext * norm_shp_per_hp
-                    if mp_ext and norm_hp_per_mp:
-                        shp_saved += mp_ext * norm_hp_per_mp * norm_shp_per_hp
-                net_by_grade[top_grade] = max(
-                    0.0,
-                    net_by_grade[top_grade] - shp_saved + stg_totals.get("shp_consumption_mt", 0.0)
-                )
 
         demand_details = {
             **raw_demands,
@@ -1557,7 +1531,7 @@ def _find_linked_gt_asset(hrsg_name: str, power_assets: list) -> dict:
     
     for gt in power_assets:
         gt_name = gt["asset_name"]
-        m_gt = re.search(r'GT[G]?\s*[-_]?\s*(\d+)', gt_name, re.IGNORECASE)
+        m_gt = re.search(r'GT(?:G|\s+Power\s+Plant)?\s*[-_]?\s*(\d+)', gt_name, re.IGNORECASE)
         if m_gt and m_gt.group(1) == hrsg_num:
             return gt
     return None

@@ -95,6 +95,21 @@ def _normalize_for_match(name: str) -> str:
     return "".join(ch.lower() for ch in name if ch.isalnum())
 
 
+def _prds_generation_from_dispatch(
+    prds_name: str,
+    cascade: list,
+    demand_detail: dict,
+    fallback: float,
+) -> float:
+    step = next((item for item in cascade if item.get("prds") == prds_name), None)
+    if not step:
+        return fallback
+    grade = str(step.get("produces", "")).replace(" Steam_Dis", "").replace("_Dis", "").lower()
+    if not grade or float(demand_detail.get(f"{grade}_letdown", 0.0)) <= 0:
+        return fallback
+    return float(demand_detail.get(f"{grade}_net", fallback))
+
+
 def _build_db_to_ods_mapping(ods_material_names: set, db_utility_names: set) -> Dict[str, str]:
     """
     Build a mapping from DB utility names to ODS material names dynamically.
@@ -201,9 +216,14 @@ class U4UIterationLoop:
         self._interplant_skipped: dict = {}
         self._interplant_skip_warned: set = set()
 
+        # Own utility plant name derived from the in-plant UOM set.  Used to
+        # select the correct source when the same material is listed multiple
+        # times with different issuing plants.
+        self._own_utility_plant: Optional[str] = None
+
     def run(self) -> dict:
         """Run the U4U iteration loop until convergence or max iterations."""
-        self.consumption_norms = self.ods_reader.get_consumption_norms(include_all_accounts=True)
+        self.consumption_norms = self.ods_reader.get_consumption_norms(include_all_accounts=False)
         self.all_consumption_norms = self.ods_reader.get_all_consumption_norms()
         if not self.consumption_norms:
             logger.warning("  [U4U LOOP] No ODS consumption norms available")
@@ -378,14 +398,43 @@ class U4UIterationLoop:
                 ):
                     uom_plants.add(uom)
 
-        # In-plant UOMs for JMD/Jamnagar sites.  Anything else is treated as an
-        # external/inter-plant transfer and excluded from U4U accumulation.
+        # In-plant UOMs for JMD/Jamnagar sites plus the current plant short code.
+        # Anything else is treated as an external/inter-plant transfer and
+        # excluded from U4U accumulation.
+        from plant_mapper import get_plant
+        try:
+            plant_info = get_plant(self.plant_id)
+            short_code = (plant_info.get("short_code", "") or "").upper()
+        except Exception:
+            short_code = ""
         self._inplant_uom_plants = {
             u for u in uom_plants
             if u.startswith(("JMD", "Jamnagar")) or u.startswith("No Plant")
+               or (short_code and short_code in u.upper())
         }
+
+        # Identify the plant's own utility plant.  This is the in-plant name that
+        # contains 'Utility Plant' but is not a power distribution / sub-plant.
+        # It is used to resolve duplicate material rows with different issuing
+        # plants (e.g. 'Desal Water Clearing' seeing 'Desalinated water' from two
+        # sources).
+        own = [
+            u for u in self._inplant_uom_plants
+            if "Utility Plant" in u
+            and "Power" not in u
+            and "Dist" not in u
+        ]
+        if own:
+            # Prefer the one that ends exactly with 'Utility Plant' and is shortest
+            self._own_utility_plant = sorted(
+                own, key=lambda p: (not p.rstrip().endswith("Utility Plant"), len(p))
+            )[0]
+        else:
+            self._own_utility_plant = None
+
         logger.info("  [U4U LOOP] UOM plant names detected: %s", sorted(uom_plants))
         logger.info("  [U4U LOOP] In-plant UOM plant names: %s", sorted(self._inplant_uom_plants))
+        logger.info("  [U4U LOOP] Own utility plant for duplicate resolution: %s", self._own_utility_plant)
         external = sorted(uom_plants - self._inplant_uom_plants)
         if external:
             logger.warning(
@@ -404,6 +453,47 @@ class U4UIterationLoop:
         ):
             return False
         return issuing_plant_or_uom not in self._inplant_uom_plants
+
+    def _filter_consumptions_for_own_plant(self, producer_name: str, consumptions: list) -> list:
+        """Resolve duplicate material rows by preferring the own utility plant.
+
+        If a producer lists the same material more than once with different
+        issuing plants, keep only the row issued by the plant's own utility
+        plant.  Single-row materials are left untouched so existing inter-plant
+        logic still applies.
+        """
+        if not self._own_utility_plant or not consumptions:
+            return consumptions
+
+        by_material: dict = {}
+        for c in consumptions:
+            by_material.setdefault(c["material"], []).append(c)
+
+        filtered = []
+        for material, rows in by_material.items():
+            if len(rows) == 1:
+                filtered.extend(rows)
+                continue
+
+            issuing_for = lambda r: r.get("issuing_plant") or r.get("material_uom", "")
+            own_rows = [r for r in rows if issuing_for(r) == self._own_utility_plant]
+
+            if own_rows:
+                filtered.extend(own_rows)
+                for r in rows:
+                    if r not in own_rows:
+                        issuing = issuing_for(r)
+                        key = (producer_name, material)
+                        if key not in self._interplant_skip_warned:
+                            self._interplant_skip_warned.add(key)
+                            logger.warning(
+                                "  [U4U FILTER] %s -> %s via %s skipped: not from own utility plant (%s)",
+                                producer_name, material, issuing, self._own_utility_plant,
+                            )
+            else:
+                filtered.extend(rows)
+
+        return filtered
 
     def _build_initial_demands(self) -> dict:
         """Build initial demand map keyed by ODS material name.
@@ -441,6 +531,29 @@ class U4UIterationLoop:
         for db_name, value in self._raw_fixed.items():
             ods_mat = db_to_ods.get(db_name, db_name)
             demands[ods_mat] = demands.get(ods_mat, 0.0) + float(value)
+
+        # Hard-coded April 2026 export demands to other plants (temporary until
+        # multi-plant CSV loading is implemented dynamically).  These values are
+        # taken from the 'Norm, Qty, Cost .csv' summary for April.
+        if self.month == 4 and self.year == 2026:
+            _april_export_additions = {
+                "Sea Water": 1463688.0,     # M3
+                "D M Water": 337922.91,    # M3
+                "Utility Water": 5063.94,  # M3
+                "SWRO WATER": 1970149.0,    # M3
+            }
+            for utility_name, export_qty in _april_export_additions.items():
+                if utility_name in self._all_producers:
+                    demands[utility_name] = demands.get(utility_name, 0.0) + export_qty
+                    logger.info(
+                        "  [U4U LOOP] Hard-coded April export demand for '%s': +%.2f",
+                        utility_name, export_qty,
+                    )
+                else:
+                    logger.warning(
+                        "  [U4U LOOP] Hard-coded export utility '%s' not in ODS producers, skipped",
+                        utility_name,
+                    )
 
         for producer in self._all_producers:
             if producer not in demands:
@@ -509,6 +622,7 @@ class U4UIterationLoop:
                 total_demands.get(ods_material, 0.0) - initial_mt
             )
             steam_export_mt = 0.0
+            steam_import_mt = 0.0
             bpc_steam = self._lookup_bpc_qty(ods_material, f"STEAM({grade})")
             if bpc_steam is not None and bpc_steam < 0:
                 steam_export_mt = -float(bpc_steam)
@@ -516,10 +630,18 @@ class U4UIterationLoop:
                     "  [STEAM_DIS %s] Adding %.2f MT export as demand",
                     ods_material, steam_export_mt
                 )
+            elif (
+                self.plant_id == _DTA_PLANT_ID
+                and grade.upper() == "HP"
+                and bpc_steam is not None
+                and bpc_steam > 0
+            ):
+                steam_import_mt = float(bpc_steam)
             dispatch_demands[ods_material] = (
                 dispatch_demands.get(ods_material, 0.0)
                 + steam_u4u_increment
                 + steam_export_mt
+                - steam_import_mt
             )
 
         return dispatch_demands
@@ -911,7 +1033,10 @@ class U4UIterationLoop:
 
             producer_uom = producer_info.get("producer_uom", "")
 
-            for c in producer_info.get("consumptions", []):
+            consumptions = self._filter_consumptions_for_own_plant(
+                producer_name, producer_info.get("consumptions", [])
+            )
+            for c in consumptions:
                 if self.allowed_accounts is not None and c["account"] not in self.allowed_accounts:
                     continue
 
@@ -1081,6 +1206,17 @@ class U4UIterationLoop:
                 net_prds_demand = max(0.0, gross_demand - lp_byproduct_mt)
             else:
                 net_prds_demand = max(0.0, gross_demand)
+
+            if (
+                self.plant_id == _DTA_PLANT_ID
+                and produces_dis in ("MP Steam_Dis", "HP Steam_Dis")
+            ):
+                dispatch_detail = (steam_result or {}).get("demand_detail") or {}
+                grade = produces_dis.split()[0].lower()
+                net_prds_demand = max(
+                    0.0,
+                    float(dispatch_detail.get(f"{grade}_net", net_prds_demand)),
+                )
 
             logger.debug(
                 "  [CASCADE] %-25s produces=%-20s gross=%10.2f "
@@ -1989,6 +2125,12 @@ class U4UIterationLoop:
         for rec in self.final_detail_records:
             if "PRDS" in rec.get("producer", "").upper():
                 prds_generation[rec["producer"]] = rec.get("generation", 0.0)
+        cascade = self.ods_reader.get_steam_letdown_norms().get("_cascade", [])
+        demand_detail = (self.final_steam_result or {}).get("demand_detail") or {}
+        for prds_name, fallback in list(prds_generation.items()):
+            prds_generation[prds_name] = _prds_generation_from_dispatch(
+                prds_name, cascade, demand_detail, fallback
+            )
 
         def _match_steam_asset(producer_name: str) -> tuple:
             """Return (asset_name, generation) for a steam producer, or ('', 0)."""

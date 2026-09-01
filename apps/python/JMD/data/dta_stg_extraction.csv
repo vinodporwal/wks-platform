@@ -1,0 +1,3 @@
+LoadMW,SHPInletTPH,HPExtractionTPH,MPExtractionTPH,LPExtractionTPH,CondensateM3hr,FreeSteamFactor,HeatRateKcalKWh,SpecificSteamConsumptionKgKWh
+17.0,205.0,117.5,62.5,0.0,25.0,0.0,1816.0,4.1485
+20.0,217.5,117.5,62.5,0.0,37.5,0.0,2021.5,4.1513

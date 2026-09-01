@@ -1,0 +1,21 @@
+{
+  "_description": "DTA CPP STG extraction methodology configuration (Digital AOP workbook + Nitin Bande document)",
+  "max_hp_extraction_tph": 135.0,
+  "max_mp_extraction_tph": 75.0,
+  "condensate_flow_tph": 25.0,
+  "lp_extraction_tph": 0.0,
+
+  "hp_exergy_factor": 0.238,
+  "mp_exergy_factor": 0.178,
+  "condensate_exergy_factor": 0.291,
+
+  "ssc_intercept": 4.81,
+  "ssc_hp_coefficient": 0.00233,
+  "ssc_mp_coefficient": 0.00467,
+  "ssc_condensate_coefficient": 0.00360,
+
+  "heat_rate_hhp_factor": 810.0,
+  "heat_rate_hp_factor": 759.0,
+  "heat_rate_mp_factor": 718.0,
+  "heat_rate_condensate_factor": 45.0
+}
