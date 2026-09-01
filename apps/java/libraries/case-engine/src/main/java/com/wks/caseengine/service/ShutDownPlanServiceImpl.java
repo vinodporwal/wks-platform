@@ -689,7 +689,7 @@ public byte[] shutdownNonProductExportWithValue(String year, String plantId, Str
 		}
 
 		innerHeaders.add("Duration (hrs)");
-		innerHeaders.add("Value"); // new column before Shutdown Basis
+		innerHeaders.add("Quality(TPH)"); // new column before Shutdown Basis
 		innerHeaders.add("Shutdown Basis");
 		innerHeaders.add("Id");
 		if (isAfterSave) {
@@ -2153,6 +2153,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 
+				boolean refinery = vertical.getName().equalsIgnoreCase("Refinery");
+
+				boolean skipDuplicateDescValidation = refinery;
+
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 
 	    List<Object[]> slowdownTimeRanges = new ArrayList<>();
@@ -2199,7 +2203,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                dto.setDiscription(desc);
 
 	                if (dto.getDiscription() != null) {
-	                    if (des.contains(dto.getDiscription().trim())) {
+	                    if (des.contains(dto.getDiscription().trim()) && !skipDuplicateDescValidation) {
 	                        dto.setSaveStatus("Failed");
 	                        dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
 	                        alreadyFailed = true;
@@ -2370,7 +2374,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                String idString = getStringCellValue(row.getCell(6), dto);
 	                dto.setId(idString);
 
-	                if (dto.getId() == null && !alreadyFailed) {
+	                if (dto.getId() == null && !alreadyFailed && !skipDuplicateDescValidation) {
 	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
 	                            plantFKId.toString(), year, dto.getDiscription());
 
@@ -4346,9 +4350,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								plantMaintenanceTransaction.setLineFKId(UUID.fromString(shutDownPlanDTO.getLineId()));
 							}
 							if(refineryUtility) {
-								if(shutDownPlanDTO.getRate()!=null && (plantMaintenanceTransaction.getRate() != shutDownPlanDTO.getRate())) {
-									changed = true;
-								}
+								if (shutDownPlanDTO.getRate() != null   && !Objects.equals(plantMaintenanceTransaction.getRate(), shutDownPlanDTO.getRate())) {
+                                        changed = true;
+                              }
 								plantMaintenanceTransaction.setRate(shutDownPlanDTO.getRate());
 							}
 							// skip remark validation for aromatics
