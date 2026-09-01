@@ -376,14 +376,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
 			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 			
 			if (!isAfterSave) {
 				dtoList = (List<ConfigurationDTO>) getConfigurationData(year, plantFKId,null).getData();
 			}
 
 			// for filament export only manual entry
-			if(filament || staple) { 
+			if(filament) { 
 				dtoList = dtoList.stream()
         .filter(dto -> "Manual Entry".equals(dto.getConfigTypeName()))
         .collect(Collectors.toList());
@@ -1119,7 +1118,6 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 			boolean merox = vertical.getName().equalsIgnoreCase("MEROX");
 			boolean bru = vertical.getName().equalsIgnoreCase("BRU");
 			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
@@ -1198,7 +1196,7 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
 					configurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
 					configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
-				}else if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || merox || bru || filament || staple) {
+				}else if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || merox || bru || filament) {
 					configurationDTO.setId(row[14] != null ? row[14].toString() : i + "#");
 
 					configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");

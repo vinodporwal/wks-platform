@@ -198,8 +198,11 @@ import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyeste
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
+import JwBudgetScreenDTA from 'components/aop-phase-two/refineryAopBudget/JwBudgetDTA/index'
 import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
+import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
+import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index'
 
 // Naphthasplitter Ended
 
@@ -423,6 +426,14 @@ export const MainRoutes = (
             ),
           },
           {
+            path: 'jw-budget-source-dta',
+            element: (
+              <PrivateRoute routeId='jw-budget-source-dta'>
+                <JwBudgetScreenDTA />
+              </PrivateRoute>
+            ),
+          },
+          {
             path: 'throughput-norms',
             element: (
               <PrivateRoute routeId='throughput-norms'>
@@ -430,9 +441,22 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
-
-
+          {
+            path: 'jw-unit',
+            element: (
+              <PrivateRoute routeId='jw-unit'>
+                <JwUnitScreen />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'fixed-bed-and-lab-cost',
+            element: (
+              <PrivateRoute routeId='fixed-bed-and-lab-cost'>
+                <FixedBedAndLabCostScreen />
+              </PrivateRoute>
+            ),
+          },
         ],
         // REFINERY AOP BUDGET Ended],
       },
@@ -1222,6 +1246,7 @@ export const MainRoutes = (
             ),
           },
           {
+
             path: 'shutdown-plan-refinery',
             element: (
               <PrivateRoute routeId='shutdown-plan-refinery'>

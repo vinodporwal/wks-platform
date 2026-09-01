@@ -33,7 +33,10 @@ const ConsumptionNorms = () => {
   const keycloak = useSession()
 
   const [open1, setOpen1] = useState(false)
-  const [openMaterialGroupedSelectionDialog, setOpenMaterialGroupedSelectionDialog] = useState(false)
+  const [
+    openMaterialGroupedSelectionDialog,
+    setOpenMaterialGroupedSelectionDialog,
+  ] = useState(false)
   const valueFormat = ValueFormatterConsumption()
 
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
@@ -121,7 +124,10 @@ const ConsumptionNorms = () => {
 
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
-  const IS_PTA_PMD_PIA = lowerVertName === 'pta' && lowerSiteName === 'pmd' && lowerPlantName === 'pia'
+  const IS_PTA_PMD_PIA =
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'pmd' &&
+    lowerPlantName === 'pia'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -538,7 +544,11 @@ const ConsumptionNorms = () => {
   }
 
   const handleCalculate = () => {
-    if (lowerVertName === 'pe' && lowerSiteName === 'c2'&& lowerPlantName=== 'lldpe') {
+    if (
+      lowerVertName === 'pe' &&
+      lowerSiteName === 'c2' &&
+      lowerPlantName === 'lldpe'
+    ) {
       setOpenMaterialGroupedSelectionDialog(true)
     } else {
       handleCalculateMeg()
@@ -662,6 +672,7 @@ const ConsumptionNorms = () => {
       saveBtn: false,
       showCalculate: true,
       allAction: true,
+      showCalulcationPromt: lowerVertName === 'cracker',
       dontClearGradeOnCalculate: true,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
@@ -670,54 +681,56 @@ const ConsumptionNorms = () => {
       customHeight: defaultCustomHeight,
       showG:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel: 'Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
       showReleaseBtn: false,
-      titleName: IS_PTA_PMD_PIA?`Overall AOP Consumption`:`${SCREEN_NAME}`,
+      titleName: IS_PTA_PMD_PIA
+        ? `Overall AOP Consumption (Norms)`
+        : `${SCREEN_NAME}`,
     },
     isOldYear,
   )
@@ -848,7 +861,7 @@ const ConsumptionNorms = () => {
               setOpenMaterialGroupedSelectionDialog(false)
             }
           }}
-          maxWidth="md"
+          maxWidth='md'
           fullWidth
           disableScrollLock
           disableEnforceFocus={true}
@@ -872,8 +885,8 @@ const ConsumptionNorms = () => {
           <DialogActions sx={{ px: 1.5, pb: 1 }}>
             <Button
               onClick={() => setOpenMaterialGroupedSelectionDialog(false)}
-              variant="contained"
-              className="btn-no"
+              variant='contained'
+              className='btn-no'
               sx={{ textTransform: 'none' }}
             >
               Close
