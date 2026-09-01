@@ -14,7 +14,6 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 public interface ShutDownPlanService {
 	
 	public List<ShutDownPlanDTO> findMaintenanceDetailsByPlantIdAndType(UUID plantId,String maintenanceTypeName, String year);
-	public List<ShutDownPlanDTO> findMaintenanceDetailsWithValueByPlantIdAndType(UUID plantId,String maintenanceTypeName, String year);
 	byte[] shutdownExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
 			List<ShutDownPlanDTO> mapForExcel);
 	byte[] shutdownNonProductExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
@@ -28,9 +27,6 @@ public interface ShutDownPlanService {
 	public AOPMessageVM importLineShutdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importLineShutdownPP(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importNonProductShutdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
-	byte[] shutdownNonProductExportWithValue(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
-			List<ShutDownPlanDTO> mapForExcel);
-	public AOPMessageVM importNonProductShutdownWithValue(String year, UUID plantId, String maintenanceTypeName, MultipartFile file);
 	public List<ShutDownPlanDTO> saveShutdownPlantData(UUID plantId,List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public List<ShutDownPlanDTO> saveShutdownPlantDataC2(UUID plantId,List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public UUID findPlantMaintenanceId(String productName);

@@ -64,7 +64,7 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 			int i = 0;
 			for (Object[] row : obj) {
 				PlantTeamDTO plantTeamDTO = new PlantTeamDTO();
-				plantTeamDTO.setId(row[0] != null ? row[0].toString() : "");
+				plantTeamDTO.setId(row[0] != null && !row[0].toString().trim().isEmpty() ? row[0].toString() : null);
 
 				plantTeamDTO.setFunctions(row[1] != null ? row[1].toString() : "");
 				plantTeamDTO.setJobRole(row[2] != null ? row[2].toString() : "");
@@ -72,13 +72,13 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 				plantTeamDTO.setAge(
 						(row[4] != null && !row[4].toString().trim().isEmpty())
 								? Integer.parseInt(row[4].toString().trim())
-								: 0);
+								: null);
 				plantTeamDTO.setTeamSize(
 						(row[5] != null && !row[5].toString().trim().isEmpty())
 								? Integer.parseInt(row[5].toString().trim())
-								: 0);
-				plantTeamDTO.setPlantId(row[6] != null ? row[6].toString() : "");
-				plantTeamDTO.setAopYear(row[7] != null ? row[7].toString() : "");
+								: null);
+				plantTeamDTO.setPlantId(row[6] != null ? row[6].toString() : plantId);
+				plantTeamDTO.setAopYear(row[7] != null ? row[7].toString() : year);
 				plantTeamDTO.setRemark(row[8] != null ? row[8].toString() : "");
 				plantTeamDTOs.add(plantTeamDTO);
 				
@@ -110,25 +110,24 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 				obj = findByYearAndPlantId(year, UUID.fromString(plantId), procedureName);
 			
 			List<PeopleInitiativeDTO> peopleInitiativeDTOs = new ArrayList<>();
-			
+			int i = 0;
 			for (Object[] row : obj) {
 				PeopleInitiativeDTO peopleInitiativeDTO = new PeopleInitiativeDTO();
 				peopleInitiativeDTO.setId(row[0] != null ? row[0].toString() : "");
+
 				peopleInitiativeDTO.setInitiative(row[1] != null ? row[1].toString() : "");
 				peopleInitiativeDTO.setOutcome(row[2] != null ? row[2].toString() : "");
-				peopleInitiativeDTO.setRecommendation(row[3] != null ? row[3].toString() : "");
-				if (row[4] != null) {
-				    java.util.Date dateValue = (java.util.Date) row[4];
-				    peopleInitiativeDTO.setTargetDate(
-				    		dateValue
-				    );
+				if (row[3] != null) {
+					if (row[3] instanceof java.util.Date) {
+						peopleInitiativeDTO.setTargetDate((java.util.Date) row[3]);
+					}
 				} else {
-				    peopleInitiativeDTO.setTargetDate(null);
+					peopleInitiativeDTO.setTargetDate(null);
 				}
-				peopleInitiativeDTO.setResponsible(row[5] != null ? row[5].toString() : "");
-				peopleInitiativeDTO.setPlantId(row[6] != null ? row[6].toString() : "");
-				peopleInitiativeDTO.setAopYear(row[7] != null ? row[7].toString() : "");
-				peopleInitiativeDTO.setRemark(row[8] != null ? row[8].toString() : "");
+				peopleInitiativeDTO.setResponsible(row[4] != null ? row[4].toString() : "");
+				peopleInitiativeDTO.setPlantId(row[5] != null ? row[5].toString() : "");
+				peopleInitiativeDTO.setAopYear(row[6] != null ? row[6].toString() : "");
+				peopleInitiativeDTO.setRemark(row[7] != null ? row[7].toString() : "");
 				peopleInitiativeDTOs.add(peopleInitiativeDTO);
 				
 			}
@@ -169,29 +168,40 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	
 	@Override
 	public AOPMessageVM deletePlantTeam(String id) {
-		Optional<PlantTeam> plantTeam =plantTeamRepository.findById(UUID.fromString(id));
-		if(plantTeam.isPresent()) {
-			plantTeamRepository.delete(plantTeam.get()); 
+		try {
+			Optional<PlantTeam> plantTeamOpt = plantTeamRepository.findById(UUID.fromString(id));
+			if (plantTeamOpt.isPresent()) {
+				plantTeamRepository.delete(plantTeamOpt.get());
+			}
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Record Deleted successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant Team ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to delete record", ex);
 		}
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		aopMessageVM.setCode(200);
-		aopMessageVM.setData(aopMessageVM);
-		aopMessageVM.setMessage("Record deleted successfully");
-		// TODO Auto-generated method stub
-		return aopMessageVM;
 	}
 
 	@Override
 	public AOPMessageVM deletePeopleInitiative(String id) {
-		Optional<PeopleInitiative> peopleInitiativeOpt =peopleInitiativeRepository.findById(UUID.fromString(id));
-		if(peopleInitiativeOpt.isPresent()) {
-			peopleInitiativeRepository.delete(peopleInitiativeOpt.get()); 
+		try {
+			Optional<PeopleInitiative> peopleInitiativeOpt = peopleInitiativeRepository.findById(UUID.fromString(id));
+			if (peopleInitiativeOpt.isPresent()) {
+				peopleInitiativeRepository.delete(peopleInitiativeOpt.get());
+			}
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Record Deleted successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for People Initiative ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to delete record", ex);
 		}
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		aopMessageVM.setCode(200);
-		aopMessageVM.setData(aopMessageVM);
-		aopMessageVM.setMessage("Record deleted successfully");
-		return aopMessageVM;
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -208,15 +218,32 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 					failedList.add(plantTeamDTO);
 					continue;
 				}
-				PlantTeam plantTeam =null;
-				if(plantTeamDTO.getId()!=null) {
-					Optional<PlantTeam> plantTeamOpt=plantTeamRepository.findById(UUID.fromString(plantTeamDTO.getId()));
-					if(plantTeamOpt.isPresent()) {
-						plantTeam=plantTeamOpt.get();
+				PlantTeam plantTeam = null;
+				if (plantTeamDTO.getId() != null && !plantTeamDTO.getId().trim().isEmpty()
+						&& !plantTeamDTO.getId().equalsIgnoreCase("null")
+						&& !plantTeamDTO.getId().startsWith("temp-")
+						&& !plantTeamDTO.getId().startsWith("plant-team-temp-")) {
+					try {
+						Optional<PlantTeam> plantTeamOpt = plantTeamRepository.findById(UUID.fromString(plantTeamDTO.getId().trim()));
+						if (plantTeamOpt.isPresent()) {
+							plantTeam = plantTeamOpt.get();
+						}
+					} catch (Exception ignored) {
 					}
-				}else {
-					plantTeam=new PlantTeam();
 				}
+
+				if (plantTeam == null && plantTeamDTO.getFunctions() != null && plantTeamDTO.getJobRole() != null) {
+					Optional<PlantTeam> existingOpt = plantTeamRepository.findByPlantIdAndAopYearAndFunctionsAndJobRole(
+							plantId, year, plantTeamDTO.getFunctions().trim(), plantTeamDTO.getJobRole().trim());
+					if (existingOpt.isPresent()) {
+						plantTeam = existingOpt.get();
+					}
+				}
+
+				if (plantTeam == null) {
+					plantTeam = new PlantTeam();
+				}
+
 				plantTeam.setAge(plantTeamDTO.getAge());
 				plantTeam.setAopYear(year);
 				plantTeam.setFunctions(plantTeamDTO.getFunctions());
@@ -254,15 +281,27 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 					failedList.add(peopleInitiativeDTO);
 					continue;
 				}
-				PeopleInitiative peopleInitiative =null;
-				if(peopleInitiativeDTO.getId()!=null) {
-					Optional<PeopleInitiative> peopleInitiativeOpt=peopleInitiativeRepository.findById(UUID.fromString(peopleInitiativeDTO.getId()));
-					if(peopleInitiativeOpt.isPresent()) {
-						peopleInitiative=peopleInitiativeOpt.get();
+				PeopleInitiative peopleInitiative = null;
+				boolean isNew = false;
+
+				if (peopleInitiativeDTO.getId() != null && !peopleInitiativeDTO.getId().trim().isEmpty()
+						&& !peopleInitiativeDTO.getId().equalsIgnoreCase("null")
+						&& !peopleInitiativeDTO.getId().startsWith("temp-")
+						&& !peopleInitiativeDTO.getId().startsWith("people-initiative-temp-")) {
+					try {
+						Optional<PeopleInitiative> peopleInitiativeOpt = peopleInitiativeRepository.findById(UUID.fromString(peopleInitiativeDTO.getId().trim()));
+						if (peopleInitiativeOpt.isPresent()) {
+							peopleInitiative = peopleInitiativeOpt.get();
+						}
+					} catch (Exception ignored) {
 					}
-				}else {
-					peopleInitiative=new PeopleInitiative();
 				}
+
+				if (peopleInitiative == null) {
+					peopleInitiative = new PeopleInitiative();
+					isNew = true;
+				}
+
 				peopleInitiative.setInitiative(peopleInitiativeDTO.getInitiative());
 				peopleInitiative.setAopYear(year);
 				peopleInitiative.setOutcome(peopleInitiativeDTO.getOutcome());
@@ -271,6 +310,14 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 				peopleInitiative.setPlantId(plantId);
 				peopleInitiative.setRemark(peopleInitiativeDTO.getRemark());
 				peopleInitiative.setTargetDate(peopleInitiativeDTO.getTargetDate());
+
+				Date now = new Date();
+				if (isNew) {
+					peopleInitiative.setCreatedOn(now);
+				} else {
+					peopleInitiative.setModifiedOn(now);
+				}
+
 				peopleInitiativeRepository.save(peopleInitiative);
 			}
 			
@@ -469,7 +516,7 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	        }
 
 	        Workbook workbook = new XSSFWorkbook();
-	        Sheet sheet = workbook.createSheet("Sheet1");
+	        Sheet sheet = workbook.createSheet("Plant Team");
 	        int currentRow = 0;
 
 	        List<String> innerHeaders = new ArrayList<>();
@@ -483,17 +530,26 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	            innerHeaders.add("Status");
 	            innerHeaders.add("Error Description");
 	        }
+
+	        int numCols = innerHeaders.size();
+	        int[] maxColWidths = new int[numCols];
+
 	        Row headerRow = sheet.createRow(currentRow++);
-	        for (int col = 0; col < innerHeaders.size(); col++) {
+	        headerRow.setHeightInPoints(24);
+	        for (int col = 0; col < numCols; col++) {
 	            Cell cell = headerRow.createCell(col);
 	            cell.setCellValue(innerHeaders.get(col));
 	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            maxColWidths[col] = innerHeaders.get(col).length();
 	        }
 
-	        int dataRowCount = dtoList.size();
+	        CellStyle dataStyle = Utility.createBorderedStyle(workbook);
+
+	        int dataRowCount = dtoList != null ? dtoList.size() : 0;
 	        for (int i = 0; i < dataRowCount; i++) {
 	        	PlantTeamDTO dto = dtoList.get(i);
 	            Row row = sheet.createRow(currentRow++);
+	            row.setHeightInPoints(20);
 	            List<Object> rowData = new ArrayList<>();
 	            rowData.add(dto.getFunctions());
 	            rowData.add(dto.getJobRole());
@@ -509,17 +565,34 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
+	                String cellText = "";
 	                if (value instanceof Number) {
 	                    cell.setCellValue(((Number) value).doubleValue());
+	                    cellText = value.toString();
 	                } else if (value instanceof Boolean) {
 	                    cell.setCellValue((Boolean) value);
+	                    cellText = value.toString();
 	                } else if (value != null) {
-	                    cell.setCellValue(value.toString());
+	                    cellText = value.toString();
+	                    cell.setCellValue(cellText);
 	                } else {
 	                    cell.setCellValue("");
-	                }  
+	                    cellText = "";
+	                }
+	                cell.setCellStyle(dataStyle);
+	                if (cellText != null && cellText.length() > maxColWidths[col]) {
+	                    maxColWidths[col] = cellText.length();
+	                }
 	            }
 	        }
+
+	        for (int col = 0; col < numCols; col++) {
+	            sheet.autoSizeColumn(col);
+	            int currentWidth = sheet.getColumnWidth(col);
+	            int calculatedWidth = Math.max(currentWidth + 1500, (maxColWidths[col] + 6) * 256);
+	            sheet.setColumnWidth(col, Math.min(calculatedWidth, 255 * 256));
+	        }
+
 	        sheet.setColumnHidden(5, true);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
