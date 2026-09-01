@@ -181,6 +181,7 @@ import ShutdownConsumptionRefinery from 'components/aop-phase-two/refineryUtilit
 import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
 import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
+import ShutdownPlanRefinery from 'components/aop-phase-two/refineryUtility/shutdown-plan/index'
 // Vertical Refinery Utility Ended
 
 // Naphthasplitter
@@ -1217,6 +1218,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='production-norms-basis-refinery'>
                 <ProductionNormsBasisRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-plan-refinery',
+            element: (
+              <PrivateRoute routeId='shutdown-plan-refinery'>
+                <ShutdownPlanRefinery />
               </PrivateRoute>
             ),
           },
