@@ -117,9 +117,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC");
 			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
-			boolean staple = vertical.getName().equalsIgnoreCase("STAPLE");
-			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-			boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD") && plant.getName().equalsIgnoreCase("PIA");
 			if(elastomerHmdSbr || pvc) {
 				withGrade=true;
 			}if(elastomer) {
@@ -139,8 +136,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			// }
 			else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 				List<Object[]> obj=getShutdownConsumptionData(plantId,year);
-				boolean isCrackerC2 = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("C2");
-				return getData(obj, plantId, year, isCrackerC2);
+				return getData(obj, plantId, year);
 			}else if(withGrade) {
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnormsGrade";
 				objList = getShutdownConsumptionData( plantId,year, storedProcedure);
@@ -1620,10 +1616,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	}
 	
 	public AOPMessageVM getData(List<Object[]> obj,String plantId,String year){
-		return getData(obj, plantId, year, false);
-	}
-
-	public AOPMessageVM getData(List<Object[]> obj,String plantId,String year, boolean isCrackerC2){
 		List<ShutdownNormsValueDTO> shutdownNormsValueDTOs = new ArrayList<ShutdownNormsValueDTO>();
 		for(Object[] row:obj) {
 			ShutdownNormsValueDTO shutdownNormsValueDTO = new ShutdownNormsValueDTO();
@@ -1632,33 +1624,18 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			shutdownNormsValueDTO.setProductName(row[1] != null ? row[1].toString() : null);
 			shutdownNormsValueDTO.setUOM(row[2] != null ? row[2].toString() : null);
 			shutdownNormsValueDTO.setMaterialFkId(row[6] != null ? row[6].toString() : null);
-			if (isCrackerC2) {
-				shutdownNormsValueDTO.setApril(parseMonthValue(row[7]));
-				shutdownNormsValueDTO.setMay(parseMonthValue(row[8]));
-				shutdownNormsValueDTO.setJune(parseMonthValue(row[9]));
-				shutdownNormsValueDTO.setJuly(parseMonthValue(row[10]));
-				shutdownNormsValueDTO.setAugust(parseMonthValue(row[11]));
-				shutdownNormsValueDTO.setSeptember(parseMonthValue(row[12]));
-				shutdownNormsValueDTO.setOctober(parseMonthValue(row[13]));
-				shutdownNormsValueDTO.setNovember(parseMonthValue(row[14]));
-				shutdownNormsValueDTO.setDecember(parseMonthValue(row[15]));
-				shutdownNormsValueDTO.setJanuary(parseMonthValue(row[16]));
-				shutdownNormsValueDTO.setFebruary(parseMonthValue(row[17]));
-				shutdownNormsValueDTO.setMarch(parseMonthValue(row[18]));
-			} else {
-				shutdownNormsValueDTO.setApril(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
-				shutdownNormsValueDTO.setMay(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
-				shutdownNormsValueDTO.setJune(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
-				shutdownNormsValueDTO.setJuly(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
-				shutdownNormsValueDTO.setAugust(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
-				shutdownNormsValueDTO.setSeptember(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
-				shutdownNormsValueDTO.setOctober(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
-				shutdownNormsValueDTO.setNovember(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
-				shutdownNormsValueDTO.setDecember(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
-				shutdownNormsValueDTO.setJanuary(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
-				shutdownNormsValueDTO.setFebruary(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0);
-				shutdownNormsValueDTO.setMarch(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0);
-			}
+			shutdownNormsValueDTO.setApril(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+			shutdownNormsValueDTO.setMay(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+			shutdownNormsValueDTO.setJune(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+			shutdownNormsValueDTO.setJuly(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+			shutdownNormsValueDTO.setAugust(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+			shutdownNormsValueDTO.setSeptember(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+			shutdownNormsValueDTO.setOctober(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+			shutdownNormsValueDTO.setNovember(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+			shutdownNormsValueDTO.setDecember(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+			shutdownNormsValueDTO.setJanuary(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
+			shutdownNormsValueDTO.setFebruary(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0);
+			shutdownNormsValueDTO.setMarch(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0);
 			shutdownNormsValueDTO.setRemarks(row[20] != null ? row[20].toString() : null);
 			shutdownNormsValueDTO.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
 			shutdownNormsValueDTO.setSapCode(row[22] != null ? row[22].toString() : null);
@@ -1677,21 +1654,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		aopMessageVM.setMessage("Data fetched successfully");
 
 		return aopMessageVM;
-	}
-
-	private Double parseMonthValue(Object val) {
-		if (val == null) {
-			return null;
-		}
-		String s = val.toString().trim();
-		if (s.isEmpty()) {
-			return null;
-		}
-		try {
-			return Double.parseDouble(s);
-		} catch (NumberFormatException e) {
-			return null;
-		}
 	}
 
 	public AOPMessageVM getShutdownGradeData(List<Object[]> obj,String plantId,String year,String gradeId){

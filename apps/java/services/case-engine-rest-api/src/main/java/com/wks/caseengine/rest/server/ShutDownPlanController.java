@@ -50,6 +50,24 @@ public class ShutDownPlanController {
 
         return ResponseEntity.ok(shutDownPlanDTOList);
     }
+
+	@GetMapping(value = "/shutdown-with-value")
+    public ResponseEntity<List<ShutDownPlanDTO>> findMaintenanceDetailsWithValueByPlantIdAndType( @RequestParam String plantId, @RequestParam String maintenanceTypeName, @RequestParam String year){
+            
+		List<ShutDownPlanDTO> shutDownPlanDTOList=null;
+         try {
+            // Convert String to UUID
+            UUID plantUuid = UUID.fromString(plantId); 
+            shutDownPlanDTOList = shutDownPlanService.findMaintenanceDetailsWithValueByPlantIdAndType(plantUuid, maintenanceTypeName,year);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null); 
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(null); 
+        }
+
+        return ResponseEntity.ok(shutDownPlanDTOList);
+    }
 	
 	@GetMapping(value = "/shutdown-export")
 	public ResponseEntity<byte[]> shutdownExport(

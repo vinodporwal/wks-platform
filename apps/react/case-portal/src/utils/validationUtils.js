@@ -46,8 +46,6 @@ export const validateFields = (data, requiredFields) => {
     sdFlushAfterBatch: 'SD Flush After Batch',
     sdWashHr: 'SD Wash Hr',
     sdFlushHr: 'SD Flush Hr',
-    category: 'Category',
-    shutdownDate: 'Shutdown Date',
     quarterlySDHr: 'Quarterly SD Hr',
   }
 

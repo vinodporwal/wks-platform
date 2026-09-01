@@ -12,5 +12,5 @@ import com.wks.caseengine.entity.PlantTeam;
 @Repository
 public interface PlantTeamRepository extends JpaRepository<PlantTeam,UUID>{
 	
-	java.util.Optional<PlantTeam> findByPlantIdAndAopYearAndFunctionsAndJobRole(UUID plantId, String aopYear, String functions, String jobRole);
+	
 }

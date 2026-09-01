@@ -25,7 +25,6 @@ export const PlantAopReportApiService = {
   importProfitImprovementInitiative,
   exportReliabilityImprovement,
   importReliabilityImprovement,
-  handleLoadPlantSafetyTarget,
 }
 async function getPlantsafetyPerformance(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/plant-report?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -400,9 +399,7 @@ async function exportPlantSafetyImprovement(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = EXCEL_NAME
-      ? `${EXCEL_NAME}.xlsx`
-      : `Plant_Safety_Improvement_${AOP_YEAR}.xlsx`
+    a.download = EXCEL_NAME ? `${EXCEL_NAME}.xlsx` : `Plant_Safety_Improvement_${AOP_YEAR}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -413,12 +410,7 @@ async function exportPlantSafetyImprovement(
   }
 }
 
-async function importPlantSafetyImprovement(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  file,
-) {
+async function importPlantSafetyImprovement(keycloak, PLANT_ID, AOP_YEAR, file) {
   const url = `${Config.CaseEngineUrl}/task/plant-safety-improvement-import?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
   const formData = new FormData()
   formData.append('file', file)
@@ -462,9 +454,7 @@ async function exportProfitImprovementInitiative(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = EXCEL_NAME
-      ? `${EXCEL_NAME}.xlsx`
-      : `Profit_Improvement_Initiative_${AOP_YEAR}.xlsx`
+    a.download = EXCEL_NAME ? `${EXCEL_NAME}.xlsx` : `Profit_Improvement_Initiative_${AOP_YEAR}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -475,12 +465,7 @@ async function exportProfitImprovementInitiative(
   }
 }
 
-async function importProfitImprovementInitiative(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  file,
-) {
+async function importProfitImprovementInitiative(keycloak, PLANT_ID, AOP_YEAR, file) {
   const url = `${Config.CaseEngineUrl}/task/profit-improvement-initiative-import?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
   const formData = new FormData()
   formData.append('file', file)
@@ -524,9 +509,7 @@ async function exportReliabilityImprovement(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = EXCEL_NAME
-      ? `${EXCEL_NAME}.xlsx`
-      : `Reliability_Improvement_${AOP_YEAR}.xlsx`
+    a.download = EXCEL_NAME ? `${EXCEL_NAME}.xlsx` : `Reliability_Improvement_${AOP_YEAR}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -537,12 +520,7 @@ async function exportReliabilityImprovement(
   }
 }
 
-async function importReliabilityImprovement(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  file,
-) {
+async function importReliabilityImprovement(keycloak, PLANT_ID, AOP_YEAR, file) {
   const url = `${Config.CaseEngineUrl}/task/reliability-improvement-import?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
   const formData = new FormData()
   formData.append('file', file)
@@ -561,21 +539,6 @@ async function importReliabilityImprovement(
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error importing Reliability Improvement Excel:', e)
-    return Promise.reject(e)
-  }
-}
-async function handleLoadPlantSafetyTarget(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/plant-safety-performance-load?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
     return Promise.reject(e)
   }
 }

@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.wks.caseengine.dto.MXOReprocessingDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
@@ -190,49 +189,6 @@ public class SpyroInputController {
 			@RequestParam String mode,
 			@RequestParam("file") MultipartFile file) {
 		return spyroInputService.importSpyroInputMinMaxExcel(plantId, siteId, verticalId, aopYear, mode, file);
-	}
-
-	@GetMapping(value="/naptha-summary")
-	public AOPMessageVM getNapthaSummaryDataSet(@RequestParam String plantId,@RequestParam String year, @RequestParam String reportType) {
-		return spyroInputService.getNapthaSummaryDataSet(plantId,year,reportType);
-	}
-
-	@GetMapping(value = "/naptha-summary-export")
-	public ResponseEntity<byte[]> exportNapthaSummary(
-			@RequestParam String plantId,
-			@RequestParam String year,
-			@RequestParam String reportType) {
-		try {
-			byte[] excelBytes = spyroInputService.createNapthaSummaryExcel(plantId, year, reportType);
-
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.parseMediaType(
-					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-			headers.setContentDisposition(ContentDisposition.builder("attachment")
-					.filename("NapthaSummary.xlsx")
-					.build());
-			headers.setContentLength(excelBytes.length);
-
-			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
-		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
-
-	@GetMapping(value = "/mxo-reprocessing-data")
-	public AOPMessageVM getMXOReprocessingData(@RequestParam String plantId, @RequestParam String aopYear) {
-		return spyroInputService.getMXOReprocessingData(plantId, aopYear);
-	}
-
-	@PostMapping(value = "/mxo-reprocessing-data")
-	public AOPMessageVM updateMXOReprocessingData(@RequestBody List<MXOReprocessingDTO> mXOReprocessingDTOList, @RequestParam String plantId, @RequestParam String year) {
-		List<MXOReprocessingDTO> failedRecords = spyroInputService.updateMXOReprocessingData(mXOReprocessingDTOList, plantId, year);
-
-		if (failedRecords.isEmpty()) {
-			return new AOPMessageVM(200, "Data updated successfully", null);
-		} else {
-			return new AOPMessageVM(422, "Partial data updated", failedRecords);
-		}
 	}
 
 }

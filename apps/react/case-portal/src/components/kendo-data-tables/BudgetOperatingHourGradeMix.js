@@ -502,8 +502,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        await fetchData()
-        await fetchDataSubGradeAllocation()
+        fetchData()
         setRefreshSignal((prev) => prev + 1)
       } else {
         setSnackbarOpen(true)
@@ -538,8 +537,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        await fetchDataSubGradeAllocation()
-        await fetchData()
+        fetchDataSubGradeAllocation()
         setRefreshSignal((prev) => prev + 1)
       } else {
         setSnackbarOpen(true)
@@ -711,7 +709,6 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       titleName: 'Gradewise Hours Allocation',
       showCalculate: true,
       showCalculateVisibility: aopCalculationSubGrade.length > 0,
-      calculateBtnText: 'Reset',
     },
     isOldYear,
   )

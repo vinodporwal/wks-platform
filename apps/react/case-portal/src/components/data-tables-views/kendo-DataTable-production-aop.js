@@ -183,8 +183,7 @@ const ProductionAopView = ({
           cols[remarkIdx] = remarkColumn(handleRemarkCellClick)
         }
 
-        // Hide the Id column from the UI
-        return cols.filter((col) => col.field !== 'Id')
+        return cols
       }
 
       setColumns(generateColumns(apiData))
@@ -209,16 +208,8 @@ const ProductionAopView = ({
   // const lastColumnField = columns[columns.length - 1]?.field
   const saveChanges = async () => {
     try {
-      const payload = rows.map((row) => {
-        const { id, path, inEdit, ...rest } = row
-        return rest
-      })
-
-      await AOPWorkFlowService.saveAnnualWorkFlowData(
-        keycloak,
-        payload,
-        PLANT_ID,
-      )
+      // console.log(rows, 'workflowDto')
+      await AOPWorkFlowService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
       // console.log(response, 'response')
       setSnackbarData({
         message: 'Data Saved Successfully!',

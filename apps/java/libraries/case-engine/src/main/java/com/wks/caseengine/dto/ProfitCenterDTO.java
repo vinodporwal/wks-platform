@@ -29,7 +29,6 @@ public class ProfitCenterDTO {
     private String oct;
     private String nov;
     private String dec;
-    private String remarks;
 
     private String saveStatus;
     private String errorMessage;

@@ -360,7 +360,7 @@ public class PlantReportServiceImpl implements PlantReportService {
                     .id(UUID.fromString(rs.getString("Id")))
                     .initiativeDescription(rs.getString("InitiativeDescription"))
                     .cost(rs.getDouble("Cost"))
-                    .outcome(rs.getString("Outcome"))
+                    .outcome(rs.getDouble("Outcome"))
                     .recommendation(rs.getString("Recommendation"))
                     .targetDate(rs.getDate("TargetDate"))
                     .remark(rs.getString("Remark"))
@@ -701,10 +701,10 @@ public class PlantReportServiceImpl implements PlantReportService {
                 prevAOPCell.setCellValue(dto.getPrevAOP() != null ? dto.getPrevAOP() : 0.0);
                 prevAOPCell.setCellStyle(unlockedStyle);
 
-                // Col 4 - FY{prev} ACT: locked+greyed when dto.isEditable==false, editable otherwise
+                // Col 4 - FY{prev} ACT (editable)
                 Cell prevActualCell = row.createCell(4);
                 prevActualCell.setCellValue(dto.getPrevActual() != null ? dto.getPrevActual() : 0.0);
-                prevActualCell.setCellStyle(!dto.isEditable() ? lockedStyle : unlockedStyle);
+                prevActualCell.setCellStyle(unlockedStyle);
 
                 // Col 5 - FY{curr} Plan (editable)
                 Cell currentPlanCell = row.createCell(5);
@@ -1489,7 +1489,7 @@ public class PlantReportServiceImpl implements PlantReportService {
                     String initiativeDescription = getStringCellValueReliability(row.getCell(1), dto);
                     String recommendation = getStringCellValueReliability(row.getCell(2), dto);
                     Double cost = getNumericCellValueReliability(row.getCell(3), dto);
-                    String outcome = getStringCellValueReliability(row.getCell(4), dto);
+                    Double outcome = getNumericCellValueReliability(row.getCell(4), dto);
                     Date targetDate = getDateCellValueReliability(row.getCell(5), dto);
                     String remark = getStringCellValueReliability(row.getCell(6), dto);
                     String idStr = getStringCellValueReliability(row.getCell(7), dto);
@@ -1660,49 +1660,5 @@ public class PlantReportServiceImpl implements PlantReportService {
         }
         return null;
     }
-
-    @Override
-    public AOPMessageVM loadReliabilityPerformanceData(String plantId, String aopYear) {
-        
-
-        String procedureName = "Sp_LoadReliabilityPerformancePlant";
-
-        Integer result = executeLoadButtonSP(plantId, aopYear, procedureName);
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		aopMessageVM.setCode(200);
-		aopMessageVM.setMessage("Load SP Executed successfully");
-		aopMessageVM.setData(result);
-		
-		return aopMessageVM;
-    }
-
-    @Override
-    public AOPMessageVM loadPlantSafetyPerformanceData(String plantId, String aopYear) {
-        
-
-        String procedureName = "Sp_LoadPlantSafetyPerformanceTargets";
-
-        Integer result = executeLoadButtonSP(plantId, aopYear, procedureName);
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		aopMessageVM.setCode(200);
-		aopMessageVM.setMessage("Load SP Executed successfully");
-		aopMessageVM.setData(result);
-		
-		return aopMessageVM;
-    }
-
-    
-	public Integer executeLoadButtonSP( String plantId, String aopYear, String procedureName) {
-		try {
-
-			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
-
-
-			return jdbcTemplate.update(callSql, plantId, aopYear);
-
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to execute stored procedure", e);
-		}
-	}
 
 }

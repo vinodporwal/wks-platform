@@ -21,7 +21,5 @@ public class ShutdownHistoryConfigDTO {
     private String modifiedBy;
     private String plantId;
     private Integer typeOfSD;
-    private String saveStatus;
-    private String errDescription;
 
 }

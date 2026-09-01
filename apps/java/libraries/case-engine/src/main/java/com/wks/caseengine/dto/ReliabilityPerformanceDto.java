@@ -36,6 +36,5 @@ public class ReliabilityPerformanceDto {
 	private String errDescription;
 	 private String tableId;
 	 private String masterId;
-     private boolean isEditable;
 
 }

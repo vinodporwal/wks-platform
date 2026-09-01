@@ -8,7 +8,6 @@ import { getRoleName } from 'services/role-service'
 import Constants from './Constants'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
-import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/naphthasplitter/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 
@@ -234,10 +233,6 @@ const ProductionNormsBasis = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
-      case 'PIMS Monthly Throughput':
-      case 'pims-monthly-throughput':
-      case 'pims-monthly-throughtput':
-        return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       default:
         return null
     }

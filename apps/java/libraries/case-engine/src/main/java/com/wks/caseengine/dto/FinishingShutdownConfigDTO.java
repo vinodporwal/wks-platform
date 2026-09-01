@@ -38,8 +38,4 @@ private String id;
     private String updatedBy;
     
     private String plantFkId;
-
-    private String saveStatus;
-
-    private String errDescription;
 }

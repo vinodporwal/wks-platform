@@ -22,7 +22,7 @@ const useFilteredMenu = () => {
     return items.map((item, index) => {
       if (item.type === 'group' && item.children) {
         const filteredChildren = item.children.filter((child) => {
-          return child.id !== 'user-management' && child.id !== 'tab-management'
+          return child.id !== 'user-management' || child.id !== 'tab-management'
         })
 
         return {
@@ -94,10 +94,10 @@ const useFilteredMenu = () => {
     const filteredMenuItem = filterMenuByRole(menuItems || [])
     const updatedMenu = isPlantManager
       ? [
-        ...filteredMenuItem,
-        userManagementRoute,
-        ...(isDeveloper ? [tabManagementRoute] : []),
-      ]
+          ...filteredMenuItem,
+          userManagementRoute,
+          ...(isDeveloper ? [tabManagementRoute] : []),
+        ]
       : [...filteredMenuItem]
 
     return {

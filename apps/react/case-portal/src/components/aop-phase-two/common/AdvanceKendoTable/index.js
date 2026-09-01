@@ -2244,57 +2244,6 @@ const AdvanceKendoTable = ({
           />
         )
       }
-      if (col?.type === 'customSelect' || col?.cellEditor) {
-        const isDynamic = !!col.dynamicOptions
-        const EditorComponent = col.cellEditor
-
-        return (
-          <GridColumn
-            key={col.field}
-            field={col.field}
-            title={col.title || col.headerName}
-            hidden={col.hidden}
-            locked={col?.locked || false}
-            editable={isEditable}
-            cells={{
-              edit: {
-                text: (cellProps) => {
-                  const resolvedOptions = isDynamic
-                    ? col.getOptions(cellProps.dataItem)
-                    : col.options
-                  return (
-                    <EditorComponent
-                      {...cellProps}
-                      options={resolvedOptions}
-                      textField={col.textField || 'label'}
-                      valueField={col.valueField || 'value'}
-                      placeholder={col.placeholder || 'Select...'}
-                      searchable={col.searchable || false}
-                      showClearOption={col.showClearOption || false}
-                      returnFullObject={col.returnFullObject || false}
-                    />
-                  )
-                },
-              },
-              data: (props) => {
-                const resolvedOptions = isDynamic
-                  ? col.getOptions(props.dataItem)
-                  : col.options
-                return createSelectToolTipRenderer(
-                  resolvedOptions,
-                  toolTipRenderer,
-                )({ ...props, displayMode: col.displayMode || 'label' })
-              },
-              headerCell: col.subtitle
-                ? createHeaderWithSubtitle(col.subtitle)
-                : SimpleHeaderWithTooltip,
-            }}
-            columnMenu={ColumnMenuCheckboxFilter}
-            className={!isEditable ? 'non-editable-cell' : ''}
-            width={setWidth(col?.minWidth || col?.widthT)}
-          />
-        )
-      }
       if (col?.type === 'multi-select') {
         // Change this to your multiselect field name
         let allOptions = col.options || []

@@ -8,7 +8,6 @@ import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
-import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumption = () => {
@@ -26,12 +25,6 @@ const OverallAopConsumption = () => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-
-  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
-    useReleaseAOP({
-      setSnackbarOpen,
-      setSnackbarData,
-    })
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -272,8 +265,6 @@ const OverallAopConsumption = () => {
     // showExport: true,
     downloadExcelBtnFromUI: true,
     showCalculate: true,
-    showReleaseBtn: true,
-    isReleaseDisabled: isReleaseDisabled,
     ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
     showImport: false,
     showTitleNameBusiness: true,
@@ -293,8 +284,6 @@ const OverallAopConsumption = () => {
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleCalculate={handleCalculate}
-        handleRelease={handleRelease}
-        isReleaseDisabled={isReleaseDisabled}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
@@ -308,8 +297,6 @@ const OverallAopConsumption = () => {
           defaultPageSize: 100,
         }}
       />
-
-      {ReleaseDialogComponent}
     </Box>
   )
 }
