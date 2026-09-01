@@ -63,5 +63,12 @@ public interface NormParametersRepository extends JpaRepository<NormParameters, 
     	        @Param("dependantAttributeId") String dependantAttributeId
     	    );
 
+    
 
+        NormParameters findByDisplayNameAndNormParameterTypeFkIdAndPlantFkId(
+            String displayName, 
+            UUID normParameterTypeFkId, 
+            UUID plantFkId
+        );
+    
 }

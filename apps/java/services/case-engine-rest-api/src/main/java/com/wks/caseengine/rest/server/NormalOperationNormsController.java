@@ -45,6 +45,42 @@ public class NormalOperationNormsController {
 	    return normalOperationNormsService.getSteadyStateNorms(year, plantId, gradeId,mode);
 	}
 	
+	@GetMapping(value = "/steady-state-norms-export-dynamic")
+	public ResponseEntity<byte[]> exportSteadyStateNorms(
+	        @RequestParam String year,
+	        @RequestParam String plantId) {
+	    try {
+	        // Calls service to generate byte array Excel file
+	        byte[] excelBytes = normalOperationNormsService.exportSteadyStateNormsDynamic(year, plantId, false, null);
+
+	        if (excelBytes == null || excelBytes.length == 0) {
+	            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	        }
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("steady_state_norms.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/steady-state-norms-import-dynamic", consumes = "multipart/form-data")
+	public AOPMessageVM importSteadyStateNorms(
+	        @RequestParam("plantId") String plantId,
+	        @RequestParam("year") String year,
+	        @RequestParam("file") MultipartFile file
+	) {
+	    return normalOperationNormsService.importSteadyStateNorms(year, plantId, file);
+	}
+	
 	@PostMapping(value="/steady-state-norms-dynamic")
 	public AOPMessageVM updateSteadyStateNorms(@RequestParam String plantId, @RequestParam String year, @RequestBody List<Map<String, Object>> payloadList){
 		return normalOperationNormsService.updateSteadyStateNorms(plantId,year,payloadList);		
