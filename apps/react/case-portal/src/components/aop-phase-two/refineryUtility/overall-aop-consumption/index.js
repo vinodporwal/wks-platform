@@ -55,6 +55,7 @@ const OverallAopConsumption = () => {
       minWidth: 120,
       type: 'text',
       editable: false,
+      locked: true,
     },
     {
       field: 'april',
