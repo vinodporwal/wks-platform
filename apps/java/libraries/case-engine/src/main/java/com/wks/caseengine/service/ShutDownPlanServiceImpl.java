@@ -3962,12 +3962,13 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean chemicalHmdHtpb = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("HTPB");
 		boolean aromaticsHmd = verticalName.equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("HMD");
 		boolean ptaPmd = verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
-		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd;
+		boolean refineryUtility = verticalName.equalsIgnoreCase("RefineryUtility");
+		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd || refineryUtility;
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		//boolean gasifier=  verticalName.equalsIgnoreCase("PCG") && (site.getName().equalsIgnoreCase("DTA") || site.getName().equalsIgnoreCase("SEZ"))  && (plant.getName().equalsIgnoreCase("GASIFIER") || plant.getName().equalsIgnoreCase("SRU"));
-		boolean refineryUtility = verticalName.equalsIgnoreCase("RefineryUtility");
+		
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",
