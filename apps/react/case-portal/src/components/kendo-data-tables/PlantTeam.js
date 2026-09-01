@@ -79,13 +79,13 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
       {
         field: 'function',
         title: 'Function',
-        editable: false,
+        editable: true,
         minWidth: 180,
       },
       {
         field: 'jobRole',
         title: 'Job Role',
-        editable: false,
+        editable: true,
         minWidth: 180,
       },
       {
@@ -182,7 +182,7 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
       if (!onlyPeopleInitiative) {
         if (res?.code === 200) {
           const mapped = res?.data?.Data?.map((item, index) => ({
-            id: item.id || `temp-${index + 1}`,
+            id: item.id || null,
             idFromApi: item.id || null,
             serialNumber: index + 1,
             function: item.functions,
@@ -204,7 +204,7 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
         if (res1?.code === 200) {
           const peopleInitiativeMapped = res1?.data?.Data?.map((item, index) => ({
             ...item,
-            id: item.id || `temp-p-${index + 1}`,
+            id: item.id || null,
             idFromApi: item.id || null,
             serialNumber: index + 1,
           }))
@@ -257,24 +257,15 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
         return isNaN(num) ? null : num
       }
 
-      const payload = data.map((item, index) => {
-        const rowId =
-          item.idFromApi ||
-          (typeof item.id === 'string' && item.id.startsWith('temp-')
-            ? null
-            : item.id) ||
-          null
-
-        return {
-          id: rowId,
-          functions: item.function,
-          jobRole: item.jobRole,
-          name: item.name || null,
-          age: parseOptionalInt(item.age),
-          teamSize: parseOptionalInt(item.teamSize),
-          remark: item.remarks || 'system generated',
-        }
-      })
+      const payload = data.map((item, index) => ({
+        id: item.id || null,
+        functions: item.function,
+        jobRole: item.jobRole,
+        name: item.name || null,
+        age: parseOptionalInt(item.age),
+        teamSize: parseOptionalInt(item.teamSize),
+        remark: item.remarks || 'system generated',
+      }))
 
       // 3. Save to API
       const response = await DataService.savePlantTeam(
@@ -585,8 +576,8 @@ export default function PlantTeam({ onlyPeopleInitiative = false, onlyPlantTeam 
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       ExcelName: getExcelExportTitle('Plant_Team'),
-      addButton: false,
-      deleteButton: false,
+      addButton: true,
+      deleteButton: true,
       disableColWidth: true,
     },
     isOldYear,

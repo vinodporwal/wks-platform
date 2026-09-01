@@ -721,7 +721,6 @@ const SlowdownNorms = () => {
       marginBottom: IS_PE_PP || IS_ELASTOMER_JMD_HIIR ? true : false,
 
       ExcelName: `${EXCEL_EXPORT_TITLE}-Slowdown Consumption`,
-      showCalulcationPromt: lowerVertName === 'cracker',
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
 
@@ -731,9 +730,7 @@ const SlowdownNorms = () => {
           ? `Slowdown Consumption (Norms/Quantity)`
           : IS_PE_PP_VERTICAL_NMD_LLDPE
             ? 'Total Loss'
-            : IS_PTA_PMD_PIA
-              ? `Slowdown Consumption (Norms)`
-              : `${SCREEN_NAME}`,
+            :IS_PTA_PMD_PIA?`Slowdown Consumption`:`${SCREEN_NAME}`,
     },
     isOldYear,
   )

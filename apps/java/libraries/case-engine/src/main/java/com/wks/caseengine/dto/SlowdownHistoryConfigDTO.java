@@ -24,8 +24,4 @@ public class SlowdownHistoryConfigDTO {
     private String updatedBy;
     private UUID plantFkId;
 
-    private String saveStatus;
-
-    private String errDescription;
-
 }

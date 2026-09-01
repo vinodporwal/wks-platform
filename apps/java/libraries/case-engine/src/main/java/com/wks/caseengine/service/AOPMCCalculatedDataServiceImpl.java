@@ -1741,7 +1741,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			List<AOPMCCalculatedDataDTO> data = readLineWiseData(file.getInputStream(), UUID.fromString(plantFKId), year);
 			
 			// april value carry forward logic for PP DTA
-			if(ppDta || ppHmd) {
+			if(ppDta) {
 				for(AOPMCCalculatedDataDTO dto : data) { 
 					// set may to march values to april value
 					dto.setMay(dto.getApril());

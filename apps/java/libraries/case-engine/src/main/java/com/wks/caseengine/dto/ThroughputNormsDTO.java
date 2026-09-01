@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class ThroughputNormsDTO {
 
     private String id;
-    private String materialId;
     private String unit;
     private String unitId;
     private String materialCode;
@@ -32,7 +31,6 @@ public class ThroughputNormsDTO {
     private String jan;
     private String feb;
     private String mar;
-    private String remarks;
 
     private String saveStatus;
     private String errorMessage;

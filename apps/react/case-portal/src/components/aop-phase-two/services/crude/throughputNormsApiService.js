@@ -7,14 +7,10 @@ export const ThroughputNormsApiService = {
   getNormsMaterialDropdown,
   getDropdownUnit,
   deleteThroughputNormsData,
-  deleteThroughputNorms,
 }
 
-async function getThroughputNorms(keycloak, siteName = 'SEZ', year, SITE_ID = '') {
-  let url = `${Config.CaseEngineUrl}/task/throughput-norms?siteName=${encodeURIComponent(siteName)}&aopYear=${encodeURIComponent(year || '')}`
-  if (SITE_ID) {
-    url += `&siteId=${encodeURIComponent(SITE_ID)}`
-  }
+async function getThroughputNorms(keycloak, SITE_ID, year) {
+  let url = `${Config.CaseEngineUrl}/task/throughput-norms?siteId=${SITE_ID}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -52,10 +48,10 @@ async function saveThroughputNorms(keycloak, payload, year) {
   }
 }
 
-async function getNormsMaterialDropdown(keycloak, siteName = 'SEZ', SITE_ID = '') {
-  let url = `${Config.CaseEngineUrl}/task/norms-material-dropdown?siteName=${encodeURIComponent(siteName)}`
-  if (SITE_ID) {
-    url += `&siteId=${encodeURIComponent(SITE_ID)}`
+async function getNormsMaterialDropdown(keycloak, SITE_ID, profitId) {
+  let url = `${Config.CaseEngineUrl}/task/norms-material-dropdown?siteId=${SITE_ID}`
+  if (profitId) {
+    url += `&profitId=${profitId}`
   }
   const headers = {
     Accept: 'application/json',
@@ -74,8 +70,8 @@ async function getNormsMaterialDropdown(keycloak, siteName = 'SEZ', SITE_ID = ''
   }
 }
 
-async function getDropdownUnit(keycloak, SITE_ID, siteName = 'SEZ') {
-  let url = `${Config.CaseEngineUrl}/task/unit-dropdown?siteId=${SITE_ID}${siteName ? `&siteName=${encodeURIComponent(siteName)}` : ''}`
+async function getDropdownUnit(keycloak, SITE_ID) {
+  let url = `${Config.CaseEngineUrl}/task/profit-center-uom-dropdown?siteId=${SITE_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -94,7 +90,7 @@ async function getDropdownUnit(keycloak, SITE_ID, siteName = 'SEZ') {
 }
 
 async function deleteThroughputNormsData(keycloak, materialId, unitId, year) {
-  const url = `${Config.CaseEngineUrl}/task/throughput-norms?materialId=${encodeURIComponent(materialId || '')}&unitId=${encodeURIComponent(unitId || '')}&aopYear=${encodeURIComponent(year || '')}`
+  const url = `${Config.CaseEngineUrl}/task/throughput-norms?materialId=${encodeURIComponent(materialId || '')}&unitId=${encodeURIComponent(unitId || '')}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
@@ -109,13 +105,9 @@ async function deleteThroughputNormsData(keycloak, materialId, unitId, year) {
         `Failed to delete throughput norms data: ${resp.status} ${resp.statusText}`,
       )
     }
-    return json(keycloak, resp)
+    return await resp.text()
   } catch (e) {
     console.error('Error deleting throughput norms data:', e)
     return Promise.reject(e)
   }
-}
-
-async function deleteThroughputNorms(keycloak, materialId, unitId, year) {
-  return deleteThroughputNormsData(keycloak, materialId, unitId, year)
 }

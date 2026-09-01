@@ -9,12 +9,10 @@ import Configuration from './Configuration'
 import Constants from './Constants'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
-import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/coker/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
 import HistoricalMonths from './HistoricalMonths'
-import JWAvgNorms from 'components/aop-phase-two/crude/production-norms-basis/JWAvgNorms'
 
 const ProductionNormsBasisCoker = () => {
   const keycloak = useSession()
@@ -207,17 +205,6 @@ const ProductionNormsBasisCoker = () => {
             refreshData={refreshData}
           />
         )
-      case 'PIMS Monthly Throughput':
-      case 'pims-monthly-throughput':
-      case 'pims-monthly-throughtput':
-        return (
-          <PIMSMontlyThroughput
-            startDate={startDate}
-            endDate={endDate}
-          />
-        )
-      case 'Job Work Avg Norms':
-        return <JWAvgNorms />
       case 'Manual Entry':
         return <ManualEntry refreshData={refreshData} />
       case 'Historical Months':

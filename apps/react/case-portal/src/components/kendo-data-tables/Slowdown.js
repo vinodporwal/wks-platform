@@ -136,7 +136,6 @@ const SlowDown = ({ permissions }) => {
   const IS_PET = lowerVertName === 'pet'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PTA_HMD = lowerVertName === 'pta' && lowerSiteName === 'hmd'
-  const IS_PTA_PMD = lowerVertName === 'pta' && lowerSiteName === 'pmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_ELASTOMER_HMD_SBR =
@@ -726,7 +725,6 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'vcm' &&
         !IS_PTA_DMD &&
         !IS_PTA_HMD &&
-        !IS_PTA_PMD &&
         !IS_CHEMICAL &&
         !IS_CHEMICAL_HMD_BUTADIENE
       ) {
@@ -903,7 +901,6 @@ const SlowDown = ({ permissions }) => {
           !IS_PTA_DMD &&
           lowerVertName !== 'pet' &&
           !IS_PTA_HMD &&
-          !IS_PTA_PMD &&
           !IS_PVC_VMD &&
           !IS_CHEMICAL
         ) {
@@ -946,7 +943,6 @@ const SlowDown = ({ permissions }) => {
           !IS_PTA_DMD &&
           lowerVertName !== 'pet' &&
           !IS_PTA_HMD &&
-          !IS_PTA_PMD &&
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
           !IS_PP_SEZ &&

@@ -652,7 +652,6 @@ const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
           showRefresh: false,
           showCalculate: viewOnly ? false : true,
           showCalculateVisibility: true,
-          showCalulcationPromt: lowerVertName === 'cracker',
 
           //BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
           // showCalculateVisibility: false,

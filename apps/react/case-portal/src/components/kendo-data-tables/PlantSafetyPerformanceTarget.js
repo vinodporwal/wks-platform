@@ -40,8 +40,32 @@ export default function PlantSafetyPerformanceTarget() {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
   // second grid states
+  const [rowsP, setRowsP] = useState([])
+  const [remarkDialogOpenP, setRemarkDialogOpenP] = useState(false)
+  const [currentRemarkP, setCurrentRemarkP] = useState('')
+  const [currentRowIdP, setCurrentRowIdP] = useState(null)
   const [modifiedCellsP, setModifiedCellsP] = useState({})
+  const [enableSaveAddBtnP, setEnableSaveAddBtnP] = useState(false)
+
+  //const [rows3, setRows3] = useState([])
+
+  const [remarkDialogOpen3, setRemarkDialogOpen3] = useState(false)
+  const [currentRemark3, setCurrentRemark3] = useState('')
+  const [currentRowId3, setCurrentRowId3] = useState(null)
+  const [modifiedCells3, setModifiedCells3] = useState({})
+  const [enableSaveAddBtn3, setEnableSaveAddBtn3] = useState(false)
+
+  //const [rows4, setRows4] = useState([])
+
+  const [enableSaveAddBtn4, setEnableSaveAddBtn4] = useState(false)
+  const [remarkDialogOpen4, setRemarkDialogOpen4] = useState(false)
+  const [currentRemark4, setCurrentRemark4] = useState('')
+  const [currentRowId4, setCurrentRowId4] = useState(null)
+  const [modifiedCells4, setModifiedCells4] = useState({})
+
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -95,7 +119,7 @@ export default function PlantSafetyPerformanceTarget() {
         minWidth: 100,
       },
       {
-        field: 'prevActuals',
+        field: 'prevActual',
         title: `FY${prev} ACT`,
         editable: true,
         type: 'number',
@@ -119,6 +143,94 @@ export default function PlantSafetyPerformanceTarget() {
     ],
     [PLANT_ID, yearChanged, AOP_YEAR, prev, next],
   )
+  const columns4 = useMemo(
+    () => [
+      {
+        field: 'serialNumber',
+        title: 'S.No',
+        widthT: 70,
+        editable: false,
+        minWidth: 70,
+      },
+      {
+        field: 'initiative',
+        title: 'Initiative',
+        editable: true,
+        widthT: 250,
+        minWidth: 100,
+      },
+      {
+        field: 'outcome',
+        title: 'Outcome',
+        editable: true,
+        minWidth: 100,
+      },
+      {
+        field: 'recommendation',
+        title: 'Recommendation',
+        editable: true,
+        minWidth: 100,
+      },
+      {
+        field: 'targetDate',
+        title: 'Target Date',
+        editable: true,
+        minWidth: 100,
+      },
+      {
+        field: 'responsible',
+        title: 'Resp.',
+        editable: true,
+        widthT: 120,
+        minWidth: 100,
+      },
+    ],
+    [PLANT_ID, yearChanged],
+  )
+
+  const columns3 = useMemo(
+    () => [
+      {
+        field: 'serialNumber',
+        title: 'S.No',
+        widthT: 70,
+        editable: false,
+        minWidth: 70,
+      },
+      {
+        field: 'incidentDescription',
+        title: 'Incident Description',
+        editable: true,
+        widthT: 250,
+        minWidth: 100,
+      },
+      {
+        field: 'rootCauses',
+        title: 'Root Causes',
+        editable: true,
+        minWidth: 100,
+      },
+      {
+        field: 'recommendation',
+        title: 'Recommendation',
+        editable: true,
+      },
+      {
+        field: 'targetDate',
+        title: 'Target Date',
+        editable: true,
+        minWidth: 100,
+      },
+      {
+        field: 'responsible',
+        title: 'Resp.',
+        editable: true,
+        widthT: 120,
+        minWidth: 100,
+      },
+    ],
+    [PLANT_ID, yearChanged],
+  )
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setModifiedCells({})
@@ -141,14 +253,12 @@ export default function PlantSafetyPerformanceTarget() {
           uom: item.uom,
           bestAchieved: item.bestAchieved ?? item.bestAchived ?? '',
           prevAOP: item.prevAOP ?? item.fyAop ?? '',
-          prevActuals: item.prevActual ?? item.fyActual ?? '',
+          prevActual: item.prevActual ?? item.fyActual ?? '',
           currentPlan: item.currentPlan ?? item.fy26Plan ?? '',
           remark: item.remark ?? item.remarks ?? '',
           responsibility: item.remark ?? item.remarks ?? '',
           originalRemark: item.remark ?? item.remarks ?? '',
-          isEditable: true,
-          currentPlanEditable:
-            item?.isEditable === true || item?.isEditable === 'true',
+          isEditable: item?.isEditable,
         }))
         setRows(mapped)
       } else {
@@ -181,22 +291,10 @@ export default function PlantSafetyPerformanceTarget() {
         masterId: item.masterId,
         kpiName: item.kpiName,
         uom: item.uom,
-        bestAchieved:
-          item.bestAchieved !== '' && item.bestAchieved != null
-            ? Number(item.bestAchieved)
-            : null,
-        prevAOP:
-          item.prevAOP !== '' && item.prevAOP != null
-            ? Number(item.prevAOP)
-            : null,
-        prevActual:
-          item.prevActuals !== '' && item.prevActuals != null
-            ? Number(item.prevActuals)
-            : null,
-        currentPlan:
-          item.currentPlan !== '' && item.currentPlan != null
-            ? Number(item.currentPlan)
-            : null,
+        bestAchieved: item.bestAchieved !== '' && item.bestAchieved != null ? Number(item.bestAchieved) : null,
+        prevAOP: item.prevAOP !== '' && item.prevAOP != null ? Number(item.prevAOP) : null,
+        prevActual: item.prevActual !== '' && item.prevActual != null ? Number(item.prevActual) : null,
+        currentPlan: item.currentPlan !== '' && item.currentPlan != null ? Number(item.currentPlan) : null,
         remark: item.responsibility ?? item.remark ?? item.remarks ?? '',
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
@@ -205,11 +303,10 @@ export default function PlantSafetyPerformanceTarget() {
         displayOrder: item.displayOrder,
       }))
 
-      const response =
-        await PlantAopReportApiService.savePlantsafetyPerformance(
-          keycloak,
-          payload,
-        )
+      const response = await PlantAopReportApiService.savePlantsafetyPerformance(
+        keycloak,
+        payload,
+      )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -254,43 +351,9 @@ export default function PlantSafetyPerformanceTarget() {
     }
   }, [modifiedCellsP])
 
-  const handleCalculate = () => {}
-  const handleCalculateP = () => {}
-  const handleLoad = async () => {
-    setLoading(true) 
-    try {
-      const data = await PlantAopReportApiService.handleLoadPlantSafetyTarget(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-      if (data || data == 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data refreshed successfully!',
-          severity: 'success',
-        })
-        fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Refresh Falied!',
-          severity: 'error',
-        })
-      }
+  const handleCalculate = () => { }
+  const handleCalculateP = () => { }
 
-      return data
-    } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: error.message || 'An error occurred',
-        severity: 'error',
-      })
-      console.error('Error!', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleRemarkCellClickP = useCallback((row) => {
     setCurrentRemarkP(row.remarks || '')
@@ -424,17 +487,11 @@ export default function PlantSafetyPerformanceTarget() {
         res?.status === 'success' ||
         (res && res.ok !== false && !res.error && res.code !== 500)
       ) {
-        setSnackbarData({
-          message: 'Uploaded Successfully!',
-          severity: 'success',
-        })
+        setSnackbarData({ message: 'Uploaded Successfully!', severity: 'success' })
         setSnackbarOpen(true)
         fetchData()
       } else {
-        setSnackbarData({
-          message: res?.message || 'Import failed!',
-          severity: 'error',
-        })
+        setSnackbarData({ message: res?.message || 'Import failed!', severity: 'error' })
         setSnackbarOpen(true)
       }
     } catch (err) {
@@ -475,7 +532,6 @@ export default function PlantSafetyPerformanceTarget() {
       uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Plant Safety Performance & Targets`,
       disableColWidth: true,
-      showLoadBtn: true,
     },
     isOldYear,
   )
@@ -497,7 +553,6 @@ export default function PlantSafetyPerformanceTarget() {
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         handleCalculate={handleCalculate}
-        handleLoad={handleLoad}
         permissions={adjustedPermissionsC}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}

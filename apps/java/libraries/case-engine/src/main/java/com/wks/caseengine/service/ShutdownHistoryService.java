@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.ShutdownHistoryConfigDTO;
 import com.wks.caseengine.dto.SlowdownHistoryConfigDTO;
-import com.wks.caseengine.entity.ShutdownHistoryConfig;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface ShutdownHistoryService {
@@ -18,12 +17,12 @@ public interface ShutdownHistoryService {
 	public AOPMessageVM getShutdownHistoryPTA(String plantId,String year);
 	public AOPMessageVM getTypeOfSD(String plantId,String year);
 	public AOPMessageVM getLineDetails(String plantId,String year);
-	public List<ShutdownHistoryConfigDTO> saveShutdownHistory( String year, String plantFKId, List<ShutdownHistoryConfigDTO> shutdownHistoryConfigDTOs);
+	public AOPMessageVM saveShutdownHistory( String year, String plantFKId, List<ShutdownHistoryConfigDTO> shutdownHistoryConfigDTOs);
 	public AOPMessageVM deleteShutdownHistory(UUID id);
 
 	public AOPMessageVM getSlowdownHistory(String plantId, String year);
 
-	public List<SlowdownHistoryConfigDTO> saveSlowdownHistory(String year, String plantFKId,
+	public AOPMessageVM saveSlowdownHistory(String year, String plantFKId,
 			List<SlowdownHistoryConfigDTO> slowdownHistoryConfigDTOs);
 
 	public AOPMessageVM deleteSlowdownHistory(UUID id);	
@@ -42,13 +41,5 @@ public interface ShutdownHistoryService {
 	byte[] createShutdownHistoryConfigExcel(String plantId, String year);
 
 	AOPMessageVM importShutdownHistoryConfigExcel(MultipartFile file, String plantId, String year);
-
-	byte[] createShutdownHistoryExcel(String plantId, String year, boolean isAfterSave, List<ShutdownHistoryConfigDTO> dtoList);
-
-	AOPMessageVM importShutdownHistoryExcel(String year, String plantId, MultipartFile file);
-
-	byte[] createSlowdownHistoryExcel(String plantId, String year, boolean isAfterSave, List<SlowdownHistoryConfigDTO> dtoList);
-
-	AOPMessageVM importSlowdownHistoryExcel(String year, String plantId, MultipartFile file);
 
 }

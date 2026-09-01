@@ -149,21 +149,8 @@ const ElastomerShutDown = ({ permissions }) => {
         return
       }
       // Validate required fields
-      const dataForValidation = data.map((row) => ({
-        ...row,
-        'Shutdown Hours': row.durationInHrs,
-        'Shutdown Date': row.shutdownDate,
-        Category: row.category,
-      }))
-      const requiredFields = [
-        'year',
-        'monthly',
-        'Shutdown Hours',
-        'Shutdown Date',
-        'Category',
-        'remarks',
-      ]
-      const validationMessage = validateFields(dataForValidation, requiredFields)
+      const requiredFields = ['remarks', 'year']
+      const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1066,7 +1053,7 @@ const ElastomerShutDown = ({ permissions }) => {
       editable: true,
     },
     {
-      field: 'category', 
+      field: 'category',
       title: 'Category',
       type: 'Categorydropdown',
       editable: true,
@@ -1305,202 +1292,6 @@ const ElastomerShutDown = ({ permissions }) => {
     }
   }
 
-  const downloadFinishingExcelForConfiguration = async () => {
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Excel download started!',
-      severity: 'success',
-    })
-
-    try {
-      await MaintenanceDetailsApiService.exportFinishingShutdownExcel(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        `${EXCEL_EXPORT_TITLE}_Finishing_Shutdown`,
-      )
-    } catch (error) {
-      console.error('Error downloading Excel:', error)
-      setSnackbarData({
-        message: 'Failed to download Excel.',
-        severity: 'error',
-      })
-    } finally {
-      setSnackbarOpen(true)
-    }
-  }
-
-  const handleFinishingExcelUpload = (rawFile) => {
-    uploadFinishingExcel(rawFile)
-  }
-
-  const uploadFinishingExcel = async (rawFile) => {
-    setLoading(true)
-
-    try {
-      const response =
-        await MaintenanceDetailsApiService.importFinishingShutdownExcel(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
-        setFinishingModifiedCells({})
-        finishingShutdownFetchData()
-      } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
-
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'Error File - Finishing Shutdown.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message:
-            response?.message || 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        setFinishingModifiedCells({})
-        finishingShutdownFetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Upload Failed!',
-          severity: 'error',
-        })
-      }
-
-      return response
-    } catch (error) {
-      console.error('Error uploading Excel:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const downloadShutdownHistoryExcelForConfiguration = async () => {
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Excel download started!',
-      severity: 'success',
-    })
-
-    try {
-      await MaintenanceDetailsApiService.exportShutdownHistoryExcel(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        `${EXCEL_EXPORT_TITLE}_Shutdown_History`,
-      )
-    } catch (error) {
-      console.error('Error downloading Excel:', error)
-      setSnackbarData({
-        message: 'Failed to download Excel.',
-        severity: 'error',
-      })
-    } finally {
-      setSnackbarOpen(true)
-    }
-  }
-
-  const handleShutdownHistoryExcelUpload = (rawFile) => {
-    uploadShutdownHistoryExcel(rawFile)
-  }
-
-  const uploadShutdownHistoryExcel = async (rawFile) => {
-    setLoading(true)
-
-    try {
-      const response =
-        await MaintenanceDetailsApiService.importShutdownHistoryExcel(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
-        setModifiedCells({})
-        slowdownFetchData()
-      } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
-
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'Error File - Shutdown History.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message:
-            response?.message || 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        setModifiedCells({})
-        slowdownFetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Upload Failed!',
-          severity: 'error',
-        })
-      }
-
-      return response
-    } catch (error) {
-      console.error('Error uploading Excel:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -1560,9 +1351,7 @@ const ElastomerShutDown = ({ permissions }) => {
           saveWithRemark: false,
           saveBtn: true,
           allAction: true,
-          downloadExcelBtn: true,
-          downloadExcelBtnFromUI: false,
-          uploadExcelBtn: true,
+          downloadExcelBtnFromUI: true,
           ExcelName: 'Shutdown History Config',
           showRefresh: false,
           showTitleNameBusiness: true,
@@ -1584,9 +1373,7 @@ const ElastomerShutDown = ({ permissions }) => {
           saveWithRemark: false,
           saveBtn: true,
           allAction: true,
-          downloadExcelBtn: true,
-          downloadExcelBtnFromUI: false,
-          uploadExcelBtn: true,
+          downloadExcelBtnFromUI: true,
           ExcelName: 'Finishing Shutdown Config',
           showRefresh: false,
           showTitleNameBusiness: true,
@@ -1670,10 +1457,6 @@ const ElastomerShutDown = ({ permissions }) => {
           setSnackbarData={setSnackbarData}
           permissions={adjustedPermissionsslowdown}
           sdDaysValues={sdDaysValues}
-          handleExcelUpload={handleShutdownHistoryExcelUpload}
-          downloadExcelForConfiguration={
-            downloadShutdownHistoryExcelForConfiguration
-          }
         />
       )}
       {IS_ELASTOMER_HMD_PBR3 && tabIndex === 2 && (
@@ -1702,8 +1485,6 @@ const ElastomerShutDown = ({ permissions }) => {
           setSnackbarData={setSnackbarData}
           permissions={adjustedPermissionsFinishing}
           sdDaysValues={sdDaysValues}
-          handleExcelUpload={handleFinishingExcelUpload}
-          downloadExcelForConfiguration={downloadFinishingExcelForConfiguration}
         />
       )}
     </div>

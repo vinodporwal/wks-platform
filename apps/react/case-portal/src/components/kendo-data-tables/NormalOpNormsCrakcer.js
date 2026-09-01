@@ -660,7 +660,6 @@ const NormalOpNormsScreenCracker = () => {
     const showSave = !mainIsTop && !monthlyIsTop && isModeTab
     base.saveBtn = selectedTab === 3 ? true : showSave && base.saveBtn
     base.showCalculate = true
-    base.showCalulcationPromt = lowerVertName === 'cracker'
     return getAdjustedPermissions(base, isOldYear)
   }, [
     baseExpressionPermissions,
@@ -691,7 +690,7 @@ const NormalOpNormsScreenCracker = () => {
     const base = { ...baseFinalPermissions }
     base.saveBtn = IS_CRACKER_C2 || IS_CRACKER_DMD ? true : false
     base.showCalculate = true
-    base.showCalulcationPromt = lowerVertName === 'cracker'
+
     return getAdjustedPermissions(base, isOldYear)
   }, [baseFinalPermissions, finalIsTop, getAdjustedPermissions, isOldYear])
 

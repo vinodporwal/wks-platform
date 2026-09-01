@@ -21,7 +21,6 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,9 +60,6 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	
 	@Autowired
 	private QualityTransactionRepository qualityTransactionRepository;
-
-	@Autowired
-	private JdbcTemplate jdbcTemplate;
 
 	@Override
 	public AOPMessageVM getQualityTransaction(String plantId, String year) {
@@ -213,12 +209,6 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	public AOPMessageVM saveQualityTransaction(String year, String plantFKId,
 			List<QualityTransactionDTO> qualityTransactionDTOs) {
 		try {
-			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-
-			boolean peNmdLldpe1 = vertical.getName().equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("NMD") && plant.getName().equalsIgnoreCase("Lldpe1");
-			boolean peNmdLldpe2 = vertical.getName().equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("NMD") && plant.getName().equalsIgnoreCase("Lldpe2");
 			List<QualityTransactionDTO> failedList = new ArrayList<>();
 			UUID plantId = UUID.fromString(plantFKId);
 
@@ -283,11 +273,6 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 				qualityTransaction.setPrevActual(qualityTransactionDTO.getPrevActual());
 				qualityTransactionRepository.save(qualityTransaction);
 			}
-
-			if(peNmdLldpe1 || peNmdLldpe2) { 
-				String procedureName = vertical.getName()+"_"+site.getName()+"_UpdateQualityPrice";
-				executeDynamicSP(plantId.toString(), year, procedureName);
-			}
 			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
@@ -297,19 +282,6 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
-		}
-	}
-
-	public Integer executeDynamicSP( String plantId, String aopYear, String procedureName) {
-		try {
-
-			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
-
-
-			return jdbcTemplate.update(callSql, plantId, aopYear);
-
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
 	}
 

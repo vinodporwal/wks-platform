@@ -171,7 +171,6 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showCalulcationPromt: lowerVertName === 'cracker',
       showCalculate: IS_CRACKER_HMD || IS_CRACKER_C2,
       showCalculateVisibility: true,
       showModes:
