@@ -230,10 +230,10 @@ const ShutdownPlan = () => {
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
       const formatted = arr.map((item, index) => {
-        const startDate = new Date(item.maintStartDateTime)
+        const startDate = item.maintStartDateTime
           ? item?.maintStartDateTime
           : null
-        const endDate = new Date(item.maintEndDateTime)
+        const endDate = item.maintEndDateTime
           ? item?.maintEndDateTime
           : null
 
