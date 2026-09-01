@@ -141,7 +141,7 @@ const ShutDownColumns = [
     title: 'Shutdown Desc',
     editable: true,
     locked: true,
-    type: 'discriptionDrpdwn',
+    type: 'text',
     minWidth: 150,
   },
   {
@@ -651,9 +651,9 @@ const ShutdownPlan = () => {
 
   const permissions = {
     allAction: true,
-    showAction: true,
+    showAction: false,
     addButton: false, // "Add Item" button — adds a blank row inline
-    deleteButton: true, // trash icon on each editable row
+    deleteButton: false, // trash icon on each editable row
     editButton: false,
     saveBtn: false,
     showImport: false, // Excel import button
@@ -664,7 +664,7 @@ const ShutdownPlan = () => {
     ExcelName: EXCEL_NAME,
     remarksEditable: true,
     marginBottom: true,
-    deleteMultiple: true,
+    deleteMultiple: false,
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
