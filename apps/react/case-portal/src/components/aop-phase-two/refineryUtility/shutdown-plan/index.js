@@ -142,7 +142,7 @@ const ShutDownColumns = [
     editable: true,
     locked: true,
     type: 'discriptionDrpdwn',
-    minWidth: 150,
+    minWidth: 130,
   },
   {
     field: 'maintenanceId',
@@ -156,29 +156,32 @@ const ShutDownColumns = [
     title: 'SD - From',
     editable: true,
     type: 'dateTime',
-    minWidth: 130,
+    minWidth: 95,
   },
   {
     field: 'maintEndDateTime',
     title: 'SD - To',
     editable: true,
     type: 'dateTime',
-    minWidth: 130,
+    minWidth: 95,
   },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
+    minWidth: 75,
   },
   {
     field: 'rate',
     title: 'Values',
     editable: true,
+    minWidth: 55,
   },
   {
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    minWidth: 150,
   },
 ]
 
