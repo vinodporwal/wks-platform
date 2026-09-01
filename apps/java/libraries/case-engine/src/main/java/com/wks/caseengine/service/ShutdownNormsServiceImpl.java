@@ -117,9 +117,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC");
 			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
-			boolean staple = vertical.getName().equalsIgnoreCase("STAPLE");
-			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-			boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD") && plant.getName().equalsIgnoreCase("PIA");
 			if(elastomerHmdSbr || pvc) {
 				withGrade=true;
 			}if(elastomer) {

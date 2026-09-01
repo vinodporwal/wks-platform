@@ -445,9 +445,9 @@ async function saveManualEntryData(keycloak, year, plantId, payload) {
  * @returns {Promise} Import response
  */
 async function importManualEntryExcel(file, keycloak, plantId, year) {
-  return saveExcelData(file, keycloak, `manual-entry-import`, {
+  return saveExcelData(file, keycloak, 'manual-entry-import', {
     year: year,
-    plantId: plantId,
+    plantFKId: plantId,
   })
 }
 
@@ -456,14 +456,13 @@ async function importManualEntryExcel(file, keycloak, plantId, year) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
- * @param {string} excelName- AOP Year
  * @returns {Promise} Export response
  */
-async function exportManualEntryExcel(keycloak, plantId, year, excelName) {
+async function exportManualEntryExcel(keycloak, plantId, year) {
   return ImportExportApiService.exportExcelData(keycloak, {
     endpoint: `manual-entry-export`,
-    queryParams: { year: year, plantId: plantId },
-    fileName: excelName || `POLYESTER_Production_Norms_Manual_Entry_${year}.xlsx`,
+    queryParams: { year: year, plantFKId: plantId },
+    fileName: `POLYESTER_Production_Norms_Manual_Entry_${year}.xlsx`,
     method: 'POST',
   })
 }

@@ -42,7 +42,6 @@ const defs = {
     productDemand: 'Business Demand',
     shutdownPlan: 'Shutdown/TA Activities',
     shutdownNorms: 'Shutdown Consumption (Quantity)',
-    shutdownConsumptionNorms: 'Shutdown Consumption Norms',
     slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
     normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
     normalOpNormsGradeWise:
@@ -153,7 +152,6 @@ const defs = {
     plantAOPReport: 'Plant AOP Report Inputs',
     gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
-    productGradeSelection: 'Product Grade Selection',
     vcmAvailability: 'VCM Availability',
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
@@ -301,7 +299,6 @@ const defs = {
         productDemand: 'Business Demand',
         shutdownPlan: 'Shutdown Activities',
         shutdownNorms: 'Shutdown Consumption (Quantity)',
-        shutdownConsumptionNorms: 'Shutdown Consumption Norms',
         normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
         normalOpNormsGradeWise:
           'Grade Wise Steady State Consumption (Norm/Quantity)',
@@ -380,7 +377,6 @@ const defs = {
         etheleneStock: 'Ethylene Stock in Cryo Tank',
         plantAOPReport: 'Plant AOP Report',
         materialGroupedSelection: 'Material Grouped Selection',
-        productGradeSelection: 'Product Grade Selection',
         gradeMixOptimizer: 'Grade Mix Optimizer',
         vcmAvailability: 'VCM Availability',
         otherDocumentUpload: 'Other Document Upload',

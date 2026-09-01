@@ -86,36 +86,6 @@ public class CPPSRMappingController {
         return ResponseEntity.status(httpStatus).body(response);
     }
 
-    // EXPORT SR Mapping by Plant
-    /**
-     * GET /task/sr-mapping/by-plant/export
-     *
-     * Exports the SR Mapping data (from SP CPP_GetSRMappingByPlant) to an
-     * Excel (.xlsx) file.
-     *
-     * @param plantIds      Required. Comma-separated Plant GUIDs.
-     * @param financialYear Optional. Financial year string e.g. "2025-26".
-     */
-    @GetMapping(value = "/sr-mapping/by-plant/export")
-    public ResponseEntity<byte[]> exportSRMappingByPlant(
-            @RequestParam String plantIds,
-            @RequestParam(required = false) String financialYear) {
-
-        byte[] excelData = service.exportSRMappingByPlant(plantIds, financialYear);
-
-        if (excelData == null || excelData.length == 0) {
-            return ResponseEntity.status(500).body(null);
-        }
-
-        String fileName = "CPP_SRMapping_" + (financialYear != null ? financialYear : "export") + ".xlsx";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", fileName);
-
-        return ResponseEntity.ok().headers(headers).body(excelData);
-    }
-
     // UPDATE SR Mapping By Plant
     /**
      * PUT /task/sr-mapping/by-plant

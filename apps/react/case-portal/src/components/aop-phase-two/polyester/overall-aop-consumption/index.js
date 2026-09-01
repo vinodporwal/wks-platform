@@ -550,7 +550,7 @@ const OverallAopConsumption = () => {
         setCurrentRowId={setCurrentRowId}
         permissions={permissions}
         saveChanges={saveChanges}
-        handleCalculate={handleCallCalculate}
+        handleCalculate={handleCalculate}
         handleRemarkCellClick={handleRemarkCellClick}
         handleExport={handleExport}
         groupBy='Particulars'

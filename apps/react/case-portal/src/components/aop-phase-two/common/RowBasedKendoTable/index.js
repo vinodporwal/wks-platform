@@ -4,17 +4,8 @@ import {
   DynamicRowCellEditor,
   DynamicRowDisplayCell,
 } from '../utilities/DynamicRowCellEditor'
-import { useSelector } from 'react-redux'
 
 const RowBasedKendoTable = (props) => {
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalObject } = dataGridStore
-  
-  const isFilamentOrStaple = useMemo(() => 
-    ['filament (pfy)', 'staple (psf)'].includes(verticalObject?.name?.toLowerCase()), 
-    [verticalObject]
-  )
-
   const { columns, rows, ...restProps } = props
 
   const getDecimalPlacesFromFormat = (format) => {
@@ -63,9 +54,8 @@ const RowBasedKendoTable = (props) => {
                 const minutes = String(value.getMinutes()).padStart(2, '0')
                 displayValue = `${year}-${month}-${day} ${hours}:${minutes}`
               } else if (!isNaN(value) && value !== null && value !== '') {
-                const decimals = isFilamentOrStaple 
-                  ? getDecimalPlacesFromFormat(col.format)
-                  : dataItem.isEditable ? 2 : 2
+                const decimals = dataItem.isEditable ? 2 : 2
+                // : getDecimalPlacesFromFormat(col.format)
                 displayValue = Number(value).toFixed(decimals)
               }
 

@@ -35,16 +35,6 @@ public interface CPPSRMappingService {
     AOPMessageVM getSRMappingByPlant(String plantIds, String financialYear);
 
     /**
-     * Exports the SR Mapping data (from SP CPP_GetSRMappingByPlant) to an Excel
-     * workbook and returns the workbook bytes.
-     *
-     * @param plantIds      comma-separated Plant GUIDs
-     * @param financialYear optional financial year string e.g. "2025-26"
-     * @return Excel file bytes, or {@code null} on error
-     */
-    byte[] exportSRMappingByPlant(String plantIds, String financialYear);
-
-    /**
      * Returns cost-center dropdown data from CPPCostCentersMaster (IsActive = 1).
      *
      * @param plantIds optional comma-separated Plant GUIDs.

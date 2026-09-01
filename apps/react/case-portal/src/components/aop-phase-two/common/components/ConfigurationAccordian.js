@@ -553,13 +553,7 @@ const ConfigurationAccordian = ({
                 alignItems='flex-start'
                 flexWrap='wrap'
               >
-                <Stack direction='column' spacing={0.5}>
-                  {isEORSORDATE && (<Typography
-                    variant='caption'
-                    className='aop-design-basis-label'
-                  >
-                    Historical Period
-                  </Typography>)}
+                <Stack direction='column' spacing={1.5}>
                   <Stack
                     direction='row'
                     sx={{ columnGap: 1, rowGap: 0 }}
@@ -569,20 +563,14 @@ const ConfigurationAccordian = ({
                     {renderDatePickerPill('Start Date', startDate, setStartDate, startShow, setStartShow, 'start-date')}
                     {renderDatePickerPill('End Date', endDate, setEndDate, endShow, setEndShow, 'end-date')}
                   </Stack>
-                  {isEORSORDATE && (<Typography
-                    variant='caption'
-                    className='aop-design-basis-label'
-                  >
-                    SOR
-                  </Typography>)}
                   {isEORSORDATE && (<Stack
                     direction='row'
                     sx={{ columnGap: 1, rowGap: 0 }}
                     alignItems='center'
                     flexWrap='wrap'
                   >
-                    {renderDatePickerPill('Start Date', sorStartDate, setSorStartDate, sorStartShow, setSorStartShow, 'sor-start-date')}
-                    {renderDatePickerPill('End Date', sorEndDate, setSorEndDate, sorEndShow, setSorEndShow, 'sor-end-date')}
+                    {renderDatePickerPill('SOR Start Date', sorStartDate, setSorStartDate, sorStartShow, setSorStartShow, 'sor-start-date')}
+                    {renderDatePickerPill('SOR End Date', sorEndDate, setSorEndDate, sorEndShow, setSorEndShow, 'sor-end-date')}
                   </Stack>)}
                 </Stack>
 

@@ -14,7 +14,6 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/cok
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
 import HistoricalMonths from './HistoricalMonths'
-import JWAvgNorms from 'components/aop-phase-two/crude/production-norms-basis/JWAvgNorms'
 
 const ProductionNormsBasisCoker = () => {
   const keycloak = useSession()
@@ -216,8 +215,6 @@ const ProductionNormsBasisCoker = () => {
             endDate={endDate}
           />
         )
-      case 'Job Work Avg Norms':
-        return <JWAvgNorms />
       case 'Manual Entry':
         return <ManualEntry refreshData={refreshData} />
       case 'Historical Months':

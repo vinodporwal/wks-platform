@@ -12,11 +12,8 @@ export const SteadyStateConsumptionApiService = {
   exportSteadyStateConsumptionPE,
   importSteadyStateConsumptionByGrade,
   saveGradeWiseSteadyStateConsumption,
-  saveDynamicSteadyStateConsumption,
-  exportSteadyStateConsumptionDynamic,
-  importSteadyStateConsumptionDynamic,
   // Generic (kept for backward compat)
-  getSteadyStateConsumptionWithColumns,
+  getSteadyStateConsumption,
   saveSteadyStateConsumption,
   exportSteadyStateConsumption,
   importSteadyStateConsumption,
@@ -281,8 +278,8 @@ async function importSteadyStateConsumptionByGrade(
 
 // ========================|| Generic / Staple endpoints (kept for backward compat) ||=====================================//
 
-async function getSteadyStateConsumptionWithColumns(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-dynamic`
+async function getSteadyStateConsumption(keycloak, plantId, year) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/staple/steady-state-norms`
   const queryParams = new URLSearchParams({ year, plantId })
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {
@@ -478,99 +475,6 @@ async function saveGradeWiseSteadyStateConsumption(
       headers,
       body: JSON.stringify(payload),
     })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-
-/**
- * Save Dynamic Steady State Consumption
- * Endpoint: POST /task/steady-state-norms-dynamic?year=&plantId=
- */
-async function saveDynamicSteadyStateConsumption(
-  PLANT_ID,
-  payload,
-  keycloak,
-  AOP_YEAR,
-) {
-  const queryParams = new URLSearchParams({ year: AOP_YEAR, plantId: PLANT_ID })
-  const url = `${Config.CaseEngineUrl}/task/steady-state-norms-dynamic?${queryParams.toString()}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-
-/**
- * Export Steady State Consumption
- * Endpoint: GET /task/steady-state-norms-export-dynamic?year=&plantId=
- */
-async function exportSteadyStateConsumptionDynamic(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  EXCEL_NAME,
-) {
-  const url = `${Config.CaseEngineUrl}/task/steady-state-norms-export-dynamic?year=${AOP_YEAR}&plantId=${PLANT_ID}`
-  const headers = {
-    'Content-Type': 'application/json',
-    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    if (!resp.ok)
-      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
-    const blob = await resp.blob()
-    const urlBlob = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = urlBlob
-    a.download = `${EXCEL_NAME}.xlsx`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    window.URL.revokeObjectURL(urlBlob)
-  } catch (e) {
-    console.error('Error exporting steady state norms (PE all grades):', e)
-    return Promise.reject(e)
-  }
-}
-
-/**
- * Import Steady State Consumption Dynamic
- * Endpoint: POST /task/steady-state-norms-import-dynamic?plantId=&year=&gradeId=
- */
-async function importSteadyStateConsumptionDynamic(
-  file,
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  gradeId,
-) {
-  let url = `${Config.CaseEngineUrl}/task/steady-state-norms-import-dynamic?plantId=${PLANT_ID}&year=${AOP_YEAR}`
-  if (gradeId) url += `&gradeId=${gradeId}`
-  const formData = new FormData()
-  formData.append('file', file)
-  const headers = {
-    Accept: 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'POST', headers, body: formData })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
