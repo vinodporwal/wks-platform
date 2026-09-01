@@ -138,6 +138,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Boolean elastomer = vertical.getName().equalsIgnoreCase("ELASTOMER")  && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+			boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("pmd") && plant.getName().equalsIgnoreCase("pia");
 			if (vertical.getName().equalsIgnoreCase("MEG")) {
 				String storedProcedure = vertical.getName() + "_" + site.getName() + "_SlowdownNormCalculation";
 
@@ -1090,7 +1091,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		}
 
 		// Column index (0-based) ? month number mapping for the 12 month columns
-		// Cols 3�11: Apr(4)�Dec(12); Cols 12�14: Jan(1)�Mar(3)
+		// Cols 3?11: Apr(4)?Dec(12); Cols 12?14: Jan(1)?Mar(3)
 		Map<Integer, Integer> colToMonth = new HashMap<>();
 		colToMonth.put(3,  4);  // April
 		colToMonth.put(4,  5);  // May
@@ -2136,38 +2137,38 @@ public void slowdownConsumptionUpdateTracker(NormAttributeTransactionsDTO dto, D
 
 			Row dataRow = sheet.createRow(rowIdx++);
 
-			// Col 0 � NormParameter_FK_Id (hidden)
+			// Col 0 ? NormParameter_FK_Id (hidden)
 			Cell c0 = dataRow.createCell(0);
 			c0.setCellValue(spRow[normParamIdx] != null ? spRow[normParamIdx].toString() : "");
 			c0.setCellStyle(hiddenStyle);
 
-			// Col 1 � IsEditable (hidden)
+			// Col 1 ? IsEditable (hidden)
 			Cell c1 = dataRow.createCell(1);
 			c1.setCellValue(String.valueOf(isEditable));
 			c1.setCellStyle(hiddenStyle);
 
-			// Col 2 � Particulars (DisplayName � always read-only)
+			// Col 2 ? Particulars (DisplayName ? always read-only)
 			String particularsVal = spRow[displayNameIdx] != null ? spRow[displayNameIdx].toString() : "";
 			Cell c2 = dataRow.createCell(2);
 			c2.setCellValue(particularsVal);
 			c2.setCellStyle(lockedStyle);
 			maxColChars[2] = Math.max(maxColChars[2], particularsVal.length());
 
-			// Col 3 � Type (NormTypeName � always read-only)
+			// Col 3 ? Type (NormTypeName ? always read-only)
 			String typeVal = normTypeNameIdx != null && spRow[normTypeNameIdx] != null ? spRow[normTypeNameIdx].toString() : "";
 			Cell c3 = dataRow.createCell(3);
 			c3.setCellValue(typeVal);
 			c3.setCellStyle(lockedStyle);
 			maxColChars[3] = Math.max(maxColChars[3], typeVal.length());
 
-			// Col 4 � UOM (always read-only)
+			// Col 4 ? UOM (always read-only)
 			String uomVal = uomIdx != null && spRow[uomIdx] != null ? spRow[uomIdx].toString() : "";
 			Cell c4 = dataRow.createCell(4);
 			c4.setCellValue(uomVal);
 			c4.setCellStyle(lockedStyle);
 			maxColChars[4] = Math.max(maxColChars[4], uomVal.length());
 
-		// Col 5+ � dynamic slowdown columns
+		// Col 5+ ? dynamic slowdown columns
 		boolean rowHasWrappedContent = false;
 		for (int i = 0; i < dynamicCols.size(); i++) {
 			String field    = dynamicCols.get(i).get("field");
@@ -2210,7 +2211,7 @@ public void slowdownConsumptionUpdateTracker(NormAttributeTransactionsDTO dto, D
 		sheet.setColumnHidden(0, true);
 		sheet.setColumnHidden(1, true);
 
-		// Remark column: fixed generous width (� 60 characters)
+		// Remark column: fixed generous width (? 60 characters)
 		if (remarkSheetCol >= 0) {
 			sheet.setColumnWidth(remarkSheetCol, 60 * 256);
 		}
@@ -2264,12 +2265,12 @@ public void slowdownConsumptionUpdateTracker(NormAttributeTransactionsDTO dto, D
 
 				Sheet sheet = workbook.getSheetAt(0);
 
-				// Row 0 is the header � start from row 1
+				// Row 0 is the header ? start from row 1
 				for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
 					Row row = sheet.getRow(rowNum);
 					if (row == null) continue;
 
-					// Col 0 � NormParameter_FK_Id (hidden)
+					// Col 0 ? NormParameter_FK_Id (hidden)
 					String normParamIdStr = getCellStringValue(row.getCell(0));
 					if (normParamIdStr == null || normParamIdStr.trim().isEmpty()) continue;
 
@@ -2280,12 +2281,12 @@ public void slowdownConsumptionUpdateTracker(NormAttributeTransactionsDTO dto, D
 						continue; // skip rows with invalid UUID
 					}
 
-					// Col 1 � IsEditable (hidden) � skip non-editable rows
+					// Col 1 ? IsEditable (hidden) ? skip non-editable rows
 					String isEditableStr = getCellStringValue(row.getCell(1));
 					boolean isEditable = "true".equalsIgnoreCase(isEditableStr != null ? isEditableStr.trim() : "");
 					if (!isEditable) continue;
 
-				// Col 5+ � dynamic slowdown column values (Col 3 = Type is read-only, Col 4 = UOM)
+				// Col 5+ ? dynamic slowdown column values (Col 3 = Type is read-only, Col 4 = UOM)
 				for (int i = 0; i < dynamicFields.size(); i++) {
 					Cell cell = row.getCell(5 + i);
 						if (cell == null) continue;

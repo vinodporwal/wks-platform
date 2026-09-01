@@ -338,7 +338,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					continue;
 				}
 
-			//	validateSlowdownDates(dto, year);
+				validateSlowdownDates(dto, year, plantFKId);
 
 				if ("Failed".equals(dto.getSaveStatus())) {
 					failedRecords.add(dto);
@@ -1899,63 +1899,64 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		}
 	}
 
-	/**
-	 * Validates that MaintStartDateTime is not after MaintEndDateTime, and that
-	 * both fall within the April–March fiscal range implied by the AOP year
-	 * parameter (e.g. "2026-27" → 2026-04-01 to 2027-03-31).
-	 */
-	private void validateSlowdownDates(SlowdownHistoryConfigDTO dto, String aopYear) {
+	
+	private void validateSlowdownDates(SlowdownHistoryConfigDTO dto, String aopYear, String plantFkId) {
 		Date start = dto.getMaintStartDateTime();
 		Date end   = dto.getMaintEndDateTime();
 
-		if (start != null && end != null && start.after(end)) {
+		AOPMessageVM configResult = configurationService.getConfigurationExecution(aopYear, plantFkId);
+		if (configResult == null || configResult.getData() == null) {
 			dto.setSaveStatus("Failed");
-			dto.setErrDescription("MaintStartDateTime cannot be greater than MaintEndDateTime");
+			dto.setErrDescription("Configuration execution data not found for the given year and plant");
 			return;
 		}
 
-		LocalDate[] range = buildSlowdownYearDateRange(aopYear);
-		if (range == null) {
+		@SuppressWarnings("unchecked")
+		List<Map<String, Object>> configData = (List<Map<String, Object>>) configResult.getData();
+
+		LocalDate configStartDate = null;
+		LocalDate configEndDate   = null;
+		DateTimeFormatter configFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+		for (Map<String, Object> entry : configData) {
+			Object nameObj  = entry.get("Name");
+			Object valueObj = entry.get("AttributeValue");
+			if (nameObj == null || valueObj == null) continue;
+			String name  = nameObj.toString();
+			String value = valueObj.toString().trim();
+			if (value.isEmpty()) continue;
+			try {
+				if ("StartDate".equalsIgnoreCase(name)) {
+					configStartDate = LocalDate.parse(value, configFmt);
+				} else if ("EndDate".equalsIgnoreCase(name)) {
+					configEndDate = LocalDate.parse(value, configFmt);
+				}
+			} catch (Exception ignored) {}
+		}
+
+		if (configStartDate == null || configEndDate == null) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("StartDate or EndDate not found in configuration execution data");
 			return;
 		}
-		LocalDate rangeStart = range[0];
-		LocalDate rangeEnd   = range[1];
 
 		if (start != null) {
 			LocalDate startLocal = sldToLocalDate(start);
-			if (startLocal.isBefore(rangeStart) || startLocal.isAfter(rangeEnd)) {
+			if (startLocal.isBefore(configStartDate) || startLocal.isAfter(configEndDate)) {
 				dto.setSaveStatus("Failed");
 				dto.setErrDescription("MaintStartDateTime (" + startLocal + ") is outside the allowed range ["
-						+ rangeStart + " to " + rangeEnd + "] for year " + aopYear);
+						+ configStartDate + " to " + configEndDate + "]");
 				return;
 			}
 		}
 
 		if (end != null) {
 			LocalDate endLocal = sldToLocalDate(end);
-			if (endLocal.isBefore(rangeStart) || endLocal.isAfter(rangeEnd)) {
+			if (endLocal.isBefore(configStartDate) || endLocal.isAfter(configEndDate)) {
 				dto.setSaveStatus("Failed");
 				dto.setErrDescription("MaintEndDateTime (" + endLocal + ") is outside the allowed range ["
-						+ rangeStart + " to " + rangeEnd + "] for year " + aopYear);
+						+ configStartDate + " to " + configEndDate + "]");
 			}
-		}
-	}
-
-	/**
-	 * Builds the fiscal year date range from an AOP year string in "YYYY-YY"
-	 * format (e.g. "2026-27"). Returns [April 1 of start year, March 31 of end
-	 * year], or {@code null} if the format cannot be parsed.
-	 */
-	private LocalDate[] buildSlowdownYearDateRange(String aopYear) {
-		try {
-			int startYear = Integer.parseInt(aopYear.split("-")[0].trim());
-			int endYear   = startYear + 1;
-			return new LocalDate[]{
-					LocalDate.of(startYear, 4, 1),
-					LocalDate.of(endYear, 3, 31)
-			};
-		} catch (Exception e) {
-			return null;
 		}
 	}
 
@@ -2007,7 +2008,8 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 	/**
 	 * Parses a user-supplied duration string to integer minutes.
 	 * Accepted formats: "05:30", "5.3" (H.MM – single-digit decimal is right-padded,
-	 * so 5.3 = 5h 30m), "0:45", "0.45", "24", "24:00".
+	 * so 5.3 = 5h 30m), "0:45", "0.45", "24", "24:00",
+	 * "HH:mm:ss" (seconds are ignored/discarded, e.g. "05:30:10" → 5h 30m).
 	 */
 	private Integer parseSlowdownDurationToMins(String input) {
 		if (input == null || input.trim().isEmpty()) return null;
@@ -2015,7 +2017,12 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		if (input.contains(":")) {
 			String[] parts = input.split(":", 2);
 			int h = Integer.parseInt(parts[0].trim());
-			int m = parts[1].trim().isEmpty() ? 0 : Integer.parseInt(parts[1].trim());
+			// Strip trailing ":ss" if present (HH:mm:ss format) – seconds are discarded.
+			String minPart = parts[1].trim();
+			if (minPart.contains(":")) {
+				minPart = minPart.split(":", 2)[0].trim();
+			}
+			int m = minPart.isEmpty() ? 0 : Integer.parseInt(minPart);
 			return h * 60 + m;
 		}
 		if (input.contains(".")) {
@@ -2279,14 +2286,10 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					if (err == null) err = "Invalid SD - To value: " + toStr;
 				}
 
-				// Col 3 – Duration (Hrs): "05:30", "5.3", "0:45", "0.45", "24", "24:00"
-				if (!durationStr.isEmpty()) {
-					try {
-						dto.setDurationInMins(parseSlowdownDurationToMins(durationStr));
-					} catch (Exception e) {
-						if (err == null)
-							err = "Invalid Duration value: " + durationStr + " (expected HH:mm or H.MM, e.g. 05:30 or 5.3)";
-					}
+				// DurationInMins is derived from MaintStartDateTime and MaintEndDateTime
+				if (startDate != null && endDate != null) {
+					long diffMillis = endDate.getTime() - startDate.getTime();
+					dto.setDurationInMins((int) (diffMillis / (1000 * 60)));
 				}
 
 				// Col 4 – Rate

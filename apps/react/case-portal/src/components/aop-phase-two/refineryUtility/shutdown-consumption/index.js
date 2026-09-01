@@ -92,6 +92,7 @@ const ShutdownConsumptionRefinery = () => {
     width: 120,
     editable: false,
     minWidth: 130,
+    locked: true,
   },
   {
     field: 'UOM',
@@ -99,6 +100,7 @@ const ShutdownConsumptionRefinery = () => {
     widthT: 80,
     editable: false,
     minWidth: 100,
+    locked: true,
   },
     
     ...monthsConfig.map((m) => ({

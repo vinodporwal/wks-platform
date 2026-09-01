@@ -10,6 +10,10 @@ export const ShutdownPlanApiService = {
   deleteMultipleShutdown,
   exportShutdownNonProduct,
   importShutdownNonProduct,
+  getShutdownPlanWithValue,
+  exportShutdownPlanWithValue,
+  dropdownValuesShutdownDesc,
+  importShutdownPlanForNonProduct,
 }
 
 // ========================|| PE Shutdown Plan APIs ||=====================================//
@@ -306,6 +310,95 @@ async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
     return json(keycloak, resp) // Handle text response from the backend
   } catch (e) {
     console.error('Error deleting multiple shutdown data:', e)
+    return Promise.reject(e)
+  }
+}
+async function getShutdownPlanWithValue(keycloak, plantId, year) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-with-value` +
+    `?plantId=${encodeURIComponent(plantId)}` +
+    `&maintenanceTypeName=Shutdown` +
+    `&year=${encodeURIComponent(year)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching shutdown plan data:', e)
+    return Promise.reject(e)
+  }
+}
+async function exportShutdownPlanWithValue(keycloak, plantId, year, excelTitle) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-export-non-product` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    `&maintenanceTypeName=Shutdown`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) throw new Error(`Export failed: ${resp.status}`)
+
+    const blob = await resp.blob()
+    const blobUrl = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = `${excelTitle}_Shutdown Activities.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(blobUrl)
+  } catch (e) {
+    console.error('Error exporting shutdown non-product:', e)
+    return Promise.reject(e)
+  }
+}
+async function dropdownValuesShutdownDesc(keycloak, PLANT_ID, AOP_YEAR) {
+  // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/shutdown-description?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function importShutdownPlanForNonProduct(file, keycloak, plantId, year) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-import-non-product` +
+    `?plantId=${encodeURIComponent(plantId)}` +
+    `&year=${encodeURIComponent(year)}` +
+    `&maintenanceTypeName=Shutdown`
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body: formData })
+    return resp.json()
+  } catch (e) {
+    console.error('Error importing shutdown plan:', e)
     return Promise.reject(e)
   }
 }

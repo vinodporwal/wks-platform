@@ -80,6 +80,28 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
             List<CPPNormsResponseDTO> allResults = new ArrayList<>();
 
+            // -- Step A: Pre-calculate Fixed-type norms (NormType=6) --------------------
+            // When date range is provided, run CPP_GetFixedCalculatedUtilityNorms
+            // which deletes stale rows in CPP_utilitiesCalculatednorms for these
+            // plants and recalculates fresh values from consumption/production data.
+            // CPP_JMD_GetCPPNorms (Step B) will then LEFT JOIN that table to
+            // populate calculatedNorms for NormType=6 rows.
+            if (fromDate != null && !fromDate.isEmpty() && toDate != null && !toDate.isEmpty()) {
+                log.info("Date range provided — pre-calculating fixed utility norms for JMD plants: {}", plantIdsStr);
+                try {
+                    callFixedUtilityCalculation(plantIdsStr, financialYear, fromDate, toDate);
+                    log.info("Fixed utility norm pre-calculation completed for financialYear={}", financialYear);
+                } catch (Exception calcEx) {
+                    log.warn("Fixed utility norm pre-calculation failed: {}. Continuing with existing CPP_utilitiesCalculatednorms values.",
+                            calcEx.getMessage());
+                }
+            } else {
+                log.info("Date range not provided — using existing values from CPP_utilitiesCalculatednorms for Fixed-type norms");
+            }
+
+            // -- Step B: Fetch CPP norms via main SP ------------------------------------
+            // CPP_JMD_GetCPPNorms handles Formula-type (NormType=9) calculation
+            // internally and LEFT JOINs CPP_utilitiesCalculatednorms for Fixed-type.
             try {
                 StoredProcedureQuery sp = entityManager
                         .createStoredProcedureQuery("dbo.CPP_JMD_GetCPPNorms")
@@ -878,6 +900,39 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
             throw new IOException("Failed to export error file: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Calls CPP_GetFixedCalculatedUtilityNorms to pre-calculate Fixed-type norms
+     * (NormType_FK_Id = 6) and persist results into CPP_utilitiesCalculatednorms.
+     *
+     * <p>The SP deletes existing rows for the given plants + financialYear and
+     * recalculates from CPP_Consumption_Data and CPP_Production_Data for the
+     * specified date range. CPP_JMD_GetCPPNorms then LEFT JOINs that table
+     * to return calculatedNorms for Fixed-type rows.
+     *
+     * @param plantIdsStr   comma-separated plant UUIDs (matching Plants.SourceName)
+     * @param financialYear financial year string e.g. "2025-26"
+     * @param fromDate      start date string e.g. "2025-04-01"
+     * @param toDate        end date string e.g. "2026-03-31"
+     */
+    private void callFixedUtilityCalculation(String plantIdsStr, String financialYear,
+                                              String fromDate, String toDate) {
+        log.info("callFixedUtilityCalculation: plantIds={}, financialYear={}, fromDate={}, toDate={}",
+                plantIdsStr, financialYear, fromDate, toDate);
+        StoredProcedureQuery sp = entityManager
+                .createStoredProcedureQuery("dbo.CPP_GetFixedCalculatedUtilityNorms")
+                .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)  // @FinancialYear
+                .registerStoredProcedureParameter(2, String.class, ParameterMode.IN)  // @FromDate
+                .registerStoredProcedureParameter(3, String.class, ParameterMode.IN)  // @ToDate
+                .registerStoredProcedureParameter(4, String.class, ParameterMode.IN); // @PlantIds
+        sp.setParameter(1, financialYear);
+        sp.setParameter(2, fromDate);
+        sp.setParameter(3, toDate);
+        sp.setParameter(4, plantIdsStr);
+        sp.execute();
+        log.info("callFixedUtilityCalculation: completed for financialYear={}", financialYear);
+    }
+
 
     private CPPNormsResponseDTO mapRowToDto(Object[] row) {
         CPPNormsResponseDTO dto = new CPPNormsResponseDTO();

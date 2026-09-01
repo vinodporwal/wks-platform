@@ -31,6 +31,27 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
 	List<Object[]> findMaintenanceDetailsByPlantIdAndType( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 
+        @Query(value = "SELECT " +
+            "pm.Discription, " +
+            "pm.MaintStartDateTime, " +
+            "pm.MaintEndDateTime, " +
+            "pm.DurationInMins, " +
+            "pmt.MaintenanceText, " +
+            "pm.Id, " +
+            "np.Id AS NormParameter_FK_Id, pm.Remarks, NPT.DisplayOrder, pm.Line_FK_Id, pm.ShutdownRate, pm.Rate " +
+            "FROM PlantMaintenanceTransaction pm " +
+            "JOIN PlantMaintenance pmt ON pm.PlantMaintenance_FK_Id = pmt.Id " +
+            "JOIN MaintenanceTypes mt ON pmt.MaintenanceType_FK_Id = mt.Id " +
+            "LEFT JOIN NormParameters np ON pm.NormParameter_FK_Id = np.Id " +
+            "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
+            "WHERE mt.Name = :maintenanceTypeName "  +
+            "and pmt.Plant_FK_Id = :plantId " +
+			"and pm.AuditYear = :year order by pm.MaintStartDateTime",
+            nativeQuery = true)
+	List<Object[]> findMaintenanceDetailsWithValueByPlantIdAndType( 
+        @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
+
+
         @Query(value = "SELECT pm.Remarks FROM PlantMaintenanceTransaction pm WHERE pm.Id = :id", nativeQuery = true)
         String findRemarksById(@Param("id") UUID id);
 

@@ -139,6 +139,7 @@ import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slo
 import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
 import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
 import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
+import ProductGradeSelection from 'components/aop-phase-two/polyester/product-grade-selection/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -180,6 +181,7 @@ import ShutdownConsumptionRefinery from 'components/aop-phase-two/refineryUtilit
 import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
 import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
+import ShutdownPlanRefinery from 'components/aop-phase-two/refineryUtility/shutdown-plan/index'
 // Vertical Refinery Utility Ended
 
 // Naphthasplitter
@@ -414,7 +416,7 @@ export const MainRoutes = (
       {
         path: 'jw-budget',
         children: [
-          //job work Started
+          //TCS Started
           {
             path: 'jw-budget-source',
             element: (
@@ -458,7 +460,6 @@ export const MainRoutes = (
         ],
         // REFINERY AOP BUDGET Ended],
       },
-
 
       {
         path: 'production-norms-plan',
@@ -1111,6 +1112,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'product-grade-selection-polyester',
+            element: (
+              <PrivateRoute routeId='product-grade-selection-polyester'>
+                <ProductGradeSelection />
+              </PrivateRoute>
+            ),
+          },
 
           //Vertical STAPLE (Polyester) Ended ****************************
 
@@ -1233,6 +1242,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='production-norms-basis-refinery'>
                 <ProductionNormsBasisRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+
+            path: 'shutdown-plan-refinery',
+            element: (
+              <PrivateRoute routeId='shutdown-plan-refinery'>
+                <ShutdownPlanRefinery />
               </PrivateRoute>
             ),
           },

@@ -409,6 +409,7 @@ const MaterialBalance = ({ permissions }) => {
         IS_CHEMICAL_VMD_BUTADIENE ||
         IS_CHEMICAL_HMD,
       showCalculateVisibility: true,
+      showCalulcationPromt: lowerVertName === 'cracker',
     },
     isOldYear,
   )
