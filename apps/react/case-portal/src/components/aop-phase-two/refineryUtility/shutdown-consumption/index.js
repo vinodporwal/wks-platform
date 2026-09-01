@@ -176,7 +176,7 @@ const ShutdownConsumptionRefinery = () => {
               remarks: item.remarks?.trim() || '',
               originalRemark: item.remarks?.trim() || '',
               id: index,
-              isEditable: true,
+              isEditable: false,
             }),
           )
           setRows(formattedData)
@@ -434,12 +434,12 @@ const ShutdownConsumptionRefinery = () => {
     addButton: false,
     deleteButton: false,
     editButton: false,
-    saveBtn: true,
+    saveBtn: false,
     showCalculate: false,
     allAction: true,
     showDropdown: false,
     showExport: true,
-    showImport: true,
+    showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Shutdown Consumption',

@@ -141,7 +141,7 @@ const ShutDownColumns = [
     title: 'Shutdown Desc',
     editable: true,
     locked: true,
-    type: 'text',
+    type: 'discriptionDrpdwn',
     minWidth: 150,
   },
   {
@@ -230,12 +230,10 @@ const ShutdownPlan = () => {
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
       const formatted = arr.map((item, index) => {
-        const startDate = new Date(item.maintStartDateTime)
+        const startDate = item.maintStartDateTime
           ? item?.maintStartDateTime
           : null
-        const endDate = new Date(item.maintEndDateTime)
-          ? item?.maintEndDateTime
-          : null
+        const endDate = item.maintEndDateTime ? item?.maintEndDateTime : null
 
         return {
           ...item,
@@ -253,7 +251,6 @@ const ShutdownPlan = () => {
             item?.remark === 'null' || item?.remark === 'NULL'
               ? ''
               : item?.remark || '',
-          isEditable: false,
         }
       })
 
@@ -377,6 +374,34 @@ const ShutdownPlan = () => {
       }
     }
 
+    for (const row of allRowsMerged) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
+      //shutdown timeframe for Multiple months
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
+
+      const formatDate = (date) =>
+        date.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+
+      const isSameMonth =
+        start.getMonth() === end.getMonth() &&
+        start.getFullYear() === end.getFullYear()
+
+      if (!isSameMonth) {
+        row.isError = true
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `The shutdown timeframe for '${row.discription}' spans multiple months (from ${formatDate(start)} to ${formatDate(end)}). Please split it into separate entries for each month.`,
+          severity: 'error',
+        })
+        return
+      }
+    }
+
     // 4. Required fields: discription and durationInHrs
     const fieldsToCheck = ['discription', 'durationInHrs']
     const validationError = validateRowDataWithRemarks(
@@ -406,6 +431,20 @@ const ShutdownPlan = () => {
         return
       }
 
+      if (
+        record.rate === undefined ||
+        record.rate === null ||
+        String(record.rate).trim() === ''
+      ) {
+        record.isError = true
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Values is required for all records.',
+          severity: 'error',
+        })
+        return
+      }
+
       const isRemarkEmpty =
         !record.remark ||
         String(record.remark).trim() === '' ||
@@ -419,25 +458,6 @@ const ShutdownPlan = () => {
         })
         return
       }
-    }
-
-    // 5. Duplicate description check across all rows
-    const allDescriptions = rows.map((r) =>
-      (r.discription || '').trim().toLowerCase(),
-    )
-    const duplicate = allDescriptions.find(
-      (d, i) => d && allDescriptions.indexOf(d) !== i,
-    )
-    if (duplicate) {
-      rows.forEach((row) => {
-        row.isError = (row.discription || '').trim().toLowerCase() === duplicate
-      })
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: `The description "${duplicate}" already exists. Please enter a unique description.`,
-        severity: 'error',
-      })
-      return
     }
 
     // 6. Build payload
@@ -651,12 +671,12 @@ const ShutdownPlan = () => {
 
   const permissions = {
     allAction: true,
-    showAction: false,
-    addButton: false, // "Add Item" button — adds a blank row inline
-    deleteButton: false, // trash icon on each editable row
-    editButton: false,
-    saveBtn: false,
-    showImport: false, // Excel import button
+    showAction: true,
+    addButton: true, // "Add Item" button — adds a blank row inline
+    deleteButton: true, // trash icon on each editable row
+    editButton: true,
+    saveBtn: true,
+    showImport: true, // Excel import button
     showExport: true, // Excel export (download) button
     showTitleNameBusiness: true,
     titleName: screenTitle?.title,
@@ -664,7 +684,7 @@ const ShutdownPlan = () => {
     ExcelName: EXCEL_NAME,
     remarksEditable: true,
     marginBottom: true,
-    deleteMultiple: false,
+    deleteMultiple: true,
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
