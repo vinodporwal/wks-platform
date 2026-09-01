@@ -2,21 +2,27 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -29,12 +35,22 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.PlantCapacitiesTranscationDTO;
 import com.wks.caseengine.dto.RefineryShutdownDTO;
+import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
+import com.wks.caseengine.dto.PlantsDTO;
+import com.wks.caseengine.dto.ProfitCenterDTO;
+import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
+import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.SitesDTO;
+import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
+import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 
@@ -52,6 +68,12 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
     @Autowired
     private VerticalsRepository verticalsRepository;
+
+    @Autowired
+    private SiteRepository sitesRepository;
+
+    @Autowired
+    private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
 
     @Override
     @Transactional
@@ -95,6 +117,12 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             List<PlantCapacitiesTranscationDTO> failedRecords = new ArrayList<>();
 
             for (PlantCapacitiesTranscationDTO dto : plantCapacitiesTranscationDTOs) {
+                minMaxValidation(dto);
+                // skip records with failed validations
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
                 if (dto.getTransactionId() == null) {
                     String insertSql = "INSERT INTO PlantCapacityTransaction (id, masterId, min, max, remarks, plantId, aopYear, modifiedBy, modifiedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
@@ -115,7 +143,6 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     throw new RuntimeException("Record not found");
                 }
                 validateRemarkChangeForPlantCapacities(existing, dto);
-                minMaxValidation(dto);
 
                 // skip records with failed validations
                 if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
@@ -451,18 +478,42 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
 
     @Override
-	public VerticalsDTO getDropDownData(String plantId) {
+    public VerticalsDTO getDropDownData(String plantId) {
 
-        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
-
+        Plants plants = plantsRepository.findById(UUID.fromString(plantId))
+                .orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
         String verticalId = plants.getVerticalFKId().toString();
 
-		List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
-		return hierarchyData.stream()
-				.filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
-				.findFirst()
-				.orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
-	}
+        String sql = "EXEC Crude_GetRefineryMaintenanceDropdown @VerticalId = ?";
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, verticalId);
+
+        Map<String, SitesDTO> sitesMap = new LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            String siteFkId = row.get("Site_FK_Id").toString();
+            String siteName = (String) row.get("SiteName");
+            String plantFkId = row.get("Plant_FK_Id").toString();
+            String plantName = (String) row.get("PlantName");
+
+            SitesDTO site = sitesMap.computeIfAbsent(siteFkId, k ->
+                    SitesDTO.builder()
+                            .id(siteFkId)
+                            .name(siteName)
+                            .plants(new ArrayList<>())
+                            .build());
+
+            site.getPlants().add(PlantsDTO.builder()
+                    .id(plantFkId)
+                    .name(plantName)
+                    .siteFkId(siteFkId)
+                    .build());
+        }
+
+        return VerticalsDTO.builder()
+                .id(verticalId)
+                .sites(new ArrayList<>(sitesMap.values()))
+                .build();
+    }
 
     @Override
     @Transactional
@@ -795,13 +846,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         List<RefineryShutdownDTO> resultList = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 
-        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
-        String verticalId = plants.getVerticalFKId().toString();
-        List<VerticalsDTO> hierarchyData = verticalsService.getHierarchyData();
-        VerticalsDTO vertical = hierarchyData.stream()
-            .filter(v -> v.getId() != null && v.getId().equalsIgnoreCase(verticalId))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Vertical not found for id: " + verticalId));
+        VerticalsDTO verticalDto = getDropDownData(plantId);
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -812,15 +857,27 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
 
-                // Skip completely empty rows (check visible columns 0-4)
+                // Skip completely empty rows (check visible columns 0-4).
+                // Col 3 (Date of Commencement) is intentionally checked without converting its
+                // type so that Excel-native NUMERIC date cells are not corrupted before the
+                // field-level handler below can read them properly.
                 boolean isEmpty = true;
                 for (int col = 0; col <= 4; col++) {
                     Cell cell = row.getCell(col);
                     if (cell != null) {
-                        cell.setCellType(CellType.STRING);
-                        if (!cell.getStringCellValue().trim().isEmpty()) {
-                            isEmpty = false;
-                            break;
+                        if (col == 3) {
+                            CellType ct = cell.getCellType();
+                            if (ct == CellType.NUMERIC
+                                    || (ct == CellType.STRING && !cell.getStringCellValue().trim().isEmpty())) {
+                                isEmpty = false;
+                                break;
+                            }
+                        } else {
+                            cell.setCellType(CellType.STRING);
+                            if (!cell.getStringCellValue().trim().isEmpty()) {
+                                isEmpty = false;
+                                break;
+                            }
                         }
                     }
                 }
@@ -866,11 +923,73 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     }
 
                     // Col 3 – Date of Commencement
+                    
                     Cell dateCell = row.getCell(3);
                     if (dateCell != null) {
-                        dateCell.setCellType(CellType.STRING);
-                        String dateStr = dateCell.getStringCellValue().trim();
-                        dto.setDateOfCommencement(dateStr.isEmpty() ? null : sdf.parse(dateStr));
+                        Date parsedDate = null;
+                        String dateError = null;
+
+                        if (dateCell.getCellType() == CellType.NUMERIC
+                                && DateUtil.isCellDateFormatted(dateCell)) {
+                            // Native Excel date cell – read directly, no string conversion needed.
+                            parsedDate = dateCell.getDateCellValue();
+                        } else {
+                            // Text cell (Google Sheets export or manually typed value).
+                            // Try the canonical format first, then common alternatives that Excel
+                            // may produce when the user re-saves the sheet.
+                            dateCell.setCellType(CellType.STRING);
+                            String dateStr = dateCell.getStringCellValue().trim();
+                            if (dateStr.isEmpty()) {
+                                dateError = "Date of Commencement is required";
+                            } else {
+                                for (String pattern : Arrays.asList(
+                                        "dd-MM-yyyy",
+                                        "dd/MM/yyyy",
+                                        "M/d/yyyy",
+                                        "MM/dd/yyyy",
+                                        "d-M-yyyy",
+                                        "yyyy-MM-dd")) {
+                                    SimpleDateFormat fmt = new SimpleDateFormat(pattern);
+                                    fmt.setLenient(false);
+                                    try {
+                                        parsedDate = fmt.parse(dateStr);
+                                        break;
+                                    } catch (ParseException ignored) {
+                                        // try next format
+                                    }
+                                }
+                                if (parsedDate == null) {
+                                    dateError = "Date of Commencement must be a valid date";
+                                }
+                            }
+                        }
+
+                        if (parsedDate != null) {
+                            dto.setDateOfCommencement(parsedDate);
+                        } else {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage(dateError != null ? dateError : "Date of Commencement is required");
+                        }
+                    }
+
+                    // Cross-field validation: SD Total Duration Days must not exceed the
+                    // remaining days in the month of the Date of Commencement.
+                    // Remaining Days = Total Days in Month − Day of Month
+                    if (dto.getDateOfCommencement() != null
+                            && dto.getSdTotalDurationDays() != null
+                            && !"Failed".equals(dto.getSaveStatus())) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(dto.getDateOfCommencement());
+                        int dayOfMonth   = cal.get(Calendar.DAY_OF_MONTH);
+                        int daysInMonth  = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+                        int remainingDays = daysInMonth - dayOfMonth;
+                        if (dto.getSdTotalDurationDays() > remainingDays) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage(
+                                "SD Total Duration Days (" + dto.getSdTotalDurationDays()
+                                + ") exceeds the remaining days in the commencement month ("
+                                + remainingDays + " days remaining)");
+                        }
                     }
 
                     // Col 4 – Purpose of Shutdown (remark)
@@ -912,7 +1031,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 }
 
               
-                    validatePlantAndSiteName(dto, vertical);
+                    validatePlantAndSiteName(dto, verticalDto);
                 
 
                 resultList.add(dto);
@@ -970,4 +1089,915 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             throw new RuntimeException("Failed to delete refinery shutdown data", e);
         }
     }
+
+    @Override
+    @Transactional
+    public AOPMessageVM getRefinerySlowdownData(String plantId, String aopYear) {
+        try {
+
+            Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for id: " + plantId));
+            Verticals verticals = verticalsRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found for id: " + plants.getVerticalFKId()));
+
+            String procedureName =  verticals.getName() + "_GetRefinerySlowdownTranscation";
+            String sql = "EXEC "+ procedureName + " @plantId = ?, @aopYear = ?";
+
+            List<RefinerySlowdownTranscationDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                RefinerySlowdownTranscationDTO.builder()
+                    .id(rs.getString("id"))
+                    .siteFkId(rs.getString("siteFkId"))
+                    .siteName(rs.getString("siteName"))
+                    .plantFkId(rs.getString("plantFkId"))
+                    .plantName(rs.getString("plantName"))
+                    .tentativeDurationDays(rs.getInt("tentativeDurationDays"))
+                    .throughputDuringTheSlowdown(
+                        rs.getObject("throughputDuringTheSlowdown", Double.class)
+                    )                    .throughputUom(rs.getString("throughputUom"))
+                    .tentativeMonth(rs.getInt("tentativeMonth"))
+                    .remark(rs.getString("remark"))
+                    .plantId(rs.getString("plantId"))
+                    .aopYear(rs.getString("aopYear"))
+                    .isEditable(rs.getBoolean("isEditable"))
+                    .isVisible(rs.getBoolean("isVisible"))
+                    .build(), plantId, aopYear);
+
+                AOPMessageVM response = new AOPMessageVM();
+                response.setCode(200);
+                response.setData(data);
+                response.setMessage("Data fetched successfully");
+                return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<RefinerySlowdownTranscationDTO> saveRefinerySlowdownData(List<RefinerySlowdownTranscationDTO> refinerySlowdownDTOs) {
+
+            String updatedBy = Utility.getUserName();
+           
+            List<RefinerySlowdownTranscationDTO> failedRecords = new ArrayList<>();
+
+            for (RefinerySlowdownTranscationDTO dto : refinerySlowdownDTOs) {
+
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+                
+                if (dto.getId() == null) {
+                    String insertSql = "INSERT INTO RefinerySlowdownTransacation (id, SiteFkId, PlantFkId, TentativeDurationDays, ThroughputDuringTheSlowdown, ThroughputUom, TentativeMonth, Remark, PlantId, AopYear, ModifiedBy, ModifiedOn, IsEditable, IsVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql,
+                        UUID.randomUUID().toString(),
+                        dto.getSiteFkId().toString(),
+                        dto.getPlantFkId().toString(),
+                        dto.getTentativeDurationDays(),
+                        dto.getThroughputDuringTheSlowdown(),
+                        dto.getThroughputUom(),
+                        dto.getTentativeMonth(),
+                        dto.getRemark(),
+                        dto.getPlantId(),
+                        dto.getAopYear(),
+                        updatedBy,
+                        new Date(),
+                        Boolean.TRUE,
+                        Boolean.TRUE
+                        );
+                    continue;
+                }
+
+                RefinerySlowdownTranscationDTO existing = fetchExistingRefinerySlowdownData(dto.getId());
+                if (existing == null) {  
+                    throw new RuntimeException("Record not found");
+                }
+                validateRemarkChangeForRefinerySlowdown(existing, dto);
+
+                // skip records with failed remark validation
+                if(dto.getSaveStatus() != null && dto.getSaveStatus().equals("Failed")) {
+                    failedRecords.add(dto);
+                    continue;
+                }
+               
+
+                String updateSql = "UPDATE RefinerySlowdownTransacation " +
+                    "SET SiteFkId = ?, PlantFkId = ?, TentativeDurationDays = ?, ThroughputDuringTheSlowdown = ?, ThroughputUom = ?, TentativeMonth = ?, Remark = ?, ModifiedBy = ?, ModifiedOn = ? " +
+                    "WHERE id = ?";
+                jdbcTemplate.update(updateSql,
+                    dto.getSiteFkId().toString(),
+                    dto.getPlantFkId().toString(),
+                    dto.getTentativeDurationDays(),
+                    dto.getThroughputDuringTheSlowdown(),
+                    dto.getThroughputUom(),
+                    dto.getTentativeMonth(),
+                    dto.getRemark(),
+                    updatedBy,
+                    new Date(),
+                    dto.getId());
+            }
+
+            return failedRecords;
+
+       
+    }
+
+    private RefinerySlowdownTranscationDTO fetchExistingRefinerySlowdownData(String id) {
+        String sql = "SELECT id, SiteFkId, PlantFkId, TentativeDurationDays, ThroughputDuringTheSlowdown, ThroughputUom, TentativeMonth, Remark, PlantId, AopYear, ModifiedBy, ModifiedOn, IsEditable, IsVisible FROM RefinerySlowdownTransacation WHERE id = ?";
+        List<RefinerySlowdownTranscationDTO> results = jdbcTemplate.query(sql, (rs, rowNum) ->
+            RefinerySlowdownTranscationDTO.builder()
+                .id(rs.getString("id"))
+                .siteFkId(rs.getString("siteFkId"))
+                .plantFkId(rs.getString("plantFkId"))
+                .tentativeDurationDays(rs.getInt("tentativeDurationDays"))
+                .throughputDuringTheSlowdown(rs.getDouble("throughputDuringTheSlowdown"))
+                .throughputUom(rs.getString("throughputUom"))
+                .tentativeMonth(rs.getInt("tentativeMonth"))
+                .remark(rs.getString("remark"))
+                .plantId(rs.getString("plantId"))
+                .aopYear(rs.getString("aopYear"))
+                .modifiedBy(rs.getString("modifiedBy"))
+                .modifiedOn(rs.getDate("modifiedOn"))
+                .isEditable(rs.getBoolean("isEditable"))
+                .isVisible(rs.getBoolean("isVisible"))
+                .build(), id);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    private void validateRemarkChangeForRefinerySlowdown(RefinerySlowdownTranscationDTO existing, RefinerySlowdownTranscationDTO incoming) {
+
+        boolean hasBusinessFieldsChanged = !Objects.equals(existing.getTentativeDurationDays(), incoming.getTentativeDurationDays())
+            || !Objects.equals(existing.getThroughputDuringTheSlowdown(), incoming.getThroughputDuringTheSlowdown())
+            || !Objects.equals(existing.getTentativeMonth(), incoming.getTentativeMonth());
+
+        if (hasBusinessFieldsChanged && normalise(existing.getRemark()).equals(normalise(incoming.getRemark()))) {
+            incoming.setSaveStatus("Failed");
+            incoming.setErrorMessage("Please update remark");
+            return;
+        }
+        return;
+    }
+
+    // ─── Refinery Slowdown Export ─────────────────────────────────────────────────
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public byte[] createRefinerySlowdownExcel(String plantId, String aopYear, boolean isAfterSave, List<RefinerySlowdownTranscationDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM result = getRefinerySlowdownData(plantId, aopYear);
+                dtoList = (List<RefinerySlowdownTranscationDTO>) result.getData();
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("RefinerySlowdown");
+            int currentRow = 0;
+
+            // Columns 0-6 are visible; 7=Id, 8=SiteFkId, 9=PlantFkId are hidden (used on import)
+            // When isAfterSave, columns 10=Status and 11=Error Description are appended
+            List<String> headers = new ArrayList<>(Arrays.asList(
+                    "Site", "Plant", "Tentative Duration in days",
+                    "Throughput during the Slowdown", "Throughput UOM",
+                    "Tentative Month", "Purpose of Slowdown",
+                    "Id", "SiteFkId", "PlantFkId"));
+            if (isAfterSave) {
+                headers.add("Status");
+                headers.add("Error Description");
+            }
+
+            Row headerRow = sheet.createRow(currentRow++);
+            for (int col = 0; col < headers.size(); col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers.get(col));
+                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+            }
+
+            CellStyle greyStyle = Utility.createBorderedLockedStyle(workbook);
+            CellStyle editableStyle = Utility.createBorderedUnlockedStyle(workbook);
+            CellStyle editableWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+
+            for (RefinerySlowdownTranscationDTO dto : dtoList) {
+                Row row = sheet.createRow(currentRow++);
+                boolean isEditable = Boolean.TRUE.equals(dto.getIsEditable());
+
+                // Col 0 – Site (always locked)
+                Cell siteCell = row.createCell(0);
+                siteCell.setCellValue(dto.getSiteName() != null ? dto.getSiteName() : "");
+                siteCell.setCellStyle(greyStyle);
+
+                // Col 1 – Plant (always locked)
+                Cell plantCell = row.createCell(1);
+                plantCell.setCellValue(dto.getPlantName() != null ? dto.getPlantName() : "");
+                plantCell.setCellStyle(greyStyle);
+
+                // Col 2 – Tentative Duration in days
+                Cell durationCell = row.createCell(2);
+                durationCell.setCellValue(dto.getTentativeDurationDays() != null ? String.valueOf(dto.getTentativeDurationDays()) : "");
+                durationCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 3 – Throughput during the Slowdown
+                Cell throughputCell = row.createCell(3);
+                throughputCell.setCellValue(dto.getThroughputDuringTheSlowdown() != null ? String.valueOf(dto.getThroughputDuringTheSlowdown()) : "");
+                throughputCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 4 – Throughput UOM
+                Cell uomCell = row.createCell(4);
+                uomCell.setCellValue(dto.getThroughputUom() != null ? dto.getThroughputUom() : "");
+                uomCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 5 – Tentative Month
+                Cell monthCell = row.createCell(5);
+                String monthName = "";
+                if (dto.getTentativeMonth() != null) {
+                    monthName = new java.text.DateFormatSymbols().getMonths()[dto.getTentativeMonth() - 1];
+                }
+                monthCell.setCellValue(monthName);
+                monthCell.setCellStyle(isEditable ? editableStyle : greyStyle);
+
+                // Col 6 – Purpose of Slowdown (remark, wrapped)
+                Cell remarkCell = row.createCell(6);
+                remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                remarkCell.setCellStyle(isEditable ? editableWrapStyle : greyStyle);
+
+                // Col 7 – Id (hidden; present means update on import)
+                Cell idCell = row.createCell(7);
+                idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+                idCell.setCellStyle(greyStyle);
+
+                // Col 8 – SiteFkId (hidden)
+                Cell siteFkIdCell = row.createCell(8);
+                siteFkIdCell.setCellValue(dto.getSiteFkId() != null ? dto.getSiteFkId() : "");
+                siteFkIdCell.setCellStyle(greyStyle);
+
+                // Col 9 – PlantFkId (hidden)
+                Cell plantFkIdCell = row.createCell(9);
+                plantFkIdCell.setCellValue(dto.getPlantFkId() != null ? dto.getPlantFkId() : "");
+                plantFkIdCell.setCellStyle(greyStyle);
+
+                if (isAfterSave) {
+                    // Col 10 – Status
+                    Cell statusCell = row.createCell(10);
+                    statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                    statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+                    // Col 11 – Error Description
+                    Cell errCell = row.createCell(11);
+                    errCell.setCellValue(dto.getErrorMessage() != null ? dto.getErrorMessage() : "");
+                    errCell.setCellStyle(Utility.createBorderedStyle(workbook));
+                }
+
+                row.setHeight((short) -1);
+            }
+
+            // Auto-size visible columns; fixed wider width for Purpose of Slowdown and Error Description
+            int totalCols = isAfterSave ? 12 : 7;
+            for (int col = 0; col < totalCols; col++) {
+                if (col == 6 || col == 11) {
+                    sheet.setColumnWidth(col, 15000);
+                } else {
+                    sheet.autoSizeColumn(col);
+                }
+            }
+
+            // Hide the identifier columns from end-users
+            sheet.setColumnHidden(7, true);
+            sheet.setColumnHidden(8, true);
+            sheet.setColumnHidden(9, true);
+
+            // Protect the sheet so locked/unlocked cell styles are enforced (only for regular export)
+            if (!isAfterSave) {
+              //  sheet.protectSheet("");
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // ─── Refinery Slowdown Import – Excel Reader ──────────────────────────────────
+
+    private List<RefinerySlowdownTranscationDTO> readRefinerySlowdownExcel(InputStream inputStream, String plantId, String aopYear) {
+        List<RefinerySlowdownTranscationDTO> resultList = new ArrayList<>();
+
+        VerticalsDTO verticalDto = getDropDownData(plantId);
+
+        AOPMessageVM uomResponse = getRefineryBudgetUomDropdown(plantId);
+        @SuppressWarnings("unchecked")
+        List<UomDropdownDTO> validUomList = (List<UomDropdownDTO>) uomResponse.getData();
+        // Set<String> validUomNames = validUomList.stream()
+        //         .map(UomDropdownDTO::getName)
+        //         .collect(Collectors.toSet());
+
+        Set<String> validUomNames = new HashSet<>();
+
+        for (UomDropdownDTO uom : validUomList) {
+            if (uom.getName() != null) {
+                validUomNames.add(uom.getName());
+            }
+            if (uom.getDisplayName() != null) {
+                validUomNames.add(uom.getDisplayName());
+            }
+        }
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) rowIterator.next(); // Skip header row
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+
+                // Skip completely empty rows (check visible columns 0-6)
+                boolean isEmpty = true;
+                for (int col = 0; col <= 6; col++) {
+                    Cell cell = row.getCell(col);
+                    if (cell != null) {
+                        cell.setCellType(CellType.STRING);
+                        if (!cell.getStringCellValue().trim().isEmpty()) {
+                            isEmpty = false;
+                            break;
+                        }
+                    }
+                }
+                if (isEmpty) continue;
+
+                RefinerySlowdownTranscationDTO dto = new RefinerySlowdownTranscationDTO();
+                try {
+                    // Col 0 – Site
+                    Cell siteCell = row.getCell(0);
+                    if (siteCell != null) {
+                        siteCell.setCellType(CellType.STRING);
+                        String siteStr = siteCell.getStringCellValue().trim();
+                        dto.setSiteName(siteStr.isEmpty() ? null : siteStr);
+                    }
+
+                    // Col 1 – Plant
+                    Cell plantCell = row.getCell(1);
+                    if (plantCell != null) {
+                        plantCell.setCellType(CellType.STRING);
+                        String plantStr = plantCell.getStringCellValue().trim();
+                        dto.setPlantName(plantStr.isEmpty() ? null : plantStr);
+                    }
+
+                    // Col 2 – Tentative Duration in days
+                    Cell durationCell = row.getCell(2);
+                    if (durationCell != null) {
+                        durationCell.setCellType(CellType.STRING);
+                        String durationStr = durationCell.getStringCellValue().trim();
+                        if (!durationStr.isEmpty()) {
+                            try {
+                                double durationDouble = Double.parseDouble(durationStr);
+                                if (durationDouble != Math.floor(durationDouble)) {
+                                    dto.setSaveStatus("Failed");
+                                    dto.setErrorMessage("Tentative Duration in days must be a whole number");
+                                } else {
+                                    dto.setTentativeDurationDays((int) durationDouble);
+                                }
+                            } catch (NumberFormatException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("Tentative Duration in days must be a valid integer");
+                            }
+                        }
+                        else {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Tentative Duration in days is required");
+                        }
+                    }
+
+                    // Col 3 – Throughput during the Slowdown (optional)
+                    Cell throughputCell = row.getCell(3);
+                    if (throughputCell != null) {
+                        throughputCell.setCellType(CellType.STRING);
+                        String throughputStr = throughputCell.getStringCellValue().trim();
+                        if (throughputStr.isEmpty()) {
+                            dto.setThroughputDuringTheSlowdown(null);
+                        } else {
+                            try {
+                                dto.setThroughputDuringTheSlowdown(Double.parseDouble(throughputStr));
+                            } catch (NumberFormatException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("Throughput during the Slowdown must be a valid number");
+                            }
+                        }
+                    } else {
+                        dto.setThroughputDuringTheSlowdown(null);
+                    }
+
+                    // Col 4 – Throughput UOM (optional)
+                    Cell uomCell = row.getCell(4);
+                    if (uomCell != null) {
+                        uomCell.setCellType(CellType.STRING);
+                        String uomStr = uomCell.getStringCellValue().trim();
+                        if (uomStr.isEmpty()) {
+                            dto.setThroughputUom(null);
+                        } else if (!validUomNames.contains(uomStr)) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Throughput UOM '" + uomStr + "' is not a valid UOM value");
+                        } else {
+                            dto.setThroughputUom(uomStr);
+                        }
+                    } else {
+                        dto.setThroughputUom(null);
+                    }
+
+                    // Col 5 – Tentative Month
+                    Cell monthCell = row.getCell(5);
+                    if (monthCell == null || monthCell.getCellType() == CellType.BLANK) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrorMessage("Tentative Month is required");
+                    } else {
+                        monthCell.setCellType(CellType.STRING);
+                        String monthStr = monthCell.getStringCellValue().trim();
+                        if (monthStr.isEmpty()) {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrorMessage("Tentative Month is required");
+                        } else {
+                            java.util.Map<String, Integer> monthMap = new java.util.LinkedHashMap<>();
+                            monthMap.put("january",   1);
+                            monthMap.put("february",  2);
+                            monthMap.put("march",     3);
+                            monthMap.put("april",     4);
+                            monthMap.put("may",       5);
+                            monthMap.put("june",      6);
+                            monthMap.put("july",      7);
+                            monthMap.put("august",    8);
+                            monthMap.put("september", 9);
+                            monthMap.put("october",  10);
+                            monthMap.put("november", 11);
+                            monthMap.put("december", 12);
+                            Integer monthInt = monthMap.get(monthStr.toLowerCase());
+                            if (monthInt == null) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrorMessage("Tentative Month must be a valid month name (e.g. January)");
+                            } else {
+                                dto.setTentativeMonth(monthInt);
+                            }
+                        }
+                    }
+
+                    // Col 6 – Purpose of Slowdown (remark)
+                    Cell remarkCell = row.getCell(6);
+                    if (remarkCell != null) {
+                        remarkCell.setCellType(CellType.STRING);
+                        dto.setRemark(remarkCell.getStringCellValue().trim());
+                    }
+
+                    // Col 7 – Id (hidden; present → update, absent → insert)
+                    Cell idCell = row.getCell(7);
+                    if (idCell != null) {
+                        idCell.setCellType(CellType.STRING);
+                        String id = idCell.getStringCellValue().trim();
+                        dto.setId(id.isEmpty() ? null : id);
+                    }
+
+                    // Col 8 – SiteFkId (hidden)
+                    Cell siteFkIdCell = row.getCell(8);
+                    if (siteFkIdCell != null) {
+                        siteFkIdCell.setCellType(CellType.STRING);
+                        String siteFkId = siteFkIdCell.getStringCellValue().trim();
+                        dto.setSiteFkId(siteFkId.isEmpty() ? null : siteFkId);
+                    }
+
+                    // Col 9 – PlantFkId (hidden)
+                    Cell plantFkIdCell = row.getCell(9);
+                    if (plantFkIdCell != null) {
+                        plantFkIdCell.setCellType(CellType.STRING);
+                        String plantFkId = plantFkIdCell.getStringCellValue().trim();
+                        dto.setPlantFkId(plantFkId.isEmpty() ? null : plantFkId);
+                    }
+
+                    dto.setAopYear(aopYear);
+                    dto.setPlantId(plantId);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                validatePlantAndSiteNameForSlowdown(dto, verticalDto);
+
+                resultList.add(dto);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Refinery Slowdown Excel", e);
+        }
+        return resultList;
+    }
+
+    private void validatePlantAndSiteNameForSlowdown(RefinerySlowdownTranscationDTO dto, VerticalsDTO vertical) {
+
+        String plantName = dto.getPlantName();
+        String siteName = dto.getSiteName();
+
+        if (plantName == null || plantName.isBlank() || siteName == null || siteName.isBlank()) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Plant and site names are required");
+            return;
+        }
+
+        if (dto.getSiteFkId() == null) {
+            List<String> siteIds = jdbcTemplate.queryForList(
+                    "SELECT id FROM Sites WHERE DisplayName = ?", String.class, siteName);
+            if (siteIds.isEmpty()) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage("Site not found: " + siteName);
+                return;
+            }
+            dto.setSiteFkId(siteIds.get(0));
+        }
+
+        if (dto.getPlantFkId() == null) {
+            List<String> plantIds = jdbcTemplate.queryForList(
+                    "SELECT id FROM Plants WHERE DisplayName = ?", String.class, plantName);
+            if (plantIds.isEmpty()) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage("Plant not found: " + plantName);
+                return;
+            }
+            dto.setPlantFkId(plantIds.get(0));
+        }
+
+        SitesDTO matchedSite = vertical.getSites().stream()
+                .filter(s -> s.getId() != null && s.getId().equalsIgnoreCase(dto.getSiteFkId()))
+                .findFirst()
+                .orElse(null);
+
+        if (matchedSite == null) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Site '" + siteName + "' does not belong to the selected vertical");
+            return;
+        }
+
+        boolean plantBelongsToSite = matchedSite.getPlants().stream()
+                .anyMatch(p -> p.getId() != null && p.getId().equalsIgnoreCase(dto.getPlantFkId()));
+
+        if (!plantBelongsToSite) {
+            dto.setSaveStatus("Failed");
+            dto.setErrorMessage("Plant '" + plantName + "' does not belong to site '" + siteName + "'");
+        }
+    }
+
+    // ─── Refinery Slowdown Import – API ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM importRefinerySlowdownExcel(String plantId, String aopYear, MultipartFile file) {
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+            throw new IllegalArgumentException("Invalid or empty Excel file.");
+        }
+
+        List<RefinerySlowdownTranscationDTO> failedRecords = new ArrayList<>();
+        try {
+            List<RefinerySlowdownTranscationDTO> data = readRefinerySlowdownExcel(file.getInputStream(), plantId, aopYear);
+            failedRecords = saveRefinerySlowdownData(data);
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedRecords.isEmpty()) {
+                byte[] fileByteArray = createRefinerySlowdownExcel(plantId, aopYear, true, failedRecords);
+                String base64File = java.util.Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to import Refinery Slowdown data", ex);
+        }
+    }
+
+    
+    @Override
+    public AOPMessageVM deleteRefinerySlowdownData(String id) {
+        try {  
+            String sql = "DELETE FROM RefinerySlowdownTransacation WHERE id = ?";
+            jdbcTemplate.update(sql, id);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Data deleted successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete refinery slowdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getRefineryBudgetUomDropdown(String plantId) {
+        try {
+   Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found"));
+
+   Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found"));
+
+   String procedureName = vertical.getName();
+
+            String sql = "EXEC " + procedureName + "_GetUomDropdown";
+
+            List<UomDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                UomDropdownDTO.builder().id(rs.getString("id")).name(rs.getString("name")).displayName(rs.getString("displayName")).build());
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch UOM dropdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getProfitCenterData(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_ProfitCenter @siteId = ?, @aopyear = ?";
+            List<ProfitCenterDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                ProfitCenterDTO.builder()
+                    .id(rs.getString("Id"))
+                    .siteId(rs.getString("SiteId"))
+                    .unit(rs.getString("Unit"))
+                    .uom(rs.getString("UOM"))
+                    .jan(rs.getString("Jan"))
+                    .feb(rs.getString("Feb"))
+                    .mar(rs.getString("Mar"))
+                    .apr(rs.getString("Apr"))
+                    .may(rs.getString("May"))
+                    .jun(rs.getString("Jun"))
+                    .jul(rs.getString("Jul"))
+                    .aug(rs.getString("Aug"))
+                    .sep(rs.getString("Sep"))
+                    .oct(rs.getString("Oct"))
+                    .nov(rs.getString("Nov"))
+                    .dec(rs.getString("Dec"))
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch profit center data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<ProfitCenterDTO> saveProfitCenterData(List<ProfitCenterDTO> profitCenterDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<ProfitCenterDTO> failedRecords = new ArrayList<>();
+
+        Map<Integer, java.util.function.Function<ProfitCenterDTO, String>> monthValueGetters = new java.util.LinkedHashMap<>();
+        monthValueGetters.put(1,  ProfitCenterDTO::getJan);
+        monthValueGetters.put(2,  ProfitCenterDTO::getFeb);
+        monthValueGetters.put(3,  ProfitCenterDTO::getMar);
+        monthValueGetters.put(4,  ProfitCenterDTO::getApr);
+        monthValueGetters.put(5,  ProfitCenterDTO::getMay);
+        monthValueGetters.put(6,  ProfitCenterDTO::getJun);
+        monthValueGetters.put(7,  ProfitCenterDTO::getJul);
+        monthValueGetters.put(8,  ProfitCenterDTO::getAug);
+        monthValueGetters.put(9,  ProfitCenterDTO::getSep);
+        monthValueGetters.put(10, ProfitCenterDTO::getOct);
+        monthValueGetters.put(11, ProfitCenterDTO::getNov);
+        monthValueGetters.put(12, ProfitCenterDTO::getDec);
+
+        for (ProfitCenterDTO dto : profitCenterDTOs) {
+            try {
+                String unitId = dto.getId();
+
+                if (unitId == null) {
+                    continue;
+                }
+
+                for (Map.Entry<Integer, java.util.function.Function<ProfitCenterDTO, String>> entry : monthValueGetters.entrySet()) {
+                    int month = entry.getKey();
+                    String value = entry.getValue().apply(dto);
+
+                    if (value == null) {
+                        continue;
+                    }
+
+                    String checkSql = "SELECT COUNT(1) FROM ThroughputProfitTransaction " +
+                                      "WHERE Unit_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                    int count = jdbcTemplate.queryForObject(checkSql, Integer.class, unitId, month, aopYear);
+
+                    if (count > 0) {
+                        String updateSql = "UPDATE ThroughputProfitTransaction " +
+                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "WHERE Unit_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                        jdbcTemplate.update(updateSql,
+                            new java.math.BigDecimal(value),
+                            updatedBy,
+                            unitId,
+                            month,
+                            aopYear);
+                    } else {
+                        String insertSql = "INSERT INTO ThroughputProfitTransaction " +
+                                           "(Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
+                                           "VALUES (NEWID(), ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                        jdbcTemplate.update(insertSql,
+                            unitId,
+                            month,
+                            aopYear,
+                            new java.math.BigDecimal(value),
+                            updatedBy);
+                    }
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+
+        return failedRecords;
+    }
+@Override
+    public AOPMessageVM deleteProfitCenterData(String id, String aopYear) { 
+
+        String sql = "DELETE FROM ThroughputProfitTransaction WHERE Unit_Id = ? AND AuditYear = ?";
+        jdbcTemplate.update(sql, id, aopYear);
+        AOPMessageVM response = new AOPMessageVM();
+        response.setCode(200);
+        response.setMessage("Data deleted successfully");
+        return response;
+    }
+
+    @Override
+    public AOPMessageVM getProfitCenterUomDropdown(String siteId) {
+        try {
+            String sql = "EXEC Sp_GetProfitCenterUomDropdown @siteId = ?";
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, siteId);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch profit center UOM dropdown data", e);
+        }
+    }
+
+
+    @Override
+    public AOPMessageVM getThroughputNorms(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_GetThroughputNorms @SiteId = ?, @AOPYear = ?";
+
+            List<ThroughputNormsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                ThroughputNormsDTO.builder()
+                    .id(rs.getString("Id"))
+                    .unit(rs.getString("Unit"))
+                    .unitId(rs.getString("UnitId"))
+                    .materialCode(rs.getString("MaterialCode"))
+                    .materialCodeDecription(rs.getString("MaterialCodeDecription"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+                    .apr(rs.getString("Apr"))
+                    .may(rs.getString("May"))
+                    .jun(rs.getString("Jun"))
+                    .jul(rs.getString("Jul"))
+                    .aug(rs.getString("Aug"))
+                    .sep(rs.getString("Sep"))
+                    .oct(rs.getString("Oct"))
+                    .nov(rs.getString("Nov"))
+                    .dec(rs.getString("Dec"))
+                    .jan(rs.getString("Jan"))
+                    .feb(rs.getString("Feb"))
+                    .mar(rs.getString("Mar"))
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch throughput norms data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<ThroughputNormsDTO> saveThroughputNorms(List<ThroughputNormsDTO> throughputNormsDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<ThroughputNormsDTO> failedRecords = new ArrayList<>();
+
+        Map<Integer, java.util.function.Function<ThroughputNormsDTO, String>> monthValueGetters = new java.util.LinkedHashMap<>();
+        monthValueGetters.put(4,  ThroughputNormsDTO::getApr);
+        monthValueGetters.put(5,  ThroughputNormsDTO::getMay);
+        monthValueGetters.put(6,  ThroughputNormsDTO::getJun);
+        monthValueGetters.put(7,  ThroughputNormsDTO::getJul);
+        monthValueGetters.put(8,  ThroughputNormsDTO::getAug);
+        monthValueGetters.put(9,  ThroughputNormsDTO::getSep);
+        monthValueGetters.put(10, ThroughputNormsDTO::getOct);
+        monthValueGetters.put(11, ThroughputNormsDTO::getNov);
+        monthValueGetters.put(12, ThroughputNormsDTO::getDec);
+        monthValueGetters.put(1,  ThroughputNormsDTO::getJan);
+        monthValueGetters.put(2,  ThroughputNormsDTO::getFeb);
+        monthValueGetters.put(3,  ThroughputNormsDTO::getMar);
+
+        for (ThroughputNormsDTO dto : throughputNormsDTOs) {
+            try {
+                String materialId = dto.getId();
+                String unitId = dto.getUnitId();
+
+                if(materialId == null || unitId == null) {
+                    continue;
+                }
+
+                for (Map.Entry<Integer, java.util.function.Function<ThroughputNormsDTO, String>> entry : monthValueGetters.entrySet()) {
+                    int month = entry.getKey();
+                    String value = entry.getValue().apply(dto);
+
+                    if (value == null) {
+                        continue;
+                    }
+
+                    String checkSql = "SELECT COUNT(1) FROM ThroughputNormsTransaction " +
+                                      "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                    int count = jdbcTemplate.queryForObject(checkSql, Integer.class, materialId, month, aopYear, unitId);
+
+                    if (count > 0) {
+                        String updateSql = "UPDATE ThroughputNormsTransaction " +
+                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                        jdbcTemplate.update(updateSql,
+                            new java.math.BigDecimal(value),
+                            updatedBy,
+                            materialId,
+                            month,
+                            aopYear,
+                            unitId);
+                    } else {
+                        String insertSql = "INSERT INTO ThroughputNormsTransaction " +
+                                           "(Id, Material_Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
+                                           "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                        jdbcTemplate.update(insertSql,
+                            materialId,
+                            unitId,
+                            month,
+                            aopYear,
+                            new java.math.BigDecimal(value),
+                            updatedBy);
+                    }
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+
+        return failedRecords;
+    }
+
+    public AOPMessageVM deleteThroughputNorms(String materialId, String unitId, String aopYear) {
+        String sql = "DELETE FROM ThroughputNormsTransaction WHERE Material_Id = ? AND Unit_Id = ? AND AuditYear = ?";
+        jdbcTemplate.update(sql, materialId, unitId, aopYear);
+        AOPMessageVM response = new AOPMessageVM();
+        response.setCode(200);
+        response.setMessage("Data deleted successfully");
+        return response;
+    }
+
+    @Override
+    public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId) {
+        try {
+            String sql = "EXEC Sp_GetNormsMaterialDropdown @siteId = ?, @profitId = ?";
+
+            List<NormsMaterialDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                NormsMaterialDropdownDTO.builder()
+                    .unitId(rs.getString("UnitId"))
+                    .materialId(rs.getString("MaterialId"))
+                    .unit(rs.getString("Unit"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+        
+                    .build(),
+                siteId, profitId);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch norms material dropdown data", e);
+        }
+    }
+
 }

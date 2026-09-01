@@ -120,6 +120,7 @@ const NormalOpNormsScreenCracker = () => {
   const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_CRACKER_NMD = lowerVertName === 'cracker' && lowerSiteName === 'nmd'
+  const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -417,7 +418,7 @@ const NormalOpNormsScreenCracker = () => {
     ],
     [headerMap, valueFormat],
   )
-  const colDefsFinalNorms = IS_CRACKER_C2
+  const colDefsFinalNorms = IS_CRACKER_C2 || IS_CRACKER_DMD
     ? colDefsFinalNormsC2
     : IS_CRACKER_HMD
       ? colDefsFinalNormsHMD
@@ -687,7 +688,7 @@ const NormalOpNormsScreenCracker = () => {
 
   const finalPermissions = useMemo(() => {
     const base = { ...baseFinalPermissions }
-    base.saveBtn = IS_CRACKER_C2 ? true : false
+    base.saveBtn = IS_CRACKER_C2 || IS_CRACKER_DMD ? true : false
     base.showCalculate = true
 
     return getAdjustedPermissions(base, isOldYear)
@@ -783,7 +784,7 @@ const NormalOpNormsScreenCracker = () => {
         remark: item.remark || '',
         Particulars: item.normType || item.normParameterTypeDisplayName,
         Method: item.Method || item.method,
-        isEditable: IS_CRACKER_C2 ? true : false,
+        isEditable: IS_CRACKER_C2 || IS_CRACKER_DMD ? true : false,
       }))
 
       setRowsBestFinalNorms(mappedWithMethod)
@@ -1066,19 +1067,19 @@ const NormalOpNormsScreenCracker = () => {
         )
         const response = isFinal
           ? await NormalOperationNormsApiService.updateFinalNormsData(
-              keycloak,
-              gradeId,
-              payload,
-              PLANT_ID,
-              AOP_YEAR,
-            )
+            keycloak,
+            gradeId,
+            payload,
+            PLANT_ID,
+            AOP_YEAR,
+          )
           : await NormalOperationNormsApiService.updateModeWiseNormsData(
-              keycloak,
-              gradeId,
-              payload,
-              PLANT_ID,
-              AOP_YEAR,
-            )
+            keycloak,
+            gradeId,
+            payload,
+            PLANT_ID,
+            AOP_YEAR,
+          )
 
         if (response?.code === 200) {
           dispatch(setIsBlocked(false))
@@ -1283,23 +1284,23 @@ const NormalOpNormsScreenCracker = () => {
 
       // 2) Collect unchecked rows from those new arrays (except the one we just checked)
       const uncheckedRows = []
-      ;[
-        { arr: newMainRows, gridName: 'main' },
-        { arr: newExpressionRows, gridName: 'expression' },
-        { arr: newBestRows, gridName: 'best' },
-      ].forEach(({ arr, gridName: gName }) => {
-        arr.forEach((r) => {
-          // If this row belongs to the same material and is unchecked, and it's NOT the row we clicked,
-          // then it's one of the rows that was implicitly unchecked
-          if (
-            r.materialName === materialName &&
-            !(gName === gridName && r.id === id) &&
-            !r[field]
-          ) {
-            uncheckedRows.push({ ...r, gridName: gName })
-          }
+        ;[
+          { arr: newMainRows, gridName: 'main' },
+          { arr: newExpressionRows, gridName: 'expression' },
+          { arr: newBestRows, gridName: 'best' },
+        ].forEach(({ arr, gridName: gName }) => {
+          arr.forEach((r) => {
+            // If this row belongs to the same material and is unchecked, and it's NOT the row we clicked,
+            // then it's one of the rows that was implicitly unchecked
+            if (
+              r.materialName === materialName &&
+              !(gName === gridName && r.id === id) &&
+              !r[field]
+            ) {
+              uncheckedRows.push({ ...r, gridName: gName })
+            }
+          })
         })
-      })
 
       // 3) Apply the new arrays to state (this updates UI)
       setRows(newMainRows)

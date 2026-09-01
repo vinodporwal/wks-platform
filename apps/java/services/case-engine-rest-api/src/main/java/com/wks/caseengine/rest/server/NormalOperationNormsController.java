@@ -37,6 +37,55 @@ public class NormalOperationNormsController {
 	    return normalOperationNormsService.getNormalOperationNormsData(year, plantId, gradeId,mode);
 	}
 	
+	@GetMapping(value = "/steady-state-norms-dynamic")
+	public AOPMessageVM getSteadyStateNorms(
+	        @RequestParam String year,
+	        @RequestParam String plantId,
+	        @RequestParam(required = false) String gradeId,@RequestParam(required = false) String mode) {
+	    return normalOperationNormsService.getSteadyStateNorms(year, plantId, gradeId,mode);
+	}
+	
+	@GetMapping(value = "/steady-state-norms-export-dynamic")
+	public ResponseEntity<byte[]> exportSteadyStateNorms(
+	        @RequestParam String year,
+	        @RequestParam String plantId) {
+	    try {
+	        // Calls service to generate byte array Excel file
+	        byte[] excelBytes = normalOperationNormsService.exportSteadyStateNormsDynamic(year, plantId, false, null);
+
+	        if (excelBytes == null || excelBytes.length == 0) {
+	            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	        }
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("steady_state_norms.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/steady-state-norms-import-dynamic", consumes = "multipart/form-data")
+	public AOPMessageVM importSteadyStateNorms(
+	        @RequestParam("plantId") String plantId,
+	        @RequestParam("year") String year,
+	        @RequestParam("file") MultipartFile file
+	) {
+	    return normalOperationNormsService.importSteadyStateNorms(year, plantId, file);
+	}
+	
+	@PostMapping(value="/steady-state-norms-dynamic")
+	public AOPMessageVM updateSteadyStateNorms(@RequestParam String plantId, @RequestParam String year, @RequestBody List<Map<String, Object>> payloadList){
+		return normalOperationNormsService.updateSteadyStateNorms(plantId,year,payloadList);		
+	}
+	
 	@GetMapping(value="/normal-operation/norms/grades")
 	public AOPMessageVM getNormalOperationNormsGrades(@RequestParam String year,@RequestParam String plantId){
 		return	normalOperationNormsService.getNormalOperationNormsGrades(year, plantId);
@@ -45,6 +94,11 @@ public class NormalOperationNormsController {
 	@GetMapping(value="/calculate-normal-ops-norms")
 	public AOPMessageVM calculateNormalOpsNorms(@RequestParam String aopYear,@RequestParam String plantId,@RequestParam String siteId,@RequestParam String verticalId){
 		return	normalOperationNormsService.calculateNormalOpsNorms(aopYear, plantId,siteId,verticalId);
+	}
+
+	@GetMapping(value="/calculate-normal-ops-norms/polyester")
+	public AOPMessageVM calculateNormalOpsNormsPolyester(@RequestParam String aopYear,@RequestParam String plantId,@RequestParam String siteId,@RequestParam String verticalId){
+		return	normalOperationNormsService.calculateNormalOpsNormsPolyester(aopYear, plantId,siteId,verticalId);
 	}
 
 	@GetMapping(value = "/norms-transactions")
@@ -70,6 +124,23 @@ public class NormalOperationNormsController {
 	    try {
 	        return normalOperationNormsService.saveNormalOperationNormsDataPolyester(
 	                mCUNormsValueDTOList, UUID.fromString(plantId), year, gradeId, false);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return AOPMessageVM.builder()
+	                .code(500)
+	                .message("Failed to save data: " + e.getMessage())
+	                .data(null)
+	                .build();
+	    }
+	}
+	@GetMapping(value = "/steady-state-norms/grade/validation")
+	public AOPMessageVM checkAllGradeNormsPolyester(
+	        @RequestParam String plantId, @RequestParam String year,
+	        @RequestParam(required = false) String gradeId
+	       ) {
+	    try {
+	        return normalOperationNormsService.checkAllGradeNormsPolyester(
+	                UUID.fromString(plantId), year, gradeId);
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	        return AOPMessageVM.builder()
@@ -169,6 +240,16 @@ public class NormalOperationNormsController {
 	    }
 	}
 
+	@PostMapping(value = "/steady-state-norms-import/polyester", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelPolyester(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+            @RequestParam(required = false) String gradeId,
+			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
+	        ) {
+			return	normalOperationNormsService.importExcelPolyester(year,UUID.fromString(plantId),gradeId, file,mode); 
+	}
+	
 	@PostMapping(value = "/steady-state-norms-import", consumes = "multipart/form-data")
 	public AOPMessageVM importExcel(
 	         @RequestParam("plantId") String plantId,

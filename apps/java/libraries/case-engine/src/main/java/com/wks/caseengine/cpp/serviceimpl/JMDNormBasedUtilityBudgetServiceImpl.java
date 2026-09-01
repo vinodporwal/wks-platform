@@ -3,6 +3,7 @@ package com.wks.caseengine.cpp.serviceimpl;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -48,6 +49,11 @@ import com.wks.caseengine.cpp.dto.norm.OutputNormsUtilityBudgetResponseDTO;
 import com.wks.caseengine.cpp.entity.NormsMonthDetail;
 import com.wks.caseengine.cpp.repository.NormsMonthDetailRepository;
 import com.wks.caseengine.cpp.service.JMDNormBasedUtilityBudgetService;
+import com.wks.caseengine.cpp.utility.ExcelCells;
+import com.wks.caseengine.cpp.utility.ExcelColumns;
+import com.wks.caseengine.cpp.utility.ExcelRows;
+import com.wks.caseengine.cpp.utility.ExcelStyles;
+import com.wks.caseengine.cpp.utility.FiscalYearMonths;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -2262,8 +2268,850 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             }
         }
         
-        logger.info("Successfully cleared AopCalculation flag for {} out of {} plants for year={}", 
+        logger.info("Successfully cleared AopCalculation flag for {} out of {} plants for year={}",
             successCount, plantIdStrings.size(), aopYear);
+    }
+
+
+    // ===================== || QUANTITY APIs (NEW) || ===================== //
+
+    @Override
+    public AOPMessageVM getQuantity(List<UUID> cppPlantIds, String financialYear) {
+
+        log.info("=== Starting getQuantity ===");
+        log.info("CPPPlantIds: {}, FinancialYear: {}", cppPlantIds, financialYear);
+
+        AOPMessageVM vm = new AOPMessageVM();
+
+        try {
+            if (cppPlantIds == null || cppPlantIds.isEmpty()) {
+                log.error("CPPPlantIds are null or empty");
+                vm.setCode(400);
+                vm.setMessage("CPPPlantIds cannot be null or empty");
+                vm.setData(new ArrayList<>());
+                return vm;
+            }
+
+            
+            String plantIdsString = cppPlantIds.stream()
+                    .map(UUID::toString)
+                    .collect(Collectors.joining(","));
+
+            String spName = "dbo.CPP_JMD_GetQuantity";
+
+            StoredProcedureQuery sp = entityManager
+                    .createStoredProcedureQuery(spName)
+                    .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
+                    .registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
+
+            sp.setParameter(1, plantIdsString); 
+            sp.setParameter(2, financialYear);
+
+            log.info("Executing stored procedure {} ...", spName);
+            sp.execute();
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = sp.getResultList();
+            log.info("Retrieved {} rows from stored procedure", rows.size());
+
+            if (rows.isEmpty()) {
+                log.warn("No rows returned from stored procedure");
+                vm.setCode(200);
+                vm.setMessage("No data found");
+                vm.setData(new ArrayList<>());
+                return vm;
+            }
+
+            List<OutputNormsUtilityBudgetResponseDTO> list = new ArrayList<>();
+            for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+                Object[] row = rows.get(rowIndex);
+                try {
+                	OutputNormsUtilityBudgetResponseDTO dto = mapRowToDto(row, rowIndex);
+                    list.add(dto);
+                } catch (Exception e) {
+                    log.error("Skipping bad row {} due to mapping error: {}", rowIndex, e.getMessage());
+                }
+            }
+
+           
+            List<Map<String, Object>> aopCalculationResultList = new ArrayList<>();
+
+            for (UUID plantId : cppPlantIds) {
+                
+                List<AopCalculation> aopCalculation = aopCalculationRepository
+                        .findByPlantIdAndAopYearAndCalculationScreen(plantId, financialYear, "cpp-norms");
+
+                
+                Map<String, Object> singlePlantMap = new HashMap<>();
+                singlePlantMap.put("plantId", plantId);
+                singlePlantMap.put("aopCalculation", aopCalculation);
+                aopCalculationResultList.add(singlePlantMap);
+            }
+
+           
+            Map<String, Object> finalDataMap = new HashMap<>();
+            finalDataMap.put("aopCalculationList", aopCalculationResultList); // List of maps containing separate calculations
+            finalDataMap.put("list", list);                                   // Combined SP data output
+
+            vm.setCode(200);
+            vm.setMessage("Quantity fetched successfully");
+            vm.setData(finalDataMap);
+
+            log.info("=== Completed getQuantity successfully ===");
+            return vm;
+
+        } catch (Exception e) {
+            log.error("=== STORED PROCEDURE FAILURE / SERVICE ERROR ===");
+            log.error("Message: {}", e.getMessage());
+            
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+            vm.setData(new ArrayList<>());
+            return vm;
+        }
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM saveOrUpdateQuantityBulk(List<NormsMonthUpdateRequestDTO> dtoList, String financialYear) {
+
+        if (dtoList == null || dtoList.isEmpty()) {
+            throw new RestInvalidArgumentException("Request body cannot be empty", null);
+        }
+
+        List<Object[]> remarkUpdates = new ArrayList<>();
+        List<NormsMonthDetail> allNormsMonthDetailsToUpdate = new ArrayList<>();
+
+        for (NormsMonthUpdateRequestDTO dto : dtoList) {
+            saveOrUpdateQuantity(dto, financialYear, remarkUpdates, allNormsMonthDetailsToUpdate);
+        }
+
+        normsMonthDetailRepository.saveAll(allNormsMonthDetailsToUpdate);
+
+        // Remarks update logic (same pattern as budget)
+        if (!remarkUpdates.isEmpty()) {
+            try {
+                String sql = """
+                    UPDATE NormsMonthDetail
+                    SET Remarks = ?
+                    WHERE FinancialYearMonth_FK_Id = ? AND NormsHeader_FK_Id = ?
+                """;
+                jdbcTemplate.batchUpdate(sql, remarkUpdates);
+            } catch (Exception e) {
+                log.error("Error updating remarks: {}", e.getMessage());
+            }
+        }
+
+        AOPMessageVM vm = new AOPMessageVM();
+        vm.setCode(200);
+        vm.setMessage("Bulk quantity month update successful");
+        vm.setData(null);
+        return vm;
+    }
+
+    private AOPMessageVM saveOrUpdateQuantity(NormsMonthUpdateRequestDTO dto, String financialYear, List<Object[]> remarkUpdates, List<NormsMonthDetail> allNormsMonthDetailsToUpdate) {
+
+        int startYear = Integer.parseInt(financialYear.substring(0, 4));
+        int endYear = startYear + 1;
+
+        List<NormsMonthDetail> normsMonthDetailsToUpdate = new ArrayList<>();
+
+        if (dto == null) {
+            AOPMessageVM vm = new AOPMessageVM();
+            vm.setCode(400);
+            vm.setMessage("DTO cannot be null");
+            return vm;
+        }
+
+        List<String> updatedMonths = new ArrayList<>();
+        List<String> skippedMonths = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        UUID headerId = dto.getNormsHeaderFkId();
+
+        if (headerId == null) {
+            log.warn("NormsHeaderId is null for DTO, skipping save");
+            AOPMessageVM vm = new AOPMessageVM();
+            vm.setCode(400);
+            vm.setMessage("NormsHeaderId is required");
+            return vm;
+        }
+
+        // Collect remark updates for all financial year months (same pattern as budget)
+        List<Object[]> AllfinancialYearMonths = fyRepo.findFinancialYearMonths(startYear, endYear);
+        for (Object[] financialYearMonth : AllfinancialYearMonths) {
+            UUID financialYearMonthId = UUID.fromString(financialYearMonth[1].toString());
+            remarkUpdates.add(new Object[]{ dto.getRemarks(), financialYearMonthId, headerId });
+        }
+
+        processQuantityMonth(dto.getApr(), headerId, "APR", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getMay(), headerId, "MAY", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getJun(), headerId, "JUN", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getJul(), headerId, "JUL", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getAug(), headerId, "AUG", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getSep(), headerId, "SEP", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getOct(), headerId, "OCT", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getNov(), headerId, "NOV", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getDec(), headerId, "DEC", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getJan(), headerId, "JAN", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getFeb(), headerId, "FEB", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+        processQuantityMonth(dto.getMar(), headerId, "MAR", updatedMonths, skippedMonths, errors, normsMonthDetailsToUpdate);
+
+        allNormsMonthDetailsToUpdate.addAll(normsMonthDetailsToUpdate);
+
+        AOPMessageVM vm = new AOPMessageVM();
+        vm.setCode(200);
+        vm.setMessage("Quantity month update processed");
+        Map<String, Object> data = new HashMap<>();
+        data.put("updatedMonths", updatedMonths);
+        data.put("skippedMonths", skippedMonths);
+        data.put("errors", errors);
+        vm.setData(data);
+        return vm;
+    }
+
+    private void processQuantityMonth(
+            NormsMonthValueDTO dto,
+            UUID headerId,
+            String monthName,
+            List<String> updatedMonths,
+            List<String> skippedMonths,
+            List<String> errors,
+            List<NormsMonthDetail> normsMonthDetailsToUpdate) {
+        try {
+            if (dto == null) {
+                skippedMonths.add(monthName);
+                return;
+            }
+
+            if (dto.getFinancialYearMonthFkId() == null) {
+                skippedMonths.add(monthName + " (missing financialYearMonthFkId)");
+                return;
+            }
+
+            // quantity type: only check quantity
+            if (dto.getQuantity() == null) {
+                skippedMonths.add(monthName + " (no update values provided)");
+                return;
+            }
+
+            Optional<NormsMonthDetail> optional = normsMonthDetailRepository
+                    .findByNormsHeaderFkIdAndFinancialYearMonthFkId(
+                            headerId,
+                            dto.getFinancialYearMonthFkId());
+
+            if (!optional.isPresent()) {
+                errors.add(monthName + " (record not found in database)");
+                return;
+            }
+
+            NormsMonthDetail existing = optional.get();
+
+            // quantity type: only update quantity (not qty/Generation Qty)
+            existing.setQuantity(dto.getQuantity());
+
+            normsMonthDetailsToUpdate.add(existing);
+            updatedMonths.add(monthName);
+
+        } catch (Exception e) {
+            System.out.println("failed to process quantity month ");
+            errors.add(monthName + " (error: " + e.getMessage() + ")");
+        }
+    }
+
+    @Override
+    public byte[] exportQuantity(List<UUID> cppPlantIds, String financialYear, boolean isAfterSave, List<OutputNormsUtilityBudgetResponseDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM result = getQuantity(cppPlantIds, financialYear);
+                Object data = result.getData();
+                if (data instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<OutputNormsUtilityBudgetResponseDTO> dataList =
+                            (List<OutputNormsUtilityBudgetResponseDTO>) data;
+                    dtoList = dataList;
+                } else if (data instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> map = (Map<String, Object>) data;
+                    Object listObj = map.get("list");
+                    if (listObj instanceof List) {
+                        @SuppressWarnings("unchecked")
+                        List<OutputNormsUtilityBudgetResponseDTO> dataList =
+                                (List<OutputNormsUtilityBudgetResponseDTO>) listObj;
+                        dtoList = dataList;
+                    }
+                }
+            }
+
+            if (dtoList == null || dtoList.isEmpty()) {
+                log.warn("No data available to export for quantity");
+                dtoList = new ArrayList<>();
+            }
+
+            return buildQuantityExcel(dtoList, financialYear, isAfterSave, null);
+
+        } catch (Exception e) {
+            log.error("Error exporting quantity Excel: {}", e.getMessage(), e);
+            return new byte[0];
+        }
+    }
+
+    private byte[] buildQuantityExcel(List<OutputNormsUtilityBudgetResponseDTO> dtoList, String financialYear, boolean isAfterSave, List<String> errorMessages) throws Exception {
+        boolean isErrorExcel = errorMessages != null && !errorMessages.isEmpty();
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Quantity_" + financialYear);
+
+        CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle dataStyle = ExcelStyles.createDataStyle(workbook);
+
+        int currentRow = 0;
+        Row topHeaderRow = sheet.createRow(currentRow++);
+
+        int col = 0;
+        String[] staticColNames = {"Generating Plant", "Utility Name", "Utility Id", "Generation UOM", "Account Name",
+                "Material Name", "Material Id", "Issuing Plant", "Issuing UOM"};
+        // Top header row: static columns are empty (names appear in sub-header row)
+        for (int i = 0; i < staticColNames.length; i++) {
+            ExcelCells.setString(topHeaderRow.createCell(col + i), "", headerStyle);
+        }
+        col += staticColNames.length;
+
+        String[] months = FiscalYearMonths.getMonthHeaders(financialYear);
+
+        List<Integer> financialYearMonthFkIdColumns = new ArrayList<>();
+        // quantity type: Generation Qty, Quantity, financialYearMonthFkId (hidden) -> 3 cols
+        int colsPerMonth = 3;
+        int fymOffset = 2;
+        for (String month : months) {
+            for (int c = 0; c < colsPerMonth; c++) {
+                ExcelCells.setString(topHeaderRow.createCell(col + c), month, headerStyle);
+            }
+            financialYearMonthFkIdColumns.add(col + fymOffset);
+            col += colsPerMonth;
+        }
+
+        int remarksCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        int idCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        int normHeaderIdCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        int dataHashCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        if (isAfterSave || isErrorExcel) {
+            ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+            ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+        }
+
+        Row subHeaderRow = sheet.createRow(currentRow++);
+        col = 0;
+        for (String colName : staticColNames) {
+            ExcelCells.setString(subHeaderRow.createCell(col++), colName, headerStyle);
+        }
+
+        // Sub-headers for each month - quantity type: Generation Qty, Quantity, financialYearMonthFkId
+        for (int i = 0; i < 12; i++) {
+            ExcelCells.setString(subHeaderRow.createCell(col++), "Generation Qty", headerStyle);
+            ExcelCells.setString(subHeaderRow.createCell(col++), "Quantity", headerStyle);
+            ExcelCells.setString(subHeaderRow.createCell(col++), "financialYearMonthFkId", headerStyle);
+        }
+
+        ExcelCells.setString(subHeaderRow.createCell(col++), "Remarks", headerStyle);
+        ExcelCells.setString(subHeaderRow.createCell(col++), "Id", headerStyle);
+        ExcelCells.setString(subHeaderRow.createCell(col++), "NormHeaderId", headerStyle);
+        ExcelCells.setString(subHeaderRow.createCell(col++), "dataHash", headerStyle);
+
+        if (isAfterSave || isErrorExcel) {
+            ExcelCells.setString(subHeaderRow.createCell(col++), "Status", headerStyle);
+            ExcelCells.setString(subHeaderRow.createCell(col++), "Error Message", headerStyle);
+        }
+
+        // Data rows
+        for (int i = 0; i < dtoList.size(); i++) {
+            OutputNormsUtilityBudgetResponseDTO dto = dtoList.get(i);
+            Row row = sheet.createRow(currentRow++);
+            col = 0;
+            ExcelCells.setString(row.createCell(col++), dto.getGeneratingPlantName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUtilityName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUtilityId(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUom(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getAccountName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getMaterialName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getMaterialId(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getIssuingUom(), dataStyle);
+
+            setQuantityMonthCellValues(row, col, dto.getApr(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getMay(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getJun(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getJul(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getAug(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getSep(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getOct(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getNov(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getDec(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getJan(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getFeb(), dataStyle); col += 3;
+            setQuantityMonthCellValues(row, col, dto.getMar(), dataStyle); col += 3;
+
+            ExcelCells.setString(row.createCell(col++), dto.getRemarks(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getNormHeaderId(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), generateQuantityHash(dto), dataStyle);
+
+            if (isAfterSave) {
+                ExcelCells.setString(row.createCell(col++), dto.getSaveStatus(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getErrDescription(), dataStyle);
+            } else if (isErrorExcel) {
+                ExcelCells.setString(row.createCell(col++), "Failed", dataStyle);
+                ExcelCells.setString(row.createCell(col++), errorMessages.get(i), dataStyle);
+            }
+        }
+
+        // Hide financialYearMonthFkId, id, normHeaderId and dataHash columns
+        ExcelColumns.hideColumns(sheet, financialYearMonthFkIdColumns);
+        ExcelColumns.hideColumns(sheet, idCol, normHeaderIdCol, dataHashCol);
+
+        ExcelColumns.autoSize(sheet, col, remarksCol);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        workbook.write(baos);
+        workbook.close();
+        return baos.toByteArray();
+    }
+
+    private void setQuantityMonthCellValues(Row row, int startCol, OutputNormsUtilityBudgetMonthDTO monthDTO, CellStyle dataStyle) {
+        if (monthDTO != null) {
+            ExcelCells.setDouble(row.createCell(startCol), monthDTO.getQty(), dataStyle);
+            ExcelCells.setDouble(row.createCell(startCol + 1), monthDTO.getQuantity(), dataStyle);
+            ExcelCells.setString(row.createCell(startCol + 2), monthDTO.getFinancialYearMonthFkId(), dataStyle);
+        } else {
+            for (int i = 0; i < 3; i++) {
+                ExcelCells.setString(row.createCell(startCol + i), null, dataStyle);
+            }
+        }
+    }
+
+    @Override
+    public byte[] exportQuantityDetailed(List<UUID> cppPlantIds, String financialYear) {
+        try {
+            AOPMessageVM result = getQuantity(cppPlantIds, financialYear);
+            List<OutputNormsUtilityBudgetResponseDTO> dtoList = new ArrayList<>();
+            Object data = result.getData();
+            if (data instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<OutputNormsUtilityBudgetResponseDTO> dataList =
+                        (List<OutputNormsUtilityBudgetResponseDTO>) data;
+                dtoList = dataList;
+            } else if (data instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) data;
+                Object listObj = map.get("list");
+                if (listObj instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<OutputNormsUtilityBudgetResponseDTO> dataList =
+                            (List<OutputNormsUtilityBudgetResponseDTO>) listObj;
+                    dtoList = dataList;
+                }
+            }
+
+            if (dtoList == null || dtoList.isEmpty()) {
+                log.warn("No data available to export for quantity detailed");
+                dtoList = new ArrayList<>();
+            }
+
+            return buildQuantityDetailedExcel(dtoList, financialYear);
+
+        } catch (Exception e) {
+            log.error("Error exporting quantity detailed Excel: {}", e.getMessage(), e);
+            return new byte[0];
+        }
+    }
+
+    private byte[] buildQuantityDetailedExcel(List<OutputNormsUtilityBudgetResponseDTO> dtoList, String financialYear) throws Exception {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Quantity_Detailed_" + financialYear);
+
+        CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle dataStyle = ExcelStyles.createDataStyle(workbook);
+
+        int currentRow = 0;
+        Row topHeaderRow = sheet.createRow(currentRow++);
+
+        int col = 0;
+        String[] staticColNames = {"Generating Plant", "Utility Name", "Utility Id", "Generation UOM", "Account Name",
+                "Material Name", "Material Id", "Issuing Plant", "Issuing UOM"};
+        // Top header row: static columns are empty (names appear in sub-header row)
+        for (int i = 0; i < staticColNames.length; i++) {
+            ExcelCells.setString(topHeaderRow.createCell(col + i), "", headerStyle);
+        }
+        col += staticColNames.length;
+
+        String[] months = FiscalYearMonths.getMonthHeaders(financialYear);
+
+        List<Integer> financialYearMonthFkIdColumns = new ArrayList<>();
+        // quantity type: Generation Qty, Quantity, financialYearMonthFkId (hidden) -> 3 cols
+        int colsPerMonth = 3;
+        int fymOffset = 2;
+        for (String month : months) {
+            for (int c = 0; c < colsPerMonth; c++) {
+                ExcelCells.setString(topHeaderRow.createCell(col + c), month, headerStyle);
+            }
+            financialYearMonthFkIdColumns.add(col + fymOffset);
+            col += colsPerMonth;
+        }
+
+        int remarksCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        int idCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        int normHeaderIdCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        int dataHashCol = col;
+        ExcelCells.setString(topHeaderRow.createCell(col++), "", headerStyle);
+
+        Row subHeaderRow = sheet.createRow(currentRow++);
+        col = 0;
+        for (String colName : staticColNames) {
+            ExcelCells.setString(subHeaderRow.createCell(col++), colName, headerStyle);
+        }
+
+        // Sub-headers for each month - quantity type: Generation Qty, Quantity, financialYearMonthFkId
+        for (int i = 0; i < 12; i++) {
+            ExcelCells.setString(subHeaderRow.createCell(col++), "Generation Qty", headerStyle);
+            ExcelCells.setString(subHeaderRow.createCell(col++), "Quantity", headerStyle);
+            ExcelCells.setString(subHeaderRow.createCell(col++), "financialYearMonthFkId", headerStyle);
+        }
+
+        ExcelCells.setString(subHeaderRow.createCell(col++), "Remarks", headerStyle);
+        ExcelCells.setString(subHeaderRow.createCell(col++), "Id", headerStyle);
+        ExcelCells.setString(subHeaderRow.createCell(col++), "NormHeaderId", headerStyle);
+        ExcelCells.setString(subHeaderRow.createCell(col++), "dataHash", headerStyle);
+
+        // Data rows
+        for (OutputNormsUtilityBudgetResponseDTO dto : dtoList) {
+            Row row = sheet.createRow(currentRow++);
+            col = 0;
+            ExcelCells.setString(row.createCell(col++), dto.getGeneratingPlantName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUtilityName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUtilityId(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUom(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getAccountName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getMaterialName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getMaterialId(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getIssuingUom(), dataStyle);
+
+            setQuantityDetailedMonthCellValues(row, col, dto.getApr(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getMay(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getJun(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getJul(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getAug(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getSep(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getOct(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getNov(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getDec(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getJan(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getFeb(), dataStyle); col += 3;
+            setQuantityDetailedMonthCellValues(row, col, dto.getMar(), dataStyle); col += 3;
+
+            ExcelCells.setString(row.createCell(col++), dto.getRemarks(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getNormHeaderId(), dataStyle);
+            ExcelCells.setString(row.createCell(col++), generateQuantityHash(dto), dataStyle);
+        }
+
+        // Hide financialYearMonthFkId, id, normHeaderId and dataHash columns
+        ExcelColumns.hideColumns(sheet, financialYearMonthFkIdColumns);
+        ExcelColumns.hideColumns(sheet, idCol, normHeaderIdCol, dataHashCol);
+
+        ExcelColumns.autoSize(sheet, col, remarksCol);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        workbook.write(baos);
+        workbook.close();
+        return baos.toByteArray();
+    }
+
+    private void setQuantityDetailedMonthCellValues(Row row, int startCol, OutputNormsUtilityBudgetMonthDTO monthDTO, CellStyle dataStyle) {
+        if (monthDTO != null) {
+            ExcelCells.setDouble(row.createCell(startCol), monthDTO.getQty(), dataStyle);
+            ExcelCells.setDouble(row.createCell(startCol + 1), monthDTO.getQuantity(), dataStyle);
+            ExcelCells.setString(row.createCell(startCol + 2), monthDTO.getFinancialYearMonthFkId(), dataStyle);
+        } else {
+            for (int c = 0; c < 3; c++) {
+                ExcelCells.setString(row.createCell(startCol + c), null, dataStyle);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM importQuantityExcel(List<UUID> cppPlantIds, String financialYear, MultipartFile file) {
+        try {
+            List<OutputNormsUtilityBudgetResponseDTO> data = readQuantityExcel(file.getInputStream(), cppPlantIds, financialYear);
+
+            if (data == null || data.isEmpty()) {
+                AOPMessageVM vm = new AOPMessageVM();
+                vm.setCode(400);
+                vm.setMessage("No valid records found in the Excel file");
+                return vm;
+            }
+
+            List<OutputNormsUtilityBudgetResponseDTO> failedRecords = new ArrayList<>();
+            List<OutputNormsUtilityBudgetResponseDTO> validRecords = new ArrayList<>();
+
+            // Fetch existing data for remark validation
+            AOPMessageVM existingData = getQuantity(cppPlantIds, financialYear);
+            java.util.Map<Integer, String> existingRemarks = new java.util.HashMap<>();
+            if (existingData.getData() instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) existingData.getData();
+                Object listObj = map.get("list");
+                if (listObj instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<OutputNormsUtilityBudgetResponseDTO> existingList = (List<OutputNormsUtilityBudgetResponseDTO>) listObj;
+                    for (OutputNormsUtilityBudgetResponseDTO existing : existingList) {
+                        if (existing.getId() != null) {
+                            existingRemarks.put(existing.getId(),
+                                    existing.getRemarks() != null ? existing.getRemarks().trim() : "");
+                        }
+                    }
+                }
+            }
+
+            List<String> errorMessages = new ArrayList<>();
+            int skippedCount = 0;
+
+            for (OutputNormsUtilityBudgetResponseDTO dto : data) {
+                if (dto.getNormHeaderId() == null || dto.getNormHeaderId().isEmpty()) {
+                    dto.setSaveStatus("FAILED");
+                    dto.setErrDescription("NormHeaderId is missing");
+                    failedRecords.add(dto);
+                    errorMessages.add("Record skipped: NormHeaderId is missing");
+                    continue;
+                }
+
+                // Skip unchanged records (dataHash matches)
+                if (!isQuantityRecordModified(dto, existingRemarks)) {
+                    skippedCount++;
+                    log.debug("[Quantity] Skipping unchanged record: {}", dto.getId());
+                    continue;
+                }
+
+                // Validate remarks is mandatory
+                if (dto.getRemarks() == null || dto.getRemarks().trim().isEmpty()) {
+                    dto.setSaveStatus("FAILED");
+                    dto.setErrDescription("Remarks field is mandatory and cannot be empty");
+                    failedRecords.add(dto);
+                    errorMessages.add("Remarks field is mandatory and cannot be empty");
+                    continue;
+                }
+
+                // Validate remarks must be different from existing DB value
+                String dbRemarks = existingRemarks.getOrDefault(dto.getId(), "");
+                String importedRemarks = dto.getRemarks().trim();
+                if (dbRemarks.equals(importedRemarks)) {
+                    dto.setSaveStatus("FAILED");
+                    dto.setErrDescription("Remarks must be updated to explain the changes. Current remarks are identical to the database value.");
+                    failedRecords.add(dto);
+                    errorMessages.add("Remarks must be updated to explain the changes. Current remarks are identical to the database value.");
+                    continue;
+                }
+
+                validRecords.add(dto);
+            }
+
+            log.info("[Quantity Import] {} unchanged (skipped), {} modified to process, {} failed",
+                    skippedCount, validRecords.size(), failedRecords.size());
+
+            AOPMessageVM vm = new AOPMessageVM();
+
+            if (!validRecords.isEmpty()) {
+                List<NormsMonthUpdateRequestDTO> updateRequests = new ArrayList<>();
+                for (OutputNormsUtilityBudgetResponseDTO dto : validRecords) {
+                    NormsMonthUpdateRequestDTO updateDTO = new NormsMonthUpdateRequestDTO();
+                    updateDTO.setNormsHeaderFkId(UUID.fromString(dto.getNormHeaderId()));
+                    updateDTO.setRemarks(dto.getRemarks());
+                    updateDTO.setApr(convertToNormsMonthValueDTO(dto.getApr()));
+                    updateDTO.setMay(convertToNormsMonthValueDTO(dto.getMay()));
+                    updateDTO.setJun(convertToNormsMonthValueDTO(dto.getJun()));
+                    updateDTO.setJul(convertToNormsMonthValueDTO(dto.getJul()));
+                    updateDTO.setAug(convertToNormsMonthValueDTO(dto.getAug()));
+                    updateDTO.setSep(convertToNormsMonthValueDTO(dto.getSep()));
+                    updateDTO.setOct(convertToNormsMonthValueDTO(dto.getOct()));
+                    updateDTO.setNov(convertToNormsMonthValueDTO(dto.getNov()));
+                    updateDTO.setDec(convertToNormsMonthValueDTO(dto.getDec()));
+                    updateDTO.setJan(convertToNormsMonthValueDTO(dto.getJan()));
+                    updateDTO.setFeb(convertToNormsMonthValueDTO(dto.getFeb()));
+                    updateDTO.setMar(convertToNormsMonthValueDTO(dto.getMar()));
+                    updateRequests.add(updateDTO);
+                }
+
+                saveOrUpdateQuantityBulk(updateRequests, financialYear);
+            }
+
+            if (!failedRecords.isEmpty()) {
+                byte[] errorExcel = buildQuantityExcel(failedRecords, financialYear, false, errorMessages);
+                String base64File = java.util.Base64.getEncoder().encodeToString(errorExcel);
+                vm.setCode(400);
+                vm.setData(base64File);
+                vm.setMessage("Partial data saved. " + validRecords.size() + " saved, " + failedRecords.size()
+                        + " failed, " + skippedCount + " unchanged. Please check the downloaded error file.");
+            } else {
+                vm.setCode(200);
+                if (validRecords.isEmpty() && skippedCount > 0) {
+                    vm.setMessage("No changes detected. All " + skippedCount + " records unchanged.");
+                } else {
+                    vm.setMessage("Import successful. " + skippedCount + " unchanged records skipped.");
+                }
+                vm.setData(null);
+            }
+
+            return vm;
+
+        } catch (Exception e) {
+            log.error("Error importing quantity file: {}", e.getMessage(), e);
+            AOPMessageVM errorVM = new AOPMessageVM();
+            errorVM.setCode(500);
+            errorVM.setMessage("Error importing file: " + e.getMessage());
+            return errorVM;
+        }
+    }
+
+    private List<OutputNormsUtilityBudgetResponseDTO> readQuantityExcel(InputStream inputStream, List<UUID> cppPlantIds, String financialYear) {
+        List<OutputNormsUtilityBudgetResponseDTO> dataList = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Data rows start after the two header rows (top header + sub-header)
+            for (Row row : ExcelRows.getDataRows(sheet, 2)) {
+                OutputNormsUtilityBudgetResponseDTO dto = new OutputNormsUtilityBudgetResponseDTO();
+
+                try {
+                    int col = 0;
+                    int colsPerMonth = 3;
+                    dto.setGeneratingPlantName(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setUtilityName(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setUtilityId(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setUom(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setAccountName(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setMaterialName(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setMaterialId(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setIssuingPlantName(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setIssuingUom(ExcelCells.toStringValue(row.getCell(col++)));
+
+                    dto.setApr(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setMay(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setJun(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setJul(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setAug(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setSep(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setOct(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setNov(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setDec(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setJan(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setFeb(readQuantityMonthData(row, col)); col += colsPerMonth;
+                    dto.setMar(readQuantityMonthData(row, col)); col += colsPerMonth;
+
+                    dto.setRemarks(ExcelCells.toStringValue(row.getCell(col++)));
+
+                    String idStr = ExcelCells.toStringValue(row.getCell(col++));
+                    if (idStr != null && !idStr.isEmpty()) {
+                        dto.setId(Integer.parseInt(idStr));
+                    }
+
+                    dto.setNormHeaderId(ExcelCells.toStringValue(row.getCell(col++)));
+                    dto.setDataHash(ExcelCells.toStringValue(row.getCell(col++)));
+
+                    dataList.add(dto);
+                } catch (Exception e) {
+                    log.error("Error reading quantity row: {}", e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error reading quantity Excel file: {}", e.getMessage(), e);
+        }
+
+        return dataList;
+    }
+
+    private OutputNormsUtilityBudgetMonthDTO readQuantityMonthData(Row row, int startCol) {
+        OutputNormsUtilityBudgetMonthDTO monthDTO = new OutputNormsUtilityBudgetMonthDTO();
+        int i = 0;
+        // Generation Qty (always first)
+        monthDTO.setQty(ExcelCells.toDouble(row.getCell(startCol + i++)));
+        // Quantity
+        monthDTO.setQuantity(ExcelCells.toDouble(row.getCell(startCol + i++)));
+        // financialYearMonthFkId (always last, hidden)
+        monthDTO.setFinancialYearMonthFkId(ExcelCells.toStringValue(row.getCell(startCol + i)));
+        return monthDTO;
+    }
+
+    // ===================== || QUANTITY HASH + REMARK VALIDATION || ===================== //
+
+    private String generateQuantityHash(OutputNormsUtilityBudgetResponseDTO dto) {
+        try {
+            StringBuilder dataToHash = new StringBuilder();
+
+            // Hash only quantity for each month (the only field quantity type updates)
+            dataToHash.append(dto.getApr() != null ? dto.getApr().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getMay() != null ? dto.getMay().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getJun() != null ? dto.getJun().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getJul() != null ? dto.getJul().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getAug() != null ? dto.getAug().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getSep() != null ? dto.getSep().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getOct() != null ? dto.getOct().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getNov() != null ? dto.getNov().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getDec() != null ? dto.getDec().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getJan() != null ? dto.getJan().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getFeb() != null ? dto.getFeb().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getMar() != null ? dto.getMar().getQuantity() : "null").append("|");
+            dataToHash.append(dto.getRemarks() != null ? dto.getRemarks() : "null");
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(dataToHash.toString().getBytes("UTF-8"));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+
+            return hexString.toString();
+        } catch (Exception e) {
+            log.error("[Quantity Hash Generation] Error generating hash: {}", e.getMessage(), e);
+            return "";
+        }
+    }
+
+    private boolean isQuantityRecordModified(OutputNormsUtilityBudgetResponseDTO dto, java.util.Map<Integer, String> existingRemarks) {
+        if (dto.getId() == null) {
+            return true;
+        }
+
+        String importedHash = dto.getDataHash();
+        if (importedHash == null || importedHash.isEmpty()) {
+            return true;
+        }
+
+        String currentHash = generateQuantityHash(dto);
+        boolean modified = !importedHash.equals(currentHash);
+
+        if (!modified) {
+            log.debug("[Quantity] Record {} unchanged - hash match", dto.getId());
+        }
+
+        return modified;
     }
 
 }

@@ -619,7 +619,7 @@ const SelectivityData = (props) => {
       allAction: true,
       showNote:
         (IS_PE_PP || lowerVertName === 'pvc' || lowerVertName === 'pet') &&
-        props?.currentTabDisplayName === 'Constant'
+          props?.currentTabDisplayName === 'Constant'
           ? true
           : false,
 
@@ -628,7 +628,7 @@ const SelectivityData = (props) => {
         props?.currentTabDisplayName === 'Report Manual Entry'
           ? `${props?.currentTabDisplayName} (${prevYearFormatted})`
           : props?.currentTabDisplayName === 'Constant' &&
-              lowerVertName === 'aromatics'
+            lowerVertName === 'aromatics'
             ? 'User Input'
             : props?.currentTabDisplayName,
 
@@ -643,7 +643,7 @@ const SelectivityData = (props) => {
       showCalculateVisibility: true,
       showCalculate:
         props?.currentTabDisplayName === 'Configuration' &&
-        IS_CHEMICAL_VMD_BENEZENEFPUBTA
+          IS_CHEMICAL_VMD_BENEZENEFPUBTA
           ? true
           : false,
       calculateBtnText: IS_CHEMICAL_VMD_BENEZENEFPUBTA
@@ -1077,6 +1077,7 @@ const SelectivityData = (props) => {
           }
         />
       </Box>
+
     </div>
   )
 }

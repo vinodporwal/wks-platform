@@ -5,6 +5,7 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { SpyroInputValueApiService } from 'services/spyro-input-value-api-service'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
@@ -16,6 +17,7 @@ import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
 import NaphthaLimsDataSet from './NaphthaLimsDataSet'
 import NaphthaHMDComponent from './NaphthaHMDComponent'
 import ModeSelection from './ModeSelection'
+import SpyroInputMinMax from './SpyroInputMinMax'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -173,12 +175,12 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       downloadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
@@ -222,9 +224,12 @@ const CrackerConfig = () => {
               ? 'Naphtha'
               : currentTabDisplay === 'External Streams'
                 ? 'External_Streams'
-                : lowerSiteName === 'c2'
-                  ? 'cracker_c2'
-                  : 'cracker'
+                : (currentTabDisplay === 'Hydrogenation' || currentTabDisplay === 'Recovery') &&
+                  lowerSiteName === 'c2'
+                  ? 'cracker_c2_recovery'
+                  : lowerSiteName === 'c2'
+                    ? 'cracker_c2'
+                    : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -824,6 +829,14 @@ const CrackerConfig = () => {
           PLANT_ID,
           AOP_YEAR,
         )
+      } else if (IS_CRACKER_C2) {
+        response = await SpyroInputValueApiService.importSpyroInputExcelValue(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response = await DataService.importSpyroInputExcel(
           rawFile,
@@ -926,6 +939,14 @@ const CrackerConfig = () => {
           AOP_YEAR,
           EXCEL_NAME,
         )
+      } else if (IS_CRACKER_C2) {
+        response = await SpyroInputValueApiService.exportSpyroInputExcelValue(
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
       } else {
         response = await DataService.exportSpyroInputExcel(
           keycloak,
@@ -936,31 +957,18 @@ const CrackerConfig = () => {
         )
       }
 
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-
-        setSnackbarData({
-          message: 'Excel download completed successfully!',
-          severity: 'success',
-        })
-      } else {
-        setSnackbarOpen(true)
-
-        setSnackbarData({
-          message: 'Failed to download Excel.',
-          severity: 'error',
-        })
-      }
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
     } catch (error) {
       console.error('Error downloading Excel:', error)
-      setSnackbarOpen(true)
-
       setSnackbarData({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
-      setSnackbarOpen(false)
+      setSnackbarOpen(true)
     }
   }
   const handleLoadNaphthaData = async (startDate, endDate) => {
@@ -1078,7 +1086,6 @@ const CrackerConfig = () => {
             case 'Hydrogenation':
             case 'Recovery':
             case 'Optimizing':
-            case 'Furnace':
             case 'OptimizerPrices':
             case 'Constant':
               return (
@@ -1097,7 +1104,54 @@ const CrackerConfig = () => {
                     currentRemark={currentRemark}
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
-                    permissions={adjustedPermissions}
+                    permissions={{
+                      ...adjustedPermissions,
+                      makePagable: false,
+                    }}
+                    handleCalculate={handleCalculate}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                    groupBy={currentTabDisplay == 'Naphtha' ? 'type' : ''}
+                  />
+                </Box>
+              )
+            case 'Furnace':
+              return (
+                <Box key={currentTabDisplay}>
+                  {IS_CRACKER_C2 && (
+                    <Box sx={{ mt: 1, mb: 3 }}>
+                      <SpyroInputMinMax />
+                    </Box>
+                  )}
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={{
+                      ...adjustedPermissions,
+                      makePagable: false,
+                    }}
                     handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}

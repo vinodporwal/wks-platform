@@ -14,6 +14,17 @@ export const PlantAopReportApiService = {
   deleteReliabilityImprovementInitiative,
   getGroupedSelection,
   saveGroupedSelection,
+  getGroupMaterialDetails,
+  saveGroupMaterialDetails,
+  GetPlanningNotification,
+  exportPlantReport,
+  importPlantReport,
+  exportPlantSafetyImprovement,
+  importPlantSafetyImprovement,
+  exportProfitImprovementInitiative,
+  importProfitImprovementInitiative,
+  exportReliabilityImprovement,
+  importReliabilityImprovement,
 }
 async function getPlantsafetyPerformance(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/plant-report?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -262,6 +273,272 @@ async function saveGroupedSelection(keycloak, payload) {
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
+    return Promise.reject(e)
+  }
+}
+async function getGroupMaterialDetails(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/group-material-details?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveGroupMaterialDetails(keycloak, AOP_YEAR, payload) {
+  const url = `${Config.CaseEngineUrl}/task/group-material-details?year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return saveGroupedSelection(keycloak, payload)
+  }
+}
+
+async function GetPlanningNotification(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/decoking-planning-notification?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportPlantReport(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
+  const url = `${Config.CaseEngineUrl}/task/plant-report-export?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = EXCEL_NAME || `Plant_Report_${AOP_YEAR}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Plant Report Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function importPlantReport(keycloak, PLANT_ID, AOP_YEAR, file) {
+  const url = `${Config.CaseEngineUrl}/task/plant-report-import?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing Plant Report Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportPlantSafetyImprovement(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/plant-safety-improvement-export?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = EXCEL_NAME ? `${EXCEL_NAME}.xlsx` : `Plant_Safety_Improvement_${AOP_YEAR}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Plant Safety Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function importPlantSafetyImprovement(keycloak, PLANT_ID, AOP_YEAR, file) {
+  const url = `${Config.CaseEngineUrl}/task/plant-safety-improvement-import?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing Plant Safety Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportProfitImprovementInitiative(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/profit-improvement-initiative-export?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = EXCEL_NAME ? `${EXCEL_NAME}.xlsx` : `Profit_Improvement_Initiative_${AOP_YEAR}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Profit Improvement Initiative Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function importProfitImprovementInitiative(keycloak, PLANT_ID, AOP_YEAR, file) {
+  const url = `${Config.CaseEngineUrl}/task/profit-improvement-initiative-import?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing Profit Improvement Initiative Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportReliabilityImprovement(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/reliability-improvement-export?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = EXCEL_NAME ? `${EXCEL_NAME}.xlsx` : `Reliability_Improvement_${AOP_YEAR}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Reliability Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function importReliabilityImprovement(keycloak, PLANT_ID, AOP_YEAR, file) {
+  const url = `${Config.CaseEngineUrl}/task/reliability-improvement-import?plantId=${encodeURIComponent(PLANT_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing Reliability Improvement Excel:', e)
     return Promise.reject(e)
   }
 }

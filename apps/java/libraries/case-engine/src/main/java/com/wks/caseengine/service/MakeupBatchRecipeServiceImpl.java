@@ -143,7 +143,7 @@ public class MakeupBatchRecipeServiceImpl implements MakeupBatchRecipeService {
                     .antifoamId(row[28] != null ? row[28].toString() : "")
                     .k57CatalystId(row[29] != null ? row[29].toString() : "")
                     .k67CatalystId(row[30] != null ? row[30].toString() : "")
-                  //  .isEditable(row[31] != null ? (Boolean) row[31] : false)
+                    .isEditable(row[31] != null ? (Boolean) row[31] : false)
                     .build();
 
                 dtoList.add(dto);
@@ -1226,6 +1226,10 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("MakeupBatchRecipe");
+
+            // ENABLE PROTECTION: This is required for 'Locked' cells to actually be uneditable
+            sheet.protectSheet("secret_password");
+
             int currentRow = 0;
 
             List<String> visibleHeaders = Arrays.asList(
@@ -1246,19 +1250,23 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
             }
 
             Row headerRow = sheet.createRow(currentRow++);
+            CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+            headerStyle.setLocked(true); // Lock headers
+
             int colIdx = 0;
             for (String header : visibleHeaders) {
                 Cell cell = headerRow.createCell(colIdx++);
                 cell.setCellValue(header);
-                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                cell.setCellStyle(headerStyle);
             }
             for (String header : hiddenHeaders) {
                 Cell cell = headerRow.createCell(colIdx++);
                 cell.setCellValue(header);
-                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                cell.setCellStyle(headerStyle);
             }
 
             CellStyle readOnlyStyle = workbook.createCellStyle();
+            readOnlyStyle.setLocked(true); // CRITICAL: This disables input
             readOnlyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             readOnlyStyle.setBorderBottom(BorderStyle.THIN);
@@ -1266,10 +1274,13 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
             readOnlyStyle.setBorderLeft(BorderStyle.THIN);
             readOnlyStyle.setBorderRight(BorderStyle.THIN);
 
+            CellStyle editableStyle = Utility.createBorderedStyle(workbook);
+            editableStyle.setLocked(false); // CRITICAL: Ensure active cells are explicitly unlocked
+
             for (MakeupBatchRecipeDTO dto : dtoList) {
                 Row row = sheet.createRow(currentRow++);
                 boolean editable = dto.getIsEditable() == null || dto.getIsEditable();
-                CellStyle dataStyle = editable ? Utility.createBorderedStyle(workbook) : readOnlyStyle;
+                CellStyle dataStyle = editable ? editableStyle : readOnlyStyle;
 
                 colIdx = 0;
                 createCell(row, colIdx++, dto.getRecipe(), dataStyle);
@@ -1520,6 +1531,10 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("ChemGrade");
+
+            // ENABLE PROTECTION: This is required for 'Locked' cells to actually be uneditable
+            sheet.protectSheet("secret_password");
+
             int currentRow = 0;
 
             List<String> visibleHeaders = Arrays.asList(
@@ -1535,19 +1550,23 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
             }
 
             Row headerRow = sheet.createRow(currentRow++);
+            CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+            headerStyle.setLocked(true); // Lock headers
+
             int colIdx = 0;
             for (String header : visibleHeaders) {
                 Cell cell = headerRow.createCell(colIdx++);
                 cell.setCellValue(header);
-                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                cell.setCellStyle(headerStyle);
             }
             for (String header : hiddenHeaders) {
                 Cell cell = headerRow.createCell(colIdx++);
                 cell.setCellValue(header);
-                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                cell.setCellStyle(headerStyle);
             }
 
             CellStyle readOnlyStyle = workbook.createCellStyle();
+            readOnlyStyle.setLocked(true); // CRITICAL: This disables input
             readOnlyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             readOnlyStyle.setBorderBottom(BorderStyle.THIN);
@@ -1555,10 +1574,13 @@ String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalCal
             readOnlyStyle.setBorderLeft(BorderStyle.THIN);
             readOnlyStyle.setBorderRight(BorderStyle.THIN);
 
+            CellStyle editableStyle = Utility.createBorderedStyle(workbook);
+            editableStyle.setLocked(false); // CRITICAL: Ensure active cells are explicitly unlocked
+
             for (ChemGradeDTO dto : dtoList) {
                 Row row = sheet.createRow(currentRow++);
                 boolean editable = dto.getIsEditable() == null || dto.getIsEditable();
-                CellStyle dataStyle = editable ? Utility.createBorderedStyle(workbook) : readOnlyStyle;
+                CellStyle dataStyle = editable ? editableStyle : readOnlyStyle;
 
                 colIdx = 0;
                 createCell(row, colIdx++, dto.getParticulars(), dataStyle);

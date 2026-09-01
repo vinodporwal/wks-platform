@@ -211,6 +211,7 @@ const COLUMN_MIN = 4
 const AdvanceKendoTable = ({
   allRedCell = [],
   allRedCell2 = [],
+  allDescriptionDrpdwn = [],
   modifiedCells = [],
   title = '',
   rows = [],
@@ -257,8 +258,10 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  defaultGridExpanded = true,
   showFilters = false,
   convertScientificValue = false,
+  pagable = true,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -277,7 +280,7 @@ const AdvanceKendoTable = ({
   const gridContainerRef = useRef(null)
   const activeCellRef = useRef({ rowId: null, field: null })
   const _export = useRef(null)
-  const [gridExpanded, setGridExpanded] = useState(true)
+  const [gridExpanded, setGridExpanded] = useState(defaultGridExpanded)
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -355,6 +358,9 @@ const AdvanceKendoTable = ({
 
   // Build pagination configuration with defaults
   const getPaginationConfig = useCallback(() => {
+    if (permissions?.makePagable === false) {
+      return false
+    }
     const defaults = {
       threshold: 100,
       buttonCount: 4,
@@ -370,7 +376,7 @@ const AdvanceKendoTable = ({
       }
     }
     return false
-  }, [rows?.length, paginationConfig])
+  }, [rows?.length, paginationConfig, permissions?.makePagable])
 
   // Constants for viewport height calculation
   const rowHeightVH = 5 // each row ~5vh
@@ -418,7 +424,7 @@ const AdvanceKendoTable = ({
 
   // Calculate total minimum width and setup resize listener
   useEffect(() => {
-    gridRef.current = document.querySelector('.k-grid')
+    gridRef.current = gridContainerRef.current?.querySelector('.k-grid')
     if (!gridRef.current) return
 
     const allColumns = extractAllColumns(columns)
@@ -729,10 +735,17 @@ const AdvanceKendoTable = ({
         '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container',
       )
 
+      // Check if click is inside another AdvanceKendoTable grid instance
+      const isInsideAnotherGrid =
+        e.target.closest('.kendo-data-grid') &&
+        gridContainerRef.current &&
+        !gridContainerRef.current.contains(e.target)
+
       if (
         gridContainerRef.current &&
         !gridContainerRef.current.contains(e.target) &&
-        !isKendoPopup // Don't close if clicking on Kendo popup elements
+        !isKendoPopup && // Don't close if clicking on Kendo popup elements
+        !isInsideAnotherGrid // Don't close if clicking inside another grid instance
       ) {
         setRows((prev) =>
           prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r)),
@@ -786,6 +799,7 @@ const AdvanceKendoTable = ({
             'remarks',
             'remark',
             'Remark',
+            'Remarks',
             'purpose',
             'reasons',
             'majorJobs',
@@ -2205,6 +2219,7 @@ const AdvanceKendoTable = ({
                       placeholder='Select...'
                       searchable={col.searchable || false}
                       showClearOption={col.showClearOption || false}
+                      returnFullObject={col.returnFullObject || false}
                     />
                   )
                 },
@@ -2337,7 +2352,7 @@ const AdvanceKendoTable = ({
                           const newVal =
                             typeof e.value === 'boolean'
                               ? e.value
-                              : (e.target?.checked ?? !checked)
+                              : e.target?.checked ?? !checked
                           onChange({ dataItem, field, value: newVal })
                         }}
                         size='medium'
@@ -2370,7 +2385,7 @@ const AdvanceKendoTable = ({
                         const newVal =
                           typeof e.value === 'boolean'
                             ? e.value
-                            : (e.target?.checked ?? !checked)
+                            : e.target?.checked ?? !checked
                         itemChange({ dataItem, field, value: newVal })
                       }}
                       size='medium'
@@ -2474,6 +2489,39 @@ const AdvanceKendoTable = ({
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      if (col?.type === 'discriptionDrpdwn') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <SelectCellEditor
+                    {...cellProps}
+                    options={allDescriptionDrpdwn || []}
+                    textField="displayName"
+                    valueField="id"
+                    placeholder="Select..."
+                  />
+                ),
+              },
+              data: toolTipRenderer,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            width={setWidth(col?.minWidth || col?.widthT || 150)}
           />
         )
       }
@@ -2978,7 +3026,7 @@ const AdvanceKendoTable = ({
                   showGroupPanel: false,
                 }}
                 size='small'
-                pageable={getPaginationConfig()}
+                pageable={pagable && getPaginationConfig()}
                 onRowClick={handleRowClick}
               >
                 {permissions?.deleteMultiple &&

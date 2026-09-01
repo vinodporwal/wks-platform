@@ -218,4 +218,84 @@ public class VgohtNormBasisController {
         AOPMessageVM aopMessageVM = vgohtNormBasisServiceImpl.LoadButtonNormCalculation(UUID.fromString(plantId), aopYear, UUID.fromString(siteId), periodFrom, periodTo);
         return ResponseEntity.ok(aopMessageVM);
     }
+
+    @GetMapping("vgoht/norms-basis/production-demand")
+    public AOPMessageVM getProductionDemand(@RequestParam String year, @RequestParam UUID plantFKId) {
+        return vgohtNormBasisServiceImpl.getProductionDemand(year, plantFKId);
+    }
+
+    @PostMapping("vgoht/norms-basis/production-demand")
+    public AOPMessageVM saveProductionDemand(@RequestParam String year, @RequestParam UUID plantFKId, @RequestBody List<VgohtNormConfigurationDTO> productionDemandList) {
+        return vgohtNormBasisServiceImpl.saveProductionDemand(year, plantFKId, productionDemandList);
+    }
+
+    @GetMapping(value="/vgoht/constant")
+    public AOPMessageVM getConfigurationDataWithTwoValues(@RequestParam String year, @RequestParam UUID plantFKId) {
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.getConfigurationDataWithTwoValues(year, plantFKId);
+    }
+
+    @PostMapping(value = "/vgoht/constant")
+    public AOPMessageVM saveConfigurationDataWithTwoValues(
+        @RequestParam String year,
+        @RequestParam UUID plantFKId,
+        @RequestBody List<VgohtNormConfigurationDTO> configurationDataList)  {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<VgohtNormConfigurationDTO> failedRecords = vgohtNormBasisServiceImpl.saveConfigurationDataWithTwoValues(year, plantFKId, configurationDataList);
+
+        if(failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "Configuration data saved successfully", null);
+        } else {
+            return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
+        }
+
+    }
+
+    @GetMapping(value = "/vgoht/constant/export")
+    public ResponseEntity<byte[]> exportConfigurationDataWithTwoValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        try {
+            byte[] excelBytes = vgohtNormBasisServiceImpl
+                    .exportConfigurationDataWithTwoValues(year, plantFKId, false, null);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("norms_basis_two_values.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/vgoht/constant/import", consumes = "multipart/form-data")
+    public AOPMessageVM importConfigurationDataWithTwoValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId,
+            @RequestParam("file") MultipartFile file) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.importConfigurationDataWithTwoValues(year, plantFKId, file);
+    }
 }

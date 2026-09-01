@@ -20,6 +20,8 @@ const QtyCostReport = () => {
       case 'jmd':
         return <QtyCostReportJMD />
       case 'dmd':
+      case 'hmd':
+      case 'vmd':
         return <QtyCostReportDMD />
       case 'nmd':
       default:

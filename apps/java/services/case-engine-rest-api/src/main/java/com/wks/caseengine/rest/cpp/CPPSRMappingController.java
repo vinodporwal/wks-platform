@@ -86,6 +86,36 @@ public class CPPSRMappingController {
         return ResponseEntity.status(httpStatus).body(response);
     }
 
+    // EXPORT SR Mapping by Plant
+    /**
+     * GET /task/sr-mapping/by-plant/export
+     *
+     * Exports the SR Mapping data (from SP CPP_GetSRMappingByPlant) to an
+     * Excel (.xlsx) file.
+     *
+     * @param plantIds      Required. Comma-separated Plant GUIDs.
+     * @param financialYear Optional. Financial year string e.g. "2025-26".
+     */
+    @GetMapping(value = "/sr-mapping/by-plant/export")
+    public ResponseEntity<byte[]> exportSRMappingByPlant(
+            @RequestParam String plantIds,
+            @RequestParam(required = false) String financialYear) {
+
+        byte[] excelData = service.exportSRMappingByPlant(plantIds, financialYear);
+
+        if (excelData == null || excelData.length == 0) {
+            return ResponseEntity.status(500).body(null);
+        }
+
+        String fileName = "CPP_SRMapping_" + (financialYear != null ? financialYear : "export") + ".xlsx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", fileName);
+
+        return ResponseEntity.ok().headers(headers).body(excelData);
+    }
+
     // UPDATE SR Mapping By Plant
     /**
      * PUT /task/sr-mapping/by-plant
@@ -276,5 +306,61 @@ public class CPPSRMappingController {
         AOPMessageVM response = service.getNormParametersBySourcePlant(plantId, type);
         int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
         return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SR MAPPING QTY  (SP: CPP_GetSRMappingQTY)
+    //  GET + EXPORT
+    // ════════════════════════════════════════════════════════════════════════
+
+    // GET SR Mapping QTY
+    /**
+     * GET /task/sr-mapping-qty
+     *
+     * Calls SP CPP_GetSRMappingQTY.
+     * Returns sender-receiver mapping records with monthly QTY values
+     * (apr → mar) for the given plant(s) and financial year.
+     *
+     * @param plantIds      Required. Comma-separated Plant GUIDs.
+     *                      Example: "23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653,48051DCF-8383-4240-A1B9-AB5D9CD196CA"
+     * @param financialYear Required. Financial year string e.g. "2025-26".
+     */
+    @GetMapping("/sr-mapping-qty")
+    public ResponseEntity<AOPMessageVM> getSRMappingQty(
+            @RequestParam String plantIds,
+            @RequestParam String financialYear) {
+
+        AOPMessageVM response = service.getSRMappingQty(plantIds, financialYear);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // EXPORT SR Mapping QTY
+    /**
+     * GET /task/sr-mapping-qty/export
+     *
+     * Exports the SR Mapping QTY data (from SP CPP_GetSRMappingQTY) to an
+     * Excel (.xlsx) file.
+     *
+     * @param plantIds      Required. Comma-separated Plant GUIDs.
+     * @param financialYear Required. Financial year string e.g. "2025-26".
+     */
+    @GetMapping(value = "/sr-mapping-qty/export")
+    public ResponseEntity<byte[]> exportSRMappingQty(
+            @RequestParam String plantIds,
+            @RequestParam String financialYear) {
+
+        byte[] excelData = service.exportSRMappingQty(plantIds, financialYear);
+
+        if (excelData == null || excelData.length == 0) {
+            return ResponseEntity.status(500).body(null);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment",
+                "CPP_SRMapping_QTY_" + financialYear + ".xlsx");
+
+        return ResponseEntity.ok().headers(headers).body(excelData);
     }
 }

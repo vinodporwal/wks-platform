@@ -44,8 +44,27 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
 
   const getOptions = useCallback(
     (dataItem) => {
-      const plantFuels = plantFuelMap[dataItem?.plantName]
-      return plantFuels?.length ? plantFuels : fuelOptions
+      const plantEntry = plantFuelMap[dataItem?.plantName]
+      if (plantEntry) {
+        // plantFuelMap is now month-wise: { apr: [...], may: [...], ... }
+        // Flatten all months into a unique list for annual view
+        if (!Array.isArray(plantEntry)) {
+          const allFuels = []
+          Object.values(plantEntry).forEach((monthFuels) => {
+            if (Array.isArray(monthFuels)) {
+              monthFuels.forEach((fuel) => {
+                if (!allFuels.some((f) => f.value === fuel.value)) {
+                  allFuels.push(fuel)
+                }
+              })
+            }
+          })
+          return allFuels.length ? allFuels : fuelOptions
+        }
+        // Backward compat: if it's still a flat array
+        return plantEntry.length ? plantEntry : fuelOptions
+      }
+      return fuelOptions
     },
     [plantFuelMap, fuelOptions],
   )
@@ -317,6 +336,7 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         groupBy={['plantName', 'assetType']}
+        defaultGridExpanded={false}
       />
     </Box>
   )

@@ -32,6 +32,12 @@ public class AOPConsumptionNormController {
 	public AOPMessageVM getAOPConsumptionNorm(@RequestParam String plantId,@RequestParam String year,@RequestParam(required = false) String gradeId){
 		return aopConsumptionNormService.getAOPConsumptionNorm(plantId,year,gradeId);
 	}
+
+	// ref: /overall-consumption | added ytd column
+	@GetMapping(value="/overall-consumption-ytd")
+	public AOPMessageVM getAOPConsumptionNormWithYTD(@RequestParam String plantId,@RequestParam String year,@RequestParam(required = false) String gradeId){
+		return aopConsumptionNormService.getAOPConsumptionNormWithYTD(plantId,year,gradeId);
+	}
 	
 	@GetMapping(value = "/overall-consumption-export")
 	public ResponseEntity<byte[]> exportOverallConsumption(
@@ -76,6 +82,28 @@ public class AOPConsumptionNormController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
+   ///overall-consumption-export-without-grades | added ytd column
+	@GetMapping(value = "/overall-consumption-export-ytd")
+	public ResponseEntity<byte[]> exportOverallConsumptionWithYTD(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year) {
+	    try {
+			
+	        byte[] excelBytes = aopConsumptionNormService.exportOverallConsumptionWithYTD(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("overall-consumption.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 
 	@PostMapping(value="/overall-consumption")
 	public List<AOPConsumptionNormDTO> saveAOPConsumptionNorm(@RequestBody List<AOPConsumptionNormDTO> aOPConsumptionNormDTOList){
@@ -95,6 +123,11 @@ public class AOPConsumptionNormController {
 	@GetMapping(value="/consumption-aop/grades")
 	public AOPMessageVM getConsumptionAOPGrades(@RequestParam String year,@RequestParam String plantId){
 		return	aopConsumptionNormService.getConsumptionAOPGrades(year, plantId);
+	}
+
+	@GetMapping(value="/proposed-aop/grades")
+	public AOPMessageVM getProposedAOPGrades(@RequestParam String year,@RequestParam String plantId){
+		return	aopConsumptionNormService.getProposedAOPGrades(year, plantId);
 	}
 	
 

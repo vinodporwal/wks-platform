@@ -11,7 +11,7 @@ import { configurationAndReportManualEntryResponse } from '../dummyData'
 import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const PIMSThroughput = () => {
+const PIMSThroughput = ({ refreshData }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -77,7 +77,7 @@ const PIMSThroughput = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConfigurationData()
     }
-  }, [PLANT_ID, AOP_YEAR, revisionUpdated])
+  }, [PLANT_ID, AOP_YEAR, revisionUpdated, refreshData])
 
   const fetchConfigurationData = async () => {
     setLoading(true)

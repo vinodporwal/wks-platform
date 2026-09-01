@@ -108,6 +108,13 @@ const ShutdownConsumption = () => {
       minWidth: 200,
     },
     {
+      field: 'sapCode',
+      title: 'SAP Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'uom',
       title: 'UOM',
       widthT: 80,
@@ -117,7 +124,7 @@ const ShutdownConsumption = () => {
     },
     ...monthsConfig.map((m) => ({
       field: m.field,
-      title: m.title,
+      title: headerMap[m.key] || m.title,
       editable: true,
       type: 'numberNonGrey',
       format: valueFormat,
@@ -339,7 +346,7 @@ const ShutdownConsumption = () => {
       severity: 'success',
     })
     try {
-      const Excel_Name = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown_Norms_${AOP_YEAR}`
+      const Excel_Name = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown_Consumption_Norms_${AOP_YEAR}`
       await ShutdownConsumptionApiService.exportShutdownConsumption(
         keycloak,
         PLANT_ID,
@@ -454,7 +461,7 @@ const ShutdownConsumption = () => {
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Shutdown Consumption',
+    titleName: 'Shutdown Consumption Norms',
   }
 
   return (

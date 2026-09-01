@@ -3,30 +3,40 @@ import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import { Backdrop, Box, CircularProgress } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
-import { DataService } from 'services/DataService'
+import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { validateFields } from 'utils/validationUtils'
+import { getRoleName } from 'services/role-service'
 
 export default function PlantSafetyPerformanceTarget() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { year } = dataGridStore
+  const {
+    year,
+    plantObject,
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID: gridPlantID,
+    isReleased,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id || gridPlantID
   const AOP_YEAR = year?.selectedYear
   const thisYear = AOP_YEAR
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
-  const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
@@ -40,7 +50,7 @@ export default function PlantSafetyPerformanceTarget() {
   const [modifiedCellsP, setModifiedCellsP] = useState({})
   const [enableSaveAddBtnP, setEnableSaveAddBtnP] = useState(false)
 
-  const [rows3, setRows3] = useState([])
+  //const [rows3, setRows3] = useState([])
 
   const [remarkDialogOpen3, setRemarkDialogOpen3] = useState(false)
   const [currentRemark3, setCurrentRemark3] = useState('')
@@ -48,7 +58,7 @@ export default function PlantSafetyPerformanceTarget() {
   const [modifiedCells3, setModifiedCells3] = useState({})
   const [enableSaveAddBtn3, setEnableSaveAddBtn3] = useState(false)
 
-  const [rows4, setRows4] = useState([])
+  //const [rows4, setRows4] = useState([])
 
   const [enableSaveAddBtn4, setEnableSaveAddBtn4] = useState(false)
   const [remarkDialogOpen4, setRemarkDialogOpen4] = useState(false)
@@ -64,73 +74,74 @@ export default function PlantSafetyPerformanceTarget() {
 
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
 
-  const oldYearLabel = useMemo(() => {
-    if (!thisYear || !thisYear.includes('-')) return ''
-    const [start, end] = thisYear.split('-').map(Number)
-    return `${start - 1}-${(end - 1).toString().slice(-2)}`
-  }, [thisYear])
+  function getAopShortYears(aopYear) {
+    if (!aopYear) return { prev: '25', next: '26' }
+    const match = aopYear.match(/(\d{4})-(\d{2})/)
+    if (match) {
+      const prev = match[1].slice(-2)
+      const next = match[2]
+      return { prev, next }
+    }
+    const yStr = String(aopYear).slice(-2)
+    return { prev: yStr, next: String(Number(yStr) + 1).padStart(2, '0') }
+  }
+
+  const { prev, next } = getAopShortYears(AOP_YEAR)
 
   const columns = useMemo(
     () => [
       {
         field: 'serialNumber',
         title: 'S.No',
-        widthT: 70,
+        width: 100,
         editable: false,
-        minWidth: 70,
+        minWidth: 100,
       },
       {
-        field: 'kpi',
+        field: 'kpiName',
         title: 'KPI',
-        editable: true,
+        editable: false,
         widthT: 300,
         minWidth: 100,
       },
       {
         field: 'uom',
         title: 'UOM',
-        widthT: 80,
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'bestAchived',
-        title: 'Best Achived',
-
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'fyAop',
-        title: 'FY25 AOP',
-
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'fyActual',
-        title: 'FY25 Actual',
-
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'fyActual',
-        title: 'FY26 Plan',
-
-        editable: true,
-        minWidth: 100,
-      },
-
-      {
-        field: 'remarks',
-        title: 'Remark',
-        widthT: 60,
+        width: 80,
+        minWidth: 60,
         editable: false,
+      },
+      {
+        field: 'prevAOP',
+        title: `FY${prev} AOP`,
+        editable: true,
+        type: 'number',
+        minWidth: 100,
+      },
+      {
+        field: 'prevActual',
+        title: `FY${prev} ACT`,
+        editable: true,
+        type: 'number',
+        minWidth: 100,
+      },
+
+      {
+        field: 'currentPlan',
+        title: `FY${next} Plan`,
+        editable: true,
+        type: 'number',
+        minWidth: 100,
+      },
+      {
+        field: 'responsibility',
+        title: 'Remarks',
+        widthT: 60,
+        editable: true,
         minWidth: 100,
       },
     ],
-    [plantID, yearChanged],
+    [PLANT_ID, yearChanged, AOP_YEAR, prev, next],
   )
   const columns4 = useMemo(
     () => [
@@ -174,7 +185,7 @@ export default function PlantSafetyPerformanceTarget() {
         minWidth: 100,
       },
     ],
-    [plantID, yearChanged],
+    [PLANT_ID, yearChanged],
   )
 
   const columns3 = useMemo(
@@ -218,204 +229,52 @@ export default function PlantSafetyPerformanceTarget() {
         minWidth: 100,
       },
     ],
-    [plantID, yearChanged],
+    [PLANT_ID, yearChanged],
   )
   const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
     setLoading(true)
     try {
-      // var res = await DataService.getMonthWiseSummary(keycloak)
-      var res = {
-        code: 200,
-        data: [
-          {
-            serialNumber: 1,
-            kpi: 'Fatality',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 2,
-            kpi: 'LWC',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 3,
-            kpi: 'Total Recordable Cases Frequency Rate (TRCFR)',
-            uom: 'Rate',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 4,
-            kpi: 'PSE Tier-1',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 5,
-            kpi: 'PSE Tier-2',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 6,
-            kpi: 'Process Fire',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 7,
-            kpi: 'Non-Process Fire',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 8,
-            kpi: 'Electrical Fire',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 9,
-            kpi: 'Overdue Investigation',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-          {
-            serialNumber: 10,
-            kpi: 'Overdue IM Recommendation',
-            uom: 'Nos',
-            bestAchived: '',
-            fyAop: '',
-            fyActual: '',
-            fy26Plan: '',
-            remarks: '',
-          },
-        ],
-        data1: [
-          {
-            Particulars: 'Routine',
-            Cost: 'Material Cost',
-            April: 1900,
-            May: 1534,
-            June: 1956,
-            July: 887,
-            August: 713,
-            September: 647,
-            October: 1875,
-            November: 1942,
-            December: 1510,
-            January: 1287,
-            February: 1398,
-            March: 1944,
-            remarks: 'Regular service checks',
-          },
-        ],
-
-        data2: [
-          {
-            serialNumber: 1,
-            incidentDescription: '',
-            rootCauses: '',
-            recommendation: '',
-            targetDate: '',
-            responsible: '',
-          },
-        ],
-
-        data3: [
-          {
-            serialNumber: 1,
-            initiative: '',
-            outcome: '',
-            recommendation: '',
-            targetDate: '',
-            responsible: '',
-          },
-        ],
-      }
+      const res = await PlantAopReportApiService.getPlantsafetyPerformance(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (res?.code === 200) {
-        const mapped = res?.data?.map((item, index) => ({
+        const mapped = (res?.data?.Data || []).map((item, index) => ({
           ...item,
           id: index,
+          idFromAPI: item.id,
+          masterId: item.masterId,
+          serialNumber: item.displayOrder || index + 1,
+          kpiName: item.kpiName || item.kpi,
+          uom: item.uom,
+          bestAchieved: item.bestAchieved ?? item.bestAchived ?? '',
+          prevAOP: item.prevAOP ?? item.fyAop ?? '',
+          prevActual: item.prevActual ?? item.fyActual ?? '',
+          currentPlan: item.currentPlan ?? item.fy26Plan ?? '',
+          remark: item.remark ?? item.remarks ?? '',
+          responsibility: item.remark ?? item.remarks ?? '',
+          originalRemark: item.remark ?? item.remarks ?? '',
           isEditable: item?.isEditable,
-          originalRemark: item.remarks,
-        }))
-        const mapped1 = res?.data1?.map((item, index) => ({
-          ...item,
-          id: index,
-          isEditable: item?.isEditable,
-          originalRemark: item.remarks,
-        }))
-        const mapped3 = res?.data2?.map((item, index) => ({
-          ...item,
-          id: index,
-          isEditable: item?.isEditable,
-          originalRemark: item.remarks,
-        }))
-        const mapped4 = res?.data3?.map((item, index) => ({
-          ...item,
-          id: index,
-          isEditable: item?.isEditable,
-          originalRemark: item.remarks,
         }))
         setRows(mapped)
-        setRowsP(mapped1)
-        setRows3(mapped3)
-        setRows4(mapped4)
       } else {
         setRows([])
-        setRowsP([])
       }
     } catch (err) {
       console.error('fetchData error', err)
       setRows([])
-      setRowsP([])
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
     fetchData()
-  }, [fetchData, yearChanged, plantID])
+  }, [fetchData])
 
   const saveChanges = useCallback(async () => {
     try {
@@ -426,12 +285,55 @@ export default function PlantSafetyPerformanceTarget() {
         setSnackbarOpen(true)
         return
       }
-      // save logic...
-    } finally {
+
+      const payload = data.map((item) => ({
+        id: item.idFromAPI || null,
+        masterId: item.masterId,
+        kpiName: item.kpiName,
+        uom: item.uom,
+        bestAchieved: item.bestAchieved !== '' && item.bestAchieved != null ? Number(item.bestAchieved) : null,
+        prevAOP: item.prevAOP !== '' && item.prevAOP != null ? Number(item.prevAOP) : null,
+        prevActual: item.prevActual !== '' && item.prevActual != null ? Number(item.prevActual) : null,
+        currentPlan: item.currentPlan !== '' && item.currentPlan != null ? Number(item.currentPlan) : null,
+        remark: item.responsibility ?? item.remark ?? item.remarks ?? '',
+        aopYear: AOP_YEAR,
+        plantFkId: PLANT_ID,
+        isEditable: item.isEditable,
+        isVisible: item.isVisible,
+        displayOrder: item.displayOrder,
+      }))
+
+      const response = await PlantAopReportApiService.savePlantsafetyPerformance(
+        keycloak,
+        payload,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
+    } catch (err) {
+      console.error('Error saving plant report data:', err)
       setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
       setLoading(false)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, keycloak, AOP_YEAR, PLANT_ID, fetchData])
 
   const saveChangesP = useCallback(async () => {
     try {
@@ -449,14 +351,9 @@ export default function PlantSafetyPerformanceTarget() {
     }
   }, [modifiedCellsP])
 
-  const handleCalculate = () => {}
-  const handleCalculateP = () => {}
+  const handleCalculate = () => { }
+  const handleCalculateP = () => { }
 
-  const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [])
 
   const handleRemarkCellClickP = useCallback((row) => {
     setCurrentRemarkP(row.remarks || '')
@@ -550,6 +447,62 @@ export default function PlantSafetyPerformanceTarget() {
     },
     isOldYear,
   )
+  const downloadExcelForConfiguration = async () => {
+    setLoading(true)
+    const EXCEL_NAME = `${lowerVertName}_Plant_Safety_Performance_Targets_${AOP_YEAR}.xlsx`
+    try {
+      await PlantAopReportApiService.exportPlantReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_NAME,
+      )
+
+      setSnackbarData({ message: 'Export started!', severity: 'success' })
+      setSnackbarOpen(true)
+    } catch (err) {
+      console.error('Export error', err)
+      setSnackbarData({ message: 'Export failed!', severity: 'error' })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = async (file) => {
+    if (!file) return
+    setLoading(true)
+    try {
+      const res = await PlantAopReportApiService.importPlantReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        file,
+      )
+
+      if (
+        res?.code === 200 ||
+        res?.status === 200 ||
+        res?.message === 'Success' ||
+        res?.status === 'success' ||
+        (res && res.ok !== false && !res.error && res.code !== 500)
+      ) {
+        setSnackbarData({ message: 'Uploaded Successfully!', severity: 'success' })
+        setSnackbarOpen(true)
+        fetchData()
+      } else {
+        setSnackbarData({ message: res?.message || 'Import failed!', severity: 'error' })
+        setSnackbarOpen(true)
+      }
+    } catch (err) {
+      console.error('Import error', err)
+      setSnackbarData({ message: 'Import failed!', severity: 'error' })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissionsC = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -561,6 +514,8 @@ export default function PlantSafetyPerformanceTarget() {
       showUnit: false,
       saveWithRemark: false,
       saveBtn: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
       isOldYear: isOldYear,
     }
   }
@@ -576,6 +531,7 @@ export default function PlantSafetyPerformanceTarget() {
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Plant Safety Performance & Targets`,
+      disableColWidth: true,
     },
     isOldYear,
   )
@@ -591,20 +547,15 @@ export default function PlantSafetyPerformanceTarget() {
       <KendoDataTables
         rows={rows}
         setRows={setRows}
-        title='Consumption Budget'
+        title='Plant Safety Performance & Targets'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         handleCalculate={handleCalculate}
-        handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissionsC}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
         // groupBy='Particulars'
         {...commonGridProps}
       />
@@ -628,7 +579,7 @@ export default function PlantSafetyPerformanceTarget() {
         permissions={adjustedPermissionsP}
         columns={columns3}
       /> */}
-      <KendoDataTables
+      {/* <KendoDataTables
         rows={rows3}
         setRows={setRows3}
         title='Procurement Budget'
@@ -646,9 +597,9 @@ export default function PlantSafetyPerformanceTarget() {
         // handleRemarkCellClick={handleRemarkCellClick3}
         permissions={adjustedPermissions3}
         columns={columns3}
-      />
+      /> */}
 
-      <KendoDataTables
+      {/* <KendoDataTables
         rows={rows4}
         setRows={setRows4}
         title='Procurement Budget'
@@ -666,7 +617,7 @@ export default function PlantSafetyPerformanceTarget() {
         // handleRemarkCellClick={handleRemarkCellClick4}
         permissions={adjustedPermissions4}
         columns={columns4}
-      />
+      /> */}
 
       <Notification
         open={snackbarOpen}

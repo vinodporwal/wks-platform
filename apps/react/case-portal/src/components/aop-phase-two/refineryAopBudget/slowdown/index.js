@@ -6,6 +6,7 @@ import { useSession } from 'SessionStoreContext'
 import { ShutdownApiService } from 'components/aop-phase-two/services/crude/shutdownApiService'
 import { useSelector } from 'react-redux'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const Slowdown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = useState({})
@@ -32,7 +33,8 @@ const Slowdown = ({ permissions }) => {
   const AOP_YEAR = year?.selectedYear
   const [siteDropdown, setSiteDropdown] = useState([])
   const [plantDropdown, setPlantDropdown] = useState([])
-
+  const [uomDropdown, setUomDropdown] = useState([])
+  const ValueFormat = ValueFormatterProduction()
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -70,7 +72,6 @@ const Slowdown = ({ permissions }) => {
   ]
 
   const columns = [
-
     {
       field: 'siteName',
       title: 'Site',
@@ -95,17 +96,20 @@ const Slowdown = ({ permissions }) => {
       minWidth: 220,
     },
     {
-      field: 'throughput',
+      field: 'throughputDuringTheSlowdown',
       title: 'Throughput during the Slowdown',
       editable: true, // orange - CTS Team, "Manual in Digital AOP"
       align: 'right',
       headerAlign: 'right',
       type: 'number',
+      format: ValueFormat,
       minWidth: 280,
     },
     {
       field: 'throughputUom',
       title: 'Throughput UOM',
+      type: 'select',
+      options: uomDropdown,
       editable: true, // orange - CTS Team
       minWidth: 170,
     },
@@ -118,13 +122,29 @@ const Slowdown = ({ permissions }) => {
       minWidth: 160,
     },
     {
-      field: 'purposeOfSlowdown',
+      field: 'remark',
       title: 'Purpose of Slowdown',
       editable: true, // yellow - EPS Team
       widthT: 250,
       minWidth: 220,
     },
   ]
+  useEffect(() => {
+    const loadUomDropdownData = async () => {
+      try {
+        const resp = await ShutdownApiService.getUomDropdownData(keycloak, PLANT_ID)
+        const mapped = resp.data.map(item => ({
+          value: item.name,
+          label: item.displayName
+        }))
+        setUomDropdown(mapped)
+
+      } catch (error) {
+        console.error('Error fetching UOM Dropdown data:', error)
+      }
+    }
+    loadUomDropdownData()
+  }, [])
 
   useEffect(() => {
     const loadSitePlantData = async () => {
@@ -165,16 +185,16 @@ const Slowdown = ({ permissions }) => {
           ...item,
           idFromApi: item.id,
           id: `${index}`,
-          originalRemark: item.purposeOfSlowdown,
-          purposeOfSlowdown: item.purposeOfSlowdown,
+          originalRemark: item.remark,
+          remark: item.remark,
           siteFkId: item.siteFkId,
           plantFkId: item.plantFkId,
           siteName: item.siteName,
           plantName: item.plantName,
           tentativeDurationDays: item.tentativeDurationDays,
-          throughput: item.throughput,
+          throughputDuringTheSlowdown: item.throughputDuringTheSlowdown,
           throughputUom: item.throughputUom,
-          tentativeMonths: item.tentativeMonths,
+          tentativeMonths: item.tentativeMonth !== null && item.tentativeMonth !== undefined ? Number(item.tentativeMonth) : null,
           isEditable: item.isEditable
         }
       })
@@ -195,12 +215,61 @@ const Slowdown = ({ permissions }) => {
       setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
       return
     }
+    // Custom check: Ensure all columns are filled for modified rows, indicating specific missing fields
+    for (const row of modifiedData) {
+      const missingFields = []
+      if (!row.siteName || String(row.siteName).trim() === '') {
+        missingFields.push('Site')
+      }
+      if (!row.plantName || String(row.plantName).trim() === '') {
+        missingFields.push('Plant')
+      }
+      if (row.tentativeDurationDays === undefined || row.tentativeDurationDays === null || String(row.tentativeDurationDays).trim() === '') {
+        missingFields.push('Tentative Duration in days')
+      }
+      if (row.tentativeMonths === undefined || row.tentativeMonths === null || String(row.tentativeMonths).trim() === '') {
+        missingFields.push('Tentative Month')
+      }
+      if (!row.remark || String(row.remark).trim() === '') {
+        missingFields.push('Purpose of Slowdown')
+      }
+
+      if (missingFields.length > 0) {
+        const rowIndex = rows.findIndex((r) => r.id === row.id)
+        const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+        const displayName = row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : row.siteName
+            ? `${row.siteName} (${rowNumLabel})`
+            : rowNumLabel
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Remaining fields to fill for ${displayName}: ${missingFields.join(', ')}`,
+          severity: 'error',
+        })
+        return
+      }
+    }
+
+    // Create unique display name for standard validation to handle duplicate plants clearly
+    const modifiedDataForValidation = modifiedData.map((row) => {
+      const rowIndex = rows.findIndex((r) => r.id === row.id)
+      const rowNumLabel = rowIndex !== -1 ? `Row ${rowIndex + 1}` : 'New Row'
+      return {
+        ...row,
+        plantNameUnique: row.plantName
+          ? `${row.plantName} (${rowNumLabel})`
+          : rowNumLabel,
+      }
+    })
+
     const validationError = validateRowDataWithRemarks(
-      modifiedData,
+      modifiedDataForValidation,
       originalRows,
-      ['siteName', 'plantName', 'tentativeDurationDays', 'throughput', 'throughputUom', 'tentativeMonths'],
-      'plantName',
-      'purposeOfSlowdown',
+      ['siteName', 'plantName', 'tentativeDurationDays', 'tentativeMonths'],
+      'plantNameUnique',
+      'remark',
     )
 
     if (validationError) {
@@ -226,10 +295,10 @@ const Slowdown = ({ permissions }) => {
           siteName: row.siteName,
           plantName: row.plantName,
           tentativeDurationDays: row.tentativeDurationDays,
-          throughput: row.throughput,
+          throughputDuringTheSlowdown: row.throughputDuringTheSlowdown || 0,
           throughputUom: row.throughputUom,
-          tentativeMonths: row.tentativeMonths,
-          purposeOfSlowdown: row.purposeOfSlowdown,
+          tentativeMonth: row.tentativeMonths !== null && row.tentativeMonths !== undefined ? Number(row.tentativeMonths) : null,
+          remark: row.remark,
           plantId: PLANT_ID,
           aopYear: AOP_YEAR,
         }
@@ -277,7 +346,7 @@ const Slowdown = ({ permissions }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      const EXCEL_NAME = `Slowdown.xlsx`
+      const EXCEL_NAME = `Refinery_Slowdown.xlsx`
       await ShutdownApiService.exportSlowdownData(
         keycloak,
         PLANT_ID,
@@ -365,7 +434,38 @@ const Slowdown = ({ permissions }) => {
     },
     [keycloak, PLANT_ID, AOP_YEAR, fetchData],
   )
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
 
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
+      }
+
+      if (idFromApi) {
+        await ShutdownApiService.deleteSlowdownData(idFromApi, keycloak, PLANT_ID)
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
   const adjustedPermissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
     textAlignment: 'center',
@@ -418,6 +518,7 @@ const Slowdown = ({ permissions }) => {
         disableRedHighlight={true}
         handleExport={handleExport}
         handleExcelUpload={handleExcelUpload}
+        deleteRowData={deleteRowData}
         screenType='pims-product-master'
         siteDropdown={siteDropdown}
         plantDropdown={plantDropdown}

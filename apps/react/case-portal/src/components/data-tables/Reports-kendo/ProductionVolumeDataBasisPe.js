@@ -25,6 +25,23 @@ import CalculateIcon from '@mui/icons-material/Calculate'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+
+const MONTH_MAP = {
+  jan: 1, january: 1,
+  feb: 2, february: 2,
+  mar: 3, march: 3,
+  apr: 4, april: 4,
+  may: 5,
+  jun: 6, june: 6,
+  jul: 7, july: 7,
+  aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9,
+  oct: 10, october: 10,
+  nov: 11, november: 11,
+  dec: 12, december: 12,
+}
+
 const ProductionVolumeDataBasisPe = () => {
   const keycloak = useSession()
   const REPORT_TYPE_FOR_ALL = 'ProductionTarget'
@@ -79,6 +96,7 @@ const ProductionVolumeDataBasisPe = () => {
       }
 
       const isManyColumns = backendCols.length > 15
+      const headerMap = generateHeaderNames(AOP_YEAR)
 
       return backendCols
         .filter((col) => col.field !== 'GRID_TYPE')
@@ -86,9 +104,19 @@ const ProductionVolumeDataBasisPe = () => {
           const isTextCol = col.type === 'string'
           const isNumberCol = col.type === 'number'
 
+          let displayTitle = col.title || col.headerName || col.field
+          const titleKey = String(displayTitle || '').trim().toLowerCase()
+          const fieldKey = String(col.field || '').trim().toLowerCase()
+          const monthNum = MONTH_MAP[titleKey] || MONTH_MAP[fieldKey]
+
+          if (monthNum && headerMap && headerMap[monthNum]) {
+            displayTitle = headerMap[monthNum]
+          }
+
           const base = {
             ...col,
-            title: col.title || col.field,
+            title: displayTitle,
+            headerName: displayTitle,
             filterable: true,
 
             flex: isManyColumns ? undefined : 1,

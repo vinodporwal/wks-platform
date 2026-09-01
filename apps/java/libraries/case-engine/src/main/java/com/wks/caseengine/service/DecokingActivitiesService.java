@@ -24,5 +24,7 @@ public interface DecokingActivitiesService {
 	public AOPMessageVM getNextYearEntry(String plantId,String year, String H10, String H11, String H12,String H13, String H14,String startDate);
 	public AOPMessageVM getNextYearConfiguration(String plantId,String year,String startDate);
 	public AOPMessageVM calculateData(String plantId, String year);
-	
+
+	public AOPMessageVM getDecokingPlanningNotification(String plantId, String aopYear);
+
 	}

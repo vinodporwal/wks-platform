@@ -4,11 +4,18 @@ import {
   CircularProgress,
   TextField,
   Button,
+  Grid,
+  Dialog,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react'
+import DecokingPlanningNotification from './DecokingPlanningNotification.js'
+import Notification from 'components/Utilities/Notification'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import { PlantAopReportApiService } from 'services/plant-aop-report-api-service.js'
 import moment from '../../../node_modules/moment/moment.js'
 // import { ibrGridThree, ibrPlanColumns } from './columnDefs'
 import { ibrGridThree } from './columnDefs'
@@ -73,6 +80,7 @@ const DecokingConfig = () => {
   const IS_C2 = siteObject?.name?.toLowerCase() == 'c2'
   const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && siteName === 'c2'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -92,12 +100,42 @@ const DecokingConfig = () => {
   const [currentRemarkRunLength, setCurrentRemarkRunLength] = useState('')
   const [currentRowIdRunLength, setCurrentRowId3] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
+  const [openDecokingPlanningDialog, setOpenDecokingPlanningDialog] =
+    useState(false)
+  const [decokingPlanningRecordsCount, setDecokingPlanningRecordsCount] =
+    useState(0)
+
+  useEffect(() => {
+    const fetchDecokingNotificationCount = async () => {
+      if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
+      try {
+        const res = await PlantAopReportApiService.GetPlanningNotification(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        if (res?.code === 200) {
+          const apiRows = res?.data?.data || []
+          setDecokingPlanningRecordsCount(apiRows.length)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchDecokingNotificationCount()
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2, openDecokingPlanningDialog])
   const [dateError, setDateError] = useState(false)
   //my chnage
   const [modifiedCellsSdTa, setModifiedCellsSdTa] = React.useState({})
   const [ibrScreen2Rows, setIbrScreen2Rows] = useState([])
   const [globalTaStartDate, setGlobalTaStartDate] = useState(null)
   const [globalTaEndDate, setGlobalTaEndDate] = useState(null)
+  const [otherFurnanceDetailsList, setOtherFurnanceDetailsList] = useState([])
+  const otherFurnanceDetailsListRef = useRef(otherFurnanceDetailsList)
+
+  useEffect(() => {
+    otherFurnanceDetailsListRef.current = otherFurnanceDetailsList
+  }, [otherFurnanceDetailsList])
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
@@ -198,6 +236,38 @@ const DecokingConfig = () => {
       (Number(actualRunLength) * Number(reduction)) / 100
     return isNaN(val) ? null : Math.ceil(val) // <-- round up to nearest integer
   }
+  const fetchOtherCost = useCallback(async () => {
+    if (!IS_CRACKER_C2 || !PLANT_ID || !AOP_YEAR) return
+    try {
+      const resp = await DataService.getOtherFurnanceDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (resp?.code === 200 && Array.isArray(resp?.data)) {
+        const formattedRows = resp.data.map((item) => {
+          const num = parseFloat(item.attributeValue)
+          const formattedVal =
+            item.attributeValue != null && item.attributeValue !== '' && !isNaN(num)
+              ? num.toFixed(2)
+              : item.attributeValue ?? ''
+          return {
+            ...item,
+            attributeValue: formattedVal,
+          }
+        })
+        setOtherFurnanceDetailsList(formattedRows)
+        otherFurnanceDetailsListRef.current = formattedRows
+      }
+      console.log('RESP FOR OTHER FURNANCE DETAILS:', resp)
+    } catch (error) {
+      console.error('Error fetching other furnance details:', error)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_C2])
+
+  useEffect(() => {
+    fetchOtherCost()
+  }, [fetchOtherCost])
 
   const fetchData = useCallback(
     async (screen = null) => {
@@ -258,9 +328,39 @@ const DecokingConfig = () => {
                   converted[field] = toDateObject(item[field])
                 })
 
+                let durationVal = item.FunShtdwnDuration ?? item.Duration
+                if (
+                  IS_CRACKER_C2 &&
+                  (durationVal === undefined ||
+                    durationVal === null ||
+                    durationVal === '')
+                ) {
+                  const sd = converted.IBR_SD || item.IBR_SD
+                  const ed = converted.IBR_ED || item.IBR_ED
+                  if (sd && ed) {
+                    const mSd = moment(sd)
+                    const mEd = moment(ed)
+                    if (mSd.isValid() && mEd.isValid()) {
+                      const diffDays = mEd.diff(mSd, 'days')
+                      if (diffDays >= 0) durationVal = diffDays
+                    }
+                  }
+                }
+
                 return {
                   ...item,
                   ...converted,
+                  ...(IS_CRACKER_C2 ? { FunShtdwnDuration: durationVal } : {}),
+                  IsIBR:
+                    item.IsIBR !== undefined
+                      ? !!item.IsIBR
+                      : !!(
+                        item.IBR_SD ||
+                        item.FunShtdwnDuration ||
+                        item.IBR_ED ||
+                        converted.IBR_SD ||
+                        converted.IBR_ED
+                      ),
                   Id: item.Id,
                   id: index,
                   DisplayName:
@@ -271,32 +371,67 @@ const DecokingConfig = () => {
                 }
               })
 
-              serIbrPlanColumns(
-                (data2?.data?.columns || [])
-                  .filter(
-                    (col) =>
-                      ![
-                        'DisplaySeq',
-                        'AOPYear',
-                        'Plant_FK_Id',
-                        'Name',
-                        'Id',
-                        'isEditable',
-                        //'TA_SD',
-                        //'TA_ED',
-                      ].includes(col.field),
-                  )
-                  .map((col) => ({
-                    ...col,
-                    widthT: 150,
-                    minWidth: col.field == 'DisplayName' ? 200 : 150,
-                    editable: ![
+              const baseCols = (data2?.data?.columns || [])
+                .filter(
+                  (col) =>
+                    ![
+                      'DisplaySeq',
+                      'AOPYear',
+                      'Plant_FK_Id',
+                      'Name',
+                      'Id',
+                      'isEditable',
+                    ].includes(col.field),
+                )
+                .map((col) => ({
+                  ...col,
+                  widthT: col.field === 'Remarks' ? 350 : 150,
+                  minWidth:
+                    col.field === 'DisplayName'
+                      ? 200
+                      : col.field === 'Remarks'
+                        ? 300
+                        : 150,
+                  editable: IS_CRACKER_C2
+                    ? !['TA_Duration_Days', 'DisplayName'].includes(col.field)
+                    : ![
                       'Pre_CR_Days',
                       'TA_Duration_Days',
                       'DisplayName',
                     ].includes(col.field),
-                  })),
-              )
+                }))
+
+              if (IS_CRACKER_C2) {
+                const isCrIndex = baseCols.findIndex(
+                  (c) =>
+                    c.field === 'IsCR' ||
+                    c.field === 'IsCoilReplacement' ||
+                    c.field === 'Is_Coil_Replacement' ||
+                    c.field === 'Is Coil Replacement',
+                )
+                const isIbrCol = {
+                  field: 'IsIBR',
+                  title: 'Is IBR planned',
+                  type: 'switch',
+                  editable: true,
+                  widthT: 130,
+                  minWidth: 110,
+                }
+                if (isCrIndex !== -1) {
+                  baseCols.splice(isCrIndex + 1, 0, isIbrCol)
+                } else {
+                  const dispNameIndex = baseCols.findIndex(
+                    (c) => c.field === 'DisplayName',
+                  )
+                  baseCols.splice(
+                    dispNameIndex !== -1 ? dispNameIndex + 1 : 1,
+                    0,
+                    isIbrCol,
+                  )
+                }
+              }
+
+              serIbrPlanColumns(baseCols)
 
               setRowsForTab(currentTab, processedData, 2)
 
@@ -497,6 +632,59 @@ const DecokingConfig = () => {
     return null
   }
 
+  const saveRunningDurationParams = async () => {
+    const listToSave =
+      otherFurnanceDetailsListRef.current &&
+        otherFurnanceDetailsListRef.current.length > 0
+        ? otherFurnanceDetailsListRef.current
+        : otherFurnanceDetailsList
+
+    if (!Array.isArray(listToSave) || listToSave.length === 0) return true
+
+    // Validate SAD Duration field if present in the dynamic API response list
+    const sadItem = listToSave.find(
+      (item) =>
+        item.name === 'sad_duration' ||
+        item.name === 'SAD' ||
+        item.displayName === 'SAD Duration' ||
+        item.displayName === 'SAD Duration(Days)' ||
+        item.displayName?.toLowerCase().includes('sad duration'),
+    )
+
+    if (
+      sadItem &&
+      sadItem.attributeValue !== '' &&
+      sadItem.attributeValue !== null &&
+      sadItem.attributeValue !== undefined
+    ) {
+      const sadVal = parseFloat(sadItem.attributeValue)
+      if (isNaN(sadVal) || sadVal < 2.1 || sadVal > 3.0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'SAD Duration must be between 2.1 and 3.0 Only!',
+          severity: 'error',
+        })
+        return false
+      }
+    }
+
+    try {
+      const resp = await DataService.saveOtherFurnanceDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        listToSave,
+      )
+      if (resp?.code === 200) {
+        return true
+      }
+    } catch (err) {
+      console.error('Error saving dynamic furnace parameters:', err)
+      return false
+    }
+    return true
+  }
+
   const saveChangesSdTa = async () => {
     if (globalTaStartDate && globalTaEndDate) {
       await saveChangesSdTa1()
@@ -647,12 +835,11 @@ const DecokingConfig = () => {
       const rowsToSave = Object.values(modifiedCellsSdTa)
 
       if (
-        !globalTaStartDate ||
-        !globalTaEndDate ||
-        (startLimit && globalTaStartDate < startLimit) ||
-        (endLimit && globalTaStartDate > endLimit) ||
-        (startLimit && globalTaEndDate < startLimit) ||
-        (endLimit && globalTaEndDate > endLimit)
+        (!IS_CRACKER_C2 && (!globalTaStartDate || !globalTaEndDate)) ||
+        (globalTaStartDate && startLimit && globalTaStartDate < startLimit) ||
+        (globalTaStartDate && endLimit && globalTaStartDate > endLimit) ||
+        (globalTaEndDate && startLimit && globalTaEndDate < startLimit) ||
+        (globalTaEndDate && endLimit && globalTaEndDate > endLimit)
       ) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -823,6 +1010,7 @@ const DecokingConfig = () => {
   }, [modifiedCellsRunLength])
 
   function validatePostCrDays(newRows) {
+    if (IS_CRACKER_C2) return { valid: true }
     for (let i = 0; i < newRows.length; i++) {
       const row = newRows[i]
       const rowLabel = row.DisplayName || `Row ${i + 1}`
@@ -871,6 +1059,14 @@ const DecokingConfig = () => {
   const postIbr = async (newRow) => {
     setLoading(true)
     try {
+      if (IS_CRACKER_C2) {
+        const success = await saveRunningDurationParams()
+        if (!success) {
+          setLoading(false)
+          return
+        }
+      }
+
       if (!ibrPlanColumns || ibrPlanColumns.length === 0) {
         throw new Error('ibrPlanColumns not loaded')
       }
@@ -896,6 +1092,7 @@ const DecokingConfig = () => {
           }
 
           columns.forEach((col) => {
+            if (col.field === 'IsIBR' || col.field === 'Is_IBR') return
             let value = row[col.field]
 
             if (col.type === 'date') value = formatIfDate(value)
@@ -904,10 +1101,10 @@ const DecokingConfig = () => {
             obj[col.field] = value
           })
 
-          if (row.ActualRunLength != null && row.Reduction != null) {
+          if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -979,6 +1176,7 @@ const DecokingConfig = () => {
         setSummaryEdited(false)
         fetchData(2)
         fetchData(3)
+        fetchOtherCost()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -999,26 +1197,34 @@ const DecokingConfig = () => {
   const postIbr2 = async (newRow) => {
     setLoading(true)
     try {
+      let durationSaved = false
+      if (IS_CRACKER_C2) {
+        const success = await saveRunningDurationParams()
+        if (!success) {
+          setLoading(false)
+          return
+        }
+        durationSaved = true
+      }
+
       if (!ibrPlanColumns || ibrPlanColumns.length === 0) {
         throw new Error('ibrPlanColumns not loaded')
       }
 
-      if (!newRow || newRow.length === 0) {
-        throw new Error('No rows to save')
-      }
+      if (newRow && newRow.length > 0) {
+        const requiredFields = ['Remarks']
 
-      const requiredFields = ['Remarks']
+        const validationMessage = validateFields(newRow, requiredFields)
 
-      const validationMessage = validateFields(newRow, requiredFields)
-
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
       }
 
       const formatIfDate = (value) => {
@@ -1050,6 +1256,7 @@ const DecokingConfig = () => {
           }
 
           columns.forEach((col) => {
+            if (col.field === 'IsIBR' || col.field === 'Is_IBR') return
             let value = row[col.field]
 
             if (col.type === 'date') value = formatIfDate(value)
@@ -1058,10 +1265,10 @@ const DecokingConfig = () => {
             obj[col.field] = value
           })
 
-          if (row.ActualRunLength != null && row.Reduction != null) {
+          if (!IS_CRACKER_C2 && row.ActualRunLength != null && row.Reduction != null) {
             obj.Pre_CR_Days = Math.ceil(
               Number(row.ActualRunLength) -
-                (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
+              (Number(row.ActualRunLength) * Number(row.Reduction)) / 100,
             )
           }
 
@@ -1083,6 +1290,9 @@ const DecokingConfig = () => {
       )
 
       if (response?.code == 200) {
+        if (IS_CRACKER_C2) {
+          await saveRunningDurationParams()
+        }
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data Saved Successfully!',
@@ -1174,7 +1384,7 @@ const DecokingConfig = () => {
   }
 
   const saveCrackerRunLength = async (newRow) => {
-    setTimeout(() => setLoading(true), 0)
+    setLoading(true)
     try {
       const referenceRows = getRows('IBR Plan')[2]
 
@@ -1525,6 +1735,149 @@ const DecokingConfig = () => {
     return () => clearTimeout(timer)
   }, [loading])
 
+  const sdtaColumns = useMemo(() => {
+    let cols = ibrPlanColumns.filter(
+      (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
+    )
+
+    if (IS_CRACKER_C2) {
+      cols = cols.map((col) => {
+        if (col.field === 'IBR_ED') {
+          return {
+            ...col,
+            editable: false,
+          }
+        }
+        return col
+      })
+
+      const hasDuration = cols.some((c) => c.field === 'FunShtdwnDuration')
+      if (!hasDuration) {
+        const ibrSdIdx = cols.findIndex((c) => c.field === 'IBR_SD')
+        const durationCol = {
+          field: 'FunShtdwnDuration',
+          title: 'FunShtdwnDuration',
+          type: 'numeric',
+          editable: true,
+          filter: false,
+          widthT: 140,
+          minWidth: 100,
+        }
+        if (ibrSdIdx !== -1) {
+          cols.splice(ibrSdIdx + 1, 0, durationCol)
+        } else {
+          cols.push(durationCol)
+        }
+      }
+    }
+
+    return cols
+  }, [ibrPlanColumns, IS_CRACKER_C2])
+
+  const calculateIbrEdDate = (sdVal, durationVal) => {
+    if (
+      !sdVal ||
+      durationVal === undefined ||
+      durationVal === null ||
+      durationVal === ''
+    ) {
+      return null
+    }
+    const durationNum = parseFloat(durationVal)
+    if (isNaN(durationNum) || durationNum < 0) return null
+
+    // Ceil logic:
+    // 1.0 -> 1 day, 1.2..1.9 -> 2 days
+    // 3.0 -> 3 days, 3.2..3.9 -> 4 days
+    const daysToAdd = Math.ceil(durationNum)
+
+    let m = moment(sdVal)
+    if (!m.isValid()) {
+      m = moment(sdVal, ['DD-MM-YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY'], true)
+    }
+    if (!m.isValid()) return null
+
+    const calculatedEd = m.clone().add(daysToAdd, 'days')
+
+    if (sdVal instanceof Date) {
+      return calculatedEd.toDate()
+    }
+    if (typeof sdVal === 'string' && sdVal.includes('-')) {
+      const parts = sdVal.split('-')
+      if (parts[0].length === 4) {
+        return calculatedEd.format('YYYY-MM-DD')
+      } else {
+        return calculatedEd.format('DD-MM-YYYY')
+      }
+    }
+    return calculatedEd.toDate()
+  }
+
+  const handleSdTaRowsChange = useCallback(
+    (data) => {
+      if (!IS_CRACKER_C2) {
+        setRowsForTab('IBR Plan', data, 2)
+        return
+      }
+
+      // Helper: apply IBR_ED auto-calculation to a resolved rows array
+      const applyCalc = (rows) => {
+        if (!Array.isArray(rows)) return rows
+        return rows.map((row) => {
+          if (row.IsIBR === false || row.Is_IBR === false) {
+            row = {
+              ...row,
+              IBR_SD: null,
+              FunShtdwnDuration: null,
+              IBR_ED: null,
+            }
+          } else if (row.IBR_SD || row.FunShtdwnDuration || row.IBR_ED) {
+            row = {
+              ...row,
+              IsIBR: true,
+            }
+          }
+          const sdVal = row.IBR_SD
+          let durVal = row.FunShtdwnDuration
+          if (
+            durVal !== undefined &&
+            durVal !== null &&
+            durVal !== ''
+          ) {
+            const num = parseFloat(durVal)
+            if (!isNaN(num)) {
+              // Format/round to 1 decimal place (0-9)
+              const roundedDur = Math.round(num * 10) / 10
+              durVal = roundedDur
+              row = { ...row, FunShtdwnDuration: roundedDur }
+            }
+          }
+          if (
+            sdVal &&
+            durVal !== undefined &&
+            durVal !== null &&
+            durVal !== ''
+          ) {
+            const newEd = calculateIbrEdDate(sdVal, durVal)
+            if (newEd) return { ...row, IBR_ED: newEd }
+          }
+          return row
+        })
+      }
+
+      // itemChange in index-cracker calls setRows as a functional updater:
+      // setRows((prev) => prev.map(...))
+      // So `data` may be a function ? handle both forms.
+      if (typeof data === 'function') {
+        setIbrScreen2Rows((prev) => applyCalc(data(prev)))
+      } else {
+        setRowsForTab('IBR Plan', applyCalc(data), 2)
+      }
+    },
+
+    [IS_CRACKER_C2, setRowsForTab, setIbrScreen2Rows, calculateIbrEdDate],
+  )
+
   if (siteName === 'nmd') {
     return <DecokingConfigNMD pid={PLANT_ID} />
   }
@@ -1543,53 +1896,167 @@ const DecokingConfig = () => {
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <Box
-          sx={{ display: 'flex', gap: 1, mb: 0, mt: 1, alignItems: 'center' }}
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 3,
+            alignItems: 'flex-start',
+            mb: 1.5,
+          }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+          {/* TA Start Date */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#252525',
+                fontFamily:
+                  '"Honeywell Sans Web", "Inter", sans-serif !important',
+              }}
+            >
               TA Start Date
             </Typography>
-            <DatePicker
-              id='global-ta-start-date'
-              format='dd-MM-yyyy'
-              value={globalTaStartDate}
-              onChange={(e) => {
-                setGlobalTaStartDate(e.value)
-                setSummaryEdited(true)
+            <Box
+              sx={{
+                '& .k-picker, & .k-datepicker': {
+                  height: '36px',
+                  width: '185px',
+                },
               }}
-              style={{ height: '80px' }}
-              size={'small'}
-              disabled={READ_ONLY}
-            />
+            >
+              <DatePicker
+                id='global-ta-start-date'
+                format='dd-MM-yyyy'
+                value={globalTaStartDate}
+                onChange={(e) => {
+                  setGlobalTaStartDate(e.value)
+                  setSummaryEdited(true)
+                }}
+                style={{ width: '100%', height: '36px' }}
+                disabled={READ_ONLY}
+              />
+            </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+          {/* TA End Date */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#252525',
+                fontFamily:
+                  '"Honeywell Sans Web", "Inter", sans-serif !important',
+              }}
+            >
               TA End Date
             </Typography>
-            <DatePicker
-              id='global-ta-end-date'
-              format='dd-MM-yyyy'
-              value={globalTaEndDate}
-              onChange={(e) => {
-                setGlobalTaEndDate(e.value)
-                setSummaryEdited(true)
+            <Box
+              sx={{
+                '& .k-picker, & .k-datepicker': {
+                  height: '36px',
+                  width: '190px',
+                },
               }}
-              style={{ height: '80px' }}
-              size={'small'}
-              disabled={READ_ONLY}
-            />
+            >
+              <DatePicker
+                id='global-ta-end-date'
+                format='dd-MM-yyyy'
+                value={globalTaEndDate}
+                onChange={(e) => {
+                  setGlobalTaEndDate(e.value)
+                  setSummaryEdited(true)
+                }}
+                style={{ width: '100%', height: '36px' }}
+                disabled={READ_ONLY}
+              />
+            </Box>
           </Box>
+
+          {/* Dynamic C2 Other Furnace Details Fields */}
+          {IS_CRACKER_C2 &&
+            otherFurnanceDetailsList.map((item, idx) => (
+              <Box
+                key={item.id || item.name || idx}
+                sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
+                >
+                  {item.displayName || item.name}
+                </Typography>
+                <TextField
+                  id={`other-furnace-detail-${item.name || idx}`}
+                  type='number'
+                  size='small'
+                  value={item.attributeValue ?? ''}
+                  onChange={(e) => {
+                    const newVal = e.target.value
+                    setOtherFurnanceDetailsList((prev) => {
+                      const updated = prev.map((row, i) =>
+                        i === idx || (row.id && row.id === item.id) || (row.name && row.name === item.name)
+                          ? { ...row, attributeValue: newVal }
+                          : row,
+                      )
+                      otherFurnanceDetailsListRef.current = updated
+                      return updated
+                    })
+                    setSummaryEdited(true)
+                  }}
+                  onBlur={(e) => {
+                    const val = e.target.value
+                    const num = parseFloat(val)
+                    if (!isNaN(num)) {
+                      const formatted = num.toFixed(2)
+                      setOtherFurnanceDetailsList((prev) => {
+                        const updated = prev.map((row, i) =>
+                          i === idx || (row.id && row.id === item.id) || (row.name && row.name === item.name)
+                            ? { ...row, attributeValue: formatted }
+                            : row,
+                        )
+                        otherFurnanceDetailsListRef.current = updated
+                        return updated
+                      })
+                    }
+                  }}
+                  disabled={READ_ONLY}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: '36px',
+                      minWidth: '185px',
+                      backgroundColor: '#ffffff',
+                    },
+                    '& input[type=number]': {
+                      '-moz-appearance': 'textfield',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-outer-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                    '& input[type=number]::-webkit-inner-spin-button': {
+                      '-webkit-appearance': 'none',
+                      margin: 0,
+                    },
+                  }}
+                />
+              </Box>
+            ))}
         </Box>
       </LocalizationProvider>
 
       <SDTAActivitiesGrid
-        columns={ibrPlanColumns.filter(
-          (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
-        )}
+        columns={sdtaColumns}
         gridKey={sdtaGridKey}
         rows={getRows('IBR Plan')[2]}
-        setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
+        setRows={handleSdTaRowsChange}
         fetchData={fetchData}
         handleRemarkCellClick={handleRemarkCellClick2}
         remarkDialogOpen={remarkDialogOpenSdTa}
@@ -1610,6 +2077,12 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculateSdTa}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        disableInnerNotification={true}
+        titleName={
+          IS_CRACKER_C2
+            ? 'Furnace un-availability and M&I activity'
+            : 'IBR/SD/HSS Activities'
+        }
       />
 
       {(IS_DMD || IS_C2) && (
@@ -1639,6 +2112,10 @@ const DecokingConfig = () => {
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleCalculate={handleCalculate}
+        onInfoClick={
+          IS_CRACKER_C2 ? () => setOpenDecokingPlanningDialog(true) : null
+        }
+        infoIconColor={decokingPlanningRecordsCount > 0 ? '#ff0000' : '#008000'}
       />
 
       <MaintenanceProcessTable permissions={MaintenanceProcessPermission} />
@@ -1659,6 +2136,46 @@ const DecokingConfig = () => {
           </CustomAccordionDetails>
         </CustomAccordion>
       )} */}
+      <Dialog
+        open={openDecokingPlanningDialog}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setOpenDecokingPlanningDialog(false)
+          }
+        }}
+        maxWidth='md'
+        fullWidth
+        disableScrollLock
+        disableEnforceFocus={true}
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 1,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 1 }}>
+          <DecokingPlanningNotification />
+        </DialogContent>
+        <DialogActions sx={{ px: 1.5, pb: 1 }}>
+          <Button
+            onClick={() => setOpenDecokingPlanningDialog(false)}
+            variant='contained'
+            className='btn-no'
+            sx={{ textTransform: 'none' }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
     </Box>
   )
 }

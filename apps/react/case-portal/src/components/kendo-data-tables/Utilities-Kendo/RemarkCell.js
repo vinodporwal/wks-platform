@@ -12,8 +12,8 @@ export const RemarkCell = ({
   const rawValue = dataItem[field]
   const displayText = String(rawValue ?? '')
 
-  const month = monthMap[field.toLowerCase()]
-  const normId = dataItem.materialFkId
+  const month = monthMap?.[field?.toLowerCase()]
+  const normId = dataItem?.materialFkId
 
   // Ensure we always work with an array
   const redCells = Array.isArray(allRedCell) ? allRedCell : []

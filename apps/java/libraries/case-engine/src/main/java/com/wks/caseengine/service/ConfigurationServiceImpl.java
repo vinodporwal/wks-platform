@@ -66,9 +66,11 @@ import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
+import com.wks.caseengine.dto.GroupMaterialDetailsDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
+import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.NormAttributeTransactionLine;
@@ -166,6 +168,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			boolean ischemicalAndVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 			boolean aromaticsDtaAromatics = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("DTA") && plant.getName().equalsIgnoreCase("Aromatics");
 		    String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+			boolean bru = vertical.getName().equalsIgnoreCase("BRU");
 			List<Boolean> isEditable = new ArrayList<>();
 
 			Workbook workbook = new XSSFWorkbook();
@@ -182,7 +185,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 				List<Object> list = new ArrayList<>();
 
-				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc) {
+				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || bru) {
 					if(!isChemical && !ischemicalAndVmd) {
 						list.add(dto.getConfigTypeDisplayName());
 						list.add(dto.getTypeDisplayName());
@@ -221,7 +224,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 
 			List<String> innerHeaders = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) {
+			if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || bru) {
 				if(!isChemical && !ischemicalAndVmd) {
 					innerHeaders.add("Category");
 				}
@@ -296,7 +299,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		boolean hasCategory = (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET")
 				|| verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM")
 				|| verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA")
-				|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc)
+				|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || bru)
 				&& !isChemical && !ischemicalAndVmd;
 		int remarkColIndex = hasCategory ? 16 : 15;
 		int totalCols = innerHeaders.size();
@@ -367,9 +370,23 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	@Override
 	public byte[] createManualEntryExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList) {
 		try {
+
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
+			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 			
 			if (!isAfterSave) {
 				dtoList = (List<ConfigurationDTO>) getConfigurationData(year, plantFKId,null).getData();
+			}
+
+			// for filament export only manual entry
+			if(filament || staple) { 
+				dtoList = dtoList.stream()
+        .filter(dto -> "Manual Entry".equals(dto.getConfigTypeName()))
+        .collect(Collectors.toList());
 			}
 			
 			List<Boolean> isEditable = new ArrayList<>();
@@ -1100,6 +1117,9 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 
 			boolean isChemicalHmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD");
 			boolean merox = vertical.getName().equalsIgnoreCase("MEROX");
+			boolean bru = vertical.getName().equalsIgnoreCase("BRU");
+			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
+			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
@@ -1178,7 +1198,7 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
 					configurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
 					configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
-				}else if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || merox) {
+				}else if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc || merox || bru || filament || staple) {
 					configurationDTO.setId(row[14] != null ? row[14].toString() : i + "#");
 
 					configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
@@ -2099,6 +2119,64 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 		}
 	}
 
+
+	@Override
+	public AOPMessageVM getAopBasiswithStartDate(String year, String plantFKId, String type) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Map<String, Object>> productionConstraintsList = new ArrayList<>();
+
+			Plants plants = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow(() -> new RuntimeException("Plant not found"));
+
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			List<Object[]> obj = new ArrayList<>();
+
+			String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+				String procedureName = verticalName +"_" + siteName + "_GetProduction_Constraints";
+				if (type != null && !type.trim().isEmpty()) {
+					obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId, procedureName, type);
+				} else {
+					obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+				}
+			
+
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("NormTypeName", row[0]);
+				map.put("NormParameter_FK_Id", row[1]);
+				map.put("Name", row[2]);
+				map.put("DisplayName", row[3]);
+				map.put("UOM", row[4]);
+				map.put("StartDate", row[5]);
+				map.put("EndDate", row[6]);
+				map.put("Duration", row[7]);
+				map.put("AuditYear", row[8]);
+				map.put("Remarks", row[9]);
+				boolean isEditable;
+				Object flagObj = row[10];
+				if (flagObj instanceof Boolean) {
+					isEditable = (Boolean) flagObj;
+				} else if (flagObj instanceof Number) {
+					isEditable = ((Number) flagObj).intValue() == 1;
+				} else {
+					isEditable = false;
+				}
+				map.put("isEditable", isEditable);
+				productionConstraintsList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(productionConstraintsList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -2207,6 +2285,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
 			boolean aromaticsPmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+			boolean aromaticsHmd = verticalName.equalsIgnoreCase("AROMATICS")
+					&& site.getName().equalsIgnoreCase("HMD");
 
 			String steamLatentName = "";
 
@@ -2340,7 +2420,35 @@ continue;
 				String procedure=verticalName+"_"+site.getName()+"_svhEquivalent_Calculation";
 				executeProcedure(procedure, plantFKId, year);
 			}
-			
+  
+			if (aromaticsHmd) {
+				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+						.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+				UUID siteId = site.getId();
+				UUID verticalId = vertical.getId();
+				String storedProcedure = verticalName + "_" + site.getName() + "_LoadMCValues";
+
+				String callSql = "{call " + storedProcedure + "(?, ?, ?, ?)}";
+
+				try (Connection connection = dataSource.getConnection();
+						CallableStatement stmt = connection.prepareCall(callSql)) {
+
+					// Set parameters in the correct order
+					stmt.setString(1, year); // @finYear
+					stmt.setString(2, plantFKId); // @plantId
+					stmt.setString(3, verticalId.toString()); // @verticalId
+					stmt.setString(4, siteId.toString()); // @siteId
+
+					// Execute the stored procedure
+					int rowsAffected = stmt.executeUpdate();
+
+					// Optional: commit if auto-commit is off
+					if (!connection.getAutoCommit()) {
+						connection.commit();
+					}
+				}
+			}
 			return failedList;
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -2415,6 +2523,83 @@ continue;
 				aopCalculationRepository.save(aopCalculation);
 			}
 			
+			
+			return failedList;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
+
+
+	
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Override
+	public List<SpyroInputMinMaxDTO> saveSpyroInputMinMax(String year, String plantFKId,
+			List<SpyroInputMinMaxDTO> configurationDTOList) {
+		try {
+
+			
+			List<SpyroInputMinMaxDTO> failedList = new ArrayList<>();
+			 UUID plantId = UUID.fromString(plantFKId);
+			 String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+
+			for (SpyroInputMinMaxDTO configurationDTO : configurationDTOList) {
+				
+				if (configurationDTO.getSaveStatus() != null
+						&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(configurationDTO);
+					continue;
+				}
+
+	     	// skip the empty rows
+			if(configurationDTO.getIdMin() == null || configurationDTO.getIdMin().isEmpty() || configurationDTO.getIdMax() == null || configurationDTO.getIdMax().isEmpty()) { 
+			continue;
+
+			}
+
+				UUID minNormParameterFKId = UUID.fromString(configurationDTO.getIdMin());
+				UUID maxNormParameterFKId = UUID.fromString(configurationDTO.getIdMax());
+
+				Optional<NormParameters> minOptionNormParameters = normParametersRepository.findById(minNormParameterFKId);
+				Optional<NormParameters> maxOptionNormParameters = normParametersRepository.findById(maxNormParameterFKId);
+				if (!minOptionNormParameters.isPresent() || !maxOptionNormParameters.isPresent()) {
+					configurationDTO.setSaveStatus("Failed");
+					configurationDTO.setErrDescription("Norm Paramter not found");
+					failedList.add(configurationDTO);
+					continue;
+				}
+			if (minOptionNormParameters.isPresent() && (!minOptionNormParameters.get().getIsEditable()) || maxOptionNormParameters.isPresent() && (!maxOptionNormParameters.get().getIsEditable())) {
+				continue;
+			}
+
+                // save for min value
+				for (int i = 1; i <= 12; i++) {
+		
+					String attributeValue = getMinAttributeValue(configurationDTO, i);
+					
+
+					saveSpyroMinMaxData(minOptionNormParameters.get(), i, year, attributeValue, configurationDTO,plantFKId);
+					if(configurationDTO.getSaveStatus()!=null && configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+						failedList.add(configurationDTO);
+						break;
+					}
+
+					
+
+				}
+
+				// save for max value
+				for (int i = 1; i <= 12; i++) {
+					String attributeValue = getMaxAttributeValue(configurationDTO, i);
+					saveSpyroMinMaxData(maxOptionNormParameters.get(), i, year, attributeValue, configurationDTO,plantFKId);
+					if(configurationDTO.getSaveStatus()!=null && configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+						failedList.add(configurationDTO);
+						break;
+					}
+			}
+		
+		}
 			
 			return failedList;
 		} catch (Exception ex) {
@@ -2567,8 +2752,8 @@ continue;
 		return null;
 	}
 	
-	void saveAopBasisData(NormParameters normParameter, Integer i, String year, String attributeValue,
-            AopBasisDTO configurationDTO, String plantFKId) {
+	void saveSpyroMinMaxData(NormParameters normParameter, Integer i, String year, String attributeValue,
+            SpyroInputMinMaxDTO configurationDTO, String plantFKId) {
   
 		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
@@ -2581,50 +2766,20 @@ continue;
 	  
 	
 	  String newValue = (attributeValue != null) ? attributeValue : "";
-	  String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
-	                     ? configurationDTO.getRemarks().trim() 
-	                     : "";
-	  
-	  boolean isRemarkEmpty = newRemark.isEmpty();
+	
 	
 	  if (existingRecord.isPresent()) {
 	      NormAttributeTransactions entity = existingRecord.get();
-	      String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "";
-	      String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
-	
-	      boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
-	      boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
-	
-	      if (isRemarkEmpty) {
-	        
-			  configurationDTO.setSaveStatus("Failed");
-		      configurationDTO.setErrDescription("Remark is mandatory to update an existing record.");
-	          return;
-	      }
-	
-	      if (isValueChanged && !isRemarkChanged) {
-			  configurationDTO.setSaveStatus("Failed");
-		      configurationDTO.setErrDescription("Value has changed; please provide a updated remark.");
-	          return;
-	      }
-	
-	      if (isValueChanged || isRemarkChanged) {
 	          entity.setAttributeValue(newValue);
-	          entity.setRemarks(newRemark);
 	          entity.setModifiedOn(new Date());
 	          normAttributeTransactionsRepository.save(entity);
-	      }
+	      
 	  } 
 	  else {
 	      if ("".equals(newValue)) {
 	          return; 
 	      }
-	
-	      if (isRemarkEmpty) {
-			  configurationDTO.setSaveStatus("Failed");
-		      configurationDTO.setErrDescription("Remark is mandatory for new records.");
-	          return;
-	      }
+
 	
 	      NormAttributeTransactions newEntity = new NormAttributeTransactions();
 	      newEntity.setNormParameterFKId(normParameter.getId());
@@ -2635,13 +2790,88 @@ continue;
 	      newEntity.setModifiedOn(new Date());
 	      
 	      newEntity.setAttributeValue(newValue);
-	      newEntity.setRemarks(newRemark);
 	      
 	      normAttributeTransactionsRepository.save(newEntity);
 	  }
 	}
 
-	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
+
+	void saveAopBasisData(NormParameters normParameter, Integer i, String year, String attributeValue,
+		AopBasisDTO configurationDTO, String plantFKId) {
+
+	Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
+	Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+  String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+
+  
+  Optional<NormAttributeTransactions> existingRecord;
+existingRecord = normAttributeTransactionsRepository
+		  .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+  
+
+  String newValue = (attributeValue != null) ? attributeValue : "";
+  String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
+					 ? configurationDTO.getRemarks().trim() 
+					 : "";
+  
+  boolean isRemarkEmpty = newRemark.isEmpty();
+
+  if (existingRecord.isPresent()) {
+	  NormAttributeTransactions entity = existingRecord.get();
+	  String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "";
+	  String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+
+	  boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
+	  boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
+
+	  if (isRemarkEmpty) {
+		
+		  configurationDTO.setSaveStatus("Failed");
+		  configurationDTO.setErrDescription("Remark is mandatory to update an existing record.");
+		  return;
+	  }
+
+	  if (isValueChanged && !isRemarkChanged) {
+		  configurationDTO.setSaveStatus("Failed");
+		  configurationDTO.setErrDescription("Value has changed; please provide a updated remark.");
+		  return;
+	  }
+
+	  if (isValueChanged || isRemarkChanged) {
+		  entity.setAttributeValue(newValue);
+		  entity.setRemarks(newRemark);
+		  entity.setModifiedOn(new Date());
+		  normAttributeTransactionsRepository.save(entity);
+	  }
+  } 
+  else {
+	  if ("".equals(newValue)) {
+		  return; 
+	  }
+
+	  if (isRemarkEmpty) {
+		  configurationDTO.setSaveStatus("Failed");
+		  configurationDTO.setErrDescription("Remark is mandatory for new records.");
+		  return;
+	  }
+
+	  NormAttributeTransactions newEntity = new NormAttributeTransactions();
+	  newEntity.setNormParameterFKId(normParameter.getId());
+	  newEntity.setAopMonth(i);
+	  newEntity.setAuditYear(year);
+	  newEntity.setUserName(Utility.getUserName());
+	  newEntity.setCreatedOn(new Date());
+	  newEntity.setModifiedOn(new Date());
+	  
+	  newEntity.setAttributeValue(newValue);
+	  newEntity.setRemarks(newRemark);
+	  
+	  normAttributeTransactionsRepository.save(newEntity);
+  }
+}
+
+// ref: saveData | seperate method to allow empty remarks for new records.
+	void saveDataForOtherCost(NormParameters normParameter, Integer i, String year, Double attributeValue,
 		ConfigurationDTO configurationDTO, String plantFKId) {
 
 	Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
@@ -2650,6 +2880,8 @@ continue;
   String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
 				   ? getVersion(year, UUID.fromString(plantFKId)) 
 				   : "V1";
+
+boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
   
   Optional<NormAttributeTransactions> existingRecord;
   if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
@@ -2668,7 +2900,6 @@ continue;
 					 ? configurationDTO.getRemarks().trim() 
 					 : "";
   
-  boolean isRemarkEmpty = newRemark.isEmpty();
 
   if (existingRecord.isPresent()) {
 	  NormAttributeTransactions entity = existingRecord.get();
@@ -2677,11 +2908,6 @@ continue;
 
 	  boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
 	  boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
-
-	  if (isRemarkEmpty) {
-		  setError(configurationDTO, "Remark is mandatory to update an existing record.");
-		  return;
-	  }
 
 	  if (isValueChanged && !isRemarkChanged) {
 		  setError(configurationDTO, "Value has changed; please provide a updated remark.");
@@ -2696,13 +2922,9 @@ continue;
 	  }
   } 
   else {
-	  if ("0.0".equals(newValue)) {
+	// allow 0.0 for PVC DMD
+	  if ( !pvcDmd && "0.0".equals(newValue)) {
 		  return; 
-	  }
-
-	  if (isRemarkEmpty) {
-		  setError(configurationDTO, "Remark is mandatory for new records.");
-		  return;
 	  }
 
 	  NormAttributeTransactions newEntity = new NormAttributeTransactions();
@@ -2719,6 +2941,89 @@ continue;
 	  
 	  normAttributeTransactionsRepository.save(newEntity);
   }
+}
+
+void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
+	ConfigurationDTO configurationDTO, String plantFKId) {
+
+Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
+Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
+			   ? getVersion(year, UUID.fromString(plantFKId)) 
+			   : "V1";
+
+boolean pvcDmd  = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
+
+Optional<NormAttributeTransactions> existingRecord;
+if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
+  existingRecord = normAttributeTransactionsRepository
+	  .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+
+// existingRecord = normAttributeTransactionsRepository
+// 	.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+} else {
+  existingRecord = normAttributeTransactionsRepository
+	  .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+}
+
+String newValue = (attributeValue != null) ? attributeValue.toString() : "0.0";
+String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
+				 ? configurationDTO.getRemarks().trim() 
+				 : "";
+
+boolean isRemarkEmpty = newRemark.isEmpty();
+
+if (existingRecord.isPresent()) {
+  NormAttributeTransactions entity = existingRecord.get();
+  String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "0.0";
+  String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+
+  boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
+  boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
+
+  if (isRemarkEmpty) {
+	  setError(configurationDTO, "Remark is mandatory to update an existing record.");
+	  return;
+  }
+
+  if (isValueChanged && !isRemarkChanged) {
+	  setError(configurationDTO, "Value has changed; please provide a updated remark.");
+	  return;
+  }
+
+  if (isValueChanged || isRemarkChanged) {
+	  entity.setAttributeValue(newValue);
+	  entity.setRemarks(newRemark);
+	  entity.setModifiedOn(new Date());
+	  normAttributeTransactionsRepository.save(entity);
+  }
+} 
+else {
+// allow 0.0 for PVC DMD
+  if ( !pvcDmd && "0.0".equals(newValue)) {
+	  return; 
+  }
+
+  if (isRemarkEmpty) {
+	  setError(configurationDTO, "Remark is mandatory for new records.");
+	  return;
+  }
+
+  NormAttributeTransactions newEntity = new NormAttributeTransactions();
+  newEntity.setNormParameterFKId(normParameter.getId());
+  newEntity.setAopMonth(i);
+  newEntity.setAuditYear(year);
+  newEntity.setAttributeValueVersion(version);
+  newEntity.setUserName(Utility.getUserName());
+  newEntity.setCreatedOn(new Date());
+  newEntity.setModifiedOn(new Date());
+  
+  newEntity.setAttributeValue(newValue);
+  newEntity.setRemarks(newRemark);
+  
+  normAttributeTransactionsRepository.save(newEntity);
+}
 }
 
 		private void setError(ConfigurationDTO dto, String message) {
@@ -2792,6 +3097,68 @@ continue;
 
 		}
 		return configurationDTO.getJan();
+	}
+
+	public String getMinAttributeValue(SpyroInputMinMaxDTO configurationDTO, Integer i) {
+		switch (i) {
+			case 1:
+				return configurationDTO.getJanMin();
+			case 2:
+				return configurationDTO.getFebMin();
+			case 3:
+				return configurationDTO.getMarMin();
+			case 4:
+				return configurationDTO.getAprMin();
+			case 5:
+				return configurationDTO.getMayMin();
+			case 6:
+				return configurationDTO.getJunMin();
+			case 7:
+				return configurationDTO.getJulMin();
+			case 8:
+				return configurationDTO.getAugMin();
+			case 9:
+				return configurationDTO.getSepMin();
+			case 10:
+				return configurationDTO.getOctMin();
+			case 11:
+				return configurationDTO.getNovMin();
+			case 12:
+				return configurationDTO.getDecMin();
+
+		}
+		return configurationDTO.getJanMin();
+	}
+
+	public String getMaxAttributeValue(SpyroInputMinMaxDTO configurationDTO, Integer i) {
+		switch (i) {
+			case 1:
+				return configurationDTO.getJanMax();
+			case 2:
+				return configurationDTO.getFebMax();
+			case 3:
+				return configurationDTO.getMarMax();
+			case 4:
+				return configurationDTO.getAprMax();
+			case 5:
+				return configurationDTO.getMayMax();
+			case 6:
+				return configurationDTO.getJunMax();
+			case 7:
+				return configurationDTO.getJulMax();
+			case 8:
+				return configurationDTO.getAugMax();
+			case 9:
+				return configurationDTO.getSepMax();
+			case 10:
+				return configurationDTO.getOctMax();
+			case 11:
+				return configurationDTO.getNovMax();
+			case 12:
+				return configurationDTO.getDecMax();
+
+		}
+		return configurationDTO.getJanMax();
 	}
 
 	private String validateDaysUOM(ConfigurationDTO dto, String year) {
@@ -3566,6 +3933,7 @@ continue;
 		boolean isChemical= verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 		boolean ischemicalAndVmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
+		boolean bru = verticalName.equalsIgnoreCase("BRU");
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -3583,7 +3951,7 @@ continue;
 					// we implement version here
 					if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")
 							|| verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA")
-							|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || verticalName.equalsIgnoreCase("PET")) && !isChemical && !ischemicalAndVmd) {
+							|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || verticalName.equalsIgnoreCase("PET") || bru) && !isChemical && !ischemicalAndVmd) {
 						dto.setConfigTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 						dto.setTypeDisplayName(getStringCellValue(row.getCell(1), dto));
 						dto.setProductName(getStringCellValue(row.getCell(2), dto));
@@ -5951,7 +6319,7 @@ continue;
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(configurationDTO, i);
 					configurationDTO.setVertical(verticalName);
-					saveData(optionNormParameters.get(), i, year, attributeValue, configurationDTO, plantFKId);
+					saveDataForOtherCost(optionNormParameters.get(), i, year, attributeValue, configurationDTO, plantFKId);
 					if (configurationDTO.getSaveStatus() != null
 							&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 						failedList.add(configurationDTO);
@@ -6271,4 +6639,131 @@ continue;
 			throw new RuntimeException("Failed to import Configuration Other Cost data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getCrackerC2OptimizingVariablesDropdown() {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			String sql = "SELECT Name AS name, Value AS value FROM vwDropDownCracker_C2_OptimizingVariables";
+			List<Map<String, Object>> result = jdbcTemplate.queryForList(sql);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(result);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch cracker C2 optimizing variables dropdown", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getGroupMaterialDetails(String year, String plantFKId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = verticalName + "_" + site.getName() + "_GetGroupMaterialDetails";
+  
+			 List<GroupMaterialDetailsDTO> result = getGroupMaterialDetailsFromSP(procedureName, year, plantFKId);
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(result);
+			return aopMessageVM;
+	
 }
+
+@Transactional
+	public List<GroupMaterialDetailsDTO> getGroupMaterialDetailsFromSP(String procedureName, String aopYear,String plantId) {
+		try {
+		String sql = "EXEC [RIL.AOP].[dbo].[" + procedureName + "] @aopYear = ?, @plantId = ?";
+
+		return jdbcTemplate.query(sql, new Object[] { aopYear, plantId }, (rs, rowNum) -> new GroupMaterialDetailsDTO(
+				rs.getString("Id"),
+				rs.getString("Name"),
+				rs.getString("UOM"),
+				rs.getString("GroupName"),
+				rs.getString("Apr"),
+				rs.getString("May"),
+				rs.getString("Jun"),
+				rs.getString("Jul"),
+				rs.getString("Aug"),
+				rs.getString("Sep"),
+				rs.getString("Oct"),
+				rs.getString("Nov"),
+				rs.getString("Dec"),
+				rs.getString("Jan"),
+				rs.getString("Feb"),
+				rs.getString("Mar"),
+				rs.getString("NormParameter_FK_Id"),
+				rs.getString("Plant_FK_Id"),
+				rs.getInt("DisplayOrder")
+				
+			));
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data from stored procedure: " + procedureName, ex);
+		}
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM saveGroupMaterialDetails(String year, List<GroupMaterialDetailsDTO> dtoList) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+		for (GroupMaterialDetailsDTO dto : dtoList) {
+			if (dto.getId() == null || dto.getId().isEmpty()) {
+				throw new RuntimeException("Id is required");
+			}
+
+			UUID normParameterFKId = UUID.fromString(dto.getId());
+
+			// April (4) to March (3) — fiscal year order
+			Map<Integer, String> monthValues = new LinkedHashMap<>();
+			monthValues.put(4,  dto.getApr() != null ? dto.getApr() : "0");
+			monthValues.put(5,  dto.getMay() != null ? dto.getMay() : "0");
+			monthValues.put(6,  dto.getJun() != null ? dto.getJun() : "0");
+			monthValues.put(7,  dto.getJul() != null ? dto.getJul() : "0");
+			monthValues.put(8,  dto.getAug() != null ? dto.getAug() : "0");
+			monthValues.put(9,  dto.getSep() != null ? dto.getSep() : "0");
+			monthValues.put(10, dto.getOct() != null ? dto.getOct() : "0");
+			monthValues.put(11, dto.getNov() != null ? dto.getNov() : "0");
+			monthValues.put(12, dto.getDec() != null ? dto.getDec() : "0");
+			monthValues.put(1,  dto.getJan() != null ? dto.getJan() : "0");
+			monthValues.put(2,  dto.getFeb() != null ? dto.getFeb() : "0");
+			monthValues.put(3,  dto.getMar() != null ? dto.getMar() : "0");
+
+			for (Map.Entry<Integer, String> entry : monthValues.entrySet()) {
+				Integer month = entry.getKey();
+				String value = entry.getValue();
+
+				Optional<NormAttributeTransactions> existing =
+						normAttributeTransactionsRepository
+								.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
+
+				if (existing.isPresent()) {
+					NormAttributeTransactions transaction = existing.get();
+					transaction.setAttributeValue(value);
+					transaction.setModifiedOn(new Date());
+					normAttributeTransactionsRepository.save(transaction);
+				} else {
+					NormAttributeTransactions transaction = NormAttributeTransactions.builder()
+							.normParameterFKId(normParameterFKId)
+							.attributeValue(value)
+							.aopMonth(month)
+							.auditYear(year)
+							.createdOn(new Date())
+							.modifiedOn(new Date())
+							.build();
+					normAttributeTransactionsRepository.save(transaction);
+				}
+			}
+		}
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		return aopMessageVM;
+	}
+		
+}
+			
+

@@ -80,6 +80,13 @@ const SteadyStateConsumption = () => {
       hidden: true,
     },
     {
+      field: 'sapCode',
+      title: 'SAP Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'UOM',
       title: 'UOM',
       minWidth: 100,
@@ -513,7 +520,7 @@ const SteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}

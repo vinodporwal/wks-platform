@@ -23,6 +23,7 @@ public interface BusinessDemandDataService {
 	public byte[] exportBusinessDemandLine(String year, String plantId, String lineId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
 	public byte[] exportBusinessDemandAllLine(String year, String plantId);
 	public 	List<BusinessDemandDataDTO>  saveBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
+	public 	List<BusinessDemandDataDTO>  saveBusinessDemandDataNew(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	List<BusinessDemandDataDTO>  saveBusinessDemandLineData(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	List<BusinessDemandDataDTO>  editBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	BusinessDemandDataDTO  deleteBusinessDemandData(UUID id);
@@ -30,7 +31,10 @@ public interface BusinessDemandDataService {
 	public AOPMessageVM importExcelLineWise(String year, UUID plantId, MultipartFile file);
 
 	public byte[] exportBusinessDemandV2(String year, String plantFKId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
-
 	public AOPMessageVM importExcelV2(String year, UUID plantId, MultipartFile file);
+
+	public byte[] exportBusinessDemandWithTotal(String year, String plantId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
+
+    public AOPMessageVM importExcelWithTotal(String year, UUID plantId, MultipartFile file);
 
 }

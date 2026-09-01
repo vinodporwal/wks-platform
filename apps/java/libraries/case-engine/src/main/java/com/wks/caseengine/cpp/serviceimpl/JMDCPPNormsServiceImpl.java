@@ -7,20 +7,15 @@ import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +28,11 @@ import com.wks.caseengine.cpp.dto.norm.CPPNormsResponseDTO;
 import com.wks.caseengine.cpp.entity.CPPNorms;
 import com.wks.caseengine.cpp.repository.CPPNormsRepository;
 import com.wks.caseengine.cpp.service.JMDCPPNormsService;
+import com.wks.caseengine.cpp.utility.ExcelCells;
+import com.wks.caseengine.cpp.utility.ExcelColumns;
+import com.wks.caseengine.cpp.utility.ExcelRows;
+import com.wks.caseengine.cpp.utility.ExcelStyles;
+import com.wks.caseengine.cpp.utility.FiscalYearMonths;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import jakarta.persistence.EntityManager;
@@ -47,9 +47,6 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
     @PersistenceContext
     private EntityManager entityManager;
-
-    @Autowired
-    private CPPNormsServiceImpl cppNormsServiceImpl;
 
     @Autowired
     private CPPNormsRepository cppNormsRepository;
@@ -83,6 +80,28 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
             List<CPPNormsResponseDTO> allResults = new ArrayList<>();
 
+            // ── Step A: Pre-calculate Fixed-type norms (NormType=6) ────────────────────
+            // When date range is provided, run CPP_GetFixedCalculatedUtilityNorms
+            // which deletes stale rows in CPP_utilitiesCalculatednorms for these
+            // plants and recalculates fresh values from consumption/production data.
+            // CPP_JMD_GetCPPNorms (Step B) will then LEFT JOIN that table to
+            // populate calculatedNorms for NormType=6 rows.
+            if (fromDate != null && !fromDate.isEmpty() && toDate != null && !toDate.isEmpty()) {
+                log.info("Date range provided — pre-calculating fixed utility norms for JMD plants: {}", plantIdsStr);
+                try {
+                    callFixedUtilityCalculation(plantIdsStr, financialYear, fromDate, toDate);
+                    log.info("Fixed utility norm pre-calculation completed for financialYear={}", financialYear);
+                } catch (Exception calcEx) {
+                    log.warn("Fixed utility norm pre-calculation failed: {}. Continuing with existing CPP_utilitiesCalculatednorms values.",
+                            calcEx.getMessage());
+                }
+            } else {
+                log.info("Date range not provided — using existing values from CPP_utilitiesCalculatednorms for Fixed-type norms");
+            }
+
+            // ── Step B: Fetch CPP norms via main SP ────────────────────────────────────
+            // CPP_JMD_GetCPPNorms handles Formula-type (NormType=9) calculation
+            // internally and LEFT JOINs CPP_utilitiesCalculatednorms for Fixed-type.
             try {
                 StoredProcedureQuery sp = entityManager
                         .createStoredProcedureQuery("dbo.CPP_JMD_GetCPPNorms")
@@ -259,79 +278,56 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("CPP Norms");
 
-            CellStyle headerStyle = createHeaderStyle(workbook);
-            CellStyle dataStyle = createDataStyle(workbook);
-            CellStyle numericStyle = createNumericStyle(workbook);
+            CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
+            CellStyle dataStyle = ExcelStyles.createDataStyle(workbook);
+            CellStyle numericStyle = ExcelStyles.createNumericStyle(workbook, "#,##0.0000");
 
             int rowNum = 0;
             int col = 0;
 
             Row headerRow = sheet.createRow(rowNum++);
 
-            headerRow.createCell(col).setCellValue("CPP Plant");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Generating Plant");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Utility");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Utility ID");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("UOM");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Account");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Material");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("SAP Code");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Issuing Plant");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Issuing UOM");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("AOP Year");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Norm Type");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "CPP Plant", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Generating Plant", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Utility", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Utility ID", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "UOM", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Account", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Material", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "SAP Code", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Issuing Plant", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Issuing UOM", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "AOP Year", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Norm Type", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Actual Norm", headerStyle);
 
-            String startYearSuffix = financialYear.substring(2, 4);
-            String endYearSuffix = financialYear.substring(5, 7);
-            String[] months = {"Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix, "Jul-" + startYearSuffix,
-                    "Aug-" + startYearSuffix, "Sep-" + startYearSuffix, "Oct-" + startYearSuffix, "Nov-" + startYearSuffix,
-                    "Dec-" + startYearSuffix, "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix};
+            String[] months = FiscalYearMonths.getMonthHeaders(financialYear);
 
             int monthStartCol = col;
             for (String month : months) {
-                headerRow.createCell(col).setCellValue(month);
-                headerRow.getCell(col++).setCellStyle(headerStyle);
+                ExcelCells.setString(headerRow.createCell(col++), month, headerStyle);
             }
 
             int remarksCol = col;
-            headerRow.createCell(col).setCellValue("Remarks");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Remarks", headerStyle);
 
             int applyActualNormToAllCol = col;
-            headerRow.createCell(col).setCellValue("applyActualNormToAll");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "applyActualNormToAll", headerStyle);
 
             int idCol = col;
-            headerRow.createCell(col).setCellValue("id");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "id", headerStyle);
 
             int cppNormsIdCol = col;
-            headerRow.createCell(col).setCellValue("cppNormsId");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "cppNormsId", headerStyle);
 
             int normsHeaderFkIdCol = col;
-            headerRow.createCell(col).setCellValue("normsHeaderFkId");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "normsHeaderFkId", headerStyle);
 
             int normTypeFkIdCol = col;
-            headerRow.createCell(col).setCellValue("normTypeFkId");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "normTypeFkId", headerStyle);
 
             int dataHashCol = col;
-            headerRow.createCell(col).setCellValue("dataHash");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "dataHash", headerStyle);
 
             int totalColumns = col;
 
@@ -339,58 +335,47 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
                 Row row = sheet.createRow(rowNum++);
                 col = 0;
 
-                setStringCellValue(row.createCell(col++), dto.getCppPlantName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getGeneratingPlantName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityId(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUom(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getAccountName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getMaterialName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getMaterialId(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getIssuingUom(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getNormTypeName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getGeneratingPlantName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getUtilityName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getUtilityId(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getUom(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getAccountName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getMaterialName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getMaterialId(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getIssuingUom(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getAopYear(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getNormTypeName(), dataStyle);
+                ExcelCells.setBigDecimal(row.createCell(col++), dto.getActualNorm(), numericStyle);
 
-                setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 2), dto.getJunNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 3), dto.getJulNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 4), dto.getAugNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 5), dto.getSepNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 6), dto.getOctNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 7), dto.getNovNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 8), dto.getDecNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 9), dto.getJanNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFebNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 0), dto.getAprNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 1), dto.getMayNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 2), dto.getJunNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 3), dto.getJulNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 4), dto.getAugNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 5), dto.getSepNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 6), dto.getOctNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 7), dto.getNovNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 8), dto.getDecNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 9), dto.getJanNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 10), dto.getFebNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 11), dto.getMarNorms(), numericStyle);
                 col = monthStartCol + 12;
 
-                setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getApplyActualNormToAll() != null ? dto.getApplyActualNormToAll().toString() : "false", dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getCppNormsId() != null ? dto.getCppNormsId().toString() : null, dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getNormsHeaderFkId() != null ? dto.getNormsHeaderFkId().toString() : null, dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getNormTypeFkId() != null ? dto.getNormTypeFkId().toString() : null, dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getRemarks(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getApplyActualNormToAll() != null ? dto.getApplyActualNormToAll().toString() : "false", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getCppNormsId() != null ? dto.getCppNormsId().toString() : "", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getNormsHeaderFkId() != null ? dto.getNormsHeaderFkId().toString() : "", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getNormTypeFkId() != null ? dto.getNormTypeFkId().toString() : "", dataStyle);
 
                 String dataHash = generateNormsHash(dto);
-                setStringCellValue(row.createCell(col++), dataHash, dataStyle);
+                ExcelCells.setString(row.createCell(col++), dataHash, dataStyle);
             }
 
-            sheet.setColumnHidden(applyActualNormToAllCol, true);
-            sheet.setColumnHidden(idCol, true);
-            sheet.setColumnHidden(cppNormsIdCol, true);
-            sheet.setColumnHidden(normsHeaderFkIdCol, true);
-            sheet.setColumnHidden(normTypeFkIdCol, true);
-            sheet.setColumnHidden(dataHashCol, true);
-
-            for (int i = 0; i < totalColumns; i++) {
-                if (i == remarksCol) {
-                    sheet.setColumnWidth(i, 8000);
-                    continue;
-                }
-                sheet.autoSizeColumn(i);
-            }
+            ExcelColumns.hideColumns(sheet, applyActualNormToAllCol, idCol, cppNormsIdCol, normsHeaderFkIdCol, normTypeFkIdCol, dataHashCol);
+            ExcelColumns.autoSize(sheet, totalColumns, remarksCol);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
@@ -409,49 +394,6 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
         }
     }
 
-    private CellStyle createHeaderStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        style.setAlignment(HorizontalAlignment.CENTER);
-        style.setVerticalAlignment(VerticalAlignment.CENTER);
-        org.apache.poi.ss.usermodel.Font font = workbook.createFont();
-        font.setBold(true);
-        style.setFont(font);
-        return style;
-    }
-
-    private CellStyle createDataStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        style.setAlignment(HorizontalAlignment.LEFT);
-        style.setVerticalAlignment(VerticalAlignment.CENTER);
-        return style;
-    }
-
-    private CellStyle createNumericStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        style.setAlignment(HorizontalAlignment.LEFT);
-        style.setVerticalAlignment(VerticalAlignment.CENTER);
-        style.setDataFormat(workbook.createDataFormat().getFormat("#,##0.0000"));
-        return style;
-    }
-
-    private void setStringCellValue(Cell cell, String value, CellStyle style) {
-        if (value != null) {
-            cell.setCellValue(value);
-        }
-        cell.setCellStyle(style);
-    }
-
-    private void setBigDecimalCellValue(Cell cell, BigDecimal value, CellStyle style) {
-        if (value != null) {
-            cell.setCellValue(value.doubleValue());
-        } else {
-            cell.setCellValue("");
-        }
-        cell.setCellStyle(style);
-    }
-
     @Override
     @Transactional
     public AOPMessageVM importCPPNorms(List<UUID> plantIds, String financialYear, MultipartFile file, String modifiedBy) throws IOException {
@@ -464,20 +406,34 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
             List<CPPNormsResponseDTO> excelData = readCPPNormsFromExcel(file.getInputStream());
             log.info("[Import CPP Norms] Read {} records from Excel", excelData.size());
 
+            // Pre-fetch all DB records in ONE query to avoid N+M round trips
+            List<UUID> normsHeaderFkIds = excelData.stream()
+                    .map(CPPNormsResponseDTO::getNormsHeaderFkId)
+                    .filter(java.util.Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+            Map<UUID, CPPNorms> dbRecordsMap = new HashMap<>();
+            if (!normsHeaderFkIds.isEmpty()) {
+                List<CPPNorms> dbRecords = cppNormsRepository.findByNormsHeaderFkIdInAndFinancialYear(normsHeaderFkIds, financialYear);
+                dbRecordsMap = dbRecords.stream()
+                        .collect(Collectors.toMap(CPPNorms::getNormsHeaderFkId, r -> r, (a, b) -> a));
+            }
+            log.info("[Import CPP Norms] Pre-fetched {} DB records in one query", dbRecordsMap.size());
+
             List<CPPNormsRequestDTO> validRecords = new ArrayList<>();
             List<CPPNormsResponseDTO> failedRecords = new ArrayList<>();
             int skippedCount = 0;
 
             for (CPPNormsResponseDTO dto : excelData) {
                 // FIRST: Check if record was actually modified by user
-                if (!isRecordModified(dto, financialYear)) {
+                if (!isRecordModified(dto, dbRecordsMap)) {
                     skippedCount++;
                     log.debug("[Import CPP Norms] Skipping unchanged record: normsHeaderFkId={}", dto.getNormsHeaderFkId());
                     continue;
                 }
 
                 // SECOND: Validate modified records
-                String validationError = validateNormsData(dto, financialYear);
+                String validationError = validateNormsData(dto, dbRecordsMap);
                 if (validationError != null) {
                     dto.setSaveStatus("Failed");
                     dto.setErrDescription(validationError);
@@ -590,65 +546,48 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
 
-            if (rowIterator.hasNext()) {
-                rowIterator.next();
-            }
-
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-
-                boolean isRowEmpty = true;
-                for (int i = 0; i < row.getLastCellNum(); i++) {
-                    Cell cell = row.getCell(i);
-                    if (cell != null && cell.toString() != null && !cell.toString().trim().isEmpty()) {
-                        isRowEmpty = false;
-                        break;
-                    }
-                }
-                if (isRowEmpty) {
-                    continue;
-                }
-
+            for (Row row : ExcelRows.getDataRows(sheet, 1)) {
                 CPPNormsResponseDTO dto = new CPPNormsResponseDTO();
 
                 try {
                     int col = 0;
-                    dto.setCppPlantName(getStringCellValue(row.getCell(col++)));
-                    dto.setGeneratingPlantName(getStringCellValue(row.getCell(col++)));
-                    dto.setUtilityName(getStringCellValue(row.getCell(col++)));
-                    dto.setUtilityId(getStringCellValue(row.getCell(col++)));
-                    dto.setUom(getStringCellValue(row.getCell(col++)));
-                    dto.setAccountName(getStringCellValue(row.getCell(col++)));
-                    dto.setMaterialName(getStringCellValue(row.getCell(col++)));
-                    dto.setMaterialId(getStringCellValue(row.getCell(col++)));
-                    dto.setIssuingPlantName(getStringCellValue(row.getCell(col++)));
-                    dto.setIssuingUom(getStringCellValue(row.getCell(col++)));
-                    dto.setAopYear(getStringCellValue(row.getCell(col++)));
-                    dto.setNormTypeName(getStringCellValue(row.getCell(col++)));
+                    dto.setCppPlantName(ExcelCells.toString(row.getCell(col++)));
+                    dto.setGeneratingPlantName(ExcelCells.toString(row.getCell(col++)));
+                    dto.setUtilityName(ExcelCells.toString(row.getCell(col++)));
+                    dto.setUtilityId(ExcelCells.toString(row.getCell(col++)));
+                    dto.setUom(ExcelCells.toString(row.getCell(col++)));
+                    dto.setAccountName(ExcelCells.toString(row.getCell(col++)));
+                    dto.setMaterialName(ExcelCells.toString(row.getCell(col++)));
+                    dto.setMaterialId(ExcelCells.toString(row.getCell(col++)));
+                    dto.setIssuingPlantName(ExcelCells.toString(row.getCell(col++)));
+                    dto.setIssuingUom(ExcelCells.toString(row.getCell(col++)));
+                    dto.setAopYear(ExcelCells.toString(row.getCell(col++)));
+                    dto.setNormTypeName(ExcelCells.toString(row.getCell(col++)));
 
-                    dto.setAprNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setMayNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setJunNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setJulNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setAugNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setSepNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setOctNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setNovNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setDecNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setJanNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setFebNorms(getBigDecimalCellValue(row.getCell(col++)));
-                    dto.setMarNorms(getBigDecimalCellValue(row.getCell(col++)));
+                    dto.setActualNorm(ExcelCells.toBigDecimal(row.getCell(col++)));
 
-                    dto.setRemarks(getStringCellValue(row.getCell(col++)));
+                    dto.setAprNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setMayNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setJunNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setJulNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setAugNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setSepNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setOctNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setNovNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setDecNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setJanNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setFebNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
+                    dto.setMarNorms(ExcelCells.toBigDecimal(row.getCell(col++)));
 
-                    String applyActualNormToAllStr = getStringCellValue(row.getCell(col++));
+                    dto.setRemarks(ExcelCells.toString(row.getCell(col++)));
+
+                    String applyActualNormToAllStr = ExcelCells.toString(row.getCell(col++));
                     if (applyActualNormToAllStr != null && !applyActualNormToAllStr.isEmpty()) {
                         dto.setApplyActualNormToAll(Boolean.parseBoolean(applyActualNormToAllStr));
                     }
 
-                    String idStr = getStringCellValue(row.getCell(col++));
+                    String idStr = ExcelCells.toString(row.getCell(col++));
                     if (idStr != null && !idStr.isEmpty()) {
                         try {
                             dto.setId(Long.parseLong(idStr));
@@ -657,24 +596,20 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
                         }
                     }
 
-                    String cppNormsIdStr = getStringCellValue(row.getCell(col++));
-                    if (cppNormsIdStr != null && !cppNormsIdStr.isEmpty()) {
-                        dto.setCppNormsId(UUID.fromString(cppNormsIdStr));
-                    }
+                    dto.setCppNormsId(ExcelCells.toUUID(row.getCell(col++)));
+                    dto.setNormsHeaderFkId(ExcelCells.toUUID(row.getCell(col++)));
 
-                    String normsHeaderFkIdStr = getStringCellValue(row.getCell(col++));
-                    if (normsHeaderFkIdStr != null && !normsHeaderFkIdStr.isEmpty()) {
-                        dto.setNormsHeaderFkId(UUID.fromString(normsHeaderFkIdStr));
-                    }
-
-                    String normTypeFkIdStr = getStringCellValue(row.getCell(col++));
+                    String normTypeFkIdStr = ExcelCells.toString(row.getCell(col++));
                     if (normTypeFkIdStr != null && !normTypeFkIdStr.isEmpty()) {
-                        dto.setNormTypeFkId(Integer.parseInt(normTypeFkIdStr));
+                        try {
+                            dto.setNormTypeFkId(Integer.parseInt(normTypeFkIdStr));
+                        } catch (NumberFormatException e) {
+                            log.warn("Could not parse normTypeFkId '{}' as Integer", normTypeFkIdStr);
+                        }
                     }
 
-                    // Read dataHash column (stored during export for audit/change detection)
-                    String storedHash = getStringCellValue(row.getCell(col++));
-                    // Hash is used by isRecordModified() which compares DB values with imported values
+                    // Read dataHash column to advance cursor (hash is regenerated in isRecordModified)
+                    row.getCell(col++);
 
                     if (dto.getNormsHeaderFkId() == null) {
                         dto.setSaveStatus("Failed");
@@ -745,19 +680,18 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
     /**
      * Check if the imported record has been modified compared to DB.
      * Returns true if norms data or remarks have changed.
+     * Uses the pre-fetched dbRecordsMap to avoid per-record DB queries.
      */
-    private boolean isRecordModified(CPPNormsResponseDTO dto, String financialYear) {
+    private boolean isRecordModified(CPPNormsResponseDTO dto, Map<UUID, CPPNorms> dbRecordsMap) {
         try {
             if (dto.getNormsHeaderFkId() == null) {
                 return true;
             }
 
-            Optional<CPPNorms> dbEntityOpt = cppNormsRepository.findByNormsHeaderFkIdAndFinancialYear(dto.getNormsHeaderFkId(), financialYear);
-            if (dbEntityOpt.isEmpty()) {
+            CPPNorms dbEntity = dbRecordsMap.get(dto.getNormsHeaderFkId());
+            if (dbEntity == null) {
                 return true;
             }
-
-            CPPNorms dbEntity = dbEntityOpt.get();
 
             CPPNormsResponseDTO dbDto = new CPPNormsResponseDTO();
             dbDto.setAprNorms(dbEntity.getAprNorms());
@@ -794,8 +728,9 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
      * Validate imported norms data.
      * Checks that NormsHeaderFkId is present, remarks are not empty,
      * and remarks have been updated from DB value (mandatory for audit).
+     * Uses the pre-fetched dbRecordsMap to avoid per-record DB queries.
      */
-    private String validateNormsData(CPPNormsResponseDTO dto, String financialYear) {
+    private String validateNormsData(CPPNormsResponseDTO dto, Map<UUID, CPPNorms> dbRecordsMap) {
         if (dto.getNormsHeaderFkId() == null) {
             return "NormsHeaderFkId is missing";
         }
@@ -805,9 +740,9 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
         }
 
         try {
-            Optional<CPPNorms> dbEntityOpt = cppNormsRepository.findByNormsHeaderFkIdAndFinancialYear(dto.getNormsHeaderFkId(), financialYear);
-            if (dbEntityOpt.isPresent()) {
-                String dbRemarks = dbEntityOpt.get().getRemarks() != null ? dbEntityOpt.get().getRemarks().trim() : "";
+            CPPNorms dbEntity = dbRecordsMap.get(dto.getNormsHeaderFkId());
+            if (dbEntity != null) {
+                String dbRemarks = dbEntity.getRemarks() != null ? dbEntity.getRemarks().trim() : "";
                 String importedRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
 
                 if (dbRemarks.equals(importedRemarks)) {
@@ -849,84 +784,60 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("CPP Norms");
 
-            CellStyle headerStyle = createHeaderStyle(workbook);
-            CellStyle dataStyle = createDataStyle(workbook);
-            CellStyle numericStyle = createNumericStyle(workbook);
+            CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
+            CellStyle dataStyle = ExcelStyles.createDataStyle(workbook);
+            CellStyle numericStyle = ExcelStyles.createNumericStyle(workbook, "#,##0.0000");
+            CellStyle errorStyle = ExcelStyles.createErrorStyle(workbook);
 
             int rowNum = 0;
             int col = 0;
 
             Row headerRow = sheet.createRow(rowNum++);
 
-            headerRow.createCell(col).setCellValue("CPP Plant");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Generating Plant");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Utility");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Utility ID");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("UOM");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Account");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Material");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("SAP Code");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Issuing Plant");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Issuing UOM");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("AOP Year");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Norm Type");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "CPP Plant", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Generating Plant", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Utility", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Utility ID", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "UOM", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Account", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Material", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "SAP Code", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Issuing Plant", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Issuing UOM", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "AOP Year", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Norm Type", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Actual Norm", headerStyle);
 
-            String startYearSuffix = financialYear.substring(2, 4);
-            String endYearSuffix = financialYear.substring(5, 7);
-            String[] months = {"Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix, "Jul-" + startYearSuffix,
-                    "Aug-" + startYearSuffix, "Sep-" + startYearSuffix, "Oct-" + startYearSuffix, "Nov-" + startYearSuffix,
-                    "Dec-" + startYearSuffix, "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix};
+            String[] months = FiscalYearMonths.getMonthHeaders(financialYear);
 
             int monthStartCol = col;
             for (String month : months) {
-                headerRow.createCell(col).setCellValue(month);
-                headerRow.getCell(col++).setCellStyle(headerStyle);
+                ExcelCells.setString(headerRow.createCell(col++), month, headerStyle);
             }
 
             int remarksCol = col;
-            headerRow.createCell(col).setCellValue("Remarks");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Remarks", headerStyle);
 
             int applyActualNormToAllCol = col;
-            headerRow.createCell(col).setCellValue("applyActualNormToAll");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "applyActualNormToAll", headerStyle);
 
             int idCol = col;
-            headerRow.createCell(col).setCellValue("id");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "id", headerStyle);
 
             int cppNormsIdCol = col;
-            headerRow.createCell(col).setCellValue("cppNormsId");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "cppNormsId", headerStyle);
 
             int normsHeaderFkIdCol = col;
-            headerRow.createCell(col).setCellValue("normsHeaderFkId");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "normsHeaderFkId", headerStyle);
 
             int normTypeFkIdCol = col;
-            headerRow.createCell(col).setCellValue("normTypeFkId");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "normTypeFkId", headerStyle);
 
             int dataHashCol = col;
-            headerRow.createCell(col).setCellValue("dataHash");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "dataHash", headerStyle);
 
-            headerRow.createCell(col).setCellValue("Status");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Error Description");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Status", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Error Description", headerStyle);
 
             int totalColumns = col;
 
@@ -934,61 +845,50 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
                 Row row = sheet.createRow(rowNum++);
                 col = 0;
 
-                setStringCellValue(row.createCell(col++), dto.getCppPlantName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getGeneratingPlantName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityId(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUom(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getAccountName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getMaterialName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getMaterialId(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getIssuingUom(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getNormTypeName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getGeneratingPlantName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getUtilityName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getUtilityId(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getUom(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getAccountName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getMaterialName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getMaterialId(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getIssuingUom(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getAopYear(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getNormTypeName(), dataStyle);
+                ExcelCells.setBigDecimal(row.createCell(col++), dto.getActualNorm(), numericStyle);
 
-                setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 2), dto.getJunNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 3), dto.getJulNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 4), dto.getAugNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 5), dto.getSepNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 6), dto.getOctNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 7), dto.getNovNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 8), dto.getDecNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 9), dto.getJanNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFebNorms(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 0), dto.getAprNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 1), dto.getMayNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 2), dto.getJunNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 3), dto.getJulNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 4), dto.getAugNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 5), dto.getSepNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 6), dto.getOctNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 7), dto.getNovNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 8), dto.getDecNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 9), dto.getJanNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 10), dto.getFebNorms(), numericStyle);
+                ExcelCells.setBigDecimal(row.createCell(monthStartCol + 11), dto.getMarNorms(), numericStyle);
                 col = monthStartCol + 12;
 
-                setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getApplyActualNormToAll() != null ? dto.getApplyActualNormToAll().toString() : "false", dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getCppNormsId() != null ? dto.getCppNormsId().toString() : null, dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getNormsHeaderFkId() != null ? dto.getNormsHeaderFkId().toString() : null, dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getNormTypeFkId() != null ? dto.getNormTypeFkId().toString() : null, dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getRemarks(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getApplyActualNormToAll() != null ? dto.getApplyActualNormToAll().toString() : "false", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getCppNormsId() != null ? dto.getCppNormsId().toString() : "", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getNormsHeaderFkId() != null ? dto.getNormsHeaderFkId().toString() : "", dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getNormTypeFkId() != null ? dto.getNormTypeFkId().toString() : "", dataStyle);
 
                 String dataHash = generateNormsHash(dto);
-                setStringCellValue(row.createCell(col++), dataHash, dataStyle);
+                ExcelCells.setString(row.createCell(col++), dataHash, dataStyle);
 
-                setStringCellValue(row.createCell(col++), dto.getSaveStatus(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getErrDescription(), dataStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getSaveStatus(), errorStyle);
+                ExcelCells.setString(row.createCell(col++), dto.getErrDescription(), errorStyle);
             }
 
-            sheet.setColumnHidden(applyActualNormToAllCol, true);
-            sheet.setColumnHidden(idCol, true);
-            sheet.setColumnHidden(cppNormsIdCol, true);
-            sheet.setColumnHidden(normsHeaderFkIdCol, true);
-            sheet.setColumnHidden(normTypeFkIdCol, true);
-            sheet.setColumnHidden(dataHashCol, true);
-
-            for (int i = 0; i < totalColumns; i++) {
-                if (i == remarksCol) {
-                    sheet.setColumnWidth(i, 8000);
-                    continue;
-                }
-                sheet.autoSizeColumn(i);
-            }
+            ExcelColumns.hideColumns(sheet, applyActualNormToAllCol, idCol, cppNormsIdCol, normsHeaderFkIdCol, normTypeFkIdCol, dataHashCol);
+            ExcelColumns.autoSize(sheet, totalColumns, remarksCol);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
@@ -1001,43 +901,38 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
         }
     }
 
-    private String getStringCellValue(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-        try {
-            switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue();
-            case NUMERIC:
-                double d = cell.getNumericCellValue();
-                if (d == Math.floor(d)) {
-                    return String.valueOf((long) d);
-                }
-                return String.valueOf(d);
-            case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
-            case FORMULA:
-                return cell.getCellFormula();
-            default:
-                return null;
-            }
-        } catch (Exception e) {
-            return null;
-        }
+    /**
+     * Calls CPP_GetFixedCalculatedUtilityNorms to pre-calculate Fixed-type norms
+     * (NormType_FK_Id = 6) and persist results into CPP_utilitiesCalculatednorms.
+     *
+     * <p>The SP deletes existing rows for the given plants + financialYear and
+     * recalculates from CPP_Consumption_Data and CPP_Production_Data for the
+     * specified date range. CPP_JMD_GetCPPNorms then LEFT JOINs that table
+     * to return calculatedNorms for Fixed-type rows.
+     *
+     * @param plantIdsStr   comma-separated plant UUIDs (matching Plants.SourceName)
+     * @param financialYear financial year string e.g. "2025-26"
+     * @param fromDate      start date string e.g. "2025-04-01"
+     * @param toDate        end date string e.g. "2026-03-31"
+     */
+    private void callFixedUtilityCalculation(String plantIdsStr, String financialYear,
+                                              String fromDate, String toDate) {
+        log.info("callFixedUtilityCalculation: plantIds={}, financialYear={}, fromDate={}, toDate={}",
+                plantIdsStr, financialYear, fromDate, toDate);
+        StoredProcedureQuery sp = entityManager
+                .createStoredProcedureQuery("dbo.CPP_GetFixedCalculatedUtilityNorms")
+                .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)  // @FinancialYear
+                .registerStoredProcedureParameter(2, String.class, ParameterMode.IN)  // @FromDate
+                .registerStoredProcedureParameter(3, String.class, ParameterMode.IN)  // @ToDate
+                .registerStoredProcedureParameter(4, String.class, ParameterMode.IN); // @PlantIds
+        sp.setParameter(1, financialYear);
+        sp.setParameter(2, fromDate);
+        sp.setParameter(3, toDate);
+        sp.setParameter(4, plantIdsStr);
+        sp.execute();
+        log.info("callFixedUtilityCalculation: completed for financialYear={}", financialYear);
     }
 
-    private BigDecimal getBigDecimalCellValue(Cell cell) {
-        String str = getStringCellValue(cell);
-        if (str == null || str.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return new BigDecimal(str.trim());
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     private CPPNormsResponseDTO mapRowToDto(Object[] row) {
         CPPNormsResponseDTO dto = new CPPNormsResponseDTO();

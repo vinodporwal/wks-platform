@@ -8,11 +8,13 @@ import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import { useSession } from 'SessionStoreContext'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import { OptimizerOutputApiService } from 'services/optimizer-output-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ModeSelection from './ModeSelection'
+import CrackerC2OptimizingVariables from './CrackerC2OptimizingVariables'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -273,6 +275,7 @@ const CrackerConfig = () => {
 
   useEffect(() => {
     fetchModes()
+
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
@@ -853,6 +856,14 @@ const CrackerConfig = () => {
             AOP_YEAR,
           )
         }
+      } else if (IS_CRACKER_C2) {
+        response = await OptimizerOutputApiService.importExcelWithPilotFurnace(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response = await DataService.importSpyroOutputExcel(
           rawFile,
@@ -1025,35 +1036,36 @@ const CrackerConfig = () => {
       } else {
         const ExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_${AOP_YEAR}`
 
-        response = await DataService.exportSpyroOutputExcel(
-          keycloak,
-          mode,
-          PLANT_ID,
-          AOP_YEAR,
-          ExcelName,
-        )
+        if (IS_CRACKER_C2) {
+          response = await OptimizerOutputApiService.exportSpyroOutputReportWithPilotFurnace(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            ExcelName,
+          )
+        } else {
+          response = await DataService.exportSpyroOutputExcel(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            ExcelName,
+          )
+        }
       }
 
-      if (response?.code === 200) {
-        // setSnackbarOpen(true)
-        // setSnackbarData({
-        //   message: 'Excel download completed successfully!',
-        //   severity: 'success',
-        // })
-      } else {
-        // setSnackbarOpen(true)
-        // setSnackbarData({
-        //   message: 'Failed to download Excel1.',
-        //   severity: 'error',
-        // })
-      }
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
       setSnackbarOpen(true)
     }
   }
@@ -1101,7 +1113,6 @@ const CrackerConfig = () => {
             case 'Total Feed':
             case 'Total Products':
             case 'Miscellaneous Parameters':
-            case 'Optimizing':
             case 'Constant':
             case 'Other Product':
             case 'Yield':
@@ -1178,6 +1189,41 @@ const CrackerConfig = () => {
                       downloadExcelForConfiguration
                     }
                   />
+                </Box>
+              )
+            case 'Optimizing':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
+                  {IS_CRACKER_C2 && <CrackerC2OptimizingVariables />}
                 </Box>
               )
             default:

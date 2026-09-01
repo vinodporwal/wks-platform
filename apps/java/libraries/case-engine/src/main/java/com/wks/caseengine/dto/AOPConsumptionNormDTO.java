@@ -44,5 +44,6 @@ public class AOPConsumptionNormDTO {
     private String saveStatus;
   	private String errDescription;
   	private Double wtAverage;
+  	private Double ytd;
 
 }

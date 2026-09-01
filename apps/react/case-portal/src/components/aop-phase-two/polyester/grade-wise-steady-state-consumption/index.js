@@ -1,20 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  IconButton,
-} from '@mui/material'
-import { styled } from '@mui/material/styles'
-import CloseIcon from '@mui/icons-material/Close'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import { SteadyStateConsumptionApiService } from '../../services/polyester/steadyStateConsumptionApiService'
@@ -23,7 +10,50 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import ValidationErrorDialog from './ValidationErrorDialog'
+import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 
+const staticInitialColumns = [
+  {
+    field: 'id',
+    title: 'Id',
+    minWidth: 200,
+    type: 'text',
+    editable: false,
+    locked: true,
+    hidden: true,
+  },
+  {
+    field: 'productName',
+    title: 'Particulars',
+    minWidth: 200,
+    type: 'text',
+    editable: false,
+    locked: true,
+  },
+  {
+    field: 'normParameterTypeDisplayName',
+    title: 'Type',
+    minWidth: 200,
+    type: 'text',
+    editable: false,
+    locked: true,
+    hidden: true,
+  },
+  {
+    field: 'sapCode',
+    title: 'SAP Code',
+    minWidth: 120,
+    type: 'text',
+    editable: false,
+  },
+  {
+    field: 'UOM',
+    title: 'UOM',
+    minWidth: 100,
+    type: 'text',
+    editable: false,
+  },
+]
 const GradeWiseSteadyStateConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -37,6 +67,7 @@ const GradeWiseSteadyStateConsumption = () => {
     dataGridStore,
     'Grade_Wise_Steady_State_Consumption',
   )
+  const isFilament = verticalObject?.name?.toLowerCase() === 'filament (pfy)'
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -46,15 +77,12 @@ const GradeWiseSteadyStateConsumption = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Grade dropdown state (for PE/PP — same as NormalOpNorms.js isPEPP logic)
+  // Grade dropdown state
   const [grades, setGrades] = useState([])
   const [selectedGradeId, setSelectedGradeId] = useState(null)
 
   // calculationObject for conditional calculateDisabled
   const [calculationObject, setCalculationObject] = useState([])
-
-  // allRedCell for norm transaction highlights
-  const [allRedCell, setAllRedCell] = useState([])
 
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -70,146 +98,9 @@ const GradeWiseSteadyStateConsumption = () => {
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
-  const columns = [
-    {
-      field: 'id',
-      title: 'Id',
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-      hidden: true,
-    },
-    {
-      field: 'productName',
-      title: 'Particulars',
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'normParameterTypeDisplayName',
-      title: 'Type',
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-      hidden: true,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      minWidth: 100,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'april',
-      title: headerMap[4],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'june',
-      title: headerMap[6],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'july',
-      title: headerMap[7],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'august',
-      title: headerMap[8],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'september',
-      title: headerMap[9],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'october',
-      title: headerMap[10],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'november',
-      title: headerMap[11],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'december',
-      title: headerMap[12],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'january',
-      title: headerMap[1],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'february',
-      title: headerMap[2],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'march',
-      title: headerMap[3],
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      minWidth: 220,
-      type: 'textarea',
-      editable: true,
-    },
-  ]
+  const [columns, setColumns] = useState(staticInitialColumns)
 
-  // ===================== Fetch Grade Dropdown (for PE — same as NormalOpNorms fetchGradeDropdowns) =====================
+  // ===================== Fetch Grade Dropdown =====================
 
   const fetchGrades = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -239,56 +130,97 @@ const GradeWiseSteadyStateConsumption = () => {
     }
   }, [PLANT_ID, AOP_YEAR, keycloak])
 
-  // ===================== Fetch Norm Transactions (allRedCell for red highlight) =====================
-
-  const fetchNormTransactions = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    try {
-      let res = await SteadyStateConsumptionApiService.getNormTransactions(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (res?.code === 200) {
-        const normalized = (res?.data || []).map((obj) => ({
-          ...obj,
-          normParameterFKId: obj.normParameterFKId?.toUpperCase(),
-        }))
-        setAllRedCell(normalized)
-      }
-    } catch (error) {
-      console.error('Error fetching norm transactions:', error)
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak])
-
-  // ===================== Fetch Main Data (requires gradeId for PE — same as NormalOpNorms fetchData) =====================
+  // ===================== Fetch Main Data (requires gradeId) =====================
 
   const fetchData = useCallback(
-    async (gradeId) => {
+    async () => {
       if (!PLANT_ID || !AOP_YEAR) return
-      if (!gradeId) return
 
       setLoading(true)
       setRows([])
       try {
-        let response =
-          await SteadyStateConsumptionApiService.getSteadyStateConsumptionByGrade(
-            keycloak,
-            gradeId,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+        let response = await SteadyStateConsumptionApiService.getSteadyStateConsumptionWithColumns(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+        if (response?.data?.columns) {
+          const excludedColumns = [
+            'Material_FK_Id',
+            'Site_FK_Id',
+            'Plant_FK_ID',
+            'Vertical_FK_Id',
+            'Material',
+            'FinancialYear',
+            'NormParameterDisplayOrder',
+            'TypeDisplayName',
+            'SAPMaterialCode',
+            'UOM',
+            'IsEditable',
+            'FinancialYear',
+            'Remarks',
+            'CreatedOn',
+            'ModifiedOn',
+            'MCUVersion',
+            'UpdatedBy',
+            'NormParameterTypeId',
+            'NormParameterTypeName',
+            'NormParameterTypeDisplayName',
+            'ProductName',
+          ]
+
+          const dynamicApiColumns = response.data.columns
+            .filter((col) => !excludedColumns.includes(col.field))
+            .map((col) => {
+              let colDef = {
+                ...col,
+                minWidth: 150,
+                editable: col.field === 'WtAvg' ? false : true,
+                type: col.type === 'number' ? 'row-based' : 'text',
+              }
+              if (col.type === 'number') {
+                colDef.format = valueFormat
+              }
+              return colDef
+            })
+
+          const remarksColumn = {
+            field: 'remarks',
+            title: 'Remark',
+            minWidth: 220,
+            type: 'textarea',
+            editable: true,
+          }
+
+          setColumns([
+            ...staticInitialColumns,
+            ...dynamicApiColumns,
+            remarksColumn,
+          ])
+        }
 
         setCalculationObject(response?.data?.aopCalculation || [])
 
-        const mappedData = response?.data?.mcuNormsValueDTOList || []
+        const mappedData =
+          response?.data?.data || response?.data?.mcuNormsValueDTOList || []
         const formattedData = mappedData.map((item, index) => ({
           ...item,
-          idFromApi: item.id,
+          idFromApi: item.id || item.Material_FK_Id,
           id: `${index}`,
-          originalRemark: item.remarks,
-          Particulars: item.normParameterTypeDisplayName,
+          originalRemark: item.Remarks,
+          remarks: item.Remarks,
+          productName: item.Particulars || item.ProductName,
+          normParameterTypeDisplayName:
+            item.NormParameterTypeDisplayName || item.TypeDisplayName,
+          isEditable:
+            typeof item.IsEditable === 'number'
+              ? item.IsEditable === 0
+                ? false
+                : true
+              : item.IsEditable,
+          type: 'number1',
+          sapCode: item.SAPMaterialCode,
         }))
 
         setRows(formattedData)
@@ -329,26 +261,22 @@ const GradeWiseSteadyStateConsumption = () => {
     [PLANT_ID, AOP_YEAR, keycloak],
   )
 
-  // ===================== Initial load & Grade change (same as NormalOpNorms fetchAllData) =====================
+  // ===================== Initial load & Grade change =====================
 
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
     setOriginalRows([])
-    setAllRedCell([])
     setGrades([])
     setSelectedGradeId(null)
-    Promise.all([fetchGrades(), fetchNormTransactions()])
-  }, [PLANT_ID, AOP_YEAR])
+    Promise.all([fetchData()])
+  }, [PLANT_ID, AOP_YEAR, fetchData])
 
   // Re-fetch data & validate when selectedGradeId changes
   useEffect(() => {
-    if (selectedGradeId) {
-      fetchData(selectedGradeId)
-      fetchNormTransactions()
-      validateGradeNorms(selectedGradeId)
-    }
-  }, [selectedGradeId, fetchData, fetchNormTransactions, validateGradeNorms])
+      // fetchData(selectedGradeId)
+      if (!isFilament) validateGradeNorms(selectedGradeId)
+  }, [isFilament, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -358,20 +286,19 @@ const GradeWiseSteadyStateConsumption = () => {
       return
     }
 
-    const fieldsToCheck = [
-      'april',
-      'may',
-      'june',
-      'july',
-      'august',
-      'september',
-      'october',
-      'november',
-      'december',
-      'january',
-      'february',
-      'march',
-    ]
+    const fieldsToCheck = columns
+      .filter(
+        (col) =>
+          ![
+            'id',
+            'productName',
+            'normParameterTypeDisplayName',
+            'sapCode',
+            'UOM',
+            'remarks'
+          ].includes(col.field)
+      )
+      .map((col) => col.field)
     const validationError = validateRowDataWithRemarks(
       modifiedData,
       originalRows,
@@ -391,41 +318,43 @@ const GradeWiseSteadyStateConsumption = () => {
 
     setLoading(true)
     try {
-      const payload = modifiedData.map((row) => ({
-        april: row.april || null,
-        may: row.may || null,
-        june: row.june || null,
-        july: row.july || null,
-        august: row.august || null,
-        september: row.september || null,
-        october: row.october || null,
-        november: row.november || null,
-        december: row.december || null,
-        january: row.january || null,
-        february: row.february || null,
-        march: row.march || null,
-        remark: row.remarks,
-        remarks: row.remarks,
-        financialYear: AOP_YEAR,
-        plantId: PLANT_ID,
-        normParameterId: row.normParameterId,
-        id: row.idFromApi || null,
-        materialFkId: row.materialFkId || null,
-        mcuVersion: row.mcuVersion || null,
-        plantFkId: row.plantFkId || null,
-        siteFkId: row.siteFkId || null,
-        verticalFkId: row.verticalFkId || null,
-        unit: row.unit || null,
-        normParameterTypeId: row.normParameterTypeId || null,
-        gradeId: row.gradeId || selectedGradeId || null,
-      }))
+      const payload = modifiedData.map((row) => {
+        const rowPayload = {
+          Site_FK_Id: row.Site_FK_Id || null,
+          Plant_FK_ID: row.Plant_FK_ID || PLANT_ID,
+          Vertical_FK_Id: row.Vertical_FK_Id || null,
+          Material_FK_Id: row.Material_FK_Id || null,
+          FinancialYear: row.FinancialYear || AOP_YEAR,
+          Remarks: row.remarks || '', // Send exactly 'Remarks' as backend expects
+          CreatedOn: row.CreatedOn || null,
+          ModifiedOn: row.ModifiedOn || null,
+          MCUVersion: row.MCUVersion || null,
+          UpdatedBy: row.UpdatedBy || null,
+          NormParameterTypeId: row.NormParameterTypeId || null,
+          NormParameterTypeName: row.NormParameterTypeName || null,
+          NormParameterTypeDisplayName: row.NormParameterTypeDisplayName || null,
+          UOM: row.UOM || '',
+          IsEditable: row.IsEditable !== undefined ? row.IsEditable : null,
+          ProductName: row.ProductName || null,
+          SAPMaterialCode: row.SAPMaterialCode || null,
+          NormParameterDisplayOrder: row.NormParameterDisplayOrder || null,
+          WtAvg: row.WtAvg !== undefined ? row.WtAvg : null,
+        }
+        
+        // Append all dynamic grade values as keys
+        fieldsToCheck.forEach((field) => {
+          const val = row[field]
+          rowPayload[field] = (val === '' || val === null || val === undefined) ? '' : Number(val)
+        })
+        
+        return rowPayload
+      })
 
       const response =
-        await SteadyStateConsumptionApiService.saveGradeWiseSteadyStateConsumption(
+        await SteadyStateConsumptionApiService.saveDynamicSteadyStateConsumption(
           PLANT_ID,
           payload,
           keycloak,
-          selectedGradeId,
           AOP_YEAR,
         )
 
@@ -441,7 +370,7 @@ const GradeWiseSteadyStateConsumption = () => {
         }
       }
 
-      if (isWeightedAverageError) {
+      if (isWeightedAverageError && !isFilament) {
         if (errorDataList && errorDataList.length > 0) {
           setValidationErrors(errorDataList)
           setValidationErrorDialogOpen(true)
@@ -457,7 +386,6 @@ const GradeWiseSteadyStateConsumption = () => {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setModifiedCells({})
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Norms not saved!', severity: 'error' })
@@ -476,7 +404,7 @@ const GradeWiseSteadyStateConsumption = () => {
     keycloak,
     selectedGradeId,
     fetchData,
-    fetchNormTransactions,
+    isFilament
   ])
 
   // ===================== Calculate (PE uses site + vertical — same as NormalOpNorms handleCalculateNormalOperationNormsPe) =====================
@@ -486,15 +414,24 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Calculating...', severity: 'info' })
     try {
-      // Same as NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe
-      const data =
-        await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
+      let data;
+      if (isFilament) {
+        data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPolyester(
           PLANT_ID,
           SITE_ID,
           VERTICAL_ID,
           AOP_YEAR,
           keycloak,
         )
+      } else {
+        data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
+          PLANT_ID,
+          SITE_ID,
+          VERTICAL_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+      }
 
       if (data == 0 || data) {
         setSnackbarOpen(true)
@@ -502,9 +439,8 @@ const GradeWiseSteadyStateConsumption = () => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        await fetchGrades()
+        // await fetchGrades()
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -530,7 +466,7 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel export started!', severity: 'info' })
     try {
-      await SteadyStateConsumptionApiService.exportSteadyStateConsumptionPE(
+      await SteadyStateConsumptionApiService.exportSteadyStateConsumptionDynamic(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -559,12 +495,12 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarData({ message: 'Importing data...', severity: 'info' })
     try {
       const response =
-        await SteadyStateConsumptionApiService.importSteadyStateConsumptionByGrade(
+        await SteadyStateConsumptionApiService.importSteadyStateConsumptionDynamic(
           file,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          selectedGradeId,
+          // selectedGradeId,
         )
 
       let isWeightedAverageError = false
@@ -574,10 +510,11 @@ const GradeWiseSteadyStateConsumption = () => {
       if (
         response &&
         response.code === 400 &&
-        response.message === 'Validation Failed'
+        (response.message === 'Validation Failed' || Array.isArray(response.data))
       ) {
         isWeightedAverageError = true
         errorMsg = response.message || 'Import validation failed.'
+        errorDataList = Array.isArray(response.data) ? response.data : []
       }
 
       if (isWeightedAverageError) {
@@ -599,7 +536,6 @@ const GradeWiseSteadyStateConsumption = () => {
         })
         setModifiedCells({})
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else if (response?.code === 400 && response?.data) {
         // Partial save — download error file
         downloadBase64Excel(
@@ -612,7 +548,6 @@ const GradeWiseSteadyStateConsumption = () => {
           severity: 'warning',
         })
         await fetchData(selectedGradeId)
-        await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -657,7 +592,7 @@ const GradeWiseSteadyStateConsumption = () => {
     showTitle: true,
     titleName: 'Grade Wise Steady State Consumption (Norm/Quantity)',
     // Grade dropdown (showG → showDropdown: true for PE)
-    showDropdown: true,
+    showDropdown: false,
     remarksEditable: true,
     marginBottom: true,
   }
@@ -675,7 +610,7 @@ const GradeWiseSteadyStateConsumption = () => {
     <Box>
       <LoaderBackdrop open={!!loading} />
 
-      <AdvanceKendoTable
+      <RowBasedKendoTable
         columns={columns}
         rows={rows}
         setRows={setRows}
@@ -701,7 +636,6 @@ const GradeWiseSteadyStateConsumption = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        allRedCell={allRedCell}
         groupBy={['normParameterTypeDisplayName']}
         customHeight={70}
         paginationConfig={{

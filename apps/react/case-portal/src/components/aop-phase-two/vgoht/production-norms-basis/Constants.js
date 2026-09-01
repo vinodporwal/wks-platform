@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import { validateRowDataWithoutRemarks, validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { productionAndNormsBasisConstant } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const Constants = ({ startDate, endDate }) => {
+const Constants = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -20,7 +20,7 @@ const Constants = ({ startDate, endDate }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, siteObject } = dataGridStore
+  const { verticalObject, plantObject, year, siteObject } = dataGridStore
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -30,50 +30,111 @@ const Constants = ({ startDate, endDate }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const valueFormat = customValueFormatterPhaseTwo(5)
-  const columns = [
-    {
-      field: 'productName',
-      title: 'Particulars',
-      widthT: 300,
-      minWidth: 250,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      widthT: 120,
-      minWidth: 100,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'value',
-      title: 'Value',
-      editable: true,
-      widthT: 150,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
+
+  const isEorSor = useMemo(() => {
+    const validConfigs = [
+      { site: 'sez', plant: 'vgoht-4' },
+      { site: 'sez', plant: 'vgoht-3' },
+      { site: 'dta', plant: 'dht1' },
+      { site: 'dta', plant: 'dht2' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.site === siteObject?.name?.toLowerCase() &&
+        config.plant === plantObject?.name?.toLowerCase()
+    )
+  }, [siteObject?.name, plantObject?.name])
+
+  const isNotRequiredRemarkValidation = useMemo(() => {
+    const validConfigs = [
+      { site: 'dta', plant: 'hnuu' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.site === siteObject?.name?.toLowerCase() &&
+        config.plant === plantObject?.name?.toLowerCase()
+    )
+  }, [siteObject?.name, plantObject?.name])
+
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
+
+  const columns = useMemo(() => {
+    const cols = [
+      {
+        field: 'productName',
+        title: 'Particulars',
+        widthT: 300,
+        minWidth: 250,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'UOM',
+        title: 'UOM',
+        widthT: 120,
+        minWidth: 100,
+        type: 'text',
+        editable: false,
+      },
+    ]
+
+    if (isEorSor) {
+      cols.push(
+        {
+          field: 'apr',
+          title: 'EOR Value',
+          editable: true,
+          widthT: 150,
+          minWidth: 120,
+          align: 'left',
+          headerAlign: 'left',
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'may',
+          title: 'SOR Value',
+          editable: true,
+          widthT: 150,
+          minWidth: 120,
+          align: 'left',
+          headerAlign: 'left',
+          type: 'number1',
+          format: valueFormat,
+        }
+      )
+    } else {
+      cols.push({
+        field: 'value',
+        title: 'Value',
+        editable: true,
+        widthT: 150,
+        minWidth: 120,
+        align: 'left',
+        headerAlign: 'left',
+        type: 'number1',
+        format: valueFormat,
+      })
+    }
+
+    cols.push({
       field: 'remarks',
       title: 'Remark',
       widthT: 350,
       type: 'textarea',
       editable: true,
       minWidth: 300,
-    },
-  ]
+    })
+
+    return cols
+  }, [valueFormat, isEorSor])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConstantsData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, isEorSor, refreshData])
 
   const fetchConstantsData = async () => {
     setLoading(true)
@@ -81,11 +142,17 @@ const Constants = ({ startDate, endDate }) => {
       // Simulate API call with 1 second delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      const res = await ProductionNormsApiService.getConstantsData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const res = isEorSor
+        ? await ProductionNormsApiService.getConstantsDataEORSOR(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        : await ProductionNormsApiService.getConstantsData(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
 
       // const res = productionAndNormsBasisConstant.data
 
@@ -117,7 +184,7 @@ const Constants = ({ startDate, endDate }) => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Production_Norms_Constants_${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
@@ -179,13 +246,29 @@ const Constants = ({ startDate, endDate }) => {
       return
     }
 
-    const fieldsToCheck = ['value']
-    const validationError = validateRowDataWithRemarks(
-      data,
-      originalRows,
-      fieldsToCheck,
-      'productName',
-    )
+    const fieldsToCheck = isEorSor ? ['apr', 'may'] : ['value']
+    let validationError
+    if (
+      isNotRequiredRemarkValidation &&
+      data.some((row) => {
+        const typeStr = row.type || ''
+        return typeStr.toLowerCase() === 'filter criteria'
+      })
+    ) {
+      validationError = validateRowDataWithoutRemarks(
+        data,
+        originalRows,
+        fieldsToCheck,
+        'productName',
+      )
+    } else {
+      validationError = validateRowDataWithRemarks(
+        data,
+        originalRows,
+        fieldsToCheck,
+        'productName',
+      )
+    }
 
     if (validationError) {
       setSnackbarOpen(true)
@@ -202,17 +285,26 @@ const Constants = ({ startDate, endDate }) => {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
-      console.log('Saving constants data:', payload)
 
-      const response = await ProductionNormsApiService.saveConstantsData(
-        keycloak,
-        AOP_YEAR,
-        PLANT_ID,
-        SITE_ID,
-        periodFrom,
-        periodTo,
-        payload,
-      )
+      const response = isEorSor
+        ? await ProductionNormsApiService.saveConstantsDataEORSOR(
+            keycloak,
+            AOP_YEAR,
+            PLANT_ID,
+            SITE_ID,
+            periodFrom,
+            periodTo,
+            payload,
+          )
+        : await ProductionNormsApiService.saveConstantsData(
+            keycloak,
+            AOP_YEAR,
+            PLANT_ID,
+            SITE_ID,
+            periodFrom,
+            periodTo,
+            payload,
+          )
 
       setModifiedCells({})
       setSnackbarOpen(true)
@@ -220,6 +312,7 @@ const Constants = ({ startDate, endDate }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      fetchConstantsData()
     } catch (error) {
       console.error('Error saving constants data:', error)
       setSnackbarOpen(true)
@@ -250,7 +343,14 @@ const Constants = ({ startDate, endDate }) => {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
-      const response = await ProductionNormsApiService.importConstantsExcel(
+      const response = isEorSor ? await ProductionNormsApiService.importConstantsExcelEORSOR(
+        file,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        periodFrom,
+        periodTo,
+      ) : await ProductionNormsApiService.importConstantsExcel(
         file,
         keycloak,
         PLANT_ID,
@@ -329,10 +429,16 @@ const Constants = ({ startDate, endDate }) => {
     })
 
     try {
-      await ProductionNormsApiService.exportConstantsExcel(
+      isEorSor ? await ProductionNormsApiService.exportConstantsExcelEORSOR(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME
+      ) : await ProductionNormsApiService.exportConstantsExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_NAME
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
