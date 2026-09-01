@@ -405,6 +405,40 @@ const ShutdownPlan = () => {
         return
       }
     }
+    // 3.6 Overlapping timeframes
+    for (let i = 0; i < allRowsMerged.length; i++) {
+      const a = allRowsMerged[i]
+      const aStart = new Date(a.maintStartDateTime).getTime()
+      const aEnd = new Date(a.maintEndDateTime).getTime()
+
+      if (isNaN(aStart) || isNaN(aEnd)) continue
+
+      for (let j = 0; j < allRowsMerged.length; j++) {
+        if (i === j) continue
+        const b = allRowsMerged[j]
+        
+        // Only validate overlap if the descriptions are the same
+        const descA = String(a.discription || '').trim().toLowerCase()
+        const descB = String(b.discription || '').trim().toLowerCase()
+        if (descA !== descB) continue
+
+        const bStart = new Date(b.maintStartDateTime).getTime()
+        const bEnd = new Date(b.maintEndDateTime).getTime()
+
+        if (isNaN(bStart) || isNaN(bEnd)) continue
+
+        if (aStart < bEnd && bStart < aEnd) {
+          a.isError = true
+          b.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `The shutdown timeframe for "${a.discription || 'this record'}" overlaps with another entry for the same shutdown. Please ensure no overlapping timeframes for the same description.`,
+            severity: 'error',
+          })
+          return
+        }
+      }
+    }
 
     // 4. Required fields: discription and durationInHrs
     const fieldsToCheck = ['discription', 'durationInHrs']
