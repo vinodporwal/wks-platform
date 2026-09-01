@@ -598,7 +598,7 @@ public byte[] shutdownNonProductExportWithValue(String year, String plantId, Str
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		if (!isAfterSave) {
-			dtoList = findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
+			dtoList = findMaintenanceDetailsWithValueByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
 		}
 		String pattern = "dd-MM-yyyy HH:mm";
 		SimpleDateFormat formatter = new SimpleDateFormat(pattern);
