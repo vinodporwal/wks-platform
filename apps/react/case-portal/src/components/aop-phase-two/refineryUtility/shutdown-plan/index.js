@@ -169,7 +169,7 @@ const ShutDownColumns = [
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
-    minWidth: 75,
+    minWidth: 80,
   },
   {
     field: 'rate',
@@ -181,7 +181,7 @@ const ShutDownColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
-    minWidth: 150,
+    minWidth: 140,
   },
 ]
 
