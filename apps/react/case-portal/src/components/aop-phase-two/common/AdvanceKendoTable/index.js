@@ -211,6 +211,7 @@ const COLUMN_MIN = 4
 const AdvanceKendoTable = ({
   allRedCell = [],
   allRedCell2 = [],
+  allDescriptionDrpdwn = [],
   modifiedCells = [],
   title = '',
   rows = [],
@@ -2539,6 +2540,39 @@ const AdvanceKendoTable = ({
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      if (col?.type === 'discriptionDrpdwn') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <SelectCellEditor
+                    {...cellProps}
+                    options={allDescriptionDrpdwn || []}
+                    textField="displayName"
+                    valueField="id"
+                    placeholder="Select..."
+                  />
+                ),
+              },
+              data: toolTipRenderer,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            width={setWidth(col?.minWidth || col?.widthT || 150)}
           />
         )
       }
