@@ -661,18 +661,20 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	@Override
 	public AOPMessageVM importSteadyStateNorms(String year, String plantId, MultipartFile file) {
 	    try {
-	        // 1. Read Excel file and convert to dynamic data list with row-level validations
+	        
 	        List<Map<String, Object>> payloadList = readSteadyStateNorms(file.getInputStream(), plantId, year);
 
-	        // 2. Call existing save/update business logic
+	        
 	        AOPMessageVM aopMessageVM = updateSteadyStateNorms(plantId, year, payloadList);
 
-	        // 3. Filter failed records (either from Excel validation or DB processing validation)
-	        List<Map<String, Object>> failedList = payloadList.stream()
-	                .filter(m -> "Failed".equalsIgnoreCase((String) m.get("saveStatus")))
-	                .collect(Collectors.toList());
+	       
+	        Map<String, Object> responseData = (Map<String, Object>) aopMessageVM.getData();
+	        List<SteadyStateNormDTO> failedDtos = (List<SteadyStateNormDTO>) responseData.get("failedList");
 
-	        // 4. Handle response & error Excel generation
+	        
+	        List<Map<String, Object>> failedList = regroupFailedPayload(failedDtos, payloadList);
+
+	       
 	        if (!failedList.isEmpty()) {
 	            byte[] fileByteArray = exportSteadyStateNormsDynamic(year, plantId, true, failedList);
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
@@ -691,6 +693,58 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        e.printStackTrace();
 	        throw new RuntimeException("Import process failed: " + e.getMessage());
 	    }
+	}
+	
+	private List<Map<String, Object>> regroupFailedPayload(List<SteadyStateNormDTO> failedDtos, List<Map<String, Object>> originalPayloadList) {
+	    if (failedDtos == null || failedDtos.isEmpty()) {
+	        return new ArrayList<>();
+	    }
+
+	    
+	    Map<String, String> failedMaterialErrors = new HashMap<>();
+	    for (SteadyStateNormDTO dto : failedDtos) {
+	        if (dto.getMaterialFkId() != null) {
+	            String err = dto.getErrDescription() != null ? dto.getErrDescription() : "Validation failed";
+	            failedMaterialErrors.put(dto.getMaterialFkId().toLowerCase(), err);
+	        }
+	    }
+
+	    
+	    List<Map<String, Object>> regroupedList = new ArrayList<>();
+
+	    for (Map<String, Object> originalRow : originalPayloadList) {
+	        
+	        String matFkKey = originalRow.keySet().stream()
+	                .filter(k -> k.replaceAll("[_ ]", "").equalsIgnoreCase("MaterialFKId"))
+	                .findFirst()
+	                .orElse(null);
+
+	        if (matFkKey != null && originalRow.get(matFkKey) != null) {
+	            String matFkVal = originalRow.get(matFkValKey(originalRow, matFkKey)).toString().toLowerCase();
+	            
+	            if (failedMaterialErrors.containsKey(matFkVal)) {
+	                Map<String, Object> failedRowMap = new LinkedHashMap<>(originalRow);
+	                
+	               
+	                String remarksKey = originalRow.keySet().stream()
+	                        .filter(k -> k.replaceAll("[_ ]", "").equalsIgnoreCase("Remarks"))
+	                        .findFirst()
+	                        .orElse("Remarks");
+
+	               
+	                failedRowMap.put(remarksKey, failedMaterialErrors.get(matFkVal));
+	                failedRowMap.put("saveStatus", "Failed");
+
+	                regroupedList.add(failedRowMap);
+	            }
+	        }
+	    }
+
+	    return regroupedList;
+	}
+
+	private String matFkValKey(Map<String, Object> map, String matFkKey) {
+	    return matFkKey;
 	}
 
 	public List<Map<String, Object>> readSteadyStateNorms(InputStream inputStream, String plantId, String year) {
