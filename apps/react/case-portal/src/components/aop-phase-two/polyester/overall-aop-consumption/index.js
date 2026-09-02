@@ -41,6 +41,7 @@ const OverallAopConsumption = () => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const isFilament = VERTICAL_NAME?.toLowerCase() === 'filament (pfy)'
+  const isStaple = VERTICAL_NAME?.toLowerCase() === 'staple (psf)'
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const valueFormat = ValueFormatterConsumption()
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -137,7 +138,7 @@ const OverallAopConsumption = () => {
       //   minWidth: 160,
       // },
     ]
-    if (isFilament) {
+    if (isFilament || isStaple) {
       defaultColumns.push({
         field: 'ytd',
         title: 'YTD',
@@ -150,7 +151,7 @@ const OverallAopConsumption = () => {
     }
 
     return defaultColumns
-  }, [isFilament])
+  }, [isFilament, isStaple])
 
   const getIsReleased = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -242,7 +243,7 @@ const OverallAopConsumption = () => {
       setLoading(true)
       try {
         const verticalWiseAPI = {
-          'staple (psf)':OverallAopConsumptionApiService.getOverallAopConsumption,
+          'staple (psf)':OverallAopConsumptionApiService.getOverallAopConsumptionYTD,
           'filament (pfy)':OverallAopConsumptionApiService.getOverallAopConsumptionYTD,
           'pet-py':OverallAopConsumptionApiService.getOverallAopConsumption,
         }
@@ -434,7 +435,7 @@ const OverallAopConsumption = () => {
     })
     try {
       const verticalWiseAPI = {
-        'staple (psf)':OverallAopConsumptionApiService.exportOverallAopConsumption,
+        'staple (psf)':OverallAopConsumptionApiService.exportOverallAopConsumptionYTD,
         'filament (pfy)':OverallAopConsumptionApiService.exportOverallAopConsumptionYTD,
         'pet-py':OverallAopConsumptionApiService.exportOverallAopConsumption,
       }

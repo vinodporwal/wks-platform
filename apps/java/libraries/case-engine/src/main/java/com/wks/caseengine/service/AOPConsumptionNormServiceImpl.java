@@ -597,6 +597,19 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	@Override
 	public byte[] exportOverallConsumptionWithYTD(String year, UUID plantFKId, boolean isAfterSave, List<AOPConsumptionNormDTO> dtoList) {
 		try {
+
+			Plants plants = plantsRepository.findById(plantFKId).get();
+			Sites sites = siteRepository.findById(plants.getSiteFkId()).get();
+			Verticals verticals = verticalRepository.findById(plants.getVerticalFKId()).get();
+
+			boolean filament = verticals.getName().equals("Filament");
+			boolean staple = verticals.getName().equals("Staple");
+		
+			if(filament || staple) {
+				// seperate method to include sap code column
+				return exportOverallConsumptionWithYTDAndSAPCode(year, plantFKId, isAfterSave, dtoList);
+			}
+
 			Workbook workbook = new XSSFWorkbook();
 			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
 			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
@@ -719,7 +732,136 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		}
 		return null;
 	}
-	
+
+	// ref: exportOverallConsumptionWithYTD | new method to include sap code column
+	@Override
+	public byte[] exportOverallConsumptionWithYTDAndSAPCode(String year, UUID plantFKId, boolean isAfterSave, List<AOPConsumptionNormDTO> dtoList) {
+		try {
+			Workbook workbook = new XSSFWorkbook();
+			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+
+			String sheetName = Utility.sanitizeSheetName("Overall Consumption");
+
+			AOPMessageVM aopMessageVM = null;
+			List<AOPConsumptionNormDTO> currentDtoList = new ArrayList<>();
+			List<Boolean> isEditable = new ArrayList<>();
+			if (!isAfterSave) {
+				aopMessageVM = getAOPConsumptionNormWithYTD(plantFKId.toString(), year, null);
+			}
+			if (aopMessageVM != null && aopMessageVM.getData() != null) {
+				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+				currentDtoList = (List<AOPConsumptionNormDTO>) responseMap.get("aopConsumptionNormDTOList");
+			} else if (isAfterSave) {
+				currentDtoList = dtoList.stream().collect(Collectors.toList());
+			}
+
+			Sheet sheet = workbook.createSheet(sheetName);
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+			for (AOPConsumptionNormDTO dto : currentDtoList) {
+				List<Object> list = new ArrayList<>();
+				list.add(dto.getNormParameterTypeDisplayName());
+				list.add(dto.getProductName());
+				list.add(dto.getSapCode());
+				list.add(dto.getUOM());
+				list.add(dto.getApril());
+				list.add(dto.getMay());
+				list.add(dto.getJune());
+				list.add(dto.getJuly());
+				list.add(dto.getAug());
+				list.add(dto.getSep());
+				list.add(dto.getOct());
+				list.add(dto.getNov());
+				list.add(dto.getDec());
+				list.add(dto.getJan());
+				list.add(dto.getFeb());
+				list.add(dto.getMarch());
+				list.add(dto.getYtd());
+				list.add(dto.getId());
+				isEditable.add(dto.getIsEditable());
+
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Type");
+			innerHeaders.add("Particulars");
+			innerHeaders.add("Sap Code");
+			innerHeaders.add("UOM");
+			List<String> monthsList = Utility.getAcademicYearMonths(year);
+			innerHeaders.addAll(monthsList);
+			innerHeaders.add("YTD");
+			innerHeaders.add("Id");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+
+			for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+				List<Object> rowData = rows.get(rowIndex);
+				boolean isRowEditable = true;
+
+				if (rowIndex < isEditable.size() && isEditable.get(rowIndex) != null) {
+					isRowEditable = isEditable.get(rowIndex);
+				}
+
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+
+					if (isRowEditable) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedStyle);
+					}
+				}
+			}
+			// Sap Code shifts Id to index 17 — hide the Id column
+			sheet.setColumnHidden(17, true);
+
+			try {
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public List<Map<String, String>> extractGradeInfo(AOPMessageVM grades) {
 	    List<Map<String, String>> gradeInfoList = new ArrayList<>();
 
