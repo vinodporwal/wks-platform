@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.MXOReprocessingDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
@@ -50,4 +51,11 @@ public interface SpyroInputService {
 
 	AOPMessageVM updateSpyroInputDataValue(List<SpyroInputDTO> spyroInputDTOList, String plantFKId, String year, String key);
 
+	AOPMessageVM getNapthaSummaryDataSet(String plantId, String year, String reportType);
+
+	byte[] createNapthaSummaryExcel(String plantId, String year, String reportType);
+
+	List<MXOReprocessingDTO> updateMXOReprocessingData(List<MXOReprocessingDTO> mXOReprocessingDTOList, String plantFKId, String year);
+
+	AOPMessageVM getMXOReprocessingData(String plantId, String aopYear);
 }

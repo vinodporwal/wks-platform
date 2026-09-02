@@ -59,4 +59,8 @@ public interface PlantReportService {
     byte[] exportReliabilityImprovement(String plantId, String aopYear, boolean isAfterSave, List<ReliabilityImprovementDTO> dtoList);
 
     AOPMessageVM importReliabilityImprovementExcel(String plantId, String aopYear, MultipartFile file);
+
+    AOPMessageVM loadReliabilityPerformanceData(String plantId, String aopYear);
+
+    AOPMessageVM loadPlantSafetyPerformanceData(String plantId, String aopYear);
 }

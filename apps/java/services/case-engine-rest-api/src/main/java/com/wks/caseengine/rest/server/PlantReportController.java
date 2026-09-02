@@ -220,4 +220,14 @@ public class PlantReportController {
             @RequestParam("file") MultipartFile file) {
         return plantReportService.importPlantReportExcel(plantId, aopYear, file);
     }
+
+    @GetMapping(value = "/reliability-performance-load")
+    public AOPMessageVM loadReliabilityPerformanceData(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.loadReliabilityPerformanceData(plantId, aopYear);
+    }
+
+    @GetMapping(value = "/plant-safety-performance-load")
+    public AOPMessageVM loadPlantSafetyPerformanceData(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.loadPlantSafetyPerformanceData(plantId, aopYear);
+    }
 }
