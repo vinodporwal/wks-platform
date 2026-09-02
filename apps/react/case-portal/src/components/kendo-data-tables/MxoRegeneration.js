@@ -8,6 +8,21 @@ import { ProductionNormsApiService } from 'services/production-norms-api-service
 import { getRoleName } from 'services/role-service'
 import { validateFields } from 'utils/validationUtils'
 
+const monthOrder = {
+  apr: 1,
+  may: 2,
+  jun: 3,
+  jul: 4,
+  aug: 5,
+  sep: 6,
+  oct: 7,
+  nov: 8,
+  dec: 9,
+  jan: 10,
+  feb: 11,
+  mar: 12,
+}
+
 const MxoRegeneration = ({ permissions }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -40,6 +55,87 @@ const MxoRegeneration = ({ permissions }) => {
     message: '',
     severity: 'info',
   })
+
+  const [rowsStock, setRowsStock] = useState([])
+  const [loadingStock, setLoadingStock] = useState(false)
+  const [modifiedCellsStock, setModifiedCellsStock] = useState({})
+
+  const colDefsStock = useMemo(
+    () => [
+      {
+        field: 'id',
+        title: 'Id',
+        width: 110,
+        minWidth: 90,
+        editable: false,
+        hidden: true,
+      },
+      {
+        field: 'monthLabel',
+        title: 'Month',
+        width: 100,
+        minWidth: 95,
+        editable: false,
+      },
+      {
+        field: 'mxoOpeningStock_MT',
+        title: 'MXO opening stock in MT',
+        width: 215,
+        minWidth: 250,
+        type: 'number',
+        align: 'right',
+        format: '{0:0.00}',
+        editable: true,
+      },
+      {
+        field: 'mxoGeneration_TPM',
+        title: 'MXO generation (TPM)',
+        width: 215,
+        minWidth: 250,
+        type: 'number',
+        align: 'right',
+        format: '{0:0.00}',
+        editable: false,
+      },
+      {
+        field: 'mxoReprocessing_TPM',
+        title: 'MXO Reprocessing (TPM)',
+        width: 215,
+        minWidth: 250,
+        type: 'number',
+        align: 'right',
+        format: '{0:0.00}',
+        editable: false,
+      },
+      {
+        field: 'mxoClosingStock_MT',
+        title: 'MXO Closing stock in MT',
+        width: 215,
+        minWidth: 250,
+        type: 'number',
+        align: 'right',
+        format: '{0:0.00}',
+        editable: false,
+      },
+      {
+        field: 'mxoOpeningStock_Id',
+        title: 'MXOOpeningStock_Id',
+        width: 180,
+        minWidth: 170,
+        editable: false,
+        hidden: true,
+      },
+      {
+        field: 'mxoClosingStock_Id',
+        title: 'MXOClosingStock_Id',
+        width: 180,
+        minWidth: 170,
+        editable: false,
+        hidden: true,
+      },
+    ],
+    [READ_ONLY],
+  )
 
   const colDefs = useMemo(
     () => [
@@ -195,6 +291,17 @@ const MxoRegeneration = ({ permissions }) => {
             isEditable: item?.isEditable || item?.IsEditable || !READ_ONLY,
           }
         })
+
+        formattedData.sort((a, b) => {
+          const monthA = a.monthLabel
+            ? a.monthLabel.substring(0, 3).toLowerCase()
+            : ''
+          const monthB = b.monthLabel
+            ? b.monthLabel.substring(0, 3).toLowerCase()
+            : ''
+          return (monthOrder[monthA] || 99) - (monthOrder[monthB] || 99)
+        })
+
         setRows(formattedData)
       } else {
         setRows([])
@@ -208,9 +315,96 @@ const MxoRegeneration = ({ permissions }) => {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR, READ_ONLY])
 
+  const fetchStockData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setLoadingStock(true)
+    try {
+      const response = await ProductionNormsApiService.getMxoStockData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        const rawData =
+          response?.data?.Data ||
+          response?.data?.data ||
+          (Array.isArray(response?.data) ? response?.data : [])
+
+        const formattedData = (rawData || []).map((item, index) => {
+          const monthVal =
+            item?.month ?? item?.Month ?? item?.months ?? item?.moth ?? ''
+
+          return {
+            ...item,
+            idFromApi: item?.id,
+            id: index,
+            monthLabel: monthVal,
+            month: monthVal,
+            mxoOpeningStock_MT:
+              item?.mXOOpeningStockInMT ??
+              item?.mxoOpeningStock_MT ??
+              item?.['MXO opening stock in MT'] ??
+              0,
+            mxoGeneration_TPM:
+              item?.mXOGeneration ??
+              item?.mxoGeneration_TPM ??
+              item?.['MXO generation (TPM)'] ??
+              0,
+            mxoReprocessing_TPM:
+              item?.mXOReprocessing ??
+              item?.mxoReprocessing_TPM ??
+              item?.['MXO Reprocessing (TPM)'] ??
+              0,
+            mxoClosingStock_MT:
+              item?.mXOClosingStockInMT ??
+              item?.mxoClosingStock_MT ??
+              item?.['MXO Closing stock in MT'] ??
+              0,
+            mxoOpeningStock_Id:
+              item?.mXOOpeningStockId ??
+              item?.mxoOpeningStock_Id ??
+              item?.MXOOpeningStock_Id ??
+              null,
+            mxoClosingStock_Id:
+              item?.mXOClosingStockId ??
+              item?.mxoClosingStock_Id ??
+              item?.MXOClosingStock_Id ??
+              null,
+            isEditable: !READ_ONLY && monthVal.toLowerCase().startsWith('apr'),
+          }
+        })
+
+        formattedData.sort((a, b) => {
+          const monthA = a.monthLabel
+            ? a.monthLabel.substring(0, 3).toLowerCase()
+            : ''
+          const monthB = b.monthLabel
+            ? b.monthLabel.substring(0, 3).toLowerCase()
+            : ''
+          return (monthOrder[monthA] || 99) - (monthOrder[monthB] || 99)
+        })
+
+        setRowsStock(formattedData)
+      } else {
+        setRowsStock([])
+      }
+    } catch (error) {
+      console.error('Error fetching MXO Stock data:', error)
+      setSnackbarData({
+        message: 'Error fetching stock data',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    } finally {
+      setLoadingStock(false)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR, READ_ONLY])
+
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+    fetchStockData()
+  }, [fetchData, fetchStockData])
 
   // Save payload cleaned to match MXOReprocessingDTO 1:1
   const saveChanges = useCallback(async () => {
@@ -285,6 +479,53 @@ const MxoRegeneration = ({ permissions }) => {
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
 
+  const saveChangesStock = useCallback(async () => {
+    const modifiedData = Object.values(modifiedCellsStock)
+    if (modifiedData.length === 0) return
+
+    setLoadingStock(true)
+    try {
+      const payload = modifiedData.map((row) => ({
+        month: row.month ?? row.monthLabel ?? '',
+        mXOOpeningStockInMT: Number(row.mxoOpeningStock_MT ?? 0),
+        mXOGeneration: Number(row.mxoGeneration_TPM ?? 0),
+        mXOReprocessing: Number(row.mxoReprocessing_TPM ?? 0),
+        mXOClosingStockInMT: Number(row.mxoClosingStock_MT ?? 0),
+        aopYear: AOP_YEAR,
+        MXOOpeningStockId:
+          row.mxoOpeningStock_Id || row.MXOOpeningStock_Id || null,
+        MXOClosingStockId:
+          row.mxoClosingStock_Id || row.MXOClosingStock_Id || null,
+      }))
+
+      const response = await ProductionNormsApiService.saveMxoStockData(
+        PLANT_ID,
+        payload,
+        keycloak,
+        AOP_YEAR,
+      )
+
+      if (response) {
+        setSnackbarData({
+          message: 'Saved Stock Successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+        setModifiedCellsStock({})
+        fetchStockData()
+      } else {
+        setSnackbarData({ message: 'Save Stock Failed!', severity: 'error' })
+        setSnackbarOpen(true)
+      }
+    } catch (error) {
+      console.error('Error saving MXO Stock data:', error)
+      setSnackbarData({ message: 'Error saving stock data', severity: 'error' })
+      setSnackbarOpen(true)
+    } finally {
+      setLoadingStock(false)
+    }
+  }, [modifiedCellsStock, keycloak, PLANT_ID, AOP_YEAR, fetchStockData])
+
   const getAdjustedPermissions = (perms, isOld) => {
     if (isOld != 1) return perms
     return {
@@ -310,10 +551,28 @@ const MxoRegeneration = ({ permissions }) => {
       saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Mxo Regeneration',
+      titleName: 'MXO Regeneration',
+      downloadExcelBtn: false,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${verticalObject?.name}_${siteObject?.name}_${AOP_YEAR}_Mxo_Regeneration`,
+      uploadExcelBtn: false,
+      ...permissions,
+    },
+    IS_OLD_YEAR,
+  )
+
+  const adjustedPermissionsStock = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? true,
+      saveWithRemark: false,
+      saveBtn: true,
+      allAction: true,
+      showTitleNameBusiness: true,
+      titleName: 'MXO Stock',
       downloadExcelBtn: false,
       downloadExcelBtnFromUI: true,
       uploadExcelBtn: false,
+      ExcelName: `${verticalObject?.name}_${siteObject?.name}_${AOP_YEAR}_Mxo_Stock`,
       ...permissions,
     },
     IS_OLD_YEAR,
@@ -338,6 +597,22 @@ const MxoRegeneration = ({ permissions }) => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
+        plantID={PLANT_ID}
+      />
+
+      <br />
+
+      <LoaderBackdrop open={!!loadingStock} />
+
+      <KendoDataTables
+        rows={rowsStock}
+        setRows={setRowsStock}
+        columns={colDefsStock}
+        permissions={adjustedPermissionsStock}
+        modifiedCells={modifiedCellsStock}
+        setModifiedCells={setModifiedCellsStock}
+        title={'MXO Stock'}
+        saveChanges={saveChangesStock}
         plantID={PLANT_ID}
       />
 
