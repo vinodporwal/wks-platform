@@ -324,11 +324,24 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
         }
     }
     private Integer toInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
         if (value instanceof Number) {
             return ((Number) value).intValue();
         }
+        if (value instanceof Boolean) {
+            return ((Boolean) value) ? 1 : 0;
+        }
+        String str = value.toString().trim();
+        if ("true".equalsIgnoreCase(str)) {
+            return 1;
+        }
+        if ("false".equalsIgnoreCase(str)) {
+            return 0;
+        }
         try {
-            return Integer.parseInt(value.toString());
+            return Integer.parseInt(str);
         } catch (NumberFormatException e) {
             return null;
         }
@@ -608,12 +621,22 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	}
 
 	private void upsertNaphthaQualityMetric(String year, String metricId, Double metricValue) {
-		if (metricId == null || metricId.isBlank() || metricValue == null) {
+		if (metricId == null || metricId.isBlank()) {
 			return;
 		}
-		UUID parsedMetricId = UUID.fromString(metricId);
+		UUID parsedMetricId;
+		try {
+			parsedMetricId = UUID.fromString(metricId.trim());
+		} catch (IllegalArgumentException e) {
+			return;
+		}
 		Optional<NormAttributeTransactions> existingTxn =
 				normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(parsedMetricId, 4, year);
+
+		if (metricValue == null) {
+			existingTxn.ifPresent(normAttributeTransactionsRepository::delete);
+			return;
+		}
 
 		NormAttributeTransactions normAttributeTransaction = existingTxn.orElseGet(NormAttributeTransactions::new);
 		normAttributeTransaction.setAopMonth(4);
@@ -925,6 +948,8 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 				dto.setBlendIp21Id(row[14] != null ? row[14].toString() : "");
 				dto.setPlantId(row[15] != null ? row[15].toString() : "");
 				dto.setAopYear(row[16] != null ? row[16].toString() : "");
+				dto.setDisplayOrder(row.length > 17 && row[17] != null ? toInteger(row[17]) : null);
+				dto.setIsEditable(row.length > 18 && row[18] != null ? toInteger(row[18]) : 1);
 				dtoList.add(dto);
 			}
 
