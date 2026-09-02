@@ -110,6 +110,8 @@ const defs = {
     propyleneBalance: 'Propylene Balance',
     specificConsumptionC3: 'Feed Availability',
 
+    jwUnit: 'Job Work Unit',
+
     functionalReports: 'Reports',
     aopDesignBasis: 'AOP Basis',
     tcs: 'Term Crude Sheet',
@@ -124,8 +126,10 @@ const defs = {
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',
     jwBudget: 'Job Work Budget',
-    jwBudgetSource: 'Job Work Throughput',
-    throughputNorms: 'Job Work Norms',
+    jwBudgetSource: 'SEZ Job Work Throughput',
+    jwBudgetSourceDTA: 'DTA Net Throughput',
+    throughputNorms: 'SEZ Job Work Norms',
+    fixedBedAndLabCost: 'Fixed Bed and Lab Cost',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
@@ -369,7 +373,7 @@ const defs = {
         shutdown: 'Shutdown',
         slowdown: 'Slowdown',
         jwBudgetSource: 'Job Work Throughput',
-        throughputNorms: 'Job Work Norms',
+        throughputNorms: 'SEZ Job Work Norms',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',

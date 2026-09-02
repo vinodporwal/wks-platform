@@ -933,3 +933,8 @@
 .k-grid .k-alt-row:not(.custom-disabled-row) {
   background-color: #ffffff !important;
 }
+.cell-readonly-greyed {
+  background-color: #f0f0f0 !important;
+  color: #8c8c8c !important;
+  cursor: not-allowed !important;
+}

@@ -124,10 +124,17 @@ const OnOffSwitchEditCell = (props) => {
 }
 
 const FeedTypeDisplayCell = (props) => {
-  const { dataItem, field, tdProps, column, customModifiedCells: propModifiedCells } = props
+  const {
+    dataItem,
+    field,
+    tdProps,
+    column,
+    customModifiedCells: propModifiedCells,
+  } = props
   const value = dataItem[field]
   const rowId = dataItem.id
-  const customModifiedCells = propModifiedCells || column?.customModifiedCells || {}
+  const customModifiedCells =
+    propModifiedCells || column?.customModifiedCells || {}
   const isEdited = Object.prototype.hasOwnProperty.call(
     customModifiedCells?.[rowId] || {},
     field,
@@ -252,29 +259,29 @@ const KendoDataTables = ({
   typeRank = {},
   permissions = {},
   errorRows = new Set(),
-  setSnackbarOpen = () => { },
-  setSnackbarData = () => { },
+  setSnackbarOpen = () => {},
+  setSnackbarData = () => {},
   snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => { },
+  setRemarkDialogOpen = () => {},
   currentRemark = '',
-  setCurrentRemark = () => { },
+  setCurrentRemark = () => {},
   currentRowId = null,
-  NormParameterIdCell = () => { },
-  setModifiedCells = () => { },
+  NormParameterIdCell = () => {},
+  setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = (selectedItems) => { },
-  saveChanges = () => { },
-  deleteRowData = () => { },
-  handleAddPlantSite = () => { },
-  handleCalculate = () => { },
-  handleLoad = () => { },
-  fetchData = () => { },
-  handleUnitChange = () => { },
-  handleYearChange = () => { },
-  handleGradeChange = () => { },
-  handleRemarkCellClick = () => { },
-  calculatebtnClicked = () => { },
+  handleDeleteSelected = (selectedItems) => {},
+  saveChanges = () => {},
+  deleteRowData = () => {},
+  handleAddPlantSite = () => {},
+  handleCalculate = () => {},
+  handleLoad = () => {},
+  fetchData = () => {},
+  handleUnitChange = () => {},
+  handleYearChange = () => {},
+  handleGradeChange = () => {},
+  handleRemarkCellClick = () => {},
+  calculatebtnClicked = () => {},
   selectedUsers = [],
   groupBy = null,
   totalRowConfiguration = null,
@@ -288,13 +295,13 @@ const KendoDataTables = ({
   allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
-  setSelectMode = () => { },
-  handleExcelUpload = () => { },
-  downloadExcelForConfiguration = () => { },
-  onLoad = () => { },
+  setSelectMode = () => {},
+  handleExcelUpload = () => {},
+  downloadExcelForConfiguration = () => {},
+  onLoad = () => {},
   disableRedHighlight = false,
   showThreeColors = false,
-  resetDataChanges = () => { },
+  resetDataChanges = () => {},
   noteOnSaveDialogeBox = '',
   deleteNoteOnDeleteDialogeBox = '',
   shutdownMonths = [],
@@ -306,7 +313,7 @@ const KendoDataTables = ({
   mcuMaxCapValues = [],
   key = [],
   isReleaseDisabled = true,
-  handleRelease = () => { },
+  handleRelease = () => {},
   customItemChange = null,
   configType,
   isEditable = false,
@@ -407,6 +414,48 @@ const KendoDataTables = ({
     Editor.displayName = 'StableFeedTypeOrNumericEditor'
     return Editor
   }, [permissions?.feedTypeOptions])
+  const StableCurrentPlanEditCell = useMemo(() => {
+    const Editor = (props) => {
+      const { dataItem, tdProps, field } = props
+      if (!dataItem?.currentPlanEditable) {
+        const value = dataItem[field]
+        return (
+          <td
+            {...tdProps}
+            title={value}
+            className={`${tdProps?.className || ''} cell-readonly-greyed`.trim()}
+          >
+            {value}
+          </td>
+        )
+      }
+      return <NoSpinnerNumericEditor {...props} />
+    }
+    Editor.displayName = 'StableCurrentPlanEditCell'
+    return Editor
+  }, [])
+
+  const StableCurrentPlanEditCellWithUOMValidation = useMemo(() => {
+    const Editor = (props) => {
+      const { dataItem, tdProps, field } = props
+      if (!dataItem?.currentPlanEditable) {
+        const value = dataItem[field]
+        return (
+          <td
+            {...tdProps}
+            title={value}
+            className={`${tdProps?.className || ''} cell-readonly-greyed`.trim()}
+          >
+            {value}
+          </td>
+        )
+      }
+      return <NoSpinnerNumericEditorWithUOMValidation {...props} />
+    }
+    Editor.displayName = 'StableCurrentPlanEditCellWithUOMValidation'
+    return Editor
+  }, [])
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
@@ -549,12 +598,12 @@ const KendoDataTables = ({
 
   const initialGroup = groupBy
     ? [
-      {
-        field: groupBy,
-        aggregates: totalRowConfiguration,
-        dir: undefined,
-      },
-    ]
+        {
+          field: groupBy,
+          aggregates: totalRowConfiguration,
+          dir: undefined,
+        },
+      ]
     : []
 
   const MyFooterCustomCell = (props) => {
@@ -2727,7 +2776,7 @@ const KendoDataTables = ({
                         },
                       },
                     }}
-                  // disabled={rows?.length === 0}
+                    // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled className='menu-item-style'>
                       UOM
@@ -2859,7 +2908,7 @@ const KendoDataTables = ({
                   onClick={excelExport}
                   // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
-                //ANY ONE CAN EXPORT
+                  //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -2930,11 +2979,31 @@ const KendoDataTables = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                      !permissions?.showCalculateVisibility)
+                        !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
                   {permissions?.calculateBtnText || 'Calculate'}
+                </Button>
+              )}
+
+              {permissions?.showLoadBtn && (
+                <Button
+                  variant='contained'
+                  onClick={handleLoad}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  disabled={
+                    READ_ONLY || (rows?.length === 0 ? false : isButtonDisabled)
+                  }
+                  className='btn-calculate'
+                >
+                  {permissions?.loadBtnText || 'Load'}
                 </Button>
               )}
 
@@ -3060,21 +3129,21 @@ const KendoDataTables = ({
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
-                      enabled: false,
-                      footer: 'visible',
-                      showGroupPanel: false,
-                    }
+                        enabled: false,
+                        footer: 'visible',
+                        showGroupPanel: false,
+                      }
                     : {
-                      enabled: false,
-                      footer: 'none',
-                      showGroupPanel: false,
-                    }
+                        enabled: false,
+                        footer: 'none',
+                        showGroupPanel: false,
+                      }
                 }
                 cells={
                   permissions?.isTotalFooterActive
                     ? {
-                      groupFooter: MyFooterCustomCell,
-                    }
+                        groupFooter: MyFooterCustomCell,
+                      }
                     : undefined
                 }
                 allRedCell={allRedCell}
@@ -3085,9 +3154,9 @@ const KendoDataTables = ({
                     ? false
                     : rows?.length > 100
                       ? {
-                        buttonCount: 4,
-                        pageSizes: [10, 50, 100],
-                      }
+                          buttonCount: 4,
+                          pageSizes: [10, 50, 100],
+                        }
                       : false
                 }
                 sortable={true}
@@ -4391,12 +4460,30 @@ const KendoDataTables = ({
                           headerClassName={numericHeaderClass(isActive, col)}
                           cells={{
                             edit: {
-                              text: NoSpinnerNumericEditorWithUOMValidation,
+                              text:
+                                col?.field === 'actuals' ||
+                                col?.field === 'prevActuals'
+                                  ? StableCurrentPlanEditCellWithUOMValidation
+                                  : NoSpinnerNumericEditorWithUOMValidation,
                             },
-                            data: (props) =>
-                              showThreeColors ? (
+                            data: (props) => {
+                              const isNotEditable =
+                                (col?.field === 'actuals' ||
+                                  col?.field === 'prevActuals') &&
+                                !props?.dataItem?.currentPlanEditable
+
+                              const mergedTdProps = isNotEditable
+                                ? {
+                                    ...props.tdProps,
+                                    className:
+                                      `${props.tdProps?.className || ''} cell-readonly-greyed`.trim(),
+                                  }
+                                : props.tdProps
+
+                              return showThreeColors ? (
                                 <RedHighlightCell2
                                   {...props}
+                                  tdProps={mergedTdProps}
                                   customModifiedCells={customModifiedCells}
                                   allRedCell={allRedCell}
                                   allRedCell2={allRedCell2}
@@ -4405,11 +4492,13 @@ const KendoDataTables = ({
                               ) : (
                                 <RedHighlightCell
                                   {...props}
+                                  tdProps={mergedTdProps}
                                   customModifiedCells={customModifiedCells}
                                   allRedCell={allRedCell}
                                   disableRedHighlight={disableRedHighlight}
                                 />
-                              ),
+                              )
+                            },
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           columnMenu={ColumnMenuCheckboxFilter}
@@ -4812,6 +4901,55 @@ const KendoDataTables = ({
                         />
                       )
                     }
+
+                    if (
+                      col?.field === 'prevActuals' ||
+                      col?.field === 'actuals'
+                    ) {
+                      return (
+                        <GridColumn
+                          locked={col.locked || false}
+                          key={col?.field}
+                          field={col?.field}
+                          title={col?.title || col?.headerName}
+                          width={setWidth(col?.minWidth || 150)}
+                          hidden={col?.hidden}
+                          className='k-number-right'
+                          editable={true}
+                          headerClassName={isActive ? 'active-column' : ''}
+                          cells={{
+                            edit: { text: StableCurrentPlanEditCell },
+                            data: (props) => {
+                              const isNotEditable =
+                                !props?.dataItem?.currentPlanEditable
+
+                              const mergedTdProps = isNotEditable
+                                ? {
+                                    ...props.tdProps,
+                                    className:
+                                      `${props.tdProps?.className || ''} cell-readonly-greyed`.trim(),
+                                  }
+                                : props.tdProps
+
+                              return (
+                                <RedHighlightCell
+                                  {...props}
+                                  tdProps={mergedTdProps}
+                                  customModifiedCells={customModifiedCells}
+                                  allRedCell={allRedCell}
+                                  disableRedHighlight={disableRedHighlight}
+                                />
+                              )
+                            },
+                            headerCell: SimpleHeaderWithTooltip,
+                          }}
+                          columnMenu={ColumnMenuCheckboxFilter}
+                          filter='numeric'
+                          format={col?.format}
+                        />
+                      )
+                    }
+
                     if (col?.type === 'number') {
                       return (
                         <GridColumn

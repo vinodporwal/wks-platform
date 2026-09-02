@@ -40,6 +40,9 @@ import com.wks.caseengine.dto.PlantsDTO;
 import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
+import com.wks.caseengine.dto.JwUnitDTO;
+import com.wks.caseengine.dto.FixedBedAndLabCostDTO;
+import com.wks.caseengine.dto.FixedBedCostCenterDropdownDTO;
 import com.wks.caseengine.dto.SitesDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
@@ -1716,9 +1719,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     }
 
     @Override
-    public AOPMessageVM getProfitCenterData(String siteId, String aopYear) {
+    public AOPMessageVM getProfitCenterData(String siteId, String aopYear, String siteName) {
         try {
-            String sql = "EXEC Sp_ProfitCenter @siteId = ?, @aopyear = ?";
+            String sql = "EXEC Sp_ProfitCenter @siteId = ?, @aopyear = ?, @siteName = ?";
             List<ProfitCenterDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 ProfitCenterDTO.builder()
                     .id(rs.getString("Id"))
@@ -1737,8 +1740,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .oct(rs.getString("Oct"))
                     .nov(rs.getString("Nov"))
                     .dec(rs.getString("Dec"))
+                    .remarks(rs.getString("Remarks"))
                     .build(),
-                siteId, aopYear);
+                siteId, aopYear, siteName != null ? siteName : "");
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);
@@ -1773,6 +1777,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         for (ProfitCenterDTO dto : profitCenterDTOs) {
             try {
                 String unitId = dto.getId();
+                String remarks = dto.getRemarks() != null ? dto.getRemarks() : "";
 
                 if (unitId == null) {
                     continue;
@@ -1792,24 +1797,26 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                     if (count > 0) {
                         String updateSql = "UPDATE ThroughputProfitTransaction " +
-                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "SET AttributeValue = ?, Remarks = ?, ModifiedOn = GETDATE(), [User] = ? " +
                                            "WHERE Unit_Id = ? AND AOPMonth = ? AND AuditYear = ?";
                         jdbcTemplate.update(updateSql,
                             new java.math.BigDecimal(value),
+                            remarks,
                             updatedBy,
                             unitId,
                             month,
                             aopYear);
                     } else {
                         String insertSql = "INSERT INTO ThroughputProfitTransaction " +
-                                           "(Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           "(Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, Remarks, " +
                                            " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
-                                           "VALUES (NEWID(), ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                                           "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
                         jdbcTemplate.update(insertSql,
                             unitId,
                             month,
                             aopYear,
                             new java.math.BigDecimal(value),
+                            remarks,
                             updatedBy);
                     }
                 }
@@ -1834,10 +1841,10 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     }
 
     @Override
-    public AOPMessageVM getProfitCenterUomDropdown(String siteId) {
+    public AOPMessageVM getProfitCenterUomDropdown(String siteId, String siteName) {
         try {
-            String sql = "EXEC Sp_GetProfitCenterUomDropdown @siteId = ?";
-            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, siteId);
+            String sql = "EXEC Sp_GetProfitCenterUomDropdown @siteId = ?, @siteName = ?";
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, siteId, siteName != null ? siteName : "");
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);
@@ -1851,13 +1858,15 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
 
     @Override
-    public AOPMessageVM getThroughputNorms(String siteId, String aopYear) {
+    public AOPMessageVM getThroughputNorms(String siteName, String aopYear) {
         try {
-            String sql = "EXEC Sp_GetThroughputNorms @SiteId = ?, @AOPYear = ?";
+            String effectiveSiteName = (siteName != null && !siteName.trim().isEmpty()) ? siteName : "SEZ";
+            String sql = "EXEC Sp_GetThroughputNorms @siteName = ?, @AOPYear = ?";
 
             List<ThroughputNormsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 ThroughputNormsDTO.builder()
                     .id(rs.getString("Id"))
+                    .materialId(rs.getString("Id"))
                     .unit(rs.getString("Unit"))
                     .unitId(rs.getString("UnitId"))
                     .materialCode(rs.getString("MaterialCode"))
@@ -1876,8 +1885,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     .jan(rs.getString("Jan"))
                     .feb(rs.getString("Feb"))
                     .mar(rs.getString("Mar"))
+                    .remarks(rs.getString("Remarks"))
                     .build(),
-                siteId, aopYear);
+                effectiveSiteName, aopYear);
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);
@@ -1911,12 +1921,19 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
         for (ThroughputNormsDTO dto : throughputNormsDTOs) {
             try {
-                String materialId = dto.getId();
+                String originalId = dto.getId();
+                String materialId = (dto.getMaterialId() != null && !dto.getMaterialId().trim().isEmpty())
+                    ? dto.getMaterialId()
+                    : dto.getId();
                 String unitId = dto.getUnitId();
+                String remarks = dto.getRemarks() != null ? dto.getRemarks() : "";
 
-                if(materialId == null || unitId == null) {
+                if (materialId == null || unitId == null) {
                     continue;
                 }
+
+                boolean isExistingRecord = (originalId != null && !originalId.trim().isEmpty()
+                    && !originalId.startsWith("new_row_") && !originalId.startsWith("row_"));
 
                 for (Map.Entry<Integer, java.util.function.Function<ThroughputNormsDTO, String>> entry : monthValueGetters.entrySet()) {
                     int month = entry.getKey();
@@ -1926,16 +1943,41 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         continue;
                     }
 
+                    // Condition 1: If original id is available, update the existing record by id
+                    if (isExistingRecord) {
+                        String checkByIdSql = "SELECT COUNT(1) FROM ThroughputNormsTransaction " +
+                                              "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                        int countById = jdbcTemplate.queryForObject(checkByIdSql, Integer.class, originalId, month, aopYear);
+
+                        if (countById > 0) {
+                            String updateSql = "UPDATE ThroughputNormsTransaction " +
+                                               "SET Material_Id = ?, Unit_Id = ?, AttributeValue = ?, Remarks = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                               "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ?";
+                            jdbcTemplate.update(updateSql,
+                                materialId,
+                                unitId,
+                                new java.math.BigDecimal(value),
+                                remarks,
+                                updatedBy,
+                                originalId,
+                                month,
+                                aopYear);
+                            continue;
+                        }
+                    }
+
+                    // Condition 2: If id is NULL/new, check if (Material_Id + Unit_Id + Month + Year) exists to UPDATE, else INSERT
                     String checkSql = "SELECT COUNT(1) FROM ThroughputNormsTransaction " +
-                                      "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                                      "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? AND Unit_Id = ?";
                     int count = jdbcTemplate.queryForObject(checkSql, Integer.class, materialId, month, aopYear, unitId);
 
                     if (count > 0) {
                         String updateSql = "UPDATE ThroughputNormsTransaction " +
-                                           "SET AttributeValue = ?, ModifiedOn = GETDATE(), [User] = ? " +
-                                           "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? And Unit_Id = ?";
+                                           "SET AttributeValue = ?, Remarks = ?, ModifiedOn = GETDATE(), [User] = ? " +
+                                           "WHERE Material_Id = ? AND AOPMonth = ? AND AuditYear = ? AND Unit_Id = ?";
                         jdbcTemplate.update(updateSql,
                             new java.math.BigDecimal(value),
+                            remarks,
                             updatedBy,
                             materialId,
                             month,
@@ -1943,15 +1985,16 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                             unitId);
                     } else {
                         String insertSql = "INSERT INTO ThroughputNormsTransaction " +
-                                           "(Id, Material_Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, " +
+                                           "(Id, Material_Id, Unit_Id, AOPMonth, AuditYear, AttributeValue, Remarks, " +
                                            " CreatedOn, ModifiedOn, [User], IsMonthwise) " +
-                                           "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
+                                           "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?, 1)";
                         jdbcTemplate.update(insertSql,
                             materialId,
                             unitId,
                             month,
                             aopYear,
                             new java.math.BigDecimal(value),
+                            remarks,
                             updatedBy);
                     }
                 }
@@ -1975,20 +2018,19 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
     }
 
     @Override
-    public AOPMessageVM getNormsMaterialDropdown(String siteId, String profitId) {
+    public AOPMessageVM getNormsMaterialDropdown(String siteName) {
         try {
-            String sql = "EXEC Sp_GetNormsMaterialDropdown @siteId = ?, @profitId = ?";
+            String effectiveSiteName = (siteName != null && !siteName.trim().isEmpty()) ? siteName : "SEZ";
+            String sql = "EXEC Sp_GetNormsMaterialDropdown @siteName = ?";
 
             List<NormsMaterialDropdownDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 NormsMaterialDropdownDTO.builder()
-                    .unitId(rs.getString("UnitId"))
                     .materialId(rs.getString("MaterialId"))
                     .unit(rs.getString("Unit"))
                     .displayName(rs.getString("DisplayName"))
                     .uom(rs.getString("UOM"))
-        
                     .build(),
-                siteId, profitId);
+                effectiveSiteName);
 
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(200);
@@ -2000,4 +2042,324 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
+    @Override
+    public AOPMessageVM getJwUnit(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC dbo.sp_GetJwUnitData @SiteId = ?, @AOPYear = ?";
+
+            List<JwUnitDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                JwUnitDTO.builder()
+                    .id(rs.getString("id"))
+                    .normParameterFkId(rs.getString("normParameterFkId"))
+                    .siteFkId(rs.getString("siteFkId"))
+                    .aopYear(rs.getString("aopYear"))
+                    .normParameterTypeName(rs.getString("normParameterTypeName"))
+                    .normParameterTypeDisplayName(rs.getString("normParameterTypeDisplayName"))
+                    .productName(rs.getString("productName"))
+                    .displayName(rs.getString("displayName"))
+                    .uom(rs.getString("UOM"))
+                    .sequenceOrder(rs.getObject("sequenceOrder") != null ? rs.getInt("sequenceOrder") : null)
+                    .april(rs.getObject("april") != null ? rs.getDouble("april") : 0.0)
+                    .may(rs.getObject("may") != null ? rs.getDouble("may") : 0.0)
+                    .june(rs.getObject("june") != null ? rs.getDouble("june") : 0.0)
+                    .july(rs.getObject("july") != null ? rs.getDouble("july") : 0.0)
+                    .aug(rs.getObject("aug") != null ? rs.getDouble("aug") : 0.0)
+                    .sep(rs.getObject("sep") != null ? rs.getDouble("sep") : 0.0)
+                    .oct(rs.getObject("oct") != null ? rs.getDouble("oct") : 0.0)
+                    .nov(rs.getObject("nov") != null ? rs.getDouble("nov") : 0.0)
+                    .dec(rs.getObject("dec") != null ? rs.getDouble("dec") : 0.0)
+                    .jan(rs.getObject("jan") != null ? rs.getDouble("jan") : 0.0)
+                    .feb(rs.getObject("feb") != null ? rs.getDouble("feb") : 0.0)
+                    .march(rs.getObject("march") != null ? rs.getDouble("march") : 0.0)
+                    .avgNorms(rs.getObject("avgNorms") != null ? rs.getDouble("avgNorms") : 0.0)
+                    .remarks(rs.getString("remarks"))
+                    .isEditable(rs.getObject("isEditable") != null ? rs.getBoolean("isEditable") : true)
+                    .isVisible(rs.getObject("isVisible") != null ? rs.getBoolean("isVisible") : true)
+                    .build(),
+                siteId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch JW Unit data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<JwUnitDTO> saveJwUnit(List<JwUnitDTO> jwUnitDTOs, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<JwUnitDTO> failedRecords = new ArrayList<>();
+
+        for (JwUnitDTO dto : jwUnitDTOs) {
+            try {
+                String normParamId = dto.getNormParameterFkId() != null ? dto.getNormParameterFkId() : dto.getId();
+                String siteId = dto.getSiteFkId();
+                String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
+
+                if (normParamId == null || siteId == null || year == null) {
+                    continue;
+                }
+
+                String checkSql = "SELECT COUNT(1) FROM dbo.JwUnitTransactionData " +
+                                  "WHERE NormParameter_FK_Id = ? AND Site_FK_Id = ? AND AOPYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, normParamId, siteId, year);
+
+                if (count > 0) {
+                    String updateSql = "UPDATE dbo.JwUnitTransactionData " +
+                                       "SET April = ?, May = ?, June = ?, July = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, March = ?, " +
+                                       "Remarks = ?, UpdatedDate = GETDATE(), UpdatedBy = ? " +
+                                       "WHERE NormParameter_FK_Id = ? AND Site_FK_Id = ? AND AOPYear = ?";
+                    jdbcTemplate.update(updateSql,
+                        dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMarch(),
+                        dto.getRemarks(), updatedBy,
+                        normParamId, siteId, year);
+                } else {
+                    String insertSql = "INSERT INTO dbo.JwUnitTransactionData " +
+                                       "(Id, NormParameter_FK_Id, Site_FK_Id, April, May, June, July, Aug, Sep, Oct, Nov, Dec, Jan, Feb, March, " +
+                                       "Remarks, AOPYear, CreatedDate, UpdatedDate, UpdatedBy) " +
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?)";
+                    jdbcTemplate.update(insertSql,
+                        normParamId, siteId,
+                        dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMarch(),
+                        dto.getRemarks(), year, updatedBy);
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+        return failedRecords;
+    }
+
+    @Override
+    public AOPMessageVM getFixedBedAndLabCostData(String aopYear) {
+        try {
+            String sql = "EXEC dbo.SP_GetFixedBedAndLabCostData @AopYear = ?";
+
+            List<FixedBedAndLabCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                String id = rs.getString("Id");
+                String costCenterMasterId = rs.getString("CostCenterMasterId");
+                String materialMasterId = rs.getString("MaterialMasterId");
+
+                return FixedBedAndLabCostDTO.builder()
+                    .id(id != null ? id : (costCenterMasterId + "_" + (materialMasterId != null ? materialMasterId : "")))
+                    .costCenterMasterId(costCenterMasterId)
+                    .materialMasterId(materialMasterId)
+                    .costCenterDescription(rs.getString("CostCenterDescription"))
+                    .material(rs.getString("Material"))
+                    .uom(rs.getString("UOM"))
+                    .aopYear(aopYear)
+                    .apr(rs.getObject("Apr") != null ? rs.getDouble("Apr") : 0.0)
+                    .may(rs.getObject("May") != null ? rs.getDouble("May") : 0.0)
+                    .jun(rs.getObject("Jun") != null ? rs.getDouble("Jun") : 0.0)
+                    .jul(rs.getObject("Jul") != null ? rs.getDouble("Jul") : 0.0)
+                    .aug(rs.getObject("Aug") != null ? rs.getDouble("Aug") : 0.0)
+                    .sep(rs.getObject("Sep") != null ? rs.getDouble("Sep") : 0.0)
+                    .oct(rs.getObject("Oct") != null ? rs.getDouble("Oct") : 0.0)
+                    .nov(rs.getObject("Nov") != null ? rs.getDouble("Nov") : 0.0)
+                    .dec(rs.getObject("Dec") != null ? rs.getDouble("Dec") : 0.0)
+                    .jan(rs.getObject("Jan") != null ? rs.getDouble("Jan") : 0.0)
+                    .feb(rs.getObject("Feb") != null ? rs.getDouble("Feb") : 0.0)
+                    .mar(rs.getObject("Mar") != null ? rs.getDouble("Mar") : 0.0)
+                    .remarks(rs.getString("Remarks"))
+                    .build();
+            }, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Fixed Bed and Lab Cost data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getFixedBedCostCentersDropdowns() {
+        return getFBSCCostCenterDropdown();
+    }
+
+    @Override
+    public AOPMessageVM getFBSCCostCenterDropdown() {
+        try {
+            String sql = "EXEC dbo.Sp_GetFBSCCostCenterDropdown";
+
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Cost Center dropdown fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Cost Center dropdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getFBSCMaterialDropdown() {
+        try {
+            String sql = "EXEC dbo.Sp_GetFBSCMaterialDropdown";
+
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Material dropdown fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Material dropdown data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<FixedBedAndLabCostDTO> saveFixedBedAndLabCostData(List<FixedBedAndLabCostDTO> dtos, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<FixedBedAndLabCostDTO> failedRecords = new ArrayList<>();
+
+        for (FixedBedAndLabCostDTO dto : dtos) {
+            try {
+                String costCenterMasterId = dto.getCostCenterMasterId() != null && !dto.getCostCenterMasterId().isEmpty() && !dto.getCostCenterMasterId().startsWith("new_row_")
+                    ? dto.getCostCenterMasterId()
+                    : null;
+                String materialMasterId = dto.getMaterialMasterId() != null && !dto.getMaterialMasterId().isEmpty() && !dto.getMaterialMasterId().startsWith("new_row_")
+                    ? dto.getMaterialMasterId()
+                    : null;
+                String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
+
+                if (year == null) {
+                    continue;
+                }
+
+                // If costCenterMasterId is missing, look up by description
+                if (costCenterMasterId == null || costCenterMasterId.isEmpty()) {
+                    String desc = dto.getCostCenterDescription();
+                    if (desc != null && !desc.isEmpty()) {
+                        List<String> existingIds = jdbcTemplate.queryForList(
+                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FBSCCostCenterMaster WHERE CostCenterDescription = ? OR CostCenter = ?",
+                            String.class, desc, desc
+                        );
+                        if (!existingIds.isEmpty()) {
+                            costCenterMasterId = existingIds.get(0);
+                        }
+                    }
+                }
+
+                // If materialMasterId is missing, look up by material name
+                if (materialMasterId == null || materialMasterId.isEmpty()) {
+                    String mat = dto.getMaterial();
+                    if (mat != null && !mat.isEmpty()) {
+                        List<String> existingMatIds = jdbcTemplate.queryForList(
+                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FBSCMaterialMaster WHERE Material = ?",
+                            String.class, mat
+                        );
+                        if (!existingMatIds.isEmpty()) {
+                            materialMasterId = existingMatIds.get(0);
+                        }
+                    }
+                }
+
+                if (costCenterMasterId == null || costCenterMasterId.isEmpty()) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrorMessage("Cost Center Description is required.");
+                    failedRecords.add(dto);
+                    continue;
+                }
+
+                if (materialMasterId == null || materialMasterId.isEmpty()) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrorMessage("Material is required.");
+                    failedRecords.add(dto);
+                    continue;
+                }
+
+                String id = dto.getId();
+                boolean isExistingId = (id != null && !id.trim().isEmpty()
+                    && !id.startsWith("new_row_") && !id.contains("_"));
+
+                // Condition 1: If existing Id is provided, update the record by Id directly
+                if (isExistingId) {
+                    String checkByIdSql = "SELECT COUNT(1) FROM dbo.FixedBedAndLabCostTransaction WHERE Id = ?";
+                    int countById = jdbcTemplate.queryForObject(checkByIdSql, Integer.class, id);
+
+                    if (countById > 0) {
+                        String updateSql = "UPDATE dbo.FixedBedAndLabCostTransaction " +
+                                           "SET CostCenterMasterId = ?, MaterialMasterId = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                           "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
+                                           "WHERE Id = ?";
+                        jdbcTemplate.update(updateSql,
+                            costCenterMasterId, materialMasterId,
+                            dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                            dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                            dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                            dto.getRemarks(), updatedBy,
+                            id);
+                        continue;
+                    }
+                }
+
+                // Condition 2: Fallback / New record check by (CostCenterMasterId + MaterialMasterId + AopYear)
+                String checkSql = "SELECT COUNT(1) FROM dbo.FixedBedAndLabCostTransaction " +
+                                  "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, costCenterMasterId, materialMasterId, year);
+
+                if (count > 0) {
+                    String updateSql = "UPDATE dbo.FixedBedAndLabCostTransaction " +
+                                       "SET Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                       "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
+                                       "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
+                    jdbcTemplate.update(updateSql,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy,
+                        costCenterMasterId, materialMasterId, year);
+                } else {
+                    String insertSql = "INSERT INTO dbo.FixedBedAndLabCostTransaction " +
+                                       "(Id, CostCenterMasterId, MaterialMasterId, AopYear, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, " +
+                                       "Remarks, CreatedAt, CreatedBy) " +
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
+                    jdbcTemplate.update(insertSql,
+                        costCenterMasterId, materialMasterId, year,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy);
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+        return failedRecords;
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteFixedBedAndLabCost(String masterId, String aopYear) {
+        try {
+            String sql = "DELETE FROM dbo.FixedBedAndLabCostTransaction WHERE (Id = ? OR CostCenterMasterId = ?) AND AopYear = ?";
+            int rowsAffected = jdbcTemplate.update(sql, masterId, masterId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage(rowsAffected > 0 ? "Record deleted successfully" : "Record not found to delete");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete Fixed Bed and Lab Cost transaction", e);
+        }
+    }
 }

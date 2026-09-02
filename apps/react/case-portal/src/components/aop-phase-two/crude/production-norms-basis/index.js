@@ -17,6 +17,8 @@ import Constants from './Constants'
 import ReportManualEntry from './ReportManualEntry'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
+import PIMSMontlyThroughput from './PIMSMontlyThroughput'
+import JWAvgNorms from './JWAvgNorms'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/crude/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 
@@ -228,6 +230,7 @@ const ProductionNormsBasis = () => {
     if (!currentTabId) return null
 
     const currentTabName = getTabName(currentTabId)
+    console.log('Rendering tab:', { tabIndex, currentTabId, currentTabName })
 
     switch (currentTabName) {
       case 'Configuration':
@@ -242,6 +245,12 @@ const ProductionNormsBasis = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
+      case 'PIMS Monthly Throughput':
+      case 'pims-monthly-throughput':
+      case 'pims-monthly-throughtput':
+        return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
+      case 'Job Work Avg Norms':
+        return <JWAvgNorms />
       case 'Report Manual Entry':
         return <ReportManualEntry startDate={startDate} endDate={endDate} />
       default:

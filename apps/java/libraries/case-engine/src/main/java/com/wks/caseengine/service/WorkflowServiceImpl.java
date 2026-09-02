@@ -262,12 +262,13 @@ public class WorkflowServiceImpl implements WorkflowService {
 			List<WorkflowYearDTO> workflowList = new ArrayList<>();
 			for (Object[] row : results) {
 				WorkflowYearDTO dto = new WorkflowYearDTO();
-				dto.setParticulates(row[0] != null ? row[0].toString() : null);
-				dto.setUom(row[1] != null ? row[1].toString() : null);
-				dto.setFyAop(row[2] != null ? row[2].toString() : null);
-				dto.setFyActual(row[3] != null ? row[3].toString() : null);
-				dto.setSyAop(row[4] != null ? row[4].toString() : null);
-				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setParticulates(row[1] != null ? row[1].toString() : null);
+				dto.setUom(row[2] != null ? row[2].toString() : null);
+				dto.setFyAop(row[3] != null ? row[3].toString() : null);
+				dto.setFyActual(row[4] != null ? row[4].toString() : null);
+				dto.setSyAop(row[5] != null ? row[5].toString() : null);
+				dto.setRemark(row[6] != null ? row[6].toString() : "");
 				dto.setAopYear(year);
 				workflowList.add(dto);
 			}
@@ -299,12 +300,13 @@ public class WorkflowServiceImpl implements WorkflowService {
 			List<WorkflowYearDTO> workflowList = new ArrayList<>();
 			for (Object[] row : results) {
 				WorkflowYearDTO dto = new WorkflowYearDTO();
-				dto.setParticulates(row[0] != null ? row[0].toString() : null);
-				dto.setUom(row[1] != null ? row[1].toString() : null);
-				dto.setFyAop(row[2] != null ? row[2].toString() : null);
-				dto.setFyActual(row[3] != null ? row[3].toString() : null);
-				dto.setSyAop(row[4] != null ? row[4].toString() : null);
-				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setParticulates(row[1] != null ? row[1].toString() : null);
+				dto.setUom(row[2] != null ? row[2].toString() : null);
+				dto.setFyAop(row[3] != null ? row[3].toString() : null);
+				dto.setFyActual(row[4] != null ? row[4].toString() : null);
+				dto.setSyAop(row[5] != null ? row[5].toString() : null);
+				dto.setRemark(row[6] != null ? row[6].toString() : "");
 				dto.setAopYear(year);
 				workflowList.add(dto);
 			}
@@ -579,55 +581,32 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager")
 	public AOPMessageVM saveAnnualAOPData(String plantId, List<WorkflowYearDTO> workflowYearDTOList) {
-		try {
+	
 			for (WorkflowYearDTO workflowYearDTO : workflowYearDTOList) {
-				System.out.println("workflowYearDTO.getParticulates()" + workflowYearDTO.getParticulates());
-				System.out.println("workflowYearDTO.getFyAop()" + workflowYearDTO.getFyAop());
-				List<AnnualAOPCostDB2> list = annualAOPCostRepository
-						.findAllByAopYearAndPlantFkIdAndParticulatesAndAopType(
-								workflowYearDTO.getAopYear(),
-								UUID.fromString(plantId),
-								workflowYearDTO.getParticulates(),
-								"Remark");
-				if (list.isEmpty()) {
-					if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
-						// annualAOPCost.setRemark(null);
-					} else {
-						AnnualAOPCostDB2 annualAOPCost = new AnnualAOPCostDB2();
-						annualAOPCost.setParticulates(workflowYearDTO.getParticulates());
-						annualAOPCost.setAopYear(workflowYearDTO.getAopYear());
-						annualAOPCost.setAopType("Remark");
-						annualAOPCost.setRemark(workflowYearDTO.getRemark());
-						annualAOPCost.setPlantFkId(UUID.fromString(plantId));
-
-						annualAOPCostRepository.save(annualAOPCost);
-					}
-				} else {
-					for (AnnualAOPCostDB2 annualAOPCost : list) {
-						// System.out.println("id:"+id);
-						// Optional<AnnualAOPCost> AnnualAOPCostOp =
-						// annualAOPCostRepository.findById(id);
-						// if (AnnualAOPCostOp != null) {
-						// AnnualAOPCost annualAOPCost = AnnualAOPCostOp.get();
-						if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
-							annualAOPCost.setRemark(null);
-						} else {
-							annualAOPCost.setRemark(workflowYearDTO.getRemark());
-						}
-
-						annualAOPCostRepository.save(annualAOPCost);
-					}
+				
+				Optional<AnnualAOPCostDB2> existingAnnualAOPCost = annualAOPCostRepository.findById(UUID.fromString(workflowYearDTO.getId()));
+					
+				if (!existingAnnualAOPCost.isPresent()) { 
+					throw new RuntimeException("Annual AOP Cost not found for ID: " + workflowYearDTO.getId());
 				}
-			}
+
+				AnnualAOPCostDB2 annualAOPCost = existingAnnualAOPCost.get();
+			
+					
+							annualAOPCost.setRemark(workflowYearDTO.getRemark());
+						
+
+						annualAOPCostRepository.save(annualAOPCost);
+					}
+				
 			AOPMessageVM response = new AOPMessageVM();
 			response.setCode(200);
 			response.setMessage("Remarks updated successfully.");
 			return response;
 
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to save data", ex);
-		}
+		
 
 	}
 

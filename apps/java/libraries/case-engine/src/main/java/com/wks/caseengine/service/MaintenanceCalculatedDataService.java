@@ -23,7 +23,6 @@ public interface MaintenanceCalculatedDataService {
 	public AOPMessageVM updateMaintenanceDataForCracker( String plantId,  String year, List<Map<String, Object>> payloadList);
 	public AOPMessageVM getBudgetMaintenance( String plantId,  String year,String budgetCategory);
 	public AOPMessageVM updateBudgetMaintenance( List<BudgetMaintenanceDto> budgetMaintenanceDtos);
-	public AOPMessageVM updateMaintenance( List<BudgetMaintenanceDto> budgetMaintenanceDtos, String plantId, String year);
 	public AOPMessageVM getMacroData( Double value,  String year,String plantId);
 	byte[] createExcel(String year, String plantId,  boolean isAfterSave,
 			Map<String, List<BudgetMaintenanceDto>> mapForExcel);
