@@ -138,13 +138,6 @@ const GradeWiseSteadyStateConsumption = () => {
 
       setLoading(true)
       setRows([])
-      const remarksColumn = {
-        field: 'remarks',
-        title: 'Remark',
-        minWidth: 220,
-        type: 'textarea',
-        editable: true,
-      }
       try {
         let response = await SteadyStateConsumptionApiService.getSteadyStateConsumptionWithColumns(
           keycloak,
@@ -192,6 +185,14 @@ const GradeWiseSteadyStateConsumption = () => {
               return colDef
             })
 
+          const remarksColumn = {
+            field: 'remarks',
+            title: 'Remark',
+            minWidth: 220,
+            type: 'textarea',
+            editable: true,
+          }
+
           setColumns([
             ...staticInitialColumns,
             ...dynamicApiColumns,
@@ -226,10 +227,6 @@ const GradeWiseSteadyStateConsumption = () => {
         setOriginalRows(formattedData)
       } catch (error) {
         console.error('Error fetching steady state consumption data:', error)
-        setRows([])
-        setOriginalRows([])
-        setCalculationObject([])
-        setColumns([...staticInitialColumns, remarksColumn])
       } finally {
         setLoading(false)
       }

@@ -1753,18 +1753,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	public byte[] exportShutdownConsumption(String year, UUID plantFKId, boolean isAfterSave, List<ShutdownNormsValueDTO> dtoList,String gradeId) {
 		try {
 			AOPMessageVM aopMessageVM = getShutdownNormsData( year,  plantFKId.toString(), gradeId);
-
-			Plants plant = plantsRepository.findById(plantFKId).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-
-			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-
-			if(filament) {
-				// seperate method to include sap code in export 
-				return exportShutdownConsumptionWithSapCode(year, plantFKId, isAfterSave, dtoList, gradeId);
-			}
-			
 					
 			List<Boolean> isEditable = new ArrayList<>();
 
@@ -1896,131 +1884,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 	}
 	
-	// ref: exportShutdownConsumption | new method to include sap code in export 
-	public byte[] exportShutdownConsumptionWithSapCode(String year, UUID plantFKId, boolean isAfterSave, List<ShutdownNormsValueDTO> dtoList, String gradeId) {
-		try {
-			AOPMessageVM aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), gradeId);
-			List<Boolean> isEditable = new ArrayList<>();
-
-			if (!isAfterSave) {
-				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
-				dtoList = (List<ShutdownNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
-			}
-
-			Workbook workbook = new XSSFWorkbook();
-			Sheet sheet = workbook.createSheet("Sheet1");
-			int currentRow = 0;
-
-			List<List<Object>> rows = new ArrayList<>();
-
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
-
-			for (ShutdownNormsValueDTO dto : dtoList) {
-				List<Object> list = new ArrayList<>();
-				list.add(dto.getNormParameterTypeDisplayName());
-				list.add(dto.getProductName());
-				list.add(dto.getSapCode());
-				list.add(dto.getUOM());
-				list.add(dto.getApril());
-				list.add(dto.getMay());
-				list.add(dto.getJune());
-				list.add(dto.getJuly());
-				list.add(dto.getAugust());
-				list.add(dto.getSeptember());
-				list.add(dto.getOctober());
-				list.add(dto.getNovember());
-				list.add(dto.getDecember());
-				list.add(dto.getJanuary());
-				list.add(dto.getFebruary());
-				list.add(dto.getMarch());
-				list.add(dto.getRemarks());
-				list.add(dto.getId());
-				list.add(dto.getMaterialFkId());
-				isEditable.add(dto.getIsEditable());
-				if (isAfterSave) {
-					list.add(dto.getSaveStatus());
-					list.add(dto.getErrDescription());
-				}
-				rows.add(list);
-			}
-
-			List<String> innerHeaders = new ArrayList<>();
-			innerHeaders.add("Type");
-			innerHeaders.add("Particulars");
-			innerHeaders.add("Sap Code");
-			innerHeaders.add("UOM");
-			List<String> monthsList = getAcademicYearMonths(year);
-			innerHeaders.addAll(monthsList);
-			innerHeaders.add("Remarks");
-			innerHeaders.add("Id");
-			innerHeaders.add("Material Id");
-			if (isAfterSave) {
-				innerHeaders.add("Status");
-				innerHeaders.add("Error Description");
-			}
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
-
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-				}
-			}
-			for (List<Object> rowData : rows) {
-				boolean isRowEditable = true;
-				if (isEditable.get(currentRow - 1) != null) {
-					isRowEditable = isEditable.get(currentRow - 1);
-				}
-
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
-
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue());
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
-					if (isRowEditable) {
-						cell.setCellStyle(unlockedStyle);
-					} else {
-						cell.setCellStyle(lockedStyle);
-					}
-				}
-			}
-			// Id at col 17, Material Id at col 18 (shifted by 1 due to Sap Code column)
-			sheet.setColumnHidden(17, true);
-			sheet.setColumnHidden(18, true);
-
-			try {
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				workbook.write(outputStream);
-				workbook.close();
-				return outputStream.toByteArray();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
 	public byte[] exportDMDShutdownConsumption(String year, UUID plantFKId, boolean isAfterSave, List<ShutdownNormsValueDTO> dtoList, String gradeId) {
 	    try {
 	        AOPMessageVM aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), gradeId);
@@ -2248,14 +2111,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			List<ShutdownNormsValueDTO> data=null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-
-			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-
-			if(filament) {
-				// seperate method to include sap code in import 
-				return importShutdownConsumptionWithSapCode(year, plantFKId, gradeId, file);
-			}
-
 			boolean ptaDmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD");
 			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 			if(ptaDmd || staple) {
@@ -2338,48 +2193,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		} catch (Exception e) {
 			e.printStackTrace();
 			// return ResponseEntity.internalServerError().build();
-		}
-		return null;
-	}
-
-	// ref: importShutdownConsumption | new method to include sap code.
-	public AOPMessageVM importShutdownConsumptionWithSapCode(String year, UUID plantFKId, String gradeId, MultipartFile file) {
-		try {
-			Plants plant = plantsRepository.findById(plantFKId).get();
-			List<ShutdownNormsValueDTO> data = null;
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			boolean ptaDmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD");
-			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
-			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-			if (ptaDmd || staple || filament) {
-				data = readDMDShutdownConsumptionsWithSapCode(file.getInputStream(), plantFKId, year);
-			} else {
-				data = readShutdownConsumptionsWithSapCode(file.getInputStream(), plantFKId, year);
-			}
-			Map<String, Object> map = saveShutdownNormsData(data);
-			List<ShutdownNormsValueDTO> retrievedList = (List<ShutdownNormsValueDTO>) map.get("data");
-
-			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			if (retrievedList != null && retrievedList.size() > 0) {
-				byte[] fileByteArray = null;
-				if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && site.getName().equalsIgnoreCase("DMD")) {
-					fileByteArray = exportDMDShutdownConsumption(year, plantFKId, true, retrievedList, gradeId);
-				} else {
-					fileByteArray = exportShutdownConsumptionWithSapCode(year, plantFKId, true, retrievedList, gradeId);
-				}
-				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
-				aopMessageVM.setData(base64File);
-				aopMessageVM.setCode(400);
-				aopMessageVM.setMessage("Partial data has been saved");
-			} else {
-				aopMessageVM.setCode(200);
-				aopMessageVM.setMessage("All data has been saved");
-			}
-
-			return aopMessageVM;
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return null;
 	}
@@ -2521,133 +2334,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	    return configList;
 	}
 	
-	public List<ShutdownNormsValueDTO> readShutdownConsumptionsWithSapCode(InputStream inputStream, UUID plantFKId, String year) {
-		List<ShutdownNormsValueDTO> configList = new ArrayList<>();
-
-		Plants plant = plantsRepository.findById(plantFKId)
-			.orElseThrow(() -> new RuntimeException("Plant not found"));
-		Sites site = siteRepository.findById(plant.getSiteFkId())
-			.orElseThrow(() -> new RuntimeException("Site not found"));
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-			.orElseThrow(() -> new RuntimeException("Vertical not found"));
-
-		Set<Integer> activeMonths = new HashSet<>();
-
-		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-			List<Integer> shutdown = plantService.getShutdownMonths(plantFKId, "Shutdown", year, null);
-			if (shutdown != null) activeMonths.addAll(shutdown);
-
-			Sheet sheet = workbook.getSheetAt(0);
-			if (sheet != null) {
-				Iterator<Row> rowIterator = sheet.iterator();
-
-				if (rowIterator.hasNext()) rowIterator.next(); // Skip header
-
-				while (rowIterator.hasNext()) {
-					Row row = rowIterator.next();
-					if (row.getPhysicalNumberOfCells() == 0) continue;
-
-					ShutdownNormsValueDTO dto = new ShutdownNormsValueDTO();
-					try {
-						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
-						dto.setProductName(getStringCellValue(row.getCell(1), dto));
-						// col 2 = Sap Code: read-only, not stored
-						dto.setUOM(getStringCellValue(row.getCell(3), dto));
-						dto.setFinancialYear(year);
-
-						if (activeMonths.contains(4))  dto.setApril(getNumericCellValue(row.getCell(4), dto));
-						if (activeMonths.contains(5))  dto.setMay(getNumericCellValue(row.getCell(5), dto));
-						if (activeMonths.contains(6))  dto.setJune(getNumericCellValue(row.getCell(6), dto));
-						if (activeMonths.contains(7))  dto.setJuly(getNumericCellValue(row.getCell(7), dto));
-						if (activeMonths.contains(8))  dto.setAugust(getNumericCellValue(row.getCell(8), dto));
-						if (activeMonths.contains(9))  dto.setSeptember(getNumericCellValue(row.getCell(9), dto));
-						if (activeMonths.contains(10)) dto.setOctober(getNumericCellValue(row.getCell(10), dto));
-						if (activeMonths.contains(11)) dto.setNovember(getNumericCellValue(row.getCell(11), dto));
-						if (activeMonths.contains(12)) dto.setDecember(getNumericCellValue(row.getCell(12), dto));
-						if (activeMonths.contains(1))  dto.setJanuary(getNumericCellValue(row.getCell(13), dto));
-						if (activeMonths.contains(2))  dto.setFebruary(getNumericCellValue(row.getCell(14), dto));
-						if (activeMonths.contains(3))  dto.setMarch(getNumericCellValue(row.getCell(15), dto));
-
-						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-						dto.setId(getStringCellValue(row.getCell(17), dto));
-						dto.setPlantFkId(plantFKId.toString());
-						dto.setSiteFkId(site.getId().toString());
-						dto.setVerticalFkId(vertical.getId().toString());
-						dto.setMaterialFkId(getStringCellValue(row.getCell(18), dto));
-
-					} catch (Exception e) {
-						e.printStackTrace();
-						dto.setErrDescription(e.getMessage());
-						dto.setSaveStatus("Failed");
-					}
-					configList.add(dto);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return configList;
-	}
-
-	public List<ShutdownNormsValueDTO> readDMDShutdownConsumptionsWithSapCode(InputStream inputStream, UUID plantFKId, String year) {
-		List<ShutdownNormsValueDTO> configList = new ArrayList<>();
-		Plants plant = plantsRepository.findById(plantFKId)
-			.orElseThrow(() -> new RuntimeException("Plant not found"));
-		Sites site = siteRepository.findById(plant.getSiteFkId())
-			.orElseThrow(() -> new RuntimeException("Site not found"));
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-			.orElseThrow(() -> new RuntimeException("Vertical not found"));
-		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-			Sheet sheet = workbook.getSheetAt(0);
-			if (sheet != null) {
-				Iterator<Row> rowIterator = sheet.iterator();
-				if (rowIterator.hasNext()) rowIterator.next(); // Skip header
-				while (rowIterator.hasNext()) {
-					Row row = rowIterator.next();
-					if (row.getPhysicalNumberOfCells() == 0) continue;
-					ShutdownNormsValueDTO dto = new ShutdownNormsValueDTO();
-					try {
-						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
-						dto.setProductName(getStringCellValue(row.getCell(1), dto));
-						// col 2 = Sap Code: read-only, not stored
-						dto.setUOM(getStringCellValue(row.getCell(3), dto));
-						dto.setFinancialYear(year);
-						dto.setApril(getNumericCellValue(row.getCell(4), dto));
-						dto.setMay(getNumericCellValue(row.getCell(5), dto));
-						dto.setJune(getNumericCellValue(row.getCell(6), dto));
-						dto.setJuly(getNumericCellValue(row.getCell(7), dto));
-						dto.setAugust(getNumericCellValue(row.getCell(8), dto));
-						dto.setSeptember(getNumericCellValue(row.getCell(9), dto));
-						dto.setOctober(getNumericCellValue(row.getCell(10), dto));
-						dto.setNovember(getNumericCellValue(row.getCell(11), dto));
-						dto.setDecember(getNumericCellValue(row.getCell(12), dto));
-						dto.setJanuary(getNumericCellValue(row.getCell(13), dto));
-						dto.setFebruary(getNumericCellValue(row.getCell(14), dto));
-						dto.setMarch(getNumericCellValue(row.getCell(15), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-						dto.setId(getStringCellValue(row.getCell(17), dto));
-						dto.setPlantFkId(plantFKId.toString());
-						dto.setSiteFkId(site.getId().toString());
-						dto.setVerticalFkId(vertical.getId().toString());
-						dto.setMaterialFkId(getStringCellValue(row.getCell(18), dto));
-					} catch (Exception e) {
-						e.printStackTrace();
-						dto.setErrDescription(e.getMessage());
-						dto.setSaveStatus("Failed");
-					}
-					configList.add(dto);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return configList;
-	}
-
-
-	
-
 	public static Boolean getBooleanCellValue(Cell cell, ShutdownNormsValueDTO dto) {
 		if (cell == null)
 			return null;

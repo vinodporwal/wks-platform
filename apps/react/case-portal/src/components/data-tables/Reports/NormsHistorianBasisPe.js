@@ -272,7 +272,7 @@ const NormsHistorianBasisPe = () => {
         return
       }
 
-      const phaseTwoVertical = ['crude', 'vgoht', 'hydrotreater', 'alkylation']
+      const phaseTwoVertical = ['crude', 'vgoht', 'hydrotreater']
       // Call the API that returns combined grids. Change REPORT_TYPE_FOR_ALL if needed.
       const apiResponse = await DataService.getProductionVolDataBasisPe(
         keycloak,
