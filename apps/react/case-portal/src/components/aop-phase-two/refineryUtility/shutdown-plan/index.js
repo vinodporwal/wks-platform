@@ -141,8 +141,8 @@ const ShutDownColumns = [
     title: 'Shutdown Desc',
     editable: true,
     locked: true,
-    type: 'text',
-    minWidth: 150,
+    type: 'discriptionDrpdwn',
+    minWidth: 130,
   },
   {
     field: 'maintenanceId',
@@ -156,29 +156,32 @@ const ShutDownColumns = [
     title: 'SD - From',
     editable: true,
     type: 'dateTime',
-    minWidth: 130,
+    minWidth: 95,
   },
   {
     field: 'maintEndDateTime',
     title: 'SD - To',
     editable: true,
     type: 'dateTime',
-    minWidth: 130,
+    minWidth: 95,
   },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
+    minWidth: 80,
   },
   {
     field: 'rate',
-    title: 'Values',
+    title: 'Quantity (TPH)',
     editable: true,
+    minWidth: 90,
   },
   {
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    minWidth: 140,
   },
 ]
 
@@ -230,21 +233,14 @@ const ShutdownPlan = () => {
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
       const formatted = arr.map((item, index) => {
-        const startDate = item.maintStartDateTime
-          ? item?.maintStartDateTime
-          : null
-        const endDate = item.maintEndDateTime
-          ? item?.maintEndDateTime
-          : null
-
         return {
           ...item,
           idFromApi: item?.id,
           id: index,
           originalRemark: item.remark,
           inEdit: false,
-          maintStartDateTime: startDate,
-          maintEndDateTime: endDate,
+          maintStartDateTime: new Date(item?.maintStartDateTime),
+          maintEndDateTime: new Date(item?.maintEndDateTime),
           discription: item.discription,
           durationInHrs: item?.durationInHrs || '',
           rate: item?.rate ?? item?.shutdownRate ?? '',
@@ -253,7 +249,6 @@ const ShutdownPlan = () => {
             item?.remark === 'null' || item?.remark === 'NULL'
               ? ''
               : item?.remark || '',
-          isEditable: false,
         }
       })
 
@@ -311,7 +306,13 @@ const ShutdownPlan = () => {
   }, [AOP_YEAR, keycloak, PLANT_ID])
 
   // ─── Save ─────────────────────────────────────────────────────────────────────
-
+  function addTimeOffset(dateTime) {
+    if (!dateTime) return null
+    const date = new Date(dateTime)
+    date.setUTCHours(date.getUTCHours() + 5)
+    date.setUTCMinutes(date.getUTCMinutes() + 30)
+    return date
+  }
   const saveChanges = useCallback(async () => {
     const data = Object.values(modifiedCells)
 
@@ -377,6 +378,68 @@ const ShutdownPlan = () => {
       }
     }
 
+    for (const row of allRowsMerged) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
+      //shutdown timeframe for Multiple months
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
+
+      const formatDate = (date) =>
+        date.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+
+      const isSameMonth =
+        start.getMonth() === end.getMonth() &&
+        start.getFullYear() === end.getFullYear()
+
+      if (!isSameMonth) {
+        row.isError = true
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `The shutdown timeframe for '${row.discription}' spans multiple months (from ${formatDate(start)} to ${formatDate(end)}). Please split it into separate entries for each month.`,
+          severity: 'error',
+        })
+        return
+      }
+    }
+    // 3.6 Overlapping timeframes
+    for (let i = 0; i < allRowsMerged.length; i++) {
+      const a = allRowsMerged[i]
+      const aStart = new Date(a.maintStartDateTime).getTime()
+      const aEnd = new Date(a.maintEndDateTime).getTime()
+
+      if (isNaN(aStart) || isNaN(aEnd)) continue
+
+      for (let j = 0; j < allRowsMerged.length; j++) {
+        if (i === j) continue
+        const b = allRowsMerged[j]
+        
+        // Only validate overlap if the descriptions are the same
+        const descA = String(a.discription || '').trim().toLowerCase()
+        const descB = String(b.discription || '').trim().toLowerCase()
+        if (descA !== descB) continue
+
+        const bStart = new Date(b.maintStartDateTime).getTime()
+        const bEnd = new Date(b.maintEndDateTime).getTime()
+
+        if (isNaN(bStart) || isNaN(bEnd)) continue
+
+        if (aStart < bEnd && bStart < aEnd) {
+          a.isError = true
+          b.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `The shutdown timeframe for "${a.discription || 'this record'}" overlaps with another entry for the same shutdown. Please ensure no overlapping timeframes for the same description.`,
+            severity: 'error',
+          })
+          return
+        }
+      }
+    }
+
     // 4. Required fields: discription and durationInHrs
     const fieldsToCheck = ['discription', 'durationInHrs']
     const validationError = validateRowDataWithRemarks(
@@ -406,6 +469,20 @@ const ShutdownPlan = () => {
         return
       }
 
+      if (
+        record.rate === undefined ||
+        record.rate === null ||
+        String(record.rate).trim() === ''
+      ) {
+        record.isError = true
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Quantity (TPH) is required for all records.',
+          severity: 'error',
+        })
+        return
+      }
+
       const isRemarkEmpty =
         !record.remark ||
         String(record.remark).trim() === '' ||
@@ -421,25 +498,6 @@ const ShutdownPlan = () => {
       }
     }
 
-    // 5. Duplicate description check across all rows
-    const allDescriptions = rows.map((r) =>
-      (r.discription || '').trim().toLowerCase(),
-    )
-    const duplicate = allDescriptions.find(
-      (d, i) => d && allDescriptions.indexOf(d) !== i,
-    )
-    if (duplicate) {
-      rows.forEach((row) => {
-        row.isError = (row.discription || '').trim().toLowerCase() === duplicate
-      })
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: `The description "${duplicate}" already exists. Please enter a unique description.`,
-        severity: 'error',
-      })
-      return
-    }
-
     // 6. Build payload
     const shutdownDetails = data.map((row) => ({
       discription: row.discription || row.discriptionDrpdwn,
@@ -451,8 +509,8 @@ const ShutdownPlan = () => {
         const [h = '00', m = '00'] = String(v).split('.')
         return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
       })(),
-      maintStartDateTime: row.maintStartDateTime || null,
-      maintEndDateTime: row.maintEndDateTime || null,
+      maintStartDateTime: addTimeOffset(row.maintStartDateTime) || null,
+      maintEndDateTime: addTimeOffset(row.maintEndDateTime) || null,
       month: row.monthly || row.month, // Use month field
       audityear: AOP_YEAR,
       id: row.idFromApi || null,
@@ -651,12 +709,12 @@ const ShutdownPlan = () => {
 
   const permissions = {
     allAction: true,
-    showAction: false,
-    addButton: false, // "Add Item" button — adds a blank row inline
-    deleteButton: false, // trash icon on each editable row
-    editButton: false,
-    saveBtn: false,
-    showImport: false, // Excel import button
+    showAction: true,
+    addButton: true, // "Add Item" button — adds a blank row inline
+    deleteButton: true, // trash icon on each editable row
+    editButton: true,
+    saveBtn: true,
+    showImport: true, // Excel import button
     showExport: true, // Excel export (download) button
     showTitleNameBusiness: true,
     titleName: screenTitle?.title,
@@ -664,7 +722,7 @@ const ShutdownPlan = () => {
     ExcelName: EXCEL_NAME,
     remarksEditable: true,
     marginBottom: true,
-    deleteMultiple: false,
+    deleteMultiple: true,
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
