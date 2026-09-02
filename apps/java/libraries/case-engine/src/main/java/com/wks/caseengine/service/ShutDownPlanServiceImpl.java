@@ -373,11 +373,14 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+
 			boolean refineryUtility = vertical.getName().equalsIgnoreCase("RefineryUtility");
 
-			if(refineryUtility) {
+			if(refineryUtility) { 
+				// seperate method to include value column
 				return shutdownNonProductExportWithValue(year, plantId, maintenanceTypeName, isAfterSave, dtoList);
 			}
+
 			if (!isAfterSave) {
 				dtoList = findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
 			}
@@ -796,7 +799,7 @@ public byte[] shutdownNonProductExportWithValue(String year, String plantId, Str
 }
 
 public byte[] shutdownNonProductLineExport(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
-		List<ShutDownPlanDTO> dtoList) {
+			List<ShutDownPlanDTO> dtoList) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
@@ -3327,7 +3330,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						}
 					}
 
-					if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez) && !alreadyFailed && ldtStart != null && ldtEnd != null) {
+					if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
 						validTimeRangesWithIndex.add(new TimeRangeWithIndex(ldtStart, ldtEnd, currentRowIndex));
 					}
 
@@ -3972,13 +3975,12 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean aromaticsHmd = verticalName.equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("HMD");
 		boolean ptaPmd = verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD");
 		boolean refineryUtility = verticalName.equalsIgnoreCase("RefineryUtility");
-		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd;
+		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd || refineryUtility;
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean pta = verticalName.equalsIgnoreCase("PTA");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		//boolean gasifier=  verticalName.equalsIgnoreCase("PCG") && (site.getName().equalsIgnoreCase("DTA") || site.getName().equalsIgnoreCase("SEZ"))  && (plant.getName().equalsIgnoreCase("GASIFIER") || plant.getName().equalsIgnoreCase("SRU"));
-		
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",
