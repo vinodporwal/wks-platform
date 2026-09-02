@@ -1759,8 +1759,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
 			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
+			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 
-			if(filament) {
+			if(filament || staple) {
 				// seperate method to include sap code in export 
 				return exportShutdownConsumptionWithSapCode(year, plantFKId, isAfterSave, dtoList, gradeId);
 			}
@@ -2250,14 +2251,13 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
 			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
-
-			if(filament) {
+			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
+			if(filament || staple) {
 				// seperate method to include sap code in import 
 				return importShutdownConsumptionWithSapCode(year, plantFKId, gradeId, file);
 			}
 
 			boolean ptaDmd = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD");
-			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 			if(ptaDmd || staple) {
 				data = readDMDShutdownConsumptions(file.getInputStream(), plantFKId, year);
 			}else {
