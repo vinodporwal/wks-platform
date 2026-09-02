@@ -374,6 +374,10 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 			boolean refineryUtility = vertical.getName().equalsIgnoreCase("RefineryUtility");
+
+			if(refineryUtility) {
+				return shutdownNonProductExportWithValue(year, plantId, maintenanceTypeName, isAfterSave, dtoList);
+			}
 			if (!isAfterSave) {
 				dtoList = findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
 			}
