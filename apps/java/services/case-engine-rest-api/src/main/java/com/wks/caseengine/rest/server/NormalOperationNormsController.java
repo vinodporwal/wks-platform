@@ -19,7 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.MCUNormsValueDTO;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.service.NormalOperationNormsService;
 
 @RestController
@@ -28,6 +34,15 @@ public class NormalOperationNormsController {
 	
 	@Autowired
 	private NormalOperationNormsService normalOperationNormsService;
+	
+	@Autowired
+	PlantsRepository plantsRepository;
+
+	@Autowired
+	SiteRepository siteRepository;
+
+	@Autowired
+	VerticalsRepository verticalRepository;
 	
 	@GetMapping(value = "/steady-state-norms")
 	public AOPMessageVM getNormalOperationNormsData(
@@ -179,9 +194,15 @@ public class NormalOperationNormsController {
             @RequestParam("year") String year,@RequestParam(required = false) String mode, @RequestParam(required = false) String gradeId
 	        ) {
 	    try {
-			
-	        byte[] excelBytes = normalOperationNormsService.createExcel(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
-
+	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			byte[] excelBytes;
+			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE")) {
+				 excelBytes = normalOperationNormsService.createExcelSAP(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+			}else {
+				 excelBytes = normalOperationNormsService.createExcel(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+			}
+	        
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
@@ -257,7 +278,14 @@ public class NormalOperationNormsController {
             @RequestParam(required = false) String gradeId,
 			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
 	        ) {
-			return	normalOperationNormsService.importExcel(year,UUID.fromString(plantId),gradeId, file,mode); 
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE")) {
+				return	normalOperationNormsService.importExcelSAP(year,UUID.fromString(plantId),gradeId, file,mode); 
+			}else {
+				return	normalOperationNormsService.importExcel(year,UUID.fromString(plantId),gradeId, file,mode); 
+			}
+			
 	}
 	
 	@PostMapping(value = "/steady-state-norms-import-chemical", consumes = "multipart/form-data")
