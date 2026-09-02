@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.MXOReprocessingDTO;
+import com.wks.caseengine.dto.MXOReprocessingStockDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
@@ -235,5 +236,20 @@ public class SpyroInputController {
 		}
 	}
 
+	@GetMapping(value = "/mxo-reprocessing-stock-data")
+	public AOPMessageVM getMXOReprocessingStockData(@RequestParam String plantId, @RequestParam String aopYear) {
+		return spyroInputService.getMXOReprocessingStockData(plantId, aopYear);
+	}
+
+	@PostMapping(value = "/mxo-reprocessing-stock-data")
+	public AOPMessageVM updateMXOReprocessingStockData(@RequestBody List<MXOReprocessingStockDTO> mXOReprocessingStockDTOList, @RequestParam String plantId, @RequestParam String year) {
+		List<MXOReprocessingStockDTO> failedRecords = spyroInputService.updateMXOReprocessingStockData(mXOReprocessingStockDTOList, plantId, year);
+
+		if (failedRecords.isEmpty()) {
+			return new AOPMessageVM(200, "Data updated successfully", null);
+		} else {
+			return new AOPMessageVM(422, "Partial data updated", failedRecords);
+		}
+	}
 }
 

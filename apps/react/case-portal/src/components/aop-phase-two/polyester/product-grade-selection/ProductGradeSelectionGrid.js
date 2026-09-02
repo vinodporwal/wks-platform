@@ -56,7 +56,7 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
             {
                 field: 'remark',
                 title: 'Remarks',
-                editable: false,
+                editable: true,
                 minWidth: 150,
             },
         ],

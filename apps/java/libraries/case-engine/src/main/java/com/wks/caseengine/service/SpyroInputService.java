@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.MXOReprocessingDTO;
+import com.wks.caseengine.dto.MXOReprocessingStockDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
@@ -58,4 +59,8 @@ public interface SpyroInputService {
 	List<MXOReprocessingDTO> updateMXOReprocessingData(List<MXOReprocessingDTO> mXOReprocessingDTOList, String plantFKId, String year);
 
 	AOPMessageVM getMXOReprocessingData(String plantId, String aopYear);
+
+	AOPMessageVM getMXOReprocessingStockData(String plantId, String aopYear);
+
+	List<MXOReprocessingStockDTO> updateMXOReprocessingStockData(List<MXOReprocessingStockDTO> mXOReprocessingStockDTOList, String plantFKId, String year);
 }
