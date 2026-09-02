@@ -92,6 +92,7 @@ const ShutdownConsumptionRefinery = () => {
     width: 120,
     editable: false,
     minWidth: 130,
+    locked: true,
   },
   {
     field: 'UOM',
@@ -99,6 +100,7 @@ const ShutdownConsumptionRefinery = () => {
     widthT: 80,
     editable: false,
     minWidth: 100,
+    locked: true,
   },
     
     ...monthsConfig.map((m) => ({
@@ -174,7 +176,7 @@ const ShutdownConsumptionRefinery = () => {
               remarks: item.remarks?.trim() || '',
               originalRemark: item.remarks?.trim() || '',
               id: index,
-              isEditable: true,
+              isEditable: false,
             }),
           )
           setRows(formattedData)
@@ -432,12 +434,12 @@ const ShutdownConsumptionRefinery = () => {
     addButton: false,
     deleteButton: false,
     editButton: false,
-    saveBtn: true,
+    saveBtn: false,
     showCalculate: false,
     allAction: true,
     showDropdown: false,
     showExport: true,
-    showImport: true,
+    showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Shutdown Consumption',
