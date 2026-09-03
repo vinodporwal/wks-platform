@@ -3001,7 +3001,7 @@ session.doWork(connection -> {
                 MXOReprocessingDTO.builder()
                     .month(rs.getString("Month"))
 					.mode(rs.getString("Mode"))
-                    .mXOGeneration_tph(rs.getDouble("MXOgeneration_TPM"))
+                    .mXOGeneration_tph(rs.getDouble("mXOGeneration_tph"))
                     .onstream_hrs(rs.getDouble("Onstream_hrs"))
                     .mXOgeneration_TPM(rs.getDouble("MXOgeneration_TPM"))
                     .mXODowntime_hrs(rs.getDouble("MXODowntime_hrs"))
