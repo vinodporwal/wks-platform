@@ -207,6 +207,11 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				slowdownNormsValueDTO.setUOM(row[28] != null ? row[28].toString() : null);
 				slowdownNormsValueDTO.setIsEditable(row[29] != null ? Boolean.valueOf(row[29].toString()) : null);
 				slowdownNormsValueDTO.setProductName(row[30] != null ? row[30].toString() : null);
+
+				if(ptapmdpia) {
+					slowdownNormsValueDTO.setSapCode(row[31] != null ? row[31].toString() : null);
+				}
+				
 				slowdownNormsValueDTOList.add(slowdownNormsValueDTO);
 			}
 			Map<String, Object> map = new HashMap<>();
@@ -1071,6 +1076,16 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	
 	public byte[] exportSlowdownConsumption(String year, UUID plantFKId, boolean isAfterSave, List<SlowdownNormsValueDTO> dtoList,String gradeId) {
 		try {
+
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("pmd") && plant.getName().equalsIgnoreCase("pia");
+
+			if(ptapmdpia) {
+				// seperate method to include sap code column
+				return exportSlowdownConsumptionWithSapCode(year, plantFKId, isAfterSave, dtoList, gradeId);
+			}
 			
 			AOPMessageVM aopMessageVM = getSlowdownNormsData( year,  plantFKId.toString(), gradeId);
 					
@@ -1233,6 +1248,165 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		return null;
 
 	}
+
+	// ref: exportSlowdownConsumption | new method to include sap code column
+	@Override
+	public byte[] exportSlowdownConsumptionWithSapCode(String year, UUID plantFKId, boolean isAfterSave, List<SlowdownNormsValueDTO> dtoList, String gradeId) {
+		try {
+			AOPMessageVM aopMessageVM = getSlowdownNormsData(year, plantFKId.toString(), gradeId);
+
+			List<Boolean> isEditable = new ArrayList<>();
+
+			if (!isAfterSave) {
+				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+				dtoList = (List<SlowdownNormsValueDTO>) responseMap.get("slowdownNormsValueDTO");
+			}
+
+			Set<Integer> allowedMonths = new HashSet<>();
+			List<?> slowdownMonthsList = getSlowdownMonths(plantFKId, "Slowdown", year, gradeId);
+			if (slowdownMonthsList != null) {
+				for (Object m : slowdownMonthsList) {
+					if (m instanceof Integer) allowedMonths.add((Integer) m);
+				}
+			}
+
+			// Column layout (0-based):
+			// 0:Type, 1:Particulars, 2:UOM, 3:Sap Code (locked), 4-15:months, 16:Remarks, 17:Id (hidden), 18:Material Id (hidden)
+			Map<Integer, Integer> colToMonth = new HashMap<>();
+			colToMonth.put(4,  4);  // April
+			colToMonth.put(5,  5);  // May
+			colToMonth.put(6,  6);  // June
+			colToMonth.put(7,  7);  // July
+			colToMonth.put(8,  8);  // August
+			colToMonth.put(9,  9);  // September
+			colToMonth.put(10, 10); // October
+			colToMonth.put(11, 11); // November
+			colToMonth.put(12, 12); // December
+			colToMonth.put(13, 1);  // January
+			colToMonth.put(14, 2);  // February
+			colToMonth.put(15, 3);  // March
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+
+			CellStyle lockedStyle = workbook.createCellStyle();
+			lockedStyle.setLocked(true);
+			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+			CellStyle unlockedStyle = workbook.createCellStyle();
+			unlockedStyle.setLocked(false);
+
+			for (SlowdownNormsValueDTO dto : dtoList) {
+				List<Object> list = new ArrayList<>();
+				list.add(dto.getNormParameterTypeDisplayName());
+				list.add(dto.getProductName());
+				list.add(dto.getUOM());
+				list.add(dto.getSapCode());
+				list.add(dto.getApril());
+				list.add(dto.getMay());
+				list.add(dto.getJune());
+				list.add(dto.getJuly());
+				list.add(dto.getAugust());
+				list.add(dto.getSeptember());
+				list.add(dto.getOctober());
+				list.add(dto.getNovember());
+				list.add(dto.getDecember());
+				list.add(dto.getJanuary());
+				list.add(dto.getFebruary());
+				list.add(dto.getMarch());
+				list.add(dto.getRemarks());
+				list.add(dto.getId());
+				list.add(dto.getMaterialFkId());
+				isEditable.add(dto.getIsEditable());
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Type");
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			innerHeaders.add("Sap Code");
+			List<String> monthsList = getAcademicYearMonths(year);
+			innerHeaders.addAll(monthsList);
+			innerHeaders.add("Remarks");
+			innerHeaders.add("Id");
+			innerHeaders.add("Material Id");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+
+			for (List<Object> rowData : rows) {
+				boolean isRowEditable = true;
+				if (isEditable.get(currentRow - 1) != null) {
+					isRowEditable = isEditable.get(currentRow - 1);
+				}
+
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+
+					boolean cellEditable;
+					if (col == 3) {
+						// Sap Code is always locked — read-only display column
+						cellEditable = false;
+					} else if (colToMonth.containsKey(col)) {
+						cellEditable = isRowEditable && allowedMonths.contains(colToMonth.get(col));
+					} else {
+						cellEditable = isRowEditable;
+					}
+					cell.setCellStyle(cellEditable ? unlockedStyle : lockedStyle);
+				}
+			}
+
+			sheet.setColumnHidden(17, true);
+			sheet.setColumnHidden(18, true);
+
+			try {
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public static List<String> getAcademicYearMonths(String year) {
 		List<String> months = new ArrayList<>();
 		int startYear = Integer.parseInt(year.substring(0, 4));
