@@ -11,6 +11,9 @@ import { OverallAopConsumptionApiService } from 'components/aop-phase-two/servic
 import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelNameWithoutExt } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import MaterialGroupedSelectionDialog, {
+  useMaterialGroupedSelectionPopup,
+} from 'components/kendo-data-tables/MaterialGroupedSelectionDialog'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -249,7 +252,7 @@ const OverallAopConsumption = () => {
     }
   }
 
-  const handleCalculate = async () => {
+  const executeCalculate = async () => {
     setLoading(true)
     setSnackbarOpen(true)
     setSnackbarData({
@@ -279,6 +282,13 @@ const OverallAopConsumption = () => {
       setLoading(false)
     }
   }
+
+  const { openDialog, handleClose, handleCalculate } =
+    useMaterialGroupedSelectionPopup({
+      keycloak,
+      plantId: PLANT_ID,
+      onCalculate: executeCalculate,
+    })
 
   const permissions = {
     showAction: false,
@@ -328,6 +338,11 @@ const OverallAopConsumption = () => {
       />
 
       {ReleaseDialogComponent}
+      <MaterialGroupedSelectionDialog
+        open={openDialog}
+        onClose={handleClose}
+        onSaveSuccess={executeCalculate}
+      />
     </Box>
   )
 }
