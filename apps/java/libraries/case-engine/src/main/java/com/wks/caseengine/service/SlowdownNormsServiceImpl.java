@@ -211,7 +211,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				if(ptapmdpia) {
 					slowdownNormsValueDTO.setSapCode(row[31] != null ? row[31].toString() : null);
 				}
-				
+
 				slowdownNormsValueDTOList.add(slowdownNormsValueDTO);
 			}
 			Map<String, Object> map = new HashMap<>();
@@ -1438,8 +1438,17 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		// TODO Auto-generated method stub
 		try {
 			Plants plant = plantsRepository.findById(plantFKId).get();
-			List<SlowdownNormsValueDTO> data=null;
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("pmd") && plant.getName().equalsIgnoreCase("pia");
+
+			if(ptapmdpia) { 
+				// seperate method to handle sap code column
+				return importSlowdownConsumptionWithSapCode(year, plantFKId, gradeId, file);
+			}
+
+			List<SlowdownNormsValueDTO> data=null;
 				data = readSlowdownConsumptions(file.getInputStream(), plantFKId, year);
 			
 				List<SlowdownNormsValueDTO> failedList = saveSlowdownNormsData(data);
@@ -1468,6 +1477,103 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			// return ResponseEntity.internalServerError().build();
 		}
 		return null;
+	}
+
+	// ref: importSlowdownConsumption | new method to include sap code column
+	@Override
+	public AOPMessageVM importSlowdownConsumptionWithSapCode(String year, UUID plantFKId, String gradeId, MultipartFile file) {
+		try {
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			List<SlowdownNormsValueDTO> data = null;
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			data = readSlowdownConsumptionsWithSapCode(file.getInputStream(), plantFKId, year);
+
+			List<SlowdownNormsValueDTO> failedList = saveSlowdownNormsData(data);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedList != null && failedList.size() > 0) {
+				byte[] fileByteArray = exportSlowdownConsumptionWithSapCode(year, plantFKId, true, failedList, gradeId);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public List<SlowdownNormsValueDTO> readSlowdownConsumptionsWithSapCode(InputStream inputStream, UUID plantFKId, String year) {
+		List<SlowdownNormsValueDTO> configList = new ArrayList<>();
+
+	    Plants plant = plantsRepository.findById(plantFKId)
+	        .orElseThrow(() -> new RuntimeException("Plant not found"));
+	    Sites site = siteRepository.findById(plant.getSiteFkId())
+	        .orElseThrow(() -> new RuntimeException("Site not found"));
+	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	        .orElseThrow(() -> new RuntimeException("Vertical not found"));
+
+	    Set<Integer> activeMonths = new HashSet<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        List<Integer> slowdown = getSlowdownMonths(plantFKId, "Slowdown", year, null);
+	        if (slowdown != null) activeMonths.addAll(slowdown);
+
+	        Sheet sheet = workbook.getSheetAt(0);
+	        if (sheet != null) {
+	            Iterator<Row> rowIterator = sheet.iterator();
+
+	            if (rowIterator.hasNext()) rowIterator.next(); // Skip header
+
+	            while (rowIterator.hasNext()) {
+	                Row row = rowIterator.next();
+	                if (row.getPhysicalNumberOfCells() == 0) continue;
+
+	                SlowdownNormsValueDTO dto = new SlowdownNormsValueDTO();
+	                try {
+	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                    dto.setProductName(getStringCellValue(row.getCell(1), dto));
+	                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
+	                    // col 3 is Sap Code — read-only display column, not imported
+	                    dto.setFinancialYear(year);
+	                    if (activeMonths.contains(4))  dto.setApril(getNumericCellValue(row.getCell(4), dto));
+	                    if (activeMonths.contains(5))  dto.setMay(getNumericCellValue(row.getCell(5), dto));
+	                    if (activeMonths.contains(6))  dto.setJune(getNumericCellValue(row.getCell(6), dto));
+	                    if (activeMonths.contains(7))  dto.setJuly(getNumericCellValue(row.getCell(7), dto));
+	                    if (activeMonths.contains(8))  dto.setAugust(getNumericCellValue(row.getCell(8), dto));
+	                    if (activeMonths.contains(9))  dto.setSeptember(getNumericCellValue(row.getCell(9), dto));
+	                    if (activeMonths.contains(10)) dto.setOctober(getNumericCellValue(row.getCell(10), dto));
+	                    if (activeMonths.contains(11)) dto.setNovember(getNumericCellValue(row.getCell(11), dto));
+	                    if (activeMonths.contains(12)) dto.setDecember(getNumericCellValue(row.getCell(12), dto));
+	                    if (activeMonths.contains(1))  dto.setJanuary(getNumericCellValue(row.getCell(13), dto));
+	                    if (activeMonths.contains(2))  dto.setFebruary(getNumericCellValue(row.getCell(14), dto));
+	                    if (activeMonths.contains(3))  dto.setMarch(getNumericCellValue(row.getCell(15), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+	                    dto.setId(getStringCellValue(row.getCell(17), dto));
+	                    dto.setPlantFkId(plantFKId.toString());
+	                    dto.setSiteFkId(site.getId().toString());
+	                    dto.setVerticalFkId(vertical.getId().toString());
+	                    dto.setMaterialFkId(getStringCellValue(row.getCell(18), dto));
+
+	                } catch (Exception e) {
+	                    e.printStackTrace();
+	                    dto.setErrDescription(e.getMessage());
+	                    dto.setSaveStatus("Failed");
+	                }
+	                configList.add(dto);
+	            }
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return configList;
 	}
 
 	public List<SlowdownNormsValueDTO> readSlowdownConsumptions(InputStream inputStream, UUID plantFKId, String year) {
