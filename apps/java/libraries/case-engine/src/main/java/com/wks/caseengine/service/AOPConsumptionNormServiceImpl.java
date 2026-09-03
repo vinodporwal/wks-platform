@@ -185,7 +185,9 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					if(vertical.getName().equalsIgnoreCase("Chemical")) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
-					
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("Coker") ) {
+						dto.setSapCode(row[25] != null ? row[25].toString() : "");
+					}
 				}
 
 				// apply grade filter for elastomerhmdsbr

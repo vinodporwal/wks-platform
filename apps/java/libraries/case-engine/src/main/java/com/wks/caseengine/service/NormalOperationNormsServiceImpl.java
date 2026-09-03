@@ -223,7 +223,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
 					mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
-					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker")) {
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX")) {
 						mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
 					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
@@ -2687,9 +2687,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						
 						Optional<MCUNormsValue> normsValue = normalOperationNormsRepository
 								.findById(UUID.fromString(mCUNormsValueDTO.getId()));
-
-					
-								
 						if (normsValue.isPresent()) {
 							mCUNormsValue = normsValue.get();
 							entityManager.detach(mCUNormsValue);
@@ -3378,6 +3375,34 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		return null;
 	}
 
+	@Override
+	public AOPMessageVM importExcelSAP(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode) {
+		// TODO Auto-generated method stub
+		try {
+			
+			List<MCUNormsValueDTO> data = null;
+			
+			data = readConfigurationsSAP(file.getInputStream(), plantFKId, year);
+			List<MCUNormsValueDTO> failedRecords = saveNormalOperationNormsData(data, plantFKId, year, gradeId, true);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				byte[]	fileByteArray = createExcelSAP(year, plantFKId, true, failedRecords, mode, gradeId);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	private List<ValidationErrorDTO> validateGradeNorms(
 	        List<MCUNormsValueDTO> mCUNormsValueDTOList,
 	        Plants plant, Verticals vertical, Sites site, String year) throws Exception {
@@ -3758,6 +3783,58 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						// naturalGas.add(dto);
 						// }
 
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+
+					configList.add(dto);
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
+		return configList;
+	}
+
+	public List<MCUNormsValueDTO> readConfigurationsSAP(InputStream inputStream, UUID plantFKId, String year) {
+		List<MCUNormsValueDTO> configList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				Iterator<Row> rowIterator = sheet.iterator();
+
+				if (rowIterator.hasNext())
+					rowIterator.next();
+
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					MCUNormsValueDTO dto = new MCUNormsValueDTO();
+
+					try {
+						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+						dto.setSapCode(getStringCellValue(row.getCell(1), dto));
+						dto.setProductName(getStringCellValue(row.getCell(2), dto));
+							dto.setApril(getNumericCellValue(row.getCell(4), dto));
+							dto.setMay(getNumericCellValue(row.getCell(5), dto));
+							dto.setJune(getNumericCellValue(row.getCell(6), dto));
+							dto.setJuly(getNumericCellValue(row.getCell(7), dto));
+							dto.setAugust(getNumericCellValue(row.getCell(8), dto));
+							dto.setSeptember(getNumericCellValue(row.getCell(9), dto));
+							dto.setOctober(getNumericCellValue(row.getCell(10), dto));
+							dto.setNovember(getNumericCellValue(row.getCell(11), dto));
+							dto.setDecember(getNumericCellValue(row.getCell(12), dto));
+							dto.setJanuary(getNumericCellValue(row.getCell(13), dto));
+							dto.setFebruary(getNumericCellValue(row.getCell(14), dto));
+							dto.setMarch(getNumericCellValue(row.getCell(15), dto));
+						dto.setUOM(getStringCellValue(row.getCell(3), dto));
+						dto.setFinancialYear(year);
+						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+						dto.setId(getStringCellValue(row.getCell(17), dto));
+						
 					} catch (Exception e) {
 						e.printStackTrace();
 						dto.setErrDescription(e.getMessage());
@@ -4466,6 +4543,196 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			}
 
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+
+	public byte[] createExcelSAP(String year, UUID plantFKId, boolean isAfterSave, List<MCUNormsValueDTO> dtoList,
+			String mode, String gradeId) {
+		try {
+			AOPMessageVM aopMessageVM = getNormalOperationNormsData(year, plantFKId.toString(), gradeId, mode);
+			List<Boolean> isEditable = new ArrayList<>();
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			if (!isAfterSave) {
+				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+				dtoList = (List<MCUNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+
+			sheet.protectSheet("secret_password");
+			// List<List<Object>> rows = new ArrayList<>();
+
+			List<List<Object>> rows = new ArrayList<>();
+
+		// Create styles for locking/unlocking cells
+		CellStyle lockedStyle = workbook.createCellStyle();
+		lockedStyle.setLocked(true);
+		lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		lockedStyle.setBorderTop(BorderStyle.THIN);
+		lockedStyle.setBorderBottom(BorderStyle.THIN);
+		lockedStyle.setBorderLeft(BorderStyle.THIN);
+		lockedStyle.setBorderRight(BorderStyle.THIN);
+
+		CellStyle unlockedStyle = workbook.createCellStyle();
+		unlockedStyle.setLocked(false);
+		unlockedStyle.setBorderTop(BorderStyle.THIN);
+		unlockedStyle.setBorderBottom(BorderStyle.THIN);
+		unlockedStyle.setBorderLeft(BorderStyle.THIN);
+		unlockedStyle.setBorderRight(BorderStyle.THIN);
+
+		CellStyle remarksLockedStyle = workbook.createCellStyle();
+		remarksLockedStyle.setLocked(true);
+		remarksLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		remarksLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		remarksLockedStyle.setBorderTop(BorderStyle.THIN);
+		remarksLockedStyle.setBorderBottom(BorderStyle.THIN);
+		remarksLockedStyle.setBorderLeft(BorderStyle.THIN);
+		remarksLockedStyle.setBorderRight(BorderStyle.THIN);
+		remarksLockedStyle.setWrapText(true);
+
+		CellStyle remarksUnlockedStyle = workbook.createCellStyle();
+		remarksUnlockedStyle.setLocked(false);
+		remarksUnlockedStyle.setBorderTop(BorderStyle.THIN);
+		remarksUnlockedStyle.setBorderBottom(BorderStyle.THIN);
+		remarksUnlockedStyle.setBorderLeft(BorderStyle.THIN);
+		remarksUnlockedStyle.setBorderRight(BorderStyle.THIN);
+		remarksUnlockedStyle.setWrapText(true);
+			// Data rows
+			for (MCUNormsValueDTO dto : dtoList) {
+				// if (isAfterSave) {
+				List<Object> list = new ArrayList<>();
+				list.add(dto.getNormParameterTypeDisplayName());
+				list.add(dto.getSapCode());
+				list.add(dto.getProductName());
+				list.add(dto.getUOM());
+				list.add(dto.getApril());
+				list.add(dto.getMay());
+				list.add(dto.getJune());
+				list.add(dto.getJuly());
+				list.add(dto.getAugust());
+				list.add(dto.getSeptember());
+				list.add(dto.getOctober());
+				list.add(dto.getNovember());
+				list.add(dto.getDecember());
+				list.add(dto.getJanuary());
+				list.add(dto.getFebruary());
+				list.add(dto.getMarch());
+				list.add(dto.getRemarks());
+				list.add(dto.getId());
+				isEditable.add(dto.getIsEditable());
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Type");
+			innerHeaders.add("SAP Mat Code");
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			List<String> monthsList = getAcademicYearMonths(year);
+			innerHeaders.addAll(monthsList);
+			
+			innerHeaders.add("Remarks");
+			innerHeaders.add("Id");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+
+			int remarksColIndex = innerHeaders.indexOf("Remarks");
+			int idColIndex = innerHeaders.indexOf("Id");
+
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+			for (List<Object> rowData : rows) {
+				boolean isRowEditable = true;
+				if (isEditable.get(currentRow - 1) != null) {
+					isRowEditable = isEditable.get(currentRow - 1);
+				}
+
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+					if (col == remarksColIndex) {
+						cell.setCellStyle(isRowEditable ? remarksUnlockedStyle : remarksLockedStyle);
+					} else if (isRowEditable) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedStyle);
+					}
+
+				}
+			}
+			
+				sheet.setColumnHidden(17, true);
+
+			int totalCols = innerHeaders.size();
+			for (int col = 0; col < totalCols; col++) {
+				if (col == idColIndex) {
+					
+				} else if (col == remarksColIndex) {
+					sheet.setColumnWidth(col, 15000); 
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
+
+			// Adjust row heights so wrapped Remarks content is fully visible
+			for (int r = 1; r < currentRow; r++) {
+				Row row = sheet.getRow(r);
+				if (row == null) continue;
+				Cell remarksCell = (remarksColIndex >= 0) ? row.getCell(remarksColIndex) : null;
+				if (remarksCell != null) {
+					String remarksText = remarksCell.getStringCellValue();
+					if (remarksText != null && !remarksText.isEmpty()) {
+						int charsPerLine = 55;
+						int lines = (int) Math.ceil((double) remarksText.length() / charsPerLine);
+						row.setHeight((short) (Math.max(1, lines) * 300)); // 300 twips ≈ 15 pt per line
+					}
+				}
+			}
+
+			try {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				workbook.write(outputStream);
