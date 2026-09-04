@@ -13,8 +13,8 @@ import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityProjection;
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetProjection;
-import com.wks.caseengine.cpp.dto.FuelMasterDto;
-import com.wks.caseengine.cpp.dto.FuelMasterProjection;
+import com.wks.caseengine.cpp.dto.FuelMasterWithCategoryDTO;
+import com.wks.caseengine.cpp.dto.FuelWithCategoryProjection;
 import com.wks.caseengine.cpp.dto.PlantFuelAvailabilityMonthlyDto;
 import com.wks.caseengine.cpp.dto.PlantFuelAvailabilityMonthlyProjection;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
@@ -41,8 +41,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
     private CPPPlantFuelAvailabilityMonthlyRepository monthlyRepository;
 
     @Override
-    public List<FuelMasterDto> getFuelMaster() {
-        return repository.getFuelMaster().stream().map(this::toDto).toList();
+    public List<FuelMasterWithCategoryDTO> getFuelMaster() {
+        return repository.getFuelMaster().stream().map(this::toFuelMasterDto).toList();
     }
 
     @Override
@@ -51,13 +51,21 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             .stream().map(this::toPlantWiseDto).toList();
     }
 
-    private FuelMasterDto toDto(FuelMasterProjection p) {
-        FuelMasterDto dto = new FuelMasterDto();
+    private FuelMasterWithCategoryDTO toFuelMasterDto(FuelWithCategoryProjection p) {
+        FuelMasterWithCategoryDTO dto = new FuelMasterWithCategoryDTO();
         if (p.getId() != null) {
             dto.setId(UUID.fromString(p.getId()));
         }
+        dto.setFuelCode(p.getFuelCode());
         dto.setFuelName(p.getFuelName());
         dto.setFuelDisplayName(p.getFuelDisplayName());
+        dto.setType(p.getType());
+        dto.setUom(p.getUom());
+        if (p.getCategoryFkId() != null) {
+            dto.setCategoryFkId(UUID.fromString(p.getCategoryFkId()));
+        }
+        dto.setCategoryName(p.getCategoryName());
+        dto.setCategoryDisplayName(p.getCategoryDisplayName());
         return dto;
     }
 

@@ -678,4 +678,436 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			throw new RuntimeException("Failed to import Proposed AOP data", ex);
 		}
 	}
+
+	public AOPMessageVM getProposedSteadyState(UUID plantId, String aopYear) {
+
+		Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+		String verticalName = verticalRepository.findById(plants.getVerticalFKId())
+				.orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+		String siteName = siteRepository.findById(plants.getSiteFkId())
+				.orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+		String procedureName = verticalName + "_" + siteName + "_GetProposedAOP";
+		List<ProposedAOPDTO> proposedAOP = fetchProposedSteadyStateFromProcedure(plantId, aopYear, procedureName);
+
+		Map<String, Object> map = new HashMap<>();
+
+		List<AopCalculation> aopCalculation = aopCalculationRepository
+				.findByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear, "proposed-aop");
+		map.put("proposedAOP", proposedAOP);
+		map.put("aopCalculation", aopCalculation);
+		return AOPMessageVM.builder()
+				.code(200)
+				.message("Proposed AOPs fetched successfully")
+				.data(map)
+				.build();
+	}
+
+	public List<ProposedAOPDTO> fetchProposedSteadyStateFromProcedure(UUID plantId, String aopYear,
+			String procedureName) {
+
+		String sql = "EXEC " +  "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+		return jdbcTemplate.query(sql, (rs, rowNum) -> ProposedAOPDTO.builder()
+				.id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
+				.normParameterId(
+						rs.getString("NormparameterId") != null ? UUID.fromString(rs.getString("NormparameterId"))
+								: null)
+				.normParameterTypeId(rs.getString("NormParameterTypeId") != null
+						? UUID.fromString(rs.getString("NormParameterTypeId"))
+						: null)
+				.normParameterTypeDisplayName(rs.getString("NormParameterTypeDisplayName"))
+				.productName(rs.getString("ProductName"))
+				.uom(rs.getString("UOM"))
+				.lastFY(rs.getDouble("LastFY"))
+				.sysGrn(rs.getDouble("SysGrn"))
+				.proposed(rs.getDouble("Proposed"))
+				.remarks(rs.getString("Remarks"))
+				.plantId(rs.getString("PlantId") != null ? UUID.fromString(rs.getString("PlantId")) : null)
+				.aopYear(rs.getString("AopYear"))
+				.build(),
+				plantId.toString(), aopYear);
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM saveProposedSteadyState(List<ProposedAOPDTO> dtoList) {
+		try {
+
+			List<ProposedAOPDTO> failedList = new ArrayList<>();
+
+			UUID plantId = null;
+			String year = null;
+			for (ProposedAOPDTO dto : dtoList) {
+
+				if (dto.getNormParameterId() == null || dto.getAopYear() == null) {
+					throw new RuntimeException("NormParameterId and AopYear are required");
+				}
+				if (plantId == null) {
+					plantId = dto.getPlantId();
+				}
+				if (year == null) {
+					year = dto.getAopYear();
+				}
+
+				String updateSql = "UPDATE MCUNormsValue_Proposed " +
+						"SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
+						"October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, Remarks = ? "
+						+
+						"WHERE Material_FK_Id = ? and FinancialYear = ?";
+				jdbcTemplate.update(updateSql,
+						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+						dto.getRemarks(),
+						dto.getNormParameterId(), dto.getAopYear());
+
+			}
+
+			if (plantId != null && year != null) {
+				List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("proposed-aop");
+				for (ScreenMapping screenMapping : screenMappingList) {
+					AopCalculation aopCalculation = new AopCalculation();
+					aopCalculation.setAopYear(year);
+					aopCalculation.setIsChanged(true);
+					aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+					aopCalculation.setPlantId(plantId);
+					aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+					aopCalculationRepository.save(aopCalculation);
+				}
+			}
+
+		AOPMessageVM vm = new AOPMessageVM();
+			vm.setCode(200);
+			vm.setMessage("Proposed AOP saved successfully");
+			vm.setData(failedList);
+			return vm;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to save proposed AOP", e);
+		}
+	}
+
+	// ─── Proposed Steady State Export – Excel Builder ────────────────────────────
+
+	@Override
+	public byte[] createProposedSteadyStateExcel(UUID plantId, String aopYear, boolean isAfterSave,
+			List<ProposedAOPDTO> dtoList) {
+		try (Workbook workbook = new XSSFWorkbook();
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			if (isAfterSave) {
+				writeProposedSteadyStateSheet(workbook, "Errors",
+						dtoList != null ? dtoList : Collections.emptyList(), true);
+			} else {
+
+				Map<String, Object> responseData =
+				(Map<String, Object>) getProposedSteadyState(plantId, aopYear).getData();
+		
+		       List<ProposedAOPDTO> data =
+				(List<ProposedAOPDTO>) responseData.get("proposedAOP");
+				
+				writeProposedSteadyStateSheet(workbook, "Proposed Steady State", data, false);
+
+				if (workbook.getNumberOfSheets() == 0) {
+					writeProposedSteadyStateSheet(workbook, "No Data", Collections.emptyList(), false);
+				}
+			}
+
+			workbook.write(outputStream);
+			byte[] workbookBytes = outputStream.toByteArray();
+			validateGeneratedWorkbook(workbookBytes);
+			return workbookBytes;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to create Proposed Steady State Excel workbook", e);
+		}
+	}
+
+	private void writeProposedSteadyStateSheet(Workbook workbook, String sheetName,
+			List<ProposedAOPDTO> dtoList, boolean isAfterSave) {
+
+		Sheet sheet = workbook.createSheet(createUniqueSheetName(workbook, sheetName));
+		int currentRow = 0;
+
+		// Columns 0-5: visible data | Columns 6-10: hidden ID columns
+		// (NormParameterId, AopYear, Id, NormParameterTypeId, PlantId)
+		// Columns 11-12: isAfterSave only (Status, Error Description)
+		List<String> headerNames = new ArrayList<>(Arrays.asList(
+				"Particulars", "UOM", "Last FY", "Sys Gen", "Proposed", "Remarks",
+				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
+		if (isAfterSave) {
+			headerNames.add("Status");
+			headerNames.add("Error Description");
+		}
+
+		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+		CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
+		CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
+		CellStyle wrapUnlocked = Utility.createBorderedWrapUnlockedStyle(workbook);
+		CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+
+		Row headerRow = sheet.createRow(currentRow++);
+		for (int col = 0; col < headerNames.size(); col++) {
+			Cell cell = headerRow.createCell(col);
+			cell.setCellValue(headerNames.get(col));
+			cell.setCellStyle(headerStyle);
+		}
+
+		for (ProposedAOPDTO dto : dtoList) {
+			Row row = sheet.createRow(currentRow++);
+
+			Cell particularsCell = row.createCell(0);
+			particularsCell.setCellValue(Utility.sanitizeCellString(dto.getProductName()));
+			particularsCell.setCellStyle(lockedStyle);
+
+			Cell uomCell = row.createCell(1);
+			uomCell.setCellValue(Utility.sanitizeCellString(dto.getUom()));
+			uomCell.setCellStyle(lockedStyle);
+
+			Cell lastFYCell = row.createCell(2);
+			setExcelCompatibleNumericValue(lastFYCell, dto.getLastFY());
+			lastFYCell.setCellStyle(lockedStyle);
+
+			Cell sysGenCell = row.createCell(3);
+			setExcelCompatibleNumericValue(sysGenCell, dto.getSysGrn());
+			sysGenCell.setCellStyle(lockedStyle);
+
+			Cell proposedCell = row.createCell(4);
+			setExcelCompatibleNumericValue(proposedCell, dto.getProposed());
+			proposedCell.setCellStyle(unlockedStyle);
+
+			Cell remarksCell = row.createCell(5);
+			remarksCell.setCellValue(Utility.sanitizeCellString(dto.getRemarks()));
+			remarksCell.setCellStyle(wrapUnlocked);
+
+			Cell normParamCell = row.createCell(6);
+			normParamCell.setCellValue(dto.getNormParameterId() != null ? dto.getNormParameterId().toString() : "");
+			normParamCell.setCellStyle(lockedStyle);
+
+			Cell aopYearCell = row.createCell(7);
+			aopYearCell.setCellValue(Utility.sanitizeCellString(dto.getAopYear()));
+			aopYearCell.setCellStyle(lockedStyle);
+
+			Cell idCell = row.createCell(8);
+			idCell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
+			idCell.setCellStyle(lockedStyle);
+
+			Cell normParamTypeIdCell = row.createCell(9);
+			normParamTypeIdCell.setCellValue(
+					dto.getNormParameterTypeId() != null ? dto.getNormParameterTypeId().toString() : "");
+			normParamTypeIdCell.setCellStyle(lockedStyle);
+
+			Cell plantIdCell = row.createCell(10);
+			plantIdCell.setCellValue(dto.getPlantId() != null ? dto.getPlantId().toString() : "");
+			plantIdCell.setCellStyle(lockedStyle);
+
+			if (isAfterSave) {
+				Cell statusCell = row.createCell(11);
+				statusCell.setCellValue(Utility.sanitizeCellString(dto.getSaveStatus()));
+				statusCell.setCellStyle(borderedStyle);
+
+				Cell errCell = row.createCell(12);
+				errCell.setCellValue(Utility.sanitizeCellString(dto.getErrDescription()));
+				errCell.setCellStyle(borderedStyle);
+			}
+
+			row.setHeight((short) -1);
+		}
+
+		int totalCols = isAfterSave ? 13 : 11;
+		for (int col = 0; col < totalCols; col++) {
+			if (col == 5 || col == 12) {
+				sheet.setColumnWidth(col, 15000);
+			} else {
+				sheet.autoSizeColumn(col);
+			}
+		}
+
+		sheet.setColumnHidden(6, true);
+		sheet.setColumnHidden(7, true);
+		sheet.setColumnHidden(8, true);
+		sheet.setColumnHidden(9, true);
+		sheet.setColumnHidden(10, true);
+
+		sheet.protectSheet("");
+	}
+
+	// ─── Proposed Steady State Import – Excel Reader ─────────────────────────────
+
+	public List<ProposedAOPDTO> readProposedSteadyStateExcel(InputStream inputStream) {
+		List<ProposedAOPDTO> resultList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			int sheetCount = workbook.getNumberOfSheets();
+			for (int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				Iterator<Row> rowIterator = sheet.iterator();
+
+				if (rowIterator.hasNext())
+					rowIterator.next(); // skip header row
+
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+
+					boolean isEmpty = true;
+					for (int c = 0; c < row.getLastCellNum(); c++) {
+						Cell cell = row.getCell(c);
+						if (cell != null && cell.getCellType() != CellType.BLANK
+								&& !cell.toString().trim().isEmpty()) {
+							isEmpty = false;
+							break;
+						}
+					}
+					if (isEmpty)
+						continue;
+
+					ProposedAOPDTO dto = new ProposedAOPDTO();
+					try {
+						Cell particularsCell = row.getCell(0);
+						if (particularsCell != null) {
+							dto.setProductName(particularsCell.toString().trim());
+						}
+
+						Cell uomCell = row.getCell(1);
+						if (uomCell != null) {
+							dto.setUom(uomCell.toString().trim());
+						}
+
+						Cell lastFYCell = row.getCell(2);
+						if (lastFYCell != null && lastFYCell.getCellType() != CellType.BLANK) {
+							if (lastFYCell.getCellType() == CellType.NUMERIC) {
+								dto.setLastFY(lastFYCell.getNumericCellValue());
+							} else {
+								String val = lastFYCell.toString().trim();
+								if (!val.isEmpty())
+									dto.setLastFY(Double.parseDouble(val));
+							}
+						}
+
+						Cell sysGenCell = row.getCell(3);
+						if (sysGenCell != null && sysGenCell.getCellType() != CellType.BLANK) {
+							if (sysGenCell.getCellType() == CellType.NUMERIC) {
+								dto.setSysGrn(sysGenCell.getNumericCellValue());
+							} else {
+								String val = sysGenCell.toString().trim();
+								if (!val.isEmpty())
+									dto.setSysGrn(Double.parseDouble(val));
+							}
+						}
+
+						Cell proposedCell = row.getCell(4);
+						if (proposedCell != null && proposedCell.getCellType() != CellType.BLANK) {
+							if (proposedCell.getCellType() == CellType.NUMERIC) {
+								dto.setProposed(proposedCell.getNumericCellValue());
+							} else {
+								String val = proposedCell.toString().trim();
+								if (!val.isEmpty())
+									dto.setProposed(Double.parseDouble(val));
+							}
+						}
+
+						Cell remarksCell = row.getCell(5);
+						if (remarksCell != null) {
+							dto.setRemarks(remarksCell.toString().trim());
+						}
+
+						// col 6: NormParameterId (no GradeId column in steady-state sheet)
+						Cell normParamCell = row.getCell(6);
+						if (normParamCell != null) {
+							String val = normParamCell.toString().trim();
+							if (!val.isEmpty())
+								dto.setNormParameterId(UUID.fromString(val));
+						}
+
+						// col 7: AopYear
+						Cell aopYearCell = row.getCell(7);
+						if (aopYearCell != null) {
+							String val = aopYearCell.toString().trim();
+							if (!val.isEmpty())
+								dto.setAopYear(val);
+						}
+
+						// col 8: Id
+						Cell idCell = row.getCell(8);
+						if (idCell != null) {
+							String val = idCell.toString().trim();
+							if (!val.isEmpty())
+								dto.setId(UUID.fromString(val));
+						}
+
+						// col 9: NormParameterTypeId
+						Cell normParamTypeIdCell = row.getCell(9);
+						if (normParamTypeIdCell != null) {
+							String val = normParamTypeIdCell.toString().trim();
+							if (!val.isEmpty())
+								dto.setNormParameterTypeId(UUID.fromString(val));
+						}
+
+						// col 10: PlantId
+						Cell plantIdCell = row.getCell(10);
+						if (plantIdCell != null) {
+							String val = plantIdCell.toString().trim();
+							if (!val.isEmpty())
+								dto.setPlantId(UUID.fromString(val));
+						}
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setSaveStatus("Failed");
+						dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+					}
+					resultList.add(dto);
+				}
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Proposed Steady State Excel", e);
+		}
+		return resultList;
+	}
+
+	// ─── Proposed Steady State Import – API ──────────────────────────────────────
+
+	@Override
+	@Transactional
+	public AOPMessageVM importProposedSteadyState(MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<ProposedAOPDTO> data = readProposedSteadyStateExcel(file.getInputStream());
+			List<ProposedAOPDTO> failedRecords = new ArrayList<>();
+
+			for (ProposedAOPDTO dto : data) {
+				if ("Failed".equals(dto.getSaveStatus())) {
+					failedRecords.add(dto);
+					continue;
+				}
+
+				try {
+					saveProposedSteadyState(Collections.singletonList(dto));
+				} catch (IllegalArgumentException e) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");
+					failedRecords.add(dto);
+				} catch (Exception e) {
+					throw new RestInvalidArgumentException("Failed to import Proposed Steady State data", e);
+				}
+			}
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = createProposedSteadyStateExcel(null, null, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import Proposed Steady State data", ex);
+		}
+	}
+
 }

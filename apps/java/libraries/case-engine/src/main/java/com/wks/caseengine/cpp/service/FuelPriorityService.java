@@ -5,13 +5,13 @@ import java.util.UUID;
 
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
-import com.wks.caseengine.cpp.dto.FuelMasterDto;
+import com.wks.caseengine.cpp.dto.FuelMasterWithCategoryDTO;
 import com.wks.caseengine.cpp.dto.PlantFuelAvailabilityMonthlyDto;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface FuelPriorityService {
-    List<FuelMasterDto> getFuelMaster();
+    List<FuelMasterWithCategoryDTO> getFuelMaster();
     List<PlantWiseFuelPriorityDto> getPlantWiseFuelPriority(String plantIds, String financialYear);
     AOPMessageVM updatePlantFuelAvailability(List<PlantWiseFuelPriorityDto> payload);
     List<PlantFuelAvailabilityMonthlyDto> getPlantFuelAvailabilityMonthly(String plantIds, String financialYear);

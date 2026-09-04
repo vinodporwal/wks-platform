@@ -17,6 +17,8 @@ public interface SlowdownNormsService {
 	public byte[] exportSlowdownNorms(String year, UUID plantFKId,boolean isAfterSave,List<SlowdownNormsValueDTO> dtoList);
 	public byte[] exportSlowdownNormsAllGrades(String year, UUID plantFKId,boolean isAfterSave,List<SlowdownNormsValueDTO> dtoList,String maintenanceName);
 	public byte[] exportSlowdownConsumption(String year, UUID plantFKId,boolean isAfterSave,List<SlowdownNormsValueDTO> dtoList,String gradeId);
+	public byte[] exportSlowdownConsumptionWithSapCode(String year, UUID plantFKId,boolean isAfterSave,List<SlowdownNormsValueDTO> dtoList,String gradeId);
+	public AOPMessageVM importSlowdownConsumptionWithSapCode(String year, UUID plantFKId, String gradeId, MultipartFile file);
 	public AOPMessageVM importSlowdownConsumption(String year, UUID fromString,String gradeId, MultipartFile file);
 	public AOPMessageVM gradeWiseImportExcel(String year, UUID fromString, MultipartFile file, String maintenanceName);
 	public List<SlowdownNormsValueDTO> saveSlowdownNormsData( List<SlowdownNormsValueDTO> slowdownNormsValueDTOList);

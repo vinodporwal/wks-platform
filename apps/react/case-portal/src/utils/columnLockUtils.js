@@ -27,6 +27,7 @@ export const shouldLockColumn = (col) => {
     fieldLower === 'description' ||
     fieldLower === 'discriptiondrpdwn' ||
     fieldLower === 'uom' ||
-    fieldLower === 'uom/mt'
+    fieldLower === 'uom/mt' ||
+    field ==='sapCode'
   )
 }
