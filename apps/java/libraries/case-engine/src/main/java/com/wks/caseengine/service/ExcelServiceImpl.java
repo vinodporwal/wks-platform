@@ -59,6 +59,12 @@ public class ExcelServiceImpl implements ExcelService {
 
                 CellStyle decimalStyle = Utility.decimalStyleForAOPReport(workbook);
                 CellStyle integerStyle = Utility.getIntegerStyleForAOPReport(workbook);
+
+                // Six-decimal style. This is used only for cells configured
+                // through styles.sixDecimalRanges in the Excel configuration JSON.
+                CellStyle sixDecimalStyle = workbook.createCellStyle();
+                sixDecimalStyle.cloneStyleFrom(decimalStyle);
+                sixDecimalStyle.setDataFormat(workbook.createDataFormat().getFormat("0.000000"));
                 
                 workbook.createCellStyle();
 
@@ -309,6 +315,15 @@ public class ExcelServiceImpl implements ExcelService {
                         Map<String, Object> styles = (Map<String, Object>) table.get("styles");
                         Map<String, Object> autoMerge = (Map<String, Object>) table.get("autoMerge");
 
+                        // Cell-level six-decimal configuration.
+                        // Example:
+                        // "sixDecimalRanges": ["2#4#10", "5#7#3"]
+                        //
+                        // Format: startDataRow#column#numberOfRows
+                        // Row and column indexes are zero-based and the row is
+                        // relative to the first data row of this table.
+                        Set<String> sixDecimalCells = parseSixDecimalRanges(styles);
+
                         Set<Integer> boldCols = new HashSet<>();
                         if (styles != null && styles.get("boldColumns") != null) {
                             for (int col : (List<Integer>) styles.get("boldColumns")) {
@@ -326,6 +341,11 @@ public class ExcelServiceImpl implements ExcelService {
                         // titleCell.setCellValue(title);
                         // titleCell.setCellStyle(boldStyle);
 
+                        int totalColumns = headers.size();
+                            if(totalColumns==0){
+                                totalColumns = headersTitles.get(0).size();
+                            }
+
                         if (textBeforeTable != null && !textBeforeTable.isEmpty()) {
 
                             int titleRowNum = currentRow;
@@ -335,7 +355,7 @@ public class ExcelServiceImpl implements ExcelService {
                             CellStyle titleStyle = Utility.createBoldStyleForAOPReport(workbook);
 
                             // Use the actual total number of Excel columns
-                            int totalColumns = headers.size();
+                            
 
                             // Create and style all cells
                             for (int col = 0; col < totalColumns; col++) {
@@ -368,7 +388,7 @@ public class ExcelServiceImpl implements ExcelService {
                             CellStyle titleStyle = createTitleStyle(workbook);
 
                             // Use the actual total number of Excel columns
-                            int totalColumns = headers.size();
+                            //int totalColumns = headers.size();
 
                             // Create and style all cells
                             for (int col = 0; col < totalColumns; col++) {
@@ -461,7 +481,22 @@ public class ExcelServiceImpl implements ExcelService {
                         // Apply number format
                         if (isNumber) {
 
-                            if (isInteger) {
+                            // currentRow has already been incremented after
+                            // creating the current data row. Convert the current
+                            // cell position to 1-based coordinates relative to
+                            // the current table.
+                            int tableDataRow = currentRow - startDataRow;
+                            int tableColumn = col + 1;
+
+                            // Always display numeric zero as 0, even when the cell
+                            // falls inside a six-decimal range.
+                            double cellNumericValue = cell.getNumericCellValue();
+
+                            if (cellNumericValue == 0.0d) {
+                                cell.setCellStyle(integerStyle);
+                            } else if (sixDecimalCells.contains(tableDataRow + "#" + tableColumn)) {
+                                cell.setCellStyle(sixDecimalStyle);
+                            } else if (isInteger) {
                                 cell.setCellStyle(integerStyle);
                             } else {
                                 cell.setCellStyle(decimalStyle);
@@ -574,6 +609,84 @@ public class ExcelServiceImpl implements ExcelService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Parses styles.sixDecimalRanges from the table configuration.
+     *
+     * Supported configuration:
+     *
+     * "styles": {
+     *     "sixDecimalRanges": [
+     *         "3#3#5",
+     *         "5#7#3"
+     *     ]
+     * }
+     *
+     * Format:
+     *     startDataRow#tableColumn#numberOfRows
+     *
+     * Row and column numbers are 1-based and relative to the current table.
+     * Therefore, the configuration does not depend on the absolute worksheet
+     * row or column where the table starts.
+     *
+     * Example:
+     *     "3#3#5"
+     * means the 3rd data row, 3rd column of the table, for 5 rows.
+     *
+     * If the table starts at column A, table column 3 is column C.
+     * If the table starts at column B, table column 3 is column D.
+     *
+     * Invalid entries are ignored.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<String> parseSixDecimalRanges(Map<String, Object> styles) {
+        Set<String> sixDecimalCells = new HashSet<>();
+
+        if (styles == null || styles.get("sixDecimalRanges") == null) {
+            return sixDecimalCells;
+        }
+
+        Object configuredRanges = styles.get("sixDecimalRanges");
+
+        if (!(configuredRanges instanceof List<?>)) {
+            return sixDecimalCells;
+        }
+
+        for (Object rangeObject : (List<Object>) configuredRanges) {
+            if (rangeObject == null) {
+                continue;
+            }
+
+            String range = rangeObject.toString().trim();
+            if (range.isEmpty()) {
+                continue;
+            }
+
+            String[] parts = range.split("#");
+            if (parts.length != 3) {
+                continue;
+            }
+
+            try {
+                int startRow = Integer.parseInt(parts[0].trim());
+                int tableColumn = Integer.parseInt(parts[1].trim());
+                int numberOfRows = Integer.parseInt(parts[2].trim());
+
+                // Configuration is 1-based.
+                if (startRow < 1 || tableColumn < 1 || numberOfRows <= 0) {
+                    continue;
+                }
+
+                for (int row = startRow; row < startRow + numberOfRows; row++) {
+                    sixDecimalCells.add(row + "#" + tableColumn);
+                }
+            } catch (NumberFormatException ignored) {
+                // Ignore malformed range configuration.
+            }
+        }
+
+        return sixDecimalCells;
     }
 
     private boolean isNumericString(String value) {

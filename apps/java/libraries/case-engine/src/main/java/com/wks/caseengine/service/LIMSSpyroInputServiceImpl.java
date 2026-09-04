@@ -1056,9 +1056,10 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 			// View name pattern: vw_Vertical_Site_LIMSConditions
 			String viewName = "vw_" + vertical.getName() + "_" + site.getName() + "_LIMSConditions";
 
-			String sql = "SELECT Section, Name, DisplayOrder, MAX, MIN, MONTHS, MAX_Id, MIN_Id, MONTHS_Id FROM " + viewName + " ORDER BY DisplayOrder";
+			String sql = "SELECT Section, Name, DisplayOrder, MAX, MIN, MONTHS, MAX_Id, MIN_Id, MONTHS_Id FROM " + viewName + " WHERE AOPYear = :aopYear ORDER BY DisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("aopYear", aopYear);
 
 			@SuppressWarnings("unchecked")
 			List<Object[]> results = query.getResultList();

@@ -31,6 +31,14 @@ const ShutdownConsumptionRefinery = () => {
   const SCREEN_NAME = screenTitle?.title
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
+  const IS_REFINERYUTILITY_DTA_PCGASU =
+    VERTICAL_NAME === 'Refinery Utility' &&
+    SITE_NAME === 'DTA' &&
+    PLANT_NAME === 'PCG ASU'
+  const IS_REFINERYUTILITY_SEZ_PCGASU =
+    VERTICAL_NAME === 'Refinery Utility' &&
+    SITE_NAME === 'SEZ' &&
+    PLANT_NAME === 'PCG ASU'
 
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
@@ -70,39 +78,39 @@ const ShutdownConsumptionRefinery = () => {
 
   const columns = [
     {
-    field: 'Particulars',
-    headerName: 'Type',
-    width: 100,
-    hidden: true,
-    minWidth: 100,
-    isVisible: false,
-  },
-  {
-    field: 'materialFkId',
-    headerName: 'Particulars',
-    minWidth: 150,
-    editable: false,
-    hidden: true,
-    width: 100,
-    isVisible: false,
-  },
-  {
-    field: 'productName',
-    headerName: 'Particulars',
-    width: 120,
-    editable: false,
-    minWidth: 130,
-    locked: true,
-  },
-  {
-    field: 'UOM',
-    headerName: 'UOM',
-    widthT: 80,
-    editable: false,
-    minWidth: 100,
-    locked: true,
-  },
-    
+      field: 'Particulars',
+      headerName: 'Type',
+      width: 100,
+      hidden: true,
+      minWidth: 100,
+      isVisible: false,
+    },
+    {
+      field: 'materialFkId',
+      headerName: 'Particulars',
+      minWidth: 150,
+      editable: false,
+      hidden: true,
+      width: 100,
+      isVisible: false,
+    },
+    {
+      field: 'productName',
+      headerName: 'Particulars',
+      width: 120,
+      editable: false,
+      minWidth: 130,
+      locked: true,
+    },
+    {
+      field: 'UOM',
+      headerName: 'UOM',
+      widthT: 80,
+      editable: false,
+      minWidth: 100,
+      locked: true,
+    },
+
     ...monthsConfig.map((m) => ({
       field: m.field,
       title: headerMap[m.key] || m.title,
@@ -176,7 +184,10 @@ const ShutdownConsumptionRefinery = () => {
               remarks: item.remarks?.trim() || '',
               originalRemark: item.remarks?.trim() || '',
               id: index,
-              isEditable: false,
+              isEditable:
+                IS_REFINERYUTILITY_DTA_PCGASU || IS_REFINERYUTILITY_SEZ_PCGASU
+                  ? false
+                  : true,
             }),
           )
           setRows(formattedData)
@@ -434,12 +445,18 @@ const ShutdownConsumptionRefinery = () => {
     addButton: false,
     deleteButton: false,
     editButton: false,
-    saveBtn: false,
+    saveBtn:
+      IS_REFINERYUTILITY_DTA_PCGASU || IS_REFINERYUTILITY_SEZ_PCGASU
+        ? false
+        : true,
     showCalculate: false,
     allAction: true,
     showDropdown: false,
     showExport: true,
-    showImport: false,
+    showImport:
+      IS_REFINERYUTILITY_DTA_PCGASU || IS_REFINERYUTILITY_SEZ_PCGASU
+        ? false
+        : true,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Shutdown Consumption',
