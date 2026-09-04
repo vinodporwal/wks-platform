@@ -35,6 +35,100 @@ const JWAvgNorms = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
+  const MergedGroupCell = (props) => {
+    const { dataItem, field, tdProps } = props
+    if (!dataItem) return <td {...tdProps} />
+
+    const getGroupId = (item) => {
+      if (!item) return null
+      const id =
+        item.groupFkId ||
+        item.GroupFkId ||
+        item.groupName ||
+        item.GroupName ||
+        item.groupDisplayName ||
+        item.GroupDisplayName
+      return id && String(id).trim() !== '' ? String(id).trim() : null
+    }
+
+    const rawValue = dataItem[field]
+    const displayValue =
+      rawValue !== null && rawValue !== undefined ? String(rawValue) : ''
+
+    const rowIndex =
+      props.dataIndex !== undefined && props.dataIndex !== null
+        ? props.dataIndex
+        : rows.findIndex(
+            (r) =>
+              (r.id || r.materialId) === (dataItem.id || dataItem.materialId),
+          )
+
+    const currentGroupId = getGroupId(dataItem)
+
+    // If no group, render as normal individual cell
+    if (!currentGroupId || rowIndex === -1) {
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            textAlign: field === 'materialGroup' ? 'center' : 'left',
+            verticalAlign: 'middle',
+          }}
+          title={displayValue}
+        >
+          {displayValue}
+        </td>
+      )
+    }
+
+    // Check if previous row belongs to the same group
+    const prevRow = rowIndex > 0 ? rows[rowIndex - 1] : null
+    const prevGroupId = getGroupId(prevRow)
+
+    if (prevGroupId === currentGroupId) {
+      // Continuation row in the merged group -> hide cell
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            display: 'none',
+          }}
+        />
+      )
+    }
+
+    // First row of the group -> calculate consecutive rowSpan
+    let spanCount = 1
+    while (
+      rowIndex + spanCount < rows.length &&
+      getGroupId(rows[rowIndex + spanCount]) === currentGroupId
+    ) {
+      spanCount++
+    }
+
+    return (
+      <td
+        {...tdProps}
+        rowSpan={spanCount}
+        style={{
+          ...tdProps?.style,
+          verticalAlign: 'middle',
+          textAlign: field === 'materialGroup' ? 'center' : 'left',
+          backgroundColor: '#FFFFFF',
+          fontWeight:
+            field === 'materialGroup' && displayValue === 'YES'
+              ? 600
+              : 'normal',
+        }}
+        title={displayValue}
+      >
+        {displayValue}
+      </td>
+    )
+  }
+
   const columns = [
     {
       field: 'plantName',
@@ -88,16 +182,18 @@ const JWAvgNorms = () => {
       title: 'Material Group',
       widthT: 180,
       minWidth: 140,
-      type: 'text',
+      type: 'customAction',
       editable: false,
+      cell: MergedGroupCell,
     },
     {
       field: 'groupDisplayName',
       title: 'Group Name',
       widthT: 180,
       minWidth: 140,
-      type: 'text',
+      type: 'customAction',
       editable: false,
+      cell: MergedGroupCell,
     },
     {
       field: 'remarks',

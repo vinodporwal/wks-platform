@@ -182,7 +182,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 						dto.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : null);
 						
 					}
-					if(vertical.getName().equalsIgnoreCase("Chemical")) {
+					if(chemical || ptapmdpia) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
 					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("VGOHT")) {

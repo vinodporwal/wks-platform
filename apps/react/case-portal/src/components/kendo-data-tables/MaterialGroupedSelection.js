@@ -6,7 +6,10 @@ import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
+import {
+  fetchGroupedSelectionData,
+  saveGroupedSelectionData,
+} from 'utils/materialGroupedSelectionPopupUtils'
 import { validateFields } from 'utils/validationUtils'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
@@ -105,7 +108,7 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
     setModifiedCells({})
     setLoading(true)
     try {
-      const res = await PlantAopReportApiService.getGroupedSelection(
+      const res = await fetchGroupedSelectionData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -213,7 +216,7 @@ export default function MaterialGroupedSelection({ onSaveSuccess }) {
         aopYear: item.aopYear || AOP_YEAR,
       }))
 
-      const response = await PlantAopReportApiService.saveGroupedSelection(
+      const response = await saveGroupedSelectionData(
         keycloak,
         payload,
       )

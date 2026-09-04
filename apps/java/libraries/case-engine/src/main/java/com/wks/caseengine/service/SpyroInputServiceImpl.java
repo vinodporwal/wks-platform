@@ -50,6 +50,7 @@ import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.OptimizingVariablesDropdownDTO;
 import com.wks.caseengine.dto.FeedTypeFlowMappingDTO;
 import com.wks.caseengine.dto.MXOReprocessingDTO;
+import com.wks.caseengine.dto.MXOReprocessingStockDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.dto.SpyroInputMinMaxDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -3000,7 +3001,7 @@ session.doWork(connection -> {
                 MXOReprocessingDTO.builder()
                     .month(rs.getString("Month"))
 					.mode(rs.getString("Mode"))
-                    .mXOGeneration_tph(rs.getDouble("MXOgeneration_TPM"))
+                    .mXOGeneration_tph(rs.getDouble("mXOGeneration_tph"))
                     .onstream_hrs(rs.getDouble("Onstream_hrs"))
                     .mXOgeneration_TPM(rs.getDouble("MXOgeneration_TPM"))
                     .mXODowntime_hrs(rs.getDouble("MXODowntime_hrs"))
@@ -3130,6 +3131,93 @@ public int getMonthNumber(String monthName) {
 
     throw new IllegalArgumentException("Invalid month: " + monthName);
 }
+
+@Override
+    @Transactional
+    public AOPMessageVM getMXOReprocessingStockData(String plantId, String aopYear) {
+        try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadMXOReprocessingStock";
+
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = ?, @aopYear = ?";
+
+            List<MXOReprocessingStockDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                MXOReprocessingStockDTO.builder()
+                    .month(rs.getString("Month"))
+                    .mXOOpeningStockInMT(rs.getDouble("MXO opening stock in MT"))
+                    .mXOGeneration(rs.getDouble("MXO generation (TPM)"))
+                    .mXOReprocessing(rs.getDouble("MXO Reprocessing (TPM)"))
+                    .mXOClosingStockInMT(rs.getDouble("MXO Closing stock in MT"))
+                    .mXOOpeningStockId(rs.getString("MXOOpeningStock_Id"))
+                    .mXOClosingStockId(rs.getString("MXOClosingStock_Id"))
+                    .build(), plantId, aopYear);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+	@Override
+	public List<MXOReprocessingStockDTO> updateMXOReprocessingStockData(List<MXOReprocessingStockDTO> mXOReprocessingStockDTOList, String plantFKId, String year) {
+	
+		List<MXOReprocessingStockDTO> failedRecords = new ArrayList<>();
+		
+		for (MXOReprocessingStockDTO dto : mXOReprocessingStockDTOList) {
+
+			if(dto.getMXOOpeningStockId() == null || dto.getMXOClosingStockId() == null) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MXOOpeningStockId and MXOClosingStockId are required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			if(dto.getMXOOpeningStockId().isBlank() || dto.getMXOClosingStockId().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("MXOOpeningStockId and MXOClosingStockId are required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			if(dto.getMonth() == null || dto.getMonth().isBlank()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrorMessage("Month is required");
+				failedRecords.add(dto);
+				continue;
+			}
+
+			Integer monthInInteger = getMonthNumber(dto.getMonth());
+		
+	       
+			 
+        String mXOOpeningStockId = dto.getMXOOpeningStockId();
+		String mXOClosingStockId = dto.getMXOClosingStockId();
+
+	UUID	mXOOpeningStockIdUUID =  mXOOpeningStockId != null ? UUID.fromString(mXOOpeningStockId) : null;
+	UUID	mXOClosingStockIdUUID = mXOClosingStockId != null ? UUID.fromString(mXOClosingStockId) : null;
+
+		saveDataForMXOReprocessing(mXOOpeningStockIdUUID, monthInInteger, dto.getMXOOpeningStockInMT(), plantFKId, year, null);
+		saveDataForMXOReprocessing(mXOClosingStockIdUUID, monthInInteger, dto.getMXOClosingStockInMT(), plantFKId, year, null);
+
+	
+
+		}
+
+		return failedRecords;
+
+	}
 
 
 

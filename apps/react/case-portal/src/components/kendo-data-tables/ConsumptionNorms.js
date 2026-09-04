@@ -25,7 +25,9 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { DataService } from 'services/DataService'
 import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
 import { useMenuContext } from 'menu/menuProvider'
-import MaterialGroupedSelection from './MaterialGroupedSelection'
+import MaterialGroupedSelectionDialog, {
+  useMaterialGroupedSelectionPopup,
+} from './MaterialGroupedSelectionDialog'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -33,10 +35,6 @@ const ConsumptionNorms = () => {
   const keycloak = useSession()
 
   const [open1, setOpen1] = useState(false)
-  const [
-    openMaterialGroupedSelectionDialog,
-    setOpenMaterialGroupedSelectionDialog,
-  ] = useState(false)
   const valueFormat = ValueFormatterConsumption()
 
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
@@ -164,6 +162,7 @@ const ConsumptionNorms = () => {
   useEffect(() => {
     getIsReleased()
   }, [keycloak, AOP_YEAR, PLANT_ID])
+
   const saveEditedData = async (newRows) => {
     setLoading(true)
     try {
@@ -543,18 +542,6 @@ const ConsumptionNorms = () => {
     setSelectedUnit(unit)
   }
 
-  const handleCalculate = () => {
-    if (
-      lowerVertName === 'pe' &&
-      lowerSiteName === 'c2' &&
-      lowerPlantName === 'lldpe'
-    ) {
-      setOpenMaterialGroupedSelectionDialog(true)
-    } else {
-      handleCalculateMeg()
-    }
-  }
-
   const handleCalculateMeg = async () => {
     try {
       const data =
@@ -604,6 +591,13 @@ const ConsumptionNorms = () => {
       console.error('Error!', error)
     }
   }
+
+  const { openDialog, handleClose, handleCalculate } =
+    useMaterialGroupedSelectionPopup({
+      keycloak,
+      plantId: PLANT_ID,
+      onCalculate: handleCalculateMeg,
+    })
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -853,46 +847,12 @@ const ConsumptionNorms = () => {
               Confirm
             </Button>
           </DialogActions>
-        </Dialog>{' '}
-        <Dialog
-          open={openMaterialGroupedSelectionDialog}
-          onClose={(event, reason) => {
-            if (reason !== 'backdropClick') {
-              setOpenMaterialGroupedSelectionDialog(false)
-            }
-          }}
-          maxWidth='md'
-          fullWidth
-          disableScrollLock
-          disableEnforceFocus={true}
-          PaperProps={{
-            sx: {
-              borderRadius: '20px',
-              p: 1,
-              backdropFilter: 'blur(8px)',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-            },
-          }}
-        >
-          <DialogContent sx={{ p: 1 }}>
-            <MaterialGroupedSelection
-              onSaveSuccess={async () => {
-                setOpenMaterialGroupedSelectionDialog(false)
-                await handleCalculateMeg()
-              }}
-            />
-          </DialogContent>
-          <DialogActions sx={{ px: 1.5, pb: 1 }}>
-            <Button
-              onClick={() => setOpenMaterialGroupedSelectionDialog(false)}
-              variant='contained'
-              className='btn-no'
-              sx={{ textTransform: 'none' }}
-            >
-              Close
-            </Button>
-          </DialogActions>
         </Dialog>
+        <MaterialGroupedSelectionDialog
+          open={openDialog}
+          onClose={handleClose}
+          onSaveSuccess={handleCalculateMeg}
+        />
       </div>
     </div>
   )
