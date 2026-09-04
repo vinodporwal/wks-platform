@@ -18,6 +18,7 @@ import { useSelector } from 'react-redux'
 import YearDropdownEditor from './Utilities-Kendo/YearDropdownEditor'
 import CloseIcon from '@mui/icons-material/Close'
 import SDDaysDropdownEditorWrapper from './Utilities-Kendo/SdDaysDropdownEditor'
+import { handleTabKeyNavigation } from './Utilities-Kendo/tabNavigationUtility'
 
 import ModeEditIcon from '@mui/icons-material/ModeEdit'
 import { styled } from '@mui/material/styles'
@@ -687,9 +688,86 @@ const KendoDataTables = ({
     return `${dd}-${mm}-${yyyy} ${hh}:${minutes} ${ampm}`
   }
 
+  const activeCellRef = useRef({ rowId: null, field: null })
+  const gridContainerRef = useRef(null)
+  const editRef = useRef(edit)
+  editRef.current = edit
+
+  const extractAllColumns = useCallback((cols) => {
+    const allCols = []
+    const traverse = (columnsList) => {
+      columnsList?.forEach((col) => {
+        if (col.children && Array.isArray(col.children)) {
+          traverse(col.children)
+        } else if (col.field) {
+          allCols.push(col)
+        }
+      })
+    }
+    traverse(cols)
+    return allCols
+  }, [])
+
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
+    if (e.edit && typeof e.edit === 'object') {
+      const rowId = Object.keys(e.edit)[0]
+      const field = e.edit[rowId]?.[0]
+      if (rowId && field) {
+        activeCellRef.current = { rowId, field }
+      } else {
+        activeCellRef.current = { rowId: null, field: null }
+      }
+    } else {
+      activeCellRef.current = { rowId: null, field: null }
+    }
   }, [])
+
+  // Close inline edit mode when clicking outside the grid container
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      // Only act if this grid is currently in edit mode
+      if (!editRef.current || Object.keys(editRef.current).length === 0) {
+        return
+      }
+
+      // Check if click is on Kendo popup/portal elements (dropdown, date picker, etc.)
+      const isKendoPopup = e.target.closest(
+        '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container, .MuiDialog-root, .MuiPopover-root',
+      )
+
+      // Check if click is inside another grid instance
+      const isInsideAnotherGrid =
+        e.target.closest('.kendo-data-grid') &&
+        gridContainerRef.current &&
+        !gridContainerRef.current.contains(e.target)
+
+      if (
+        gridContainerRef.current &&
+        !gridContainerRef.current.contains(e.target) &&
+        !isKendoPopup &&
+        !isInsideAnotherGrid
+      ) {
+        setEdit({})
+        activeCellRef.current = { rowId: null, field: null }
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
+
+  const onTabKeyPressed = (e) => {
+    handleTabKeyNavigation({
+      e,
+      activeCellRef,
+      columns,
+      hiddenFields: [],
+      rows,
+      setRows,
+      setEdit,
+      extractAllColumns,
+    })
+  }
 
   const fileInputRef = useRef(null)
   const onSelectionChange = (event) => {
@@ -3086,7 +3164,7 @@ const KendoDataTables = ({
       )}
 
       <Collapse in={gridExpanded}>
-        <div className='kendo-data-grid'>
+        <div ref={gridContainerRef} className='kendo-data-grid'>
           <Tooltip openDelay={50} position='auto' anchorElement='target'>
             <ExcelExport
               data={rows}
@@ -3118,6 +3196,7 @@ const KendoDataTables = ({
                 filter={filter}
                 onFilterChange={(e) => setFilter(e.filter)}
                 onItemChange={itemChange}
+                onKeyDown={(e) => onTabKeyPressed(e)}
                 resizable={true}
                 defaultSkip={0}
                 defaultTake={50}

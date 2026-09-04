@@ -42,6 +42,7 @@ import {
   Button,
   Typography,
 } from '../../../../../node_modules/@mui/material/index'
+import PublishIcon from '@mui/icons-material/Publish'
 import { keyframes } from '@mui/material/styles'
 import {
   FileExportIcon,
@@ -2998,6 +2999,7 @@ const AdvanceKendoTable = ({
                   className='btn-save'
                   disabled={isReleaseDisabled || READ_ONLY}
                   onClick={handleRelease}
+                  startIcon={<PublishIcon sx={{ color: '#4A4DDA' }} />}
                 >
                   Release
                 </Button>

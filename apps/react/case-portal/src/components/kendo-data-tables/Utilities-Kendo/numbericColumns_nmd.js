@@ -13,11 +13,21 @@ export const PostCrDaysEditorNMD = ({ dataItem, field, onChange }) => {
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
+  const latestValueRef = useRef(localValue)
+  const initialValueRef = useRef(initialValue)
+  latestValueRef.current = localValue
 
   const handleChange = (e) => {
     const val = e.target.value
     if (val === '' || /^\d*(\.\d*)?$/.test(val)) {
       setLocalValue(val)
+    }
+  }
+
+  const handleBlur = () => {
+    if (isEditable && latestValueRef.current !== initialValueRef.current) {
+      onChange({ dataItem, field, value: latestValueRef.current })
+      initialValueRef.current = latestValueRef.current
     }
   }
 
@@ -32,13 +42,23 @@ export const PostCrDaysEditorNMD = ({ dataItem, field, onChange }) => {
     if (!isEditable) return
 
     const handler = setTimeout(() => {
-      if (localValue !== initialValue) {
+      if (localValue !== initialValueRef.current) {
         onChange({ dataItem, field, value: localValue })
+        initialValueRef.current = localValue
       }
     }, 300)
 
     return () => clearTimeout(handler)
-  }, [localValue, dataItem, field, onChange, initialValue, isEditable])
+  }, [localValue, dataItem, field, onChange, isEditable])
+
+  // Flush on unmount if user navigated away quickly via Tab before debounce timer fired
+  useEffect(() => {
+    return () => {
+      if (isEditable && latestValueRef.current !== initialValueRef.current) {
+        onChange({ dataItem, field, value: latestValueRef.current })
+      }
+    }
+  }, [dataItem, field, onChange, isEditable])
 
   // Render decision AFTER all hooks
   if (!isEditable) {
@@ -48,8 +68,10 @@ export const PostCrDaysEditorNMD = ({ dataItem, field, onChange }) => {
   return (
     <td style={{ textAlign: 'end' }}>
       <InputBase
+        autoFocus
         value={localValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='input-editor'
         style={{
           fontSize: '15px',

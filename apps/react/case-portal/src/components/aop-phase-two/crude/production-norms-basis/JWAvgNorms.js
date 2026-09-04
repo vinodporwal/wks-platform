@@ -271,7 +271,7 @@ const JWAvgNorms = () => {
       console.error('Error fetching JW Avg Norms data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Error fetching JW Avg Norms data',
+        message: 'Error fetching data',
         severity: 'error',
       })
     } finally {
@@ -356,9 +356,7 @@ const JWAvgNorms = () => {
         setModifiedCells({})
         setSnackbarOpen(true)
         setSnackbarData({
-          message:
-            response?.message ||
-            `Successfully saved ${payload.length} records!`,
+          message: 'Saved Successfully!',
           severity: 'success',
         })
         await fetchJWAvgNormsData()
@@ -415,7 +413,7 @@ const JWAvgNorms = () => {
       if (response?.code === 200 || response?.success) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: response?.message || 'Excel file imported successfully!',
+          message: response?.message || 'Saved Successfully!',
           severity: 'success',
         })
         await fetchJWAvgNormsData()

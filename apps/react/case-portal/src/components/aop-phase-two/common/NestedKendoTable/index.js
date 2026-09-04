@@ -19,6 +19,7 @@ import {
   CircularProgress,
   Typography,
 } from '@mui/material'
+import PublishIcon from '@mui/icons-material/Publish'
 import {
   FileExportIcon,
   FileImportIcon,
@@ -1560,6 +1561,7 @@ const NestedKendoTable = ({
                   className='btn-save'
                   disabled={isReleaseDisabled || READ_ONLY}
                   onClick={handleRelease}
+                  startIcon={<PublishIcon sx={{ color: '#4A4DDA' }} />}
                 >
                   Release
                 </Button>
