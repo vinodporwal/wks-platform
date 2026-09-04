@@ -32,7 +32,7 @@ const Comment = ({
   const canDelete = false; // replies.length === 0 // && currentUserId === comment.userId && !timePassed;
   // const canReply = true //Boolean(currentUserId);
   // const canEdit = true //currentUserId === comment.userId && !timePassed;
-  const canReply = Boolean(currentUserId) && isCommentEnabled;
+  const canReply = Boolean(currentUserId);
   const canEdit = currentUserId === comment.userId;
   const replyId = parentId ? parentId : comment.id
   const createdAt = new Date(comment.createdAt).toLocaleDateString()
