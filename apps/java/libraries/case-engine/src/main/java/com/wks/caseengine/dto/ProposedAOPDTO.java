@@ -26,6 +26,7 @@ public class ProposedAOPDTO {
     private UUID plantId;
     private String aopYear;
     private UUID gradeId;
+    private String sapCode;
     private String saveStatus;
     private String errDescription;
 }

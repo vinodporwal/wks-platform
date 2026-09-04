@@ -724,6 +724,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				.remarks(rs.getString("Remarks"))
 				.plantId(rs.getString("PlantId") != null ? UUID.fromString(rs.getString("PlantId")) : null)
 				.aopYear(rs.getString("AopYear"))
+				.sapCode(rs.getString("SapMaterialCode"))
 				.build(),
 				plantId.toString(), aopYear);
 	}
@@ -826,11 +827,11 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		Sheet sheet = workbook.createSheet(createUniqueSheetName(workbook, sheetName));
 		int currentRow = 0;
 
-		// Columns 0-5: visible data | Columns 6-10: hidden ID columns
+		// Columns 0-6: visible data | Columns 7-11: hidden ID columns
 		// (NormParameterId, AopYear, Id, NormParameterTypeId, PlantId)
-		// Columns 11-12: isAfterSave only (Status, Error Description)
+		// Columns 12-13: isAfterSave only (Status, Error Description)
 		List<String> headerNames = new ArrayList<>(Arrays.asList(
-				"Particulars", "UOM", "Last FY", "Sys Gen", "Proposed", "Remarks",
+				"Particulars", "Sap Code", "UOM", "Last FY", "Sys Gen", "Proposed", "Remarks",
 				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
 		if (isAfterSave) {
 			headerNames.add("Status");
@@ -853,57 +854,75 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		for (ProposedAOPDTO dto : dtoList) {
 			Row row = sheet.createRow(currentRow++);
 
+			// col 0: Particulars
 			Cell particularsCell = row.createCell(0);
 			particularsCell.setCellValue(Utility.sanitizeCellString(dto.getProductName()));
 			particularsCell.setCellStyle(lockedStyle);
 
-			Cell uomCell = row.createCell(1);
+			// col 1: Sap Code (read-only display column)
+			Cell sapCodeCell = row.createCell(1);
+			sapCodeCell.setCellValue(Utility.sanitizeCellString(dto.getSapCode()));
+			sapCodeCell.setCellStyle(lockedStyle);
+
+			// col 2: UOM
+			Cell uomCell = row.createCell(2);
 			uomCell.setCellValue(Utility.sanitizeCellString(dto.getUom()));
 			uomCell.setCellStyle(lockedStyle);
 
-			Cell lastFYCell = row.createCell(2);
+			// col 3: Last FY
+			Cell lastFYCell = row.createCell(3);
 			setExcelCompatibleNumericValue(lastFYCell, dto.getLastFY());
 			lastFYCell.setCellStyle(lockedStyle);
 
-			Cell sysGenCell = row.createCell(3);
+			// col 4: Sys Gen
+			Cell sysGenCell = row.createCell(4);
 			setExcelCompatibleNumericValue(sysGenCell, dto.getSysGrn());
 			sysGenCell.setCellStyle(lockedStyle);
 
-			Cell proposedCell = row.createCell(4);
+			// col 5: Proposed
+			Cell proposedCell = row.createCell(5);
 			setExcelCompatibleNumericValue(proposedCell, dto.getProposed());
 			proposedCell.setCellStyle(unlockedStyle);
 
-			Cell remarksCell = row.createCell(5);
+			// col 6: Remarks
+			Cell remarksCell = row.createCell(6);
 			remarksCell.setCellValue(Utility.sanitizeCellString(dto.getRemarks()));
 			remarksCell.setCellStyle(wrapUnlocked);
 
-			Cell normParamCell = row.createCell(6);
+			// col 7: NormParameterId (hidden)
+			Cell normParamCell = row.createCell(7);
 			normParamCell.setCellValue(dto.getNormParameterId() != null ? dto.getNormParameterId().toString() : "");
 			normParamCell.setCellStyle(lockedStyle);
 
-			Cell aopYearCell = row.createCell(7);
+			// col 8: AopYear (hidden)
+			Cell aopYearCell = row.createCell(8);
 			aopYearCell.setCellValue(Utility.sanitizeCellString(dto.getAopYear()));
 			aopYearCell.setCellStyle(lockedStyle);
 
-			Cell idCell = row.createCell(8);
+			// col 9: Id (hidden)
+			Cell idCell = row.createCell(9);
 			idCell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
 			idCell.setCellStyle(lockedStyle);
 
-			Cell normParamTypeIdCell = row.createCell(9);
+			// col 10: NormParameterTypeId (hidden)
+			Cell normParamTypeIdCell = row.createCell(10);
 			normParamTypeIdCell.setCellValue(
 					dto.getNormParameterTypeId() != null ? dto.getNormParameterTypeId().toString() : "");
 			normParamTypeIdCell.setCellStyle(lockedStyle);
 
-			Cell plantIdCell = row.createCell(10);
+			// col 11: PlantId (hidden)
+			Cell plantIdCell = row.createCell(11);
 			plantIdCell.setCellValue(dto.getPlantId() != null ? dto.getPlantId().toString() : "");
 			plantIdCell.setCellStyle(lockedStyle);
 
 			if (isAfterSave) {
-				Cell statusCell = row.createCell(11);
+				// col 12: Status
+				Cell statusCell = row.createCell(12);
 				statusCell.setCellValue(Utility.sanitizeCellString(dto.getSaveStatus()));
 				statusCell.setCellStyle(borderedStyle);
 
-				Cell errCell = row.createCell(12);
+				// col 13: Error Description
+				Cell errCell = row.createCell(13);
 				errCell.setCellValue(Utility.sanitizeCellString(dto.getErrDescription()));
 				errCell.setCellStyle(borderedStyle);
 			}
@@ -911,20 +930,20 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			row.setHeight((short) -1);
 		}
 
-		int totalCols = isAfterSave ? 13 : 11;
+		int totalCols = isAfterSave ? 14 : 12;
 		for (int col = 0; col < totalCols; col++) {
-			if (col == 5 || col == 12) {
+			if (col == 6 || col == 13) {
 				sheet.setColumnWidth(col, 15000);
 			} else {
 				sheet.autoSizeColumn(col);
 			}
 		}
 
-		sheet.setColumnHidden(6, true);
 		sheet.setColumnHidden(7, true);
 		sheet.setColumnHidden(8, true);
 		sheet.setColumnHidden(9, true);
 		sheet.setColumnHidden(10, true);
+		sheet.setColumnHidden(11, true);
 
 		sheet.protectSheet("");
 	}
@@ -959,17 +978,22 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 
 					ProposedAOPDTO dto = new ProposedAOPDTO();
 					try {
+						// col 0: Particulars
 						Cell particularsCell = row.getCell(0);
 						if (particularsCell != null) {
 							dto.setProductName(particularsCell.toString().trim());
 						}
 
-						Cell uomCell = row.getCell(1);
+						// col 1: Sap Code – read-only display column; not stored in DTO
+
+						// col 2: UOM
+						Cell uomCell = row.getCell(2);
 						if (uomCell != null) {
 							dto.setUom(uomCell.toString().trim());
 						}
 
-						Cell lastFYCell = row.getCell(2);
+						// col 3: Last FY
+						Cell lastFYCell = row.getCell(3);
 						if (lastFYCell != null && lastFYCell.getCellType() != CellType.BLANK) {
 							if (lastFYCell.getCellType() == CellType.NUMERIC) {
 								dto.setLastFY(lastFYCell.getNumericCellValue());
@@ -980,7 +1004,8 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 							}
 						}
 
-						Cell sysGenCell = row.getCell(3);
+						// col 4: Sys Gen
+						Cell sysGenCell = row.getCell(4);
 						if (sysGenCell != null && sysGenCell.getCellType() != CellType.BLANK) {
 							if (sysGenCell.getCellType() == CellType.NUMERIC) {
 								dto.setSysGrn(sysGenCell.getNumericCellValue());
@@ -991,7 +1016,8 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 							}
 						}
 
-						Cell proposedCell = row.getCell(4);
+						// col 5: Proposed
+						Cell proposedCell = row.getCell(5);
 						if (proposedCell != null && proposedCell.getCellType() != CellType.BLANK) {
 							if (proposedCell.getCellType() == CellType.NUMERIC) {
 								dto.setProposed(proposedCell.getNumericCellValue());
@@ -1002,45 +1028,46 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 							}
 						}
 
-						Cell remarksCell = row.getCell(5);
+						// col 6: Remarks
+						Cell remarksCell = row.getCell(6);
 						if (remarksCell != null) {
 							dto.setRemarks(remarksCell.toString().trim());
 						}
 
-						// col 6: NormParameterId (no GradeId column in steady-state sheet)
-						Cell normParamCell = row.getCell(6);
+						// col 7: NormParameterId (no GradeId column in steady-state sheet)
+						Cell normParamCell = row.getCell(7);
 						if (normParamCell != null) {
 							String val = normParamCell.toString().trim();
 							if (!val.isEmpty())
 								dto.setNormParameterId(UUID.fromString(val));
 						}
 
-						// col 7: AopYear
-						Cell aopYearCell = row.getCell(7);
+						// col 8: AopYear
+						Cell aopYearCell = row.getCell(8);
 						if (aopYearCell != null) {
 							String val = aopYearCell.toString().trim();
 							if (!val.isEmpty())
 								dto.setAopYear(val);
 						}
 
-						// col 8: Id
-						Cell idCell = row.getCell(8);
+						// col 9: Id
+						Cell idCell = row.getCell(9);
 						if (idCell != null) {
 							String val = idCell.toString().trim();
 							if (!val.isEmpty())
 								dto.setId(UUID.fromString(val));
 						}
 
-						// col 9: NormParameterTypeId
-						Cell normParamTypeIdCell = row.getCell(9);
+						// col 10: NormParameterTypeId
+						Cell normParamTypeIdCell = row.getCell(10);
 						if (normParamTypeIdCell != null) {
 							String val = normParamTypeIdCell.toString().trim();
 							if (!val.isEmpty())
 								dto.setNormParameterTypeId(UUID.fromString(val));
 						}
 
-						// col 10: PlantId
-						Cell plantIdCell = row.getCell(10);
+						// col 11: PlantId
+						Cell plantIdCell = row.getCell(11);
 						if (plantIdCell != null) {
 							String val = plantIdCell.toString().trim();
 							if (!val.isEmpty())
