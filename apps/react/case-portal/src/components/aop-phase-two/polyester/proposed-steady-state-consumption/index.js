@@ -10,6 +10,7 @@ import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/d
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { useSelector } from 'react-redux'
 import { ProposedAopApiService } from 'components/aop-phase-two/services/polyester/proposed-aop-api-service'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const ProposedSteadyStateConsumption = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -57,6 +58,8 @@ const ProposedSteadyStateConsumption = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const valueFormat = customValueFormatterPhaseTwo(5)
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -294,6 +297,7 @@ const ProposedSteadyStateConsumption = () => {
       editable: false,
       type: 'number',
       fixedWidth: 150,
+      format: valueFormat
     },
     {
       field: 'sysGrn',
@@ -301,6 +305,7 @@ const ProposedSteadyStateConsumption = () => {
       editable: false,
       type: 'number',
       fixedWidth: 150,
+      format: valueFormat
     },
     {
       field: 'proposed',
@@ -308,6 +313,7 @@ const ProposedSteadyStateConsumption = () => {
       editable: true,
       type: 'numberNonGrey',
       fixedWidth: 150,
+      format: valueFormat
     },
     {
       field: 'remarks',

@@ -9,8 +9,8 @@ export const ProposedAopApiService = {
   importProposedAOP,
 }
 
-async function getProposedAOP(keycloak, plantId, aopYear, gradeId) {
-  const url = `${Config.CaseEngineUrl}/task/proposed-aop?year=${aopYear}&plantId=${plantId}&gradeId=${gradeId}`
+async function getProposedAOP(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/proposed-steady-state?year=${aopYear}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ async function calculateProposedAOP(keycloak, plantId, aopYear) {
 }
 
 async function saveProposedAOP(keycloak, payload) {
-  const url = `${Config.CaseEngineUrl}/task/save-proposed-aop`
+  const url = `${Config.CaseEngineUrl}/task/save-proposed-steady-state`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -66,9 +66,8 @@ async function exportProposedAOP(
   plantId,
   year,
   EXCEL_EXPORT_TITLE,
-  SCREEN_NAME,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/proposed-aop-export?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+  const url = `${Config.CaseEngineUrl}/task/proposed-steady-state-export?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -86,7 +85,7 @@ async function exportProposedAOP(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `${EXCEL_EXPORT_TITLE}.xlsx`
+    a.download = `${EXCEL_EXPORT_TITLE}`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -98,7 +97,7 @@ async function exportProposedAOP(
 }
 
 async function importProposedAOP(file, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/proposed-aop-import`
+  const url = `${Config.CaseEngineUrl}/task/proposed-steady-state-import`
   const formData = new FormData()
   formData.append('file', file)
 
