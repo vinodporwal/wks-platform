@@ -21,6 +21,8 @@ import '@progress/kendo-font-icons/dist/index.css'
 import Layout from 'layout/FooterLayout/index'
 import { MenuProvider } from 'menu/menuProvider'
 
+import Loader from './components/Loader'
+
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
 const App = () => {
@@ -77,29 +79,30 @@ const App = () => {
     }
   }
 
-  return (
-    keycloak &&
-    authenticated && (
-      <ThemeCustomization>
-        {/* <Layout> */}
-        <Suspense fallback={<div>Loading...</div>}>
-          <ScrollTop>
-            <SessionStoreProvider value={{ keycloak }}>
-              <MenuProvider>
-                <ThemeRoutes
-                  keycloak={keycloak}
-                  authenticated={authenticated}
+  if (!keycloak?.token || !authenticated) {
+    return <Loader />
+  }
 
-                  // recordsTypes={recordsTypes}
-                  // casesDefinitions={casesDefinitions}
-                />
-              </MenuProvider>
-            </SessionStoreProvider>
-          </ScrollTop>
-        </Suspense>
-        {/* </Layout> */}
-      </ThemeCustomization>
-    )
+  return (
+    <ThemeCustomization>
+      {/* <Layout> */}
+      <Suspense fallback={<Loader />}>
+        <ScrollTop>
+          <SessionStoreProvider value={{ keycloak }}>
+            <MenuProvider>
+              <ThemeRoutes
+                keycloak={keycloak}
+                authenticated={authenticated}
+
+                // recordsTypes={recordsTypes}
+                // casesDefinitions={casesDefinitions}
+              />
+            </MenuProvider>
+          </SessionStoreProvider>
+        </ScrollTop>
+      </Suspense>
+      {/* </Layout> */}
+    </ThemeCustomization>
   )
 }
 export default App

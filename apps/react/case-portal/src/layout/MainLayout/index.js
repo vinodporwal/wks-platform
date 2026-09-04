@@ -9,11 +9,12 @@ import { openDrawer } from 'store/reducers/menu'
 import { useMenuContext } from 'menu/menuProvider'
 import StepperNav from 'components/Utilities/StepperNav'
 import UtilityDetails from 'components/Utilities/UtilityDetails'
+import PageSkeleton from 'components/PageSkeleton'
 
 const MainLayout = ({ keycloak, authenticated }) => {
   const dispatch = useDispatch()
   const { drawerOpen: open } = useSelector((state) => state.menu)
-  const { items: menuItems } = useMenuContext()
+  const { items: menuItems, isMenuLoading } = useMenuContext()
   const menu = { items: [...menuItems] }
   const location = useLocation()
   const isDashboard = location.pathname === '/dashboard'
@@ -65,9 +66,6 @@ const MainLayout = ({ keycloak, authenticated }) => {
           flexDirection: 'column',
           overflow: 'hidden',
           backgroundColor: BG_COLOR_FULL,
-
-          // border: '1px solid rgba(0,0,0,0.08)',
-          // boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
           borderRadius: '6px',
         }}
       >
@@ -83,54 +81,35 @@ const MainLayout = ({ keycloak, authenticated }) => {
         {/* Push content below header */}
         <Box sx={{ pt: '46px' }} />
 
-        {/* {location.pathname.startsWith('/production-norms-plan') && (
-          <Box>
-            <StepperNav />
-          </Box>
-        )} */}
-
-        {stepperNavRoutes.some((route) =>
-          location?.pathname.startsWith(route),
-        ) && (
-            <Box>
-              <StepperNav />
-            </Box>
-          )}
-
-        {/* HIDE AS OF NOW - 16 APRIL 2026 */}
-        {/* {location.pathname.startsWith('/production-norms-plan') && (
-          <Box>
-            <UtilityDetails navigation={menu} />
-          </Box>
-        )} */}
-
-        {/* <Box className='outlet-wrapper'>
-          <Box className='outlet-border-box'>
+        {isMenuLoading ? (
+          <PageSkeleton />
+        ) : (
+          <>
             {stepperNavRoutes.some((route) =>
               location?.pathname.startsWith(route),
             ) && (
-                <Box className="breadcrumbs-box">
-                  <Breadcrumbs variant='dense' navigation={menu} divider={false} />
-                </Box>)}
-            <Outlet />
-          </Box>
-        </Box> */}
-
-        <Box className='outlet-wrapper'>
-          <Box className='outlet-border-box'>
-            {!hideBreadcrumbs && (
-              <Box className='breadcrumbs-box'>
-                <Breadcrumbs
-                  variant='dense'
-                  navigation={menu}
-                  divider={false}
-                />
+              <Box>
+                <StepperNav />
               </Box>
             )}
 
-            <Outlet />
-          </Box>
-        </Box>
+            <Box className='outlet-wrapper'>
+              <Box className='outlet-border-box'>
+                {!hideBreadcrumbs && (
+                  <Box className='breadcrumbs-box'>
+                    <Breadcrumbs
+                      variant='dense'
+                      navigation={menu}
+                      divider={false}
+                    />
+                  </Box>
+                )}
+
+                <Outlet />
+              </Box>
+            </Box>
+          </>
+        )}
       </Box>
     </Box>
   )

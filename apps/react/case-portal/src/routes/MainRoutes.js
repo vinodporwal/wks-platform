@@ -1,214 +1,210 @@
-import { CaseStatus } from 'common/caseStatus'
-import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/kendo-WorkFlowMerge'
-import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
-
-import MonthwiseProduction from 'components/data-tables/Reports-kendo/kendo-MonthwiseProduction'
-import MonthwiseRawMaterial from 'components/data-tables/Reports-kendo/kendo-MonthwiseRawMaterial'
-import PlantsProductionSummary from 'components/data-tables/Reports-kendo/kendo-PlantsProductionData'
-import ProductionVolumeDataBasis from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasis'
-import AnnualAopCost from 'components/data-tables/Reports/AnnualAopCost'
-import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
-import BestAchievedNorms from 'components/data-tables/Reports/BestAchievedNorms'
-import BusinessDemand from 'components/kendo-data-tables/BusinessDemand'
-import ConsumptionNorms from 'components/kendo-data-tables/ConsumptionNorms'
-import PackagingConsumables from 'components/kendo-data-tables/PackagingConsumables'
-import DecokingConfig from 'components/kendo-data-tables/KendoConfigCrackerActivities'
-import CrackerConfig from 'components/kendo-data-tables/KendoConfigCrackerInput'
-import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCrackerOutput'
-import MaintenanceTable from 'components/kendo-data-tables/MaintenanceTable'
-import NormalOpNormsScreen from 'components/kendo-data-tables/NormalOpNorms'
-import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
-import ConfigurationOtherCost from 'components/kendo-data-tables/ConfigurationOtherCost'
-import ProductionvolumeData from 'components/kendo-data-tables/ProductionVoluemData'
-import ShutDown from 'components/kendo-data-tables/ShutDown'
-import ShutdownNorms from 'components/kendo-data-tables/ShutdownNorms'
-import SlowDown from 'components/kendo-data-tables/Slowdown'
-import SlowdownNorms from 'components/kendo-data-tables/SlowdownNorms'
-import Loadable from 'components/Loadable'
-import TextSubmitComponent from 'components/user-management/TextSubmitComponent'
-import UserForm from 'components/user-management/UserForm'
-import UserManagementTable from 'components/user-management/UserManagementTable'
-import QualityPackagingNorms from 'components/kendo-data-tables/QualityPackagingNorms'
-import MainLayout from 'layout/MainLayout'
 import { lazy } from 'react'
-import { CaseList } from 'views/caseList/caseList'
-import { CaseDefList } from 'views/management/caseDef/caseDefList/caseDefList'
-import { FormList } from 'views/management/form/formList'
-import { ProcessDefList } from 'views/management/processDef/processDefList'
-import { QueueList } from 'views/management/queue/queueList'
-import { RecordTypeList } from 'views/management/recordType/recordTypeList'
-import { TaskList } from 'views/taskList/taskList'
-
-import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
 import { Navigate } from '../../node_modules/react-router-dom/dist/index'
+import Loadable from 'components/Loadable'
+import MainLayout from 'layout/MainLayout'
 import PrivateRoute from './PrivateRoutes'
-import AopBudget from 'components/kendo-data-tables/AopBudget'
+import { CaseStatus } from 'common/caseStatus'
 
-import PlantTeam from 'components/kendo-data-tables/PlantTeam'
-import RelPerf from 'components/kendo-data-tables/RelPerf'
-import RelPerfPlantWise from 'components/kendo-data-tables/RelPerfPlantWise'
-import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
-import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
-import RawDataSet from 'components/data-tables/Reports/RawDataSet'
-import UtilitiesNormsBasis from 'components/data-tables/Reports/UtilitiesNormsBasis'
-import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
-import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
-import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
-import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
-import MaintenanceSummary from 'components/kendo-data-tables/MaintenanceSummary'
-import PlantBudgetSummary from 'components/kendo-data-tables/PlantBudgetSummary'
-import SiteAOPReport from 'components/kendo-data-tables/SiteAOPReport'
-import AopDesignBasis from 'components/kendo-data-tables/AopDesignBasis'
-import ProductionTargetBasis from 'components/data-tables/Reports/ProductionTargetBasis'
-
-import SiteMaintenanceSummary from 'components/kendo-data-tables/SiteMaintenanceSummary'
-import FeedStockAvailability from 'components/kendo-data-tables/FeedStockavailability'
-import TurnaroundPlanTable from 'components/kendo-data-tables/TurnaroundPlanTable'
-import NormComparisonReport from 'components/kendo-data-tables/NormComparisonReport'
-//CPP
-import Inputs from 'components/aop-phase-two/cpp/Inputs/index'
-import PlantRequirement from 'components/aop-phase-two/cpp/PlantRequirement'
-import FixedConsumption from 'components/aop-phase-two/cpp/FixedConsumption'
-import Norms from 'components/aop-phase-two/cpp/Norms'
-import QtyCostReport from 'components/aop-phase-two/cpp/qty-cost-report/index'
-import UtilityRate from 'components/aop-phase-two/cpp/utility-rate/index'
-// TCS
-
-import TcsOutput from 'components/aop-phase-two/tcs/TcsOutput/index'
-import PimsOutput from 'components/aop-phase-two/tcs/PimsOutput/PimsOutput'
-import TcsInput from 'components/aop-phase-two/tcs/TcsInput/index'
-import WorkflowDiagram from 'components/aop-phase-two/tcs/workflow-diagram/index'
-import AopDashboard from 'components/kendo-data-tables/AopDashboard'
-import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
-import ProposedAOP from 'components/kendo-data-tables/ProposedAOP'
-import Summary from 'components/aop-phase-two/cpp/Summary/index'
-import ProductionNormsBasis from 'components/aop-phase-two/vgoht/production-norms-basis/index'
-import ShutdownActivities from 'components/aop-phase-two/vgoht/shutdown-activities/index'
-import SlowdownActivities from 'components/aop-phase-two/vgoht/slowdown-activities/index'
-import ProductionTarget from 'components/aop-phase-two/vgoht/production-target/index'
-import NetProductionHours from 'components/aop-phase-two/vgoht/net-production-hours/index'
-import MonthwiseProductionPlan from 'components/aop-phase-two/vgoht/monthwise-production-plan/index'
-import SteadyStateConsumption from 'components/aop-phase-two/vgoht/steady-state-consumption/index'
-import ShutdownConsumption from 'components/aop-phase-two/vgoht/shutdown-consumption/index'
-import SlowdownConsumption from 'components/aop-phase-two/vgoht/slowdown-consumption/index'
-import OverallAopConsumption from 'components/aop-phase-two/vgoht/overall-aop-consumption/index'
-import SiteBudgetSummary from 'components/kendo-data-tables/SiteBudgetSummary'
-import QualityPackagingBasis from 'components/data-tables/Reports/QualityPackagingBasis'
-import EthyleneBalance from 'components/kendo-data-tables/EthyleneBalance'
-import PropyleneBalance from 'components/kendo-data-tables/PropyleneBalance'
-
-// crude
-import ProductionNormsBasisCrude from 'components/aop-phase-two/crude/production-norms-basis/index'
-import ShutdownActivitiesCrude from 'components/aop-phase-two/crude/shutdown-activities/index'
-import SlowdownActivitiesCrude from 'components/aop-phase-two/crude/slowdown-activities/index'
-import ProductionTargetCrude from 'components/aop-phase-two/crude/production-target/index'
-import NetProductionHoursCrude from 'components/aop-phase-two/crude/net-production-hours/index'
-import MonthwiseProductionPlanCrude from 'components/aop-phase-two/crude/monthwise-production-plan/index'
-import SteadyStateConsumptionCrude from 'components/aop-phase-two/crude/steady-state-consumption/index'
-import ShutdownConsumptionCrude from 'components/aop-phase-two/crude/shutdown-consumption/index'
-import SlowdownConsumptionCrude from 'components/aop-phase-two/crude/slowdown-consumption/index'
-import OverallAopConsumptionCrude from 'components/aop-phase-two/crude/overall-aop-consumption/index'
-
-//fcc
-import ProductionNormsBasisFCC from 'components/aop-phase-two/fcc/production-norms-basis/index'
-import OverallAopConsumptionFCC from 'components/aop-phase-two/fcc/overall-aop-consumption/index'
-import SteadyStateConsumptionFCC from 'components/aop-phase-two/fcc/steady-state-consumption/index'
-import MonthwiseProductionPlanFCC from 'components/aop-phase-two/fcc/monthwise-production-plan/index'
-import NetProductionHoursFCC from 'components/aop-phase-two/fcc/net-production-hours/index'
-
-//coker
-import ProductionNormsBasisCoker from 'components/aop-phase-two/coker/production-norms-basis/index'
-import OverallAopConsumptionCoker from 'components/aop-phase-two/coker/overall-aop-consumption/index'
-import SteadyStateConsumptionCoker from 'components/aop-phase-two/coker/steady-state-consumption/index'
-import MonthwiseProductionPlanCoker from 'components/aop-phase-two/coker/monthwise-production-plan/index'
-import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-production-hours/index'
-
-//staple (polyester)
-import BusinessDemandPolyester from 'components/aop-phase-two/polyester/business-demand/index'
-import MonthwiseProductionPlanPolyester from 'components/aop-phase-two/polyester/monthwise-production-plan/index'
-import NetProductionHoursPolyester from 'components/aop-phase-two/polyester/net-production-hours/index'
-import OverallAopConsumptionPolyester from 'components/aop-phase-two/polyester/overall-aop-consumption/index'
-import ProductionNormsBasisPolyester from 'components/aop-phase-two/polyester/production-norms-basis/index'
-import ProductionTargetPolyester from 'components/aop-phase-two/polyester/production-target/index'
-import ProposedAopConsumptionPolyester from 'components/aop-phase-two/polyester/proposed-aop-consumption/index'
-import QualityPackagingNormsPolyester from 'components/aop-phase-two/polyester/quality-packaging-norms/index'
-import ShutdownConsumptionPolyester from 'components/aop-phase-two/polyester/shutdown-consumption/index'
-import ShutdownPlanPolyester from 'components/aop-phase-two/polyester/shutdown-plan/index'
-import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-plan/index'
-import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
-import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
-import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
-import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
-import ProductGradeSelection from 'components/aop-phase-two/polyester/product-grade-selection/index'
-import ProposedSteadyStateConsumption from 'components/aop-phase-two/polyester/proposed-steady-state-consumption/index'
-
-import OtherProduction from 'components/kendo-data-tables/other-production/index'
-import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
-import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
-import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
-import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBasis'
-import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
-import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
-import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
-import MaterialGroupedSelection from 'components/kendo-data-tables/MaterialGroupedSelection'
-
-// Vertical MEROX Started
-import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
-import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
-import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
-import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
-// Vertical MEROX Ended
-
-// Vertical ALKYLATION Started
-import SteadyStateConsumptionAlkylation from 'components/aop-phase-two/alkylation/steady-state-consumption'
-import OverallAopConsumptionAlkylation from 'components/aop-phase-two/alkylation/overall-aop-consumption'
-import ProductionNormsBasisAlkylation from 'components/aop-phase-two/alkylation/production-norms-basis'
-// Vertical ALKYLATION Ended
-
-// PCG
-import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
-import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
-import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
-import NetProductionHoursPCG from 'components/aop-phase-two/pcg/net-production-hours/index'
-import MonthwiseProductionPlanPCG from 'components/aop-phase-two/pcg/monthwise-production-plan/index'
-import ShutdownActivitiesPCG from 'components/aop-phase-two/pcg/shutdown-activities/index'
-import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consumption/index'
-
-// PCG Ended
-
-// Vertical Refinery Utility
-import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
-import ShutdownConsumptionRefinery from 'components/aop-phase-two/refineryUtility/shutdown-consumption/index'
-import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
-import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
-import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
-import ShutdownPlanRefinery from 'components/aop-phase-two/refineryUtility/shutdown-plan/index'
-// Vertical Refinery Utility Ended
-
-// Naphthasplitter
-import SteadyStateConsumptionNS from 'components/aop-phase-two/naphthasplitter/steady-state-consumption'
-import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/overall-aop-consumption'
-import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
-import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
-import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
-import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
-import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
-import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
-import ProductionScheduling from 'components/kendo-data-tables/ProductionScheduling'
-import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyester/material-grouped-selection/index'
-import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
-import Outputs from 'components/aop-phase-two/cpp/Outputs'
-import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
-import JwBudgetScreenDTA from 'components/aop-phase-two/refineryAopBudget/JwBudgetDTA/index'
-import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
-import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
-import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
-import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index'
-
-// Naphthasplitter Ended
-
+// Views
+const CaseList = Loadable(lazy(() => import('views/caseList/caseList').then((m) => ({ default: m.CaseList }))))
+const CaseDefList = Loadable(lazy(() => import('views/management/caseDef/caseDefList/caseDefList').then((m) => ({ default: m.CaseDefList }))))
+const FormList = Loadable(lazy(() => import('views/management/form/formList').then((m) => ({ default: m.FormList }))))
+const ProcessDefList = Loadable(lazy(() => import('views/management/processDef/processDefList').then((m) => ({ default: m.ProcessDefList }))))
+const QueueList = Loadable(lazy(() => import('views/management/queue/queueList').then((m) => ({ default: m.QueueList }))))
+const RecordTypeList = Loadable(lazy(() => import('views/management/recordType/recordTypeList').then((m) => ({ default: m.RecordTypeList }))))
+const TaskList = Loadable(lazy(() => import('views/taskList/taskList').then((m) => ({ default: m.TaskList }))))
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
+
+// Lazy loaded table and page components
+const WorkFlowMerge = Loadable(lazy(() => import('components/data-tables/AOPWorkFlow/kendo-WorkFlowMerge')))
+const AssessmentForm = Loadable(lazy(() => import('components/data-tables/AssesmentForm/AssessmentContext')))
+const MonthwiseProduction = Loadable(lazy(() => import('components/data-tables/Reports-kendo/kendo-MonthwiseProduction')))
+const MonthwiseRawMaterial = Loadable(lazy(() => import('components/data-tables/Reports-kendo/kendo-MonthwiseRawMaterial')))
+const PlantsProductionSummary = Loadable(lazy(() => import('components/data-tables/Reports-kendo/kendo-PlantsProductionData')))
+const ProductionVolumeDataBasis = Loadable(lazy(() => import('components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasis')))
+const AnnualAopCost = Loadable(lazy(() => import('components/data-tables/Reports/AnnualAopCost')))
+const NormsHistorianBasis = Loadable(lazy(() => import('components/data-tables/Reports/NormsHistorianBasis')))
+const BestAchievedNorms = Loadable(lazy(() => import('components/data-tables/Reports/BestAchievedNorms')))
+const BusinessDemand = Loadable(lazy(() => import('components/kendo-data-tables/BusinessDemand')))
+const ConsumptionNorms = Loadable(lazy(() => import('components/kendo-data-tables/ConsumptionNorms')))
+const PackagingConsumables = Loadable(lazy(() => import('components/kendo-data-tables/PackagingConsumables')))
+const DecokingConfig = Loadable(lazy(() => import('components/kendo-data-tables/KendoConfigCrackerActivities')))
+const CrackerConfig = Loadable(lazy(() => import('components/kendo-data-tables/KendoConfigCrackerInput')))
+const CrackerConfigOutput = Loadable(lazy(() => import('components/kendo-data-tables/KendoConfigCrackerOutput')))
+const MaintenanceTable = Loadable(lazy(() => import('components/kendo-data-tables/MaintenanceTable')))
+const NormalOpNormsScreen = Loadable(lazy(() => import('components/kendo-data-tables/NormalOpNorms')))
+const ProductionNorms = Loadable(lazy(() => import('components/kendo-data-tables/ProductionNorms')))
+const ConfigurationOtherCost = Loadable(lazy(() => import('components/kendo-data-tables/ConfigurationOtherCost')))
+const ProductionvolumeData = Loadable(lazy(() => import('components/kendo-data-tables/ProductionVoluemData')))
+const ShutDown = Loadable(lazy(() => import('components/kendo-data-tables/ShutDown')))
+const ShutdownNorms = Loadable(lazy(() => import('components/kendo-data-tables/ShutdownNorms')))
+const SlowDown = Loadable(lazy(() => import('components/kendo-data-tables/Slowdown')))
+const SlowdownNorms = Loadable(lazy(() => import('components/kendo-data-tables/SlowdownNorms')))
+const TextSubmitComponent = Loadable(lazy(() => import('components/user-management/TextSubmitComponent')))
+const UserForm = Loadable(lazy(() => import('components/user-management/UserForm')))
+const UserManagementTable = Loadable(lazy(() => import('components/user-management/UserManagementTable')))
+const QualityPackagingNorms = Loadable(lazy(() => import('components/kendo-data-tables/QualityPackagingNorms')))
+const ConfigurationTable = Loadable(lazy(() => import('components/kendo-data-tables/KendoConfigurationTable')))
+const AopBudget = Loadable(lazy(() => import('components/kendo-data-tables/AopBudget')))
+const PlantTeam = Loadable(lazy(() => import('components/kendo-data-tables/PlantTeam')))
+const RelPerf = Loadable(lazy(() => import('components/kendo-data-tables/RelPerf')))
+const RelPerfPlantWise = Loadable(lazy(() => import('components/kendo-data-tables/RelPerfPlantWise')))
+const PlantSafetyPerformanceTarget = Loadable(lazy(() => import('components/kendo-data-tables/PlantSafetyPerformanceTarget')))
+const IntermediateValuesDataSet = Loadable(lazy(() => import('components/data-tables/Reports/IntermediateValuesDataSet')))
+const RawDataSet = Loadable(lazy(() => import('components/data-tables/Reports/RawDataSet')))
+const UtilitiesNormsBasis = Loadable(lazy(() => import('components/data-tables/Reports/UtilitiesNormsBasis')))
+const SteadyStateNormsHistorianBasis = Loadable(lazy(() => import('components/data-tables/Reports/SteadyStateNormsHistorianBasis')))
+const ConsumptionNormsHistorianBasis = Loadable(lazy(() => import('components/data-tables/Reports/ConsumptionNormsHistorianBasis')))
+const BestAchievedIndividualNorms = Loadable(lazy(() => import('components/data-tables/Reports/BestAchievedIndividualNorms')))
+const RunLengthDataSet = Loadable(lazy(() => import('components/data-tables/Reports/RunLengthDataSet')))
+const MaintenanceSummary = Loadable(lazy(() => import('components/kendo-data-tables/MaintenanceSummary')))
+const PlantBudgetSummary = Loadable(lazy(() => import('components/kendo-data-tables/PlantBudgetSummary')))
+const SiteAOPReport = Loadable(lazy(() => import('components/kendo-data-tables/SiteAOPReport')))
+const AopDesignBasis = Loadable(lazy(() => import('components/kendo-data-tables/AopDesignBasis')))
+const ProductionTargetBasis = Loadable(lazy(() => import('components/data-tables/Reports/ProductionTargetBasis')))
+const SiteMaintenanceSummary = Loadable(lazy(() => import('components/kendo-data-tables/SiteMaintenanceSummary')))
+const FeedStockAvailability = Loadable(lazy(() => import('components/kendo-data-tables/FeedStockavailability')))
+const TurnaroundPlanTable = Loadable(lazy(() => import('components/kendo-data-tables/TurnaroundPlanTable')))
+const NormComparisonReport = Loadable(lazy(() => import('components/kendo-data-tables/NormComparisonReport')))
+
+// CPP
+const Inputs = Loadable(lazy(() => import('components/aop-phase-two/cpp/Inputs/index')))
+const PlantRequirement = Loadable(lazy(() => import('components/aop-phase-two/cpp/PlantRequirement')))
+const FixedConsumption = Loadable(lazy(() => import('components/aop-phase-two/cpp/FixedConsumption')))
+const Norms = Loadable(lazy(() => import('components/aop-phase-two/cpp/Norms')))
+const QtyCostReport = Loadable(lazy(() => import('components/aop-phase-two/cpp/qty-cost-report/index')))
+const UtilityRate = Loadable(lazy(() => import('components/aop-phase-two/cpp/utility-rate/index')))
+const Summary = Loadable(lazy(() => import('components/aop-phase-two/cpp/Summary/index')))
+const Outputs = Loadable(lazy(() => import('components/aop-phase-two/cpp/Outputs')))
+const TabManagement = Loadable(lazy(() => import('components/aop-phase-two/cpp/common/TabManagement')))
+
+// TCS
+const TcsOutput = Loadable(lazy(() => import('components/aop-phase-two/tcs/TcsOutput/index')))
+const PimsOutput = Loadable(lazy(() => import('components/aop-phase-two/tcs/PimsOutput/PimsOutput')))
+const TcsInput = Loadable(lazy(() => import('components/aop-phase-two/tcs/TcsInput/index')))
+const WorkflowDiagram = Loadable(lazy(() => import('components/aop-phase-two/tcs/workflow-diagram/index')))
+const AopDashboard = Loadable(lazy(() => import('components/kendo-data-tables/AopDashboard')))
+const ProposedConsumptionNorms = Loadable(lazy(() => import('components/kendo-data-tables/ProposedConsumptionNorms')))
+const ProposedAOP = Loadable(lazy(() => import('components/kendo-data-tables/ProposedAOP')))
+
+// VGOHT
+const ProductionNormsBasis = Loadable(lazy(() => import('components/aop-phase-two/vgoht/production-norms-basis/index')))
+const ShutdownActivities = Loadable(lazy(() => import('components/aop-phase-two/vgoht/shutdown-activities/index')))
+const SlowdownActivities = Loadable(lazy(() => import('components/aop-phase-two/vgoht/slowdown-activities/index')))
+const ProductionTarget = Loadable(lazy(() => import('components/aop-phase-two/vgoht/production-target/index')))
+const NetProductionHours = Loadable(lazy(() => import('components/aop-phase-two/vgoht/net-production-hours/index')))
+const MonthwiseProductionPlan = Loadable(lazy(() => import('components/aop-phase-two/vgoht/monthwise-production-plan/index')))
+const SteadyStateConsumption = Loadable(lazy(() => import('components/aop-phase-two/vgoht/steady-state-consumption/index')))
+const ShutdownConsumption = Loadable(lazy(() => import('components/aop-phase-two/vgoht/shutdown-consumption/index')))
+const SlowdownConsumption = Loadable(lazy(() => import('components/aop-phase-two/vgoht/slowdown-consumption/index')))
+const OverallAopConsumption = Loadable(lazy(() => import('components/aop-phase-two/vgoht/overall-aop-consumption/index')))
+const SiteBudgetSummary = Loadable(lazy(() => import('components/kendo-data-tables/SiteBudgetSummary')))
+const QualityPackagingBasis = Loadable(lazy(() => import('components/data-tables/Reports/QualityPackagingBasis')))
+const EthyleneBalance = Loadable(lazy(() => import('components/kendo-data-tables/EthyleneBalance')))
+const PropyleneBalance = Loadable(lazy(() => import('components/kendo-data-tables/PropyleneBalance')))
+
+// Crude
+const ProductionNormsBasisCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/production-norms-basis/index')))
+const ShutdownActivitiesCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/shutdown-activities/index')))
+const SlowdownActivitiesCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/slowdown-activities/index')))
+const ProductionTargetCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/production-target/index')))
+const NetProductionHoursCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/net-production-hours/index')))
+const MonthwiseProductionPlanCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/monthwise-production-plan/index')))
+const SteadyStateConsumptionCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/steady-state-consumption/index')))
+const ShutdownConsumptionCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/shutdown-consumption/index')))
+const SlowdownConsumptionCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/slowdown-consumption/index')))
+const OverallAopConsumptionCrude = Loadable(lazy(() => import('components/aop-phase-two/crude/overall-aop-consumption/index')))
+
+// FCC
+const ProductionNormsBasisFCC = Loadable(lazy(() => import('components/aop-phase-two/fcc/production-norms-basis/index')))
+const OverallAopConsumptionFCC = Loadable(lazy(() => import('components/aop-phase-two/fcc/overall-aop-consumption/index')))
+const SteadyStateConsumptionFCC = Loadable(lazy(() => import('components/aop-phase-two/fcc/steady-state-consumption/index')))
+const MonthwiseProductionPlanFCC = Loadable(lazy(() => import('components/aop-phase-two/fcc/monthwise-production-plan/index')))
+const NetProductionHoursFCC = Loadable(lazy(() => import('components/aop-phase-two/fcc/net-production-hours/index')))
+
+// Coker
+const ProductionNormsBasisCoker = Loadable(lazy(() => import('components/aop-phase-two/coker/production-norms-basis/index')))
+const OverallAopConsumptionCoker = Loadable(lazy(() => import('components/aop-phase-two/coker/overall-aop-consumption/index')))
+const SteadyStateConsumptionCoker = Loadable(lazy(() => import('components/aop-phase-two/coker/steady-state-consumption/index')))
+const MonthwiseProductionPlanCoker = Loadable(lazy(() => import('components/aop-phase-two/coker/monthwise-production-plan/index')))
+const NetProductionHoursCoker = Loadable(lazy(() => import('components/aop-phase-two/coker/net-production-hours/index')))
+
+// Staple (Polyester)
+const BusinessDemandPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/business-demand/index')))
+const MonthwiseProductionPlanPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/monthwise-production-plan/index')))
+const NetProductionHoursPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/net-production-hours/index')))
+const OverallAopConsumptionPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/overall-aop-consumption/index')))
+const ProductionNormsBasisPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/production-norms-basis/index')))
+const ProductionTargetPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/production-target/index')))
+const ProposedAopConsumptionPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/proposed-aop-consumption/index')))
+const QualityPackagingNormsPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/quality-packaging-norms/index')))
+const ShutdownConsumptionPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/shutdown-consumption/index')))
+const ShutdownPlanPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/shutdown-plan/index')))
+const SlowdownPlanPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/slowdown-plan/index')))
+const SlowdownConsumptionPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/slowdown-consumption/index')))
+const SteadyStateConsumptionPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/steady-state-consumption/index')))
+const GradeWiseSteadyStateConsumptionPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index')))
+const ConfigurationOtherCostPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/configuration-other-cost/index')))
+const ProductGradeSelection = Loadable(lazy(() => import('components/aop-phase-two/polyester/product-grade-selection/index')))
+const ProposedSteadyStateConsumption = Loadable(lazy(() => import('components/aop-phase-two/polyester/proposed-steady-state-consumption/index')))
+const MaterialGroupedSelectionPolyester = Loadable(lazy(() => import('components/aop-phase-two/polyester/material-grouped-selection/index')))
+
+// Other
+const OtherProduction = Loadable(lazy(() => import('components/kendo-data-tables/other-production/index')))
+const SapBasedRefNorms = Loadable(lazy(() => import('components/data-tables/Reports-kendo/SapBasedRefNorms')))
+const SpecificConsumptionCalculation = Loadable(lazy(() => import('components/kendo-data-tables/SpecificConsumptionCalculation')))
+const ProductionOptimizer = Loadable(lazy(() => import('components/kendo-data-tables/ProductionOptimizer')))
+const CausticSodaLyeBasis = Loadable(lazy(() => import('components/data-tables/Reports/CausticSodaLyeBasis')))
+const MaterialBalance = Loadable(lazy(() => import('components/kendo-data-tables/MaterialBalance')))
+const CatalystChecmicalsCalculation = Loadable(lazy(() => import('components/kendo-data-tables/CatalystChecmicalsCalculation')))
+const CausticSodaLyeBasisCatChem = Loadable(lazy(() => import('components/data-tables/Reports/CausticSodaLyeBasisCatChem')))
+const MaterialGroupedSelection = Loadable(lazy(() => import('components/kendo-data-tables/MaterialGroupedSelection')))
+
+// Vertical MEROX
+const SteadyStateConsumptionMerox = Loadable(lazy(() => import('components/aop-phase-two/merox/steady-state-consumption')))
+const OverallAopConsumptionMerox = Loadable(lazy(() => import('components/aop-phase-two/merox/overall-aop-consumption')))
+const ProductionNormsBasisMerox = Loadable(lazy(() => import('components/aop-phase-two/merox/production-norms-basis')))
+const EtheleneStock = Loadable(lazy(() => import('components/data-tables/Reports/EtheleneStock')))
+
+// Vertical ALKYLATION
+const SteadyStateConsumptionAlkylation = Loadable(lazy(() => import('components/aop-phase-two/alkylation/steady-state-consumption')))
+const OverallAopConsumptionAlkylation = Loadable(lazy(() => import('components/aop-phase-two/alkylation/overall-aop-consumption')))
+const ProductionNormsBasisAlkylation = Loadable(lazy(() => import('components/aop-phase-two/alkylation/production-norms-basis')))
+
+// PCG
+const SteadyStateConsumptionPCG = Loadable(lazy(() => import('components/aop-phase-two/pcg/steady-state-consumption')))
+const OverallAopConsumptionPCG = Loadable(lazy(() => import('components/aop-phase-two/pcg/overall-aop-consumption')))
+const ProductionNormsBasisPCG = Loadable(lazy(() => import('components/aop-phase-two/pcg/production-norms-basis')))
+const NetProductionHoursPCG = Loadable(lazy(() => import('components/aop-phase-two/pcg/net-production-hours/index')))
+const MonthwiseProductionPlanPCG = Loadable(lazy(() => import('components/aop-phase-two/pcg/monthwise-production-plan/index')))
+const ShutdownActivitiesPCG = Loadable(lazy(() => import('components/aop-phase-two/pcg/shutdown-activities/index')))
+const ShutdownConsumptionPCG = Loadable(lazy(() => import('components/aop-phase-two/pcg/shutdown-consumption/index')))
+
+// Vertical Refinery Utility
+const SteadyStateConsumptionRefUtil = Loadable(lazy(() => import('components/aop-phase-two/refineryUtility/steady-state-consumption')))
+const ShutdownConsumptionRefinery = Loadable(lazy(() => import('components/aop-phase-two/refineryUtility/shutdown-consumption/index')))
+const OverallAopConsumptionRefUtil = Loadable(lazy(() => import('components/aop-phase-two/refineryUtility/overall-aop-consumption')))
+const ProductionNormsBasisRefUtil = Loadable(lazy(() => import('components/aop-phase-two/refineryUtility/production-norms-basis')))
+const PlantAOPReport = Loadable(lazy(() => import('components/kendo-data-tables/PlantAOPReport')))
+const ShutdownPlanRefinery = Loadable(lazy(() => import('components/aop-phase-two/refineryUtility/shutdown-plan/index')))
+
+// Naphthasplitter & Refinery AOP Budget
+const SteadyStateConsumptionNS = Loadable(lazy(() => import('components/aop-phase-two/naphthasplitter/steady-state-consumption')))
+const OverallAopConsumptionNS = Loadable(lazy(() => import('components/aop-phase-two/naphthasplitter/overall-aop-consumption')))
+const ProductionNormsBasisNS = Loadable(lazy(() => import('components/aop-phase-two/naphthasplitter/production-norms-basis')))
+const GradeMixOptimizer = Loadable(lazy(() => import('components/kendo-data-tables/GradeMixOptimizer')))
+const VcmAvailability = Loadable(lazy(() => import('components/kendo-data-tables/VcmAvailability')))
+const PlantCapacities = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/PlantCapacities')))
+const ShutdownSchedule = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/shutdown')))
+const SlowdownSchedule = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/slowdown')))
+const ProductionScheduling = Loadable(lazy(() => import('components/kendo-data-tables/ProductionScheduling')))
+const OtherDocumentUpload = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index')))
+const JwBudgetScreen = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/JwBudget/index')))
+const JwBudgetScreenDTA = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/JwBudgetDTA/index')))
+const ThroughputNormsScreen = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index')))
+const JwUnitScreen = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/JwUnit/index')))
+const FixedBedAndLabCostScreen = Loadable(lazy(() => import('components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index')))
 
 export const MainRoutes = (
   keycloak,

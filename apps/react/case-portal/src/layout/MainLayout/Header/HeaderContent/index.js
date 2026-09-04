@@ -40,6 +40,8 @@ import Logo from 'assets/images/ril-logo2.png'
 import DropdownSkeleton from 'utils/DropdownSkeleton'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { openDrawer } from 'store/reducers/menu'
+import { useMenuContext } from 'menu/menuProvider'
+import { getFirstNavigableUrl } from 'components/Utilities/menuRefractoring'
 import CalendarToday from '@mui/icons-material/CalendarToday'
 import Business from '@mui/icons-material/Business'
 import Domain from '@mui/icons-material/Domain'
@@ -682,17 +684,29 @@ export default function HeaderContent({ keycloak, navigation }) {
     )
   }, [verticalFromDashboard?.sid, sites, dispatch])
 
-  useEffect(() => {
-    // console.log(2)
+  const { items: menuItems, isMenuLoading } = useMenuContext()
+  const pendingDashboardNavRef = React.useRef(false)
 
-    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
-      return
+  useEffect(() => {
+    if (verticalFromDashboard?.trigger) {
+      pendingDashboardNavRef.current = true
     }
-    // setTimeout(() => {
-    //   dispatch(openDrawer({ drawerOpen: true }))
-    // }, 1500)
-    navigate('/production-norms-plan/configuration', { replace: true })
   }, [verticalFromDashboard?.trigger])
+
+  useEffect(() => {
+    if (
+      pendingDashboardNavRef.current &&
+      !isMenuLoading &&
+      menuItems &&
+      menuItems.length > 0
+    ) {
+      const firstUrl = getFirstNavigableUrl(menuItems)
+      if (firstUrl) {
+        pendingDashboardNavRef.current = false
+        navigate(firstUrl, { replace: true })
+      }
+    }
+  }, [isMenuLoading, menuItems, navigate])
 
   useEffect(() => {
     // console.log('--- Plant Effect Triggered ---')
@@ -761,13 +775,6 @@ export default function HeaderContent({ keycloak, navigation }) {
 
     // console.log('?? Dispatched plant to Redux')
   }, [verticalFromDashboard?.pid, plants, IS_CPP_JMD, dispatch])
-  // 4. Navigation Effect (Existing)
-  useEffect(() => {
-    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
-      return
-    }
-    navigate('/production-norms-plan/configuration', { replace: true })
-  }, [verticalFromDashboard?.trigger])
 
   // -------------------------
   // Visual styles (pills & menus)

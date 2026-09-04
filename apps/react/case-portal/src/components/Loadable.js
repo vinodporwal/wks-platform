@@ -1,10 +1,10 @@
 import { Suspense } from 'react'
-import Loader from './Loader'
+import PageSkeleton from './PageSkeleton'
 
 function Loadable(Component) {
   return function LoadableComponent(props) {
     return (
-      <Suspense fallback={<Loader />}>
+      <Suspense fallback={<PageSkeleton />}>
         <Component {...props} />
       </Suspense>
     )

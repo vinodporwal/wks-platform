@@ -2,11 +2,119 @@
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
+import LinearProgress from '@mui/material/LinearProgress'
+import Skeleton from '@mui/material/Skeleton'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 import NavGroup from './NavGroup'
 import useFilteredMenu from 'hooks/useFilteredMenu'
 
+const MenuLoadingSkeleton = () => (
+  <Box sx={{ px: 2, pt: 2, pb: 4, width: '100%' }}>
+    <Stack spacing={2.5}>
+      {/* Group 1 Skeleton */}
+      <Box>
+        <Skeleton
+          variant='text'
+          width={110}
+          height={18}
+          sx={{ mb: 1.5, bgcolor: 'rgba(0, 0, 0, 0.08)', borderRadius: '3px' }}
+        />
+        <Stack spacing={1}>
+          {[80, 68, 92, 60, 76].map((w, idx) => (
+            <Box
+              key={`g1-${idx}`}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                px: 1,
+                py: 0.75,
+                borderRadius: '6px',
+                bgcolor: 'rgba(0, 0, 0, 0.02)',
+              }}
+            >
+              <Skeleton
+                variant='rounded'
+                width={22}
+                height={22}
+                sx={{ borderRadius: 1, bgcolor: 'rgba(0, 0, 0, 0.08)' }}
+              />
+              <Skeleton
+                variant='text'
+                width={`${w}%`}
+                height={20}
+                sx={{ bgcolor: 'rgba(0, 0, 0, 0.08)', flex: 1 }}
+              />
+              <Skeleton
+                variant='circular'
+                width={12}
+                height={12}
+                sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)' }}
+              />
+            </Box>
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Divider */}
+      <Skeleton
+        variant='rectangular'
+        height={1}
+        sx={{ bgcolor: 'rgba(0, 0, 0, 0.06)', my: 0.5 }}
+      />
+
+      {/* Group 2 Skeleton */}
+      <Box>
+        <Skeleton
+          variant='text'
+          width={130}
+          height={18}
+          sx={{ mb: 1.5, bgcolor: 'rgba(0, 0, 0, 0.08)', borderRadius: '3px' }}
+        />
+        <Stack spacing={1}>
+          {[85, 62, 90, 72, 80, 65].map((w, idx) => (
+            <Box
+              key={`g2-${idx}`}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                px: 1,
+                py: 0.75,
+                borderRadius: '6px',
+                bgcolor: 'rgba(0, 0, 0, 0.02)',
+              }}
+            >
+              <Skeleton
+                variant='rounded'
+                width={22}
+                height={22}
+                sx={{ borderRadius: 1, bgcolor: 'rgba(0, 0, 0, 0.08)' }}
+              />
+              <Skeleton
+                variant='text'
+                width={`${w}%`}
+                height={20}
+                sx={{ bgcolor: 'rgba(0, 0, 0, 0.08)', flex: 1 }}
+              />
+              <Skeleton
+                variant='circular'
+                width={12}
+                height={12}
+                sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)' }}
+              />
+            </Box>
+          ))}
+        </Stack>
+      </Box>
+    </Stack>
+  </Box>
+)
+
 const Navigation = () => {
   const filteredMenu = useFilteredMenu()
+  const isMenuLoading = filteredMenu?.isMenuLoading
 
   const navGroups = filteredMenu?.items?.map((item, index) => {
     if (item.type !== 'group') {
@@ -68,11 +176,7 @@ const Navigation = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-
-        // ? Dark navy gradient background (like your screenshot)
         background: '#ffffff',
-
-        // borderRight: '1px solid #ffffff',
         fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         color: '#cbd5e1',
         fontSize: '0.75rem',
@@ -80,6 +184,19 @@ const Navigation = () => {
     >
       {/* Thin divider */}
       <Divider sx={{ borderColor: '#DDDEE1', my: 0.25, borderWidth: '1px' }} />
+
+      {/* Loading progress bar */}
+      {isMenuLoading && (
+        <LinearProgress
+          sx={{
+            height: 2,
+            bgcolor: '#f1f5f9',
+            '& .MuiLinearProgress-bar': {
+              bgcolor: '#0284c7',
+            },
+          }}
+        />
+      )}
 
       {/* Scrollable menu */}
       <Box
@@ -99,15 +216,19 @@ const Navigation = () => {
           },
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0,
-          }}
-        >
-          {navGroups}
-        </Box>
+        {isMenuLoading ? (
+          <MenuLoadingSkeleton />
+        ) : (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0,
+            }}
+          >
+            {navGroups}
+          </Box>
+        )}
       </Box>
     </Box>
   )

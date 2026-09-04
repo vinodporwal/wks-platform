@@ -6,7 +6,7 @@ import i18n from '../i18n/index'
 
 const useFilteredMenu = () => {
   const keycloak = useSession()
-  const { items: menuItems } = useMenuContext()
+  const { items: menuItems, isMenuLoading } = useMenuContext()
   const isPlantManager = keycloak?.realmAccess?.roles?.includes('cts_admin')
   const isDeveloper = keycloak?.realmAccess?.roles?.includes('developer')
   // const isPlantManager = true
@@ -102,8 +102,9 @@ const useFilteredMenu = () => {
 
     return {
       items: updatedMenu,
+      isMenuLoading,
     }
-  }, [menuItems])
+  }, [menuItems, isMenuLoading, isPlantManager, isDeveloper])
 
   return filteredMenu
 }

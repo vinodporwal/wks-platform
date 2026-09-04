@@ -58,6 +58,7 @@ export function MenuProvider({ children }) {
   }, [verticalName])
   const [menuItems, setMenuItems] = useState(staticMenuForVertical)
   const [permissions, setPermissions] = useState([])
+  const [isMenuLoading, setIsMenuLoading] = useState(false)
 
   // const fetchMenuScreens = useCallback(
   //   async (currentToken, vId, pId, staticMenu) => {
@@ -107,9 +108,6 @@ export function MenuProvider({ children }) {
   //   [],
   // )
 
-  // Cache to avoid redundant API calls
-  const menuCache = new Map()
-
   const fetchMenuScreens = useCallback(
     async (currentToken, vId, pId, staticMenu) => {
       if (USE_STATIC_MENU || !currentToken || (!vId && !pId)) {
@@ -124,7 +122,6 @@ export function MenuProvider({ children }) {
         )
 
         if (!res?.data || !Array.isArray(res.data) || res.data.length === 0) {
-          menuCache.set(cacheKey, staticMenu)
           return staticMenu
         }
 
@@ -152,15 +149,27 @@ export function MenuProvider({ children }) {
     let cancelled = false
     async function updateMenu() {
       const token = keycloak?.token
-      const items = await fetchMenuScreens(
-        token,
-        VERTICAL_ID,
-        PLANT_ID,
-        staticMenuForVertical,
-      )
-      // console.log('items', items)
-      if (!cancelled) {
-        setMenuItems(items)
+      if (!token) return
+
+      setIsMenuLoading(true)
+      try {
+        const items = await fetchMenuScreens(
+          token,
+          VERTICAL_ID,
+          PLANT_ID,
+          staticMenuForVertical,
+        )
+        if (!cancelled) {
+          setMenuItems(items)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setMenuItems(staticMenuForVertical)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsMenuLoading(false)
+        }
       }
     }
     updateMenu()
@@ -176,8 +185,8 @@ export function MenuProvider({ children }) {
   ])
 
   const menuValue = useMemo(
-    () => ({ items: menuItems, permissions }),
-    [menuItems, permissions],
+    () => ({ items: menuItems, permissions, isMenuLoading }),
+    [menuItems, permissions, isMenuLoading],
   )
   return (
     <MenuContext.Provider value={menuValue}>{children}</MenuContext.Provider>

@@ -80,3 +80,18 @@ export function mapScreen(item = {}) {
     children: Array.isArray(children) ? children.map(mapScreen) : [],
   }
 }
+
+export function getFirstNavigableUrl(items) {
+  if (!Array.isArray(items)) return null
+  for (const item of items) {
+    if (item.type === 'item' && item.url && item.url !== '#' && item.url !== '') {
+      return item.url
+    }
+    if (item.children && Array.isArray(item.children) && item.children.length > 0) {
+      const found = getFirstNavigableUrl(item.children)
+      if (found) return found
+    }
+  }
+  return null
+}
+
