@@ -560,11 +560,75 @@ const AdvanceKendoTable = ({
   }, [modifiedCells, saveChanges, setModifiedCells])
 
   const excelExport = () => {
-    if (_export.current !== null) {
-      _export.current.save()
+    if (!_export.current) {
+      return
     }
-  }
 
+    const options = _export.current.workbookOptions()
+
+    const CELL_BORDER = {
+      size: 1,
+      color: '#D9D9D9',
+    }
+
+    const HEADER_BORDER = {
+      size: 1,
+      color: '#808080',
+    }
+
+    const GROUP_HEADER_BORDER = {
+      size: 2,
+      color: '#404040',
+    }
+
+    options.sheets.forEach((sheet) => {
+      sheet.rows.forEach((row) => {
+        const isHeader = row.type === 'header' || row.type === 'group-header'
+
+        row.cells.forEach((cell) => {
+          const isMerged = Number(cell.colSpan) > 1
+
+          // -----------------------------
+          // Border
+          // -----------------------------
+          let border = CELL_BORDER
+
+          if (row.type === 'group-header' && isMerged) {
+            border = GROUP_HEADER_BORDER
+          } else if (isHeader) {
+            border = HEADER_BORDER
+          }
+
+          cell.borderTop = border
+          cell.borderBottom = border
+          cell.borderLeft = border
+          cell.borderRight = border
+
+          // -----------------------------
+          // Header styling
+          // -----------------------------
+          if (isHeader) {
+            cell.background = '#DFDFDF'
+            cell.color = '#000000'
+            cell.bold = true
+
+            cell.textAlign = 'center'
+            cell.verticalAlign = 'center'
+            cell.wrap = true
+          }
+
+          // -----------------------------
+          // Data styling
+          // -----------------------------
+          if (!isHeader) {
+            cell.verticalAlign = 'center'
+          }
+        })
+      })
+    })
+
+    _export.current.save(options)
+  }
   const handleRowClick = (e) => {
     if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
       setEdit({})
@@ -2559,9 +2623,9 @@ const AdvanceKendoTable = ({
                   <SelectCellEditor
                     {...cellProps}
                     options={allDescriptionDrpdwn || []}
-                    textField="displayName"
-                    valueField="id"
-                    placeholder="Select..."
+                    textField='displayName'
+                    valueField='id'
+                    placeholder='Select...'
                   />
                 ),
               },
