@@ -517,16 +517,16 @@ export const NormalOpNormPtaPmdPiaColumns = [
   {
     field: 'productName',
     title: 'Particulars',
-    widthT: 120,
-    minWidth: 100,
+    widthT: 140,
+    minWidth: 130,
   },
 
   {
     field: 'UOM',
     title: 'UOM/MT',
-    widthT: 90,
+    widthT: 120,
     editable: false,
-    minWidth: 80,
+    minWidth: 110,
   },
   {
     field: 'sapCode',
@@ -782,7 +782,7 @@ export const ShutdownConsumptionPtaPmdPiaColumns = [
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 120,
+    widthT: 150,
     editable: false,
     minWidth: 130,
   },
@@ -791,7 +791,7 @@ export const ShutdownConsumptionPtaPmdPiaColumns = [
     headerName: 'UOM/MT',
     width: 90,
     editable: false,
-    minWidth: 80,
+    minWidth: 110,
   },
   {
     field: 'sapCode',

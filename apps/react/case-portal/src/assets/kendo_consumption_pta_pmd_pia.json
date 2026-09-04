@@ -18,15 +18,15 @@
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 130,
-    "minWidth": 120
+    "widthT": 150,
+    "minWidth": 130
   },
   {
     "field": "UOM",
     "title": "UOM / MT",
     "editable": false,
     "widthT": 80,
-    "minWidth": 100
+    "minWidth": 120
   },
   {
     "field": "sapCode",
