@@ -11,6 +11,7 @@ import { OverallAopConsumptionApiService } from '../../services/vgoht/overallAop
 import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 import { overAllAOpResponse } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelNameWithoutExt } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import MaterialGroupedSelectionDialog, {
   useMaterialGroupedSelectionPopup,
 } from 'components/kendo-data-tables/MaterialGroupedSelectionDialog'
@@ -39,8 +40,21 @@ const OverallAopConsumption = () => {
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const EXCEL_EXPORT_TITLE = generateExcelNameWithoutExt(
+      dataGridStore,
+      'Overall_AOP_Consumption'
+    )
 
   const columns = [
+    {
+      field: 'sapCode',
+      title: 'SAP Mat Code',
+      // widthT: 250,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+      locked: false,
+    },
     {
       field: 'productName',
       title: 'Particulars',
@@ -283,7 +297,7 @@ const OverallAopConsumption = () => {
     showCalculate: true,
     showReleaseBtn: true,
     isReleaseDisabled: isReleaseDisabled,
-    ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
+    ExcelName: EXCEL_EXPORT_TITLE,
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,

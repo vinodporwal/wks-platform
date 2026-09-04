@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetProjection;
-import com.wks.caseengine.cpp.dto.FuelMasterProjection;
+import com.wks.caseengine.cpp.dto.FuelWithCategoryProjection;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityProjection;
 import com.wks.caseengine.entity.DummyEntity;
 
@@ -17,8 +17,21 @@ import com.wks.caseengine.entity.DummyEntity;
 @Transactional
 public interface FuelPriorityRepository extends JpaRepository<DummyEntity, Long> {
 
-    @Query(value = "SELECT CAST(Id AS varchar(36)) as Id, FuelName, FuelDisplayName FROM CPP_FuelMaster WITH(NOLOCK)", nativeQuery = true)
-    List<FuelMasterProjection> getFuelMaster();
+    @Query(value =
+        "SELECT CAST(fm.Id AS varchar(36)) AS id, " +
+        "       fm.FuelCode AS fuelCode, " +
+        "       fm.FuelName AS fuelName, " +
+        "       fm.FuelDisplayName AS fuelDisplayName, " +
+        "       fm.[Type] AS type, " +
+        "       fm.UOM AS uom, " +
+        "       CAST(fm.Category_FK_Id AS varchar(36)) AS categoryFkId, " +
+        "       cat.FuelName AS categoryName, " +
+        "       cat.FuelDisplayName AS categoryDisplayName " +
+        "FROM dbo.CPP_FuelMaster fm WITH(NOLOCK) " +
+        "LEFT JOIN dbo.CPP_FuelMaster cat WITH(NOLOCK) ON cat.Id = fm.Category_FK_Id " +
+        "ORDER BY cat.FuelDisplayName, fm.FuelDisplayName",
+        nativeQuery = true)
+    List<FuelWithCategoryProjection> getFuelMaster();
 
     @Query(value = "EXEC dbo.CPP_GetPlantWiseFuelPriority :plantIds, :financialYear", nativeQuery = true)
     List<PlantWiseFuelPriorityProjection> getPlantWiseFuelPriority(@org.springframework.data.repository.query.Param("plantIds") String plantIds, @org.springframework.data.repository.query.Param("financialYear") String financialYear);

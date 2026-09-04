@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
-import com.wks.caseengine.cpp.dto.FuelMasterDto;
+import com.wks.caseengine.cpp.dto.FuelMasterWithCategoryDTO;
 import com.wks.caseengine.cpp.dto.PlantFuelAvailabilityMonthlyDto;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
 import com.wks.caseengine.cpp.service.FuelPriorityService;
@@ -38,7 +38,7 @@ public class FuelPriorityController {
     public ResponseEntity<AOPMessageVM> getFuelMaster() {
         logger.info("Fetching fuel master data");
         try {
-            List<FuelMasterDto> data = service.getFuelMaster();
+            List<FuelMasterWithCategoryDTO> data = service.getFuelMaster();
             logger.info("Successfully retrieved {} fuel master records", data.size());
 
             AOPMessageVM response = new AOPMessageVM();

@@ -223,7 +223,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
 					mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
-					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX")) {
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT")) {
 						mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
 					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
