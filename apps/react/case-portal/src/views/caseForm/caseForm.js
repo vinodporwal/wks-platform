@@ -310,6 +310,7 @@ const handleFormChange = (submission) => {
           );
         };
         let shouldDisable = !userEmailIds.some(checkEmailMatch);
+        const isCreatorOrAssigned = !shouldDisable;
         let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(checkEmailMatch);
 
         console.log('--- Permissions Check ---');
@@ -325,9 +326,9 @@ const handleFormChange = (submission) => {
         const userEmailIdsWithRecommendationUsers = userEmailIdsWithRecommendationAssignees.concat(recommendationReviewers);
         let shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.some(email => email.startsWith(currentUserName + '@'));
 
-        if(accountStore.isManagerUser(keycloak)){
-          shouldDisable = shouldDisableAnalysis = shouldDisableValueRealization = false;
-        }
+        // if(accountStore.isManagerUser(keycloak)){
+        //   shouldDisable = shouldDisableAnalysis = shouldDisableValueRealization = false;
+        // }
 
         const isAnalysisOnly =
           shouldDisable &&
@@ -424,7 +425,7 @@ const handleFormChange = (submission) => {
               }
             });
 
-            if (parsedAttributeValue.valueRealizationCategory !== '') {
+            if (parsedAttributeValue.valueRealizationCategory !== '' && !isCreatorOrAssigned) {
               valueRealization.disabled = true;
             }
             const caseDetails0 = caseDetails?.components?.[0];
@@ -602,7 +603,7 @@ const handleFormChange = (submission) => {
               }
 
               const valueRealizationSection = level1.components[7] ?? null;
-              if (valueRealizationSection && shouldDisableValueRealization) {
+              if (valueRealizationSection && shouldDisableValueRealization && !isCreatorOrAssigned) {
                 valueRealizationSection.disabled = true;
                 const valueRealizationSubmit = valueRealizationSection?.components?.[3] ?? null;
 
