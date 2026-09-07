@@ -280,7 +280,7 @@ const ProposedSteadyStateConsumption = () => {
       locked: true,
     },
     {
-      field: 'SAPCode',
+      field: 'sapCode',
       title: 'SAP Code',
       editable: false,
       fixedWidth: 100,
@@ -294,6 +294,14 @@ const ProposedSteadyStateConsumption = () => {
     {
       field: 'lastFY',
       title: 'Last FY',
+      editable: false,
+      type: 'number',
+      fixedWidth: 150,
+      format: valueFormat
+    },
+    {
+      field: 'actualLastFY',
+      title: 'Actual Last FY',
       editable: false,
       type: 'number',
       fixedWidth: 150,
@@ -444,7 +452,7 @@ const ProposedSteadyStateConsumption = () => {
     allAction: true,
     showExport: true,
     showImport: true,
-    showCalculate: false,
+    showCalculate: true,
     // Disable Calculate if no calculationObject from API (same as NormalOpNorms showCalculateVisibility)
     calculateDisabled:
       !calculationObject || Object.keys(calculationObject).length === 0,

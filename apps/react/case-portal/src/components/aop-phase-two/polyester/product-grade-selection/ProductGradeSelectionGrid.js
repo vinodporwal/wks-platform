@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { Box } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { useSelector } from 'react-redux'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { getRoleName } from 'services/role-service'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import { ProductGradeSelectionApiService } from '../../services/polyester/productGradeSelectionApiService'
 
 export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
     const keycloak = useSession()
@@ -23,6 +23,7 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
 
     const [rows, setRows] = useState([])
     const [loading, setLoading] = useState(false)
+    const originalRemarkRef = useRef('')
 
     const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
     const [currentRemark, setCurrentRemark] = useState('')
@@ -37,51 +38,24 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
 
     const FORMATE_DECIMAL = ValueFormatterProduction()
 
-    const columns = useMemo(
-        () => [
-            {
-                field: 'particular',
-                title: 'Product Grades',
-                editable: false,
-                minWidth: 200,
-                locked: true,
-            },
-            {
-                field: 'status',
-                title: 'Selection',
-                editable: true,
-                type: 'checkbox',
-                minWidth: 100,
-            },
-            {
-                field: 'remark',
-                title: 'Remarks',
-                editable: true,
-                minWidth: 150,
-            },
-        ],
-        [],
-    )
 
     const fetchData = useCallback(async () => {
         setModifiedCells({})
         setLoading(true)
         try {
-            const dummyData = [
-                { id: 1, particular: 'Grade 1', status: true, remark: 'FY 2027-28' },
-                { id: 2, particular: 'Grade 10', status: true, remark: 'FY 2027-28' },
-                { id: 3, particular: 'Grade 2', status: true, remark: 'FY 2027-28' },
-                { id: 4, particular: 'Grade 3', status: true, remark: 'FY 2027-28' },
-                { id: 5, particular: 'Grade 4', status: true, remark: 'FY 2027-28' },
-                { id: 6, particular: 'Grade 5', status: false, remark: 'FY 2026-27' },
-                { id: 7, particular: 'Grade 6', status: true, remark: 'FY 2027-28' },
-                { id: 8, particular: 'Grade 7', status: true, remark: 'FY 2027-28' },
-                { id: 9, particular: 'Grade 8', status: false, remark: 'FY 2026-27' },
-                { id: 10, particular: 'Grade 9', status: true, remark: 'FY 2027-28' },
-                { id: 11, particular: 'Grade 11', status: true, remark: 'FY 2027-28' },
-            ].map((item) => ({ ...item, inEdit: false }))
+            const resp = await ProductGradeSelectionApiService.getGradeSelection(keycloak, PLANT_ID, AOP_YEAR)
+            const mappedData = (resp?.data || []).map((item, index) => ({
+                id: item.gradeId || index,
+                gradeId: item.gradeId,
+                normParameterId: item.normParameterId,
+                particular: item.materialName,
+                status: item.isSelected,
+                remark: item.remarks,
+                inEdit: false
+            }))
             
-            setRows(dummyData)
+            originalRemarkRef.current = mappedData[0]?.remark || ''
+            setRows(mappedData)
         } catch (e) {
             console.error('Error fetching data:', e)
             setRows([])
@@ -101,19 +75,61 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
     const saveChanges = useCallback(async () => {
         try {
             setLoading(true)
-            // Mock API save for dummy data
-            setTimeout(async () => {
+            
+            const hasDataChanges = Object.keys(modifiedCells).some(
+                (rowId) => Object.keys(modifiedCells[rowId]).some((key) => key !== 'remark')
+            )
+
+            // Extract the unified remark from the first row (or default empty)
+            const currentRemark = rows[0]?.remark || ''
+
+            if (hasDataChanges) {
+                if (!currentRemark.trim()) {
+                    setSnackbarOpen(true)
+                    setSnackbarData({
+                        message: 'Please fill the Remarks when data is modified.',
+                        severity: 'error',
+                    })
+                    setLoading(false)
+                    return
+                }
+
+                if (currentRemark === originalRemarkRef.current) {
+                    setSnackbarOpen(true)
+                    setSnackbarData({
+                        message: 'Remarks must be different from the original when data is modified.',
+                        severity: 'error',
+                    })
+                    setLoading(false)
+                    return
+                }
+            }
+            
+            const payload = rows.map((row) => ({
+                normParameterId: row.normParameterId,
+                gradeId: row.gradeId,
+                materialName: row.particular,
+                isSelected: row.status,
+                remarks: currentRemark,
+            }))
+            
+            const response = await ProductGradeSelectionApiService.saveGradeSelection(keycloak, payload, AOP_YEAR)
+            
+            if (response?.code === 200) {
                 setSnackbarOpen(true)
                 setSnackbarData({
                     message: 'Saved Successfully!',
                     severity: 'success',
                 })
                 setModifiedCells({})
+                originalRemarkRef.current = currentRemark
+                fetchData()
                 if (onSaveSuccess) {
                     await onSaveSuccess()
                 }
-                setLoading(false)
-            }, 500)
+            } else {
+                throw new Error(response?.message || 'Failed to save')
+            }
         } catch (e) {
             console.error('Error saving data:', e)
             setSnackbarOpen(true)
@@ -144,6 +160,71 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
         [READ_ONLY],
     )
 
+    const columns = useMemo(
+        () => [
+            {
+                field: 'particular',
+                title: 'Product Grades',
+                editable: false,
+                minWidth: 200,
+                locked: true,
+            },
+            {
+                field: 'status',
+                title: 'Selection',
+                editable: true,
+                type: 'checkbox',
+                minWidth: 100,
+            },
+            {
+                field: 'remark',
+                title: 'Remarks',
+                editable: true,
+                type: 'mergedCells',
+                minWidth: 150,
+                cell: (props) => {
+                    const { dataItem, field, rowType, ...kendoTdProps } = props
+                    
+                    const rowIndex = rows.findIndex(r => r.id === dataItem.id)
+
+                    if (rowIndex === 0) {
+                        const rawValue = dataItem.remark
+                        const isEdited = modifiedCells?.[dataItem.id]?.remark !== undefined
+                        return (
+                            <td
+                                {...kendoTdProps}
+                                rowSpan={rows.length}
+                                className={`${kendoTdProps.className || ''} ${isEdited ? 'edited-cell' : 'non-edited-cell'}`}
+                                style={{
+                                    ...kendoTdProps.style,
+                                    verticalAlign: 'middle',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    borderLeft: '1px solid rgba(0, 0, 0, 0.08)',
+                                    backgroundColor: '#fff',
+                                    color: rawValue ? 'inherit' : 'gray',
+                                }}
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                }}
+                                onDoubleClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    handleRemarkCellClick(dataItem)
+                                }}
+                            >
+                                {rawValue || 'Add'}
+                            </td>
+                        )
+                    }
+                    return null
+                }
+            },
+        ],
+        [rows, handleRemarkCellClick, modifiedCells],
+    )
+
     const permissions = useMemo(
         () => ({
             allAction: true,
@@ -152,6 +233,8 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
             showTitleNameBusiness: true,
             showTitle: true,
             titleName: 'Product Grade Selection',
+            downloadExcelBtnFromUI: false,
+            showCalculate: false,
             ExcelName: EXCEL_NAME,
             showAction: false,
             addButton: false,

@@ -1545,6 +1545,30 @@ const AdvanceKendoTable = ({
         )
       }
 
+      // Merged Cells Handler
+      if (col.type === 'mergedCells' && col.cell) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={false}
+            filterable={false}
+            className={col.className || 'k-text-center'}
+            headerClassName={col.headerClassName || 'k-text-center'}
+            cells={{
+              data: col.cell,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            width={setWidth(col?.minWidth || col?.widthT || 80)}
+          />
+        )
+      }
+
       // Textarea type handler (for dialog-based editing)
       if (col.type === 'textarea') {
         return (
