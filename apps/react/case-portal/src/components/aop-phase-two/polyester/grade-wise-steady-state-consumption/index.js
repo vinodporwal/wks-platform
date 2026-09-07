@@ -53,6 +53,13 @@ const staticInitialColumns = [
     type: 'text',
     editable: false,
   },
+  {
+    field: 'ytd',
+    title: 'YTD Norm',
+    minWidth: 100,
+    type: 'text',
+    editable: false,
+  },
 ]
 const GradeWiseSteadyStateConsumption = () => {
   const keycloak = useSession()
