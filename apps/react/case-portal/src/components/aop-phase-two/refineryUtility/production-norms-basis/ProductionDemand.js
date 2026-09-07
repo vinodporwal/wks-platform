@@ -49,25 +49,23 @@ const ProductionDemands = () => {
         AOP_YEAR,
       )
       if (response?.code === 200) {
-  const formattedData = (response?.data || []).map(
-    (item, index) => ({
-      ...item,
-      idFromApi: item?.normParameterFKId,   // <-- was item?.id (doesn't exist in response)
-      id: index,
-      Type: item?.type || item?.TypeDisplayName, // <-- was item?.Type (doesn't exist)
-      remarks: item?.remarks || '',
-      originalRemark: item?.remarks || '',
-      isEditable: true,
-      ParticularG:
-        item?.type && String(item.type).trim()
-          ? item.type
-          : item?.TypeDisplayName || 'MatBal',
-    }),
-  )
-  setRows(formattedData)
-} else {
-  setRows([])
-}
+        const formattedData = (response?.data || []).map((item, index) => ({
+          ...item,
+          idFromApi: item?.normParameterFKId, // <-- was item?.id (doesn't exist in response)
+          id: index,
+          Type: item?.type || item?.TypeDisplayName, // <-- was item?.Type (doesn't exist)
+          remarks: item?.remarks || '',
+          originalRemark: item?.remarks || '',
+          isEditable: true,
+          ParticularG:
+            item?.type && String(item.type).trim()
+              ? item.type
+              : item?.TypeDisplayName || 'MatBal',
+        }))
+        setRows(formattedData)
+      } else {
+        setRows([])
+      }
     } catch (error) {
       console.error('Error fetching Matbal data:', error)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
@@ -82,6 +80,54 @@ const ProductionDemands = () => {
   }, [fetchMatbalData])
 
   const colDefs = useMemo(() => {
+    const isRefineryUtilityCondition =
+      verticalObject?.name === 'Refinery Utility' &&
+      (siteObject?.name?.toLowerCase() === 'sez' ||
+        siteObject?.name?.toLowerCase() === 'dta') &&
+      plantObject?.name?.toLowerCase() === 'pcg asu'
+
+    if (isRefineryUtilityCondition) {
+      return [
+        {
+          field: 'productName',
+          title: 'Particulars',
+          editable: false,
+          width: 300,
+          minWidth: 300,
+        },
+        {
+          field: 'UOM',
+          title: 'UOM',
+          editable: false,
+          width: 80,
+          minWidth: 80,
+        },
+        {
+          field: 'apr',
+          title: 'Summer',
+          width: 120,
+          type: 'number',
+          format: valueFormat,
+          editable: true,
+        },
+        {
+          field: 'oct',
+          title: 'Winter',
+          width: 120,
+          type: 'number',
+          format: valueFormat,
+          editable: true,
+        },
+        {
+          field: 'remarks',
+          title: 'Remark',
+          editable: true,
+          width: 100,
+          minWidth: 100,
+        },
+      ]
+    }
+
     return [
       {
         field: 'productName',
@@ -99,20 +145,20 @@ const ProductionDemands = () => {
       },
       {
         field: 'apr',
-        title: 'Summer',
+        title: 'Value',
         width: 120,
         type: 'number',
         format: valueFormat,
         editable: true,
       },
-      {
-        field: 'oct',
-        title: 'Winter',
-        width: 120,
-        type: 'number',
-        format: valueFormat, 
-        editable: true,
-      },
+      // {
+      //   field: 'oct',
+      //   title: 'Winter',
+      //   width: 120,
+      //   type: 'number',
+      //   format: valueFormat,
+      //   editable: true,
+      // },
       {
         field: 'remarks',
         title: 'Remark',
@@ -121,7 +167,7 @@ const ProductionDemands = () => {
         minWidth: 100,
       },
     ]
-  }, [])
+  }, [verticalObject?.name, siteObject?.name, plantObject?.name])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -148,14 +194,14 @@ const ProductionDemands = () => {
     try {
       // Payload matches colDefs: only 'apr' (Winter) and 'oct' (Summer) are editable
       const payload = modifiedData.map((row) => ({
-  apr: row.apr ?? row.Apr ?? row.ConstantValue ?? null,
-  oct: row.oct ?? row.Oct ?? null,
-  UOM: row.UOM || '',                         // <-- was hardcoded '', now uses the API's UOM
-  auditYear: AOP_YEAR,
-  normParameterFKId: row.normParameterFKId,    // <-- was row.NormParameterId (undefined)
-  remarks: row.remarks,
-  id: row.idFromApi || row.normParameterFKId || null, // fallback since idFromApi = normParameterFKId now
-}))
+        apr: row.apr ?? row.Apr ?? row.ConstantValue ?? null,
+        oct: row.oct ?? row.Oct ?? null,
+        UOM: row.UOM || '', // <-- was hardcoded '', now uses the API's UOM
+        auditYear: AOP_YEAR,
+        normParameterFKId: row.normParameterFKId, // <-- was row.NormParameterId (undefined)
+        remarks: row.remarks,
+        id: row.idFromApi || row.normParameterFKId || null, // fallback since idFromApi = normParameterFKId now
+      }))
 
       const response = await ProductionNormsApiService.saveProductionDemandData(
         keycloak,
@@ -184,12 +230,13 @@ const ProductionDemands = () => {
   const handleExcelUpload = async (file) => {
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.saveProductionDemandExcel(
-        file,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ProductionNormsApiService.saveProductionDemandExcel(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       if (response?.code === 200) {
         setSnackbarData({
           message: 'Imported Successfully!',
@@ -257,7 +304,6 @@ const ProductionDemands = () => {
     }
   }
 
- 
   // Simplified: no vertical/site conditions — same permissions apply to everyone.
   // If it's an old year, everything gets locked down via the overrides below.
   const adjustedPermissions = useMemo(() => {
