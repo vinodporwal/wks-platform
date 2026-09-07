@@ -35,7 +35,6 @@ const ConsumptionNorms = () => {
   const keycloak = useSession()
 
   const [open1, setOpen1] = useState(false)
-  const valueFormat = ValueFormatterConsumption()
 
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
@@ -130,6 +129,9 @@ const ConsumptionNorms = () => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const consumptionFormat = ValueFormatterConsumption() 
+  const valueFormat =
+    lowerVertName === 'pvc' ? '{0:0.00000}' : consumptionFormat
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
