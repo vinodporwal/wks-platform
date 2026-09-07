@@ -17,6 +17,8 @@ import logging
 from datetime import datetime
 from io import StringIO
 
+import pandas as pd
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from database.queries import (
@@ -35,6 +37,7 @@ from database.queries import (
     fetch_hrsg_availability,
     fetch_stg_extraction_lookup,
     fetch_hrsg_heat_rate_lookup,
+    fetch_auxboiler_heat_rate_lookup,
     fetch_gt_heat_rate_lookup,
     fetch_power_asset_capacity_all_months,
     fetch_steam_asset_capacity_all_months,
@@ -203,6 +206,15 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
     hrsg_avail   = _fetch("hrsg_avail",   fetch_hrsg_availability,                  plant_id, month, year, default=[])
     stg_df       = _fetch("stg_lookup",   fetch_stg_extraction_lookup,              plant_id, month, year, default=None)
     hrsg_df      = _fetch("hrsg_hr",      fetch_hrsg_heat_rate_lookup,              plant_id, month, year, default=None)
+    auxb_df      = _fetch("auxb_hr",      fetch_auxboiler_heat_rate_lookup,         plant_id, month, year, default=None)
+    # Aux boiler curves share the same column shape as the HRSG lookup and are
+    # consumed by the same interpolation helper — merge them so the reverse
+    # MMBTU norm applies to both HRSG and AUXBOILER steam assets.
+    if auxb_df is not None and not auxb_df.empty:
+        if hrsg_df is None or hrsg_df.empty:
+            hrsg_df = auxb_df
+        else:
+            hrsg_df = pd.concat([hrsg_df, auxb_df], ignore_index=True)
     gt_df        = _fetch("gt_hr",        fetch_gt_heat_rate_lookup,                plant_id, month, year, default=None)
 
     power_caps   = _fetch("power_caps",   fetch_power_asset_capacity_all_months,    plant_id, fy_start, default=[])

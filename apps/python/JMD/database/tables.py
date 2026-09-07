@@ -76,6 +76,13 @@ class T:
     HRSG_HR_VALUE_COL           = "FinalHeatRate"
     HRSG_HR_YEAR_COL            = "FinancialYear"
 
+    # ── Aux boiler heat rate lookup ────────────────────────────────────────
+    CPP_AUXBOILER_HEAT_RATE     = "CPP_AUXBoilerHeatRate"
+    AUXB_HR_ASSET_FK            = "Asset_FK_Id"             # joined via CPPSteamGenerationAsset
+    AUXB_HR_LOAD_COL            = "AUXBoilerLoad"
+    AUXB_HR_VALUE_COL           = "FinalHeatRate"
+    AUXB_HR_YEAR_COL            = "FinancialYear"
+
     # ── GT heat rate lookup ────────────────────────────────────────────────
     CPP_GT_HEAT_RATE            = "CPP_GTHeatRate"
     GT_HR_ASSET_FK              = "Asset_FK_Id"             # joined via PowerGenerationAssets

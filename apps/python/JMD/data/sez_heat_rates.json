@@ -1,0 +1,2518 @@
+{
+  "_description": "SEZ CPP GT and HRSG/AuxBoiler heat rate curves (temporary JSON fallback until DB tables CPP_GTHeatRate and CPP_HRSGHeatRate are populated for SEZ)",
+  "_plant_id": "2DFEE33F-4CFD-4887-B9DD-53388AA95271",
+  "_plant_name": "SEZ-CPP",
+  "_financial_year": "2026-27",
+  "_source": "User-provided heat rate data (Sept 2026), mapped from Main Tagging labels to DB asset names",
+  "_note": "GT heat rate is in KCAL/KWH, HRSG/AuxBoiler heat rate is in BTU/lb. Free steam factor is MT of steam per MWH for GTs, 0 for HRSGs/AuxBoilers.",
+  "gt_heat_rates": {
+    "JMD - SEZ GT Power plant 1": {
+      "asset_id": "4B3A123E-B371-44AA-8750-2DA289A888DA",
+      "asset_name": "JMD - SEZ GT Power plant 1",
+      "curve": [
+        {
+          "load_mw": 41.0,
+          "heat_rate_kcal_kwh": 3569.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 42.0,
+          "heat_rate_kcal_kwh": 3555.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 43.0,
+          "heat_rate_kcal_kwh": 3541.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 44.0,
+          "heat_rate_kcal_kwh": 3527.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 45.0,
+          "heat_rate_kcal_kwh": 3513.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 46.0,
+          "heat_rate_kcal_kwh": 3499.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 47.0,
+          "heat_rate_kcal_kwh": 3485.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 48.0,
+          "heat_rate_kcal_kwh": 3471.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 49.0,
+          "heat_rate_kcal_kwh": 3457.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 50.0,
+          "heat_rate_kcal_kwh": 3443.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 51.0,
+          "heat_rate_kcal_kwh": 3429.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 52.0,
+          "heat_rate_kcal_kwh": 3415.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 53.0,
+          "heat_rate_kcal_kwh": 3401.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 54.0,
+          "heat_rate_kcal_kwh": 3387.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 55.0,
+          "heat_rate_kcal_kwh": 3373.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 56.0,
+          "heat_rate_kcal_kwh": 3359.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 57.0,
+          "heat_rate_kcal_kwh": 3345.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 58.0,
+          "heat_rate_kcal_kwh": 3331.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 59.0,
+          "heat_rate_kcal_kwh": 3317.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 60.0,
+          "heat_rate_kcal_kwh": 3303.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 61.0,
+          "heat_rate_kcal_kwh": 3283.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 62.0,
+          "heat_rate_kcal_kwh": 3264.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 63.0,
+          "heat_rate_kcal_kwh": 3245.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 64.0,
+          "heat_rate_kcal_kwh": 3226.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 65.0,
+          "heat_rate_kcal_kwh": 3208.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 66.0,
+          "heat_rate_kcal_kwh": 3190.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 67.0,
+          "heat_rate_kcal_kwh": 3172.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 68.0,
+          "heat_rate_kcal_kwh": 3154.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 69.0,
+          "heat_rate_kcal_kwh": 3137.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 70.0,
+          "heat_rate_kcal_kwh": 3120.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 71.0,
+          "heat_rate_kcal_kwh": 3103.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 72.0,
+          "heat_rate_kcal_kwh": 3087.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 73.0,
+          "heat_rate_kcal_kwh": 3071.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 74.0,
+          "heat_rate_kcal_kwh": 3055.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 75.0,
+          "heat_rate_kcal_kwh": 3039.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 76.0,
+          "heat_rate_kcal_kwh": 3024.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 77.0,
+          "heat_rate_kcal_kwh": 3009.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 78.0,
+          "heat_rate_kcal_kwh": 2994.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 79.0,
+          "heat_rate_kcal_kwh": 2979.98,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 80.0,
+          "heat_rate_kcal_kwh": 2965.98,
+          "free_steam_factor": 2.04
+        },
+        {
+          "load_mw": 81.0,
+          "heat_rate_kcal_kwh": 2951.98,
+          "free_steam_factor": 2.04
+        },
+        {
+          "load_mw": 82.0,
+          "heat_rate_kcal_kwh": 2937.98,
+          "free_steam_factor": 2.03
+        },
+        {
+          "load_mw": 83.0,
+          "heat_rate_kcal_kwh": 2924.98,
+          "free_steam_factor": 2.03
+        },
+        {
+          "load_mw": 84.0,
+          "heat_rate_kcal_kwh": 2911.98,
+          "free_steam_factor": 2.03
+        },
+        {
+          "load_mw": 85.0,
+          "heat_rate_kcal_kwh": 2898.98,
+          "free_steam_factor": 2.02
+        },
+        {
+          "load_mw": 86.0,
+          "heat_rate_kcal_kwh": 2885.98,
+          "free_steam_factor": 2.02
+        },
+        {
+          "load_mw": 87.0,
+          "heat_rate_kcal_kwh": 2873.98,
+          "free_steam_factor": 2.01
+        },
+        {
+          "load_mw": 88.0,
+          "heat_rate_kcal_kwh": 2861.98,
+          "free_steam_factor": 2.01
+        },
+        {
+          "load_mw": 89.0,
+          "heat_rate_kcal_kwh": 2849.98,
+          "free_steam_factor": 2.0
+        },
+        {
+          "load_mw": 90.0,
+          "heat_rate_kcal_kwh": 2837.98,
+          "free_steam_factor": 2.0
+        },
+        {
+          "load_mw": 91.0,
+          "heat_rate_kcal_kwh": 2826.98,
+          "free_steam_factor": 1.99
+        },
+        {
+          "load_mw": 92.0,
+          "heat_rate_kcal_kwh": 2815.98,
+          "free_steam_factor": 1.99
+        },
+        {
+          "load_mw": 93.0,
+          "heat_rate_kcal_kwh": 2804.98,
+          "free_steam_factor": 1.98
+        },
+        {
+          "load_mw": 94.0,
+          "heat_rate_kcal_kwh": 2794.98,
+          "free_steam_factor": 1.97
+        },
+        {
+          "load_mw": 95.0,
+          "heat_rate_kcal_kwh": 2784.98,
+          "free_steam_factor": 1.97
+        },
+        {
+          "load_mw": 96.0,
+          "heat_rate_kcal_kwh": 2774.99,
+          "free_steam_factor": 1.96
+        },
+        {
+          "load_mw": 97.0,
+          "heat_rate_kcal_kwh": 2764.99,
+          "free_steam_factor": 1.96
+        },
+        {
+          "load_mw": 98.0,
+          "heat_rate_kcal_kwh": 2754.99,
+          "free_steam_factor": 1.95
+        },
+        {
+          "load_mw": 99.0,
+          "heat_rate_kcal_kwh": 2745.0,
+          "free_steam_factor": 1.94
+        },
+        {
+          "load_mw": 100.0,
+          "heat_rate_kcal_kwh": 2735.0,
+          "free_steam_factor": 1.93
+        },
+        {
+          "load_mw": 101.0,
+          "heat_rate_kcal_kwh": 2731.0,
+          "free_steam_factor": 1.87
+        },
+        {
+          "load_mw": 102.0,
+          "heat_rate_kcal_kwh": 2726.0,
+          "free_steam_factor": 1.86
+        },
+        {
+          "load_mw": 103.0,
+          "heat_rate_kcal_kwh": 2721.0,
+          "free_steam_factor": 1.85
+        },
+        {
+          "load_mw": 104.0,
+          "heat_rate_kcal_kwh": 2716.0,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 105.0,
+          "heat_rate_kcal_kwh": 2711.0,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 106.0,
+          "heat_rate_kcal_kwh": 2706.0,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 107.0,
+          "heat_rate_kcal_kwh": 2701.0,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 108.0,
+          "heat_rate_kcal_kwh": 2696.0,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 109.0,
+          "heat_rate_kcal_kwh": 2691.0,
+          "free_steam_factor": 1.79
+        },
+        {
+          "load_mw": 110.0,
+          "heat_rate_kcal_kwh": 2686.0,
+          "free_steam_factor": 1.78
+        },
+        {
+          "load_mw": 111.0,
+          "heat_rate_kcal_kwh": 2681.0,
+          "free_steam_factor": 1.77
+        },
+        {
+          "load_mw": 112.0,
+          "heat_rate_kcal_kwh": 2676.0,
+          "free_steam_factor": 1.76
+        },
+        {
+          "load_mw": 113.0,
+          "heat_rate_kcal_kwh": 2671.0,
+          "free_steam_factor": 1.75
+        },
+        {
+          "load_mw": 114.0,
+          "heat_rate_kcal_kwh": 2666.0,
+          "free_steam_factor": 1.74
+        },
+        {
+          "load_mw": 115.0,
+          "heat_rate_kcal_kwh": 2661.0,
+          "free_steam_factor": 1.73
+        },
+        {
+          "load_mw": 116.0,
+          "heat_rate_kcal_kwh": 2656.0,
+          "free_steam_factor": 1.72
+        },
+        {
+          "load_mw": 117.0,
+          "heat_rate_kcal_kwh": 2651.0,
+          "free_steam_factor": 1.71
+        }
+      ]
+    },
+    "JMD - SEZ GT Power plant 2": {
+      "asset_id": "A211CBC2-475A-4A09-9CFE-D976466A1DAE",
+      "asset_name": "JMD - SEZ GT Power plant 2",
+      "curve": [
+        {
+          "load_mw": 41.0,
+          "heat_rate_kcal_kwh": 3487.2,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 42.0,
+          "heat_rate_kcal_kwh": 3473.16,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 43.0,
+          "heat_rate_kcal_kwh": 3459.12,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 44.0,
+          "heat_rate_kcal_kwh": 3445.08,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 45.0,
+          "heat_rate_kcal_kwh": 3431.04,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 46.0,
+          "heat_rate_kcal_kwh": 3416.99,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 47.0,
+          "heat_rate_kcal_kwh": 3402.95,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 48.0,
+          "heat_rate_kcal_kwh": 3388.91,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 49.0,
+          "heat_rate_kcal_kwh": 3374.87,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 50.0,
+          "heat_rate_kcal_kwh": 3360.83,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 51.0,
+          "heat_rate_kcal_kwh": 3346.79,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 52.0,
+          "heat_rate_kcal_kwh": 3332.75,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 53.0,
+          "heat_rate_kcal_kwh": 3318.71,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 54.0,
+          "heat_rate_kcal_kwh": 3304.67,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 55.0,
+          "heat_rate_kcal_kwh": 3290.63,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 56.0,
+          "heat_rate_kcal_kwh": 3276.58,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 57.0,
+          "heat_rate_kcal_kwh": 3262.54,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 58.0,
+          "heat_rate_kcal_kwh": 3248.5,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 59.0,
+          "heat_rate_kcal_kwh": 3234.46,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 60.0,
+          "heat_rate_kcal_kwh": 3220.42,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 61.0,
+          "heat_rate_kcal_kwh": 3206.38,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 62.0,
+          "heat_rate_kcal_kwh": 3192.34,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 63.0,
+          "heat_rate_kcal_kwh": 3178.3,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 64.0,
+          "heat_rate_kcal_kwh": 3164.26,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 65.0,
+          "heat_rate_kcal_kwh": 3150.21,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 66.0,
+          "heat_rate_kcal_kwh": 3136.17,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 67.0,
+          "heat_rate_kcal_kwh": 3122.13,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 68.0,
+          "heat_rate_kcal_kwh": 3109.09,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 69.0,
+          "heat_rate_kcal_kwh": 3096.06,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 70.0,
+          "heat_rate_kcal_kwh": 3083.02,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 71.0,
+          "heat_rate_kcal_kwh": 3069.98,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 72.0,
+          "heat_rate_kcal_kwh": 3056.94,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 73.0,
+          "heat_rate_kcal_kwh": 3043.9,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 74.0,
+          "heat_rate_kcal_kwh": 3030.87,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 75.0,
+          "heat_rate_kcal_kwh": 3017.83,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 76.0,
+          "heat_rate_kcal_kwh": 3005.79,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 77.0,
+          "heat_rate_kcal_kwh": 2993.76,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 78.0,
+          "heat_rate_kcal_kwh": 2981.72,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 79.0,
+          "heat_rate_kcal_kwh": 2969.69,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 80.0,
+          "heat_rate_kcal_kwh": 2957.65,
+          "free_steam_factor": 2.0
+        },
+        {
+          "load_mw": 81.0,
+          "heat_rate_kcal_kwh": 2945.62,
+          "free_steam_factor": 1.99
+        },
+        {
+          "load_mw": 82.0,
+          "heat_rate_kcal_kwh": 2933.58,
+          "free_steam_factor": 1.98
+        },
+        {
+          "load_mw": 83.0,
+          "heat_rate_kcal_kwh": 2921.55,
+          "free_steam_factor": 1.98
+        },
+        {
+          "load_mw": 84.0,
+          "heat_rate_kcal_kwh": 2910.51,
+          "free_steam_factor": 1.97
+        },
+        {
+          "load_mw": 85.0,
+          "heat_rate_kcal_kwh": 2899.48,
+          "free_steam_factor": 1.96
+        },
+        {
+          "load_mw": 86.0,
+          "heat_rate_kcal_kwh": 2888.45,
+          "free_steam_factor": 1.96
+        },
+        {
+          "load_mw": 87.0,
+          "heat_rate_kcal_kwh": 2877.42,
+          "free_steam_factor": 1.95
+        },
+        {
+          "load_mw": 88.0,
+          "heat_rate_kcal_kwh": 2866.38,
+          "free_steam_factor": 1.94
+        },
+        {
+          "load_mw": 89.0,
+          "heat_rate_kcal_kwh": 2855.35,
+          "free_steam_factor": 1.94
+        },
+        {
+          "load_mw": 90.0,
+          "heat_rate_kcal_kwh": 2844.32,
+          "free_steam_factor": 1.93
+        },
+        {
+          "load_mw": 91.0,
+          "heat_rate_kcal_kwh": 2833.29,
+          "free_steam_factor": 1.93
+        },
+        {
+          "load_mw": 92.0,
+          "heat_rate_kcal_kwh": 2823.26,
+          "free_steam_factor": 1.92
+        },
+        {
+          "load_mw": 93.0,
+          "heat_rate_kcal_kwh": 2813.23,
+          "free_steam_factor": 1.91
+        },
+        {
+          "load_mw": 94.0,
+          "heat_rate_kcal_kwh": 2803.2,
+          "free_steam_factor": 1.91
+        },
+        {
+          "load_mw": 95.0,
+          "heat_rate_kcal_kwh": 2793.17,
+          "free_steam_factor": 1.9
+        },
+        {
+          "load_mw": 96.0,
+          "heat_rate_kcal_kwh": 2783.14,
+          "free_steam_factor": 1.89
+        },
+        {
+          "load_mw": 97.0,
+          "heat_rate_kcal_kwh": 2773.11,
+          "free_steam_factor": 1.89
+        },
+        {
+          "load_mw": 98.0,
+          "heat_rate_kcal_kwh": 2763.08,
+          "free_steam_factor": 1.88
+        },
+        {
+          "load_mw": 99.0,
+          "heat_rate_kcal_kwh": 2753.05,
+          "free_steam_factor": 1.87
+        },
+        {
+          "load_mw": 100.0,
+          "heat_rate_kcal_kwh": 2735.0,
+          "free_steam_factor": 1.87
+        },
+        {
+          "load_mw": 101.0,
+          "heat_rate_kcal_kwh": 2729.99,
+          "free_steam_factor": 1.86
+        },
+        {
+          "load_mw": 102.0,
+          "heat_rate_kcal_kwh": 2724.97,
+          "free_steam_factor": 1.85
+        },
+        {
+          "load_mw": 103.0,
+          "heat_rate_kcal_kwh": 2719.96,
+          "free_steam_factor": 1.85
+        },
+        {
+          "load_mw": 104.0,
+          "heat_rate_kcal_kwh": 2714.94,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 105.0,
+          "heat_rate_kcal_kwh": 2709.93,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 106.0,
+          "heat_rate_kcal_kwh": 2704.91,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 107.0,
+          "heat_rate_kcal_kwh": 2699.9,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 108.0,
+          "heat_rate_kcal_kwh": 2695.89,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 109.0,
+          "heat_rate_kcal_kwh": 2691.87,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 110.0,
+          "heat_rate_kcal_kwh": 2687.86,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 111.0,
+          "heat_rate_kcal_kwh": 2683.85,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 112.0,
+          "heat_rate_kcal_kwh": 2679.84,
+          "free_steam_factor": 1.79
+        },
+        {
+          "load_mw": 113.0,
+          "heat_rate_kcal_kwh": 2675.83,
+          "free_steam_factor": 1.78
+        },
+        {
+          "load_mw": 114.0,
+          "heat_rate_kcal_kwh": 2671.82,
+          "free_steam_factor": 1.78
+        },
+        {
+          "load_mw": 115.0,
+          "heat_rate_kcal_kwh": 2668.81,
+          "free_steam_factor": 1.77
+        },
+        {
+          "load_mw": 116.0,
+          "heat_rate_kcal_kwh": 2665.8,
+          "free_steam_factor": 1.77
+        },
+        {
+          "load_mw": 117.0,
+          "heat_rate_kcal_kwh": 2662.79,
+          "free_steam_factor": 1.76
+        }
+      ]
+    },
+    "JMD - SEZ GT Power plant 3": {
+      "asset_id": "B2B6451B-1C1A-416F-BC90-AA6B53905E1F",
+      "asset_name": "JMD - SEZ GT Power plant 3",
+      "curve": [
+        {
+          "load_mw": 41.0,
+          "heat_rate_kcal_kwh": 3398.19,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 42.0,
+          "heat_rate_kcal_kwh": 3384.34,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 43.0,
+          "heat_rate_kcal_kwh": 3370.48,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 44.0,
+          "heat_rate_kcal_kwh": 3356.63,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 45.0,
+          "heat_rate_kcal_kwh": 3342.77,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 46.0,
+          "heat_rate_kcal_kwh": 3328.92,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 47.0,
+          "heat_rate_kcal_kwh": 3315.07,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 48.0,
+          "heat_rate_kcal_kwh": 3301.21,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 49.0,
+          "heat_rate_kcal_kwh": 3287.36,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 50.0,
+          "heat_rate_kcal_kwh": 3273.5,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 51.0,
+          "heat_rate_kcal_kwh": 3259.65,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 52.0,
+          "heat_rate_kcal_kwh": 3245.79,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 53.0,
+          "heat_rate_kcal_kwh": 3231.94,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 54.0,
+          "heat_rate_kcal_kwh": 3218.09,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 55.0,
+          "heat_rate_kcal_kwh": 3204.23,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 56.0,
+          "heat_rate_kcal_kwh": 3190.38,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 57.0,
+          "heat_rate_kcal_kwh": 3176.52,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 58.0,
+          "heat_rate_kcal_kwh": 3162.67,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 59.0,
+          "heat_rate_kcal_kwh": 3148.82,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 60.0,
+          "heat_rate_kcal_kwh": 3134.96,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 61.0,
+          "heat_rate_kcal_kwh": 3121.11,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 62.0,
+          "heat_rate_kcal_kwh": 3107.25,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 63.0,
+          "heat_rate_kcal_kwh": 3093.4,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 64.0,
+          "heat_rate_kcal_kwh": 3079.55,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 65.0,
+          "heat_rate_kcal_kwh": 3065.69,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 66.0,
+          "heat_rate_kcal_kwh": 3051.84,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 67.0,
+          "heat_rate_kcal_kwh": 3037.98,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 68.0,
+          "heat_rate_kcal_kwh": 3025.12,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 69.0,
+          "heat_rate_kcal_kwh": 3012.25,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 70.0,
+          "heat_rate_kcal_kwh": 2999.39,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 71.0,
+          "heat_rate_kcal_kwh": 2986.53,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 72.0,
+          "heat_rate_kcal_kwh": 2973.66,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 73.0,
+          "heat_rate_kcal_kwh": 2960.8,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 74.0,
+          "heat_rate_kcal_kwh": 2947.93,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 75.0,
+          "heat_rate_kcal_kwh": 2935.07,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 76.0,
+          "heat_rate_kcal_kwh": 2923.19,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 77.0,
+          "heat_rate_kcal_kwh": 2911.32,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 78.0,
+          "heat_rate_kcal_kwh": 2899.44,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 79.0,
+          "heat_rate_kcal_kwh": 2887.57,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 80.0,
+          "heat_rate_kcal_kwh": 2875.69,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 81.0,
+          "heat_rate_kcal_kwh": 2863.82,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 82.0,
+          "heat_rate_kcal_kwh": 2852.93,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 83.0,
+          "heat_rate_kcal_kwh": 2842.05,
+          "free_steam_factor": 2.08
+        },
+        {
+          "load_mw": 84.0,
+          "heat_rate_kcal_kwh": 2831.16,
+          "free_steam_factor": 2.07
+        },
+        {
+          "load_mw": 85.0,
+          "heat_rate_kcal_kwh": 2820.28,
+          "free_steam_factor": 2.06
+        },
+        {
+          "load_mw": 86.0,
+          "heat_rate_kcal_kwh": 2809.39,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 87.0,
+          "heat_rate_kcal_kwh": 2799.5,
+          "free_steam_factor": 2.04
+        },
+        {
+          "load_mw": 88.0,
+          "heat_rate_kcal_kwh": 2789.6,
+          "free_steam_factor": 2.03
+        },
+        {
+          "load_mw": 89.0,
+          "heat_rate_kcal_kwh": 2779.7,
+          "free_steam_factor": 2.02
+        },
+        {
+          "load_mw": 90.0,
+          "heat_rate_kcal_kwh": 2769.81,
+          "free_steam_factor": 2.01
+        },
+        {
+          "load_mw": 91.0,
+          "heat_rate_kcal_kwh": 2759.91,
+          "free_steam_factor": 2.0
+        },
+        {
+          "load_mw": 92.0,
+          "heat_rate_kcal_kwh": 2750.02,
+          "free_steam_factor": 2.0
+        },
+        {
+          "load_mw": 93.0,
+          "heat_rate_kcal_kwh": 2740.12,
+          "free_steam_factor": 1.99
+        },
+        {
+          "load_mw": 94.0,
+          "heat_rate_kcal_kwh": 2730.23,
+          "free_steam_factor": 1.98
+        },
+        {
+          "load_mw": 95.0,
+          "heat_rate_kcal_kwh": 2720.33,
+          "free_steam_factor": 1.97
+        },
+        {
+          "load_mw": 96.0,
+          "heat_rate_kcal_kwh": 2710.64,
+          "free_steam_factor": 1.96
+        },
+        {
+          "load_mw": 97.0,
+          "heat_rate_kcal_kwh": 2700.94,
+          "free_steam_factor": 1.95
+        },
+        {
+          "load_mw": 98.0,
+          "heat_rate_kcal_kwh": 2691.25,
+          "free_steam_factor": 1.94
+        },
+        {
+          "load_mw": 99.0,
+          "heat_rate_kcal_kwh": 2681.55,
+          "free_steam_factor": 1.93
+        },
+        {
+          "load_mw": 100.0,
+          "heat_rate_kcal_kwh": 2700.0,
+          "free_steam_factor": 1.92
+        },
+        {
+          "load_mw": 101.0,
+          "heat_rate_kcal_kwh": 2694.48,
+          "free_steam_factor": 1.91
+        },
+        {
+          "load_mw": 102.0,
+          "heat_rate_kcal_kwh": 2689.11,
+          "free_steam_factor": 1.91
+        },
+        {
+          "load_mw": 103.0,
+          "heat_rate_kcal_kwh": 2683.87,
+          "free_steam_factor": 1.9
+        },
+        {
+          "load_mw": 104.0,
+          "heat_rate_kcal_kwh": 2678.78,
+          "free_steam_factor": 1.89
+        },
+        {
+          "load_mw": 105.0,
+          "heat_rate_kcal_kwh": 2673.83,
+          "free_steam_factor": 1.88
+        },
+        {
+          "load_mw": 106.0,
+          "heat_rate_kcal_kwh": 2669.02,
+          "free_steam_factor": 1.87
+        },
+        {
+          "load_mw": 107.0,
+          "heat_rate_kcal_kwh": 2664.35,
+          "free_steam_factor": 1.86
+        },
+        {
+          "load_mw": 108.0,
+          "heat_rate_kcal_kwh": 2659.83,
+          "free_steam_factor": 1.85
+        },
+        {
+          "load_mw": 109.0,
+          "heat_rate_kcal_kwh": 2655.44,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 110.0,
+          "heat_rate_kcal_kwh": 2651.2,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 111.0,
+          "heat_rate_kcal_kwh": 2647.1,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 112.0,
+          "heat_rate_kcal_kwh": 2643.14,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 113.0,
+          "heat_rate_kcal_kwh": 2639.32,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 114.0,
+          "heat_rate_kcal_kwh": 2635.64,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 115.0,
+          "heat_rate_kcal_kwh": 2632.1,
+          "free_steam_factor": 1.79
+        },
+        {
+          "load_mw": 116.0,
+          "heat_rate_kcal_kwh": 2628.71,
+          "free_steam_factor": 1.78
+        },
+        {
+          "load_mw": 117.0,
+          "heat_rate_kcal_kwh": 2625.46,
+          "free_steam_factor": 1.77
+        }
+      ]
+    },
+    "JMD - SEZ GT Power plant 4": {
+      "asset_id": "94C09F09-71F5-408C-B707-7966D260683D",
+      "asset_name": "JMD - SEZ GT Power plant 4",
+      "curve": [
+        {
+          "load_mw": 41.0,
+          "heat_rate_kcal_kwh": 3990.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 42.0,
+          "heat_rate_kcal_kwh": 3958.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 43.0,
+          "heat_rate_kcal_kwh": 3926.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 44.0,
+          "heat_rate_kcal_kwh": 3894.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 45.0,
+          "heat_rate_kcal_kwh": 3862.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 46.0,
+          "heat_rate_kcal_kwh": 3830.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 47.0,
+          "heat_rate_kcal_kwh": 3798.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 48.0,
+          "heat_rate_kcal_kwh": 3766.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 49.0,
+          "heat_rate_kcal_kwh": 3734.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 50.0,
+          "heat_rate_kcal_kwh": 3702.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 51.0,
+          "heat_rate_kcal_kwh": 3670.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 52.0,
+          "heat_rate_kcal_kwh": 3638.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 53.0,
+          "heat_rate_kcal_kwh": 3606.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 54.0,
+          "heat_rate_kcal_kwh": 3574.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 55.0,
+          "heat_rate_kcal_kwh": 3542.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 56.0,
+          "heat_rate_kcal_kwh": 3510.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 57.0,
+          "heat_rate_kcal_kwh": 3478.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 58.0,
+          "heat_rate_kcal_kwh": 3446.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 59.0,
+          "heat_rate_kcal_kwh": 3414.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 60.0,
+          "heat_rate_kcal_kwh": 3382.3,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 61.0,
+          "heat_rate_kcal_kwh": 3350.03,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 62.0,
+          "heat_rate_kcal_kwh": 3318.73,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 63.0,
+          "heat_rate_kcal_kwh": 3288.41,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 64.0,
+          "heat_rate_kcal_kwh": 3259.06,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 65.0,
+          "heat_rate_kcal_kwh": 3230.69,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 66.0,
+          "heat_rate_kcal_kwh": 3203.29,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 67.0,
+          "heat_rate_kcal_kwh": 3176.87,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 68.0,
+          "heat_rate_kcal_kwh": 3151.42,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 69.0,
+          "heat_rate_kcal_kwh": 3126.94,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 70.0,
+          "heat_rate_kcal_kwh": 3103.44,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 71.0,
+          "heat_rate_kcal_kwh": 3080.91,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 72.0,
+          "heat_rate_kcal_kwh": 3059.36,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 73.0,
+          "heat_rate_kcal_kwh": 3038.78,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 74.0,
+          "heat_rate_kcal_kwh": 3019.18,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 75.0,
+          "heat_rate_kcal_kwh": 3000.55,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 76.0,
+          "heat_rate_kcal_kwh": 2982.9,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 77.0,
+          "heat_rate_kcal_kwh": 2966.21,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 78.0,
+          "heat_rate_kcal_kwh": 2950.51,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 79.0,
+          "heat_rate_kcal_kwh": 2935.78,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 80.0,
+          "heat_rate_kcal_kwh": 2922.02,
+          "free_steam_factor": 2.13
+        },
+        {
+          "load_mw": 81.0,
+          "heat_rate_kcal_kwh": 2909.24,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 82.0,
+          "heat_rate_kcal_kwh": 2896.0,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 83.0,
+          "heat_rate_kcal_kwh": 2884.0,
+          "free_steam_factor": 2.11
+        },
+        {
+          "load_mw": 84.0,
+          "heat_rate_kcal_kwh": 2873.0,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 85.0,
+          "heat_rate_kcal_kwh": 2862.0,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 86.0,
+          "heat_rate_kcal_kwh": 2853.0,
+          "free_steam_factor": 2.08
+        },
+        {
+          "load_mw": 87.0,
+          "heat_rate_kcal_kwh": 2844.0,
+          "free_steam_factor": 2.07
+        },
+        {
+          "load_mw": 88.0,
+          "heat_rate_kcal_kwh": 2835.0,
+          "free_steam_factor": 2.06
+        },
+        {
+          "load_mw": 89.0,
+          "heat_rate_kcal_kwh": 2826.0,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 90.0,
+          "heat_rate_kcal_kwh": 2817.0,
+          "free_steam_factor": 2.04
+        },
+        {
+          "load_mw": 91.0,
+          "heat_rate_kcal_kwh": 2808.0,
+          "free_steam_factor": 2.03
+        },
+        {
+          "load_mw": 92.0,
+          "heat_rate_kcal_kwh": 2799.0,
+          "free_steam_factor": 2.02
+        },
+        {
+          "load_mw": 93.0,
+          "heat_rate_kcal_kwh": 2790.0,
+          "free_steam_factor": 2.01
+        },
+        {
+          "load_mw": 94.0,
+          "heat_rate_kcal_kwh": 2781.0,
+          "free_steam_factor": 2.0
+        },
+        {
+          "load_mw": 95.0,
+          "heat_rate_kcal_kwh": 2772.0,
+          "free_steam_factor": 1.99
+        },
+        {
+          "load_mw": 96.0,
+          "heat_rate_kcal_kwh": 2763.0,
+          "free_steam_factor": 1.98
+        },
+        {
+          "load_mw": 97.0,
+          "heat_rate_kcal_kwh": 2754.0,
+          "free_steam_factor": 1.97
+        },
+        {
+          "load_mw": 98.0,
+          "heat_rate_kcal_kwh": 2745.0,
+          "free_steam_factor": 1.96
+        },
+        {
+          "load_mw": 99.0,
+          "heat_rate_kcal_kwh": 2736.0,
+          "free_steam_factor": 1.95
+        },
+        {
+          "load_mw": 100.0,
+          "heat_rate_kcal_kwh": 2727.0,
+          "free_steam_factor": 1.94
+        },
+        {
+          "load_mw": 101.0,
+          "heat_rate_kcal_kwh": 2722.0,
+          "free_steam_factor": 1.93
+        },
+        {
+          "load_mw": 102.0,
+          "heat_rate_kcal_kwh": 2717.0,
+          "free_steam_factor": 1.93
+        },
+        {
+          "load_mw": 103.0,
+          "heat_rate_kcal_kwh": 2712.0,
+          "free_steam_factor": 1.92
+        },
+        {
+          "load_mw": 104.0,
+          "heat_rate_kcal_kwh": 2707.0,
+          "free_steam_factor": 1.91
+        },
+        {
+          "load_mw": 105.0,
+          "heat_rate_kcal_kwh": 2702.0,
+          "free_steam_factor": 1.9
+        },
+        {
+          "load_mw": 106.0,
+          "heat_rate_kcal_kwh": 2697.0,
+          "free_steam_factor": 1.89
+        },
+        {
+          "load_mw": 107.0,
+          "heat_rate_kcal_kwh": 2692.0,
+          "free_steam_factor": 1.88
+        },
+        {
+          "load_mw": 108.0,
+          "heat_rate_kcal_kwh": 2688.0,
+          "free_steam_factor": 1.87
+        },
+        {
+          "load_mw": 109.0,
+          "heat_rate_kcal_kwh": 2684.0,
+          "free_steam_factor": 1.86
+        },
+        {
+          "load_mw": 110.0,
+          "heat_rate_kcal_kwh": 2680.0,
+          "free_steam_factor": 1.85
+        },
+        {
+          "load_mw": 111.0,
+          "heat_rate_kcal_kwh": 2676.0,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 112.0,
+          "heat_rate_kcal_kwh": 2672.0,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 113.0,
+          "heat_rate_kcal_kwh": 2668.0,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 114.0,
+          "heat_rate_kcal_kwh": 2664.0,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 115.0,
+          "heat_rate_kcal_kwh": 2661.0,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 116.0,
+          "heat_rate_kcal_kwh": 2658.0,
+          "free_steam_factor": 1.79
+        },
+        {
+          "load_mw": 117.0,
+          "heat_rate_kcal_kwh": 2655.0,
+          "free_steam_factor": 1.78
+        }
+      ]
+    },
+    "JMD - SEZ GT Power plant 5": {
+      "asset_id": "067526B0-6781-42CC-98EB-94AB60F7D901",
+      "asset_name": "JMD - SEZ GT Power plant 5",
+      "curve": [
+        {
+          "load_mw": 41.0,
+          "heat_rate_kcal_kwh": 3427.0,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 42.0,
+          "heat_rate_kcal_kwh": 3413.2,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 43.0,
+          "heat_rate_kcal_kwh": 3399.39,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 44.0,
+          "heat_rate_kcal_kwh": 3385.59,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 45.0,
+          "heat_rate_kcal_kwh": 3371.79,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 46.0,
+          "heat_rate_kcal_kwh": 3357.98,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 47.0,
+          "heat_rate_kcal_kwh": 3344.18,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 48.0,
+          "heat_rate_kcal_kwh": 3330.38,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 49.0,
+          "heat_rate_kcal_kwh": 3316.58,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 50.0,
+          "heat_rate_kcal_kwh": 3302.77,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 51.0,
+          "heat_rate_kcal_kwh": 3288.97,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 52.0,
+          "heat_rate_kcal_kwh": 3275.17,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 53.0,
+          "heat_rate_kcal_kwh": 3261.36,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 54.0,
+          "heat_rate_kcal_kwh": 3247.56,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 55.0,
+          "heat_rate_kcal_kwh": 3233.76,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 56.0,
+          "heat_rate_kcal_kwh": 3219.96,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 57.0,
+          "heat_rate_kcal_kwh": 3206.15,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 58.0,
+          "heat_rate_kcal_kwh": 3192.35,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 59.0,
+          "heat_rate_kcal_kwh": 3178.55,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 60.0,
+          "heat_rate_kcal_kwh": 3164.74,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 61.0,
+          "heat_rate_kcal_kwh": 3150.94,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 62.0,
+          "heat_rate_kcal_kwh": 3137.14,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 63.0,
+          "heat_rate_kcal_kwh": 3123.34,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 64.0,
+          "heat_rate_kcal_kwh": 3109.53,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 65.0,
+          "heat_rate_kcal_kwh": 3095.73,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 66.0,
+          "heat_rate_kcal_kwh": 3081.93,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 67.0,
+          "heat_rate_kcal_kwh": 3068.12,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 68.0,
+          "heat_rate_kcal_kwh": 3055.31,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 69.0,
+          "heat_rate_kcal_kwh": 3042.49,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 70.0,
+          "heat_rate_kcal_kwh": 3029.67,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 71.0,
+          "heat_rate_kcal_kwh": 3016.86,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 72.0,
+          "heat_rate_kcal_kwh": 3004.04,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 73.0,
+          "heat_rate_kcal_kwh": 2991.22,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 74.0,
+          "heat_rate_kcal_kwh": 2978.41,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 75.0,
+          "heat_rate_kcal_kwh": 2965.59,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 76.0,
+          "heat_rate_kcal_kwh": 2953.76,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 77.0,
+          "heat_rate_kcal_kwh": 2941.93,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 78.0,
+          "heat_rate_kcal_kwh": 2930.1,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 79.0,
+          "heat_rate_kcal_kwh": 2918.26,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 80.0,
+          "heat_rate_kcal_kwh": 2906.43,
+          "free_steam_factor": 2.12
+        },
+        {
+          "load_mw": 81.0,
+          "heat_rate_kcal_kwh": 2894.6,
+          "free_steam_factor": 2.11
+        },
+        {
+          "load_mw": 82.0,
+          "heat_rate_kcal_kwh": 2882.77,
+          "free_steam_factor": 2.11
+        },
+        {
+          "load_mw": 83.0,
+          "heat_rate_kcal_kwh": 2870.94,
+          "free_steam_factor": 2.1
+        },
+        {
+          "load_mw": 84.0,
+          "heat_rate_kcal_kwh": 2860.1,
+          "free_steam_factor": 2.09
+        },
+        {
+          "load_mw": 85.0,
+          "heat_rate_kcal_kwh": 2849.25,
+          "free_steam_factor": 2.08
+        },
+        {
+          "load_mw": 86.0,
+          "heat_rate_kcal_kwh": 2838.41,
+          "free_steam_factor": 2.07
+        },
+        {
+          "load_mw": 87.0,
+          "heat_rate_kcal_kwh": 2827.56,
+          "free_steam_factor": 2.06
+        },
+        {
+          "load_mw": 88.0,
+          "heat_rate_kcal_kwh": 2816.72,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 89.0,
+          "heat_rate_kcal_kwh": 2805.87,
+          "free_steam_factor": 2.04
+        },
+        {
+          "load_mw": 90.0,
+          "heat_rate_kcal_kwh": 2795.03,
+          "free_steam_factor": 2.04
+        },
+        {
+          "load_mw": 91.0,
+          "heat_rate_kcal_kwh": 2785.17,
+          "free_steam_factor": 2.03
+        },
+        {
+          "load_mw": 92.0,
+          "heat_rate_kcal_kwh": 2775.31,
+          "free_steam_factor": 2.02
+        },
+        {
+          "load_mw": 93.0,
+          "heat_rate_kcal_kwh": 2765.45,
+          "free_steam_factor": 2.01
+        },
+        {
+          "load_mw": 94.0,
+          "heat_rate_kcal_kwh": 2755.59,
+          "free_steam_factor": 2.0
+        },
+        {
+          "load_mw": 95.0,
+          "heat_rate_kcal_kwh": 2745.73,
+          "free_steam_factor": 1.99
+        },
+        {
+          "load_mw": 96.0,
+          "heat_rate_kcal_kwh": 2735.88,
+          "free_steam_factor": 1.98
+        },
+        {
+          "load_mw": 97.0,
+          "heat_rate_kcal_kwh": 2726.03,
+          "free_steam_factor": 1.97
+        },
+        {
+          "load_mw": 98.0,
+          "heat_rate_kcal_kwh": 2716.18,
+          "free_steam_factor": 1.97
+        },
+        {
+          "load_mw": 99.0,
+          "heat_rate_kcal_kwh": 2706.34,
+          "free_steam_factor": 1.96
+        },
+        {
+          "load_mw": 100.0,
+          "heat_rate_kcal_kwh": 2699.45,
+          "free_steam_factor": 1.95
+        },
+        {
+          "load_mw": 101.0,
+          "heat_rate_kcal_kwh": 2693.93,
+          "free_steam_factor": 1.94
+        },
+        {
+          "load_mw": 102.0,
+          "heat_rate_kcal_kwh": 2688.55,
+          "free_steam_factor": 1.93
+        },
+        {
+          "load_mw": 103.0,
+          "heat_rate_kcal_kwh": 2683.32,
+          "free_steam_factor": 1.92
+        },
+        {
+          "load_mw": 104.0,
+          "heat_rate_kcal_kwh": 2678.23,
+          "free_steam_factor": 1.91
+        },
+        {
+          "load_mw": 105.0,
+          "heat_rate_kcal_kwh": 2673.28,
+          "free_steam_factor": 1.9
+        },
+        {
+          "load_mw": 106.0,
+          "heat_rate_kcal_kwh": 2668.47,
+          "free_steam_factor": 1.9
+        },
+        {
+          "load_mw": 107.0,
+          "heat_rate_kcal_kwh": 2663.8,
+          "free_steam_factor": 1.89
+        },
+        {
+          "load_mw": 108.0,
+          "heat_rate_kcal_kwh": 2659.28,
+          "free_steam_factor": 1.88
+        },
+        {
+          "load_mw": 109.0,
+          "heat_rate_kcal_kwh": 2654.9,
+          "free_steam_factor": 1.87
+        },
+        {
+          "load_mw": 110.0,
+          "heat_rate_kcal_kwh": 2650.65,
+          "free_steam_factor": 1.86
+        },
+        {
+          "load_mw": 111.0,
+          "heat_rate_kcal_kwh": 2646.55,
+          "free_steam_factor": 1.85
+        },
+        {
+          "load_mw": 112.0,
+          "heat_rate_kcal_kwh": 2642.59,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 113.0,
+          "heat_rate_kcal_kwh": 2638.77,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 114.0,
+          "heat_rate_kcal_kwh": 2635.1,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 115.0,
+          "heat_rate_kcal_kwh": 2631.56,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 116.0,
+          "heat_rate_kcal_kwh": 2628.17,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 117.0,
+          "heat_rate_kcal_kwh": 2624.92,
+          "free_steam_factor": 1.8
+        }
+      ]
+    },
+    "JMD - SEZ GT Power plant 6": {
+      "asset_id": "E6CF24A0-B870-4422-BF88-981F15DE17B4",
+      "asset_name": "JMD - SEZ GT Power plant 6",
+      "curve": [
+        {
+          "load_mw": 41.0,
+          "heat_rate_kcal_kwh": 3464.71,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 42.0,
+          "heat_rate_kcal_kwh": 3450.72,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 43.0,
+          "heat_rate_kcal_kwh": 3436.72,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 44.0,
+          "heat_rate_kcal_kwh": 3422.73,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 45.0,
+          "heat_rate_kcal_kwh": 3408.73,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 46.0,
+          "heat_rate_kcal_kwh": 3394.74,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 47.0,
+          "heat_rate_kcal_kwh": 3380.74,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 48.0,
+          "heat_rate_kcal_kwh": 3366.75,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 49.0,
+          "heat_rate_kcal_kwh": 3352.75,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 50.0,
+          "heat_rate_kcal_kwh": 3338.76,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 51.0,
+          "heat_rate_kcal_kwh": 3324.76,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 52.0,
+          "heat_rate_kcal_kwh": 3310.77,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 53.0,
+          "heat_rate_kcal_kwh": 3296.77,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 54.0,
+          "heat_rate_kcal_kwh": 3282.78,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 55.0,
+          "heat_rate_kcal_kwh": 3268.79,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 56.0,
+          "heat_rate_kcal_kwh": 3254.79,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 57.0,
+          "heat_rate_kcal_kwh": 3240.8,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 58.0,
+          "heat_rate_kcal_kwh": 3226.8,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 59.0,
+          "heat_rate_kcal_kwh": 3212.81,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 60.0,
+          "heat_rate_kcal_kwh": 3198.81,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 61.0,
+          "heat_rate_kcal_kwh": 3184.82,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 62.0,
+          "heat_rate_kcal_kwh": 3170.82,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 63.0,
+          "heat_rate_kcal_kwh": 3156.83,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 64.0,
+          "heat_rate_kcal_kwh": 3142.83,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 65.0,
+          "heat_rate_kcal_kwh": 3128.84,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 66.0,
+          "heat_rate_kcal_kwh": 3114.84,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 67.0,
+          "heat_rate_kcal_kwh": 3101.85,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 68.0,
+          "heat_rate_kcal_kwh": 3088.85,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 69.0,
+          "heat_rate_kcal_kwh": 3075.86,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 70.0,
+          "heat_rate_kcal_kwh": 3062.86,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 71.0,
+          "heat_rate_kcal_kwh": 3049.87,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 72.0,
+          "heat_rate_kcal_kwh": 3036.87,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 73.0,
+          "heat_rate_kcal_kwh": 3023.87,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 74.0,
+          "heat_rate_kcal_kwh": 3010.88,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 75.0,
+          "heat_rate_kcal_kwh": 2998.88,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 76.0,
+          "heat_rate_kcal_kwh": 2986.89,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 77.0,
+          "heat_rate_kcal_kwh": 2974.89,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 78.0,
+          "heat_rate_kcal_kwh": 2962.9,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 79.0,
+          "heat_rate_kcal_kwh": 2950.9,
+          "free_steam_factor": 2.05
+        },
+        {
+          "load_mw": 80.0,
+          "heat_rate_kcal_kwh": 2938.91,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 81.0,
+          "heat_rate_kcal_kwh": 2926.91,
+          "free_steam_factor": 1.84
+        },
+        {
+          "load_mw": 82.0,
+          "heat_rate_kcal_kwh": 2915.91,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 83.0,
+          "heat_rate_kcal_kwh": 2904.92,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 84.0,
+          "heat_rate_kcal_kwh": 2893.92,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 85.0,
+          "heat_rate_kcal_kwh": 2882.93,
+          "free_steam_factor": 1.83
+        },
+        {
+          "load_mw": 86.0,
+          "heat_rate_kcal_kwh": 2871.93,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 87.0,
+          "heat_rate_kcal_kwh": 2860.93,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 88.0,
+          "heat_rate_kcal_kwh": 2850.94,
+          "free_steam_factor": 1.82
+        },
+        {
+          "load_mw": 89.0,
+          "heat_rate_kcal_kwh": 2840.94,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 90.0,
+          "heat_rate_kcal_kwh": 2830.95,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 91.0,
+          "heat_rate_kcal_kwh": 2820.95,
+          "free_steam_factor": 1.81
+        },
+        {
+          "load_mw": 92.0,
+          "heat_rate_kcal_kwh": 2810.95,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 93.0,
+          "heat_rate_kcal_kwh": 2800.96,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 94.0,
+          "heat_rate_kcal_kwh": 2790.96,
+          "free_steam_factor": 1.8
+        },
+        {
+          "load_mw": 95.0,
+          "heat_rate_kcal_kwh": 2780.96,
+          "free_steam_factor": 1.79
+        },
+        {
+          "load_mw": 96.0,
+          "heat_rate_kcal_kwh": 2770.97,
+          "free_steam_factor": 1.79
+        },
+        {
+          "load_mw": 97.0,
+          "heat_rate_kcal_kwh": 2760.98,
+          "free_steam_factor": 1.78
+        },
+        {
+          "load_mw": 98.0,
+          "heat_rate_kcal_kwh": 2750.99,
+          "free_steam_factor": 1.78
+        },
+        {
+          "load_mw": 99.0,
+          "heat_rate_kcal_kwh": 2740.99,
+          "free_steam_factor": 1.78
+        },
+        {
+          "load_mw": 100.0,
+          "heat_rate_kcal_kwh": 2732.0,
+          "free_steam_factor": 1.77
+        },
+        {
+          "load_mw": 101.0,
+          "heat_rate_kcal_kwh": 2727.0,
+          "free_steam_factor": 1.77
+        },
+        {
+          "load_mw": 102.0,
+          "heat_rate_kcal_kwh": 2722.0,
+          "free_steam_factor": 1.76
+        },
+        {
+          "load_mw": 103.0,
+          "heat_rate_kcal_kwh": 2717.01,
+          "free_steam_factor": 1.76
+        },
+        {
+          "load_mw": 104.0,
+          "heat_rate_kcal_kwh": 2712.01,
+          "free_steam_factor": 1.75
+        },
+        {
+          "load_mw": 105.0,
+          "heat_rate_kcal_kwh": 2707.01,
+          "free_steam_factor": 1.75
+        },
+        {
+          "load_mw": 106.0,
+          "heat_rate_kcal_kwh": 2702.01,
+          "free_steam_factor": 1.74
+        },
+        {
+          "load_mw": 107.0,
+          "heat_rate_kcal_kwh": 2697.01,
+          "free_steam_factor": 1.74
+        },
+        {
+          "load_mw": 108.0,
+          "heat_rate_kcal_kwh": 2693.01,
+          "free_steam_factor": 1.73
+        },
+        {
+          "load_mw": 109.0,
+          "heat_rate_kcal_kwh": 2689.02,
+          "free_steam_factor": 1.73
+        },
+        {
+          "load_mw": 110.0,
+          "heat_rate_kcal_kwh": 2685.02,
+          "free_steam_factor": 1.72
+        },
+        {
+          "load_mw": 111.0,
+          "heat_rate_kcal_kwh": 2681.02,
+          "free_steam_factor": 1.71
+        },
+        {
+          "load_mw": 112.0,
+          "heat_rate_kcal_kwh": 2677.02,
+          "free_steam_factor": 1.71
+        },
+        {
+          "load_mw": 113.0,
+          "heat_rate_kcal_kwh": 2673.02,
+          "free_steam_factor": 1.7
+        },
+        {
+          "load_mw": 114.0,
+          "heat_rate_kcal_kwh": 2669.02,
+          "free_steam_factor": 1.7
+        },
+        {
+          "load_mw": 115.0,
+          "heat_rate_kcal_kwh": 2666.02,
+          "free_steam_factor": 1.69
+        },
+        {
+          "load_mw": 116.0,
+          "heat_rate_kcal_kwh": 2663.03,
+          "free_steam_factor": 1.68
+        },
+        {
+          "load_mw": 117.0,
+          "heat_rate_kcal_kwh": 2660.03,
+          "free_steam_factor": 1.68
+        }
+      ]
+    }
+  },
+  "hrsg_heat_rates": {
+    "HRSG1_HP STEAM": {
+      "asset_id": "E38FB355-31B0-4E03-8132-7A4768E3EFAD",
+      "asset_name": "HRSG1_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "HRSG2_HP STEAM": {
+      "asset_id": "B818470B-40E7-4432-BDA8-60C87F172F5F",
+      "asset_name": "HRSG2_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "HRSG3_HP STEAM": {
+      "asset_id": "289EEB86-FE79-44B7-BEB8-D1BF92D804CD",
+      "asset_name": "HRSG3_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "HRSG4_HP STEAM": {
+      "asset_id": "FA133E25-CFBB-427C-8BDA-0AD4F20562DD",
+      "asset_name": "HRSG4_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "HRSG5_HP STEAM": {
+      "asset_id": "F76FC8F5-C9CB-47D9-8B45-0E077B9F79A9",
+      "asset_name": "HRSG5_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "HRSG6_HP STEAM": {
+      "asset_id": "C1D8D1F7-4506-4930-A10F-60BBB5CE4032",
+      "asset_name": "HRSG6_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 715.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "AUXBOIL1_HP STEAM": {
+      "asset_id": "69607AB6-6BA5-44F7-B2B7-F15039DE65F4",
+      "asset_name": "AUXBOIL1_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "AUXBOIL2_HP STEAM": {
+      "asset_id": "8AD1A0DE-924E-42C1-A232-134A7B92002A",
+      "asset_name": "AUXBOIL2_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "AUXBOIL3_HP STEAM": {
+      "asset_id": "7B64D820-8591-40D0-B2AE-01252AEC09C7",
+      "asset_name": "AUXBOIL3_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    },
+    "AUXBOIL4_HP STEAM": {
+      "asset_id": "8B5D0280-F69D-4910-8C1C-68E5D31B8872",
+      "asset_name": "AUXBOIL4_HP STEAM",
+      "curve": [
+        {
+          "load_tph": 1.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        },
+        {
+          "load_tph": 10000000.0,
+          "heat_rate_btu_lb": 639.0,
+          "free_steam_factor": 0.0
+        }
+      ]
+    }
+  }
+}

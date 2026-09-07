@@ -30,6 +30,12 @@ import os
 import pandas as pd
 from database.connection import get_connection
 from database.tables import T, USE_DUMMY
+from database.heat_rate_json_fallback import (
+    build_gt_heat_rate_df as _build_gt_heat_rate_json,
+    build_hrsg_heat_rate_df as _build_hrsg_heat_rate_json,
+    has_gt_heat_rate_json,
+    has_hrsg_heat_rate_json,
+)
 
 _DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 
@@ -2090,6 +2096,10 @@ def fetch_hrsg_heat_rate_lookup(plant_id: str, month: int = None, year: int = No
 
         rows = cur.fetchall()
         if not rows:
+            # Fallback: load from JSON if available for this plant
+            if has_hrsg_heat_rate_json(plant_id):
+                logger.info("  [HRSG HR] DB empty — using JSON fallback for plant %s", plant_id)
+                return _build_hrsg_heat_rate_json(plant_id, fy)
             return pd.DataFrame()
 
         cols = ["HRSGName", "LoadTPH", "HeatRateBTUlb", "FinancialYear"]
@@ -2098,6 +2108,77 @@ def fetch_hrsg_heat_rate_lookup(plant_id: str, month: int = None, year: int = No
         logger.error("  [HRSG HR] Error: %s", e)
         if _is_schema_error(e):
             raise DataFetchError("HRSG HR", e)
+        return pd.DataFrame()
+    finally:
+        conn.close()
+
+
+def fetch_auxboiler_heat_rate_lookup(plant_id: str, month: int = None, year: int = None) -> pd.DataFrame:
+    """
+    Fetch aux boiler heat rate lookup records for a plant.
+
+    Reads CPP_AUXBoilerHeatRate (joined via CPPSteamGenerationAsset) and returns
+    the same column shape as fetch_hrsg_heat_rate_lookup so the rows can be
+    concatenated into the HRSG heat-rate DataFrame and consumed by the same
+    interpolation helper (_interpolate_hrsg_heat_rate).
+
+    Returns:
+        DataFrame with columns:
+            HRSGName, LoadTPH, HeatRateBTUlb, FinancialYear
+        Sorted by HRSGName, LoadTPH.
+    """
+    fy = _fy_string(month, year) if (month and year) else None
+
+    conn = get_connection()
+    cur  = conn.cursor()
+    try:
+        if fy:
+            cur.execute(
+                f"""
+                SELECT h.AssetName AS HRSGName, h.{T.AUXB_HR_LOAD_COL} AS LoadTPH,
+                       h.{T.AUXB_HR_VALUE_COL} AS HeatRateBTUlb, h.{T.AUXB_HR_YEAR_COL}
+                FROM {T.CPP_AUXBOILER_HEAT_RATE} h
+                JOIN {T.CPP_STEAM_GENERATION_ASSET} a ON a.AssetId = h.{T.AUXB_HR_ASSET_FK}
+                WHERE a.{T.SGA_PLANT_FK}          = ?
+                  AND h.{T.AUXB_HR_YEAR_COL}      = ?
+                ORDER BY h.AssetName, h.{T.AUXB_HR_LOAD_COL} ASC
+                """,
+                (plant_id, fy),
+            )
+        else:
+            cur.execute(
+                f"""
+                SELECT h.AssetName AS HRSGName, h.{T.AUXB_HR_LOAD_COL} AS LoadTPH,
+                       h.{T.AUXB_HR_VALUE_COL} AS HeatRateBTUlb, h.{T.AUXB_HR_YEAR_COL}
+                FROM {T.CPP_AUXBOILER_HEAT_RATE} h
+                JOIN {T.CPP_STEAM_GENERATION_ASSET} a ON a.AssetId = h.{T.AUXB_HR_ASSET_FK}
+                WHERE a.{T.SGA_PLANT_FK} = ?
+                ORDER BY h.AssetName, h.{T.AUXB_HR_LOAD_COL} ASC
+                """,
+                (plant_id,),
+            )
+
+        rows = cur.fetchall()
+        if not rows:
+            # Fallback: aux boiler curves may live in the JSON fallback under
+            # hrsg_heat_rates (e.g. AUXBOIL*_HP STEAM entries for SEZ).
+            if has_hrsg_heat_rate_json(plant_id):
+                logger.info("  [AUXB HR] DB empty — using JSON fallback for plant %s", plant_id)
+                df = _build_hrsg_heat_rate_json(plant_id, fy)
+                if not df.empty:
+                    df = df[df["HRSGName"].astype(str).str.upper().str.contains("AUXBOIL")]
+                return df
+            return pd.DataFrame()
+
+        cols = ["HRSGName", "LoadTPH", "HeatRateBTUlb", "FinancialYear"]
+        df = pd.DataFrame([list(r) for r in rows], columns=cols)
+        for col in ["LoadTPH", "HeatRateBTUlb"]:
+            df[col] = df[col].astype(float)
+        return df
+    except Exception as e:
+        logger.error("  [AUXB HR] Error: %s", e)
+        if _is_schema_error(e):
+            raise DataFetchError("AUXB HR", e)
         return pd.DataFrame()
     finally:
         conn.close()
@@ -2223,6 +2304,10 @@ def fetch_gt_heat_rate_lookup(plant_id: str, month: int = None, year: int = None
 
         rows = cur.fetchall()
         if not rows:
+            # Fallback: load from JSON if available for this plant
+            if has_gt_heat_rate_json(plant_id):
+                logger.info("  [GT HR] DB empty — using JSON fallback for plant %s", plant_id)
+                return _build_gt_heat_rate_json(plant_id, fy)
             return pd.DataFrame()
 
         cols = ["AssetId", "GTName", "LoadMW", "HeatRateKCALKWH", "FreeSteamFactor", "FinancialYear"]

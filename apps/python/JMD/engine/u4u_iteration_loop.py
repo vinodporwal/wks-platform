@@ -940,31 +940,44 @@ class U4UIterationLoop:
 
             producer_uom = producer_norms.get("producer_uom", "MT")
 
-            # Reverse-calculate HRSG heat rate for fuel norm override
+            # Reverse-calculate heat rate for fuel norm override
+            # (HRSG curves from CPP_HRSGHeatRate, AuxBoiler curves from
+            # CPP_AUXBoilerHeatRate — both are merged into hrsg_heat_rate_df).
             hrsg_hr_btu_lb = 0.0
-            if asset.get("asset_type", "").upper() == "HRSG" and self.hrsg_heat_rate_df is not None:
+            if asset.get("asset_type", "").upper() in ("HRSG", "AUXBOILER") and self.hrsg_heat_rate_df is not None:
                 op_hours = asset.get("op_hours", 0)
                 steam_flow_tph = total_output_mt / op_hours if op_hours > 0 else 0.0
                 hrsg_hr_btu_lb = _interpolate_hrsg_heat_rate(asset_name, steam_flow_tph, self.hrsg_heat_rate_df)
 
+            fuel_norm_applied = False  # first Raw Material fuel row carries the reverse norm
             for c in producer_norms.get("consumptions", []):
                 if self.allowed_accounts is not None and c["account"] not in self.allowed_accounts:
                     continue
 
                 norm = c["norm"]
-                if norm == 0:
-                    continue
 
                 material = c["material"]
                 material_uom = c.get("material_uom", "")
                 account = c["account"]
 
-                # Reverse-calculate MMBTU norm for Raw Material (fuel) on HRSG
-                # assets using heat rate from CPP_HRSGHeatRate table
+                # Reverse-calculate MMBTU norm for Raw Material (fuel) on
+                # HRSG/AuxBoiler assets using the heat-rate lookup.  When an
+                # asset has multiple fuel rows (e.g. RFO + SynGas), only the
+                # first fuel row carries the total MMBTU; the remaining fuel
+                # rows are shown with 0 norm and 0 quantity.
+                is_secondary_fuel = False
                 if account == "Raw Material" and hrsg_hr_btu_lb > 0:
-                    reverse_norm = hrsg_hr_btu_lb * _BTU_LB_TO_MMBTU_MT
-                    if reverse_norm > 0:
-                        norm = reverse_norm
+                    if not fuel_norm_applied:
+                        fuel_norm_applied = True
+                        reverse_norm = hrsg_hr_btu_lb * _BTU_LB_TO_MMBTU_MT
+                        if reverse_norm > 0:
+                            norm = reverse_norm
+                    else:
+                        norm = 0.0
+                        is_secondary_fuel = True
+
+                if norm == 0 and not is_secondary_fuel:
+                    continue
 
                 quantity = total_output_mt * norm
                 u4u_amount = quantity
@@ -2112,8 +2125,8 @@ class U4UIterationLoop:
             )
             steam_asset_gens[aname] = total_mt
 
-            # Build HRSG heat rate lookup for reverse norm calculation
-            if asset.get("asset_type", "").upper() == "HRSG" and self.hrsg_heat_rate_df is not None:
+            # Build HRSG/AuxBoiler heat rate lookup for reverse norm calculation
+            if asset.get("asset_type", "").upper() in ("HRSG", "AUXBOILER") and self.hrsg_heat_rate_df is not None:
                 op_hours = asset.get("op_hours", 0)
                 steam_flow_tph = total_mt / op_hours if op_hours > 0 else 0.0
                 hr_btu_lb = _interpolate_hrsg_heat_rate(aname, steam_flow_tph, self.hrsg_heat_rate_df)
@@ -2206,6 +2219,10 @@ class U4UIterationLoop:
 
             for gen_entry in gen_entries:
                 gen = gen_entry["generation"]
+                # Multi-fuel assets: the first Raw Material fuel row carries the
+                # full reverse-calculated MMBTU norm and quantity; remaining
+                # fuel rows show 0 norm and 0 quantity.
+                fuel_norm_applied = False
                 for c in consumptions:
                     # For the power producer, only show consumption entries
                     # belonging to the current sub-asset
@@ -2221,21 +2238,30 @@ class U4UIterationLoop:
                     # Reverse-calculate MMBTU norm for Raw Material (fuel) entries
                     # on GT power assets using heat_rate and free_steam_factor
                     if c["account"] == "Raw Material" and gen_entry["producer"] in power_asset_heat:
-                        hr, fsf = power_asset_heat[gen_entry["producer"]]
-                        reverse_norm = (
-                            _KCAL_TO_BTU * (hr - fsf * _FREE_STEAM_ENERGY_KCAL_KG)
-                            / _BTU_TO_MMBTU
-                        )
-                        if reverse_norm > 0:
-                            norm = reverse_norm
+                        if not fuel_norm_applied:
+                            fuel_norm_applied = True
+                            hr, fsf = power_asset_heat[gen_entry["producer"]]
+                            reverse_norm = (
+                                _KCAL_TO_BTU * (hr - fsf * _FREE_STEAM_ENERGY_KCAL_KG)
+                                / _BTU_TO_MMBTU
+                            )
+                            if reverse_norm > 0:
+                                norm = reverse_norm
+                        else:
+                            norm = 0.0
 
                     # Reverse-calculate MMBTU norm for Raw Material (fuel) entries
-                    # on HRSG steam assets using heat rate from CPP_HRSGHeatRate
+                    # on HRSG/AuxBoiler steam assets using heat rate from
+                    # CPP_HRSGHeatRate / CPP_AUXBoilerHeatRate
                     elif c["account"] == "Raw Material" and gen_entry["producer"] in hrsg_asset_heat:
-                        hr_btu_lb = hrsg_asset_heat[gen_entry["producer"]]
-                        reverse_norm = hr_btu_lb * _BTU_LB_TO_MMBTU_MT
-                        if reverse_norm > 0:
-                            norm = reverse_norm
+                        if not fuel_norm_applied:
+                            fuel_norm_applied = True
+                            hr_btu_lb = hrsg_asset_heat[gen_entry["producer"]]
+                            reverse_norm = hr_btu_lb * _BTU_LB_TO_MMBTU_MT
+                            if reverse_norm > 0:
+                                norm = reverse_norm
+                        else:
+                            norm = 0.0
 
                     quantity = gen * norm
 
