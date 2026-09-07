@@ -45,6 +45,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CPPNormPricesServiceImpl implements CPPNormPricesService {
 
+    // Account for which "Amount" is exposed as "Percentage" (0-100 range) to the UI/Excel,
+    // but persisted as "Amount" in the database.
+    private static final String RPO_ACCOUNT = "Renewable Power Purchases Obligation";
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -128,7 +132,14 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 dto.setModifiedBy(getString(row[idx++]));
                 dto.setCreatedDate(getString(row[idx++]));
                 dto.setUpdatedDate(getString(row[idx++]));
-                dto.setValueType(getString(row[idx++]));
+                String valueType = getString(row[idx++]);
+
+                // For RPO account, expose "Amount" as "Percentage" to the UI/Excel
+                if (RPO_ACCOUNT.equalsIgnoreCase(dto.getAccountName())
+                        && "Amount".equalsIgnoreCase(valueType)) {
+                    valueType = "Percentage";
+                }
+                dto.setValueType(valueType);
 
                 dtoList.add(dto);
             }
@@ -470,6 +481,20 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             List<Object[]> monthUpdates = new ArrayList<>();
 
             for (CPPNormPricesRequestDTO dto : uniqueRequestList) {
+                // For RPO account, UI/Excel sends "Percentage"; convert back to "Amount" before persisting.
+                // Also validate 0-100 range for percentage values.
+                if (RPO_ACCOUNT.equalsIgnoreCase(dto.getAccountName())
+                        && "Percentage".equalsIgnoreCase(dto.getValueType())) {
+
+                    String rangeError = validatePercentageRange(dto);
+                    if (rangeError != null) {
+                        errorMessages.add(rangeError + " (NormsHeaderFkId " + dto.getNormsHeaderFkId() + ")");
+                        continue;
+                    }
+
+                    dto.setValueType("Amount");
+                }
+
                 BigDecimal apr = normalizePrice(dto.getAprPrice());
                 BigDecimal may = normalizePrice(dto.getMayPrice());
                 BigDecimal jun = normalizePrice(dto.getJunPrice());
@@ -651,47 +676,47 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
     }
 
     private String validatePriceData(CPPNormPricesResponseDTO dto) {
-        if (isNegative(dto.getAprPrice())) {
-            return "Apr price cannot be negative";
-        }
-        if (isNegative(dto.getMayPrice())) {
-            return "May price cannot be negative";
-        }
-        if (isNegative(dto.getJunPrice())) {
-            return "Jun price cannot be negative";
-        }
-        if (isNegative(dto.getJulPrice())) {
-            return "Jul price cannot be negative";
-        }
-        if (isNegative(dto.getAugPrice())) {
-            return "Aug price cannot be negative";
-        }
-        if (isNegative(dto.getSepPrice())) {
-            return "Sep price cannot be negative";
-        }
-        if (isNegative(dto.getOctPrice())) {
-            return "Oct price cannot be negative";
-        }
-        if (isNegative(dto.getNovPrice())) {
-            return "Nov price cannot be negative";
-        }
-        if (isNegative(dto.getDecPrice())) {
-            return "Dec price cannot be negative";
-        }
-        if (isNegative(dto.getJanPrice())) {
-            return "Jan price cannot be negative";
-        }
-        if (isNegative(dto.getFebPrice())) {
-            return "Feb price cannot be negative";
-        }
-        if (isNegative(dto.getMarPrice())) {
-            return "Mar price cannot be negative";
+        // For RPO account with Percentage type, validate 0-100 range
+        boolean isRpoPercentage = RPO_ACCOUNT.equalsIgnoreCase(dto.getAccountName())
+                && "Percentage".equalsIgnoreCase(dto.getValueType());
+        BigDecimal hundred = BigDecimal.valueOf(100);
+
+        String[] labels = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+        BigDecimal[] values = {
+                dto.getAprPrice(), dto.getMayPrice(), dto.getJunPrice(), dto.getJulPrice(),
+                dto.getAugPrice(), dto.getSepPrice(), dto.getOctPrice(), dto.getNovPrice(),
+                dto.getDecPrice(), dto.getJanPrice(), dto.getFebPrice(), dto.getMarPrice()
+        };
+
+        for (int i = 0; i < values.length; i++) {
+            if (isNegative(values[i])) {
+                return labels[i] + " price cannot be negative";
+            }
+            if (isRpoPercentage && values[i] != null && values[i].compareTo(hundred) > 0) {
+                return labels[i] + " percentage cannot exceed 100";
+            }
         }
         return null;
     }
 
     private boolean isNegative(BigDecimal value) {
         return value != null && value.compareTo(BigDecimal.ZERO) < 0;
+    }
+
+    private String validatePercentageRange(CPPNormPricesRequestDTO dto) {
+        BigDecimal hundred = BigDecimal.valueOf(100);
+        String[] labels = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+        BigDecimal[] values = {
+                dto.getAprPrice(), dto.getMayPrice(), dto.getJunPrice(), dto.getJulPrice(),
+                dto.getAugPrice(), dto.getSepPrice(), dto.getOctPrice(), dto.getNovPrice(),
+                dto.getDecPrice(), dto.getJanPrice(), dto.getFebPrice(), dto.getMarPrice()
+        };
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] != null && values[i].compareTo(hundred) > 0) {
+                return labels[i] + " percentage cannot exceed 100";
+            }
+        }
+        return null;
     }
 
     private BigDecimal normalizePrice(BigDecimal price) {
@@ -973,6 +998,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             request.setRemarks(dto.getRemarks());
             request.setPriceSource(dto.getPriceSource());
             request.setValueType(dto.getValueType());
+            request.setAccountName(dto.getAccountName());
             requests.add(request);
         }
         return requests;

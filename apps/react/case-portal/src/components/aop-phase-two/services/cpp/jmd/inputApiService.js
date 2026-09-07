@@ -116,6 +116,14 @@ export const InputApiService = {
   savePricesData,
   exportPricesExcel,
   savePricesExcel,
+
+  // Used in: ImportPowerMain/InterSitePowerTransferGrid.js
+  // NOTE: Backend endpoints pending DB table. Methods are ready to wire up.
+  getInterSitePowerTransfer,
+  saveInterSitePowerTransfer,
+  deleteInterSitePowerTransfer,
+  exportInterSitePowerTransferExcel,
+  saveInterSitePowerTransferExcel,
 }
 
 // ===================== ||Shutdown and Operational hrs APIs || ===================== //
@@ -1891,6 +1899,121 @@ async function savePricesExcel(file, keycloak, plantIds, aopYear) {
     file,
     keycloak,
     'jmd/cpp-norm-prices/import',
+    null,
+    null,
+    {
+      plantIds: plantIdArray.join(','),
+      aopYear,
+    },
+  )
+}
+
+// ========================|| Inter Site Power Transfer APIs ||=====================================//
+// NOTE: Backend endpoints are pending the DB table design. These methods follow the
+// same pattern as the other JMD endpoints (query params: plantIds + aopYear) so they
+// can be wired up as soon as the backend controller/service is implemented.
+
+// GET /task/jmd/inter-site-power-transfer?plantIds=UUID,UUID&aopYear=2026-27
+async function getInterSitePowerTransfer(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/inter-site-power-transfer?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching inter site power transfer data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/inter-site-power-transfer?plantIds=UUID,UUID&aopYear=2026-27
+// Body: direct array of transfer records
+async function saveInterSitePowerTransfer(
+  keycloak,
+  plantIds,
+  aopYear,
+  payload,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/inter-site-power-transfer?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving inter site power transfer data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// DELETE /task/jmd/inter-site-power-transfer/{id}
+async function deleteInterSitePowerTransfer(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/inter-site-power-transfer/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const text = await resp.text()
+    return text ? JSON.parse(text) : { success: true }
+  } catch (e) {
+    console.error('Error deleting inter site power transfer record:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/inter-site-power-transfer/export?plantIds=UUID,UUID&aopYear=2026-27
+async function exportInterSitePowerTransferExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/inter-site-power-transfer/export',
+    queryParams: { plantIds: plantIdArray.join(','), aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/inter-site-power-transfer/import?plantIds=UUID,UUID&aopYear=2026-27 (multipart)
+async function saveInterSitePowerTransferExcel(
+  file,
+  keycloak,
+  plantIds,
+  aopYear,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(
+    file,
+    keycloak,
+    'jmd/inter-site-power-transfer/import',
     null,
     null,
     {
