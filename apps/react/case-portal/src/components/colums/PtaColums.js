@@ -541,7 +541,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -552,7 +552,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -563,7 +563,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -574,7 +574,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
 
@@ -586,7 +586,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -597,7 +597,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -608,7 +608,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -619,7 +619,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -629,7 +629,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -639,7 +639,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -649,7 +649,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
@@ -659,7 +659,7 @@ export const NormalOpNormPtaPmdPiaColumns = [
     width: 100,
     align: 'right',
     format: '{0:#.###}',
-    type: 'number',
+    type: 'negativeNumber',
     minWidth: 100,
   },
   {
