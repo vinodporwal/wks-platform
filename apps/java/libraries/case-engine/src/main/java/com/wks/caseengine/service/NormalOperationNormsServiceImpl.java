@@ -486,47 +486,51 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            }
 	        }
 
-	        List<String> dynamicUuidHeaders = new ArrayList<>();
-	        String matFkKey = null;
-	        String normParamTypeKey = null;
-	        String sapCodeKey = null;
-	        String uomKey = null;
-	        String wtAvgKey = null;
-	        String remarksKey = null;
-	        String isEditableKey = null;
+        List<String> dynamicUuidHeaders = new ArrayList<>();
+        String matFkKey = null;
+        String normParamTypeKey = null;
+        String sapCodeKey = null;
+        String uomKey = null;
+        String ytdKey = null;
+        String wtAvgKey = null;
+        String remarksKey = null;
+        String isEditableKey = null;
 
-	        for (String key : rawHeaders) {
-	            String sanitizedKey = key.replaceAll("[_ ]", "");
-	            if (sanitizedKey.equalsIgnoreCase("MaterialFKId")) {
-	                matFkKey = key;
-	            } else if (sanitizedKey.equalsIgnoreCase("NormParameterTypeId") || sanitizedKey.equalsIgnoreCase("NormParameterTypeFKId")) {
-	                normParamTypeKey = key;
-	            } else if (sanitizedKey.equalsIgnoreCase("SAPMaterialCode")) {
-	                sapCodeKey = key;
-	            } else if (sanitizedKey.equalsIgnoreCase("UOM")) {
-	                uomKey = key;
-	            } else if (sanitizedKey.equalsIgnoreCase("WtAvg")) {
-	                wtAvgKey = key;
-	            } else if (sanitizedKey.equalsIgnoreCase("Remarks")) {
-	                remarksKey = key;
-	            } else if (sanitizedKey.equalsIgnoreCase("IsEditable")) {
-	                isEditableKey = key;
-	            } else if (isValidUUID(key)) {
-	                dynamicUuidHeaders.add(key);
-	            }
-	        }
+        for (String key : rawHeaders) {
+            String sanitizedKey = key.replaceAll("[_ ]", "");
+            if (sanitizedKey.equalsIgnoreCase("MaterialFKId")) {
+                matFkKey = key;
+            } else if (sanitizedKey.equalsIgnoreCase("NormParameterTypeId") || sanitizedKey.equalsIgnoreCase("NormParameterTypeFKId")) {
+                normParamTypeKey = key;
+            } else if (sanitizedKey.equalsIgnoreCase("SAPMaterialCode")) {
+                sapCodeKey = key;
+            } else if (sanitizedKey.equalsIgnoreCase("UOM")) {
+                uomKey = key;
+            } else if (sanitizedKey.equalsIgnoreCase("YTD")) {
+                ytdKey = key;
+            } else if (sanitizedKey.equalsIgnoreCase("WtAvg")) {
+                wtAvgKey = key;
+            } else if (sanitizedKey.equalsIgnoreCase("Remarks")) {
+                remarksKey = key;
+            } else if (sanitizedKey.equalsIgnoreCase("IsEditable")) {
+                isEditableKey = key;
+            } else if (isValidUUID(key)) {
+                dynamicUuidHeaders.add(key);
+            }
+        }
 
 	        if (normParamTypeKey == null && matFkKey != null) {
 	            normParamTypeKey = "NormParameterTypeId";
 	        }
 
-	        List<String> orderedKeys = new ArrayList<>();
-	        orderedKeys.add("PARTICULARS_HEADER"); 
-	        if (sapCodeKey != null) orderedKeys.add(sapCodeKey);
-	        if (uomKey != null) orderedKeys.add(uomKey);
-	        orderedKeys.addAll(dynamicUuidHeaders); // Visible dynamic Grade columns
-	        if (wtAvgKey != null) orderedKeys.add(wtAvgKey);
-	        if (remarksKey != null) orderedKeys.add(remarksKey);
+        List<String> orderedKeys = new ArrayList<>();
+        orderedKeys.add("PARTICULARS_HEADER"); 
+        if (sapCodeKey != null) orderedKeys.add(sapCodeKey);
+        if (uomKey != null) orderedKeys.add(uomKey);
+        if (ytdKey != null) orderedKeys.add(ytdKey);
+        orderedKeys.addAll(dynamicUuidHeaders); // Visible dynamic Grade columns
+        if (wtAvgKey != null) orderedKeys.add(wtAvgKey);
+        if (remarksKey != null) orderedKeys.add(remarksKey);
 
 	        List<String> hiddenKeys = new ArrayList<>();
 	        if (matFkKey != null) {
@@ -557,14 +561,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            Cell cell = headerRow.createCell(i);
 	            String key = orderedKeys.get(i);
 
-	            String displayHeader;
-	            if ("PARTICULARS_HEADER".equals(key)) {
-	                displayHeader = "Particulars";
-	            } else if (fieldToTitleMap.containsKey(key)) {
-	                displayHeader = fieldToTitleMap.get(key);
-	            } else {
-	                displayHeader = formatTitle(key);
-	            }
+            String displayHeader;
+            if ("PARTICULARS_HEADER".equals(key)) {
+                displayHeader = "Particulars";
+            } else if (key != null && key.equals(ytdKey)) {
+                displayHeader = "YTD Norms";
+            } else if (fieldToTitleMap.containsKey(key)) {
+                displayHeader = fieldToTitleMap.get(key);
+            } else {
+                displayHeader = formatTitle(key);
+            }
 
 	            cell.setCellValue(displayHeader);
 	            cell.setCellStyle(headerStyle);
@@ -844,16 +850,19 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    Object value = null;
 
 	                   
-	                    if (sanitized.equalsIgnoreCase("Particulars")) {
-	                        mappedKey = "PARTICULARS_DISPLAY";
-	                        value = getStringCellValue(cell);
-	                    } else if (sanitized.equalsIgnoreCase("SAPMaterialCode")) {
-	                        mappedKey = "SAPMaterialCode";
-	                        value = getStringCellValue(cell);
-	                    } else if (sanitized.equalsIgnoreCase("UOM")) {
-	                        mappedKey = "UOM";
-	                        value = getStringCellValue(cell);
-	                    } else if (sanitized.equalsIgnoreCase("WtAvg")) {
+                    if (sanitized.equalsIgnoreCase("Particulars")) {
+                        mappedKey = "PARTICULARS_DISPLAY";
+                        value = getStringCellValue(cell);
+                    } else if (sanitized.equalsIgnoreCase("SAPMaterialCode")) {
+                        mappedKey = "SAPMaterialCode";
+                        value = getStringCellValue(cell);
+                    } else if (sanitized.equalsIgnoreCase("UOM")) {
+                        mappedKey = "UOM";
+                        value = getStringCellValue(cell);
+                    } else if (sanitized.equalsIgnoreCase("YTDNorms") || sanitized.equalsIgnoreCase("YTD")) {
+                        mappedKey = "YTD";
+                        value = getStringCellValue(cell);
+                    } else if (sanitized.equalsIgnoreCase("WtAvg")) {
 	                        mappedKey = "WtAvg";
 	                        value = getNumericCellValue(cell);
 	                    } else if (sanitized.equalsIgnoreCase("Remarks")) {
