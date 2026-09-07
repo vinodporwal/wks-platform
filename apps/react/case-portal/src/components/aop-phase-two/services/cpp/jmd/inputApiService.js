@@ -1909,9 +1909,6 @@ async function savePricesExcel(file, keycloak, plantIds, aopYear) {
 }
 
 // ========================|| Inter Site Power Transfer APIs ||=====================================//
-// NOTE: Backend endpoints are pending the DB table design. These methods follow the
-// same pattern as the other JMD endpoints (query params: plantIds + aopYear) so they
-// can be wired up as soon as the backend controller/service is implemented.
 
 // GET /task/jmd/inter-site-power-transfer?plantIds=UUID,UUID&aopYear=2026-27
 async function getInterSitePowerTransfer(keycloak, plantIds, aopYear) {
