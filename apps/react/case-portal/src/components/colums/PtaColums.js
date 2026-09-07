@@ -515,6 +515,12 @@ export const NormalOpNormPtaPmdPiaColumns = [
     isVisible: false,
   },
   {
+    field: 'sapCode',
+    title: 'SAP MAT Code',
+    hidden: false,
+    minWidth: 150,
+  },
+  {
     field: 'productName',
     title: 'Particulars',
     widthT: 140,
@@ -527,12 +533,6 @@ export const NormalOpNormPtaPmdPiaColumns = [
     widthT: 120,
     editable: false,
     minWidth: 110,
-  },
-  {
-    field: 'sapCode',
-    title: 'Sap Code',
-    hidden: false,
-    minWidth: 120,
   },
   {
     field: 'april',
@@ -780,6 +780,12 @@ export const ShutdownConsumptionPtaPmdPiaColumns = [
     isVisible: false,
   },
   {
+    field: 'sapCode',
+    title: 'SAP MAT Code',
+    hidden: false,
+    minWidth: 150,
+  },
+  {
     field: 'productName',
     headerName: 'Particulars',
     widthT: 150,
@@ -792,12 +798,6 @@ export const ShutdownConsumptionPtaPmdPiaColumns = [
     width: 90,
     editable: false,
     minWidth: 110,
-  },
-  {
-    field: 'sapCode',
-    title: 'Sap Code',
-    hidden: false,
-    minWidth: 120,
   },
 
   ...Array.from({ length: 12 }, (_, i) => {
@@ -986,6 +986,12 @@ export const SlowdownConsumptionPtaPmdPiaColumns = [
     width: 100,
   },
   {
+    field: 'sapCode',
+    title: 'SAP MAT Code',
+    hidden: false,
+    minWidth: 150,
+  },
+  {
     field: 'productName',
     headerName: 'Particulars',
     width: 120,
@@ -998,12 +1004,6 @@ export const SlowdownConsumptionPtaPmdPiaColumns = [
     width: 80,
     editable: false,
     minWidth: 100,
-  },
-  {
-    field: 'sapCode',
-    title: 'Sap Code',
-    hidden: false,
-    minWidth: 120,
   },
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
