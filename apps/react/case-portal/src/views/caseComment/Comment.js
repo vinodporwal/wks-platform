@@ -32,7 +32,7 @@ const Comment = ({
   const canDelete = false; // replies.length === 0 // && currentUserId === comment.userId && !timePassed;
   // const canReply = true //Boolean(currentUserId);
   // const canEdit = true //currentUserId === comment.userId && !timePassed;
-  const canReply = Boolean(currentUserId);
+  const canReply = Boolean(currentUserId) && isCommentEnabled; 
   const canEdit = currentUserId === comment.userId;
   const replyId = parentId ? parentId : comment.id
   const createdAt = new Date(comment.createdAt).toLocaleDateString()
@@ -42,7 +42,7 @@ const Comment = ({
   return (
     <div key={comment.id} className='comment'>
       <div className='comment-image-container'>
-        {/* <Avatar alt='John Doe' src={User1} /> */}
+        {/*<Avatar alt='John Doe' src={User1} /> */}
       </div>
       <div className='comment-right-part'>
         <div className='comment-content'>
@@ -63,6 +63,7 @@ const Comment = ({
             handleCancel={() => {
               setActiveComment(null)
             }}
+             isCommentEnabled={isCommentEnabled}
           />
         )}
         <div className='comment-actions'>
@@ -99,6 +100,9 @@ const Comment = ({
           <CommentForm
             submitLabel='Reply'
             handleSubmit={(text) => addComment(text, replyId)}
+             hasCancelButton 
+             handleCancel={() => setActiveComment(null)} 
+             isCommentEnabled={isCommentEnabled}
           />
         )}
         {replies.length > 0 && (
@@ -116,6 +120,7 @@ const Comment = ({
                 parentId={comment.id}
                 replies={[]}
                 currentUserId={currentUserId}
+                isCommentEnabled={isCommentEnabled}
               />
             ))}
           </div>
