@@ -20,6 +20,7 @@ public class ProposedAOPDTO {
     private String productName;
     private String uom;
     private Double lastFY;
+    private Double actualLastFY;
     private Double sysGrn;
     private Double proposed;
     private String remarks;
