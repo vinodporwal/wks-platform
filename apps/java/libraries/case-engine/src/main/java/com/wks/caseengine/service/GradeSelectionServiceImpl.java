@@ -12,7 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.GradeSelectionDTO;
 import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -23,14 +28,26 @@ public class GradeSelectionServiceImpl implements GradeSelectionService {
  private JdbcTemplate jdbcTemplate;
 
  @Autowired
+ private PlantsRepository plantsRepository;
+
+ @Autowired
+ private VerticalsRepository verticalRepository;
+
+ @Autowired
+ private SiteRepository siteRepository;
+
+ @Autowired
  private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
 
  @Override
  public AOPMessageVM getGradeSelection(String plantFKId, String year) {
 
-    String storedProcedure = "usp_GetPlantProductGrades";
-       
-    List<GradeSelectionDTO> gradeSelectionDTOs = fetchGradeSelectionFromSp(plantFKId, year, storedProcedure);
+    Plants plants = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+    String verticalName = verticalRepository.findById(plants.getVerticalFKId()).get().getName();
+    String siteName = siteRepository.findById(plants.getSiteFkId()).get().getName();
+    
+    String procedureName = verticalName + "_" + siteName + "_GetProductGradeSelection";
+    List<GradeSelectionDTO> gradeSelectionDTOs = fetchGradeSelectionFromSp(plantFKId, year, procedureName);
 
     AOPMessageVM aopMessageVM = new AOPMessageVM();
     aopMessageVM.setCode(200);
@@ -41,7 +58,7 @@ public class GradeSelectionServiceImpl implements GradeSelectionService {
     }
 
     public List<GradeSelectionDTO> fetchGradeSelectionFromSp(String plantFKId, String year, String procedureName) {
-        String sql = "EXEC " + procedureName + " @plantFKId = ?, @year = ?";
+        String sql = "EXEC " + "[" + procedureName + "]" + " @plantFKId = ?, @year = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) ->
             GradeSelectionDTO.builder()
                 .normParameterId(rs.getString("NormParameterId"))

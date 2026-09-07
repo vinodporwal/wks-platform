@@ -52,6 +52,10 @@ const getNormalOpNormColDef = ({
     cols = VERTICAL_COLDEFS_MAP[lowerVertName] || NormalOpNormMegColumns
   }
 
+  const isNegativeAllowed =
+    (lowerVertName === 'pe' && lowerSiteName === 'hmd') ||
+    (lowerVertName === 'pta' && lowerSiteName === 'pmd' && lowerPlantName === 'pia')
+
   const enhancedColDefs = cols.map((col) => {
     let updatedCol = { ...col }
     if (!headerMap || headerMap[col.title] === undefined) {
@@ -62,11 +66,7 @@ const getNormalOpNormColDef = ({
         title: headerMap[col.title],
         align: 'right',
         format: valueFormat || '{0:#.###}',
-        type:
-          col.type ||
-          (lowerVertName === 'pe' && lowerSiteName === 'hmd'
-            ? 'negativeNumber'
-            : 'number'),
+        type: isNegativeAllowed ? 'negativeNumber' : (col.type || 'number'),
       }
     }
     if (shouldLockColumn(col)) {

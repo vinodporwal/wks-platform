@@ -13,6 +13,26 @@ import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/d
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 
+// Account for which the backend exposes "Amount" as "Percentage" (0-100 range).
+// The DB stores "Amount"; the backend converts in GET/POST. The UI only needs to
+// show "Percentage" in the dropdown and validate 0-100 inline.
+const RPO_ACCOUNT = 'Renewable Power Purchases Obligation'
+
+const getValueTypeOptions = (dataItem) => {
+  if (dataItem?.accountName === RPO_ACCOUNT) {
+    return [
+      { value: 'Price', label: 'Price' },
+      { value: 'Percentage', label: 'Percentage' },
+      { value: 'Calculation', label: 'Calculation' },
+    ]
+  }
+  return [
+    { value: 'Price', label: 'Price' },
+    { value: 'Amount', label: 'Amount' },
+    { value: 'Calculation', label: 'Calculation' },
+  ]
+}
+
 const Prices = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -100,7 +120,7 @@ const Prices = () => {
     format: customFormat,
     conditionalEditable: {
       dependsOn: 'valueType',
-      editableValues: ['Price', 'Amount'],
+      editableValues: ['Price', 'Amount', 'Percentage'],
     },
   }))
 
@@ -208,11 +228,8 @@ const Prices = () => {
       editable: true,
       minWidth: 150,
       locked: true,
-      options: [
-        { value: 'Price', label: 'Price' },
-        { value: 'Amount', label: 'Amount' },
-        { value: 'Calculation', label: 'Calculation' },
-      ],
+      dynamicOptions: true,
+      getOptions: getValueTypeOptions,
     },
 
     // Monthly norms ─ Apr → Mar (editable only when valueType is Price or Amount)
@@ -234,7 +251,7 @@ const Prices = () => {
       minWidth: 250,
       conditionalEditable: {
         dependsOn: 'valueType',
-        editableValues: ['Price', 'Amount'],
+        editableValues: ['Price', 'Amount', 'Percentage'],
       },
     },
     {
@@ -315,8 +332,12 @@ const Prices = () => {
         MONTH_COLUMNS.forEach((col) => {
           updates[col.field] = 0
         })
-      } else if (value === 'Price' || value === 'Amount') {
-        // Restore original month values when switching back to Price or Amount
+      } else if (
+        value === 'Price' ||
+        value === 'Amount' ||
+        value === 'Percentage'
+      ) {
+        // Restore original month values when switching back to Price, Amount or Percentage
         const originalRow = originalRows.find((r) => r.id === itemId)
         if (originalRow) {
           MONTH_COLUMNS.forEach((col) => {
@@ -378,6 +399,30 @@ const Prices = () => {
     if (validationError) {
       setSnackbarOpen(true)
       setSnackbarData({ message: validationError, severity: 'error' })
+      setLoading(false)
+      return
+    }
+
+    // Validate 0-100 range for Percentage (RPO) rows
+    const percentageErrors = []
+    data.forEach((row) => {
+      if (row.accountName === RPO_ACCOUNT && row.valueType === 'Percentage') {
+        MONTH_COLUMNS.forEach((col) => {
+          const val = parseFloat(row[col.field])
+          if (!isNaN(val) && (val < 0 || val > 100)) {
+            percentageErrors.push(
+              `${row.generatingPlantName || `Row ${row.id}`} - ${col.title}`,
+            )
+          }
+        })
+      }
+    })
+    if (percentageErrors.length > 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Percentage values must be between 0 and 100 for: ${percentageErrors.join(', ')}`,
+        severity: 'error',
+      })
       setLoading(false)
       return
     }

@@ -53,6 +53,13 @@ const staticInitialColumns = [
     type: 'text',
     editable: false,
   },
+  {
+    field: 'YTD',
+    title: 'YTD Norm',
+    minWidth: 100,
+    type: 'text',
+    editable: false,
+  },
 ]
 const GradeWiseSteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -175,6 +182,8 @@ const GradeWiseSteadyStateConsumption = () => {
             'NormParameterTypeName',
             'NormParameterTypeDisplayName',
             'ProductName',
+            'YTDNorms',
+            'YTD',
           ]
 
           const dynamicApiColumns = response.data.columns
