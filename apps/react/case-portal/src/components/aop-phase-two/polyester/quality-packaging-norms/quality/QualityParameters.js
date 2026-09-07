@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Dialog,
@@ -43,6 +43,7 @@ const QualityParameters = () => {
   const showReleaseButton = shouldShowReleaseButton(menuItems)
 
   const [rows, setRows] = useState([])
+  const [originalRows, setOriginalRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -58,6 +59,11 @@ const QualityParameters = () => {
     message: '',
     severity: 'info',
   })
+
+  // Error modal state
+  const [errorModalOpen, setErrorModalOpen] = useState(false)
+  const [errorModalMessage, setErrorModalMessage] = useState('')
+  const [isSaveDisabled, setIsSaveDisabled] = useState(false)
 
   function getPreviousYear(aopYear) {
     if (!aopYear) return ''
@@ -154,12 +160,15 @@ const QualityParameters = () => {
           originalRemark: item.remark,
         }))
         setRows(mappedRows)
+        setOriginalRows(mappedRows)
       } else {
         setRows([])
+        setOriginalRows([])
       }
     } catch (err) {
       console.error('fetchQualityParameters error', err)
       setRows([])
+      setOriginalRows([])
     } finally {
       setLoading(false)
     }
@@ -187,6 +196,40 @@ const QualityParameters = () => {
     fetchQualityParameters()
     getIsReleased()
   }, [fetchQualityParameters, getIsReleased])
+
+  useEffect(() => {
+    if (rows.length === 0) {
+      setIsSaveDisabled(false)
+      return
+    }
+
+    const finalRows = rows.map((row) => {
+      const modifiedRow = modifiedCells[row.id]
+      return modifiedRow ? { ...row, ...modifiedRow } : row
+    })
+
+    const qualityRow = finalRows.find((r) => r.name === 'Quality')
+    const otherRows = finalRows.filter((r) => r.name !== 'Quality')
+
+    if (qualityRow) {
+      const qualityActual = parseFloat(qualityRow.actual) || 0
+      const otherSumActual = otherRows.reduce(
+        (sum, r) => sum + (parseFloat(r.actual) || 0),
+        0,
+      )
+
+      const qualityNorm = parseFloat(qualityRow.proposedNorm) || 0
+      const otherSumNorm = otherRows.reduce(
+        (sum, r) => sum + (parseFloat(r.proposedNorm) || 0),
+        0,
+      )
+
+      const isActualValid = Math.abs(qualityActual - otherSumActual) <= 0.0001
+      const isNormValid = Math.abs(qualityNorm - otherSumNorm) <= 0.0001
+
+      setIsSaveDisabled(!isActualValid || !isNormValid)
+    }
+  }, [rows, modifiedCells])
 
   const saveChanges = useCallback(async () => {
     try {
@@ -252,6 +295,8 @@ const QualityParameters = () => {
       setSnackbarOpen(true)
       setSnackbarData({ message: err.message, severity: 'error' })
     } finally {
+      setErrorModalMessage('')
+      setErrorModalOpen(false)
       setLoading(false)
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchQualityParameters])
@@ -355,6 +400,59 @@ const QualityParameters = () => {
     [READ_ONLY],
   )
 
+  const handleCustomItemChange = useCallback(
+    (e, setRowsState, setModifiedCellsState, setCustomModifiedCellsState) => {
+      const { dataItem, field, value } = e
+      
+      if ((field === 'proposedNorm' || field === 'actual') && dataItem.name !== 'Quality') {
+        const currentModified = {
+          ...modifiedCells,
+          [dataItem.id]: { ...modifiedCells[dataItem.id], [field]: value },
+        }
+
+        const finalRows = rows.map((row) => {
+          const modifiedRow = currentModified[row.id]
+          return modifiedRow ? { ...row, ...modifiedRow } : row
+        })
+
+        const qualityRow = finalRows.find((r) => r.name === 'Quality')
+        const otherRows = finalRows.filter((r) => r.name !== 'Quality')
+
+        if (qualityRow) {
+          const qualityActual = parseFloat(qualityRow.actual) || 0
+          const otherSumActual = otherRows.reduce(
+            (sum, r) => sum + (parseFloat(r.actual) || 0),
+            0,
+          )
+
+          const qualityNorm = parseFloat(qualityRow.proposedNorm) || 0
+          const otherSumNorm = otherRows.reduce(
+            (sum, r) => sum + (parseFloat(r.proposedNorm) || 0),
+            0,
+          )
+
+          const isActualValid =
+            Math.abs(qualityActual - otherSumActual) <= 0.0001
+          const isNormValid = Math.abs(qualityNorm - otherSumNorm) <= 0.0001
+
+          if (!isActualValid || !isNormValid) {
+            let errorMsg = ''
+            if (!isActualValid && !isNormValid) {
+              errorMsg = `Actual sum (${otherSumActual}) must match Quality Actual (${qualityActual}) AND Proposed Norm sum (${otherSumNorm}) must match Quality Norm (${qualityNorm}).`
+            } else if (!isActualValid) {
+              errorMsg = `Actual sum (${otherSumActual}) must match Quality Actual (${qualityActual}).`
+            } else {
+              errorMsg = `Proposed Norm sum (${otherSumNorm}) must match Quality Norm (${qualityNorm}).`
+            }
+            setErrorModalMessage(errorMsg)
+            setErrorModalOpen(true)
+          }
+        }
+      }
+    },
+    [rows, modifiedCells],
+  )
+
   const handleRelease = () => {
     setOpenReleaseDialogBox(true)
   }
@@ -387,19 +485,22 @@ const QualityParameters = () => {
     }
   }
 
-  const permissions = {
-    allAction: true,
-    saveBtn: true,
-    showTitleNameBusiness: true,
-    titleName: 'Quality Parameters',
-    showExport: true,
-    showImport: true,
-    ExcelName: `${lowerVertName}_Quality_Parameters`,
-    addButton: false,
-    deleteButton: false,
-    showTitle: true,
-    showReleaseBtn: showReleaseButton,
-  }
+  const permissions = useMemo(() => {
+    return {
+      allAction: true,
+      saveBtn: true,
+      disableActionButtons: isSaveDisabled,
+      showTitleNameBusiness: true,
+      titleName: 'Quality Parameters',
+      showExport: true,
+      showImport: true,
+      ExcelName: `${lowerVertName}_Quality_Parameters`,
+      addButton: false,
+      deleteButton: false,
+      showTitle: true,
+      showReleaseBtn: showReleaseButton,
+    }
+  }, [isSaveDisabled, showReleaseButton])
 
   return (
     <Box>
@@ -422,6 +523,7 @@ const QualityParameters = () => {
         handleRemarkCellClick={handleRemarkCellClick}
         handleExport={handleExport}
         handleExcelUpload={handleExcelUpload}
+        customItemChange={handleCustomItemChange}
         groupBy='Particulars'
         isReleaseDisabled={isReleaseDisabled}
         handleRelease={handleRelease}
@@ -478,6 +580,44 @@ const QualityParameters = () => {
             sx={{ textTransform: 'none', px: 2.5 }}
           >
             Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        disableScrollLock
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 2,
+            width: 400,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{ fontWeight: 700, fontSize: '1.2rem', pb: 0.5, color: '#d32f2f' }}
+        >
+          Validation Error
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <DialogContentText
+            sx={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.5 }}
+          >
+            {errorModalMessage}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button
+            onClick={() => setErrorModalOpen(false)}
+            variant='contained'
+            color='error'
+            sx={{ textTransform: 'none', px: 2.5 }}
+          >
+            Close
           </Button>
         </DialogActions>
       </Dialog>

@@ -3177,16 +3177,16 @@ public int getMonthNumber(String monthName) {
 		
 		for (MXOReprocessingStockDTO dto : mXOReprocessingStockDTOList) {
 
-			if(dto.getMXOOpeningStockId() == null || dto.getMXOClosingStockId() == null) {
+			if(dto.getMXOOpeningStockId() == null ) {
 				dto.setSaveStatus("Failed");
-				dto.setErrorMessage("MXOOpeningStockId and MXOClosingStockId are required");
+				dto.setErrorMessage("MXOOpeningStockId is required");
 				failedRecords.add(dto);
 				continue;
 			}
 
-			if(dto.getMXOOpeningStockId().isBlank() || dto.getMXOClosingStockId().isBlank()) {
+			if(dto.getMXOOpeningStockId().isBlank()) {
 				dto.setSaveStatus("Failed");
-				dto.setErrorMessage("MXOOpeningStockId and MXOClosingStockId are required");
+				dto.setErrorMessage("MXOOpeningStockId is required");
 				failedRecords.add(dto);
 				continue;
 			}
@@ -3203,13 +3203,13 @@ public int getMonthNumber(String monthName) {
 	       
 			 
         String mXOOpeningStockId = dto.getMXOOpeningStockId();
-		String mXOClosingStockId = dto.getMXOClosingStockId();
+	//	String mXOClosingStockId = dto.getMXOClosingStockId();
 
 	UUID	mXOOpeningStockIdUUID =  mXOOpeningStockId != null ? UUID.fromString(mXOOpeningStockId) : null;
-	UUID	mXOClosingStockIdUUID = mXOClosingStockId != null ? UUID.fromString(mXOClosingStockId) : null;
+//	UUID	mXOClosingStockIdUUID = mXOClosingStockId != null ? UUID.fromString(mXOClosingStockId) : null;
 
-		saveDataForMXOReprocessing(mXOOpeningStockIdUUID, monthInInteger, dto.getMXOOpeningStockInMT(), plantFKId, year, null);
-		saveDataForMXOReprocessing(mXOClosingStockIdUUID, monthInInteger, dto.getMXOClosingStockInMT(), plantFKId, year, null);
+		saveDataForMXOReprocessing(mXOOpeningStockIdUUID, monthInInteger, dto.getMXOOpeningStockInMT(), null, plantFKId, year);
+	//	saveDataForMXOReprocessing(mXOClosingStockIdUUID, monthInInteger, dto.getMXOClosingStockInMT(),null, plantFKId, year);
 
 	
 
