@@ -34,6 +34,7 @@ import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
 import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
 import com.wks.caseengine.dto.ReliabilityImprovementDTO;
+import com.wks.caseengine.dto.SiteAopReportTabDTO;
 import com.wks.caseengine.dto.SiteSafetyPerformanceTargetsDTO;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -461,25 +462,40 @@ public class PlantReportServiceImpl implements PlantReportService {
     @Transactional
     public AOPMessageVM getSiteSafetyPerformanceTargets(String siteId, String aopYear) {
         try {
-            String sql = "EXEC Sp_SiteSafetyPerformanceTargets @siteId = ?, @aopYear = ?";
+            String sql = "EXEC Sp_SiteSafetyPerformanceTargets @SiteId = ?, @AOPYear = ?";
 
-            List<SiteSafetyPerformanceTargetsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
-                SiteSafetyPerformanceTargetsDTO.builder()
-                    .id(Optional.ofNullable(rs.getString("Id")).map(UUID::fromString).orElse(null))
-                    .masterId(Optional.ofNullable(rs.getString("MasterId")).map(UUID::fromString).orElse(null))
+            List<SiteSafetyPerformanceTargetsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                Double prevAOP = rs.getObject("PrevAOP") != null ? rs.getDouble("PrevAOP") : null;
+                Double prevActual = rs.getObject("PrevActual") != null ? rs.getDouble("PrevActual") : null;
+                Double currentPlan = rs.getObject("CurrentPlan") != null ? rs.getDouble("CurrentPlan") : null;
+                String idStr = rs.getString("Id");
+                String masterIdStr = rs.getString("MasterId");
+                String siteFkIdStr = null;
+                try {
+                    siteFkIdStr = rs.getString("Site_FK_Id");
+                } catch (Exception ignored) {}
+                if (siteFkIdStr == null) {
+                    try {
+                        siteFkIdStr = rs.getString("SiteId");
+                    } catch (Exception ignored) {}
+                }
+
+                return SiteSafetyPerformanceTargetsDTO.builder()
+                    .id((idStr != null && !idStr.trim().isEmpty()) ? UUID.fromString(idStr.trim()) : null)
+                    .masterId((masterIdStr != null && !masterIdStr.trim().isEmpty()) ? UUID.fromString(masterIdStr.trim()) : null)
                     .kpiName(rs.getString("KPIName"))
                     .uom(rs.getString("UOM"))
-                    .bestAchieved(rs.getDouble("BestAchieved"))
-                    .prevAOP(rs.getDouble("PrevAOP"))
-                    .prevActual(rs.getDouble("PrevActual"))
-                    .currentPlan(rs.getDouble("CurrentPlan"))
+                    .prevAOP(prevAOP)
+                    .prevActual(prevActual)
+                    .currentPlan(currentPlan)
                     .remark(rs.getString("Remark"))
                     .aopYear(rs.getString("AOPYear"))
-                    .siteFkId(UUID.fromString(rs.getString("Site_FK_Id")))
+                    .siteFkId((siteFkIdStr != null && !siteFkIdStr.trim().isEmpty()) ? UUID.fromString(siteFkIdStr.trim()) : null)
                     .isEditable(rs.getBoolean("IsEditable"))
-                    .isVisible(rs.getBoolean("IsVisible"))
-                    .displayOrder(rs.getInt("DisplayOrder"))
-                    .build(), siteId, aopYear);
+                    .isVisible(rs.getObject("IsActive") != null ? rs.getBoolean("IsActive") : true)
+                    .displayOrder(rs.getObject("DisplayOrder") != null ? rs.getInt("DisplayOrder") : rowNum + 1)
+                    .build();
+            }, siteId, aopYear);
 
             Map<String, Object> map = new HashMap<>();
             map.put("Data", data);
@@ -503,33 +519,29 @@ public class PlantReportServiceImpl implements PlantReportService {
             String updatedBy = Utility.getUserName();
             Timestamp modifiedOn = new Timestamp(new Date().getTime());
 
-
             for (SiteSafetyPerformanceTargetsDTO dto : siteSafetyPerformanceTargetsDTOs) {
                 if (dto.getId() == null) {
-                    // insert logic 
-                    String insertSql = "INSERT INTO SiteSafetyPerformanceTargetsTransaction (Id, MasterId, BestAchieved, PrevAOP, PrevActual, CurrentPlan, Remark, AOPYear, Site_FK_Id, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    String insertSql = "INSERT INTO SiteSafetyPerformanceTargetsTransaction (Id, MasterId, PrevAOP, PrevActual, CurrentPlan, Remark, AOPYear, Site_FK_Id, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
-                    UUID.randomUUID().toString(),
-                    dto.getMasterId().toString(),
-                    dto.getBestAchieved(),
-                    dto.getPrevAOP(),
-                    dto.getPrevActual(),
-                    dto.getCurrentPlan(),
-                    dto.getRemark(),
-                    dto.getAopYear(),
-                    dto.getSiteFkId().toString(),
-                    updatedBy,
-                    new Timestamp(new Date().getTime()));
+                        UUID.randomUUID().toString(),
+                        dto.getMasterId() != null ? dto.getMasterId().toString() : null,
+                        dto.getPrevAOP(),
+                        dto.getPrevActual(),
+                        dto.getCurrentPlan(),
+                        dto.getRemark(),
+                        dto.getAopYear(),
+                        dto.getSiteFkId() != null ? dto.getSiteFkId().toString() : null,
+                        updatedBy,
+                        new Timestamp(new Date().getTime()));
                     
                     continue;
                 }
 
                 String updateSql = "UPDATE SiteSafetyPerformanceTargetsTransaction " +
-                "SET BestAchieved = ?, PrevAOP = ?, PrevActual = ?, CurrentPlan = ?, " +
-                "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
-                "WHERE Id = ?";
+                    "SET PrevAOP = ?, PrevActual = ?, CurrentPlan = ?, " +
+                    "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
+                    "WHERE Id = ?";
                 jdbcTemplate.update(updateSql,
-                    dto.getBestAchieved(),
                     dto.getPrevAOP(),
                     dto.getPrevActual(),
                     dto.getCurrentPlan(),
@@ -547,7 +559,7 @@ public class PlantReportServiceImpl implements PlantReportService {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new RuntimeException("Failed to save plant report data", ex);
+            throw new RuntimeException("Failed to save site safety performance data", ex);
         }
     }
 
@@ -615,6 +627,35 @@ public class PlantReportServiceImpl implements PlantReportService {
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new RuntimeException("Failed to save conversion variable cost data", ex);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AOPMessageVM getSiteAopReportTabs(String siteId) {
+        try {
+            String sql = "EXEC Sp_GetSiteAOPReportTabs @siteId = ?";
+
+            List<SiteAopReportTabDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                SiteAopReportTabDTO.builder()
+                    .id(Optional.ofNullable(rs.getString("Id")).map(UUID::fromString).orElse(null))
+                    .tabName(rs.getString("TabName"))
+                    .tabDisplayName(rs.getString("TabDisplayName"))
+                    .tabSequence(rs.getInt("TabSequence"))
+                    .isVisible(rs.getBoolean("IsVisible"))
+                    .build(), siteId);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch site AOP report tabs", e);
         }
     }
 
@@ -1692,14 +1733,308 @@ public class PlantReportServiceImpl implements PlantReportService {
     }
 
     
+    @Override
+    public AOPMessageVM loadSiteSafetyPerformanceData(String siteId, String aopYear) {
+        String procedureName = "Sp_LoadSiteSafetyPerformanceTargets";
+        Integer result = executeLoadButtonSP(siteId, aopYear, procedureName);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setCode(200);
+        aopMessageVM.setMessage("Load SP Executed successfully");
+        aopMessageVM.setData(result);
+        return aopMessageVM;
+    }
+
+    @Override
+    public byte[] exportSiteSafetyPerformanceTargets(String siteId, String aopYear, boolean isAfterSave, List<SiteSafetyPerformanceTargetsDTO> dtoList) {
+        try {
+            if (!isAfterSave) {
+                AOPMessageVM response = getSiteSafetyPerformanceTargets(siteId, aopYear);
+                if (response != null && response.getData() instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) response.getData();
+                    if (map != null && map.containsKey("Data")) {
+                        dtoList = (List<SiteSafetyPerformanceTargetsDTO>) map.get("Data");
+                    }
+                }
+            }
+
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            // Parse dynamic year labels from aopYear e.g. "2026-27" -> prevShort="26", currShort="27"
+            String prevYearShort = "";
+            String currYearShort = "";
+            if (aopYear != null && aopYear.contains("-")) {
+                String[] parts = aopYear.split("-");
+                String fullYear = parts[0];
+                prevYearShort = fullYear.length() >= 2 ? fullYear.substring(fullYear.length() - 2) : fullYear;
+                currYearShort = parts.length > 1 ? parts[1] : "";
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Site Safety Performance");
+            sheet.protectSheet("");
+
+            CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
+            CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
+            CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+
+            List<String> innerHeaders = new ArrayList<>();
+            innerHeaders.add("S.No");
+            innerHeaders.add("KPI");
+            innerHeaders.add("UOM");
+            innerHeaders.add("FY" + prevYearShort + " AOP");
+            innerHeaders.add("FY" + prevYearShort + " ACT");
+            innerHeaders.add("FY" + currYearShort + " Plan");
+            innerHeaders.add("Remarks");
+            innerHeaders.add("Id");
+            innerHeaders.add("MasterId");
+            if (isAfterSave) {
+                innerHeaders.add("Status");
+                innerHeaders.add("Error Description");
+            }
+
+            int currentRow = 0;
+            Row headerRow = sheet.createRow(currentRow++);
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(innerHeaders.get(col));
+                cell.setCellStyle(headerStyle);
+            }
+
+            int sno = 1;
+            for (int i = 0; i < dtoList.size(); i++) {
+                SiteSafetyPerformanceTargetsDTO dto = dtoList.get(i);
+                Row row = sheet.createRow(currentRow++);
+
+                // Col 0 - S.No (locked/grey, non-editable)
+                Cell snoCell = row.createCell(0);
+                snoCell.setCellValue(sno++);
+                snoCell.setCellStyle(lockedStyle);
+
+                // Col 1 - KPI (locked/grey, non-editable)
+                Cell kpiCell = row.createCell(1);
+                kpiCell.setCellValue(dto.getKpiName() != null ? dto.getKpiName() : "");
+                kpiCell.setCellStyle(lockedStyle);
+
+                // Col 2 - UOM (locked/grey, non-editable)
+                Cell uomCell = row.createCell(2);
+                uomCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+                uomCell.setCellStyle(lockedStyle);
+
+                // Col 3 - FY{prev} AOP (editable)
+                Cell prevAOPCell = row.createCell(3);
+                if (dto.getPrevAOP() != null) {
+                    prevAOPCell.setCellValue(dto.getPrevAOP());
+                } else {
+                    prevAOPCell.setCellValue("");
+                }
+                prevAOPCell.setCellStyle(unlockedStyle);
+
+                // Col 4 - FY{prev} ACT: locked+greyed when dto.isEditable==false, editable otherwise
+                Cell prevActualCell = row.createCell(4);
+                if (dto.getPrevActual() != null) {
+                    prevActualCell.setCellValue(dto.getPrevActual());
+                } else {
+                    prevActualCell.setCellValue("");
+                }
+                prevActualCell.setCellStyle(!dto.isEditable() ? lockedStyle : unlockedStyle);
+
+                // Col 5 - FY{curr} Plan (editable)
+                Cell currentPlanCell = row.createCell(5);
+                if (dto.getCurrentPlan() != null) {
+                    currentPlanCell.setCellValue(dto.getCurrentPlan());
+                } else {
+                    currentPlanCell.setCellValue("");
+                }
+                currentPlanCell.setCellStyle(unlockedStyle);
+
+                // Col 6 - Remarks (editable)
+                Cell remarkCell = row.createCell(6);
+                remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                remarkCell.setCellStyle(unlockedStyle);
+
+                // Col 7 - Id (hidden)
+                Cell idCell = row.createCell(7);
+                idCell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
+                idCell.setCellStyle(lockedStyle);
+
+                // Col 8 - MasterId (hidden)
+                Cell masterIdCell = row.createCell(8);
+                masterIdCell.setCellValue(dto.getMasterId() != null ? dto.getMasterId().toString() : "");
+                masterIdCell.setCellStyle(lockedStyle);
+
+                if (isAfterSave) {
+                    Cell statusCell = row.createCell(9);
+                    statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                    statusCell.setCellStyle(lockedStyle);
+
+                    Cell errCell = row.createCell(10);
+                    errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+                    errCell.setCellStyle(lockedStyle);
+                }
+            }
+
+            sheet.setColumnHidden(7, true); // Hide Id
+            sheet.setColumnHidden(8, true); // Hide MasterId
+            for (int col = 0; col < innerHeaders.size(); col++) {
+                if (col != 7 && col != 8) {
+                    sheet.autoSizeColumn(col);
+                    sheet.setColumnWidth(col, Math.max(sheet.getColumnWidth(col) + 1200, 5000));
+                }
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public AOPMessageVM importSiteSafetyPerformanceTargetsExcel(String siteId, String aopYear, MultipartFile file) {
+        try {
+            List<SiteSafetyPerformanceTargetsDTO> data = readSiteSafetyPerformanceTargets(file.getInputStream(), UUID.fromString(siteId), aopYear);
+            saveSiteSafetyPerformanceTargets(data);
+
+            List<SiteSafetyPerformanceTargetsDTO> failedList = new ArrayList<>();
+            for (SiteSafetyPerformanceTargetsDTO dto : data) {
+                if ("Failed".equals(dto.getSaveStatus())) {
+                    failedList.add(dto);
+                }
+            }
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            if (!failedList.isEmpty()) {
+                byte[] fileByteArray = exportSiteSafetyPerformanceTargets(siteId, aopYear, true, failedList);
+                String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+                aopMessageVM.setData(base64File);
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Partial data has been saved");
+            } else {
+                aopMessageVM.setCode(200);
+                aopMessageVM.setMessage("All data has been saved");
+            }
+            return aopMessageVM;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to import Site Safety Performance Targets", e);
+        }
+    }
+
+    private List<SiteSafetyPerformanceTargetsDTO> readSiteSafetyPerformanceTargets(InputStream inputStream, UUID siteId, String aopYear) {
+        List<SiteSafetyPerformanceTargetsDTO> list = new ArrayList<>();
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (rowIterator.hasNext()) {
+                rowIterator.next(); // Skip header
+            }
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                SiteSafetyPerformanceTargetsDTO dto = new SiteSafetyPerformanceTargetsDTO();
+                try {
+                    // 0: S.No (skip)
+                    String kpiName = getStringCellValueSafety(row.getCell(1));
+                    String uom = getStringCellValueSafety(row.getCell(2));
+                    Double prevAOP = getNumericCellValueSafety(row.getCell(3), "Prev AOP", dto);
+                    Double prevActual = getNumericCellValueSafety(row.getCell(4), "Prev Actual", dto);
+                    Double currentPlan = getNumericCellValueSafety(row.getCell(5), "Current Plan", dto);
+                    String remark = getStringCellValueSafety(row.getCell(6));
+                    String idStr = getStringCellValueSafety(row.getCell(7));
+                    String masterIdStr = getStringCellValueSafety(row.getCell(8));
+
+                    dto.setKpiName(kpiName);
+                    dto.setUom(uom);
+                    dto.setPrevAOP(prevAOP);
+                    dto.setPrevActual(prevActual);
+                    dto.setCurrentPlan(currentPlan);
+                    dto.setRemark(remark);
+                    dto.setAopYear(aopYear);
+                    dto.setSiteFkId(siteId);
+
+                    if (idStr != null && !idStr.trim().isEmpty()) {
+                        try {
+                            dto.setId(UUID.fromString(idStr.trim()));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    if (masterIdStr != null && !masterIdStr.trim().isEmpty()) {
+                        try {
+                            dto.setMasterId(UUID.fromString(masterIdStr.trim()));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                } catch (Exception e) {
+                    dto.setErrDescription(e.getMessage());
+                    dto.setSaveStatus("Failed");
+                }
+                list.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    private String getStringCellValueSafety(Cell cell) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getDateCellValue().toString();
+                } else {
+                    double val = cell.getNumericCellValue();
+                    if (val == (long) val) {
+                        return String.valueOf((long) val);
+                    }
+                    return String.valueOf(val);
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            default:
+                return "";
+        }
+    }
+
+    private Double getNumericCellValueSafety(Cell cell, String fieldName, SiteSafetyPerformanceTargetsDTO dto) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return cell.getNumericCellValue();
+        }
+        if (cell.getCellType() == CellType.STRING) {
+            String val = cell.getStringCellValue().trim();
+            if (val.isEmpty()) {
+                return null;
+            }
+            try {
+                return Double.parseDouble(val);
+            } catch (NumberFormatException e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrDescription(fieldName + " must be a valid numeric value");
+            }
+        }
+        return null;
+    }
+
 	public Integer executeLoadButtonSP( String plantId, String aopYear, String procedureName) {
 		try {
-
 			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
-
-
 			return jdbcTemplate.update(callSql, plantId, aopYear);
-
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
