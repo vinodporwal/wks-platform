@@ -197,8 +197,8 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
                                 className={`${kendoTdProps.className || ''} ${isEdited ? 'edited-cell' : 'non-edited-cell'}`}
                                 style={{
                                     ...kendoTdProps.style,
-                                    verticalAlign: 'middle',
-                                    textAlign: 'center',
+                                    verticalAlign: 'top',
+                                    // textAlign: 'center',
                                     cursor: 'pointer',
                                     borderLeft: '1px solid rgba(0, 0, 0, 0.08)',
                                     backgroundColor: '#fff',

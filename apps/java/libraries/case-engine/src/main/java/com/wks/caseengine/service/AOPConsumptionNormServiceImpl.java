@@ -185,10 +185,10 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					if(chemical || ptapmdpia) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
-					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("VGOHT")) {
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")) {
 						dto.setSapCode(row[25] != null ? row[25].toString() : "");
 					}
-						if(vertical.getName().equalsIgnoreCase("PCG")) {
+					if(vertical.getName().equalsIgnoreCase("PCG")) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
 				}
@@ -768,8 +768,8 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			for (AOPConsumptionNormDTO dto : currentDtoList) {
 				List<Object> list = new ArrayList<>();
 				list.add(dto.getNormParameterTypeDisplayName());
-				list.add(dto.getProductName());
 				list.add(dto.getSapCode());
+				list.add(dto.getProductName());
 				list.add(dto.getUOM());
 				list.add(dto.getApril());
 				list.add(dto.getMay());
@@ -796,8 +796,8 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 
 			List<String> innerHeaders = new ArrayList<>();
 			innerHeaders.add("Type");
+			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("Sap Code");
 			innerHeaders.add("UOM");
 			List<String> monthsList = Utility.getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
@@ -849,7 +849,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					}
 				}
 			}
-			// Sap Code shifts Id to index 17 — hide the Id column
+			// SAP MAT Code shifts Id to index 17 — hide the Id column
 			sheet.setColumnHidden(17, true);
 
 			try {
