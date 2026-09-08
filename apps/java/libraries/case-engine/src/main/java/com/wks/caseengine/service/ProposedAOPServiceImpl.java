@@ -831,8 +831,9 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		// Columns 0-7: visible data | Columns 8-12: hidden ID columns
 		// (NormParameterId, AopYear, Id, NormParameterTypeId, PlantId)
 		// Columns 13-14: isAfterSave only (Status, Error Description)
+		// Col 0: SAP MAT Code | Col 1: Particulars
 		List<String> headerNames = new ArrayList<>(Arrays.asList(
-				"Particulars", "Sap Code", "UOM", "Last FY", "Actual Last FY", "Sys Gen", "Proposed", "Remarks",
+				"SAP MAT Code", "Particulars", "UOM", "Last FY", "Actual Last FY", "Sys Gen", "Proposed", "Remarks",
 				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
 		if (isAfterSave) {
 			headerNames.add("Status");
@@ -855,15 +856,15 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		for (ProposedAOPDTO dto : dtoList) {
 			Row row = sheet.createRow(currentRow++);
 
-			// col 0: Particulars
-			Cell particularsCell = row.createCell(0);
-			particularsCell.setCellValue(Utility.sanitizeCellString(dto.getProductName()));
-			particularsCell.setCellStyle(lockedStyle);
-
-			// col 1: Sap Code (read-only display column)
-			Cell sapCodeCell = row.createCell(1);
+			// col 0: SAP MAT Code (read-only display column)
+			Cell sapCodeCell = row.createCell(0);
 			sapCodeCell.setCellValue(Utility.sanitizeCellString(dto.getSapCode()));
 			sapCodeCell.setCellStyle(lockedStyle);
+
+			// col 1: Particulars
+			Cell particularsCell = row.createCell(1);
+			particularsCell.setCellValue(Utility.sanitizeCellString(dto.getProductName()));
+			particularsCell.setCellStyle(lockedStyle);
 
 			// col 2: UOM
 			Cell uomCell = row.createCell(2);
@@ -984,13 +985,13 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 
 					ProposedAOPDTO dto = new ProposedAOPDTO();
 					try {
-						// col 0: Particulars
-						Cell particularsCell = row.getCell(0);
+						// col 0: SAP MAT Code – read-only display column; not stored in DTO
+
+						// col 1: Particulars
+						Cell particularsCell = row.getCell(1);
 						if (particularsCell != null) {
 							dto.setProductName(particularsCell.toString().trim());
 						}
-
-						// col 1: Sap Code – read-only display column; not stored in DTO
 
 						// col 2: UOM
 						Cell uomCell = row.getCell(2);

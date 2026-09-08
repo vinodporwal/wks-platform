@@ -1925,8 +1925,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			for (ShutdownNormsValueDTO dto : dtoList) {
 				List<Object> list = new ArrayList<>();
 				list.add(dto.getNormParameterTypeDisplayName());
-				list.add(dto.getProductName());
 				list.add(dto.getSapCode());
+				list.add(dto.getProductName());
 				list.add(dto.getUOM());
 				list.add(dto.getApril());
 				list.add(dto.getMay());
@@ -1953,8 +1953,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 			List<String> innerHeaders = new ArrayList<>();
 			innerHeaders.add("Type");
+			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("Sap Code");
 			innerHeaders.add("UOM");
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
@@ -2949,8 +2949,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 					ShutdownNormsValueDTO dto = new ShutdownNormsValueDTO();
 					try {
 						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
-						dto.setProductName(getStringCellValue(row.getCell(1), dto));
-						// col 2 = Sap Code: read-only, not stored
+						// col 1 = SAP MAT Code: read-only, not stored
+						dto.setProductName(getStringCellValue(row.getCell(2), dto));
 						dto.setUOM(getStringCellValue(row.getCell(3), dto));
 						dto.setFinancialYear(year);
 						dto.setApril(getNumericCellValue(row.getCell(4), dto));

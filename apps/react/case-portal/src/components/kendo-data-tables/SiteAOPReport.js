@@ -1,21 +1,12 @@
-// Fixed Expenses grid columns (parent-child, for KendoDataTablesReports, tabIndex 9)
-// MCU Capacity Utilization grid columns (for tab 11)
-import { useGridApiRef } from '@mui/x-data-grid'
-import React, { useEffect, useState, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
-import { SiteReportDataService } from 'services/SiteReportDataService'
 import { useSession } from 'SessionStoreContext'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import Backdrop from '@mui/material/Backdrop'
-import CircularProgress from '@mui/material/CircularProgress'
-import { validateFields } from 'utils/validationUtils'
-import KendoDataTables from './index'
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
-import { getRoleName } from 'services/role-service'
-import { Box, Button, Tab, Tabs, Typography } from '@mui/material'
-import { TextArea } from '@progress/kendo-react-inputs'
+import { SiteReportDataService } from 'services/SiteReportDataService'
+import AopTabs from 'components/AopTabs'
+import SiteTeam from './SiteAOPReport/SiteTeam'
+import SiteSafetyPerformanceTarget from './SiteAOPReport/SiteSafetyPerformanceTarget'
+import ConversionVariableCost from './ConversionVariableCost'
+import EnergyPerformance from './SiteAOPReport/EnergyPerformance'
 import FixedExpenses from './FixedExpenses'
 import Capex from './Capex'
 import ShutdownSlowdownPlan from './SlowdownPlan'
@@ -26,1182 +17,119 @@ import MajorProfitInitiative from './MajorProfitInitiative'
 import MajorReliabilityInitiative from './MajorReliabilityInitiative'
 import MajorPeopleInitiative from './MajorPeopleInitiative'
 import MCUCapacityUtilization from './MCUCapacityUtilization'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AopTabs from 'components/AopTabs'
-import SiteSafetyPerformanceTarget from './SiteSafetyPerformanceTarget'
-import ConversionVariableCost from './ConversionVariableCost'
+
+// Default hardcoded fallback tabs
+const DEFAULT_TABS = [
+  { tabName: 'SiteTeam', tabDisplayName: 'Site Team', tabSequence: 1, isVisible: true },
+  { tabName: 'SiteSafetyPerformanceTarget', tabDisplayName: 'Safety Performance & Targets', tabSequence: 2, isVisible: true },
+  { tabName: 'ConversionVariableCost', tabDisplayName: 'Conversion & Variable Cost', tabSequence: 3, isVisible: true },
+  { tabName: 'EnergyPerformance', tabDisplayName: 'Energy Performance', tabSequence: 4, isVisible: true },
+  { tabName: 'FixedExpenses', tabDisplayName: 'Fixed Expenses', tabSequence: 5, isVisible: true },
+  { tabName: 'Capex', tabDisplayName: 'Capex/PIO Plan', tabSequence: 6, isVisible: true },
+  { tabName: 'ShutdownSlowdownPlan', tabDisplayName: 'Shutdown / Slowdown plan', tabSequence: 7, isVisible: true },
+  { tabName: 'TechnicalAvailability', tabDisplayName: 'Technical Availability', tabSequence: 8, isVisible: true },
+  { tabName: 'ReportManualEntry', tabDisplayName: 'Report Manual Entry', tabSequence: 9, isVisible: true },
+  { tabName: 'MajorSafetyInitiative', tabDisplayName: 'Major Safety Improvement', tabSequence: 10, isVisible: true },
+  { tabName: 'MajorProfitInitiative', tabDisplayName: 'Major Profit and Operability Improvement', tabSequence: 11, isVisible: true },
+  { tabName: 'MajorReliabilityInitiative', tabDisplayName: 'Major Reliability Improvement', tabSequence: 12, isVisible: true },
+  { tabName: 'MajorPeopleInitiative', tabDisplayName: 'Major People Initiative', tabSequence: 13, isVisible: true },
+  { tabName: 'MCUCapacityUtilization', tabDisplayName: 'MCU Capacity Utilization (%)', tabSequence: 14, isVisible: true },
+]
+
 const SiteAOPReport = ({ permissions }) => {
-  const [_plantID, set_PlantID] = useState('')
-  const [modifiedCells, setModifiedCells] = React.useState({})
-  const [modifiedCells2, setModifiedCells2] = useState({})
-  const [modifiedCellsEnergyPerformance, setModifiedCellsEnergyPerformance] =
-    useState({})
-  const [modifiedCellsShutdownSlowdown, setModifiedCellsShutdownSlowdown] =
-    React.useState({})
-  const [modifiedCells1, setModifiedCells1] = React.useState({})
-  const [allProducts, setAllProducts] = useState([])
-  const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-
-  const {
-    verticalChange,
-    yearChanged,
-    oldYear,
-    plantID,
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-  } = dataGridStore
-
-  const PLANT_ID = plantObject?.id
-  const PLANT_NAME = plantObject?.name
-
-  const SITE_ID = siteObject?.id
-  const SITE_NAME = siteObject?.name
-
-  const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
-
-  const AOP_YEAR = year?.selectedYear
-  const vertName = verticalChange?.selectedVertical
-  const SCREEN_NAME = screenTitle?.title
-
-  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
-  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
-  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
-
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
-
-  const lowerVertName = vertName?.toLowerCase()
-  const lowerSiteName = SITE_NAME?.toLowerCase()
-  const lowerPlantName = PLANT_NAME?.toLowerCase()
-  const plantName = plantObject?.name
-  const siteName = siteObject?.name
-  const isOldYear = false
-  const IS_OLD_YEAR = oldYear?.oldYear
-  //const [Rowssafety, setRowssafety] = useState([])
-
-  const [open1, setOpen1] = useState(false)
-  const [deleteId, setDeleteId] = useState(null)
-  const [deleteId1, setDeleteId1] = useState(null)
-  const apiRef = useGridApiRef()
-  //const [rows, setRows] = useState()
-  const [rowsSlowdown, setRowsSlowdown] = useState()
-
-  const [loading, setLoading] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({
-    message: '',
-    severity: 'info',
-  })
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRemark1, setCurrentRemark1] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
-  const [currentRowId1, setCurrentRowId1] = useState(null)
-  const [remarkDialogOpen1, setRemarkDialogOpen1] = useState(false)
-  const [remarkDialogOpen2, setRemarkDialogOpen2] = useState(false)
-  const [currentRemark2, setCurrentRemark2] = useState('')
-  const [currentRowId2, setCurrentRowId2] = useState(null)
-  const [
-    remarkDialogOpenEnergyPerformance,
-    setRemarkDialogOpenEnergyPerformance,
-  ] = useState(false)
-  const [currentRemarkEnergyPerformance, setCurrentRemarkEnergyPerformance] =
-    useState('')
-  const [currentRowIdEnergyPerformance, setCurrentRowIdEnergyPerformance] =
-    useState(null)
+  const [tabIndex, setTabIndex] = useState(0)
+  const [tabs, setTabs] = useState(DEFAULT_TABS)
 
   const keycloak = useSession()
-  const [rows, setRows] = useState()
-  const [energyPerformance, setEnergyPerformance] = useState()
-  const [performanceSummary, setPerformanceSummary] = useState('')
-  const [performanceHighlightsEdited, setPerformanceHighlightsEdited] =
-    useState(false)
-  const [tabIndex, setTabIndex] = useState(0)
-  const defaultTabs = [
-    'Site Team',
-    'Safety Performance & Targets',
-    'Conversion & Variable Cost',
-    'Energy Performance',
-    'Fixed Expenses',
-    'Capex/PIO Plan',
-    'Shutdown / Slowdown plan',
-    'Technical Availability',
-    'Report Manual Entry',
-    'Major Safety Improvement',
-    'Major Profit and Operability Improvement',
-    'Major Reliability Improvement',
-    'Major People Initiative',
-    'MCU Capacity Utilization (%)',
-    // 'Contribution (Rs/ MT & Rs Crs.)',
-    // 'Major Process Incidents',
-    // 'Major Process Incidents FY26',
-    // 'Major Incidents FY26',
-    // // Major Process Incidents FY26 columns and dummy data (tabIndex 9)
-    // 'Production (TPH) basis',
-    // 'Production',
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const SITE_ID = dataGridStore?.siteObject?.id
 
-  ]
-  function getAopShortYears(aopYear) {
-    if (!aopYear) return { prev: '', next: '' }
-    const match = aopYear.match(/(\d{4})-(\d{2})/)
-    if (match) {
-      const prev = match[1].slice(-2)
-      const next = match[2]
-      return { prev, next }
-    }
-    const year = String(aopYear).slice(-2)
-    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
-  }
-  const { prev, next } = getAopShortYears(AOP_YEAR)
-  const valueFormat = ValueFormatterConsumption()
-
-  const { isReleased } = dataGridStore
-  const IS_RELEASED = isReleased
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const headerMap = generateHeaderNames(AOP_YEAR)
-  const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
-  const columns = getSiteAOPReportColumns({ AOP_YEAR, valueFormat, prev, next })
-  const handleRemarkCellClick1 = (row) => {
-    setCurrentRemark1(row.remarks || '')
-    setCurrentRowId1(row.id)
-    setRemarkDialogOpen1(true)
-  }
-
-  const handleRemarkCellClick = (row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }
-  const handleRemarkCellClickEnergyPerformance = (row) => {
-    if (READ_ONLY) return
-    setCurrentRemarkEnergyPerformance(row.remark || '')
-    setCurrentRowIdEnergyPerformance(row.id)
-    setRemarkDialogOpenEnergyPerformance(true)
-  }
-  const handleRemarkCellClickMajorInc = (row) => {
-    setCurrentRemark2(row.remarks || '')
-    setCurrentRowId2(row.id)
-    setRemarkDialogOpen2(true)
-  }
-  const updateShutdownData = () => {
-    // Dummy function for now
-  }
-
-  const dummyRowsSafety = [
-    {
-      id: 1,
-      sno: 1,
-      uom: 'Nos',
-      bestAchieved: 0,
-      aop: 0,
-      actual: 0,
-      remarks: '',
-      isEditable: true, // <-- add this
-      isdisable: false,
-    },
-    {
-      id: 2,
-      sno: 2,
-      uom: 'Nos',
-      bestAchieved: 0,
-      aop: 0,
-      actual: 0,
-      remarks: '',
-      isEditable: true, // <-- add this
-      isdisable: false,
-    },
-    {
-      id: 3,
-      sno: 3,
-      uom: 'Nos',
-      bestAchieved: 0,
-      aop: 0,
-      actual: 0,
-      remarks: '',
-      isEditable: true, // <-- add this
-      isdisable: false,
-    },
-  ]
-  const [Rowssafety, setRowssafety] = useState(dummyRowsSafety)
-  const majorIncidentsRows = [
-    {
-      id: 1,
-      sno: 1,
-      plant: 'Plant A',
-      incidentDescription: 'Fire in storage area',
-      rootCauses: 'Short circuit',
-      recommendation: 'Upgrade wiring',
-      targetDate: '2025-08-15',
-      resp: 'John Doe',
-      remarks: 'ch.shiva  ji ma ha ra j',
-    },
-    {
-      id: 2,
-      sno: 2,
-      plant: 'Plant B',
-      incidentDescription: 'Chemical spill',
-      rootCauses: 'Valve failure',
-      recommendation: 'Replace valves',
-      targetDate: '2025-09-10',
-      resp: 'Jane Smith',
-      remarks: 'Pending review',
-    },
-  ]
-
-  const [majorIncidents, setMajorIncidents] = useState(majorIncidentsRows)
-
-  const productionRows = [
-    {
-      id: 1,
-      plant: 'Cracker',
-      uom: 'KTA',
-      aop: 120,
-      basis: 'Historical average',
-      remarks: 'Stable operation',
-    },
-    {
-      id: 2,
-      plant: 'EOEG',
-      uom: 'KTA',
-      aop: 95,
-      basis: 'Last year actual',
-      remarks: 'Increase planned',
-    },
-    {
-      id: 3,
-      plant: 'PP',
-      uom: 'KTA',
-      aop: 110,
-      basis: 'Market demand',
-      remarks: 'Expansion project',
-    },
-    {
-      id: 4,
-      plant: 'LDPE',
-      uom: 'KTA',
-      aop: 80,
-      basis: 'Capacity',
-      remarks: 'No change',
-    },
-    {
-      id: 5,
-      plant: 'LLD Tr-1',
-      uom: 'KTA',
-      aop: 70,
-      basis: 'Forecast',
-      remarks: 'Maintenance scheduled',
-    },
-    {
-      id: 6,
-      plant: 'LLD Tr-2',
-      uom: 'KTA',
-      aop: 75,
-      basis: 'Forecast',
-      remarks: 'New line',
-    },
-    {
-      id: 7,
-      plant: 'Hexene-1',
-      uom: 'KTA',
-      aop: 30,
-      basis: 'Raw material availability',
-      remarks: 'Dependent on supply',
-    },
-    {
-      id: 8,
-      plant: 'R-Pet',
-      uom: 'KTA',
-      aop: 50,
-      basis: 'Sustainability initiative',
-      remarks: 'Pilot phase',
-    },
-  ]
-  const [production, setProduction] = useState(productionRows)
-
-  const fetchDataEnergyPerformance = async () => {
-    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
-
-    setModifiedCellsEnergyPerformance({})
-
-    setLoading(true)
+  // Fetch tabs from SP via API, fallback to DEFAULT_TABS
+  const fetchTabs = useCallback(async () => {
     try {
-      var data = await SiteReportDataService.getEnergyPerformanceDetails(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-      )
-
-      const formattedData = (data?.data?.Data || []).map((item, idx) => ({
-        ...item,
-        sno: idx + 1,
-        originalRemark: item.remark, // Add serial number if not present
-      }))
-
-      setEnergyPerformance(formattedData)
-
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      setLoading(false)
-    }
-  }
-
-  //---------------------------
-  const saveChangesEnergyPerformance = React.useCallback(async () => {
-    try {
-      setLoading(true)
-      const data = Object.values(modifiedCellsEnergyPerformance)
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
-
-      const requiredFields = ['remark']
-
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
-
-      const payload = data.map((item, index) => ({
-        id: item.id || null,
-        plant: item.plant,
-        uom: item.uom,
-        aopValue: item.aopValue,
-        actualValue: item.actualValue,
-        planValue: item.planValue,
-        remark: item.remark,
-      }))
-
-      // 3. Save to API
-      const response = await SiteReportDataService.saveEnergyPerformance(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-        payload,
-      )
-
-      // 4. Handle API response
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
-        setModifiedCellsEnergyPerformance({})
-        fetchDataEnergyPerformance()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Save failed!',
-          severity: 'error',
-        })
+      const response = await SiteReportDataService.getSiteAopReportTabs(keycloak, SITE_ID)
+      const data = response?.data?.Data || response?.data || []
+      if (Array.isArray(data) && data.length > 0) {
+        const sortedVisibleTabs = data
+          .filter((t) => t.isVisible !== false)
+          .sort((a, b) => (a.tabSequence ?? 0) - (b.tabSequence ?? 0))
+        if (sortedVisibleTabs.length > 0) {
+          setTabs(sortedVisibleTabs)
+        }
       }
     } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
+      console.warn('Using default hardcoded tabs due to fetch error:', error)
+      setTabs(DEFAULT_TABS)
     }
-  }, [
-    modifiedCellsEnergyPerformance,
-    keycloak,
-    SITE_ID,
-    AOP_YEAR,
-    fetchDataEnergyPerformance,
-  ])
-
-  const [performanceId, setPerformanceId] = useState(null)
-
-  const getPerformanceHighlights = async () => {
-    if (!PLANT_ID || !SITE_ID || !AOP_YEAR) return
-
-    try {
-      // Clear states before fetching
-      setPerformanceSummary('')
-      setPerformanceId(null)
-
-      const res = await SiteReportDataService.getPerformanceHighlightsSummary(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-      )
-
-      if (res?.code === 200 && res?.data?.Data?.length > 0) {
-        // Get the first record from the array
-        const record = res.data.Data[0]
-
-        // Set both the text and the ID
-        setPerformanceSummary(record.summary || '')
-        setPerformanceId(record.id || null)
-      } else {
-        setPerformanceSummary('')
-        setPerformanceId(null)
-      }
-    } catch (error) {
-      setPerformanceSummary('')
-      setPerformanceId(null)
-      console.error('Error fetching summary:', error)
-    }
-  }
-
-  // Save summary (POST/PUT)
-  // Assuming you store the ID from the GET response in a state variable
-
-  const savePerformanceHighlightsSummary = async () => {
-    try {
-      // Construct the DTO list expected by the @RequestBody List<PerformanceHighlightDTO>
-      const payload = [
-        {
-          id: performanceId, // The UUID from the GET response
-          summary: performanceSummary,
-          saveStatus: null,
-        },
-      ]
-
-      const res = await SiteReportDataService.savePerformanceHighlightsSummary(
-        keycloak,
-
-        SITE_ID, // mapped to @RequestParam String siteId
-        AOP_YEAR, // mapped to @RequestParam String year
-        payload, // mapped to @RequestBody List<PerformanceHighlightDTO>
-      )
-
-      if (res?.code === 200 || res?.code === 207) {
-        setSnackbarData({
-          message:
-            res?.code === 200
-              ? 'Saved Successfully!'
-              : 'Saved with minor issues',
-          severity: res?.code === 200 ? 'success' : 'warning',
-        })
-        setPerformanceHighlightsEdited(false)
-        setSnackbarOpen(true)
-      } else {
-        setSnackbarData({
-          message: 'Save Failed!',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
-      }
-    } catch (error) {
-      setSnackbarData({
-        message: 'Error saving summary!',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
-    }
-  }
-  //----------
-  const contributionColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    { field: 'plant', title: 'Plant', editable: false },
-    {
-      title: 'FY 26 AOP',
-      children: [
-        {
-          field: 'fy26AopRsMt',
-          title: 'Rs/ MT',
-          editable: true,
-          type: 'number',
-        },
-        {
-          field: 'fy26AopRsCrs',
-          title: 'Rs. Crs.',
-          editable: true,
-          type: 'number',
-        },
-      ],
-    },
-    {
-      title: 'FY26 Actual',
-      children: [
-        {
-          field: 'fy26ActualRsMt',
-          title: 'Rs/ MT',
-          editable: true,
-          type: 'number',
-        },
-        {
-          field: 'fy26ActualRsCrs',
-          title: 'Rs. Crs.',
-          editable: true,
-          type: 'number',
-        },
-      ],
-    },
-    {
-      title: 'FY27 AOP',
-      children: [
-        {
-          field: 'fy27AopRsMt',
-          title: 'Rs/ MT',
-          editable: true,
-          type: 'number',
-        },
-        {
-          field: 'fy27AopRsCrs',
-          title: 'Rs. Crs.',
-          editable: true,
-          type: 'number',
-        },
-      ],
-    },
-    { field: 'rationalReasons', title: 'Rationale/ Reasons', editable: true },
-  ]
-  const contributionRows = [
-    {
-      id: 1,
-      plant: 'EOE',
-      fy26AopRsMt: 1200,
-      fy26AopRsCrs: 50,
-      fy26ActualRsMt: 1150,
-      fy26ActualRsCrs: 48,
-      fy27AopRsMt: 1250,
-      fy27AopRsCrs: 52,
-      rationalReasons: 'Market improvement',
-    },
-    {
-      id: 2,
-      plant: 'LDPE',
-      fy26AopRsMt: 900,
-      fy26AopRsCrs: 40,
-      fy26ActualRsMt: 880,
-      fy26ActualRsCrs: 39,
-      fy27AopRsMt: 920,
-      fy27AopRsCrs: 41,
-      rationalReasons: 'Stable demand',
-    },
-    {
-      id: 3,
-      plant: 'LLD Tr-1',
-      fy26AopRsMt: 950,
-      fy26AopRsCrs: 42,
-      fy26ActualRsMt: 930,
-      fy26ActualRsCrs: 41,
-      fy27AopRsMt: 970,
-      fy27AopRsCrs: 43,
-      rationalReasons: 'Capacity expansion',
-    },
-    {
-      id: 4,
-      plant: 'LLD Tr-2',
-      fy26AopRsMt: 960,
-      fy26AopRsCrs: 43,
-      fy26ActualRsMt: 940,
-      fy26ActualRsCrs: 42,
-      fy27AopRsMt: 980,
-      fy27AopRsCrs: 44,
-      rationalReasons: 'Efficiency gain',
-    },
-    {
-      id: 5,
-      plant: 'PP',
-      fy26AopRsMt: 1100,
-      fy26AopRsCrs: 47,
-      fy26ActualRsMt: 1080,
-      fy26ActualRsCrs: 46,
-      fy27AopRsMt: 1120,
-      fy27AopRsCrs: 48,
-      rationalReasons: 'New product line',
-    },
-  ]
-  const [contribution, setContribution] = useState(contributionRows)
-
-  // Production (TPH) basis grid columns (tabIndex 11)
-  const productionTphColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'sno',
-      title: 'S.No',
-      widthT: 60,
-      editable: false,
-      align: 'right',
-      format: '{0:0}',
-    },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: true },
-    { field: 'tph', title: 'TPH', widthT: 100, editable: true, type: 'number' },
-    {
-      field: 'fy26Aop',
-      title: 'FY26 AOP',
-      widthT: 100,
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'fy26Actual',
-      title: 'FY26 Actual',
-      widthT: 100,
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'fy27Aop',
-      title: 'FY27 AOP',
-      widthT: 100,
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'rationalReasons',
-      title: 'Rationale/ Reasons',
-      widthT: 200,
-      editable: true,
-    },
-  ]
-
-  const productionTphRows = [
-    {
-      id: 1,
-      sno: 1,
-      plant: '',
-      tph: '',
-      fy26Aop: '',
-      fy26Actual: '',
-      fy27Aop: '',
-      rationalReasons: '',
-    },
-    {
-      id: 2,
-      sno: 2,
-      plant: '',
-      tph: '',
-      fy26Aop: '',
-      fy26Actual: '',
-      fy27Aop: '',
-      rationalReasons: '',
-    },
-    {
-      id: 3,
-      sno: 3,
-      plant: '',
-      tph: '',
-      fy26Aop: '',
-      fy26Actual: '',
-      fy27Aop: '',
-      rationalReasons: '',
-    },
-  ]
-
-  const [productionTphState, setProductionTphState] =
-    useState(productionTphRows)
-  // Shutdown/Slow Down Plan grid columns
-
-  // Major Process Incidents FY26 columns and dummy data (tabIndex 9)
-  const majorProcessIncidentsFy26Columns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'sno',
-      title: 'S.No.',
-      widthT: 60,
-      editable: false,
-      align: 'right',
-      format: '{0:0}',
-    },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: true },
-    {
-      field: 'incidentDescription',
-      title: 'Incident Description',
-      widthT: 220,
-      editable: true,
-    },
-    {
-      field: 'rootCause',
-      title: 'Root Cause Analysis',
-      widthT: 180,
-      editable: true,
-    },
-    {
-      field: 'recommendation',
-      title: 'Recommendation',
-      widthT: 180,
-      editable: true,
-    },
-    {
-      field: 'targetDate',
-      title: 'Target Date',
-      widthT: 120,
-      editable: true,
-      type: 'date',
-    },
-    { field: 'resp', title: 'Resp.', widthT: 100, editable: true },
-  ]
-
-  const majorProcessIncidentsFy26Rows = [
-    {
-      id: 1,
-      sno: 1,
-      plant: '',
-      incidentDescription: '',
-      rootCause: '',
-      recommendation: '',
-      targetDate: '',
-      resp: '',
-    },
-    {
-      id: 2,
-      sno: 2,
-      plant: '',
-      incidentDescription: '',
-      rootCause: '',
-      recommendation: '',
-      targetDate: '',
-      resp: '',
-    },
-  ]
-
-  const [majorProcessIncidentsFy26State, setMajorProcessIncidentsFy26State] =
-    useState(majorProcessIncidentsFy26Rows)
-
-  //---------------------------
-  const fetchData = async () => {
-    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
-
-    setModifiedCells({})
-
-    setLoading(true)
-    try {
-      var data = await SiteReportDataService.getSiteTeamDetails(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-      )
-
-      const formattedData = (data?.data?.Data || []).map((item, idx) => ({
-        ...item,
-        sno: idx + 1,
-        originalRemark: item.remark, // Add serial number if not present
-      }))
-
-      setRows(formattedData)
-
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      setLoading(false)
-    }
-  }
-
-  //---------------------------
-  const saveChanges = React.useCallback(async () => {
-    try {
-      setLoading(true)
-      const data = Object.values(modifiedCells)
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
-
-      const requiredFields = ['jobRole', 'name', 'age', 'teamSize', 'remark']
-
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
-
-      const payload = data.map((item, index) => ({
-        id: item.id || null,
-        jobRole: item.jobRole,
-        name: item.name,
-        age: item.age,
-        teamSize: item.teamSize,
-        remark: item.remark,
-      }))
-
-      // 3. Save to API
-      const response = await SiteReportDataService.saveSiteTeam(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-        payload,
-      )
-
-      // 4. Handle API response
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
-        setModifiedCells({})
-        fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Save failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
+  }, [keycloak, SITE_ID])
 
   useEffect(() => {
-    if (tabIndex === 0) {
-      fetchData()
-    } else if (tabIndex === 3) {
-      fetchDataEnergyPerformance()
-      getPerformanceHighlights()
-    }
-  }, [PLANT_ID, SITE_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
+    fetchTabs()
+  }, [fetchTabs])
 
-  const getAdjustedPermissions = (permissions, isOldYear) => {
-    if (isOldYear != 1) return permissions
-    return {
-      ...permissions,
-      showAction: false,
-      addButton: false,
-      deleteButton: false,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
-      editButton: false,
-      showUnit: false,
-      saveWithRemark: false,
-      saveBtn: false,
-      isOldYear: isOldYear,
-      allAction: false,
+  const renderTabContent = (tabName, tabDisplayName) => {
+    switch (tabName || tabDisplayName) {
+      case 'SiteTeam':
+      case 'Site Team':
+        return <SiteTeam permissions={permissions} />
+      case 'SiteSafetyPerformanceTarget':
+      case 'Safety Performance & Targets':
+        return <SiteSafetyPerformanceTarget permissions={permissions} />
+      case 'ConversionVariableCost':
+      case 'Conversion & Variable Cost':
+        return <ConversionVariableCost permissions={permissions} />
+      case 'EnergyPerformance':
+      case 'Energy Performance':
+        return <EnergyPerformance permissions={permissions} />
+      case 'FixedExpenses':
+      case 'Fixed Expenses':
+        return <FixedExpenses permissions={permissions} />
+      case 'Capex':
+      case 'Capex/PIO Plan':
+        return <Capex permissions={permissions} />
+      case 'ShutdownSlowdownPlan':
+      case 'Shutdown / Slowdown plan':
+        return <ShutdownSlowdownPlan permissions={permissions} />
+      case 'TechnicalAvailability':
+      case 'Technical Availability':
+        return <TechnicalAvailability permissions={permissions} />
+      case 'ReportManualEntry':
+      case 'Report Manual Entry':
+        return <CrackerReportMannualEntry tabIndex={5} permissions={permissions} />
+      case 'MajorSafetyInitiative':
+      case 'Major Safety Improvement':
+        return <MajorSafetyInitiative permissions={permissions} />
+      case 'MajorProfitInitiative':
+      case 'Major Profit and Operability Improvement':
+        return <MajorProfitInitiative permissions={permissions} />
+      case 'MajorReliabilityInitiative':
+      case 'Major Reliability Improvement':
+        return <MajorReliabilityInitiative permissions={permissions} />
+      case 'MajorPeopleInitiative':
+      case 'Major People Initiative':
+        return <MajorPeopleInitiative permissions={permissions} />
+      case 'MCUCapacityUtilization':
+      case 'MCU Capacity Utilization (%)':
+        return <MCUCapacityUtilization permissions={permissions} />
+      default:
+        return null
     }
   }
 
-  const adjustedPermissions = getAdjustedPermissions(
-    {
-      showAction: permissions?.showAction ?? true,
-      showUnit: permissions?.showUnit ?? false,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? true,
-      customHeight: permissions?.customHeight,
-      allAction: true,
-      downloadExcelBtn: false,
-      showNoteWhileDeleting: false,
-      showTitleNameBusiness: true,
-      titleName: tabIndex === 0 ? 'Site Team' : 'Energy Performance',
-
-      uploadExcelBtn: false,
-    },
-    isOldYear,
-  )
-  const adjustedPermissionsslowdown = useMemo(
-    () =>
-      getAdjustedPermissions(
-        {
-          showAction: false,
-          addButton: true,
-          deleteButton: true,
-          editButton: false,
-          showUnit: false,
-          saveWithRemark: false,
-          saveBtn: true,
-          allAction: true,
-          downloadExcelBtnFromUI: true,
-          uploadExcelBtn: false,
-        },
-        isOldYear,
-      ),
-    [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME],
-  )
-  const adjustedPermission1 = useMemo(
-    () =>
-      getAdjustedPermissions(
-        {
-          showAction: false,
-          addButton: false,
-          deleteButton: false,
-          editButton: false,
-          showUnit: false,
-          saveWithRemark: false,
-          saveBtn: true,
-          allAction: true,
-          downloadExcelBtnFromUI: true,
-          uploadExcelBtn: false,
-          MonthDropdownPEPPHighlight: true,
-        },
-        isOldYear,
-      ),
-    [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME],
-  )
+  const tabDisplayNames = tabs.map((t) => t.tabDisplayName || t.tabName)
+  const currentTab = tabs[tabIndex] || tabs[0]
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
-      {defaultTabs?.length > 1 && (
+      {tabDisplayNames?.length > 1 && (
         <AopTabs
           tabIndex={tabIndex}
           setTabIndex={setTabIndex}
-          tabs={defaultTabs}
-        />
-      )}
-      {tabIndex === 0 && (
-        <KendoDataTables
-          modifiedCells={modifiedCells}
-          setModifiedCells={setModifiedCells}
-          setRows={setRows}
-          columns={columns.siteTeam}
-          rows={rows}
-          fetchData={fetchData}
-          saveChanges={saveChanges}
-          paginationOptions={[100, 200, 300]}
-          updateShutdownData={updateShutdownData}
-          snackbarData={snackbarData}
-          snackbarOpen={snackbarOpen}
-          apiRef={apiRef}
-          deleteId={deleteId}
-          open1={open1}
-          setDeleteId={setDeleteId}
-          setOpen1={setOpen1}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          handleRemarkCellClick={handleRemarkCellClick}
-          remarkDialogOpen={remarkDialogOpen}
-          setRemarkDialogOpen={setRemarkDialogOpen}
-          currentRemark={currentRemark}
-          setCurrentRemark={setCurrentRemark}
-          currentRowId={currentRowId}
-          permissions={adjustedPermissions}
-          disableRedHighlight={true}
-          screenType='shutdown'
-        />
-      )}
-      {tabIndex === 1 && <SiteSafetyPerformanceTarget />}
-      {tabIndex === 2 && (<ConversionVariableCost />
-      )}
-      {tabIndex === 3 && (
-        <>
-          <KendoDataTables
-            modifiedCells={modifiedCellsEnergyPerformance}
-            setModifiedCells={setModifiedCellsEnergyPerformance}
-            columns={columns.energyPerformance}
-            rows={energyPerformance}
-            setRows={setEnergyPerformance}
-            saveChanges={saveChangesEnergyPerformance}
-            fetchData={fetchDataEnergyPerformance}
-            title='B3.4. Energy Performance'
-            permissions={adjustedPermissions}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            snackbarData={snackbarData}
-            setSnackbarData={setSnackbarData}
-            setDeleteId={setDeleteId}
-            setOpen1={setOpen1}
-            handleRemarkCellClick={handleRemarkCellClickEnergyPerformance}
-            remarkDialogOpen={remarkDialogOpenEnergyPerformance}
-            setRemarkDialogOpen={setRemarkDialogOpenEnergyPerformance}
-            currentRemark={currentRemarkEnergyPerformance}
-            setCurrentRemark={setCurrentRemarkEnergyPerformance}
-            currentRowId={currentRowIdEnergyPerformance}
-            setCurrentRowId={setCurrentRowIdEnergyPerformance}
-          />
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column', // ?? stack vertically
-              alignItems: 'flex-start',
-              gap: 0,
-              mt: 1,
-            }}
-          >
-            <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
-              Performance Highlights
-            </Typography>
-
-            <Button
-              variant='contained'
-              // onClick={onLoad}
-              onClick={savePerformanceHighlightsSummary}
-              className='btn-save'
-              disabled={READ_ONLY || !performanceHighlightsEdited}
-              sx={{ alignSelf: 'flex-end' }}
-            >
-              Save
-            </Button>
-            <TextArea
-              value={performanceSummary}
-              rows={6}
-              style={{
-                width: '100%',
-              }}
-              onChange={(e) => {
-                setPerformanceSummary(e.target.value)
-                setPerformanceHighlightsEdited(true)
-              }}
-              placeholder='Enter summary here...'
-              disabled={READ_ONLY}
-            />
-          </Box>
-        </>
-      )}
-
-      {tabIndex === 4 && <FixedExpenses />}
-
-      {tabIndex === 5 && <Capex />}
-      {tabIndex === 6 && <ShutdownSlowdownPlan />}
-
-      {tabIndex === 7 && <TechnicalAvailability />}
-
-      {tabIndex === 8 && <CrackerReportMannualEntry tabIndex={5} />}
-
-      {tabIndex === 9 && <MajorSafetyInitiative />}
-
-      {tabIndex === 10 && <MajorProfitInitiative />}
-
-      {tabIndex === 11 && <MajorReliabilityInitiative />}
-
-      {tabIndex === 12 && <MajorPeopleInitiative />}
-
-      {tabIndex === 13 && <MCUCapacityUtilization />}
-
-      {tabIndex === 14 && (
-        <KendoDataTablesReports
-          columns={columns.safetyPerformance}
-          rows={Rowssafety}
-          setRows={setRowssafety}
-          deleteId={deleteId}
-          setDeleteId={setDeleteId}
-          modifiedCells={modifiedCells}
-          setModifiedCells={setModifiedCells}
-          open1={open1}
-          setOpen1={setOpen1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          remarkDialogOpen={remarkDialogOpen1}
-          setRemarkDialogOpen={setRemarkDialogOpen1}
-          currentRemark={currentRemark1}
-          setCurrentRemark={setCurrentRemark1}
-          currentRowId={currentRowId1}
-          handleRemarkCellClick={handleRemarkCellClick1}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
-          permissions={adjustedPermissionsslowdown}
-        />
-      )}
-      {tabIndex === 15 && (
-        <KendoDataTables
-          columns={contributionColumns}
-          rows={contribution}
-          setRows={setContribution}
-          title='B3.5. Contribution (Rs/ MT & Rs Crs.)'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
+          tabs={tabDisplayNames}
         />
       )}
 
-      {tabIndex === 16 && (
-        <KendoDataTables
-          columns={majorProcessIncidentsFy26Columns}
-          rows={majorProcessIncidentsFy26State}
-          setRows={setMajorProcessIncidentsFy26State}
-          title='B3.6. Major Process Incidents FY26: (High & Medium Risks)'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
-        />
-      )}
-
-      {tabIndex === 17 && (
-        <KendoDataTables
-          columns={columns.majorIncidents}
-          rows={majorIncidents}
-          setRows={setMajorIncidents}
-          modifiedCells={modifiedCells2} // <-- add this
-          setModifiedCells={setModifiedCells2}
-          title='B2.1. Major Incidents FY26: (Fatality, PSI Tier 1 & 2, LWC, High Severity, Process Fires)'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
-          handleRemarkCellClick={handleRemarkCellClickMajorInc}
-          remarkDialogOpen={remarkDialogOpen2}
-          setRemarkDialogOpen={setRemarkDialogOpen2}
-          currentRemark={currentRemark2}
-          setCurrentRemark={setCurrentRemark2}
-          currentRowId={currentRowId2}
-        />
-      )}
-
-      {tabIndex === 18 && (
-        <KendoDataTables
-          columns={productionTphColumns}
-          rows={productionTphState}
-          setRows={setProductionTphState}
-          title='Production (TPH) basis'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
-        />
-      )}
-
-      {tabIndex === 19 && (
-        <KendoDataTablesReports
-          columns={columns.production}
-          rows={production}
-          setRows={setProduction}
-          title='B3.1. AOP FY27 Basis'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
-        />
-      )}
-
+      {currentTab && renderTabContent(currentTab.tabName, currentTab.tabDisplayName)}
     </div>
   )
 }

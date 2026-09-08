@@ -273,17 +273,17 @@ const ProposedSteadyStateConsumption = () => {
 
   const productionColumns = [
     {
+      field: 'sapCode',
+      title: 'SAP MAT Code',
+      editable: false,
+      fixedWidth: 100,
+    },
+    {
       field: 'productName',
       title: 'Particulars',
       editable: false,
       fixedWidth: 250,
       locked: true,
-    },
-    {
-      field: 'sapCode',
-      title: 'SAP Code',
-      editable: false,
-      fixedWidth: 100,
     },
     {
       field: 'UOM',

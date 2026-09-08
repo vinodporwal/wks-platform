@@ -94,6 +94,7 @@ const QualityParameters = () => {
       field: 'name',
       title: 'Name',
       editable: false,
+      minWidth: 200,
     },
     {
       field: 'unit',
@@ -106,6 +107,7 @@ const QualityParameters = () => {
       title: `Budget ${previousYear}`,
       editable: false,
       type: 'number',
+      minWidth: 120,
       format: valueFormat,
     },
     {
@@ -113,12 +115,13 @@ const QualityParameters = () => {
       title: `Actual ${previousYear}`,
       editable: true,
       type: 'number',
+      minWidth: 120,
       format: valueFormat,
     },
     {
       field: 'proposedNorm',
       title: `Proposed Norm ${AOP_YEAR}`,
-      minWidth: 150,
+      minWidth: 120,
       editable: true,
       type: 'number',
       format: valueFormat,
@@ -128,6 +131,7 @@ const QualityParameters = () => {
       title: 'Remark',
       type: 'textarea',
       editable: true,
+      minWidth: 220
     },
   ]
 
@@ -431,18 +435,18 @@ const QualityParameters = () => {
             0,
           )
 
-          const isActualValid =
-            Math.abs(qualityActual - otherSumActual) <= 0.0001
-          const isNormValid = Math.abs(qualityNorm - otherSumNorm) <= 0.0001
+          // Only show error when sum of other rows EXCEEDS the Quality row value
+          const isActualExceeded = otherSumActual - qualityActual > 0.0001
+          const isNormExceeded = otherSumNorm - qualityNorm > 0.0001
 
-          if (!isActualValid || !isNormValid) {
+          if (isActualExceeded || isNormExceeded) {
             let errorMsg = ''
-            if (!isActualValid && !isNormValid) {
-              errorMsg = `Actual sum (${otherSumActual}) must match Quality Actual (${qualityActual}) AND Proposed Norm sum (${otherSumNorm}) must match Quality Norm (${qualityNorm}).`
-            } else if (!isActualValid) {
-              errorMsg = `Actual sum (${otherSumActual}) must match Quality Actual (${qualityActual}).`
+            if (isActualExceeded && isNormExceeded) {
+              errorMsg = `Actual sum (${otherSumActual}) exceeds Quality Actual (${qualityActual}) AND Proposed Norm sum (${otherSumNorm}) exceeds Quality Norm (${qualityNorm}).`
+            } else if (isActualExceeded) {
+              errorMsg = `Actual sum (${otherSumActual}) exceeds Quality Actual (${qualityActual}).`
             } else {
-              errorMsg = `Proposed Norm sum (${otherSumNorm}) must match Quality Norm (${qualityNorm}).`
+              errorMsg = `Proposed Norm sum (${otherSumNorm}) exceeds Quality Norm (${qualityNorm}).`
             }
             setErrorModalMessage(errorMsg)
             setErrorModalOpen(true)

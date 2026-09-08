@@ -12,55 +12,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import ValidationErrorDialog from './ValidationErrorDialog'
 import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 
-const staticInitialColumns = [
-  {
-    field: 'id',
-    title: 'Id',
-    minWidth: 200,
-    type: 'text',
-    editable: false,
-    locked: true,
-    hidden: true,
-  },
-  {
-    field: 'productName',
-    title: 'Particulars',
-    minWidth: 200,
-    type: 'text',
-    editable: false,
-    locked: true,
-  },
-  {
-    field: 'normParameterTypeDisplayName',
-    title: 'Type',
-    minWidth: 200,
-    type: 'text',
-    editable: false,
-    locked: true,
-    hidden: true,
-  },
-  {
-    field: 'sapCode',
-    title: 'SAP Code',
-    minWidth: 120,
-    type: 'text',
-    editable: false,
-  },
-  {
-    field: 'UOM',
-    title: 'UOM',
-    minWidth: 100,
-    type: 'text',
-    editable: false,
-  },
-  {
-    field: 'YTD',
-    title: 'YTD Norm',
-    minWidth: 100,
-    type: 'text',
-    editable: false,
-  },
-]
+
 const GradeWiseSteadyStateConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -105,8 +57,57 @@ const GradeWiseSteadyStateConsumption = () => {
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
+  const staticInitialColumns = [
+    {
+      field: 'id',
+      title: 'Id',
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+      locked: true,
+      hidden: true,
+    },
+    {
+      field: 'sapCode',
+      title: 'SAP MAT Code',
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+      locked: true,
+    },
+    {
+      field: 'normParameterTypeDisplayName',
+      title: 'Type',
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+      locked: true,
+      hidden: true,
+    },
+    {
+      field: 'UOM',
+      title: 'UOM',
+      minWidth: 100,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'YTD',
+      title: 'YTD Norm',
+      minWidth: 100,
+      type: 'number',
+      editable: false,
+      format: valueFormat
+    },
+  ]
   const [columns, setColumns] = useState(staticInitialColumns)
-
   // ===================== Fetch Grade Dropdown =====================
 
   const fetchGrades = useCallback(async () => {
