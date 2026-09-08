@@ -55,7 +55,7 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
             }))
             
             originalRemarkRef.current = mappedData[0]?.remark || ''
-            setRows(mappedData)
+            setRows(mappedData.sort((a, b) => (b.status ? 1 : 0) - (a.status ? 1 : 0)))
         } catch (e) {
             console.error('Error fetching data:', e)
             setRows([])
@@ -67,6 +67,12 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
     useEffect(() => {
         fetchData()
     }, [fetchData])
+    
+    useEffect(() => {
+        if(Object.keys(modifiedCells).length > 0){
+            setRows((prevRows) => [...prevRows].sort((a, b) => (b.status ? 1 : 0) - (a.status ? 1 : 0)))
+        }
+    }, [modifiedCells])
 
     const customItemChange = useCallback((e, setRowsFn, setModifiedCellsFn) => {
         // Multi-selection is standard behavior, no override needed
