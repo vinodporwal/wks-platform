@@ -164,7 +164,7 @@ const JWAvgNorms = () => {
       minWidth: 80,
       type: 'text',
       editable: false,
-      hidden: true,
+      locked: true,
     },
     {
       field: 'value',
