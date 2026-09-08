@@ -488,14 +488,12 @@ const MxoRegeneration = ({ permissions }) => {
       const payload = modifiedData.map((row) => ({
         month: row.month ?? row.monthLabel ?? '',
         mXOOpeningStockInMT: Number(row.mxoOpeningStock_MT ?? 0),
-        mXOGeneration: Number(row.mxoGeneration_TPM ?? 0),
-        mXOReprocessing: Number(row.mxoReprocessing_TPM ?? 0),
-        mXOClosingStockInMT: Number(row.mxoClosingStock_MT ?? 0),
-        aopYear: AOP_YEAR,
-        MXOOpeningStockId:
-          row.mxoOpeningStock_Id || row.MXOOpeningStock_Id || null,
-        MXOClosingStockId:
-          row.mxoClosingStock_Id || row.MXOClosingStock_Id || null,
+        mXOOpeningStockId:
+          row.mXOOpeningStockId ||
+          row.mxoOpeningStock_Id ||
+          row.MXOOpeningStock_Id ||
+          row.MXOOpeningStockId ||
+          null,
       }))
 
       const response = await ProductionNormsApiService.saveMxoStockData(
