@@ -184,6 +184,38 @@ public class PlantReportController {
         return plantReportService.saveSiteSafetyPerformanceTargets(siteSafetyPerformanceTargetsDTOs);
     }
 
+    @GetMapping(value = "/site-safety-performance-load")
+    public AOPMessageVM loadSiteSafetyPerformanceData(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.loadSiteSafetyPerformanceData(siteId, aopYear);
+    }
+
+    @GetMapping(value = "/site-safety-performance-export")
+    public ResponseEntity<byte[]> exportSiteSafetyPerformance(
+            @RequestParam String siteId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = plantReportService.exportSiteSafetyPerformanceTargets(siteId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("site_safety_performance.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/site-safety-performance-import", consumes = "multipart/form-data")
+    public AOPMessageVM importSiteSafetyPerformance(
+            @RequestParam String siteId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return plantReportService.importSiteSafetyPerformanceTargetsExcel(siteId, aopYear, file);
+    }
+
     @GetMapping(value = "/conversion-variable-cost")
     public AOPMessageVM getConversionVariableCostData(@RequestParam String siteId, @RequestParam String aopYear) {
         return plantReportService.getConversionVariableCostData(siteId, aopYear);
@@ -192,6 +224,11 @@ public class PlantReportController {
     @PostMapping(value = "/conversion-variable-cost")
     public AOPMessageVM saveConversionVariableCostData(@RequestBody List<ConversionVariableCostDTO> conversionVariableCostDTOs) {
         return plantReportService.saveConversionVariableCostData(conversionVariableCostDTOs);
+    }
+
+    @GetMapping(value = "/site-aop-report-tabs")
+    public AOPMessageVM getSiteAopReportTabs(@RequestParam(required = false) String siteId) {
+        return plantReportService.getSiteAopReportTabs(siteId);
     }
 
     @GetMapping(value = "/plant-report-export")
