@@ -41,6 +41,7 @@ import { CaseService } from '../../services'
 // import { Grid, GridColumn } from '@progress/kendo-react-grid';
 //import '@progress/kendo-theme-material/dist/all.css'
 import { getQueryParamValue } from 'utils/util'
+import { getUrlParamsCompat, getFullApmContext, updateApmContext } from 'utils/apmContext'
 // import { useLocation } from 'react-router-dom';
 import { accountStore } from '../../store'
 import moment from 'moment'
@@ -195,13 +196,9 @@ export const CaseList = ({ status, caseDefId }) => {
     const [page, setPage] = useState(0)
     const [rowsPerPage, setRowsPerPage] = useState(10)
   
-    const getUrlParams = () => {
-      const searchParams = new URLSearchParams(window.location.search)
-      return {
-        assetName: searchParams.get('assetName') || '',
-        hierarchyName: searchParams.get('hierarchyName') || '',
-      }
-    }
+    // Use APM context utility for parameter persistence across navigation
+    // This replaces the old getUrlParams() with sessionStorage + URL fallback
+    const getUrlParams = getUrlParamsCompat;
   
   const columns = React.useMemo(() => makeColumns(), []);
 
@@ -479,9 +476,10 @@ export const CaseList = ({ status, caseDefId }) => {
       }
     } else {
       if (isLinkCaseUrl) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const mainAssetName = urlParams.get('assetName');
-        const eventIds = urlParams.get('eventIds');
+        // Use APM context for parameters including eventIds
+        const context = getFullApmContext();
+        const mainAssetName = context.assetName;
+        const eventIds = context.eventIds;
         setFetching(true);
         CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds).then((data) => {
           const cases = Array.isArray(data) ? data : (data?.data || []);
@@ -862,14 +860,7 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   const handleNewCaseAction = () => {
-   if(isLinkCaseUrl) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const linkIdsValue = urlParams.get('eventIds');
-    urlParams.delete('eventIds');
-    urlParams.set('eventIds', linkIdsValue);
-    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-    window.history.replaceState(null, '', newUrl);
-  }
+    // The new case form will use APM context, so no URL manipulation needed
     setLastCreatedCase(null)
     setNewCaseDefId(caseDefId)
     setOpenNewCaseForm(true)
@@ -877,11 +868,12 @@ export const CaseList = ({ status, caseDefId }) => {
 
   const handleLinkCaseAction = () => {  
 
-const urlParams = new URLSearchParams(window.location.search);
-const eventIds = urlParams.get('eventIds');
+// Use APM context for eventIds
+const context = getFullApmContext();
+const eventIds = context.eventIds;
 
 if (!eventIds) {
-  console.error('handleLinkCaseAction: eventIds missing from URL');
+  console.error('handleLinkCaseAction: eventIds missing from context');
   setLinkSnackMessage('No events found to link. Please try again from the events page.');
   setLinkSnackOpen(true);
   return;
@@ -958,12 +950,15 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
       console.error("linkEventsToCase SQL update failed: ", err);
     });
 
-    // clean url parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const savedAssetName = urlParams.get('assetName');    
-    const savedEventIds = urlParams.get('eventIds');      
+    // Get context parameters for display
+    const context = getFullApmContext();
+    const savedAssetName = context.assetName;    
+    const savedEventIds = context.eventIds;      
     setLinkedAssetName(savedAssetName || '');            
     setLinkedEventIds(savedEventIds || '');               
+    
+    // Clean URL parameters but keep context in sessionStorage
+    const urlParams = new URLSearchParams(window.location.search);
     urlParams.delete('eventIds');
     urlParams.delete('assetName');
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
@@ -1115,9 +1110,10 @@ let request;
   if(isLinkCaseUrl) {  
   const nextPage = page + 1;
   setPage(nextPage);
-    const urlParams = new URLSearchParams(window.location.search);
-    const mainAssetName = urlParams.get('assetName');
-    const eventIds = urlParams.get('eventIds');  
+    // Use APM context for parameters
+    const context = getFullApmContext();
+    const mainAssetName = context.assetName;
+    const eventIds = context.eventIds;  
 
     request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, next, mainAssetName, eventIds, rowsPerPage, nextPage * rowsPerPage)
     .then((data) => ({
@@ -1164,9 +1160,10 @@ let request;
 if(isLinkCaseUrl) {
   const prevPage = Math.max(page - 1, 0);
   setPage(prevPage);
-  const urlParams = new URLSearchParams(window.location.search);
-  const mainAssetName = urlParams.get('assetName');
-  const eventIds = urlParams.get('eventIds');  
+  // Use APM context for parameters
+  const context = getFullApmContext();
+  const mainAssetName = context.assetName;
+  const eventIds = context.eventIds;  
   request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, prior, mainAssetName, eventIds, rowsPerPage, prevPage * rowsPerPage)
     .then((data) => ({
       data: Array.isArray(data) ? data : (data?.data || []),
@@ -1252,9 +1249,10 @@ else {
       setPage(0)
       let request
       if (isLinkCaseUrl) {
-        const urlParams = new URLSearchParams(window.location.search)
-        const mainAssetName = urlParams.get('assetName')
-        const eventIds = urlParams.get('eventIds')
+        // Use APM context for parameters
+        const context = getFullApmContext();
+        const mainAssetName = context.assetName;
+        const eventIds = context.eventIds;
         request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, { limit: newLimit }, mainAssetName, eventIds, newLimit, 0)
           .then((data) => ({ data: Array.isArray(data) ? data : (data?.data || []), paging: { cursors: {}, hasPrevious: false, hasNext: false } }))
       } else {
@@ -1371,15 +1369,7 @@ else {
                     variant="contained"
                     color="primary"
                     onClick={() => {
-                      // Change 'linkIds' to 'eventIds' in URL before opening form
-                      const urlParams = new URLSearchParams(window.location.search);
-                      if (urlParams.has('eventIds')) {
-                        const linkIdsValue = urlParams.get('eventIds');
-                        urlParams.delete('eventIds');
-                        urlParams.set('eventIds', linkIdsValue);
-                        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-                        window.history.replaceState(null, '', newUrl);
-                      }
+                      // The new case form will use APM context, so no URL manipulation needed
                       setNewCaseDefId(caseDefId);
                       setOpenNewCaseForm(true);
                     }}
@@ -1575,9 +1565,10 @@ else {
 
     let response;
     if(isLinkCaseUrl) {  
-      const urlParams = new URLSearchParams(window.location.search);
-      const mainAssetName = urlParams.get('assetName');
-      const eventIds = urlParams.get('eventIds');
+      // Use APM context for parameters
+      const context = getFullApmContext();
+      const mainAssetName = context.assetName;
+      const eventIds = context.eventIds;
       response = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds)
     }
 else 

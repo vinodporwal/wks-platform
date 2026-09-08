@@ -41,6 +41,7 @@ import logo from 'assets/images/logo.svg'
 import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 import Config from '../../consts'
 import { buildCreateUrl } from 'utils/util'
+import { getFullApmContext } from 'utils/apmContext'
 import { Formio } from 'formiojs'
 import { Form } from '@formio/react'
 import { accountStore } from './../../store'
@@ -700,12 +701,13 @@ console.log('*****  taskId:  ', taskId);
     }
     const currentParams = window.location.search
     setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
-
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    
+    // Use APM context for parameters instead of URL
+    const context = getFullApmContext();
+    const assetName = context.assetName || 'default'
+    const hierarchyName = context.hierarchyName || 'default'
+    const eventIdsParam = context.eventIds
+    const sourceSystem = context.sourceSystem || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
@@ -797,11 +799,13 @@ console.log('*****  taskId:  ', taskId);
     }
     const currentParams = window.location.search
     setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    
+    // Use APM context for parameters instead of URL
+    const context = getFullApmContext();
+    const assetName = context.assetName || 'default'
+    const hierarchyName = context.hierarchyName || 'default'
+    const eventIdsParam = context.eventIds
+    const sourceSystem = context.sourceSystem || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(liveContainer).map((key) => ({
       name: key,
@@ -958,12 +962,13 @@ console.log('*****  taskId:  ', taskId);
    
     const currentParams = window.location.search
     setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
-
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    
+    // Use APM context for parameters instead of URL
+    const context = getFullApmContext();
+    const assetName = context.assetName || 'default'
+    const hierarchyName = context.hierarchyName || 'default'
+    const eventIdsParam = context.eventIds
+    const sourceSystem = context.sourceSystem || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
 
     if(isLastStageofProcessRef.current === true) {

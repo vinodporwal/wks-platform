@@ -3,8 +3,10 @@ server:
    servlet:
       context-path: /cm
    tomcat:
-      max-http-header-size: ${SERVER_MAX_HTTP_HEADER_SIZE:16KB}
+      max-http-header-size: ${SERVER_MAX_HTTP_HEADER_SIZE:64KB}
       max-http-form-post-size: ${SERVER_MAX_HTTP_FORM_POST_SIZE:50MB}
+      max-http-request-header-size: ${SERVER_MAX_HTTP_REQUEST_HEADER_SIZE:64KB}
+   max-http-header-size: ${SERVER_MAX_HTTP_HEADER_SIZE:65536}
 
 logging:
    level:

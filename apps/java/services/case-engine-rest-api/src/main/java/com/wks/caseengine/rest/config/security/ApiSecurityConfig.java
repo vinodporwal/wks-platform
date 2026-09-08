@@ -55,7 +55,8 @@ public class ApiSecurityConfig {
 					.filterSecurityInterceptorOncePerRequest(false)
 					// SSO endpoints are validated internally, no Bearer token required
 					.requestMatchers("/sso/**").permitAll()
-					.requestMatchers("/debug/**").permitAll()
+					.requestMatchers("/debug/headers").permitAll()
+					.requestMatchers("/debug/auth-headers").authenticated()
 					.anyRequest().authenticated()
 					.accessDecisionManager(accessDecisionManager()))
 			.oauth2ResourceServer(oauth2 -> oauth2

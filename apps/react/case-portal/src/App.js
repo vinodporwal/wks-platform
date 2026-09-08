@@ -27,6 +27,104 @@ const App = () => {
 
   const isInIframe = window.self !== window.top
 
+  // Cookie cleanup and cache management
+  useEffect(() => {
+    const appVersion = process.env.REACT_APP_VERSION || '1.0.0';
+    const lastVersion = localStorage.getItem('wks_app_version');
+    
+    if (lastVersion !== appVersion) {
+      console.log(`App version changed from ${lastVersion} to ${appVersion} - performing selective cleanup`);
+      
+      // === SELECTIVE COOKIE CLEANUP ===
+      // Only clear cookies that are known to accumulate and cause header bloat
+      // DO NOT clear functional cookies that WKS needs
+      const problematicCookies = [
+        // APM-specific cookies that accumulate
+        'apm_session', 'apm_token', 'apm_auth', 'apm_sso',
+        // Generic SSO cookies that grow large
+        'sso_session', 'sso_token', 'sso_auth', 'sso_state',
+        // Keycloak cookies that can accumulate
+        'KC_RESTART', 'AUTH_SESSION_ID', 'AUTH_SESSION_ID_LEGACY',
+        // Large session cookies that aren't essential
+        'connect.sid', 'session_state', 'legacy_session'
+      ];
+      
+      // Get all cookies and only clear the problematic ones
+      document.cookie.split(";").forEach(cookie => {
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        
+        // Only clear cookies that match problematic patterns or names
+        const shouldClear = problematicCookies.includes(name) ||
+                           name.toLowerCase().includes('apm_') ||
+                           name.toLowerCase().includes('_sso_') ||
+                           (name.toLowerCase().includes('session') && name.length > 20); // Long session names
+        
+        if (shouldClear) {
+          // Clear cookie for current domain
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/cm`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=${window.location.hostname}`;
+          
+          console.log(`Cleared problematic cookie: ${name}`);
+        }
+      });
+      
+      // === SELECTIVE BROWSER CACHE CLEANUP ===
+      // Clear browser caches but preserve service worker caches
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            // Only clear WKS-specific caches, not all caches
+            if (cacheName.includes('wks') || cacheName.includes('case-portal')) {
+              caches.delete(cacheName);
+              console.log(`Cleared cache: ${cacheName}`);
+            }
+          });
+        });
+      }
+      
+      // === SELECTIVE SESSION STORAGE CLEANUP ===
+      // Only remove problematic sessionStorage items, preserve important ones
+      const sessionKeysToRemove = [];
+      const preservedSessionKeys = ['apmMainAssetInfo']; // Keep APM asset info
+      
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && !preservedSessionKeys.includes(key)) {
+          // Only remove auth-related session items that can accumulate
+          if (key.includes('keycloak_') || key.includes('sso_') || 
+              key.includes('auth_') || key.includes('token_') ||
+              (key.includes('session') && key.length > 15)) {
+            sessionKeysToRemove.push(key);
+          }
+        }
+      }
+      
+      sessionKeysToRemove.forEach(key => {
+        sessionStorage.removeItem(key);
+        console.log(`Cleared sessionStorage: ${key}`);
+      });
+      
+      // === PRESERVE IMPORTANT LOCALSTORAGE ===
+      // DO NOT clear these localStorage items as they are functional:
+      // - baseUrl, keycloakToken, userId (auth essentials)
+      // - aCaseOwnerEmail, formData1 (case form data)
+      // - categoryOptions, faultCategoryOptions, etc. (cached options)
+      // - dtrCreated, rejectCreated, etc. (form creation flags)
+      
+      // Update stored version
+      localStorage.setItem('wks_app_version', appVersion);
+      
+      // Force a single page reload only if this was an actual version change (not first load)
+      if (lastVersion && lastVersion !== appVersion) {
+        console.log('Reloading page to apply clean state...');
+        window.location.reload();
+        return; // Exit early to prevent further execution
+      }
+    }
+  }, []); // Empty dependency array - only run on mount
+
   // Iframe SSO flow: receive token from APM via postMessage
   useIframeSso({
     onSuccess: async (token) => {

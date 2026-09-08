@@ -2,6 +2,12 @@
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const Dotenv = require('dotenv-webpack')
+const webpack = require('webpack')
+
+// Get version directly from package.json
+const packageJson = require('./package.json')
+const appVersion = packageJson.version
+const buildTime = new Date().toISOString()
 
 /*eslint-disable no-undef*/
 module.exports = {
@@ -12,8 +18,9 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'build/[name].js',
+    filename: 'build/[name].[contenthash].js', // Add content hash for better cache busting
     publicPath: '/cm/',
+    clean: true, // Clean dist folder on each build
   },
   optimization: {
     splitChunks: {
@@ -67,11 +74,20 @@ module.exports = {
       template: './public/index.html',
     }),
     new Dotenv({ systemvars: true }),
+    new webpack.DefinePlugin({
+      'process.env.REACT_APP_VERSION': JSON.stringify(appVersion),
+      'process.env.REACT_APP_BUILD_TIME': JSON.stringify(buildTime),
+    }),
   ],
   devServer: {
     static: path.join(__dirname, 'public'),
     port: 3001,
-    historyApiFallback: true,
+    historyApiFallback: {
+      index: '/cm/index.html',
+      rewrites: [
+        { from: /^\/cm\/.*$/, to: '/cm/index.html' },
+      ],
+    },
   },
   devtool: 'source-map',
 }
