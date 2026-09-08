@@ -333,8 +333,9 @@ const NormalOpNormsScreen = () => {
   useEffect(() => {
     fetchAllData(gradeId)
   }, [oldYear, yearChanged, keycloak, gradeId, PLANT_ID, AOP_YEAR])
-
-  const valueFormat = ValueFormatterConsumption()
+  const consumptionFormat = ValueFormatterConsumption()
+  const valueFormat =
+    lowerVertName === 'pvc' ? '{0:0.00000}' : consumptionFormat
 
   const colDefs = getNormalOpNormColDef({
     headerMap,

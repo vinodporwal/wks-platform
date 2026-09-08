@@ -1139,6 +1139,7 @@ const CrackerConfig = () => {
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}
                     saveChanges={saveChanges}
+                    handleCalculate={handleCalculate}
                     snackbarData={snackbarData}
                     snackbarOpen={snackbarOpen}
                     setSnackbarOpen={setSnackbarOpen}
