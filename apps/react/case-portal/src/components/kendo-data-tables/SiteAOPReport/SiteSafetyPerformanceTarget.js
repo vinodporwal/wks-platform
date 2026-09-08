@@ -136,7 +136,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         headerAlign: 'right',
       },
       {
-        field: 'remark',
+        field: 'responsibility',
         title: 'Remarks',
         editable: true,
         minWidth: 180,
@@ -175,6 +175,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
             prevActual: item.prevActual ?? '',
             currentPlan: item.currentPlan ?? '',
             remark: item.remark ?? item.remarks ?? '',
+            responsibility: item.remark ?? item.remarks ?? '',
             isEditable: true,
             currentPlanEditable: isActEditable,
           }
@@ -224,7 +225,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         prevAOP: parseOptionalNumber(item.prevAOP),
         prevActual: parseOptionalNumber(item.prevActual),
         currentPlan: parseOptionalNumber(item.currentPlan),
-        remark: item.remark ?? '',
+        remark: item.responsibility ?? item.remark ?? '',
         siteFkId: SITE_ID,
         aopYear: AOP_YEAR,
       }))
