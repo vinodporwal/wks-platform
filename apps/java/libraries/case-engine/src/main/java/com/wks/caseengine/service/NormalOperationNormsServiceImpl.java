@@ -4853,7 +4853,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 			List<String> innerHeaders = new ArrayList<>();
 			innerHeaders.add("Type");
-			innerHeaders.add("SAP Mat Code");
+			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
 			innerHeaders.add("UOM");
 			List<String> monthsList = getAcademicYearMonths(year);

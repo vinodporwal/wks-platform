@@ -64,6 +64,8 @@ export default function PlantContributionLastFourYears() {
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const SITE_NAME = siteObject?.name
+  const lowerSiteName = SITE_NAME?.toLowerCase()
   const [loading, setLoading] = useState(false)
   const [reports, setReports] = useState({})
   const [snackbarData, setSnackbarData] = useState({
@@ -110,11 +112,14 @@ export default function PlantContributionLastFourYears() {
               : lowerVertName === 'pta'
                 ? '{0:0.00000}'
                 : '{0:0.00}',
-        norms: ['meg', 'elastomer', 'pta'].includes(lowerVertName)
-          ? '{0:0.00000}'
-          : lowerVertName === 'vcm'
-            ? '{0:0.000}'
-            : '{0:0.00}',
+        norms:
+          lowerVertName === 'vcm' && lowerSiteName === 'hmd'
+            ? '{0:0.000000}'
+            : ['meg', 'elastomer', 'pta'].includes(lowerVertName)
+              ? '{0:0.00000}'
+              : lowerVertName === 'vcm'
+                ? '{0:0.000}'
+                : '{0:0.00}',
       }
 
   const FORMAT_VALUES_3_DECIMAL = formats.dec3

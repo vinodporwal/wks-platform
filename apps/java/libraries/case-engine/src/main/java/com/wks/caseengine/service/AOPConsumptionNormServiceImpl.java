@@ -185,10 +185,10 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					if(chemical || ptapmdpia) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
-					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("FCC")) {
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")) {
 						dto.setSapCode(row[25] != null ? row[25].toString() : "");
 					}
-						if(vertical.getName().equalsIgnoreCase("PCG")) {
+					if(vertical.getName().equalsIgnoreCase("PCG")) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
 				}
