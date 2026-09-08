@@ -522,8 +522,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        }
 
         List<String> orderedKeys = new ArrayList<>();
-        orderedKeys.add("PARTICULARS_HEADER"); 
         if (sapCodeKey != null) orderedKeys.add(sapCodeKey);
+        orderedKeys.add("PARTICULARS_HEADER"); 
         if (uomKey != null) orderedKeys.add(uomKey);
         if (ytdKey != null) orderedKeys.add(ytdKey);
         orderedKeys.addAll(dynamicUuidHeaders); // Visible dynamic Grade columns
@@ -562,6 +562,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
             String displayHeader;
             if ("PARTICULARS_HEADER".equals(key)) {
                 displayHeader = "Particulars";
+            } else if (key != null && key.equals(sapCodeKey)) {
+                displayHeader = "SAP MAT Code";
             } else if (key != null && key.equals(ytdKey)) {
                 displayHeader = "YTD Norms";
             } else if (fieldToTitleMap.containsKey(key)) {
@@ -793,6 +795,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	       
 	        int materialFkColIndex = -1;
 	        int normParamTypeColIndex = -1;
+	        int particularsColIndex = 0; // defaults to column 0; updated below when header is found
 
 	        for (int j = 0; j < totalCols; j++) {
 	            String headerTitle = getStringCellValue(headerRow.getCell(j));
@@ -803,6 +806,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                materialFkColIndex = j;
 	            } else if (sanitized.equalsIgnoreCase("NormParameterTypeId") || sanitized.equalsIgnoreCase("NormParameterTypeFKId")) {
 	                normParamTypeColIndex = j;
+	            } else if (sanitized.equalsIgnoreCase("Particulars")) {
+	                particularsColIndex = j;
 	            }
 	        }
 
@@ -813,7 +818,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            Row row = sheet.getRow(i);
 	            if (row == null) continue;
 
-	            Cell firstCell = row.getCell(0);
+	            Cell firstCell = row.getCell(particularsColIndex);
 	            String firstCellValue = getStringCellValue(firstCell);
 
 	            
@@ -851,7 +856,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
                     if (sanitized.equalsIgnoreCase("Particulars")) {
                         mappedKey = "PARTICULARS_DISPLAY";
                         value = getStringCellValue(cell);
-                    } else if (sanitized.equalsIgnoreCase("SAPMaterialCode")) {
+                    } else if (sanitized.equalsIgnoreCase("SAPMaterialCode") || sanitized.equalsIgnoreCase("SAPMATCode")) {
                         mappedKey = "SAPMaterialCode";
                         value = getStringCellValue(cell);
                     } else if (sanitized.equalsIgnoreCase("UOM")) {

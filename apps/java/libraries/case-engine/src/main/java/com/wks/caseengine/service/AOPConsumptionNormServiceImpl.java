@@ -768,8 +768,8 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			for (AOPConsumptionNormDTO dto : currentDtoList) {
 				List<Object> list = new ArrayList<>();
 				list.add(dto.getNormParameterTypeDisplayName());
-				list.add(dto.getProductName());
 				list.add(dto.getSapCode());
+				list.add(dto.getProductName());
 				list.add(dto.getUOM());
 				list.add(dto.getApril());
 				list.add(dto.getMay());
@@ -796,8 +796,8 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 
 			List<String> innerHeaders = new ArrayList<>();
 			innerHeaders.add("Type");
+			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("Sap Code");
 			innerHeaders.add("UOM");
 			List<String> monthsList = Utility.getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
@@ -849,7 +849,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					}
 				}
 			}
-			// Sap Code shifts Id to index 17 — hide the Id column
+			// SAP MAT Code shifts Id to index 17 — hide the Id column
 			sheet.setColumnHidden(17, true);
 
 			try {
