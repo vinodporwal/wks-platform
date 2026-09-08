@@ -18,6 +18,7 @@ No hardcoded norm values.
 
 import logging
 import os
+import re
 from typing import Dict, Optional, Set
 
 from engine.norms_reader_factory import get_norms_reader
@@ -41,6 +42,7 @@ _POWER_DIS_OTHER_PLANT_MATERIAL = "Power"
 
 # DTA CPP plant id — used for STG extraction override.
 _DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
+_SEZ_PLANT_ID = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
 
 # Constants for reverse MMBTU norm calculation (same as NMD)
 _KCAL_TO_BTU = 3.96567
@@ -775,16 +777,45 @@ class U4UIterationLoop:
                     display, self.plant_id
                 )
 
+    @staticmethod
+    def _find_power_producer(norms: dict, power_assets: list) -> tuple:
+        kwh_producers = [
+            (name, info) for name, info in norms.items()
+            if str(info.get("producer_uom", "")).upper() == "KWH"
+        ]
+        for name, info in kwh_producers:
+            if name.upper() == "POWERGEN":
+                return name, info
+
+        asset_names = {
+            str(asset.get("asset_name", "")).strip().upper()
+            for asset in power_assets
+            if str(asset.get("asset_name", "")).strip()
+        }
+        for name, info in kwh_producers:
+            source_plants = {
+                str(c.get("source_plant", "")).strip().upper()
+                for c in info.get("consumptions", [])
+                if str(c.get("source_plant", "")).strip()
+            }
+            if source_plants & asset_names:
+                return name, info
+
+        return kwh_producers[0] if kwh_producers else (None, None)
+
     def _apply_stg_extraction_u4u(
         self, power_result: dict, u4u: dict, details: list
     ) -> None:
         """Override ODS-derived STG HP/MP extraction with dispatch_power values.
 
-        For DTA only, the actual STG extraction per power asset (from the
-        averaged interpolated curve) is already computed in dispatch_power and
-        stored in the asset dict.  Replace the U4U back-calculated values with
-        those real quantities so the cascade uses the correct SHP consumption.
+        For DTA and SEZ, the actual STG extraction per power asset is already
+        computed in dispatch_power and stored in the asset dict. Replace the
+        U4U back-calculated values with those real quantities so each plant's
+        steam cascade uses its own STG methodology.
         """
+        if self.plant_id == _SEZ_PLANT_ID:
+            self._apply_sez_stg_extraction_u4u(power_result, u4u, details)
+            return
         if self.plant_id != _DTA_PLANT_ID:
             return
 
@@ -828,6 +859,45 @@ class U4UIterationLoop:
                         "norms_month_detail_id": None,
                     })
 
+    def _apply_sez_stg_extraction_u4u(
+        self, power_result: dict, u4u: dict, details: list
+    ) -> None:
+        def replace_quantity(rec: dict, quantity: float, generation: float = None) -> None:
+            material = str(rec.get("material", "")).strip()
+            old_quantity = float(rec.get("quantity", 0.0))
+            rec["quantity"] = quantity
+            if generation is not None:
+                rec["generation"] = generation
+            rec_generation = float(rec.get("generation", 0.0))
+            rec["norm"] = quantity / rec_generation if rec_generation > 0 else 0.0
+            if material in u4u:
+                u4u[material] += quantity - old_quantity
+
+        for asset in power_result.get("assets", []):
+            hp_for_power = float(asset.get("stg_hp_for_power_mt", 0.0))
+            hp_for_mp = float(asset.get("stg_hp_for_mp_consumption_mt", 0.0))
+            mp_extraction = float(asset.get("stg_mp_extraction_mt", 0.0))
+            match = re.search(r"(?:STG|SGT)[^0-9]*(\d+)", asset.get("asset_name", ""), re.IGNORECASE)
+            if not match or hp_for_power <= 0:
+                continue
+
+            stg_number = match.group(1)
+            mp_producer = f"STG{stg_number}_MP STEAM"
+            for rec in details:
+                producer = str(rec.get("producer", "")).strip()
+                material = str(rec.get("material", "")).strip()
+                if producer == asset.get("asset_name") and material == "HP Steam_Dis":
+                    replace_quantity(rec, hp_for_power)
+                elif producer.upper() == mp_producer and mp_extraction > 0:
+                    if material == "HP Steam_Dis":
+                        replace_quantity(rec, hp_for_mp, mp_extraction)
+                    else:
+                        replace_quantity(
+                            rec,
+                            mp_extraction * float(rec.get("norm", 0.0)),
+                            mp_extraction,
+                        )
+
     def _calculate_u4u_from_power(self, power_result: dict) -> tuple:
         """Calculate U4U from power dispatch using per-asset ODS norms.
 
@@ -835,14 +905,9 @@ class U4UIterationLoop:
         """
         u4u: dict = {}
         details: list = []
-        # Dynamically find the power producer: the one whose production UOM is KWH
-        power_producer_name = None
-        powergen = None
-        for pname, pinfo in self.consumption_norms.items():
-            if pinfo.get("producer_uom", "").upper() == "KWH":
-                power_producer_name = pname
-                powergen = pinfo
-                break
+        power_producer_name, powergen = self._find_power_producer(
+            self.consumption_norms, power_result.get("assets", [])
+        )
         if not powergen:
             return u4u, details
 
@@ -2092,17 +2157,15 @@ class U4UIterationLoop:
         if not self.all_consumption_norms:
             return records
 
-        # Identify the power producer (UOM = KWH) and its ODS sub-assets
-        power_producer_name = None
+        power_assets = (self.final_power_result or {}).get("assets", [])
+        power_producer_name, power_producer_info = self._find_power_producer(
+            self.all_consumption_norms, power_assets
+        )
         power_sub_assets: set = set()
-        for pname, pinfo in self.all_consumption_norms.items():
-            if pinfo.get("producer_uom", "").upper() == "KWH":
-                power_producer_name = pname
-                for c in pinfo.get("consumptions", []):
-                    sp = c.get("source_plant", "").strip()
-                    if sp:
-                        power_sub_assets.add(sp)
-                break
+        for c in (power_producer_info or {}).get("consumptions", []):
+            sp = c.get("source_plant", "").strip()
+            if sp:
+                power_sub_assets.add(sp)
 
         # Map power/steam asset names to their final generation
         power_asset_gens: dict = {}

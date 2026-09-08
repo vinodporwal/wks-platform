@@ -46,6 +46,7 @@ from engine.dta_stg_calc import (
     log_stg_extraction,
 )
 from engine.dta_stg_config import get_dta_stg_config
+from engine.sez_stg_calc import calculate_sez_stg_extraction
 
 logger = logging.getLogger(__name__)
 
@@ -196,6 +197,7 @@ def _get_asset_equipment_type(asset_name: str) -> str:
 # DTA STG extraction curve — averaged from the four cases in the site Excel.
 # Loaded on first use so it does not affect other plants.
 _DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
+_SEZ_PLANT_ID = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
 _DTA_STG_CSV = os.path.join(os.path.dirname(__file__), "..", "data", "dta_stg_extraction.csv")
 _DTA_STG_LOOKUP: list = []
 
@@ -262,6 +264,9 @@ def _stg_extraction_totals_from_power_result(power_result: dict) -> dict:
     """Sum STG extraction across all dispatched STG assets."""
     totals = {
         "shp_consumption_mt": 0.0,
+        "hp_consumption_mt": 0.0,
+        "hp_for_power_mt": 0.0,
+        "hp_for_mp_consumption_mt": 0.0,
         "hp_extraction_mt": 0.0,
         "mp_extraction_mt": 0.0,
         "lp_extraction_mt": 0.0,
@@ -269,6 +274,9 @@ def _stg_extraction_totals_from_power_result(power_result: dict) -> dict:
     for d in (power_result or {}).get("assets", []):
         if "STG" in d.get("asset_type", "").upper():
             totals["shp_consumption_mt"] += d.get("stg_shp_consumption_mt", 0.0)
+            totals["hp_consumption_mt"] += d.get("stg_hp_consumption_mt", 0.0)
+            totals["hp_for_power_mt"] += d.get("stg_hp_for_power_mt", 0.0)
+            totals["hp_for_mp_consumption_mt"] += d.get("stg_hp_for_mp_consumption_mt", 0.0)
             totals["hp_extraction_mt"] += d.get("stg_hp_extraction_mt", 0.0)
             totals["mp_extraction_mt"] += d.get("stg_mp_extraction_mt", 0.0)
             totals["lp_extraction_mt"] += d.get("stg_lp_extraction_mt", 0.0)
@@ -932,6 +940,47 @@ def dispatch_power(
             total_stg_condensate_mt += d["stg_condensate_mt"]
             log_stg_extraction(d["asset_name"], ext)
 
+    if plant_id == _SEZ_PLANT_ID:
+        for d in dispatch:
+            if "STG" not in d.get("asset_type", "").upper():
+                continue
+            hours = float(d.get("op_hours", 0.0))
+            mwh = float(d.get("dispatched_mwh", 0.0))
+            load_mw = mwh / hours if hours > 0 else 0.0
+            ext = calculate_sez_stg_extraction(load_mw)
+            stg_num = _stg_num_from_name(d["asset_name"])
+            d["stg_hp_inlet_tph"] = round(ext["hp_inlet_tph"], 4)
+            d["stg_hp_for_power_tph"] = round(ext["hp_for_power_tph"], 4)
+            d["stg_hp_for_mp_consumption_tph"] = round(ext["hp_for_mp_extraction_tph"], 4)
+            d["stg_mp_extraction_tph"] = round(ext["mp_extraction_tph"], 4)
+            d["stg_ssc_kg_kwh"] = round(ext["ssc_kg_kwh"], 4)
+            d["stg_heat_rate_kcal_kwh"] = round(ext["fy2025_26_heat_rate_kcal_kwh"], 4)
+            d["stg_hp_consumption_mt"] = round(ext["hp_inlet_tph"] * hours, 2)
+            d["stg_hp_for_power_mt"] = round(ext["hp_for_power_tph"] * hours, 2)
+            d["stg_hp_for_mp_consumption_mt"] = round(ext["hp_for_mp_extraction_tph"] * hours, 2)
+            d["stg_mp_extraction_mt"] = round(ext["mp_extraction_tph"] * hours, 2)
+            d["stg_mp_material"] = f"STG{stg_num}_MP STEAM" if stg_num else ""
+            total_stg_mp_extraction_mt += d["stg_mp_extraction_mt"]
+            logger.info(
+                "  SEZ STG calculation: %s load=%.4f MW, HP inlet=%.2f TPH, "
+                "HP power=%.2f TPH, HP for MP=%.2f TPH, MP extraction=%.2f TPH, "
+                "SSC=%.4f kg/kWh, heat rate=%.2f kcal/kWh",
+                d["asset_name"], load_mw, ext["hp_inlet_tph"],
+                ext["hp_for_power_tph"], ext["hp_for_mp_extraction_tph"],
+                ext["mp_extraction_tph"], ext["ssc_kg_kwh"],
+                ext["fy2025_26_heat_rate_kcal_kwh"],
+            )
+
+    total_stg_hp_consumption_mt = sum(
+        float(d.get("stg_hp_consumption_mt", 0.0)) for d in dispatch
+    )
+    total_stg_hp_for_power_mt = sum(
+        float(d.get("stg_hp_for_power_mt", 0.0)) for d in dispatch
+    )
+    total_stg_hp_for_mp_consumption_mt = sum(
+        float(d.get("stg_hp_for_mp_consumption_mt", 0.0)) for d in dispatch
+    )
+
     return {
         "demand_mwh": total_demand,
         "demand_detail": demand,
@@ -939,6 +988,9 @@ def dispatch_power(
         "total_free_steam_mt": total_free_steam,
         "total_aux_power_mwh": total_aux,
         "total_stg_shp_consumption_mt": round(total_stg_shp_consumption_mt, 2),
+        "total_stg_hp_consumption_mt": round(total_stg_hp_consumption_mt, 2),
+        "total_stg_hp_for_power_mt": round(total_stg_hp_for_power_mt, 2),
+        "total_stg_hp_for_mp_consumption_mt": round(total_stg_hp_for_mp_consumption_mt, 2),
         "total_stg_hp_extraction_mt": round(total_stg_hp_extraction_mt, 2),
         "total_stg_mp_extraction_mt": round(total_stg_mp_extraction_mt, 2),
         "total_stg_condensate_mt": round(total_stg_condensate_mt, 2),
@@ -1198,7 +1250,11 @@ def dispatch_steam(
     demand_details = {}
     free_steam = float(power_result.get("total_free_steam_mt", 0.0))
     
-    stg_totals = _stg_extraction_totals_from_power_result(power_result) if plant_id == _DTA_PLANT_ID else {}
+    stg_totals = (
+        _stg_extraction_totals_from_power_result(power_result)
+        if plant_id in (_DTA_PLANT_ID, _SEZ_PLANT_ID)
+        else {}
+    )
 
     for iteration in range(5):
         # Dynamic cascade: walk from lowest grade upward, each grade letdowns into the next
@@ -1231,7 +1287,7 @@ def dispatch_steam(
 
             if "mp" in net_by_grade and mp_ext:
                 net_by_grade["mp"] = max(0.0, net_by_grade["mp"] - mp_ext)
-            if "hp" in net_by_grade and hp_ext:
+            if plant_id == _DTA_PLANT_ID and "hp" in net_by_grade and hp_ext:
                 net_by_grade["hp"] = max(0.0, net_by_grade["hp"] - hp_ext)
 
             # Recalculate letdown for adjusted grades (cascade unchanged)
