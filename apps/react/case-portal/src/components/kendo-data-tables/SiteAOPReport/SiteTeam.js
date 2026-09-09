@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
+import getSiteAOPReportColumns from './columns/SiteReportColumns'
 import { SiteTeamDataService } from './data-service/SiteTeamDataService'
 import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
@@ -10,7 +10,7 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
-const SiteTeam = ({ permissions }) => {
+const SiteTeam = ({ permissions, tabDisplayName }) => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -40,6 +40,9 @@ const SiteTeam = ({ permissions }) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const vertName = verticalChange?.selectedVertical
+  const SITE_NAME =
+    siteObject?.name || siteObject?.siteName || siteObject?.displayName || ''
+  const EXCEL_EXPORT_TITLE = `${SITE_NAME ? `${SITE_NAME}_` : ''}${tabDisplayName || 'Site Team'}_${AOP_YEAR}`
 
   const keycloak = useSession()
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
@@ -59,19 +62,6 @@ const SiteTeam = ({ permissions }) => {
   const { prev, next } = getAopShortYears(AOP_YEAR)
   const valueFormat = ValueFormatterConsumption()
   const columns = getSiteAOPReportColumns({ AOP_YEAR, valueFormat, prev, next })
-
-  const getExcelExportTitle = useCallback(
-    (gridTitle) =>
-      [
-        verticalObject?.name?.toUpperCase() || vertName?.toUpperCase(),
-        siteObject?.name?.toUpperCase(),
-        gridTitle,
-        AOP_YEAR,
-      ]
-        .filter(Boolean)
-        .join('_'),
-    [verticalObject, siteObject, vertName, AOP_YEAR],
-  )
 
   const fetchData = useCallback(async () => {
     if (!SITE_ID || !AOP_YEAR) return
@@ -131,7 +121,10 @@ const SiteTeam = ({ permissions }) => {
       }
 
       const payload = data.map((item) => ({
-        id: (item.id && !String(item.id).startsWith('temp_')) ? item.id : (item.idFromAPI || null),
+        id:
+          item.id && !String(item.id).startsWith('temp_')
+            ? item.id
+            : item.idFromAPI || null,
         masterId: item.masterId || null,
         functions: item.functions,
         jobRole: item.jobRole,
@@ -183,7 +176,6 @@ const SiteTeam = ({ permissions }) => {
     })
 
     try {
-      const EXCEL_EXPORT_TITLE = getExcelExportTitle('Site_Team')
       await SiteTeamDataService.SiteTeamExport(
         keycloak,
         SITE_ID,
@@ -233,7 +225,7 @@ const SiteTeam = ({ permissions }) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', `Error File - Site_Team.xlsx`)
+        link.setAttribute('download', `Error File - ${EXCEL_EXPORT_TITLE}.xlsx`)
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -298,10 +290,12 @@ const SiteTeam = ({ permissions }) => {
       uploadExcelBtn: true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Site Team',
-      ExcelName: getExcelExportTitle('Site_Team'),
+      titleName: tabDisplayName || 'Site Team',
+      ExcelName: EXCEL_EXPORT_TITLE,
       addButton: false,
       deleteButton: false,
+      disableColWidth: true,
+      makePagable: false,
     },
     isOldYear,
   )
@@ -317,7 +311,6 @@ const SiteTeam = ({ permissions }) => {
         rows={rows}
         fetchData={fetchData}
         saveChanges={saveChanges}
-        paginationOptions={[100, 200, 300]}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}

@@ -61,7 +61,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
   const keycloak = useSession()
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
-  const valueFormat =  ValueFormatterProduction()
+  const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
@@ -150,7 +150,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       format: valueFormat,
     },
     {
-      field: 'remark',
+      field: 'responsibility',
       title: 'Remark',
       editable: true,
       hidden: false,
@@ -219,10 +219,11 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       if (res?.code === 200) {
         const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id:index,
+          id: index,
           idFromAPI: item.id,
           isEditable: item?.isEditable,
           remark: item.remark,
+          responsibility: item.remark,
           originalRemark: item.remark,
         }))
         setRows(mapped)
@@ -251,20 +252,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         return
       }
 
-      // adjust to whichever fields are actually mandatory on this grid
-      const requiredFields = ['remark']
-
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
-
       const payload = data.map((item) => ({
         id: item.idFromAPI || null,
         kpiName: item.kpiName,
@@ -273,10 +260,10 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         prevAOP: item.prevAOP,
         prevActual: item.prevActual,
         currentPlan: item.currentPlan,
-        remark: item.remark,
+        remark: item.responsibility ?? item.remark ?? '',
         aopYear: AOP_YEAR,
         siteFkId: SITE_ID,
-        masterId:item.masterId,
+        masterId: item.masterId,
       }))
 
       const response = await SiteReportDataService.saveSitesafetyPerformance(

@@ -105,7 +105,9 @@ const extractFlatRowsFromGrouped = (data) => {
 // Helper function to create select tooltip renderer with label display
 const createSelectToolTipRenderer = (allOptions, toolTipRenderer) => {
   return (props) => {
-    const value = props.dataItem[props.field]
+    const value = props.field?.includes('.')
+      ? getNestedValue(props.dataItem, props.field)
+      : props.dataItem[props.field]
     const displayMode = props.displayMode || 'label'
 
     let displayChildren = props.children
@@ -1192,9 +1194,7 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={
-          convertScientificValue ? convertFromScientificNotation(value) : value
-        }
+        title={convertFromScientificNotation(value) ?? value}
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
@@ -1309,9 +1309,7 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={
-          convertScientificValue ? convertFromScientificNotation(value) : value
-        }
+        title={convertFromScientificNotation(value) ?? value}
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
           color:
@@ -2755,7 +2753,10 @@ const AdvanceKendoTable = ({
     })
 
   const toolTipRenderer = (props) => {
-    const value = props.dataItem[props.field]
+    const value = props.field?.includes('.')
+      ? getNestedValue(props.dataItem, props.field)
+      : props.dataItem[props.field]
+
     const month = monthMap[props.field?.toLowerCase()]
     const normId = props.dataItem.materialFkId
     const rowId = props.dataItem.id
@@ -2774,9 +2775,12 @@ const AdvanceKendoTable = ({
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
-    // Convert boolean values to Yes/No for display
+    // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
-      typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value
+      typeof value === 'boolean'
+        ? (value ? 'Yes' : 'No')
+        : convertFromScientificNotation(value) ?? value
+
     const cellContent =
       typeof value === 'boolean' ? displayValue : props.children
 
@@ -2784,7 +2788,7 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}.trim()`}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,

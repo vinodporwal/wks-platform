@@ -10,7 +10,7 @@ import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
 import { formatDate } from 'utils/dateUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function MajorPeopleInitiative() {
+export default function MajorPeopleInitiative({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, siteObject, year } = dataGridStore
@@ -174,7 +174,7 @@ export default function MajorPeopleInitiative() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'Major People Initiative',
+      titleName: tabDisplayName || 'Major People Initiative',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Major_People_Initiative_${AOP_YEAR}`,
       // addButton: true,

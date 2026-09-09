@@ -650,6 +650,13 @@ const ConfigurationOtherCost = ({ permissions }) => {
           isReleaseDisabled={isReleaseDisabled}
           handleRelease={handleRelease}
           permissions={adjustedPermissions}
+          customHeight={70}
+          paginationConfig={{
+            threshold: 100,
+            buttonCount: 5,
+            pageSizes: [10, 20, 50, 100],
+            defaultPageSize: 100,
+          }}
         />
       </Box>
     </div>

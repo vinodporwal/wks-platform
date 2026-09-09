@@ -6,6 +6,8 @@ export const SiteReportDataService = {
   saveSiteTeam,
   getEnergyPerformanceDetails,
   saveEnergyPerformance,
+  exportEnergyPerformance,
+  importEnergyPerformance,
   getPerformanceHighlightsSummary,
   savePerformanceHighlightsSummary,
   getSlowdownPlan,
@@ -18,6 +20,10 @@ export const SiteReportDataService = {
   saveTechnicalAvailability,
   getMajorSafetyInitiative,
   saveMajorSafetyInitiative,
+  deleteMajorSafetyInitiative,
+  getPlantDropdownForSiteAOPReport,
+  exportMajorSafetyInitiative,
+  importMajorSafetyInitiative,
   getMajorProfitImprovement,
   saveMajorProfitImprovement,
   getMajorReliabilityImprovement,
@@ -99,6 +105,61 @@ export async function saveEnergyPerformance(keycloak, SITE_ID, AOP_YEAR, data) {
     return await resp.json()
   } catch (e) {
     console.error('Error saving Energy Performance data:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function exportEnergyPerformance(
+  keycloak,
+  siteId,
+  aopYear,
+  excelName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/energy-performance-export?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}&excelName=${encodeURIComponent(excelName || 'energy_performance')}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName || 'energy_performance'}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Energy Performance Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function importEnergyPerformance(file, keycloak, siteId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/energy-performance-import?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Energy Performance Excel:', e)
     return Promise.reject(e)
   }
 }
@@ -329,6 +390,102 @@ export async function saveMajorSafetyInitiative(
   }
 }
 
+export async function deleteMajorSafetyInitiative(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/major-safety-improvement-initiative/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting Major Safety Initiative record:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function getPlantDropdownForSiteAOPReport(keycloak, siteId) {
+  const url = `${Config.CaseEngineUrl}/task/plant-dropdown-for-site-aop-report?siteId=${siteId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error fetching plant dropdown for Site AOP Report:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function exportMajorSafetyInitiative(
+  keycloak,
+  siteId,
+  aopYear,
+  excelName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-safety-improvement-initiative-export?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName || 'Major_Safety_Initiative'}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Major Safety Initiative Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function importMajorSafetyInitiative(
+  file,
+  keycloak,
+  siteId,
+  aopYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-safety-improvement-initiative-import?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Major Safety Initiative Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
 // Major Profit Improvement
 export async function getMajorProfitImprovement(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/major-profit-improvement?siteId=${SITE_ID}&aopYear=${AOP_YEAR}`
@@ -545,7 +702,12 @@ export async function getConversionVariableCost(keycloak, SITE_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-export async function saveConversionVariableCost(keycloak, SITE_ID, AOP_YEAR, data) {
+export async function saveConversionVariableCost(
+  keycloak,
+  SITE_ID,
+  AOP_YEAR,
+  data,
+) {
   const url = `${Config.CaseEngineUrl}/task/conversion-variable-cost`
   const headers = {
     Accept: 'application/json',
