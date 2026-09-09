@@ -188,7 +188,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						}
 					}
 					mCUNormsValueDTO.setProductName(row[29] != null ? row[29].toString() : null);
-					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
+					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || withGrade){
 						mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
 					}
 				} else {
@@ -3349,7 +3349,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
-
+			Boolean elastomerWithGrade = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 			boolean ptaPmdPia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD") && plant.getName().equalsIgnoreCase("PIA");
 
 			if(ptaPmdPia){ 
@@ -3358,7 +3358,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			}
 
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-					|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc) {
+					|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc || elastomerWithGrade) {
 				data = readSteadyStateSAP(file.getInputStream(), plantFKId, year);
 			} else {
 				data = readConfigurations(file.getInputStream(), plantFKId, year);
@@ -3370,7 +3370,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = null;
 				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-						|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc) {
+						|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc || elastomerWithGrade) {
 					fileByteArray = exportSteadyStateNorms(year, plantFKId, true, failedRecords, mode);
 				} else {
 					fileByteArray = createExcel(year, plantFKId, true, failedRecords, mode, gradeId);

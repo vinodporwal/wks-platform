@@ -199,7 +199,7 @@ public class NormalOperationNormsController {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			byte[] excelBytes;
-			Boolean elastomerWithoutGrade= vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD");
+			Boolean elastomerWithoutGrade= vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
 			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC")) {
 				 excelBytes = normalOperationNormsService.createExcelSAP(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 			}else if(elastomerWithoutGrade) {
@@ -285,7 +285,7 @@ public class NormalOperationNormsController {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			Boolean elastomerWithoutGrade= vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD");
+			Boolean elastomerWithoutGrade= vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
 			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")) {
 				return	normalOperationNormsService.importExcelSAP(year,UUID.fromString(plantId),gradeId, file,mode); 
 			}if(elastomerWithoutGrade){
