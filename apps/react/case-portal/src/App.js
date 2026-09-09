@@ -24,6 +24,8 @@ const App = () => {
   const [casesDefinitions, setCasesDefinitions] = useState([])
   const [menu, setMenu] = useState({ items: [] })
   const [formChecked, setFormChecked] = useState(false)
+  const [ssoError, setSsoError] = useState(null)
+  const [isBlocked, setIsBlocked] = useState(false)
 
   const isInIframe = window.self !== window.top
 
@@ -127,25 +129,11 @@ const App = () => {
 
   // Iframe SSO flow: receive token from APM via postMessage
   useIframeSso({
-    onSuccess: async (token) => {
+    onSuccess: async (token, loginData, userInfo) => {
       const payload = JSON.parse(atob(token.split('.')[1]))
 
-      // The APM token is not a Keycloak token — call our backend /sso/userinfo
-      // which uses the Keycloak admin client to look up the user profile + wks-portal roles
-      let userInfo = {}
-      try {
-        const res = await fetch(`${Config.CaseEngineUrl}/sso/userinfo`, {
-          credentials: 'include', // send the WKS_SSO_SESSION cookie set by /sso/login
-        })
-        if (res.ok) {
-          userInfo = await res.json()
-          console.log('SSO userinfo fetched from backend:', userInfo)
-        } else {
-          console.warn('SSO userinfo fetch failed, status:', res.status, '— user will have no roles')
-        }
-      } catch (e) {
-        console.warn('SSO userinfo fetch error:', e)
-      }
+      // We already have userInfo from the validation, use it directly
+      console.log('SSO userinfo from validation:', userInfo)
 
       // Inject wks-portal roles into the token so buildMenuItems works correctly
       const wksRoles = userInfo.wks_portal_roles || []
@@ -167,10 +155,25 @@ const App = () => {
         hasRealmRole: (role) => (patchedPayload.resource_access?.['wks-portal']?.roles || []).includes(role),
         hasResourceRole: (role, clientId) => (patchedPayload.resource_access?.[clientId || 'wks-portal']?.roles || []).includes(role),
       }
+      
+      // Clear any previous errors
+      setSsoError(null)
+      setIsBlocked(false)
       initApp(kcMock, true)
     },
     onFailure: (err) => {
       console.error('SSO iframe login failed:', err)
+      if (isInIframe) {
+        setSsoError(`Authentication failed: ${err}`)
+        setIsBlocked(true)
+      }
+    },
+    onUserInfoFailure: (err) => {
+      console.error('SSO userinfo validation failed:', err)
+      if (isInIframe) {
+        setSsoError(`Authentication validation failed: ${err}`)
+        setIsBlocked(true)
+      }
     },
   })
 
@@ -241,6 +244,41 @@ const App = () => {
         })
     }
   }, [])
+
+  // Periodic session validation for iframe mode
+  useEffect(() => {
+    if (!isInIframe || !authenticated || isBlocked) return
+
+    const validateSession = async () => {
+      try {
+        const res = await fetch(`${Config.CaseEngineUrl}/sso/health`, {
+          credentials: 'include',
+        })
+        
+        if (!res.ok) {
+          const error = await res.text()
+          console.error('Session validation failed:', error)
+          setSsoError('Your session has expired or become invalid')
+          setIsBlocked(true)
+        }
+      } catch (err) {
+        console.error('Session validation error:', err)
+        setSsoError('Unable to validate session')
+        setIsBlocked(true)
+      }
+    }
+
+    // Validate every 5 minutes
+    const interval = setInterval(validateSession, 5 * 60 * 1000)
+    
+    // Initial validation after 1 minute
+    const timeout = setTimeout(validateSession, 60 * 1000)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
+  }, [isInIframe, authenticated, isBlocked])
 
 
   async function buildMenuItems(keycloak) {
@@ -529,23 +567,84 @@ async function createCaseManagement(keycloak) {
 
 
   return (
-    keycloak &&
-    authenticated && (
-      <ThemeCustomization>
-        <Suspense fallback={<div>Loading...</div>}>
-          <ScrollTop>
-            <SessionStoreProvider value={{ keycloak, menu }}>
-              <ThemeRoutes
-                keycloak={keycloak}
-                authenticated={authenticated}
-                recordsTypes={recordsTypes}
-                casesDefinitions={casesDefinitions}
-              />
-            </SessionStoreProvider>
-          </ScrollTop>
-        </Suspense>
-      </ThemeCustomization>
-    )
+    <>
+      {/* SSO Error Message for APM iframe mode */}
+      {isInIframe && ssoError && isBlocked && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: '#f8f9fa',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            border: '1px solid #dc3545',
+            borderRadius: '8px',
+            padding: '30px',
+            maxWidth: '500px',
+            textAlign: 'center',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              color: '#dc3545',
+              marginBottom: '20px'
+            }}>⚠️</div>
+            <h2 style={{ color: '#dc3545', marginBottom: '15px' }}>
+              Authentication Error
+            </h2>
+            <p style={{ color: '#6c757d', marginBottom: '20px', lineHeight: '1.5' }}>
+              {ssoError}
+            </p>
+            <p style={{ color: '#6c757d', fontSize: '14px', marginBottom: '20px' }}>
+              Please contact your system administrator or try refreshing the page.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              style={{
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#0056b3'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#007bff'}
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Main App - only render if not blocked */}
+      {(!isInIframe || !isBlocked) && keycloak && authenticated && (
+        <ThemeCustomization>
+          <Suspense fallback={<div>Loading...</div>}>
+            <ScrollTop>
+              <SessionStoreProvider value={{ keycloak, menu }}>
+                <ThemeRoutes
+                  keycloak={keycloak}
+                  authenticated={authenticated}
+                  recordsTypes={recordsTypes}
+                  casesDefinitions={casesDefinitions}
+                />
+              </SessionStoreProvider>
+            </ScrollTop>
+          </Suspense>
+        </ThemeCustomization>
+      )}
+    </>
   )
 }
 

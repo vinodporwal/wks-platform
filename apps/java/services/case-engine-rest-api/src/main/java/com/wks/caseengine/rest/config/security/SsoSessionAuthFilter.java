@@ -46,7 +46,13 @@ public class SsoSessionAuthFilter extends OncePerRequestFilter {
 
                     // Strip Authorization header so BearerTokenAuthenticationFilter skips
                     request = stripAuthorizationHeader(request);
+                } else {
+                    log.warn("SsoSessionAuthFilter: Invalid session data for session: {}", ssoSessionId);
+                    // Clear invalid session
+                    SsoSessionStore.STORE.remove(ssoSessionId);
                 }
+            } else {
+                log.warn("SsoSessionAuthFilter: Session not found for id: {}", ssoSessionId);
             }
         }
 

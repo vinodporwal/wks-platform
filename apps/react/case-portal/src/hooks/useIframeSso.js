@@ -12,7 +12,7 @@ const APM_ORIGIN = process.env.REACT_APP_APM_ORIGIN || 'http://localhost:3000'
  *   4. Backend validates token and creates HttpOnly session
  *   5. onSuccess callback fires so App.js can proceed to render
  */
-export function useIframeSso({ onSuccess, onFailure }) {
+export function useIframeSso({ onSuccess, onFailure, onUserInfoFailure }) {
   const isInIframe = window.self !== window.top
   const handledRef = useRef(false)
   console.log("useIframeSso call :::::", useIframeSso);
@@ -84,7 +84,32 @@ export function useIframeSso({ onSuccess, onFailure }) {
 
       const data = await res.json()
       console.log("SSO login by APM Response JSON :::", data);
-      onSuccess && onSuccess(token, data)
+      
+      // After successful login, validate userinfo is accessible
+      try {
+        const userinfoRes = await fetch(`${Config.CaseEngineUrl}/sso/userinfo`, {
+          credentials: 'include',
+        })
+        
+        if (!userinfoRes.ok) {
+          // UserInfo failed - this should block the user
+          const userinfoError = await userinfoRes.text()
+          console.error('SSO userinfo failed after login:', userinfoError)
+          onUserInfoFailure && onUserInfoFailure(`Authentication validation failed: ${userinfoError}`)
+          return
+        }
+        
+        const userInfo = await userinfoRes.json()
+        console.log('SSO userinfo validated successfully:', userInfo)
+        
+        // Both login and userinfo succeeded
+        onSuccess && onSuccess(token, data, userInfo)
+        
+      } catch (userinfoErr) {
+        console.error('SSO userinfo validation error:', userinfoErr)
+        onUserInfoFailure && onUserInfoFailure(`Authentication validation error: ${userinfoErr.message}`)
+      }
+      
     } catch (err) {
       onFailure && onFailure(`SSO login error: ${err.message}`)
     }

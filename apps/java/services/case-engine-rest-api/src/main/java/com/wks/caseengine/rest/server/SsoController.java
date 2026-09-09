@@ -110,6 +110,9 @@ public class SsoController {
         try {
             Map<String, Object> user = keycloakService.getUserByFederatedId(userId);
             if (user == null) {
+                // User not found - invalidate the session to prevent further access
+                log.warn("SSO session invalidated - user not found in Keycloak for sub: {}", userId);
+                SsoSessionStore.STORE.remove(ssoSessionId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("User not found in Keycloak for sub: " + userId);
             }
@@ -134,12 +137,44 @@ public class SsoController {
             return ResponseEntity.ok(info);
         } catch (Exception e) {
             log.warn("SSO userinfo lookup failed for userId {}: {}", userId, e.getMessage());
+            // On any error, invalidate the session to prevent further access
+            SsoSessionStore.STORE.remove(ssoSessionId);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Failed to fetch user info: " + e.getMessage());
         }
     }
 
-    @PostMapping("/logout")
+    @GetMapping("/health")
+    public ResponseEntity<?> health(HttpServletRequest request) {
+        String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
+        if (ssoSessionId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("status", "no_session", "message", "No SSO session cookie"));
+        }
+
+        Map<String, String> sessionData = SsoSessionStore.STORE.get(ssoSessionId);
+        if (sessionData == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("status", "session_not_found", "message", "SSO session not found in store"));
+        }
+
+        String userId = sessionData.get("userId");
+        String org = sessionData.get("org");
+        
+        // Quick validation without full userinfo lookup
+        if (userId == null || userId.isBlank()) {
+            SsoSessionStore.STORE.remove(ssoSessionId);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("status", "invalid_session", "message", "Invalid session data"));
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "status", "healthy",
+            "userId", userId,
+            "org", org,
+            "sessionId", ssoSessionId
+        ));
+    }
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
         if (ssoSessionId != null) {
