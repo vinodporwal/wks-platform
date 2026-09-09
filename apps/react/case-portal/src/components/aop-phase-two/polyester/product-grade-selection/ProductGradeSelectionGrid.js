@@ -172,7 +172,8 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
                 field: 'particular',
                 title: 'Product Grades',
                 editable: false,
-                minWidth: 200,
+                widthT: 150,
+                minWidth: 120,
                 locked: true,
             },
             {
@@ -180,14 +181,16 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
                 title: 'Selection',
                 editable: true,
                 type: 'checkbox',
-                minWidth: 100,
+                widthT: 50,
+                minWidth: 50,
             },
             {
                 field: 'remark',
                 title: 'Remarks',
                 editable: true,
                 type: 'mergedCells',
-                minWidth: 150,
+                widthT: 100,
+                minWidth: 120,
                 cell: (props) => {
                     const { dataItem, field, rowType, ...kendoTdProps } = props
                     
@@ -279,6 +282,13 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
                 setSnackbarOpen={setSnackbarOpen}
                 snackbarData={snackbarData}
                 setSnackbarData={setSnackbarData}
+                customHeight={70}
+                paginationConfig={{
+                    threshold: 100,
+                    buttonCount: 5,
+                    pageSizes: [10, 20, 50, 100],
+                    defaultPageSize: 100,
+                }}
             />
         </Box>
     )

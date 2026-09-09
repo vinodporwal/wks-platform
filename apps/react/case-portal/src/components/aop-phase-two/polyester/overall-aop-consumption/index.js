@@ -6,7 +6,6 @@ import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { validateFields } from 'utils/validationUtils'
 import { useMenuContext } from 'menu/menuProvider'
 import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
@@ -15,6 +14,7 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import MaterialGroupedSelectionGrid from '../material-grouped-selection/MaterialGroupedSelectionGrid'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const OverallAopConsumption = () => {
   const dispatch = useDispatch()
@@ -43,7 +43,7 @@ const OverallAopConsumption = () => {
   const isFilament = VERTICAL_NAME?.toLowerCase() === 'filament (pfy)'
   const isStaple = VERTICAL_NAME?.toLowerCase() === 'staple (psf)'
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const valueFormat = ValueFormatterConsumption()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [rows, setRows] = useState([])
