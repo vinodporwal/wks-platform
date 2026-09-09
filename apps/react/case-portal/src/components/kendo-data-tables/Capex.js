@@ -11,7 +11,7 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function Capex() {
+export default function Capex({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -274,7 +274,7 @@ export default function Capex() {
     {
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Capex Plan',
+      titleName: tabDisplayName || 'Capex/PIO Plan',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Capex_Plan_${AOP_YEAR}`,
       saveBtn: true,

@@ -10,7 +10,7 @@ import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
 import { formatDate } from 'utils/dateUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function MajorProfitInitiative() {
+export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, siteObject, year } = dataGridStore
@@ -176,8 +176,7 @@ export default function MajorProfitInitiative() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName:
-        'Major Profit Improvement and Operability Improvement Initiative',
+      titleName: tabDisplayName || 'Major Profit and Operability Improvement',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Major_Profit_Initiative_${AOP_YEAR}`,
       // addButton: true,

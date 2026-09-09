@@ -10,7 +10,10 @@ import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
 import { formatDate } from 'utils/dateUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function MajorReliabilityInitiative() {
+export default function MajorReliabilityInitiative({
+  permissions,
+  tabDisplayName,
+}) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, siteObject, year } = dataGridStore
@@ -175,7 +178,7 @@ export default function MajorReliabilityInitiative() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'Major Reliability Improvement Initiative',
+      titleName: tabDisplayName || 'Major Reliability Improvement',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Major_Reliability_Initiative_${AOP_YEAR}`,
       // addButton: true,

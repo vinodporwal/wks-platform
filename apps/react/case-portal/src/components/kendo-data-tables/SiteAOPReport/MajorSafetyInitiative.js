@@ -3,10 +3,10 @@ import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
-import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
+import getSiteAOPReportColumns from './columns/SiteReportColumns'
 import { formatDate } from 'utils/dateUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
@@ -31,6 +31,9 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
   const isOldYear = false
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const SITE_NAME =
+    siteObject?.name || siteObject?.siteName || siteObject?.displayName || ''
+  const EXCEL_EXPORT_TITLE = `${SITE_NAME ? `${SITE_NAME}_` : ''}${tabDisplayName || 'Major Safety Improvement'}_${AOP_YEAR}`
 
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -128,30 +131,31 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
   const deleteRowData = async (paramsForDelete) => {
     setLoading(true)
     try {
-      const { idFromApi, id } = paramsForDelete
-      const targetId = idFromApi || id
+      const response = await SiteReportDataService.deleteMajorSafetyInitiative(
+        keycloak,
+        paramsForDelete?.id,
+      )
 
-      if (idFromApi && !String(idFromApi).startsWith('temp-')) {
-        await SiteReportDataService.deleteMajorSafetyInitiative(
-          keycloak,
-          idFromApi,
-        )
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Record deleted successfully!',
+          message: response?.message || 'Deleted successfully',
           severity: 'success',
         })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Delete failed',
+          severity: 'error',
+        })
       }
-      setRows((prevRows) =>
-        prevRows
-          .filter((row) => row.id !== id && row.idFromApi !== targetId)
-          .map((row, idx) => ({ ...row, sno: idx + 1 })),
-      )
     } catch (error) {
-      console.error('Error deleting Record!', error)
+      console.error('Error deleting record:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Error deleting record!',
+        message: 'Failed to delete record.',
         severity: 'error',
       })
     } finally {
@@ -159,68 +163,69 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
     }
   }
 
-  const saveChanges = React.useCallback(async () => {
+  const saveChanges = useCallback(async () => {
+    const data = Object.values(modifiedCells)
+    if (!data.length) {
+      setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+      setSnackbarOpen(true)
+      return
+    }
+
+    // Required fields check: Plant & Initiative Description
+    const missing = data.some(
+      (item) => !item.plant || !item.initiativeDescription,
+    )
+    if (missing) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Plant and Initiative Description are mandatory!',
+        severity: 'error',
+      })
+      return
+    }
+
+    setLoading(true)
     try {
-      setLoading(true)
-      const data = Object.values(modifiedCells)
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        setLoading(false)
-        return
-      }
-
-      const requiredFields = ['plant', 'initiativeDescription']
-
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
-
       const payload = data.map((item) => {
-        const plantObj = plantOptions.find(
-          (p) =>
-            p.name === item.plant ||
-            p.plantDisplayName === item.plant ||
-            p.plantName === item.plant ||
-            p.value === item.plant,
-        )
-        const plantId = plantObj?.id || item.plantId || null
+        let matchedPlantId = item.plantId
+        if (!matchedPlantId && item.plant && plantOptions.length > 0) {
+          const matched = plantOptions.find(
+            (p) =>
+              p.name?.toLowerCase() === item.plant?.toLowerCase() ||
+              p.plantName?.toLowerCase() === item.plant?.toLowerCase(),
+          )
+          if (matched) {
+            matchedPlantId = matched.id
+          }
+        }
 
         return {
           id:
             item.idFromApi ||
-            (item.id && !String(item.id).startsWith('temp-') ? item.id : null),
-          plantId: plantId,
-          initiativeDescription: item.initiativeDescription || '',
+            (typeof item.id === 'string' && item.id.startsWith('temp-')
+              ? null
+              : item.id) ||
+            null,
+          plantId: matchedPlantId || null,
+          initiativeDescription: item.initiativeDescription,
           category: item.category || '',
           outcome: item.outcome || '',
-          targetDate: item.targetDate
-            ? formatDate(new Date(item.targetDate))
-            : null,
+          recommendation: item.recommendation || '',
+          targetDate: item.targetDate ? formatDate(item.targetDate) : null,
           responsibility: item.responsibility || item.remark || '',
           siteId: SITE_ID,
           aopYear: AOP_YEAR,
         }
       })
 
-      const response = await SiteReportDataService.saveMajorSafetyInitiative(
+      const res = await SiteReportDataService.saveMajorSafetyInitiative(
         keycloak,
         SITE_ID,
         AOP_YEAR,
         payload,
       )
 
-      if (response?.code === 200) {
+      if (res?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Saved Successfully!',
@@ -231,11 +236,12 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: response?.message || 'Save failed!',
+          message: res?.message || 'Save failed!',
           severity: 'error',
         })
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Error saving Major Safety Initiatives:', err)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',
@@ -260,7 +266,6 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
     })
 
     try {
-      const EXCEL_EXPORT_TITLE = `${lowerVertName}_Major_Safety_Initiative_${AOP_YEAR}`
       await SiteReportDataService.exportMajorSafetyInitiative(
         keycloak,
         SITE_ID,
@@ -309,10 +314,7 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute(
-          'download',
-          `Error_File_${lowerVertName}_Major_Safety_Initiative_${AOP_YEAR}.xlsx`,
-        )
+        link.setAttribute('download', `Error_File_${EXCEL_EXPORT_TITLE}.xlsx`)
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -373,10 +375,12 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
       showTitleNameBusiness: true,
       titleName: tabDisplayName || 'Major Safety Improvement',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Major_Safety_Initiative_${AOP_YEAR}`,
+      ExcelName: EXCEL_EXPORT_TITLE,
       dynamicDropdownOptions: {
         plant: plantOptions,
       },
+      disableColWidth: true,
+      makePagable: false,
     },
     isOldYear,
   )
@@ -407,7 +411,6 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
         setOpen1={setOpen1}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
-        paginationOptions={[100, 200, 300]}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
       />

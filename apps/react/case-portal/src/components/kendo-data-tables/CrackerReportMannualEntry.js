@@ -436,7 +436,7 @@ const CrackerReportMannualEntry = (props) => {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Report Manual Entry',
+      titleName: props?.tabDisplayName || 'Report Manual Entry',
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: false,
