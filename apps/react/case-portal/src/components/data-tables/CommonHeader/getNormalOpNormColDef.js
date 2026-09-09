@@ -7,6 +7,7 @@ import { NormalOpNormVcmColumns } from 'components/colums/VcmColumns'
 import { CrackerColums } from 'components/colums/CrackerColums'
 import { NormalOpNormPeColumns } from 'components/colums/PeColums'
 import { NormalOpNormPpColumns } from 'components/colums/PpColums'
+import { NormalOpNormPetColumns } from 'components/colums/PetColumn'
 import {
   NormalOpNormPtaColumns,
   NormalOpNormPtaPmdPiaColumns,
@@ -28,6 +29,7 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.CRACKER]: CrackerColums,
   [verticalEnums.VCM]: NormalOpNormVcmColumns,
   [verticalEnums.CHEMICAL]: NormalOpNormChemicalColumns,
+  [verticalEnums.PET]: NormalOpNormPetColumns,
 }
 
 const getNormalOpNormColDef = ({
@@ -46,15 +48,21 @@ const getNormalOpNormColDef = ({
   let cols = []
   if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
     cols = NormalOpNormElastomerJmdColumns
-  } else if (lowerVertName==='pta' && lowerSiteName=== 'pmd' && lowerPlantName==='pia'){
-     cols = NormalOpNormPtaPmdPiaColumns 
-  }else {
+  } else if (
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'pmd' &&
+    lowerPlantName === 'pia'
+  ) {
+    cols = NormalOpNormPtaPmdPiaColumns
+  } else {
     cols = VERTICAL_COLDEFS_MAP[lowerVertName] || NormalOpNormMegColumns
   }
 
   const isNegativeAllowed =
     (lowerVertName === 'pe' && lowerSiteName === 'hmd') ||
-    (lowerVertName === 'pta' && lowerSiteName === 'pmd' && lowerPlantName === 'pia')
+    (lowerVertName === 'pta' &&
+      lowerSiteName === 'pmd' &&
+      lowerPlantName === 'pia')
 
   const enhancedColDefs = cols.map((col) => {
     let updatedCol = { ...col }
@@ -66,7 +74,7 @@ const getNormalOpNormColDef = ({
         title: headerMap[col.title],
         align: 'right',
         format: valueFormat || '{0:#.###}',
-        type: isNegativeAllowed ? 'negativeNumber' : (col.type || 'number'),
+        type: isNegativeAllowed ? 'negativeNumber' : col.type || 'number',
       }
     }
     if (shouldLockColumn(col)) {
