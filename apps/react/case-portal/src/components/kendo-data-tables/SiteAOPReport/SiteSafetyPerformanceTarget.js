@@ -6,9 +6,10 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 import { SiteSafetyPerformanceTargetDataService } from './data-service/SiteSafetyPerformanceTargetDataService'
-import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { SiteReportDataService } from 'services/SiteReportDataService'
+import PerformanceHighlights from './Utilities/PerformanceHighlights'
 
-const SiteSafetyPerformanceTarget = ({ permissions }) => {
+const SiteSafetyPerformanceTarget = ({ permissions, tabDisplayName }) => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -18,6 +19,12 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  // Performance Highlights state
+  const [performanceSummary, setPerformanceSummary] = useState('')
+  const [performanceId, setPerformanceId] = useState(null)
+  const [performanceHighlightsEdited, setPerformanceHighlightsEdited] =
+    useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -35,10 +42,12 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const vertName = verticalChange?.selectedVertical
+  const SITE_NAME =
+    siteObject?.name || siteObject?.siteName || siteObject?.displayName || ''
+  const EXCEL_EXPORT_TITLE = `${SITE_NAME ? `${SITE_NAME}_` : ''}${tabDisplayName || 'Safety Performance & Targets'}_${AOP_YEAR}`
 
   const keycloak = useSession()
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const valueFormat = ValueFormatterProduction()
 
   function getAopShortYears(aopYear) {
     if (!aopYear) return { prev: '', next: '' }
@@ -53,19 +62,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
   }
 
   const { prev, next } = getAopShortYears(AOP_YEAR)
-
-  const getExcelExportTitle = useCallback(
-    (gridTitle) =>
-      [
-        verticalObject?.name?.toUpperCase() || vertName?.toUpperCase(),
-        siteObject?.name?.toUpperCase(),
-        gridTitle,
-        AOP_YEAR,
-      ]
-        .filter(Boolean)
-        .join('_'),
-    [verticalObject, siteObject, vertName, AOP_YEAR],
-  )
 
   const columns = useMemo(
     () => [
@@ -110,7 +106,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         title: `FY${prev} AOP`,
         editable: true,
         type: 'number',
-        format: valueFormat,
         minWidth: 120,
         align: 'right',
         headerAlign: 'right',
@@ -120,7 +115,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         title: `FY${prev} ACT`,
         editable: true,
         type: 'number',
-        format: valueFormat,
         minWidth: 120,
         align: 'right',
         headerAlign: 'right',
@@ -130,7 +124,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         title: `FY${next} Plan`,
         editable: true,
         type: 'number',
-        format: valueFormat,
         minWidth: 120,
         align: 'right',
         headerAlign: 'right',
@@ -142,7 +135,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         minWidth: 180,
       },
     ],
-    [AOP_YEAR, prev, next, valueFormat],
+    [AOP_YEAR, prev, next],
   )
 
   const fetchData = useCallback(async () => {
@@ -306,9 +299,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
     })
 
     try {
-      const EXCEL_EXPORT_TITLE = getExcelExportTitle(
-        'Site_Safety_Performance_Targets',
-      )
       await SiteSafetyPerformanceTargetDataService.SiteSafetyPerformanceExport(
         keycloak,
         SITE_ID,
@@ -359,10 +349,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute(
-          'download',
-          `Error File - Site_Safety_Performance_Targets.xlsx`,
-        )
+        link.setAttribute('download', `Error File - ${EXCEL_EXPORT_TITLE}.xlsx`)
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -392,6 +379,83 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       setLoading(false)
     }
   }
+
+  // --- Performance Highlights Summary ---
+  const getPerformanceHighlights = useCallback(async () => {
+    if (!SITE_ID || !AOP_YEAR) return
+
+    try {
+      setPerformanceSummary('')
+      setPerformanceId(null)
+
+      const res = await SiteReportDataService.getPerformanceHighlightsSummary(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+
+      if (res?.code === 200 && res?.data?.Data?.length > 0) {
+        const record = res.data.Data[0]
+        setPerformanceSummary(record.summary || '')
+        setPerformanceId(record.id || null)
+      } else {
+        setPerformanceSummary('')
+        setPerformanceId(null)
+      }
+    } catch (error) {
+      setPerformanceSummary('')
+      setPerformanceId(null)
+      console.error('Error fetching summary:', error)
+    }
+  }, [keycloak, SITE_ID, AOP_YEAR])
+
+  const savePerformanceHighlightsSummary = async () => {
+    try {
+      const payload = [
+        {
+          id: performanceId,
+          summary: performanceSummary,
+          saveStatus: null,
+        },
+      ]
+
+      const res = await SiteReportDataService.savePerformanceHighlightsSummary(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+        payload,
+      )
+
+      if (res?.code === 200 || res?.code === 207) {
+        setSnackbarData({
+          message:
+            res?.code === 200
+              ? 'Saved Successfully!'
+              : 'Saved with minor issues',
+          severity: res?.code === 200 ? 'success' : 'warning',
+        })
+        setPerformanceHighlightsEdited(false)
+        setSnackbarOpen(true)
+      } else {
+        setSnackbarData({
+          message: 'Save Failed!',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+      }
+    } catch (error) {
+      setSnackbarData({
+        message: 'Error saving summary!',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+    getPerformanceHighlights()
+  }, [fetchData, getPerformanceHighlights])
 
   const getAdjustedPermissions = (perms, isOld) => {
     if (isOld != 1) return perms
@@ -425,11 +489,12 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       showLoadBtn: true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Site Safety Performance & Targets',
-      ExcelName: getExcelExportTitle('Site_Safety_Performance_Targets'),
+      titleName: tabDisplayName || 'Site Safety Performance & Targets',
+      ExcelName: EXCEL_EXPORT_TITLE,
       addButton: false,
       deleteButton: false,
       disableColWidth: true,
+      makePagable: false,
     },
     isOldYear,
   )
@@ -437,6 +502,14 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
   return (
     <>
       <LoaderBackdrop open={!!loading} />
+      <PerformanceHighlights
+        performanceSummary={performanceSummary}
+        setPerformanceSummary={setPerformanceSummary}
+        performanceHighlightsEdited={performanceHighlightsEdited}
+        setPerformanceHighlightsEdited={setPerformanceHighlightsEdited}
+        savePerformanceHighlightsSummary={savePerformanceHighlightsSummary}
+        readOnly={READ_ONLY}
+      />
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
@@ -446,7 +519,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         fetchData={fetchData}
         saveChanges={saveChanges}
         handleLoad={handleLoad}
-        paginationOptions={[100, 200, 300]}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}

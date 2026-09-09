@@ -8,7 +8,10 @@ import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function MCUCapacityUtilization() {
+export default function MCUCapacityUtilization({
+  permissions,
+  tabDisplayName,
+}) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, siteObject, year } = dataGridStore
@@ -243,7 +246,7 @@ export default function MCUCapacityUtilization() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'MCU Capacity Utilization (%)',
+      titleName: tabDisplayName || 'MCU Capacity Utilization (%)',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_MCU_Capacity_Utilization_${AOP_YEAR}`,
       // addButton: false,

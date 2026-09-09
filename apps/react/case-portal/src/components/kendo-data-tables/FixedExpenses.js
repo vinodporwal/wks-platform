@@ -11,7 +11,7 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function FixedExpenses() {
+export default function FixedExpenses({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -328,7 +328,7 @@ export default function FixedExpenses() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'Fixed Expenses',
+      titleName: tabDisplayName || 'Fixed Expenses',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Fixed_Expenses_${AOP_YEAR}`,
       //addButton: true,

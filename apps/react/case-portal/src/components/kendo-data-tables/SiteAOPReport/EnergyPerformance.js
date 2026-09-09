@@ -1,16 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSelector } from 'react-redux'
-import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
+import getSiteAOPReportColumns from './columns/SiteReportColumns'
 import { SiteReportDataService } from 'services/SiteReportDataService'
 import { useSession } from 'SessionStoreContext'
-import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from '../index'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import PerformanceHighlights from './Utilities/PerformanceHighlights'
+import Notification from 'components/Utilities/Notification'
 
-const EnergyPerformance = ({ permissions }) => {
+const EnergyPerformance = ({ permissions, tabDisplayName }) => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -21,34 +20,20 @@ const EnergyPerformance = ({ permissions }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  // Remark dialog state
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
-
-  // Performance Highlights state
-  const [performanceSummary, setPerformanceSummary] = useState('')
-  const [performanceId, setPerformanceId] = useState(null)
-  const [performanceHighlightsEdited, setPerformanceHighlightsEdited] =
-    useState(false)
-
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    oldYear,
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    isReleased,
-  } = dataGridStore
+  const { oldYear, siteObject, verticalChange, year, isReleased } =
+    dataGridStore
 
-  const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'site'
+  const SITE_NAME =
+    siteObject?.name || siteObject?.siteName || siteObject?.displayName || ''
+  const EXCEL_EXPORT_TITLE = `${SITE_NAME ? `${SITE_NAME}_` : ''}${tabDisplayName || 'Energy Performance'}_${AOP_YEAR}`
 
   const keycloak = useSession()
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
@@ -67,18 +52,14 @@ const EnergyPerformance = ({ permissions }) => {
 
   const { prev, next } = getAopShortYears(AOP_YEAR)
   const valueFormat = ValueFormatterConsumption()
-  const columns = getSiteAOPReportColumns({ AOP_YEAR, valueFormat, prev, next })
-
-  const handleRemarkCellClick = (row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }
+  const columns = useMemo(() => {
+    return getSiteAOPReportColumns({ AOP_YEAR, valueFormat, prev, next })
+      .energyPerformance
+  }, [AOP_YEAR, valueFormat, prev, next])
 
   // --- Fetch & Save Energy Performance ---
   const fetchData = useCallback(async () => {
-    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+    if (!SITE_ID || !AOP_YEAR) return
 
     setModifiedCells({})
     setLoading(true)
@@ -91,8 +72,18 @@ const EnergyPerformance = ({ permissions }) => {
 
       const formattedData = (data?.data?.Data || []).map((item, idx) => ({
         ...item,
+        id: item.id || `temp-${idx + 1}`,
+        idFromApi: item.id || null,
+        masterId: item.masterId,
         sno: idx + 1,
-        originalRemark: item.remark,
+        plant: item.plant,
+        uom: item.uom,
+        aopValue: item.aopValue ?? '',
+        actualValue: item.actualValue ?? '',
+        planValue: item.planValue ?? '',
+        remark: item.remark ?? item.remarks ?? '',
+        responsibility: item.remark ?? item.remarks ?? '',
+        isEditable: true,
       }))
 
       setRows(formattedData)
@@ -101,7 +92,7 @@ const EnergyPerformance = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, SITE_ID, VERTICAL_ID, PLANT_ID, AOP_YEAR])
+  }, [keycloak, SITE_ID, AOP_YEAR])
 
   const saveChanges = useCallback(async () => {
     try {
@@ -113,28 +104,41 @@ const EnergyPerformance = ({ permissions }) => {
           message: 'No Records to Save!',
           severity: 'info',
         })
-        return
-      }
-
-      const requiredFields = ['remark']
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
+        setLoading(false)
         return
       }
 
       const payload = data.map((item) => ({
-        id: item.id || null,
+        id:
+          item.idFromApi ||
+          (item.id && !String(item.id).startsWith('temp-') ? item.id : null),
+        masterId: item.masterId || null,
         plant: item.plant,
         uom: item.uom,
-        aopValue: item.aopValue,
-        actualValue: item.actualValue,
-        planValue: item.planValue,
-        remark: item.remark,
+        aopValue:
+          item.aopValue !== undefined &&
+          item.aopValue !== null &&
+          item.aopValue !== ''
+            ? Number(item.aopValue)
+            : null,
+        actualValue:
+          item.actualValue !== undefined &&
+          item.actualValue !== null &&
+          item.actualValue !== ''
+            ? Number(item.actualValue)
+            : null,
+        planValue:
+          item.planValue !== undefined &&
+          item.planValue !== null &&
+          item.planValue !== ''
+            ? Number(item.planValue)
+            : null,
+        remark:
+          item.responsibility !== undefined
+            ? item.responsibility
+            : item.remark || item.remarks || '',
+        siteId: SITE_ID,
+        aopYear: AOP_YEAR,
       }))
 
       const response = await SiteReportDataService.saveEnergyPerformance(
@@ -170,82 +174,99 @@ const EnergyPerformance = ({ permissions }) => {
     }
   }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
-  // --- Performance Highlights Summary ---
-  const getPerformanceHighlights = useCallback(async () => {
-    if (!PLANT_ID || !SITE_ID || !AOP_YEAR) return
+  // --- Excel Export & Import ---
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
 
     try {
-      setPerformanceSummary('')
-      setPerformanceId(null)
-
-      const res = await SiteReportDataService.getPerformanceHighlightsSummary(
+      await SiteReportDataService.exportEnergyPerformance(
         keycloak,
         SITE_ID,
         AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
       )
-
-      if (res?.code === 200 && res?.data?.Data?.length > 0) {
-        const record = res.data.Data[0]
-        setPerformanceSummary(record.summary || '')
-        setPerformanceId(record.id || null)
-      } else {
-        setPerformanceSummary('')
-        setPerformanceId(null)
-      }
     } catch (error) {
-      setPerformanceSummary('')
-      setPerformanceId(null)
-      console.error('Error fetching summary:', error)
-    }
-  }, [keycloak, SITE_ID, PLANT_ID, AOP_YEAR])
-
-  const savePerformanceHighlightsSummary = async () => {
-    try {
-      const payload = [
-        {
-          id: performanceId,
-          summary: performanceSummary,
-          saveStatus: null,
-        },
-      ]
-
-      const res = await SiteReportDataService.savePerformanceHighlightsSummary(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-        payload,
-      )
-
-      if (res?.code === 200 || res?.code === 207) {
-        setSnackbarData({
-          message:
-            res?.code === 200
-              ? 'Saved Successfully!'
-              : 'Saved with minor issues',
-          severity: res?.code === 200 ? 'success' : 'warning',
-        })
-        setPerformanceHighlightsEdited(false)
-        setSnackbarOpen(true)
-      } else {
-        setSnackbarData({
-          message: 'Save Failed!',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
-      }
-    } catch (error) {
+      console.error('Error downloading Excel:', error)
       setSnackbarData({
-        message: 'Error saving summary!',
+        message: 'Failed to download Excel.',
         severity: 'error',
       })
       setSnackbarOpen(true)
     }
   }
 
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response = await SiteReportDataService.importEnergyPerformance(
+        rawFile,
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `Error_File_${EXCEL_EXPORT_TITLE}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred during upload!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchData()
-    getPerformanceHighlights()
-  }, [fetchData, getPerformanceHighlights])
+  }, [fetchData])
 
   const getAdjustedPermissions = (perms, isOld) => {
     if (isOld != 1) return perms
@@ -267,17 +288,22 @@ const EnergyPerformance = ({ permissions }) => {
 
   const adjustedPermissions = getAdjustedPermissions(
     {
-      showAction: permissions?.showAction ?? true,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
       showUnit: permissions?.showUnit ?? false,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
+      saveWithRemark: false,
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: false,
+      downloadExcelBtn: permissions?.downloadExcelBtn ?? true,
+      uploadExcelBtn: permissions?.uploadExcelBtn ?? true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Energy Performance',
-      uploadExcelBtn: false,
+      titleName: tabDisplayName || 'Energy Performance',
+      ExcelName: EXCEL_EXPORT_TITLE,
+      disableColWidth: true,
+      makePagable: false,
     },
     isOldYear,
   )
@@ -288,32 +314,21 @@ const EnergyPerformance = ({ permissions }) => {
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        columns={columns.energyPerformance}
+        columns={columns}
         rows={rows}
         setRows={setRows}
         saveChanges={saveChanges}
         fetchData={fetchData}
         title='B3.4. Energy Performance'
         permissions={adjustedPermissions}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        snackbarData={snackbarData}
-        setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
       />
-      <PerformanceHighlights
-        performanceSummary={performanceSummary}
-        setPerformanceSummary={setPerformanceSummary}
-        performanceHighlightsEdited={performanceHighlightsEdited}
-        setPerformanceHighlightsEdited={setPerformanceHighlightsEdited}
-        savePerformanceHighlightsSummary={savePerformanceHighlightsSummary}
-        readOnly={READ_ONLY}
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+        onClose={() => setSnackbarOpen(false)}
       />
     </>
   )

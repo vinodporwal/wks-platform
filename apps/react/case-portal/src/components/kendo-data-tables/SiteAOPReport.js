@@ -12,7 +12,7 @@ import Capex from './Capex'
 import ShutdownSlowdownPlan from './SlowdownPlan'
 import TechnicalAvailability from './TechnicalAvailability'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
-import MajorSafetyInitiative from './MajorSafetyInitiative'
+import MajorSafetyInitiative from './SiteAOPReport/MajorSafetyInitiative'
 import MajorProfitInitiative from './MajorProfitInitiative'
 import MajorReliabilityInitiative from './MajorReliabilityInitiative'
 import MajorPeopleInitiative from './MajorPeopleInitiative'
@@ -20,20 +20,90 @@ import MCUCapacityUtilization from './MCUCapacityUtilization'
 
 // Default hardcoded fallback tabs
 const DEFAULT_TABS = [
-  { tabName: 'SiteTeam', tabDisplayName: 'Site Team', tabSequence: 1, isVisible: true },
-  { tabName: 'SiteSafetyPerformanceTarget', tabDisplayName: 'Safety Performance & Targets', tabSequence: 2, isVisible: true },
-  { tabName: 'ConversionVariableCost', tabDisplayName: 'Conversion & Variable Cost', tabSequence: 3, isVisible: true },
-  { tabName: 'EnergyPerformance', tabDisplayName: 'Energy Performance', tabSequence: 4, isVisible: true },
-  { tabName: 'FixedExpenses', tabDisplayName: 'Fixed Expenses', tabSequence: 5, isVisible: true },
-  { tabName: 'Capex', tabDisplayName: 'Capex/PIO Plan', tabSequence: 6, isVisible: true },
-  { tabName: 'ShutdownSlowdownPlan', tabDisplayName: 'Shutdown / Slowdown plan', tabSequence: 7, isVisible: true },
-  { tabName: 'TechnicalAvailability', tabDisplayName: 'Technical Availability', tabSequence: 8, isVisible: true },
-  { tabName: 'ReportManualEntry', tabDisplayName: 'Report Manual Entry', tabSequence: 9, isVisible: true },
-  { tabName: 'MajorSafetyInitiative', tabDisplayName: 'Major Safety Improvement', tabSequence: 10, isVisible: true },
-  { tabName: 'MajorProfitInitiative', tabDisplayName: 'Major Profit and Operability Improvement', tabSequence: 11, isVisible: true },
-  { tabName: 'MajorReliabilityInitiative', tabDisplayName: 'Major Reliability Improvement', tabSequence: 12, isVisible: true },
-  { tabName: 'MajorPeopleInitiative', tabDisplayName: 'Major People Initiative', tabSequence: 13, isVisible: true },
-  { tabName: 'MCUCapacityUtilization', tabDisplayName: 'MCU Capacity Utilization (%)', tabSequence: 14, isVisible: true },
+  {
+    tabName: 'SiteTeam',
+    tabDisplayName: 'Site Team',
+    tabSequence: 1,
+    isVisible: true,
+  },
+  {
+    tabName: 'SiteSafetyPerformanceTarget',
+    tabDisplayName: 'Safety Performance & Targets',
+    tabSequence: 2,
+    isVisible: true,
+  },
+  {
+    tabName: 'MajorSafetyInitiative',
+    tabDisplayName: 'Major Safety Improvement',
+    tabSequence: 3,
+    isVisible: true,
+  },
+  {
+    tabName: 'EnergyPerformance',
+    tabDisplayName: 'Energy Performance',
+    tabSequence: 4,
+    isVisible: true,
+  },
+  {
+    tabName: 'MajorProfitInitiative',
+    tabDisplayName: 'Major Profit and Operability Improvement',
+    tabSequence: 5,
+    isVisible: true,
+  },
+  {
+    tabName: 'MajorReliabilityInitiative',
+    tabDisplayName: 'Major Reliability Improvement',
+    tabSequence: 6,
+    isVisible: true,
+  },
+  {
+    tabName: 'MajorPeopleInitiative',
+    tabDisplayName: 'Major People Initiative',
+    tabSequence: 7,
+    isVisible: true,
+  },
+  {
+    tabName: 'ShutdownSlowdownPlan',
+    tabDisplayName: 'Shutdown / Slowdown plan',
+    tabSequence: 8,
+    isVisible: true,
+  },
+  {
+    tabName: 'FixedExpenses',
+    tabDisplayName: 'Fixed Expenses',
+    tabSequence: 9,
+    isVisible: true,
+  },
+  {
+    tabName: 'ReportManualEntry',
+    tabDisplayName: 'Report Manual Entry',
+    tabSequence: 10,
+    isVisible: true,
+  },
+  {
+    tabName: 'Capex',
+    tabDisplayName: 'Capex/PIO Plan',
+    tabSequence: 11,
+    isVisible: true,
+  },
+  {
+    tabName: 'TechnicalAvailability',
+    tabDisplayName: 'Technical Availability',
+    tabSequence: 12,
+    isVisible: true,
+  },
+  {
+    tabName: 'MCUCapacityUtilization',
+    tabDisplayName: 'MCU Capacity Utilization (%)',
+    tabSequence: 13,
+    isVisible: true,
+  },
+  {
+    tabName: 'ConversionVariableCost',
+    tabDisplayName: 'Conversion & Variable Cost',
+    tabSequence: 14,
+    isVisible: true,
+  },
 ]
 
 const SiteAOPReport = ({ permissions }) => {
@@ -47,7 +117,10 @@ const SiteAOPReport = ({ permissions }) => {
   // Fetch tabs from SP via API, fallback to DEFAULT_TABS
   const fetchTabs = useCallback(async () => {
     try {
-      const response = await SiteReportDataService.getSiteAopReportTabs(keycloak, SITE_ID)
+      const response = await SiteReportDataService.getSiteAopReportTabs(
+        keycloak,
+        SITE_ID,
+      )
       const data = response?.data?.Data || response?.data || []
       if (Array.isArray(data) && data.length > 0) {
         const sortedVisibleTabs = data
@@ -71,46 +144,111 @@ const SiteAOPReport = ({ permissions }) => {
     switch (tabName || tabDisplayName) {
       case 'SiteTeam':
       case 'Site Team':
-        return <SiteTeam permissions={permissions} />
+        return (
+          <SiteTeam permissions={permissions} tabDisplayName={tabDisplayName} />
+        )
       case 'SiteSafetyPerformanceTarget':
       case 'Safety Performance & Targets':
-        return <SiteSafetyPerformanceTarget permissions={permissions} />
-      case 'ConversionVariableCost':
-      case 'Conversion & Variable Cost':
-        return <ConversionVariableCost permissions={permissions} />
-      case 'EnergyPerformance':
-      case 'Energy Performance':
-        return <EnergyPerformance permissions={permissions} />
-      case 'FixedExpenses':
-      case 'Fixed Expenses':
-        return <FixedExpenses permissions={permissions} />
-      case 'Capex':
-      case 'Capex/PIO Plan':
-        return <Capex permissions={permissions} />
-      case 'ShutdownSlowdownPlan':
-      case 'Shutdown / Slowdown plan':
-        return <ShutdownSlowdownPlan permissions={permissions} />
-      case 'TechnicalAvailability':
-      case 'Technical Availability':
-        return <TechnicalAvailability permissions={permissions} />
-      case 'ReportManualEntry':
-      case 'Report Manual Entry':
-        return <CrackerReportMannualEntry tabIndex={5} permissions={permissions} />
+        return (
+          <SiteSafetyPerformanceTarget
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
       case 'MajorSafetyInitiative':
       case 'Major Safety Improvement':
-        return <MajorSafetyInitiative permissions={permissions} />
+        return (
+          <MajorSafetyInitiative
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
+      case 'EnergyPerformance':
+      case 'Energy Performance':
+        return (
+          <EnergyPerformance
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
       case 'MajorProfitInitiative':
       case 'Major Profit and Operability Improvement':
-        return <MajorProfitInitiative permissions={permissions} />
+        return (
+          <MajorProfitInitiative
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
       case 'MajorReliabilityInitiative':
       case 'Major Reliability Improvement':
-        return <MajorReliabilityInitiative permissions={permissions} />
+        return (
+          <MajorReliabilityInitiative
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
       case 'MajorPeopleInitiative':
       case 'Major People Initiative':
-        return <MajorPeopleInitiative permissions={permissions} />
+        return (
+          <MajorPeopleInitiative
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
+      case 'ShutdownSlowdownPlan':
+      case 'Shutdown / Slowdown plan':
+        return (
+          <ShutdownSlowdownPlan
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
+      case 'FixedExpenses':
+      case 'Fixed Expenses':
+        return (
+          <FixedExpenses
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
+      case 'ReportManualEntry':
+      case 'Report Manual Entry':
+        return (
+          <CrackerReportMannualEntry
+            tabIndex={5}
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
+      case 'Capex':
+      case 'Capex/PIO Plan':
+        return (
+          <Capex permissions={permissions} tabDisplayName={tabDisplayName} />
+        )
+      case 'TechnicalAvailability':
+      case 'Technical Availability':
+        return (
+          <TechnicalAvailability
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
       case 'MCUCapacityUtilization':
       case 'MCU Capacity Utilization (%)':
-        return <MCUCapacityUtilization permissions={permissions} />
+        return (
+          <MCUCapacityUtilization
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
+      case 'ConversionVariableCost':
+      case 'Conversion & Variable Cost':
+        return (
+          <ConversionVariableCost
+            permissions={permissions}
+            tabDisplayName={tabDisplayName}
+          />
+        )
       default:
         return null
     }
@@ -129,7 +267,8 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {currentTab && renderTabContent(currentTab.tabName, currentTab.tabDisplayName)}
+      {currentTab &&
+        renderTabContent(currentTab.tabName, currentTab.tabDisplayName)}
     </div>
   )
 }
