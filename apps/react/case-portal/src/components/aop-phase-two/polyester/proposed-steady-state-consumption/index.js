@@ -494,10 +494,11 @@ const ProposedSteadyStateConsumption = () => {
           groupBy='Particulars'
           handleExport={handleExport}
           handleExcelUpload={handleExcelUpload}
+          customHeight={70}
           paginationConfig={{
             threshold: 100,
             buttonCount: 5,
-            pageSizes: [100, 200, 300],
+            pageSizes: [10, 20, 50, 100],
             defaultPageSize: 100,
           }}
         />
