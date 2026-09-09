@@ -53,15 +53,6 @@ const SteadyStateConsumption = () => {
       hidden: true,
     },
     {
-      field:'sapCode',
-      title: 'SAP MAT Code',
-      widthT: 250,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
       field: 'productName',
       title: 'Particulars',
       widthT: 250,

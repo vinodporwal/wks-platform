@@ -197,7 +197,7 @@ public class NormalOperationNormsController {
 	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			byte[] excelBytes;
-			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")) {
+			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC")) {
 				 excelBytes = normalOperationNormsService.createExcelSAP(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 			}else {
 				 excelBytes = normalOperationNormsService.createExcel(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
@@ -210,7 +210,6 @@ public class NormalOperationNormsController {
 	                .filename("plant_production_plan.xlsx")
 	                .build());
 	        headers.setContentLength(excelBytes.length);
-
 	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
 	    } catch (Exception e) {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

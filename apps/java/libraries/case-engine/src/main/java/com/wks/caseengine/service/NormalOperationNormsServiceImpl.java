@@ -223,7 +223,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
 					mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
-					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")) {
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC")) {
 						mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
 					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
@@ -1485,12 +1485,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	               MCUNormsValueGrade existing = opt.get();
 	               String existingRemark = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
 
-	               if (newRemark.isEmpty()) {
-	                   steadyStateNormDTO.setSaveStatus("Failed");
-	                   steadyStateNormDTO.setErrDescription("Remark is mandatory to update an existing record.");
-	                   failedList.add(steadyStateNormDTO);
-	                   continue;
-	               }
+	            //    if (newRemark.isEmpty()) {
+	            //        steadyStateNormDTO.setSaveStatus("Failed");
+	            //        steadyStateNormDTO.setErrDescription("Remark is mandatory to update an existing record.");
+	            //        failedList.add(steadyStateNormDTO);
+	            //        continue;
+	            //    }
 
 	               boolean isValueChanged = isAnyMonthValueChanged(existing, steadyStateNormDTO);
 	               boolean isRemarkChanged = !existingRemark.equalsIgnoreCase(newRemark);
@@ -1615,11 +1615,18 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	   }
 
 	   
-	   private boolean isDoubleChanged(Double val1, Double val2) {
-	       if (val1 == null && val2 == null) return false;
-	       if (val1 == null || val2 == null) return true;
-	       return Double.compare(val1, val2) != 0;
-	   }
+	//    private boolean isDoubleChanged(Double val1, Double val2) {
+	//        if (val1 == null && val2 == null) return false;
+	//        if (val1 == null || val2 == null) return true;
+	//        return Double.compare(val1, val2) != 0;
+	//    }
+
+	private boolean isDoubleChanged(Double val1, Double val2) {
+		double value1 = val1 == null ? 0.0 : val1;
+		double value2 = val2 == null ? 0.0 : val2;
+	
+		return Double.compare(value1, value2) != 0;
+	}
 	   
 	   public List<SteadyStateNormDTO> processPayload(List<Map<String, Object>> payloadList) {
 		    List<SteadyStateNormDTO> dtoList = new ArrayList<>();
