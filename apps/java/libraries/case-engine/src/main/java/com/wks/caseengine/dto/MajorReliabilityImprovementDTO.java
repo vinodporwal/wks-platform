@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for Sp_GetMajorReliabilityImprovement stored procedure result row.
+ * DTO for Sp_GetMajorReliabilityImprovementInitiative stored procedure result row.
  */
 @Configuration
 @NoArgsConstructor
@@ -19,15 +19,18 @@ import lombok.NoArgsConstructor;
 @Data
 public class MajorReliabilityImprovementDTO {
     private String id;
+    private String plantId;
+    private String plantName;
+    private String plantDisplayName;
     private String plant;
     private String initiativeDescription;
     private String category;
+    private String cost;
     private String outcome;
-    private String recommendation;
     private Date targetDate;
-    private String remark;
+    private String responsibility;
+    private String siteId;
     private String aopYear;
-    private String siteFkId;
-    private String updatedBy;
-    private Date updatedDateTime;
+    private String modifiedBy;
+    private Date modifiedOn;
 }

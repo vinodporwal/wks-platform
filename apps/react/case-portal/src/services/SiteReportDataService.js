@@ -40,6 +40,9 @@ export const SiteReportDataService = {
   SiteTeamExport,
   ImportSiteTeamExcel,
   deleteMajorInitiativeInitiative,
+  deleteMajorProfitImprovement,
+  exportMajorProfitImprovement,
+  importMajorProfitImprovement,
 }
 export async function getSiteTeamDetails(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/site-team-transaction?siteId=${SITE_ID}&year=${AOP_YEAR}`
@@ -528,6 +531,85 @@ export async function saveMajorProfitImprovement(
   }
 }
 
+export async function deleteMajorProfitImprovement(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/major-profit-improvement/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting Major Profit Improvement record:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function exportMajorProfitImprovement(
+  keycloak,
+  siteId,
+  aopYear,
+  excelName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-profit-improvement-export?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName || 'Major_Profit_Improvement'}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Major Profit Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function importMajorProfitImprovement(
+  file,
+  keycloak,
+  siteId,
+  aopYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-profit-improvement-import?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Major Profit Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
 // Major Reliability Improvement
 export async function getMajorReliabilityImprovement(
   keycloak,

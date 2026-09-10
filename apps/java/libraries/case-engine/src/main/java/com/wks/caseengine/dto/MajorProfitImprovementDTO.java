@@ -19,15 +19,18 @@ import lombok.NoArgsConstructor;
 @Data
 public class MajorProfitImprovementDTO {
     private String id;
+    private String plantId;
+    private String plantName;
+    private String plantDisplayName;
     private String plant;
     private String initiativeDescription;
     private String category;
+    private String cost;
     private String outcome;
-    private String recommendation;
     private Date targetDate;
     private String remark;
-    private String aopYear;
     private String siteFkId;
-    private String updatedBy;
-    private Date updatedDateTime;
+    private String aopYear;
+    private String modifiedBy;
+    private Date modifiedOn;
 }

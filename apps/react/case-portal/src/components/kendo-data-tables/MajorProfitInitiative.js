@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Backdrop, Box, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
@@ -9,6 +9,7 @@ import { validateFields } from 'utils/validationUtils'
 import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
 import { formatDate } from 'utils/dateUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelNameWithoutExt } from 'utils/excelNameUtil'
 
 export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   const keycloak = useSession()
@@ -24,7 +25,9 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
+  const [plantOptions, setPlantOptions] = useState([])
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
   const isOldYear = false
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -35,12 +38,49 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
+  const ExcelExportTitle = generateExcelNameWithoutExt(dataGridStore, tabDisplayName || 'Major Profit and Operability Improvement')
+
   const columns = useMemo(() => {
-    const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorSafetyInitiative
+    const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorProfitInitiative
     return cols.map((col) => {
       return col
     })
   }, [AOP_YEAR])
+
+  // Fetch plant dropdown for this site
+  const fetchPlantDropdown = useCallback(async () => {
+    if (!SITE_ID) return
+    try {
+      const res = await SiteReportDataService.getPlantDropdownForSiteAOPReport(
+        keycloak,
+        SITE_ID,
+      )
+      const data = res?.data?.plants || res?.data?.Data || res?.data || []
+      const formatted = Array.isArray(data)
+        ? data.map((p) => ({
+          id: p.id || p.Id,
+          name:
+            p.plantDisplayName ||
+            p.name ||
+            p.displayName ||
+            p.plantName ||
+            '',
+          value:
+            p.plantDisplayName ||
+            p.name ||
+            p.displayName ||
+            p.plantName ||
+            '',
+          plantName: p.plantName || p.name || '',
+          plantDisplayName: p.plantDisplayName || p.displayName || '',
+        }))
+        : []
+      setPlantOptions(formatted)
+    } catch (err) {
+      console.error('Error fetching plant dropdown:', err)
+      setPlantOptions([])
+    }
+  }, [keycloak, SITE_ID])
 
   const fetchData = useCallback(async () => {
     if (!SITE_ID || !AOP_YEAR) return
@@ -53,12 +93,13 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
       )
 
       if (res?.code === 200) {
-        const mapped = res?.data?.majorProfitImprovementList?.map(
+        const mapped = res?.data?.map(
           (item, index) => ({
             ...item,
             id: item.id || index + 1,
             sno: index + 1,
             idFromApi: item.id || null,
+            responsibility: item?.remark || '',
           }),
         )
         setRows(mapped)
@@ -74,6 +115,10 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   }, [keycloak, SITE_ID, AOP_YEAR])
 
   useEffect(() => {
+    fetchPlantDropdown()
+  }, [fetchPlantDropdown])
+
+  useEffect(() => {
     fetchData()
   }, [fetchData])
 
@@ -87,7 +132,7 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
         return
       }
 
-      const requiredFields = ['initiativeDescription', 'remark']
+      const requiredFields = ['initiativeDescription', 'responsibility']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -97,26 +142,46 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
         return
       }
       const payload = data.map((item) => {
-        const {
-          id,
-          initiativeDescription,
-          remark,
-          targetDate,
-          category,
-          outcome,
-          recommendation,
-        } = item
-
+        let matchedPlantId = null
+        let matchedPlant = null
+        if (item.plant && plantOptions.length > 0) {
+          const plantSearch =
+            typeof item.plant === 'string'
+              ? item.plant.trim().toLowerCase()
+              : ''
+          matchedPlant = plantOptions.find(
+            (p) =>
+              p.name?.trim().toLowerCase() === plantSearch ||
+              p.plantName?.trim().toLowerCase() === plantSearch ||
+              p.plantDisplayName?.trim().toLowerCase() === plantSearch ||
+              p.value?.trim().toLowerCase() === plantSearch,
+          )
+          if (matchedPlant) {
+            matchedPlantId = matchedPlant.id
+          }
+        }
+        if (!matchedPlantId) {
+          matchedPlantId = item.plantId
+        }
         return {
-          id,
-          initiativeDescription,
-          remark,
-          targetDate: formatDate(
-            targetDate ? new Date(targetDate) : new Date(),
-          ),
-          category,
-          outcome,
-          recommendation,
+          id:
+            item.idFromApi ||
+            (typeof item.id === 'string' && item.id.startsWith('temp-')
+              ? null
+              : item.id) ||
+            null,
+          plantId: matchedPlantId || null,
+          plantName: matchedPlant?.plantName || item?.plantName || '',
+          plantDisplayName: matchedPlant?.plantDisplayName || item?.plantDisplayName || '',
+          plant: matchedPlant?.name || item?.plant || '',
+          initiativeDescription: item.initiativeDescription,
+          category: item.category || '',
+          outcome: item.outcome || '',
+          cost: item.cost || '',
+          targetDate: item.targetDate ? formatDate(item.targetDate) : null,
+          remark: item.responsibility || item.remark || '',
+          siteFkId: SITE_ID,
+          aopYear: AOP_YEAR,
         }
       })
 
@@ -150,11 +215,135 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
     }
   }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
+    try {
+      const response = await SiteReportDataService.deleteMajorProfitImprovement(
+        keycloak,
+        paramsForDelete?.id,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Deleted successfully',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Delete failed',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting record:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete record.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.responsibility || row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await SiteReportDataService.exportMajorProfitImprovement(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response = await SiteReportDataService.importMajorProfitImprovement(
+        rawFile,
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `Error_File_${EXCEL_EXPORT_TITLE}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred during upload!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -178,9 +367,17 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
       showTitleNameBusiness: true,
       titleName: tabDisplayName || 'Major Profit and Operability Improvement',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Major_Profit_Initiative_${AOP_YEAR}`,
-      // addButton: true,
-      // deleteButton: true,
+      ExcelName: ExcelExportTitle,
+      dynamicDropdownOptions: {
+        plant: plantOptions,
+      },
+      disableColWidth: true,
+      makePagable: false,
+      saveBtn: permissions?.saveBtn ?? true,
+      addButton: permissions?.addButton ?? true,
+      deleteButton: permissions?.deleteButton ?? true,
+      downloadExcelBtn: permissions?.downloadExcelBtn ?? false,
+      uploadExcelBtn: permissions?.uploadExcelBtn ?? false,
     },
     isOldYear,
   )
@@ -206,6 +403,11 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
+        deleteRowData={deleteRowData}
+        deleteId={deleteId}
+        setDeleteId={setDeleteId}
       />
       <Notification
         open={snackbarOpen}
