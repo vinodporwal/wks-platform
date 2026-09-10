@@ -169,6 +169,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setJanuary(row[15] != null ? Double.parseDouble(row[15].toString()) : null);
 					mCUNormsValueDTO.setFebruary(row[16] != null ? Double.parseDouble(row[16].toString()) : null);
 					mCUNormsValueDTO.setMarch(row[17] != null ? Double.parseDouble(row[17].toString()) : null);
+
 					mCUNormsValueDTO.setFinancialYear(row[18].toString());
 					mCUNormsValueDTO.setRemarks(row[19] != null ? row[19].toString() : "");
 					mCUNormsValueDTO.setCreatedOn(row[20] != null ? (Date) row[20] : null);
@@ -3427,6 +3428,53 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		}
 		return null;
 	}
+	
+	@Override
+	public AOPMessageVM importAllGradeExcel(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode) {
+		// TODO Auto-generated method stub
+		try {
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			List<MCUNormsValueDTO> data = null;
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			
+			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
+					|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty())) {
+			
+				data = readSteadyState(file.getInputStream(), plantFKId, year);
+			} else {
+				data = readConfigurations(file.getInputStream(), plantFKId, year);
+			}
+
+			List<MCUNormsValueDTO> failedRecords = saveNormalOperationNormsData(data, plantFKId, year, gradeId, true);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				byte[] fileByteArray = null;
+				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
+						|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty())) {
+					fileByteArray = exportSteadyStateNorms(year, plantFKId, true, failedRecords, mode);
+				} else {
+					fileByteArray = createExcel(year, plantFKId, true, failedRecords, mode, gradeId);
+				}
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				// aopMessageVM.setData();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			// return ResponseEntity.ok(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// return ResponseEntity.internalServerError().build();
+		}
+		return null;
+	}
 
 	@Override
 	public AOPMessageVM importExcelSAP(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode) {
@@ -4545,6 +4593,182 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 
 	public byte[] exportSteadyStateNorms(String year, UUID plantFKId, boolean isAfterSave,
+			List<MCUNormsValueDTO> dtoList, String mode) {
+		try {
+			AOPMessageVM gradesVM = getNormalOperationNormsGrades(year, plantFKId.toString());
+			List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
+			Workbook workbook = new XSSFWorkbook();
+			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+
+			CellStyle lockedWrappedStyle = workbook.createCellStyle();
+			lockedWrappedStyle.cloneStyleFrom(lockedStyle);
+			lockedWrappedStyle.setWrapText(true);
+
+			CellStyle unlockedWrappedStyle = workbook.createCellStyle();
+			unlockedWrappedStyle.cloneStyleFrom(unlockedStyle);
+			unlockedWrappedStyle.setWrapText(true);
+
+			for (Map<String, String> gradeInfo : gradeInfoList) {
+
+				String currentGradeId = gradeInfo.get("gradeId");
+				String sheetName = Utility.sanitizeSheetName(gradeInfo.get("displayName"));
+
+				AOPMessageVM aopMessageVM = null;
+				List<MCUNormsValueDTO> currentDtoList = new ArrayList<>();
+				List<Boolean> isEditable = new ArrayList<>();
+				if (!isAfterSave) {
+					aopMessageVM = getNormalOperationNormsData(year, plantFKId.toString(), currentGradeId, mode);
+				}
+				if (aopMessageVM != null && aopMessageVM.getData() != null) {
+
+					Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+					currentDtoList = (List<MCUNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
+				} else if (isAfterSave) {
+					currentDtoList = dtoList.stream().filter(dto -> currentGradeId.equals(dto.getGradeId()))
+							.collect(Collectors.toList());
+				} else {
+					continue;
+				}
+
+			Sheet sheet = workbook.createSheet(sheetName);
+			// CRITICAL: Sheet protection must be enabled for cell-level locking to take effect in Excel
+			sheet.protectSheet("secret_password");
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+			for (MCUNormsValueDTO dto : currentDtoList) {
+					List<Object> list = new ArrayList<>();
+					list.add(dto.getNormParameterTypeDisplayName());
+					list.add(dto.getSapCode());
+					list.add(dto.getProductName());
+					list.add(dto.getUOM());
+					list.add(dto.getApril());
+					list.add(dto.getMay());
+					list.add(dto.getJune());
+					list.add(dto.getJuly());
+					list.add(dto.getAugust());
+					list.add(dto.getSeptember());
+					list.add(dto.getOctober());
+					list.add(dto.getNovember());
+					list.add(dto.getDecember());
+					list.add(dto.getJanuary());
+					list.add(dto.getFebruary());
+					list.add(dto.getMarch());
+					list.add(dto.getRemarks());
+					list.add(dto.getId());
+					isEditable.add(dto.getIsEditable());
+
+					if (isAfterSave) {
+						list.add(dto.getSaveStatus());
+						list.add(dto.getErrDescription());
+					}
+					rows.add(list);
+				}
+
+				List<String> innerHeaders = new ArrayList<>();
+				innerHeaders.add("Type");
+				innerHeaders.add("SAP MAT Code");
+				innerHeaders.add("Particulars");
+				innerHeaders.add("UOM");
+				List<String> monthsList = getAcademicYearMonths(year);
+				innerHeaders.addAll(monthsList);
+				innerHeaders.add("Remarks");
+				innerHeaders.add("Id");
+				if (isAfterSave) {
+					innerHeaders.add("Status");
+					innerHeaders.add("Error Description");
+				}
+				List<List<String>> headers = new ArrayList<>();
+				headers.add(innerHeaders);
+
+				int remarksColIndex = innerHeaders.indexOf("Remarks");
+				int idColIndex = innerHeaders.indexOf("Id");
+
+				for (List<String> headerRowData : headers) {
+					Row headerRow = sheet.createRow(currentRow++);
+					for (int col = 0; col < headerRowData.size(); col++) {
+						Cell cell = headerRow.createCell(col);
+						cell.setCellValue(headerRowData.get(col));
+						cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+					}
+				}
+
+				for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+					List<Object> rowData = rows.get(rowIndex);
+					boolean isRowEditable = true;
+
+					if (rowIndex < isEditable.size() && isEditable.get(rowIndex) != null) {
+						isRowEditable = isEditable.get(rowIndex);
+					}
+
+					Row row = sheet.createRow(currentRow++);
+					for (int col = 0; col < rowData.size(); col++) {
+						Cell cell = row.createCell(col);
+						Object value = rowData.get(col);
+
+						if (value instanceof Number) {
+							cell.setCellValue(((Number) value).doubleValue());
+						} else if (value instanceof Boolean) {
+							cell.setCellValue((Boolean) value);
+						} else if (value != null) {
+							cell.setCellValue(value.toString());
+						} else {
+							cell.setCellValue("");
+						}
+
+					if (col == remarksColIndex) {
+						cell.setCellStyle(isRowEditable ? unlockedWrappedStyle : lockedWrappedStyle);
+					} else if (isRowEditable) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedStyle);
+					}
+				}
+
+				// Auto-adjust row height to accommodate wrapped Remarks text
+				if (remarksColIndex >= 0 && remarksColIndex < rowData.size()) {
+					Object remarksValue = rowData.get(remarksColIndex);
+					if (remarksValue != null && !remarksValue.toString().isEmpty()) {
+						String remarksText = remarksValue.toString();
+						int charsPerLine = 55; // approximate characters fitting the fixed Remarks column width
+						int lines = (int) Math.ceil((double) remarksText.length() / charsPerLine);
+						lines = Math.max(1, lines);
+						row.setHeight((short) (lines * 300)); // 300 twips ≈ 15 pt per line
+					}
+				}
+			}
+
+			// Auto-size content columns; give Remarks a fixed wide width with wrapping
+			int totalCols = innerHeaders.size();
+			for (int col = 0; col < totalCols; col++) {
+				if (col == remarksColIndex) {
+					sheet.setColumnWidth(col, 15000); // ~55 characters wide
+				} else if (col == idColIndex) {
+					sheet.setColumnHidden(col, true);
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
+
+			}
+
+			try {
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public byte[] exportAllGradeSteadyStateNorms(String year, UUID plantFKId, boolean isAfterSave,
 			List<MCUNormsValueDTO> dtoList, String mode) {
 		try {
 			AOPMessageVM gradesVM = getNormalOperationNormsGrades(year, plantFKId.toString());

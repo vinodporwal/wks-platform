@@ -29,9 +29,11 @@ public interface NormalOperationNormsService {
 	public byte[] createExcelWithSapCode(String year, UUID plantFKId,boolean isAfterSave,List<MCUNormsValueDTO> dtoList,String mode,String gradeId);
 	public byte[] exportSteadyStateNormsChemical(String year, UUID plantFKId,boolean isAfterSave,List<MCUNormsValueDTO> dtoList);
 	public byte[] exportSteadyStateNorms(String year, UUID plantFKId,boolean isAfterSave,List<MCUNormsValueDTO> dtoList,String mode);
+	public byte[] exportAllGradeSteadyStateNorms(String year, UUID plantFKId,boolean isAfterSave,List<MCUNormsValueDTO> dtoList,String mode);
     public AOPMessageVM importExcel(String year, UUID fromString,String gradeId, MultipartFile file,String mode);
     public AOPMessageVM importExcelSAPWithoutGrade(String year, UUID fromString,String gradeId, MultipartFile file,String mode);
-    public AOPMessageVM importExcelSAP(String year, UUID fromString,String gradeId, MultipartFile file,String mode);
+    public AOPMessageVM importAllGradeExcel(String year, UUID fromString,String gradeId, MultipartFile file,String mode);
+	public AOPMessageVM importExcelSAP(String year, UUID fromString,String gradeId, MultipartFile file,String mode);
 	public AOPMessageVM importExcelWithSapCode(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode);
     public AOPMessageVM importChemicalExcel(String year, UUID fromString, MultipartFile file);
     public AOPMessageVM getNormalOperationNormsGrades(String year,String plantId);

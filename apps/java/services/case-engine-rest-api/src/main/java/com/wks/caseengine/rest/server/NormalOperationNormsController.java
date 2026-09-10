@@ -265,6 +265,28 @@ public class NormalOperationNormsController {
 	    }
 	}
 
+	@GetMapping(value = "/steady-state-norms-all-grades-export-elastomer")
+	public ResponseEntity<byte[]> exportAllGradeSteadyStateNorms(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam(required = false) String mode) {
+	    try {
+			
+	        byte[] excelBytes = normalOperationNormsService.exportAllGradeSteadyStateNorms(year,UUID.fromString(plantId),false,null,mode); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("plant_production_plan.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
 	@PostMapping(value = "/steady-state-norms-import/polyester", consumes = "multipart/form-data")
 	public AOPMessageVM importExcelPolyester(
 	         @RequestParam("plantId") String plantId,
@@ -293,6 +315,16 @@ public class NormalOperationNormsController {
 			}else {
 				return	normalOperationNormsService.importExcel(year,UUID.fromString(plantId),gradeId, file,mode); 
 			}
+	}
+	
+	@PostMapping(value = "/steady-state-norms-import-elastomer", consumes = "multipart/form-data")
+	public AOPMessageVM importAllGradeExcel(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+            @RequestParam(required = false) String gradeId,
+			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
+	        ) {
+			return	normalOperationNormsService.importAllGradeExcel(year,UUID.fromString(plantId),gradeId, file,mode); 
 	}
 	
 	@PostMapping(value = "/steady-state-norms-import-chemical", consumes = "multipart/form-data")
