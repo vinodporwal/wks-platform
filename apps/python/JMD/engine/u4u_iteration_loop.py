@@ -31,6 +31,13 @@ logger = logging.getLogger(__name__)
 CONVERGENCE_TOLERANCE = 0.0001  # 0.01% as a fraction
 MAX_ITERATIONS = 50
 
+# NormType_FK_Id = 10 means "Fixed Consumption" — the quantity is fixed
+# (entered by user/BPC) and does NOT depend on generation quantity.
+# The Python model should NOT recalculate it via norm × generation.
+# Instead, use the fixed Quantity from NormsMonthDetail directly, but
+# still include it as U4U demand on the consumed material.
+FIXED_CONSUMPTION_NORM_TYPE = 10
+
 DEFAULT_ALLOWED_ACCOUNTS: Optional[Set[str]] = None
 
 _EXCLUDED_NON_DISPATCHABLE = {"Power_Dis"}
@@ -552,10 +559,9 @@ class U4UIterationLoop:
         # taken from the 'Norm, Qty, Cost .csv' summary for April.
         if self.month == 4 and self.year == 2026:
             _april_export_additions = {
-                "Sea Water": 1463688.0,     # M3
-                "D M Water": 337922.91,    # M3
-                "Utility Water": 5063.94,  # M3
-                "SWRO WATER": 1970149.0,    # M3
+                "D M Water": 390380.45,       # M3
+                "Utility Water": 10153.0,     # M3
+                "Desal Water Clearing": 502450.25,  # M3
             }
             for utility_name, export_qty in _april_export_additions.items():
                 if utility_name in self._all_producers:
@@ -967,19 +973,28 @@ class U4UIterationLoop:
                     continue
 
                 norm = c["norm"]
-                if norm == 0:
-                    continue
+                is_fixed = c.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE
 
                 material = c["material"]
                 material_uom = c.get("material_uom", "")
                 account = c["account"]
 
-                quantity = gen_kwh * norm
+                if is_fixed:
+                    # Fixed consumption: use the fixed Quantity from DB, don't
+                    # recalculate from norm × generation.
+                    quantity = float(c.get("quantity", 0.0) or 0.0)
+                    if quantity == 0:
+                        continue
+                elif norm == 0:
+                    continue
+                else:
+                    quantity = gen_kwh * norm
+
                 u4u_amount = quantity
 
                 # Negative norms are byproduct credits (supply, not consumption).
                 # Include in detail_records for display but do NOT add to u4u[].
-                if norm < 0:
+                if not is_fixed and norm < 0:
                     details.append({
                         "producer": asset_name,
                         "producer_utility": power_producer_name,
@@ -992,6 +1007,7 @@ class U4UIterationLoop:
                         "quantity": quantity,
                         "norms_header_id": c.get("norms_header_id"),
                         "norms_month_detail_id": c.get("norms_month_detail_id"),
+                        "norm_type": c.get("norm_type"),
                     })
                     continue
 
@@ -1013,6 +1029,7 @@ class U4UIterationLoop:
                     "quantity": quantity,
                     "norms_header_id": c.get("norms_header_id"),
                     "norms_month_detail_id": c.get("norms_month_detail_id"),
+                    "norm_type": c.get("norm_type"),
                 })
 
         return u4u, details
@@ -1054,18 +1071,25 @@ class U4UIterationLoop:
                     continue
 
                 norm = c["norm"]
-                if norm == 0:
-                    continue
+                is_fixed = c.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE
 
                 material = c["material"]
                 material_uom = c.get("material_uom", "")
                 account = c["account"]
 
-                quantity = gen_kwh * norm
+                if is_fixed:
+                    quantity = float(c.get("quantity", 0.0) or 0.0)
+                    if quantity == 0:
+                        continue
+                elif norm == 0:
+                    continue
+                else:
+                    quantity = gen_kwh * norm
+
                 u4u_amount = quantity
 
                 # Negative norms are byproduct credits (supply, not consumption).
-                if norm < 0:
+                if not is_fixed and norm < 0:
                     details.append({
                         "producer": asset_name,
                         "producer_utility": asset_name,
@@ -1078,6 +1102,7 @@ class U4UIterationLoop:
                         "quantity": quantity,
                         "norms_header_id": c.get("norms_header_id"),
                         "norms_month_detail_id": c.get("norms_month_detail_id"),
+                        "norm_type": c.get("norm_type"),
                     })
                     continue
 
@@ -1099,6 +1124,7 @@ class U4UIterationLoop:
                     "quantity": quantity,
                     "norms_header_id": c.get("norms_header_id"),
                     "norms_month_detail_id": c.get("norms_month_detail_id"),
+                    "norm_type": c.get("norm_type"),
                 })
 
         return u4u, details
@@ -1144,6 +1170,7 @@ class U4UIterationLoop:
                     continue
 
                 norm = c["norm"]
+                is_fixed = c.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE
 
                 material = c["material"]
                 material_uom = c.get("material_uom", "")
@@ -1165,16 +1192,23 @@ class U4UIterationLoop:
                         norm = 0.0
                         is_secondary_fuel = True
 
-                if norm == 0 and not is_secondary_fuel:
+                if is_fixed:
+                    # Fixed consumption: use the fixed Quantity from DB, don't
+                    # recalculate from norm × generation.
+                    quantity = float(c.get("quantity", 0.0) or 0.0)
+                    if quantity == 0:
+                        continue
+                elif norm == 0 and not is_secondary_fuel:
                     continue
+                else:
+                    quantity = total_output_mt * norm
 
-                quantity = total_output_mt * norm
                 u4u_amount = quantity
 
                 # Negative norms are byproduct credits (e.g. LP steam from HRSG).
                 # Include them in detail_records for display in the U4U table but
                 # do NOT add them to u4u[] — they are a supply, not a consumption.
-                if norm < 0:
+                if not is_fixed and norm < 0:
                     details.append({
                         "producer": asset_name,
                         "producer_utility": asset_name,
@@ -1187,6 +1221,7 @@ class U4UIterationLoop:
                         "quantity": quantity,
                         "norms_header_id": c.get("norms_header_id"),
                         "norms_month_detail_id": c.get("norms_month_detail_id"),
+                        "norm_type": c.get("norm_type"),
                     })
                     continue
 
@@ -1208,6 +1243,7 @@ class U4UIterationLoop:
                     "quantity": quantity,
                     "norms_header_id": c.get("norms_header_id"),
                     "norms_month_detail_id": c.get("norms_month_detail_id"),
+                    "norm_type": c.get("norm_type"),
                 })
 
         return u4u, details
@@ -1253,19 +1289,28 @@ class U4UIterationLoop:
                     continue
 
                 norm = c["norm"]
-                if norm == 0:
-                    continue
+                is_fixed = c.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE
 
                 material = c["material"]
                 material_uom = c.get("material_uom", "")
                 account = c["account"]
 
-                quantity = generation * norm
+                if is_fixed:
+                    # Fixed consumption: use the fixed Quantity from DB, don't
+                    # recalculate from norm × generation.
+                    quantity = float(c.get("quantity", 0.0) or 0.0)
+                    if quantity == 0:
+                        continue
+                elif norm == 0:
+                    continue
+                else:
+                    quantity = generation * norm
+
                 u4u_amount = quantity
 
                 # Negative norms are byproduct credits (supply, not consumption).
                 # Include in detail_records for display but do NOT add to u4u[].
-                if norm < 0:
+                if not is_fixed and norm < 0:
                     details.append({
                         "producer": producer_name,
                         "producer_utility": producer_name,
@@ -1278,6 +1323,7 @@ class U4UIterationLoop:
                         "quantity": quantity,
                         "norms_header_id": c.get("norms_header_id"),
                         "norms_month_detail_id": c.get("norms_month_detail_id"),
+                        "norm_type": c.get("norm_type"),
                     })
                     continue
 
@@ -1317,6 +1363,7 @@ class U4UIterationLoop:
                     "quantity": quantity,
                     "norms_header_id": c.get("norms_header_id"),
                     "norms_month_detail_id": c.get("norms_month_detail_id"),
+                    "norm_type": c.get("norm_type"),
                 })
 
         return u4u, details
@@ -1505,15 +1552,23 @@ class U4UIterationLoop:
                     for pc in prds_info.get("consumptions", []):
                         pmat = pc.get("material", "")
                         pnorm = pc.get("norm", 0.0)
+                        p_is_fixed = pc.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE
                         # Skip the letdown material (already handled above),
                         # negative norms (byproduct credits), and zero norms.
-                        if pmat == consumes_dis or pnorm <= 0:
+                        if pmat == consumes_dis:
+                            continue
+                        if not p_is_fixed and pnorm <= 0:
                             continue
                         # Skip inter-plant transfers.
                         issuing_plant = pc.get("issuing_plant") or pc.get("material_uom", "")
                         if self._is_interplant_uom(issuing_plant):
                             continue
-                        pqty = net_prds_demand * pnorm
+                        if p_is_fixed:
+                            pqty = float(pc.get("quantity", 0.0) or 0.0)
+                            if pqty == 0:
+                                continue
+                        else:
+                            pqty = net_prds_demand * pnorm
                         # Convert Power_Dis from KWH to MWh for U4U tracking.
                         u4u_amount = pqty
                         if pmat == "Power_Dis":
@@ -1532,6 +1587,7 @@ class U4UIterationLoop:
                             "quantity": pqty,
                             "norms_header_id": pc.get("norms_header_id"),
                             "norms_month_detail_id": pc.get("norms_month_detail_id"),
+                            "norm_type": pc.get("norm_type"),
                         })
 
         return u4u, details
@@ -2625,7 +2681,12 @@ class U4UIterationLoop:
                         else:
                             norm = 0.0
 
-                    quantity = gen * norm
+                    if c.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE:
+                        # Fixed consumption: show the fixed DB quantity, not
+                        # generation * norm (norm is 0 for these rows).
+                        quantity = float(c.get("quantity", 0.0) or 0.0)
+                    else:
+                        quantity = gen * norm
 
                     records.append({
                         "producer": gen_entry["producer"],
@@ -2637,6 +2698,9 @@ class U4UIterationLoop:
                         "material_uom": material_uom,
                         "norm": norm,
                         "quantity": quantity,
+                        "norms_header_id": c.get("norms_header_id"),
+                        "norms_month_detail_id": c.get("norms_month_detail_id"),
+                        "norm_type": c.get("norm_type"),
                     })
 
         # Replace the Power_Dis rows with the reverse-norm supply table.

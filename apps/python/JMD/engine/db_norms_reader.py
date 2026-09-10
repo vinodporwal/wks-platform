@@ -167,6 +167,7 @@ class DBNormsReader:
                 "source_plant_id": self.plant_id,
                 "norms_header_id": row.get("norms_header_id"),
                 "norms_month_detail_id": row.get("norms_month_detail_id"),
+                "norm_type": row.get("norm_type"),
             })
 
         # Build specialized indexes for specific norm types

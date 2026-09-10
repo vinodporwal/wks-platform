@@ -28,6 +28,11 @@ logger = logging.getLogger(__name__)
 
 _save_lock = threading.Lock()
 
+# NormType_FK_Id = 10 means "Fixed Consumption" — the Quantity and Norms
+# are fixed (user-entered/BPC) and must NOT be overwritten by the model.
+# Only QTY (generation) may be updated for these rows.
+FIXED_CONSUMPTION_NORM_TYPE = 10
+
 
 def save_calculated_norms(
     month: int,
@@ -140,8 +145,14 @@ def save_calculated_norms(
         # Get norm and quantity from detail_records if available
         detail_rec = detail_by_nmd_id.get(str(nmd_id))
         if detail_rec:
-            new_norm = detail_rec.get("norm", old_norms)
-            new_quantity = detail_rec.get("quantity", old_quantity)
+            # Fixed consumption (NormType=10): preserve existing Norms and
+            # Quantity — they are user-entered/BPC values, not model-calculated.
+            if detail_rec.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE:
+                new_norm = old_norms
+                new_quantity = old_quantity
+            else:
+                new_norm = detail_rec.get("norm", old_norms)
+                new_quantity = detail_rec.get("quantity", old_quantity)
         else:
             # No detail record for this row — keep existing values
             new_norm = old_norms
@@ -247,8 +258,15 @@ def save_calculated_norms(
                     # Get norm and quantity from detail_records if available
                     detail_rec = detail_by_nmd_id.get(str(nmd_id))
                     if detail_rec:
-                        new_norm = detail_rec.get("norm", old_norms)
-                        new_quantity = detail_rec.get("quantity", old_quantity)
+                        # Fixed consumption (NormType=10): preserve existing
+                        # Norms and Quantity — they are user-entered/BPC values,
+                        # not model-calculated.  Only QTY (generation) is updated.
+                        if detail_rec.get("norm_type") == FIXED_CONSUMPTION_NORM_TYPE:
+                            new_norm = old_norms
+                            new_quantity = old_quantity
+                        else:
+                            new_norm = detail_rec.get("norm", old_norms)
+                            new_quantity = detail_rec.get("quantity", old_quantity)
                     else:
                         # No detail record for this row — keep existing values
                         new_norm = old_norms

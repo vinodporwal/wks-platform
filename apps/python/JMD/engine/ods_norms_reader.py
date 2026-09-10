@@ -707,6 +707,7 @@ class ODSNormsReader:
                 "material_uom": material_uom,
                 "source_plant": utility_plant,
                 "source_plant_id": utility_plant_id,
+                "norm_type": None,  # ODS does not carry NormType; only DB reader does
             })
 
         return norms_map

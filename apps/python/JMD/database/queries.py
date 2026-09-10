@@ -1905,6 +1905,10 @@ def fetch_norm_rows_for_jmd(plant_id: str, month: int, year: int) -> list:
     conn = get_connection()
     cur = conn.cursor()
     try:
+        # Compute FY string for CPPNorms AOPYear filter (e.g. "2026-27")
+        fy_start = year if month >= 4 else year - 1
+        fy_string = f"{fy_start}-{str(fy_start + 1)[-2:]}"
+
         query = f"""
         WITH GeneratingPlants AS
         (
@@ -1930,19 +1934,23 @@ def fetch_norm_rows_for_jmd(plant_id: str, month: int, year: int) -> list:
             nmd.Amount,
             nmd.Price,
             nh.Id                      AS NormsHeaderId,
-            nmd.Id                     AS NormsMonthDetailId
+            nmd.Id                     AS NormsMonthDetailId,
+            cn.NormType_FK_Id          AS NormType_FK_Id
         FROM {T.NORMS_MONTH_DETAIL} nmd WITH (NOLOCK)
         INNER JOIN {T.NORMS_HEADER} nh WITH (NOLOCK) ON nh.Id = nmd.NormsHeader_FK_Id
         INNER JOIN GeneratingPlants gp ON gp.GeneratingPlantId = nh.{T.NORMS_HEADER_PLANT_FK}
         INNER JOIN {T.PLANTS} p WITH (NOLOCK) ON p.Id = nh.{T.NORMS_HEADER_PLANT_FK}
         INNER JOIN {T.FINANCIAL_YEAR_MONTH} fym WITH (NOLOCK) ON fym.Id = nmd.FinancialYearMonth_FK_Id
+        LEFT JOIN CPPNorms cn WITH (NOLOCK)
+            ON cn.NormsHeader_FK_Id = nh.Id
+            AND cn.AOPYear = ?
         WHERE fym.Month = ? AND fym.Year = ?
           AND nh.IsActive = 1
           AND nh.AccountName IN ('Utilities', 'Catalyst & Chemical', 'Raw Material', 'By Product')
         ORDER BY p.Name, nh.DisplayOrder, nmd.DisplayOrder
         """
-        cur.execute(query, (plant_id, month, year))
-        
+        cur.execute(query, (plant_id, fy_string, month, year))
+
         rows = []
         for row in cur.fetchall():
             rows.append({
@@ -1963,6 +1971,7 @@ def fetch_norm_rows_for_jmd(plant_id: str, month: int, year: int) -> list:
                 "price": float(row[14]) if row[14] is not None else 0.0,
                 "norms_header_id": row[15],
                 "norms_month_detail_id": row[16],
+                "norm_type": int(row[17]) if row[17] is not None else None,
             })
         
         logger.info("  [JMD NORMS] Fetched %d norm rows for plant %s, month %d, year %d", 
