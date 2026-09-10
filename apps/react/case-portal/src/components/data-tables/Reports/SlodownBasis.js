@@ -327,7 +327,7 @@ const SlodownBasis = () => {
     }
   }, [fetchAllGrids, keycloak, PLANT_ID, AOP_YEAR, oldYear, yearChanged])
 
-  const INVALID_SHEET_CHARS_RE = /[\\\/\?\*\[\]\:]/g
+  const INVALID_SHEET_CHARS_RE = /[/\\?*[\]:]/g
   function sanitizeSheetName(name = '', fallback = 'Sheet') {
     let s = String(name || '')
       .replace(INVALID_SHEET_CHARS_RE, ' ')
