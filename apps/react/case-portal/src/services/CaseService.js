@@ -412,11 +412,21 @@ async function addDocuments(keycloak, businessKey, document) {
 async function addComment(keycloak, text, parentId, businessKey) {
   const url = `${Config.CaseEngineUrl}/case/${businessKey}/comment`
 
+  // Use SSO name key first (from APM login), then fallback to standalone app version
+  const ssoName = keycloak.idTokenParsed?.name
+  const standaloneName = keycloak.tokenParsed.given_name
+  const userName = (ssoName && ssoName.trim() !== '') ? ssoName : standaloneName
+
+  // Use SSO userId first (from APM login), then fallback to standalone app version
+  const ssoUserId = keycloak.idTokenParsed?.preferred_username
+  const standaloneUserId = keycloak.tokenParsed.preferred_username
+  const userId = (ssoUserId && ssoUserId.trim() !== '') ? ssoUserId : standaloneUserId
+
   const comment = {
     body: text,
     parentId,
-    userId: keycloak.tokenParsed.preferred_username,
-    userName: keycloak.tokenParsed.given_name,
+    userId: userId,
+    userName: userName,
     caseId: businessKey,
   }
 
@@ -440,10 +450,15 @@ async function addComment(keycloak, text, parentId, businessKey) {
 async function updateComment(keycloak, text, commentId, businessKey) {
   const url = `${Config.CaseEngineUrl}/case/${businessKey}/comment/${commentId}`
 
+  // Use SSO userId first (from APM login), then fallback to standalone app version
+  const ssoUserId = keycloak.idTokenParsed?.preferred_username
+  const standaloneUserId = keycloak.tokenParsed.preferred_username
+  const userId = (ssoUserId && ssoUserId.trim() !== '') ? ssoUserId : standaloneUserId
+
   const comment = {
     id: commentId,
     body: text,
-    userId: keycloak.tokenParsed.preferred_username,
+    userId: userId,
     caseId: businessKey,
   }
 

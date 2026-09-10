@@ -98,7 +98,12 @@ export const Comments = ({ comments, aCase, getCaseInfo }) => {
           addComment={addComment}
           deleteComment={deleteComment}
           updateComment={updateComment}
-          currentUserId={keycloak.tokenParsed.preferred_username}
+          currentUserId={
+            (keycloak.idTokenParsed?.preferred_username && 
+             keycloak.idTokenParsed.preferred_username.trim() !== '') 
+              ? keycloak.idTokenParsed.preferred_username 
+              : keycloak.tokenParsed.preferred_username
+          }
         />
       ))}
     </React.Fragment>

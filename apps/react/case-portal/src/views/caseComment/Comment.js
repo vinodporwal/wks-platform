@@ -2,7 +2,6 @@ import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
-import User1 from 'assets/images/users/avatar-3.png'
 import { useTranslation } from 'react-i18next'
 import CommentForm from './CommentForm'
 
@@ -37,14 +36,31 @@ const Comment = ({
 
   const { t } = useTranslation()
 
+  // Function to generate initials from user name
+  const getInitials = (name) => {
+    if (!name || typeof name !== 'string') return ''
+    
+    const nameParts = name.trim().split(/\s+/)
+    if (nameParts.length === 1) {
+      // Only first name - return first initial
+      return nameParts[0].charAt(0).toUpperCase()
+    } else if (nameParts.length >= 2) {
+      // First and last name - return first initial of first and last name
+      return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase()
+    }
+    return ''
+  }
+
   return (
     <div key={comment.id} className='comment'>
       <div className='comment-image-container'>
-        <Avatar alt='John Doe' src={User1} />
+        <Avatar sx={{ bgcolor: '#1976d2', color: 'white',fontWeight: 700, fontSize: 14 }}>
+          {getInitials(comment.userName)}
+        </Avatar>
       </div>
       <div className='comment-right-part'>
         <div className='comment-content'>
-          <Box sx={{ display: 'flex', flexDirection: 'row', m: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'row' }}>
             <Typography sx={{ p: 0.5 }} variant='h5'>
               {comment.userName}
             </Typography>
