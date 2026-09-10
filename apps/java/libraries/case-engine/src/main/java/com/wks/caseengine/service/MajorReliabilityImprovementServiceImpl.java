@@ -1,68 +1,59 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.MajorReliabilityImprovementDTO;
-import com.wks.caseengine.entity.MajorReliabilityImprovement;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.MajorReliabilityImprovementRepository;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
+import com.wks.caseengine.utility.Utility;
 
 @Service
 public class MajorReliabilityImprovementServiceImpl implements MajorReliabilityImprovementService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private MajorReliabilityImprovementRepository majorReliabilityImprovementRepository;
 
     @Override
     public AOPMessageVM getMajorReliabilityImprovement(String aopYear, String siteId) {
-        AOPMessageVM aopMessageVM = new AOPMessageVM();
+      
         try {
             UUID.fromString(siteId); // validate UUID format
 
-            String sql = "EXEC Sp_GetMajorReliabilityImprovement @AOPYear = :aopYear, @SiteId = :siteId";
-            Query query = entityManager.createNativeQuery(sql);
-            query.setParameter("aopYear", aopYear);
-            query.setParameter("siteId", UUID.fromString(siteId));
+            String procedureName = "Sp_GetMajorReliabilityImprovementInitiative";
+            String sql = "EXEC " + procedureName + " @SiteId = ?, @AOPYear = ?";
+            List<MajorReliabilityImprovementDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                MajorReliabilityImprovementDTO.builder()
+                    .id(rs.getString("Id"))
+                    .plantId(rs.getString("PlantId"))
+                    .plantName(rs.getString("PlantName"))
+                    .plantDisplayName(rs.getString("PlantDisplayName"))
+                    .plant(rs.getString("Plant"))
+                    .initiativeDescription(rs.getString("InitiativeDescription"))
+                    .category(rs.getString("Category"))
+                    .cost(rs.getString("Cost"))
+                    .outcome(rs.getString("Outcome"))
+                    .targetDate(rs.getDate("TargetDate"))
+                    .responsibility(rs.getString("Responsibility"))
+                    .siteId(rs.getString("SiteId"))
+                    .aopYear(rs.getString("AOPYear"))
+                    .modifiedBy(rs.getString("ModifiedBy"))
+                    .modifiedOn(rs.getDate("ModifiedOn"))
+                    .build(),
+                siteId, aopYear
+            );
 
-            @SuppressWarnings("unchecked")
-            List<Object[]> results = query.getResultList();
-
-            List<MajorReliabilityImprovementDTO> list = new ArrayList<>();
-            for (Object[] row : results) {
-                MajorReliabilityImprovementDTO dto = new MajorReliabilityImprovementDTO();
-                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : "");
-                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : "");
-                dto.setInitiativeDescription(row.length > 2 && row[2] != null ? row[2].toString() : "");
-                dto.setCategory(row.length > 3 && row[3] != null ? row[3].toString() : "");
-                dto.setOutcome(row.length > 4 && row[4] != null ? row[4].toString() : "");
-                dto.setRecommendation(row.length > 5 && row[5] != null ? row[5].toString() : "");
-                dto.setTargetDate(row.length > 6 && row[6] != null ? (java.util.Date) row[6] : null);
-                dto.setRemark(row.length > 7 && row[7] != null ? row[7].toString() : "");
-                dto.setAopYear(row.length > 8 && row[8] != null ? row[8].toString() : "");
-                dto.setSiteFkId(row.length > 9 && row[9] != null ? row[9].toString() : "");
-                dto.setUpdatedBy(row.length > 10 && row[10] != null ? row[10].toString() : "");
-                dto.setUpdatedDateTime(row.length > 11 && row[11] != null ? (java.util.Date) row[11] : null);
-                list.add(dto);
-            }
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("majorReliabilityImprovementList", list);
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
             aopMessageVM.setData(data);
@@ -70,46 +61,81 @@ public class MajorReliabilityImprovementServiceImpl implements MajorReliabilityI
         } catch (IllegalArgumentException e) {
             throw new RestInvalidArgumentException("Invalid UUID format for Site ID", e);
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to fetch major reliability improvement", ex);
+            throw new RuntimeException("Failed to fetch major profit improvement", ex);
         }
     }
 
     @Override
-    public AOPMessageVM updateMajorReliabilityImprovement(List<MajorReliabilityImprovementDTO> dtoList) {
-        AOPMessageVM aopMessageVM = new AOPMessageVM();
+    public List<MajorReliabilityImprovementDTO> updateMajorReliabilityImprovement(List<MajorReliabilityImprovementDTO> dtoList) {
+        List<MajorReliabilityImprovementDTO> failedRecords = new ArrayList<>();
         if (dtoList == null || dtoList.isEmpty()) {
+            throw new RestInvalidArgumentException("Request body cannot be empty", null);
+        }
+
+        for (MajorReliabilityImprovementDTO dto : dtoList) {
+            if (dto.getId() == null || dto.getId().isBlank()) {
+                // INSERT new record when Id is null
+                String newId = UUID.randomUUID().toString();
+                String insertSql = "INSERT INTO MajorReliabilityImprovementInitiative " +
+                    "(Id, PlantId, InitiativeDescription, Category, Cost, " +
+                    "Outcome, TargetDate, Responsibility, SiteId, AOPYear, " +
+                    "ModifiedBy, ModifiedOn) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                jdbcTemplate.update(insertSql,
+                    newId,
+                    dto.getPlantId(),
+                    dto.getInitiativeDescription(),
+                    dto.getCategory(),
+                    dto.getCost(),
+                    dto.getOutcome(),
+                    dto.getTargetDate(),
+                    dto.getResponsibility(),
+                    dto.getSiteId(),
+                    dto.getAopYear(),
+                    Utility.getUserName(),
+                    new Date());
+            } else {
+                // UPDATE existing record when Id is provided
+                String updateSql = "UPDATE MajorReliabilityImprovementInitiative " +
+                    "SET PlantId = ?, InitiativeDescription = ?, Category = ?, Cost = ?, " +
+                    "Outcome = ?, TargetDate = ?, Responsibility = ?, " +
+                    "ModifiedBy = ?, ModifiedOn = ? " +
+                    "WHERE Id = ?";
+                jdbcTemplate.update(updateSql,
+                    dto.getPlantId(),
+                    dto.getInitiativeDescription(),
+                    dto.getCategory(),
+                    dto.getCost(),
+                    dto.getOutcome(),
+                    dto.getTargetDate(),
+                    dto.getResponsibility(),
+                    Utility.getUserName(),
+                    new Date(),
+                    dto.getId());
+            }
+        }
+
+        return failedRecords;
+    }
+
+    @Override
+    public AOPMessageVM deleteMajorReliabilityImprovement(String id) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        if (id == null || id.isBlank()) {
             aopMessageVM.setCode(400);
-            aopMessageVM.setMessage("Request body cannot be empty");
+            aopMessageVM.setMessage("Id cannot be empty");
             return aopMessageVM;
         }
         try {
-            for (MajorReliabilityImprovementDTO dto : dtoList) {
-                if (dto.getId() == null || dto.getId().isBlank()) {
-                    continue;
-                }
-                UUID id = UUID.fromString(dto.getId().trim());
-                Optional<MajorReliabilityImprovement> optional = majorReliabilityImprovementRepository.findById(id);
-                if (optional.isEmpty()) {
-                    continue;
-                }
-                MajorReliabilityImprovement entity = optional.get();
-                entity.setInitiativeDescription(dto.getInitiativeDescription());
-                entity.setCategory(dto.getCategory());
-                entity.setOutcome(dto.getOutcome());
-                entity.setRecommendation(dto.getRecommendation());
-                entity.setTargetDate(dto.getTargetDate());
-                entity.setRemark(dto.getRemark());
-                entity.setUpdatedBy(dto.getUpdatedBy());
-                entity.setUpdatedDateTime(dto.getUpdatedDateTime());
-                majorReliabilityImprovementRepository.save(entity);
-            }
+            UUID uuid = UUID.fromString(id.trim());
+            majorReliabilityImprovementRepository.deleteById(uuid);
             aopMessageVM.setCode(200);
-            aopMessageVM.setMessage("Data updated successfully");
+            aopMessageVM.setMessage("Record deleted successfully");
             return aopMessageVM;
         } catch (IllegalArgumentException e) {
-            throw new RestInvalidArgumentException("Invalid Id format", e);
+            throw new RestInvalidArgumentException("Invalid UUID format for Id", e);
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to update major reliability improvement", ex);
+            throw new RuntimeException("Failed to delete major reliability improvement record", ex);
         }
     }
 }

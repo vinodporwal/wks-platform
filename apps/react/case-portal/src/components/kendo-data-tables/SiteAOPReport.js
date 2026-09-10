@@ -13,10 +13,10 @@ import ShutdownSlowdownPlan from './SlowdownPlan'
 import TechnicalAvailability from './TechnicalAvailability'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
 import MajorSafetyInitiative from './SiteAOPReport/MajorSafetyInitiative'
-import MajorProfitInitiative from './MajorProfitInitiative'
-import MajorReliabilityInitiative from './MajorReliabilityInitiative'
-import MajorPeopleInitiative from './MajorPeopleInitiative'
+import MajorPeopleInitiative from './SiteAOPReport/MajorPeopleInitiative'
+import MajorReliabilityInitiative from './SiteAOPReport/MajorReliabilityInitiative'
 import MCUCapacityUtilization from './MCUCapacityUtilization'
+import MajorProfitInitiative from './MajorProfitInitiative'
 
 // Default hardcoded fallback tabs
 const DEFAULT_TABS = [
