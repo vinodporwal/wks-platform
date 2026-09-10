@@ -16,6 +16,8 @@ import MajorSafetyInitiative from './SiteAOPReport/MajorSafetyInitiative'
 import MajorProfitInitiative from './MajorProfitInitiative'
 import MajorReliabilityInitiative from './MajorReliabilityInitiative'
 import MajorPeopleInitiative from './SiteAOPReport/MajorPeopleInitiative'
+import MajorReliabilityInitiative from './SiteAOPReport/MajorReliabilityInitiative'
+import MajorPeopleInitiative from './MajorPeopleInitiative'
 import MCUCapacityUtilization from './MCUCapacityUtilization'
 
 // Default hardcoded fallback tabs

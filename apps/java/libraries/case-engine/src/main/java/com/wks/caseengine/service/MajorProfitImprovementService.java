@@ -9,5 +9,7 @@ public interface MajorProfitImprovementService {
 
     AOPMessageVM getMajorProfitImprovement(String aopYear, String siteId);
 
-    AOPMessageVM updateMajorProfitImprovement(List<MajorProfitImprovementDTO> dtoList);
+    List<MajorProfitImprovementDTO> updateMajorProfitImprovement(List<MajorProfitImprovementDTO> dtoList);
+
+    AOPMessageVM deleteMajorProfitImprovement(String id);
 }

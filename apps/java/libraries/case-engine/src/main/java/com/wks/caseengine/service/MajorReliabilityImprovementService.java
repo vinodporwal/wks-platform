@@ -9,5 +9,7 @@ public interface MajorReliabilityImprovementService {
 
     AOPMessageVM getMajorReliabilityImprovement(String aopYear, String siteId);
 
-    AOPMessageVM updateMajorReliabilityImprovement(List<MajorReliabilityImprovementDTO> dtoList);
+    List<MajorReliabilityImprovementDTO> updateMajorReliabilityImprovement(List<MajorReliabilityImprovementDTO> dtoList);
+
+    AOPMessageVM deleteMajorReliabilityImprovement(String id);
 }
