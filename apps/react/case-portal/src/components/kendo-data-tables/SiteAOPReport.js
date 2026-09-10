@@ -14,7 +14,7 @@ import TechnicalAvailability from './TechnicalAvailability'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
 import MajorSafetyInitiative from './SiteAOPReport/MajorSafetyInitiative'
 import MajorProfitInitiative from './MajorProfitInitiative'
-import MajorReliabilityInitiative from './MajorReliabilityInitiative'
+import MajorReliabilityInitiative from './SiteAOPReport/MajorReliabilityInitiative'
 import MajorPeopleInitiative from './MajorPeopleInitiative'
 import MCUCapacityUtilization from './MCUCapacityUtilization'
 

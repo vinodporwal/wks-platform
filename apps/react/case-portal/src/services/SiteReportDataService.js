@@ -39,6 +39,7 @@ export const SiteReportDataService = {
   getSiteAopReportTabs,
   SiteTeamExport,
   ImportSiteTeamExcel,
+  deleteMajorInitiativeInitiative,
 }
 export async function getSiteTeamDetails(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/site-team-transaction?siteId=${SITE_ID}&year=${AOP_YEAR}`
@@ -795,6 +796,24 @@ export async function ImportSiteTeamExcel(file, keycloak, siteId, year) {
     return await resp.json()
   } catch (e) {
     console.error('Error importing Site Team Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function deleteMajorInitiativeInitiative(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/major-reliability-improvement/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting Major Safety Initiative record:', e)
     return Promise.reject(e)
   }
 }
