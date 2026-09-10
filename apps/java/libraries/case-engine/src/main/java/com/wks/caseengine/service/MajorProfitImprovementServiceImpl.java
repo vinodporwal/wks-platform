@@ -100,11 +100,12 @@ public class MajorProfitImprovementServiceImpl implements MajorProfitImprovement
             } else {
                 // UPDATE existing record when Id is provided
                 String updateSql = "UPDATE MajorProfitImprovementInitiative " +
-                    "SET InitiativeDescription = ?, Category = ?, Cost = ?, " +
+                    "SET PlantId = ?, InitiativeDescription = ?, Category = ?, Cost = ?, " +
                     "Outcome = ?, TargetDate = ?, Responsibility = ?, " +
                     "ModifiedBy = ?, ModifiedOn = ? " +
                     "WHERE Id = ?";
                 jdbcTemplate.update(updateSql,
+                    dto.getPlantId(),
                     dto.getInitiativeDescription(),
                     dto.getCategory(),
                     dto.getCost(),
