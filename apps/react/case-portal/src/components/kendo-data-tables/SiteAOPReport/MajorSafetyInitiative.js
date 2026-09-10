@@ -190,7 +190,9 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
         let matchedPlantId = null
         if (item.plant && plantOptions.length > 0) {
           const plantSearch =
-            typeof item.plant === 'string' ? item.plant.trim().toLowerCase() : ''
+            typeof item.plant === 'string'
+              ? item.plant.trim().toLowerCase()
+              : ''
           const matched = plantOptions.find(
             (p) =>
               p.name?.trim().toLowerCase() === plantSearch ||
