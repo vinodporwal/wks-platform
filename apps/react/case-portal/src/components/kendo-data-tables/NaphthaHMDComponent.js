@@ -227,6 +227,7 @@ export default function NaphthaHMDComponent() {
       width: 120,
       type: 'number',
     },
+
   ]
 
   const fetchData = useCallback(async () => {
@@ -296,6 +297,9 @@ export default function NaphthaHMDComponent() {
           othersId: item.othersId,
           blendId: item.blendId,
           blendIp21Id: item.blendIp21Id,
+          displayOrder: item.displayOrder,
+          isEditable: item.isEditable,
+          IsEditable: item.isEditable,
         }))
         setRows1(mapped)
       } else {
@@ -339,16 +343,27 @@ export default function NaphthaHMDComponent() {
       //     return
       //   }
 
+      const parseNumeric = (val) => {
+        if (val === '' || val === null || val === undefined) return null
+        const num = Number(val)
+        return isNaN(num) ? null : num
+      }
+
+      const parseId = (val) => {
+        if (val === '' || val === null || val === undefined) return null
+        return String(val).trim() === '' ? null : val
+      }
+
       const payload = data.map((item) => ({
         //id: item.id || null,
         section: item.section,
         name: item.name,
-        max: item.max,
-        min: item.min,
-        months: item.months,
-        maxId: item.maxId,
-        minId: item.minId,
-        monthsId: item.monthsId,
+        max: parseNumeric(item.max),
+        min: parseNumeric(item.min),
+        months: parseNumeric(item.months),
+        maxId: parseId(item.maxId),
+        minId: parseId(item.minId),
+        monthsId: parseId(item.monthsId),
       }))
 
       // 3. Save to API
@@ -399,23 +414,34 @@ export default function NaphthaHMDComponent() {
         return
       }
 
+      const parseNumeric = (val) => {
+        if (val === '' || val === null || val === undefined) return null
+        const num = Number(val)
+        return isNaN(num) ? null : num
+      }
+
+      const parseId = (val) => {
+        if (val === '' || val === null || val === undefined) return null
+        return String(val).trim() === '' ? null : val
+      }
+
       const payload = data.map((item) => ({
         id: item.id || null,
         name: item.name,
         displayName: item.displayName,
         uom: item.uom,
-        jmd: item.jmd,
-        hpn: item.hpn,
-        heavy: item.heavy,
-        others: item.others,
-        blend: item.blend,
-        blendIp21: item.blendIp21,
-        jmdId: item.jmdId,
-        hpnId: item.hpnId,
-        heavyId: item.heavyId,
-        othersId: item.othersId,
-        blendId: item.blendId,
-        blendIp21Id: item.blendIp21Id,
+        jmd: parseNumeric(item.jmd),
+        hpn: parseNumeric(item.hpn),
+        heavy: parseNumeric(item.heavy),
+        others: parseNumeric(item.others),
+        blend: parseNumeric(item.blend),
+        blendIp21: parseNumeric(item.blendIp21),
+        jmdId: parseId(item.jmdId),
+        hpnId: parseId(item.hpnId),
+        heavyId: parseId(item.heavyId),
+        othersId: parseId(item.othersId),
+        blendId: parseId(item.blendId),
+        blendIp21Id: parseId(item.blendIp21Id),
       }))
 
       // 3. Save to API

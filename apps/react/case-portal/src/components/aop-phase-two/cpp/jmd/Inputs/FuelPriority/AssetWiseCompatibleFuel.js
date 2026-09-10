@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -42,9 +42,9 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
     [jmdSelectedPlants],
   )
 
-  const getOptions = useCallback(
-    (dataItem) => {
-      const plantEntry = plantFuelMap[dataItem?.plantName]
+  const getPlantFuels = useCallback(
+    (plantName) => {
+      const plantEntry = plantFuelMap[plantName]
       if (plantEntry) {
         // plantFuelMap is now month-wise: { apr: [...], may: [...], ... }
         // Flatten all months into a unique list for annual view
@@ -69,22 +69,37 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
     [plantFuelMap, fuelOptions],
   )
 
-  const fuelSelectBaseConfig = useMemo(
-    () => ({
-      widthT: 120,
-      minWidth: 120,
-      type: 'select',
-      dynamicOptions: true,
-      getOptions,
-      displayMode: 'label',
-      editable: true,
-      showClearOption: true,
-    }),
-    [getOptions],
+  const getCategoryOptions = useCallback(
+    (dataItem) => {
+      const availableFuels = getPlantFuels(dataItem?.plantName)
+      const map = new Map()
+      availableFuels.forEach((f) => {
+        if (f.categoryFkId && !map.has(f.categoryFkId)) {
+          map.set(f.categoryFkId, {
+            value: f.categoryFkId,
+            label: f.categoryDisplayName || f.categoryName || f.categoryFkId,
+          })
+        }
+      })
+      return Array.from(map.values())
+    },
+    [getPlantFuels],
   )
 
-  const columns = useMemo(
-    () => [
+  const getFuelOptionsForField = useCallback(
+    (categoryFkField) => {
+      return (dataItem) => {
+        const availableFuels = getPlantFuels(dataItem?.plantName)
+        const catId = dataItem?.[categoryFkField]
+        if (!catId) return availableFuels
+        return availableFuels.filter((f) => f.categoryFkId === catId)
+      }
+    },
+    [getPlantFuels],
+  )
+
+  const columns = useMemo(() => {
+    const cols = [
       {
         field: 'assetName',
         title: 'Asset Name',
@@ -94,27 +109,97 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
         locked: true,
         minWidth: 150,
       },
-      ...FUEL_TYPES.map(({ field, title }) => ({
-        ...fuelSelectBaseConfig,
-        field,
+    ]
+    FUEL_TYPES.forEach(({ field, title }) => {
+      const categoryField = `${field}Category`
+      const categoryFkField = `${field}CategoryFkId`
+      const fuelCodeField = `${field}FuelCode`
+
+      cols.push({
         title,
-      })),
-      //   {
-      //     field: 'remarks',
-      //     title: 'Remarks',
-      //     widthT: 250,
-      //     type: 'textarea',
-      //     editable: true,
-      //     minWidth: 250,
-      //     locked: true,
-      //     lockPosition: 'right',
-      //   },
-    ],
-    [fuelSelectBaseConfig],
-  )
+        children: [
+          // Category dropdown
+          {
+            field: categoryField,
+            title: 'Category',
+            widthT: 150,
+            minWidth: 150,
+            type: 'select',
+            dynamicOptions: true,
+            getOptions: getCategoryOptions,
+            displayMode: 'label',
+            editable: true,
+            showClearOption: true,
+            returnFullObject: true,
+          },
+          // Fuel dropdown (filtered by category)
+          {
+            field,
+            title: 'Fuel',
+            widthT: 120,
+            minWidth: 120,
+            type: 'select',
+            dynamicOptions: true,
+            getOptions: getFuelOptionsForField(categoryFkField),
+            displayMode: 'label',
+            editable: true,
+            showClearOption: true,
+          },
+          // Fuel Code (read-only, auto-populated)
+          {
+            field: fuelCodeField,
+            title: 'Code',
+            widthT: 100,
+            minWidth: 100,
+            type: 'text',
+            editable: false,
+          },
+        ],
+      })
+    })
+    return cols
+  }, [getCategoryOptions, getFuelOptionsForField])
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
+
+  useEffect(() => {
+    if (!fuelOptions?.length) return
+    setRows((prev) => {
+      if (!prev?.length) return prev
+      let changed = false
+      const next = prev.map((row) => {
+        const enriched = { ...row }
+        FUEL_TYPES.forEach(({ field }) => {
+          const fuelId = row[field]
+          if (!fuelId) return
+          const fuel = fuelOptions.find(
+            (f) => String(f.value) === String(fuelId),
+          )
+          if (!fuel) return
+          const categoryFkField = `${field}CategoryFkId`
+          const categoryField = `${field}Category`
+          const fuelCodeField = `${field}FuelCode`
+          if (!enriched[categoryFkField] && fuel.categoryFkId) {
+            enriched[categoryFkField] = fuel.categoryFkId
+            changed = true
+          }
+          const categoryDisplay =
+            fuel.categoryDisplayName || fuel.categoryName || ''
+          if (!enriched[categoryField] && categoryDisplay) {
+            enriched[categoryField] = categoryDisplay
+            changed = true
+          }
+          if (!enriched[fuelCodeField] && fuel.fuelCode) {
+            enriched[fuelCodeField] = fuel.fuelCode
+            changed = true
+          }
+        })
+        return enriched
+      })
+      return changed ? next : prev
+    })
+  }, [fuelOptions, rows])
 
   const fetchAssetCompatibleFuelData = useCallback(async () => {
     setLoading(true)
@@ -318,6 +403,68 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
     // Remark dialog functionality can be added if needed
   }
 
+  const handleCustomItemChange = useCallback(
+    (e) => {
+      const { dataItem, field, value } = e
+      if (!dataItem || !field) return
+
+      const updates = { [field]: value }
+
+      // Category selection: {field}Category
+      // value is the full option object { value, label } (returnFullObject: true)
+      if (field.endsWith('Category')) {
+        const fuelTypeField = field.replace('Category', '')
+        const catFkField = `${fuelTypeField}CategoryFkId`
+        if (value && typeof value === 'object' && value.value) {
+          updates[catFkField] = value.value
+          updates[field] = value.label
+        } else {
+          updates[catFkField] = null
+          updates[field] = ''
+        }
+        // Reset fuel + code when category changes
+        updates[fuelTypeField] = ''
+        updates[`${fuelTypeField}FuelCode`] = ''
+      }
+
+      // Fuel selection: primary, secondary, tertiary
+      // value is the fuel UUID string (no returnFullObject on fuel column)
+      if (FUEL_TYPES.some((ft) => ft.field === field)) {
+        if (value) {
+          const fuel = fuelOptions.find(
+            (f) => String(f.value) === String(value),
+          )
+          if (fuel) {
+            updates[`${field}FuelCode`] = fuel.fuelCode || ''
+            if (fuel.categoryFkId) {
+              updates[`${field}CategoryFkId`] = fuel.categoryFkId
+              updates[`${field}Category`] =
+                fuel.categoryDisplayName || fuel.categoryName || ''
+            }
+          }
+        } else {
+          updates[`${field}FuelCode`] = ''
+        }
+      }
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id ? { ...row, ...updates, inEdit: true } : row,
+        ),
+      )
+      setModifiedCells((prev) => ({
+        ...prev,
+        [dataItem.id]: {
+          ...prev[dataItem.id],
+          ...dataItem,
+          ...updates,
+          inEdit: true,
+        },
+      }))
+    },
+    [fuelOptions],
+  )
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -337,6 +484,7 @@ const AssetWiseCompatibleFuel = ({ fuelOptions = [], plantFuelMap = {} }) => {
         setSnackbarData={setSnackbarData}
         groupBy={['plantName', 'assetType']}
         defaultGridExpanded={false}
+        customItemChange={handleCustomItemChange}
       />
     </Box>
   )

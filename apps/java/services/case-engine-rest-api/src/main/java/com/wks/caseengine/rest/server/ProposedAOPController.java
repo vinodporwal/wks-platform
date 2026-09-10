@@ -68,4 +68,39 @@ public class ProposedAOPController {
         return proposedAOPService.importProposedAOPExcel(file);
     }
 
+    @GetMapping(value="/proposed-steady-state")
+    public AOPMessageVM getProposedSteadyState(@RequestParam String year, @RequestParam String plantId) {
+        return proposedAOPService.getProposedSteadyState(UUID.fromString(plantId), year);
+    }
+
+    @PostMapping(value="/save-proposed-steady-state")
+    public AOPMessageVM saveProposedSteadyState(@RequestBody List<ProposedAOPDTO> dtoList) {
+        return proposedAOPService.saveProposedSteadyState(dtoList);
+    }
+
+    @GetMapping(value = "/proposed-steady-state-export")
+    public ResponseEntity<byte[]> exportProposedSteadyState(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+        try {
+            byte[] excelBytes = proposedAOPService.createProposedSteadyStateExcel(
+                    UUID.fromString(plantId), year, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("proposed_steady_state.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/proposed-steady-state-import", consumes = "multipart/form-data")
+    public AOPMessageVM importProposedSteadyState(@RequestParam("file") MultipartFile file) {
+        return proposedAOPService.importProposedSteadyState(file);
+    }
+
 }

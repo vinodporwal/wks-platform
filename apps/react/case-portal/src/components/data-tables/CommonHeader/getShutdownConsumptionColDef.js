@@ -7,6 +7,7 @@ import { ShutdownConsumptionPpColumns } from 'components/colums/PpColums'
 import {
   ShutdownConsumptionPtaColumns,
   ShutdownConsumptionPtadmdColumns,
+  ShutdownConsumptionPtaPmdPiaColumns,
 } from 'components/colums/PtaColums'
 import { ShutdownConsumptionVcmColumns } from 'components/colums/VcmColums'
 import { verticalEnums } from 'enums/verticalEnums'
@@ -58,7 +59,10 @@ const getShutdownConsumptionColDef = ({
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
   const IS_PVC_HMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'hmd'
-
+  const IS_PTA_PIA =
+    lowerVertName === 'pta' &&
+    SITE_NAME_LOWERCASE === 'pmd' &&
+    PLANT_NAME_LOWERCASE === 'pia'
   let safeShutdownMonths = Array.isArray(shutdownMonths) ? shutdownMonths : []
 
   const cacheKey = `${lowerVertName}_${SITE_NAME_LOWERCASE}_${PLANT_NAME_LOWERCASE}_${JSON.stringify(headerMap)}_${safeShutdownMonths.join(',')}`
@@ -72,6 +76,8 @@ const getShutdownConsumptionColDef = ({
     cols = ShutdownConsumptionPeColumnsPeLldpe
   } else if (IS_PTA_DMD) {
     cols = ShutdownConsumptionPtadmdColumns
+  } else if (IS_PTA_PIA) {
+    cols = ShutdownConsumptionPtaPmdPiaColumns
   } else if (IS_PVC_VMD) {
     cols = ShutdownConsumptionPeColumns
   } else if (IS_PVC_DMD || IS_PVC_HMD) {

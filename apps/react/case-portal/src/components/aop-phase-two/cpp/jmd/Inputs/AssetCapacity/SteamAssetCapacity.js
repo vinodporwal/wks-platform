@@ -105,11 +105,11 @@ const SteamAssetCapacity = ({
         widthT: 140,
         minWidth: 140,
         editable: true,
-        type: 'number1',
-        wholeNumberOnly: true,
-        errorMessage: 'Enter 0 (False) or 1 (True) only.',
-        minValue: 0,
-        maxValue: 1,
+        type: 'select',
+        options: [
+          { label: 1, value: 1 },
+          { label: 0, value: 0 },
+        ],
       },
     ],
   }))

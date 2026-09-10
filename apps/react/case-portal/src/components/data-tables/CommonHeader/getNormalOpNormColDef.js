@@ -7,7 +7,10 @@ import { NormalOpNormVcmColumns } from 'components/colums/VcmColumns'
 import { CrackerColums } from 'components/colums/CrackerColums'
 import { NormalOpNormPeColumns } from 'components/colums/PeColums'
 import { NormalOpNormPpColumns } from 'components/colums/PpColums'
-import { NormalOpNormPtaColumns } from 'components/colums/PtaColums'
+import {
+  NormalOpNormPtaColumns,
+  NormalOpNormPtaPmdPiaColumns,
+} from 'components/colums/PtaColums'
 import { NormalOpNormVcmDmdColumns } from 'components/colums/VcmDmdColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
@@ -43,9 +46,15 @@ const getNormalOpNormColDef = ({
   let cols = []
   if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
     cols = NormalOpNormElastomerJmdColumns
-  } else {
+  } else if (lowerVertName==='pta' && lowerSiteName=== 'pmd' && lowerPlantName==='pia'){
+     cols = NormalOpNormPtaPmdPiaColumns 
+  }else {
     cols = VERTICAL_COLDEFS_MAP[lowerVertName] || NormalOpNormMegColumns
   }
+
+  const isNegativeAllowed =
+    (lowerVertName === 'pe' && lowerSiteName === 'hmd') ||
+    (lowerVertName === 'pta' && lowerSiteName === 'pmd' && lowerPlantName === 'pia')
 
   const enhancedColDefs = cols.map((col) => {
     let updatedCol = { ...col }
@@ -57,11 +66,7 @@ const getNormalOpNormColDef = ({
         title: headerMap[col.title],
         align: 'right',
         format: valueFormat || '{0:#.###}',
-        type:
-          col.type ||
-          (lowerVertName === 'pe' && lowerSiteName === 'hmd'
-            ? 'negativeNumber'
-            : 'number'),
+        type: isNegativeAllowed ? 'negativeNumber' : (col.type || 'number'),
       }
     }
     if (shouldLockColumn(col)) {

@@ -689,7 +689,7 @@ public byte[] shutdownNonProductExportWithValue(String year, String plantId, Str
 		}
 
 		innerHeaders.add("Duration (hrs)");
-		innerHeaders.add("Value"); // new column before Shutdown Basis
+		innerHeaders.add("Quantity(TPH)"); // new column before Shutdown Basis
 		innerHeaders.add("Shutdown Basis");
 		innerHeaders.add("Id");
 		if (isAfterSave) {
@@ -799,7 +799,7 @@ public byte[] shutdownNonProductExportWithValue(String year, String plantId, Str
 }
 
 public byte[] shutdownNonProductLineExport(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
-		List<ShutDownPlanDTO> dtoList) {
+			List<ShutDownPlanDTO> dtoList) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
@@ -1889,6 +1889,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+				Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+
+				boolean peHmd = vertical.getName().equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("HMD");
 	            
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 	    
@@ -2016,7 +2020,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            }
 
 	                            if (overlapsFile ) {
-	                            	if(!(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP"))) {
+	                            	if(!( vertical.getName().equalsIgnoreCase("PP"))) {
 	                            		dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription(
 	                                        "The maintenance period overlaps with an already validated period in the file.");
@@ -2080,7 +2084,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                            throw new IllegalStateException("Calculated negative duration.");
 	                        }
 
-	                        double durationInDecimalHours = (double) totalMinutes / 60.0;
+	                      //  double durationInDecimalHours = (double) totalMinutes / 60.0;
+							
+							double	durationInDecimalHours = convertMinutesToHoursMinutes(totalMinutes);
+							
 	                        dto.setDurationInHrs(durationInDecimalHours);
 	                    } catch (Exception e) {
 	                        if (!alreadyFailed) { 
@@ -2153,6 +2160,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 
+				boolean refineryUtility= vertical.getName().equalsIgnoreCase("RefineryUtility");
+
+				boolean skipDuplicateDescValidation = refineryUtility;
+
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 
 	    List<Object[]> slowdownTimeRanges = new ArrayList<>();
@@ -2199,7 +2210,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                dto.setDiscription(desc);
 
 	                if (dto.getDiscription() != null) {
-	                    if (des.contains(dto.getDiscription().trim())) {
+	                    if (des.contains(dto.getDiscription().trim()) && !skipDuplicateDescValidation) {
 	                        dto.setSaveStatus("Failed");
 	                        dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
 	                        alreadyFailed = true;
@@ -2370,7 +2381,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	                String idString = getStringCellValue(row.getCell(6), dto);
 	                dto.setId(idString);
 
-	                if (dto.getId() == null && !alreadyFailed) {
+	                if (dto.getId() == null && !alreadyFailed && !skipDuplicateDescValidation) {
 	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
 	                            plantFKId.toString(), year, dto.getDiscription());
 
@@ -3020,7 +3031,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 									throw new IllegalStateException("Calculated negative duration.");
 								}
 
-								double durationInDecimalHours = (double) totalMinutes / 60.0;
+								// double durationInDecimalHours = (double) totalMinutes / 60.0;
+								double durationInDecimalHours = convertMinutesToHoursMinutes(totalMinutes);
 								dto.setDurationInHrs(durationInDecimalHours);
 
 							} catch (Exception e) {
@@ -3318,7 +3330,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						}
 					}
 
-					if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez) && !alreadyFailed && ldtStart != null && ldtEnd != null) {
+					if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
 						validTimeRangesWithIndex.add(new TimeRangeWithIndex(ldtStart, ldtEnd, currentRowIndex));
 					}
 
@@ -3966,9 +3978,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean descriptionValidation = chemicalHmdDropdown || aromaticsHmd || ptaPmd || refineryUtility;
 		boolean skipDescriptionValidation = chemicalHmdHtpb;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
+		boolean pta = verticalName.equalsIgnoreCase("PTA");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		//boolean gasifier=  verticalName.equalsIgnoreCase("PCG") && (site.getName().equalsIgnoreCase("DTA") || site.getName().equalsIgnoreCase("SEZ"))  && (plant.getName().equalsIgnoreCase("GASIFIER") || plant.getName().equalsIgnoreCase("SRU"));
-		
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",
@@ -4325,18 +4337,38 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 									.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1);
 							Date entityEndDate = plantMaintenanceTransaction.getMaintEndDateTime();
 							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
-							if (!(entityEndDate != null && dtoEndDate != null
-									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
-								if(!elastomer || !filament || !staple) {
+							boolean datesChanged;
+
+							// for pta compare month value only 
+							if (pta) {
+								datesChanged = !isSameDate(entityEndDate, dtoEndDate);
+							} else {
+								datesChanged = !(entityEndDate != null
+										&& dtoEndDate != null
+										&& entityEndDate.compareTo(dtoEndDate) == 0);
+							}
+
+							if (datesChanged) {
+								if (!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
 							plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 							Date entityStartDate = plantMaintenanceTransaction.getMaintStartDateTime();
 							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
-							if (!(entityStartDate != null && dtoStartDate != null
-									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
-								if(!elastomer || !filament || !staple) {
+
+							boolean startDateChanged;
+
+							if (pta) {
+								startDateChanged = !isSameDate(entityStartDate, dtoStartDate);
+							} else {
+								startDateChanged = !(entityStartDate != null
+										&& dtoStartDate != null
+										&& entityStartDate.compareTo(dtoStartDate) == 0);
+							}
+
+							if (startDateChanged) {
+								if (!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
@@ -4346,9 +4378,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								plantMaintenanceTransaction.setLineFKId(UUID.fromString(shutDownPlanDTO.getLineId()));
 							}
 							if(refineryUtility) {
-								if(shutDownPlanDTO.getRate()!=null && (plantMaintenanceTransaction.getRate() != shutDownPlanDTO.getRate())) {
-									changed = true;
-								}
+								if (shutDownPlanDTO.getRate() != null   && !Objects.equals(plantMaintenanceTransaction.getRate(), shutDownPlanDTO.getRate())) {
+                                        changed = true;
+                              }
 								plantMaintenanceTransaction.setRate(shutDownPlanDTO.getRate());
 							}
 							// skip remark validation for aromatics
@@ -4401,6 +4433,32 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
+	}
+
+	public static double convertMinutesToHoursMinutes(long totalMinutes) {
+		if (totalMinutes < 0) {
+			throw new IllegalArgumentException("Total minutes cannot be negative.");
+		}
+	
+		long hours = totalMinutes / 60;
+		long minutes = totalMinutes % 60;
+	
+		return Double.parseDouble(String.format("%d.%02d", hours, minutes));
+	}
+
+	private boolean isSameDate(Date date1, Date date2) {
+		if (date1 == null || date2 == null) {
+			return date1 == date2;
+		}
+	
+		Calendar cal1 = Calendar.getInstance();
+		Calendar cal2 = Calendar.getInstance();
+	
+		cal1.setTime(date1);
+		cal2.setTime(date2);
+	
+		return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)
+				&& cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
 	}
 
 	private void updateSlowdownActivities(ShutDownPlanDTO shutDownPlanDTO, PlantMaintenanceTransaction plantMaintenanceTransaction, UUID plantId) {  

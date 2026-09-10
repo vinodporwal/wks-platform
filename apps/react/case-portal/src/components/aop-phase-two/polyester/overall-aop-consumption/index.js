@@ -6,7 +6,6 @@ import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { validateFields } from 'utils/validationUtils'
 import { useMenuContext } from 'menu/menuProvider'
 import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
@@ -15,6 +14,7 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import MaterialGroupedSelectionGrid from '../material-grouped-selection/MaterialGroupedSelectionGrid'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const OverallAopConsumption = () => {
   const dispatch = useDispatch()
@@ -41,8 +41,9 @@ const OverallAopConsumption = () => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const isFilament = VERTICAL_NAME?.toLowerCase() === 'filament (pfy)'
+  const isStaple = VERTICAL_NAME?.toLowerCase() === 'staple (psf)'
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const valueFormat = ValueFormatterConsumption()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [rows, setRows] = useState([])
@@ -94,17 +95,17 @@ const OverallAopConsumption = () => {
         minWidth: 100,
       },
       {
+        field: 'sapCode',
+        title: 'SAP MAT Code',
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+      },
+      {
         field: 'productName',
         title: 'Particulars',
         editable: false,
         minWidth: 200,
-      },
-      {
-        field: 'sapCode',
-        title: 'SAP Code',
-        minWidth: 120,
-        type: 'text',
-        editable: false,
       },
       {
         field: 'UOM',
@@ -137,7 +138,7 @@ const OverallAopConsumption = () => {
       //   minWidth: 160,
       // },
     ]
-    if (isFilament) {
+    if (isFilament || isStaple) {
       defaultColumns.push({
         field: 'ytd',
         title: 'YTD',
@@ -150,7 +151,7 @@ const OverallAopConsumption = () => {
     }
 
     return defaultColumns
-  }, [isFilament])
+  }, [isFilament, isStaple])
 
   const getIsReleased = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -242,7 +243,7 @@ const OverallAopConsumption = () => {
       setLoading(true)
       try {
         const verticalWiseAPI = {
-          'staple (psf)':OverallAopConsumptionApiService.getOverallAopConsumption,
+          'staple (psf)':OverallAopConsumptionApiService.getOverallAopConsumptionYTD,
           'filament (pfy)':OverallAopConsumptionApiService.getOverallAopConsumptionYTD,
           'pet-py':OverallAopConsumptionApiService.getOverallAopConsumption,
         }
@@ -434,7 +435,7 @@ const OverallAopConsumption = () => {
     })
     try {
       const verticalWiseAPI = {
-        'staple (psf)':OverallAopConsumptionApiService.exportOverallAopConsumption,
+        'staple (psf)':OverallAopConsumptionApiService.exportOverallAopConsumptionYTD,
         'filament (pfy)':OverallAopConsumptionApiService.exportOverallAopConsumptionYTD,
         'pet-py':OverallAopConsumptionApiService.exportOverallAopConsumption,
       }
@@ -563,6 +564,13 @@ const OverallAopConsumption = () => {
         setSnackbarData={setSnackbarData}
         isReleaseDisabled={isReleaseDisabled}
         handleRelease={handleRelease}
+        customHeight={70}
+        paginationConfig={{
+          threshold: 100,
+          buttonCount: 5,
+          pageSizes: [10, 20, 50, 100],
+          defaultPageSize: 100,
+        }}
       />
 
       <ReleaseDialog

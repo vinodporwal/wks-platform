@@ -86,11 +86,14 @@ export default function AopBudget() {
   const headerMap = generateHeaderNames(AOP_YEAR)
   const thisYear = AOP_YEAR
 
+
   const VERTICAL_NAME_U = verticalObject?.name?.toUpperCase()
   const SiteName = siteObject?.name
   const SITE_NAME_U = siteObject?.name?.toUpperCase()
   const PLANT_NAME_U = plantObject?.name?.toUpperCase()
   const EXCEL_NAME = `${VERTICAL_NAME_U}_${SITE_NAME_U}_${AOP_YEAR}_Budget_Maintenance`
+
+
 
   // second grid states
   const [rowsP, setRowsP] = useState([])
@@ -244,9 +247,8 @@ export default function AopBudget() {
   ]
 
   const columns = [
-    { field: 'idFromApi', title: 'ID', widthT: 50, minWidth: 50, hidden: true },
-    { field: 'plantName', title: 'Plant', widthT: 100, minWidth: 100 },
-    { field: 'costName', title: 'Cost', widthT: 100, minWidth: 100 },
+    { field: 'plantName', title: 'Plant', widthT: 130, minWidth: 130, locked: true },
+    { field: 'costName', title: 'Cost', widthT: 130, minWidth: 130, locked: true },
     {
       field: 'budgetType',
       title: 'Budget Type',
@@ -258,10 +260,10 @@ export default function AopBudget() {
     {
       field: 'percentChange',
       title: '% Change (+/-)',
-      widthT: 105,
+      widthT: 130,
       editable: true,
       type: 'percentChange',
-      minWidth: 100,
+      minWidth: 130,
     },
     // { field: 'symbol', title: '+VE/-VE', width: 120 },
     ...monthFields.map(
@@ -324,7 +326,7 @@ export default function AopBudget() {
         AOP_YEAR,
       )
 
-      const mapped = (resConsumption?.data || []).map((item, index) => {
+      const mapped = (resConsumption?.data || []).map((item) => {
         const allMonthsTotal = monthTotal?.reduce((sum, month) => {
           const value = parseFloat(item[month]) || 0
           return sum + value
@@ -332,8 +334,6 @@ export default function AopBudget() {
 
         return {
           ...item,
-          id: item.id || index, // Ensure there's an id for React key
-          idFromApi: item.id || null, // Keep original API id for reference
           plantName: item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -360,8 +360,6 @@ export default function AopBudget() {
 
         return {
           ...item,
-          idFromApi: item.id || null,
-          id: index,
           plantName: item.plantName || item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -434,21 +432,9 @@ export default function AopBudget() {
     plantID,
     keycloak,
   ])
-  const anyGridEdited = useMemo(
-    () =>
-      Object.keys(modifiedCells).length > 0 ||
-      Object.keys(modifiedCellsP).length > 0 ||
-      designBasisAndDesignRemarksEdited ||
-      designBasisAndDesignRemarksEdited2,
-    [
-      modifiedCells,
-      modifiedCellsP,
-      designBasisAndDesignRemarksEdited,
-      designBasisAndDesignRemarksEdited2,
-    ],
-  )
-  const handleCalculate = () => {}
-  const handleCalculateP = () => {}
+  const handleCalculate = () => { }
+  const handleCalculateP = () => { }
+
   const getIsReleased = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
@@ -553,7 +539,7 @@ export default function AopBudget() {
       // downloadExcelBtnFromUI: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
-      ExcelName: `${lowerVertName}_Monthly Procurement Budget`,
+      ExcelName: `${vertName}_${siteObject?.name}_${AOP_YEAR}_Budget_Maintenance`,
       constarins: ['+', '-'],
       resetButton: false,
       percentChangeLogic: true,
@@ -588,7 +574,7 @@ export default function AopBudget() {
       downloadExcelBtnFromUI: false,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
-      ExcelName: `${lowerVertName}_Monthly Consumption Budget`,
+      ExcelName: `${vertName}_${siteObject?.name}_${AOP_YEAR}_Budget_Maintenance`,
       constarins: ['+', '-'],
       resetButton: false,
       percentChangeLogic: true,
@@ -682,17 +668,11 @@ export default function AopBudget() {
         return
       }
 
-      const fieldsToOmit = ['isEditable', 'IsEditable', 'idFromApi']
+      const fieldsToOmit = ['isEditable', 'IsEditable']
 
       const allRows = [
-        ...consumptionData.map((row) => ({
-          ...omitFields(row, fieldsToOmit),
-          id: row.idFromApi,
-        })),
-        ...procurementData.map((row) => ({
-          ...omitFields(row, fieldsToOmit),
-          id: row.idFromApi,
-        })),
+        ...consumptionData.map((row) => omitFields(row, fieldsToOmit)),
+        ...procurementData.map((row) => omitFields(row, fieldsToOmit)),
       ]
 
       const prefixPlusForNumericPercent = (row) => {
@@ -728,15 +708,16 @@ export default function AopBudget() {
       setLoading(false)
     }
   }
+
+
   const downloadExcelForConfiguration = async () => {
     setLoading(true)
-    const EXCEL_NAME = `${vertName}_${SiteName}_${PLANT_NAME}_${AOP_YEAR}_Maintenance Budget_Export.xlsx`
     try {
       await AOPMaintenanceApiService.maintenaceExportdata(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        EXCEL_NAME,
+        EXCEL_NAME
       )
 
       setSnackbarData({ message: 'Export started!', severity: 'success' })
@@ -822,9 +803,9 @@ export default function AopBudget() {
     budgetMaintenanceExcelFile(rawFile)
   }
 
-  const resetRowData1 = async (paramsForDelete) => {}
+  const resetRowData1 = async (paramsForDelete) => { }
 
-  const resetRowData2 = async (paramsForDelete) => {}
+  const resetRowData2 = async (paramsForDelete) => { }
 
   return (
     <Box>
@@ -849,7 +830,7 @@ export default function AopBudget() {
               container
               alignItems='center'
               justifyContent='space-between'
-              // sx={{ marginBottom: 0.5 }}
+            // sx={{ marginBottom: 0.5 }}
             >
               <Grid item>
                 <div
@@ -882,7 +863,7 @@ export default function AopBudget() {
               container
               alignItems='center'
               justifyContent='space-between'
-              // sx={{ marginBottom: 0.5 }}
+            // sx={{ marginBottom: 0.5 }}
             >
               <Grid item>
                 <div
@@ -935,11 +916,11 @@ export default function AopBudget() {
         permissions={adjustedPermissionsC}
         groupBy='budgetType'
         resetRowData={resetRowData1}
-        summaryEdited={anyGridEdited}
+        summaryEdited={designBasisAndDesignRemarksEdited}
         resetDataChanges={resetDataChanges}
         isReleaseDisabled={isReleaseDisabled}
         handleRelease={handleRelease}
-        // setEditMode={setEditMode}
+      // setEditMode={setEditMode}
       />
 
       <KendoDataTables
@@ -963,7 +944,7 @@ export default function AopBudget() {
         permissions={adjustedPermissionsP}
         groupBy='budgetType'
         resetRowData={resetRowData2}
-        summaryEdited={anyGridEdited}
+        summaryEdited={designBasisAndDesignRemarksEdited2}
         // setEditMode={setEditMode}
         resetDataChanges={resetDataChanges}
       />
@@ -1000,8 +981,8 @@ export default function AopBudget() {
               lineHeight: 1.5,
             }}
           >
-            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>,{' '}
-            <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
+            , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
             <b style={{ color: '#16a34a' }}>Reports</b> are verified before
             releasing for review.
           </DialogContentText>

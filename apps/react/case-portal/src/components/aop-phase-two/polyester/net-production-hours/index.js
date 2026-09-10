@@ -192,6 +192,7 @@ const NetProductionHours = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        customHeight={70}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

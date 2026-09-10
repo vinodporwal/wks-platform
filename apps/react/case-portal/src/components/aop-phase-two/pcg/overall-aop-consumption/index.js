@@ -7,6 +7,7 @@ import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const OverallAopConsumptionPCG = () => {
   const keycloak = useSession()
@@ -29,8 +30,20 @@ const OverallAopConsumptionPCG = () => {
   const valueFormat = customValueFormatterPhaseTwo(DECIMALS)
   const monthMinWidth = IS_GASIFIER ? 160 : 120
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const EXCEL_EXPORT_TITLE = generateExcelName(
+    dataGridStore,
+    'Overall AOP Consumption',
+  )
 
   const columns = [
+    {
+      field: 'sapCode',
+      title: 'SAP Mat Code',
+      // widthT: 250,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+    },
     {
       field: 'productName',
       title: 'Particulars',

@@ -19,4 +19,12 @@ public interface ProposedAOPService {
     public byte[] createProposedAOPExcel(UUID plantId, String aopYear, boolean isAfterSave, List<ProposedAOPDTO> dtoList);
 
     public AOPMessageVM importProposedAOPExcel(MultipartFile file);
+
+    public AOPMessageVM getProposedSteadyState(UUID plantId, String aopYear);
+
+    public AOPMessageVM saveProposedSteadyState(List<ProposedAOPDTO> dtoList);
+
+    public byte[] createProposedSteadyStateExcel(UUID plantId, String aopYear, boolean isAfterSave, List<ProposedAOPDTO> dtoList);
+
+    public AOPMessageVM importProposedSteadyState(MultipartFile file);
 }

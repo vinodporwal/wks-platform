@@ -13,6 +13,7 @@ export const ConsumptionNormsApiService = {
   slowdownconsumptionExportMEG,
   ExcelSlowdownConsumptionMEG,
   getProposedAOPNormsGrades,
+  checkMaterialGroupedSelectionPopup,
 }
 async function saveAOPConsumptionNorm(PLANT_ID, shutdownDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/overall-consumption`
@@ -307,3 +308,19 @@ async function getProposedAOPNormsGrades(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+
+async function checkMaterialGroupedSelectionPopup(keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/grouped-selection/check-popup?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error checking grouped selection popup status:', e)
+    return await Promise.reject(e)
+  }
+}

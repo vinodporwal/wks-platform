@@ -25,7 +25,9 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { DataService } from 'services/DataService'
 import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
 import { useMenuContext } from 'menu/menuProvider'
-import MaterialGroupedSelection from './MaterialGroupedSelection'
+import MaterialGroupedSelectionDialog, {
+  useMaterialGroupedSelectionPopup,
+} from './MaterialGroupedSelectionDialog'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -33,8 +35,6 @@ const ConsumptionNorms = () => {
   const keycloak = useSession()
 
   const [open1, setOpen1] = useState(false)
-  const [openMaterialGroupedSelectionDialog, setOpenMaterialGroupedSelectionDialog] = useState(false)
-  const valueFormat = ValueFormatterConsumption()
 
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
@@ -121,11 +121,17 @@ const ConsumptionNorms = () => {
 
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
-  const IS_PTA_PMD_PIA = lowerVertName === 'pta' && lowerSiteName === 'pmd' && lowerPlantName === 'pia'
+  const IS_PTA_PMD_PIA =
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'pmd' &&
+    lowerPlantName === 'pia'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const consumptionFormat = ValueFormatterConsumption() 
+  const valueFormat =
+    lowerVertName === 'pvc' ? '{0:0.00000}' : consumptionFormat
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -158,6 +164,7 @@ const ConsumptionNorms = () => {
   useEffect(() => {
     getIsReleased()
   }, [keycloak, AOP_YEAR, PLANT_ID])
+
   const saveEditedData = async (newRows) => {
     setLoading(true)
     try {
@@ -537,14 +544,6 @@ const ConsumptionNorms = () => {
     setSelectedUnit(unit)
   }
 
-  const handleCalculate = () => {
-    if (lowerVertName === 'pe' && lowerSiteName === 'c2'&& lowerPlantName=== 'lldpe') {
-      setOpenMaterialGroupedSelectionDialog(true)
-    } else {
-      handleCalculateMeg()
-    }
-  }
-
   const handleCalculateMeg = async () => {
     try {
       const data =
@@ -594,6 +593,13 @@ const ConsumptionNorms = () => {
       console.error('Error!', error)
     }
   }
+
+  const { openDialog, handleClose, handleCalculate } =
+    useMaterialGroupedSelectionPopup({
+      keycloak,
+      plantId: PLANT_ID,
+      onCalculate: handleCalculateMeg,
+    })
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -662,6 +668,7 @@ const ConsumptionNorms = () => {
       saveBtn: false,
       showCalculate: true,
       allAction: true,
+      showCalulcationPromt: lowerVertName === 'cracker',
       dontClearGradeOnCalculate: true,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
@@ -670,54 +677,56 @@ const ConsumptionNorms = () => {
       customHeight: defaultCustomHeight,
       showG:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel: 'Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn:
         lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet' ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
       showReleaseBtn: false,
-      titleName: IS_PTA_PMD_PIA?`Overall AOP Consumption`:`${SCREEN_NAME}`,
+      titleName: IS_PTA_PMD_PIA
+        ? `Overall AOP Consumption (Norms)`
+        : `${SCREEN_NAME}`,
     },
     isOldYear,
   )
@@ -840,46 +849,12 @@ const ConsumptionNorms = () => {
               Confirm
             </Button>
           </DialogActions>
-        </Dialog>{' '}
-        <Dialog
-          open={openMaterialGroupedSelectionDialog}
-          onClose={(event, reason) => {
-            if (reason !== 'backdropClick') {
-              setOpenMaterialGroupedSelectionDialog(false)
-            }
-          }}
-          maxWidth="md"
-          fullWidth
-          disableScrollLock
-          disableEnforceFocus={true}
-          PaperProps={{
-            sx: {
-              borderRadius: '20px',
-              p: 1,
-              backdropFilter: 'blur(8px)',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-            },
-          }}
-        >
-          <DialogContent sx={{ p: 1 }}>
-            <MaterialGroupedSelection
-              onSaveSuccess={async () => {
-                setOpenMaterialGroupedSelectionDialog(false)
-                await handleCalculateMeg()
-              }}
-            />
-          </DialogContent>
-          <DialogActions sx={{ px: 1.5, pb: 1 }}>
-            <Button
-              onClick={() => setOpenMaterialGroupedSelectionDialog(false)}
-              variant="contained"
-              className="btn-no"
-              sx={{ textTransform: 'none' }}
-            >
-              Close
-            </Button>
-          </DialogActions>
         </Dialog>
+        <MaterialGroupedSelectionDialog
+          open={openDialog}
+          onClose={handleClose}
+          onSaveSuccess={handleCalculateMeg}
+        />
       </div>
     </div>
   )

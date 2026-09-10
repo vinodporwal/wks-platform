@@ -8,8 +8,13 @@ import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/vgoht/overallAopConsumptionApiService'
+import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 import { overAllAOpResponse } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelNameWithoutExt } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import MaterialGroupedSelectionDialog, {
+  useMaterialGroupedSelectionPopup,
+} from 'components/kendo-data-tables/MaterialGroupedSelectionDialog'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -27,10 +32,29 @@ const OverallAopConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
+  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
+    useReleaseAOP({
+      setSnackbarOpen,
+      setSnackbarData,
+    })
+
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const EXCEL_EXPORT_TITLE = generateExcelNameWithoutExt(
+      dataGridStore,
+      'Overall_AOP_Consumption'
+    )
 
   const columns = [
+    {
+      field: 'sapCode',
+      title: 'SAP Mat Code',
+      // widthT: 250,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+      locked: false,
+    },
     {
       field: 'productName',
       title: 'Particulars',
@@ -224,7 +248,7 @@ const OverallAopConsumption = () => {
     }
   }
 
-  const handleCalculate = async () => {
+  const executeCalculate = async () => {
     setLoading(true)
     setSnackbarOpen(true)
     setSnackbarData({
@@ -255,6 +279,13 @@ const OverallAopConsumption = () => {
     }
   }
 
+  const { openDialog, handleClose, handleCalculate } =
+    useMaterialGroupedSelectionPopup({
+      keycloak,
+      plantId: PLANT_ID,
+      onCalculate: executeCalculate,
+    })
+
   const permissions = {
     showAction: false,
     addButton: false,
@@ -264,7 +295,9 @@ const OverallAopConsumption = () => {
     allAction: true,
     downloadExcelBtnFromUI: true,
     showCalculate: true,
-    ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
+    showReleaseBtn: true,
+    isReleaseDisabled: isReleaseDisabled,
+    ExcelName: EXCEL_EXPORT_TITLE,
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
@@ -283,6 +316,8 @@ const OverallAopConsumption = () => {
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleCalculate={handleCalculate}
+        handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
@@ -295,6 +330,13 @@ const OverallAopConsumption = () => {
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 100,
         }}
+      />
+
+      {ReleaseDialogComponent}
+      <MaterialGroupedSelectionDialog
+        open={openDialog}
+        onClose={handleClose}
+        onSaveSuccess={executeCalculate}
       />
     </Box>
   )

@@ -451,7 +451,8 @@ const WorkFlowMerge = () => {
       cols[remarkIdx] = remarkColumn(handleRemarkCellClick)
     }
 
-    return cols
+    // Hide the Id column from the UI
+    return cols.filter((c) => c.field !== 'Id')
     // The column is considered numeric if:
     // - It's a valid number (including empty values)
   }
@@ -641,8 +642,15 @@ const WorkFlowMerge = () => {
   }
   const saveChanges = async () => {
     try {
-      // console.log(rows, 'workflowDto')
-      await AOPWorkFlowService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
+      const payload = rows.map((row) => {
+        const { id, path, inEdit, ...rest } = row
+        return rest
+      })
+      await AOPWorkFlowService.saveAnnualWorkFlowData(
+        keycloak,
+        payload,
+        PLANT_ID,
+      )
       setSnackbarData({
         message: 'Data Saved Successfully!',
         severity: 'success',

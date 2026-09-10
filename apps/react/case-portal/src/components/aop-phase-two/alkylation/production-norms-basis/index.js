@@ -9,6 +9,7 @@ import Configuration from './Configuration'
 import Constants from './Constants'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
+import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/alkylation/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
@@ -218,6 +219,10 @@ const ProductionNormsBasisAlkylation = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
+      case 'PIMS Monthly Throughput':
+      case 'pims-monthly-throughput':
+      case 'pims-monthly-throughtput':
+        return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       case 'Manual Entry':
         return <ManualEntry startDate={startDate} endDate={endDate} />
       default:

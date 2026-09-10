@@ -105,7 +105,9 @@ const extractFlatRowsFromGrouped = (data) => {
 // Helper function to create select tooltip renderer with label display
 const createSelectToolTipRenderer = (allOptions, toolTipRenderer) => {
   return (props) => {
-    const value = props.dataItem[props.field]
+    const value = props.field?.includes('.')
+      ? getNestedValue(props.dataItem, props.field)
+      : props.dataItem[props.field]
     const displayMode = props.displayMode || 'label'
 
     let displayChildren = props.children
@@ -560,11 +562,75 @@ const AdvanceKendoTable = ({
   }, [modifiedCells, saveChanges, setModifiedCells])
 
   const excelExport = () => {
-    if (_export.current !== null) {
-      _export.current.save()
+    if (!_export.current) {
+      return
     }
-  }
 
+    const options = _export.current.workbookOptions()
+
+    const CELL_BORDER = {
+      size: 1,
+      color: '#D9D9D9',
+    }
+
+    const HEADER_BORDER = {
+      size: 1,
+      color: '#808080',
+    }
+
+    const GROUP_HEADER_BORDER = {
+      size: 2,
+      color: '#404040',
+    }
+
+    options.sheets.forEach((sheet) => {
+      sheet.rows.forEach((row) => {
+        const isHeader = row.type === 'header' || row.type === 'group-header'
+
+        row.cells.forEach((cell) => {
+          const isMerged = Number(cell.colSpan) > 1
+
+          // -----------------------------
+          // Border
+          // -----------------------------
+          let border = CELL_BORDER
+
+          if (row.type === 'group-header' && isMerged) {
+            border = GROUP_HEADER_BORDER
+          } else if (isHeader) {
+            border = HEADER_BORDER
+          }
+
+          cell.borderTop = border
+          cell.borderBottom = border
+          cell.borderLeft = border
+          cell.borderRight = border
+
+          // -----------------------------
+          // Header styling
+          // -----------------------------
+          if (isHeader) {
+            cell.background = '#DFDFDF'
+            cell.color = '#000000'
+            cell.bold = true
+
+            cell.textAlign = 'center'
+            cell.verticalAlign = 'center'
+            cell.wrap = true
+          }
+
+          // -----------------------------
+          // Data styling
+          // -----------------------------
+          if (!isHeader) {
+            cell.verticalAlign = 'center'
+          }
+        })
+      })
+    })
+
+    _export.current.save(options)
+  }
   const handleRowClick = (e) => {
     if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
       setEdit({})
@@ -1128,9 +1194,7 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={
-          convertScientificValue ? convertFromScientificNotation(value) : value
-        }
+        title={convertFromScientificNotation(value) ?? value}
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
@@ -1245,9 +1309,7 @@ const AdvanceKendoTable = ({
     return (
       <td
         {...tdProps}
-        title={
-          convertScientificValue ? convertFromScientificNotation(value) : value
-        }
+        title={convertFromScientificNotation(value) ?? value}
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
           color:
@@ -1478,6 +1540,30 @@ const AdvanceKendoTable = ({
           >
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
+        )
+      }
+
+      // Merged Cells Handler
+      if (col.type === 'mergedCells' && col.cell) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={false}
+            filterable={false}
+            className={col.className || 'k-text-center'}
+            headerClassName={col.headerClassName || 'k-text-center'}
+            cells={{
+              data: col.cell,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            width={setWidth(col?.minWidth || col?.widthT || 80)}
+          />
         )
       }
 
@@ -2244,6 +2330,57 @@ const AdvanceKendoTable = ({
           />
         )
       }
+      if (col?.type === 'customSelect' || col?.cellEditor) {
+        const isDynamic = !!col.dynamicOptions
+        const EditorComponent = col.cellEditor
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  const resolvedOptions = isDynamic
+                    ? col.getOptions(cellProps.dataItem)
+                    : col.options
+                  return (
+                    <EditorComponent
+                      {...cellProps}
+                      options={resolvedOptions}
+                      textField={col.textField || 'label'}
+                      valueField={col.valueField || 'value'}
+                      placeholder={col.placeholder || 'Select...'}
+                      searchable={col.searchable || false}
+                      showClearOption={col.showClearOption || false}
+                      returnFullObject={col.returnFullObject || false}
+                    />
+                  )
+                },
+              },
+              data: (props) => {
+                const resolvedOptions = isDynamic
+                  ? col.getOptions(props.dataItem)
+                  : col.options
+                return createSelectToolTipRenderer(
+                  resolvedOptions,
+                  toolTipRenderer,
+                )({ ...props, displayMode: col.displayMode || 'label' })
+              },
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
       if (col?.type === 'multi-select') {
         // Change this to your multiselect field name
         let allOptions = col.options || []
@@ -2508,9 +2645,9 @@ const AdvanceKendoTable = ({
                   <SelectCellEditor
                     {...cellProps}
                     options={allDescriptionDrpdwn || []}
-                    textField="displayName"
-                    valueField="id"
-                    placeholder="Select..."
+                    textField='displayName'
+                    valueField='id'
+                    placeholder='Select...'
                   />
                 ),
               },
@@ -2616,7 +2753,10 @@ const AdvanceKendoTable = ({
     })
 
   const toolTipRenderer = (props) => {
-    const value = props.dataItem[props.field]
+    const value = props.field?.includes('.')
+      ? getNestedValue(props.dataItem, props.field)
+      : props.dataItem[props.field]
+
     const month = monthMap[props.field?.toLowerCase()]
     const normId = props.dataItem.materialFkId
     const rowId = props.dataItem.id
@@ -2635,9 +2775,12 @@ const AdvanceKendoTable = ({
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
-    // Convert boolean values to Yes/No for display
+    // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
-      typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value
+      typeof value === 'boolean'
+        ? (value ? 'Yes' : 'No')
+        : convertFromScientificNotation(value) ?? value
+
     const cellContent =
       typeof value === 'boolean' ? displayValue : props.children
 
@@ -2645,7 +2788,7 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}.trim()`}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,

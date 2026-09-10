@@ -14,6 +14,11 @@ export const ProductionNormsApiService = {
   savePIMSThroughputData,
   importPIMSThroughputExcel,
   exportPIMSThroughputExcel,
+  // PIMS Monthly Throughput APIs
+  getPIMSMonthlyThroughputData,
+  savePIMSMonthlyThroughputData,
+  importPIMSMonthlyThroughputExcel,
+  exportPIMSMonthlyThroughputExcel,
   // Norm Calculation API
   loadButtonNormCalculation,
 }
@@ -225,6 +230,111 @@ async function exportPIMSThroughputExcel(keycloak, plantId, year) {
     endpoint: `production-norms/pims-throughput/export/${plantId}/${year}`,
     queryParams: {},
     fileName: `Production_Norms_PIMS_Throughput_${year}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// ========================|| PIMS Monthly Throughput APIs ||=====================================//
+/**
+ * Get PIMS Monthly Throughput data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} PIMS Monthly Throughput data
+ */
+async function getPIMSMonthlyThroughputData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/pims-monthly-throughput?plantId=${plantId}&aopYear=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save PIMS Monthly Throughput data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {Array} payload - Data to save
+ * @param {string} plantId - Plant ID
+ * @param {string} siteId - Site ID
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
+ * @returns {Promise} Save response
+ */
+async function savePIMSMonthlyThroughputData(
+  keycloak,
+  year,
+  payload,
+  plantId,
+  siteId,
+  periodFrom,
+  periodTo,
+) {
+  const url = `${Config.CaseEngineUrl}/task/pims-monthly-throughput?plantId=${plantId}&aopYear=${year}&siteId=${siteId || ''}&periodFrom=${periodFrom || ''}&periodTo=${periodTo || ''}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Import PIMS Monthly Throughput Excel file
+ * @param {File} file - Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Import response
+ */
+async function importPIMSMonthlyThroughputExcel(file, keycloak, plantId, year) {
+  return ImportExportApiService.saveExcelData(
+    file,
+    keycloak,
+    'production-norms/pims-monthly-throughput/import',
+    plantId,
+    year,
+  )
+}
+
+/**
+ * Export PIMS Monthly Throughput Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Export response
+ */
+async function exportPIMSMonthlyThroughputExcel(keycloak, plantId, year) {
+  return ImportExportApiService.exportExcelData(keycloak, {
+    endpoint: `production-norms/pims-monthly-throughput/export/${plantId}/${year}`,
+    queryParams: {},
+    fileName: `Production_Norms_PIMS_Monthly_Throughput_${year}.xlsx`,
     method: 'GET',
   })
 }

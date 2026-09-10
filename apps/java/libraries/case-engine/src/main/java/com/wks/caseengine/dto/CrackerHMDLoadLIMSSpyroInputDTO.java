@@ -31,4 +31,7 @@ public class CrackerHMDLoadLIMSSpyroInputDTO {
 
     private String plantId;
     private String aopYear;
+
+    private Integer displayOrder;
+    private Integer isEditable;
 }

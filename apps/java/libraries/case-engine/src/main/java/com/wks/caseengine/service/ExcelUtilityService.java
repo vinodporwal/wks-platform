@@ -13,6 +13,7 @@ public interface ExcelUtilityService {
      List<String>  getFinancialYear(String year);
      byte[]  generateFlexibleExcelForBudgetMaintenance(Map<String, Object> structure, Map<String, List<List<Object>>> data,Map<String, Object> metadataValues,String basisSummary,String remarkSummary);
      byte[]  generateFlexibleExcelForReliability(Map<String, Object> structure, Map<String, List<List<Object>>> data) ;
+     byte[]  generateFlexibleExcelForReliabilityPlantWise(Map<String, Object> structure, Map<String, List<List<Object>>> data) ;
      byte[]  generateFlexibleExcelGridDisable(Map<String, Object> structure, Map<String, List<List<Object>>> data, String verticalSite) ;
      
 

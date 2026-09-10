@@ -105,6 +105,11 @@ const ConfigurationTable = () => {
     lowerVertName === 'chemical' &&
     lowerSiteName === 'vmd' &&
     plantObject?.name?.toUpperCase() === 'BUTADIENE'
+  const IS_PTA_PMD_PIA =
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'pmd' &&
+    plantObject?.name?.toLowerCase() === 'pia'
+  const PTA_PMD_PIA = IS_PTA_PMD_PIA
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -166,7 +171,8 @@ const ConfigurationTable = () => {
   //   usePermissions()
 
   const handleOpenDialog = () => {
-    const isPEorPP = lowerVertName === 'pe' || lowerVertName === 'pp'
+    const isPEorPP =
+      lowerVertName === 'pe' || lowerVertName === 'pp' || IS_PTA_PMD_PIA
 
     if (isPEorPP || IS_PVC_DMD || IS_PVC_HMD) {
       if (!summaryEdited && !summary) {
@@ -413,7 +419,7 @@ const ConfigurationTable = () => {
                   cr.TypeDisplayName === 'Constant' &&
                   cr.UOM === 'Day' &&
                   (cr.productName || '').trim().toLowerCase() ===
-                    constantProductName,
+                  constantProductName,
               )
 
               const totalValue = constantRow ? Number(constantRow.apr) || 0 : 0
@@ -975,7 +981,7 @@ const ConfigurationTable = () => {
       setStartDateObj(startDateObj)
       setEndDateObj(endDateObj)
       //1st SAVE THE BASIS
-      if (lowerVertName == 'pe' || lowerVertName == 'pp') {
+      if (lowerVertName == 'pe' || lowerVertName == 'pp' || IS_PTA_PMD_PIA) {
         saveSummary(summary)
         setSummaryEdited(false)
         setDateEdited(false)
@@ -1343,15 +1349,15 @@ const ConfigurationTable = () => {
     const megTabs = IS_CHEMICAL_VMD_BUTADIENE
       ? ['Configuration', 'Constants', 'Report Manual Entry']
       : IS_CHEMICAL_DMD ||
-          (IS_CHEMICAL_VMD &&
-            !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
+        (IS_CHEMICAL_VMD &&
+          !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
         ? ['Configuration', 'Constants', 'Report Manual Entry']
         : [
-            'Configuration',
-            'Constants',
-            'Report Manual Entry',
-            'NSR & Material Prices',
-          ]
+          'Configuration',
+          'Constants',
+          'Report Manual Entry',
+          'NSR & Material Prices',
+        ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {

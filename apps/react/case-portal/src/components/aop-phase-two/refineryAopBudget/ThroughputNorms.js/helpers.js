@@ -1,8 +1,9 @@
 /**
+ * Helper functions and utilities for ThroughputNorms screen.
+ */
+
+/**
  * Formats unit dropdown API response data into dropdown option objects.
- *
- * @param {Array} data - Raw unit dropdown response items
- * @returns {Array} Formatted unit dropdown options
  */
 export const formatUnitDropdownOptions = (data = []) => {
      const formattedOptions = []
@@ -29,30 +30,15 @@ export const formatUnitDropdownOptions = (data = []) => {
 }
 
 /**
- * Filters raw material response list by profitId/unitName and formats into dropdown options.
- *
- * @param {Array} rawList - Raw material items from API
- * @param {string} profitId - Unit/Profit ID filter
- * @param {string} unitName - Unit name filter
- * @returns {Array} Formatted material dropdown options
+ * Formats raw material response list into dropdown options.
  */
-export const formatMaterialDropdownOptions = (rawList = [], profitId = '', unitName = '') => {
-     const filtered = rawList.filter((item) => {
-          const uId = item?.UnitId || item?.unitId || item?.profitId
-          const uName = item?.Unit || item?.unit
-          if (profitId) {
-               return String(uId).toLowerCase() === String(profitId).toLowerCase()
-          }
-          if (unitName) {
-               return String(uName).toLowerCase() === String(unitName).toLowerCase()
-          }
-          return true
-     })
+export const formatMaterialDropdownOptions = (rawList = []) => {
+     if (!Array.isArray(rawList)) return []
 
      const formatted = []
      const seenMaterialKeys = new Set()
-     filtered.forEach((item) => {
-          const dName = item?.displayName || item?.DisplayName || item?.name || ''
+     rawList.forEach((item) => {
+          const dName = item?.displayName || item?.DisplayName || item?.materialName || item?.MaterialName || item?.name || ''
           const mId = item?.materialId || item?.MaterialId || item?.id || item?.Id || dName
           const key = String(dName).trim().toLowerCase()
           if (dName && !seenMaterialKeys.has(key)) {
@@ -62,8 +48,8 @@ export const formatMaterialDropdownOptions = (rawList = [], profitId = '', unitN
                     value: dName,
                     id: mId,
                     materialId: mId,
-                    unitId: item?.unitId || item?.UnitId || profitId,
-                    unit: item?.unit || item?.Unit || unitName || '',
+                    unitId: item?.unitId || item?.UnitId || item?.profitId || '',
+                    unit: item?.unit || item?.Unit || '',
                     uom: item?.uom || item?.UOM || '',
                })
           }
@@ -72,69 +58,130 @@ export const formatMaterialDropdownOptions = (rawList = [], profitId = '', unitN
 }
 
 /**
- * Helper function to filter and deduplicate material dropdown options for a given row in ThroughputNorms grid.
+ * Helper function to get available Material Code dropdown options for a given row.
  *
- * @param {Object} dataItem - Current row data item
- * @param {Object} materialDropdownMap - Map of profitId / unitName to options array
- * @param {Object} materialDropdownMapRef - Ref pointing to materialDropdownMap
- * @param {Array} rows - Current table rows
- * @returns {Array} Filtered and deduplicated material options
+ * Rules:
+ * - If the row has NO Unit selected yet: show all materials (no filtering by duplicate).
+ * - If the row has a Unit selected: exclude any Material already used with that same Unit
+ *   in another row (unless it is this row's own current selection).
+ * - Blank new rows (no unit, no displayName) NEVER block each other's options.
  */
-export const getMaterialOptions = (dataItem, materialDropdownMap = {}, materialDropdownMapRef = { current: {} }, rows = []) => {
-     const profitId = dataItem?.unitId || dataItem?.profitId || dataItem?.profitCenter_FK_Id || dataItem?.profitCenterFkId
-     const unitName = dataItem?.unit || dataItem?.Unit
-     const rawOptions =
-          materialDropdownMap[profitId] ||
-          materialDropdownMap[unitName] ||
-          (profitId ? materialDropdownMapRef?.current?.[profitId] : null) ||
-          (unitName ? materialDropdownMapRef?.current?.[unitName] : null) ||
-          []
+export const getMaterialOptions = (
+     dataItem,
+     materialOptionsList = [],
+     materialDropdownMapRef = { current: {} },
+     rows = [],
+) => {
+     let allOptions = []
+     if (Array.isArray(materialOptionsList)) {
+          allOptions = materialOptionsList
+     } else if (typeof materialOptionsList === 'object' && materialOptionsList !== null) {
+          allOptions = Object.values(materialOptionsList).flat()
+     }
 
-     // 1. Deduplicate raw options by label / materialId
-     const uniqueOptionsMap = new Map()
-     rawOptions.forEach((opt) => {
-          const key = String(opt.label || opt.value || opt.id || opt.materialId).trim().toLowerCase()
-          if (key && !uniqueOptionsMap.has(key)) {
-               uniqueOptionsMap.set(key, opt)
+     if (allOptions.length === 0 && materialDropdownMapRef?.current) {
+          allOptions = Object.values(materialDropdownMapRef.current).flat()
+     }
+
+     // Deduplicate options list by label
+     const uniqueMap = new Map()
+     allOptions.forEach((opt) => {
+          const key = String(opt.label || opt.value || opt.displayName || '').trim().toLowerCase()
+          if (key && !uniqueMap.has(key)) {
+               uniqueMap.set(key, opt)
           }
      })
-     const uniqueRawOptions = Array.from(uniqueOptionsMap.values())
+     const uniqueList = Array.from(uniqueMap.values())
 
-     // 2. Filter out materials already selected in other rows under the SAME unit
-     const currentUnit = String(unitName || '').toLowerCase()
-     const currentProfitId = String(profitId || '').toLowerCase()
      const currentRowId = String(dataItem?.id || '')
-     const currentDisplayName = String(dataItem?.displayName || '').trim().toLowerCase()
+     const currentUnit = String(dataItem?.unit || dataItem?.Unit || '').trim().toLowerCase()
+     // Only treat as "real" materialId if it doesn't look like a numeric index
+     const rawMaterialId = dataItem?.materialId
+     const currentMaterialId = (rawMaterialId && isNaN(rawMaterialId))
+          ? String(rawMaterialId).trim().toLowerCase()
+          : ''
+     const currentDisplayName = String(dataItem?.displayName || dataItem?.DisplayName || '').trim().toLowerCase()
 
-     const selectedMaterialsInSameUnit = new Set()
-     rows.forEach((r) => {
-          const rUnit = String(r.unit || '').toLowerCase()
-          const rProfitId = String(r.unitId || r.profitId || '').toLowerCase()
+     // If no unit is selected on this row yet — show all options, no restriction
+     if (!currentUnit) {
+          return uniqueList
+     }
+
+     // Collect all Materials already committed to this Unit by OTHER rows
+     const usedMaterialsInCurrentUnit = new Set()
+     const rowList = Array.isArray(rows) ? rows : []
+     rowList.forEach((r) => {
           const rRowId = String(r.id || '')
-          const rDisplayName = String(r.displayName || '').trim().toLowerCase()
+          if (rRowId === currentRowId) return // skip self
 
-          const isSameUnit =
-               (currentProfitId && rProfitId && currentProfitId === rProfitId) ||
-               (currentUnit && rUnit && currentUnit === rUnit)
+          const rUnit = String(r.unit || r.Unit || '').trim().toLowerCase()
+          const rDisplayName = String(r.displayName || r.DisplayName || '').trim().toLowerCase()
 
-          if (isSameUnit && rRowId !== currentRowId && rDisplayName) {
-               selectedMaterialsInSameUnit.add(rDisplayName)
+          // Only block if other row has same unit AND a real material selected
+          if (rUnit && rUnit === currentUnit && rDisplayName) {
+               usedMaterialsInCurrentUnit.add(rDisplayName)
           }
      })
 
-     return uniqueRawOptions.filter((opt) => {
-          const optLabel = String(opt.label || opt.value || '').trim().toLowerCase()
-          if (optLabel === currentDisplayName) return true
-          return !selectedMaterialsInSameUnit.has(optLabel)
+     return uniqueList.filter((opt) => {
+          const optName = String(opt.label || opt.value || opt.displayName || '').trim().toLowerCase()
+
+          // Keep this row's own current selection always visible
+          if (currentDisplayName && optName === currentDisplayName) return true
+          if (currentMaterialId && String(opt.materialId || '').trim().toLowerCase() === currentMaterialId) return true
+
+          // Exclude if already selected in the same Unit by another row
+          return !usedMaterialsInCurrentUnit.has(optName)
+     })
+}
+
+/**
+ * Helper to get available Unit dropdown options for a given row.
+ *
+ * Rules:
+ * - If the row has NO Material Code selected yet: show all units.
+ * - If the row has a Material Code selected: exclude any Unit that already has
+ *   that Material in another row (unless it is this row's own current unit).
+ * - Blank rows NEVER restrict each other.
+ */
+export const getUnitOptions = (dataItem, unitOptions = [], rows = []) => {
+     if (!Array.isArray(unitOptions)) return []
+
+     const currentRowId = String(dataItem?.id || '')
+     const currentDisplayName = String(dataItem?.displayName || dataItem?.DisplayName || '').trim().toLowerCase()
+     const currentUnit = String(dataItem?.unit || dataItem?.Unit || '').trim().toLowerCase()
+
+     // If no material is chosen yet — show all units
+     if (!currentDisplayName) {
+          return unitOptions
+     }
+
+     // Collect all Units already using this Material in other rows
+     const unitsHavingMaterial = new Set()
+     const rowList = Array.isArray(rows) ? rows : []
+     rowList.forEach((r) => {
+          const rRowId = String(r.id || '')
+          if (rRowId === currentRowId) return // skip self
+
+          const rUnit = String(r.unit || r.Unit || '').trim().toLowerCase()
+          const rDisplayName = String(r.displayName || r.DisplayName || '').trim().toLowerCase()
+
+          if (rUnit && rDisplayName && rDisplayName === currentDisplayName) {
+               unitsHavingMaterial.add(rUnit)
+          }
+     })
+
+     return unitOptions.filter((u) => {
+          const uLabel = String(u.label || u.value || '').trim().toLowerCase()
+          // Always show current row's own unit
+          if (currentUnit && uLabel === currentUnit) return true
+          // Exclude if another row already uses this unit+material
+          return !unitsHavingMaterial.has(uLabel)
      })
 }
 
 /**
  * Formats initial Throughput Norms API data into row objects for table state.
- *
- * @param {Array} data - Raw API throughput norms items
- * @param {Array} unitsList - Available unit dropdown options
- * @returns {Array} Formatted row objects
  */
 export const formatNormsInitialRows = (data = [], unitsList = []) => {
      if (!Array.isArray(data)) return []
@@ -156,42 +203,22 @@ export const formatNormsInitialRows = (data = [], unitsList = []) => {
                matchedUnit?.id ||
                ''
 
+          const matId = item?.materialId || item?.id || ''
+          const uniqueRowId = `row_${matId}_${resolvedUnitId}_${index}_${Date.now()}`
+
           return {
                ...item,
-               id: item?.id || item?.materialId || index + 1,
-               materialId: item?.materialId || item?.id,
+               id: uniqueRowId,
+               originalMaterialId: matId,
+               materialId: matId,
                unit: uName,
                unitId: resolvedUnitId,
                profitId: resolvedUnitId,
-               displayName: item.displayName || item.DisplayName || '',
+               displayName: item.displayName || item.DisplayName || item.materialCode || '',
                uom: item.uom || item.UOM || '',
                UOM: item.UOM || item.uom || '',
                remarks: item.remarks || '',
                isEditable: true,
           }
      })
-}
-
-/**
- * Extracts unique unit identifiers to pre-fetch material dropdown options.
- *
- * @param {Array} rows - Current formatted grid rows
- * @returns {Array} Array of unique unit objects ({ profitId, unitName })
- */
-export const getUniqueUnitsToFetch = (rows = []) => {
-     const unitsToFetch = rows
-          .map((r) => ({
-               profitId: r.unitId || r.profitId || r.profitCenter_FK_Id || r.profitCenterFkId,
-               unitName: r.unit,
-          }))
-          .filter((u) => u.profitId || u.unitName)
-
-     return unitsToFetch.filter(
-          (item, index, self) =>
-               index === self.findIndex(
-                    (t) =>
-                         (t.profitId && t.profitId === item.profitId) ||
-                         (t.unitName && t.unitName === item.unitName),
-               ),
-     )
 }

@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,6 +80,12 @@ public class PriceDifferentialServiceImpl implements PriceDifferentialService{
 	
 	@Autowired
 	private PriceDifferentialTransactionRepository priceDifferentialTransactionRepository;
+
+	@Autowired
+	private VerticalsRepository verticalRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Override
 	public AOPMessageVM getPriceDifferential(String plantId, String year) {
@@ -263,6 +270,13 @@ public class PriceDifferentialServiceImpl implements PriceDifferentialService{
 	public AOPMessageVM savePriceDifferentialTransaction(String year, String plantFKId,
 			List<PriceDifferentialTransactionDTO> priceDifferentialTransactionDTOs) {
 		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean peNmdLldpe1 = vertical.getName().equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("NMD") && plant.getName().equalsIgnoreCase("Lldpe1");
+			boolean peNmdLldpe2 = vertical.getName().equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("NMD") && plant.getName().equalsIgnoreCase("Lldpe2");
+
 			List<PriceDifferentialTransactionDTO> failedList = new ArrayList<>();
 			UUID plantId = UUID.fromString(plantFKId);
 
@@ -322,6 +336,11 @@ public class PriceDifferentialServiceImpl implements PriceDifferentialService{
 				priceDifferentialTransactionRepository.save(priceDifferentialTransaction);
 			}
 			
+			if(peNmdLldpe1 || peNmdLldpe2) { 
+				String procedureName = vertical.getName()+"_"+site.getName()+"_UpdateQualityPrice";
+				executeDynamicSP(plantId.toString(), year, procedureName);
+			}
+
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
 			aopMessageVM.setData(failedList);
@@ -330,6 +349,19 @@ public class PriceDifferentialServiceImpl implements PriceDifferentialService{
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
+
+	public Integer executeDynamicSP( String plantId, String aopYear, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
 	}
 

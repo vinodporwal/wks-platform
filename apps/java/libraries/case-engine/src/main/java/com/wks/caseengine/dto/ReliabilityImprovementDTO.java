@@ -18,7 +18,7 @@ public class ReliabilityImprovementDTO {
     private UUID id;
     private String initiativeDescription;
     private Double cost;
-    private Double outcome;
+    private String outcome;
     private String recommendation;
     private Date targetDate;
     private String remark;

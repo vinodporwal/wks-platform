@@ -80,14 +80,14 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
             List<CPPNormsResponseDTO> allResults = new ArrayList<>();
 
-            // ── Step A: Pre-calculate Fixed-type norms (NormType=6) ────────────────────
+            // -- Step A: Pre-calculate Fixed-type norms (NormType=6) --------------------
             // When date range is provided, run CPP_GetFixedCalculatedUtilityNorms
             // which deletes stale rows in CPP_utilitiesCalculatednorms for these
             // plants and recalculates fresh values from consumption/production data.
             // CPP_JMD_GetCPPNorms (Step B) will then LEFT JOIN that table to
             // populate calculatedNorms for NormType=6 rows.
             if (fromDate != null && !fromDate.isEmpty() && toDate != null && !toDate.isEmpty()) {
-                log.info("Date range provided — pre-calculating fixed utility norms for JMD plants: {}", plantIdsStr);
+                log.info("Date range provided � pre-calculating fixed utility norms for JMD plants: {}", plantIdsStr);
                 try {
                     callFixedUtilityCalculation(plantIdsStr, financialYear, fromDate, toDate);
                     log.info("Fixed utility norm pre-calculation completed for financialYear={}", financialYear);
@@ -96,10 +96,10 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
                             calcEx.getMessage());
                 }
             } else {
-                log.info("Date range not provided — using existing values from CPP_utilitiesCalculatednorms for Fixed-type norms");
+                log.info("Date range not provided � using existing values from CPP_utilitiesCalculatednorms for Fixed-type norms");
             }
 
-            // ── Step B: Fetch CPP norms via main SP ────────────────────────────────────
+            // -- Step B: Fetch CPP norms via main SP ------------------------------------
             // CPP_JMD_GetCPPNorms handles Formula-type (NormType=9) calculation
             // internally and LEFT JOINs CPP_utilitiesCalculatednorms for Fixed-type.
             try {

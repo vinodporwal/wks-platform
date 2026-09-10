@@ -40,6 +40,7 @@ export default function PlantContribution() {
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
   const categories = () => [
     {
       key: 'ProductMixAndProduction',
@@ -98,11 +99,13 @@ export default function PlantContribution() {
     ? '{0:0.0000}'
     : lowerVertName === 'meg' || lowerVertName === 'elastomer'
       ? '{0:0.00000}'
-      : lowerVertName === 'vcm'
-        ? '{0:0.000}'
-        : lowerVertName === 'pta'
-          ? '{0:0.00000}'
-          : '{0:0.00}'
+      : lowerVertName === 'vcm' && lowerSiteName === 'hmd'
+        ? '{0:0.0000000}'
+        : lowerVertName === 'vcm'
+          ? '{0:0.000}'
+          : lowerVertName === 'pta'
+            ? '{0:0.00000}'
+            : '{0:0.00}'
 
   const loadAll = async () => {
     setLoading(true)

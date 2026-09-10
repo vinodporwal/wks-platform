@@ -102,17 +102,17 @@ const ShutdownConsumption = () => {
       minWidth: 120,
     },
     {
+      field: 'sapCode',
+      title: 'SAP MAT Code',
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'productName',
       title: 'Particulars',
       editable: false,
       minWidth: 200,
-    },
-    {
-      field: 'sapCode',
-      title: 'SAP Code',
-      minWidth: 120,
-      type: 'text',
-      editable: false,
     },
     {
       field: 'uom',
@@ -492,6 +492,13 @@ const ShutdownConsumption = () => {
       snackbarData={snackbarData}
       setSnackbarData={setSnackbarData}
       groupBy={['normParameterTypeDisplayName']}
+      customHeight={70}
+      paginationConfig={{
+        threshold: 100,
+        buttonCount: 5,
+        pageSizes: [10, 20, 50, 100],
+        defaultPageSize: 100,
+      }}
     />
   )
 }

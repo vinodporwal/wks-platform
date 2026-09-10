@@ -10,6 +10,7 @@ import ValueFormatterPhaseTwo, {
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const SteadyStateConsumptionPCG = () => {
   const keycloak = useSession()
@@ -37,6 +38,10 @@ const SteadyStateConsumptionPCG = () => {
   const valueFormat = customValueFormatterPhaseTwo(DECIMALS)
   const monthMinWidth = IS_GASIFIER ? 160 : 120
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const EXCEL_EXPORT_TITLE = generateExcelName(
+    dataGridStore,
+    'Steady State Consumption',
+  )
 
   const columns = [
     {
@@ -48,6 +53,13 @@ const SteadyStateConsumptionPCG = () => {
       editable: false,
       locked: true,
       hidden: true,
+    },
+    {
+      field: 'sapCode',
+      title: 'SAP Mat Code',
+      minWidth: 200,
+      type: 'text',
+      editable: false,
     },
     {
       field: 'productName',
@@ -372,7 +384,7 @@ const SteadyStateConsumptionPCG = () => {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `Steady_State_Consumption_${AOP_YEAR}.xlsx`
+      link.download = EXCEL_EXPORT_TITLE
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

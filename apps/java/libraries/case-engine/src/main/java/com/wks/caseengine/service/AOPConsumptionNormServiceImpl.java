@@ -89,6 +89,10 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		Boolean elastomer = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 	    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 		boolean elastomerhmdsbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+		boolean staple = vertical.getName().equalsIgnoreCase("STAPLE");
+		boolean filament = vertical.getName().equalsIgnoreCase("Filament");
+		boolean chemical = vertical.getName().equalsIgnoreCase("Chemical");
+		boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("pmd") && plant.getName().equalsIgnoreCase("pia");
 		Boolean withGrade=false;
 		if(elastomerhmdsbr || pvc) {
 			withGrade=true;
@@ -171,17 +175,22 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					dto.setUOM(row[22] != null ? row[22].toString() : null);
 					dto.setIsEditable(row[23] != null ? Boolean.valueOf(row[23].toString()) : null);
 					dto.setProductName(row[24] != null ? row[24].toString() : null);
-					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
+					if(staple || filament){
 					dto.setSapCode(row[25] != null ? row[25].toString() : "");
 					}
 					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						dto.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : null);
 						
 					}
-					if(vertical.getName().equalsIgnoreCase("Chemical")) {
+					if(chemical || ptapmdpia) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
-					
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")) {
+						dto.setSapCode(row[25] != null ? row[25].toString() : "");
+					}
+					if(vertical.getName().equalsIgnoreCase("PCG")) {
+						dto.setSapCode(row[26] != null ? row[26].toString() : "");
+					}
 				}
 
 				// apply grade filter for elastomerhmdsbr
@@ -593,6 +602,19 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	@Override
 	public byte[] exportOverallConsumptionWithYTD(String year, UUID plantFKId, boolean isAfterSave, List<AOPConsumptionNormDTO> dtoList) {
 		try {
+
+			Plants plants = plantsRepository.findById(plantFKId).get();
+			Sites sites = siteRepository.findById(plants.getSiteFkId()).get();
+			Verticals verticals = verticalRepository.findById(plants.getVerticalFKId()).get();
+
+			boolean filament = verticals.getName().equals("Filament");
+			boolean staple = verticals.getName().equals("Staple");
+		
+			if(filament || staple) {
+				// seperate method to include sap code column
+				return exportOverallConsumptionWithYTDAndSAPCode(year, plantFKId, isAfterSave, dtoList);
+			}
+
 			Workbook workbook = new XSSFWorkbook();
 			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
 			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
@@ -715,7 +737,136 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		}
 		return null;
 	}
-	
+
+	// ref: exportOverallConsumptionWithYTD | new method to include sap code column
+	@Override
+	public byte[] exportOverallConsumptionWithYTDAndSAPCode(String year, UUID plantFKId, boolean isAfterSave, List<AOPConsumptionNormDTO> dtoList) {
+		try {
+			Workbook workbook = new XSSFWorkbook();
+			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+
+			String sheetName = Utility.sanitizeSheetName("Overall Consumption");
+
+			AOPMessageVM aopMessageVM = null;
+			List<AOPConsumptionNormDTO> currentDtoList = new ArrayList<>();
+			List<Boolean> isEditable = new ArrayList<>();
+			if (!isAfterSave) {
+				aopMessageVM = getAOPConsumptionNormWithYTD(plantFKId.toString(), year, null);
+			}
+			if (aopMessageVM != null && aopMessageVM.getData() != null) {
+				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+				currentDtoList = (List<AOPConsumptionNormDTO>) responseMap.get("aopConsumptionNormDTOList");
+			} else if (isAfterSave) {
+				currentDtoList = dtoList.stream().collect(Collectors.toList());
+			}
+
+			Sheet sheet = workbook.createSheet(sheetName);
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+			for (AOPConsumptionNormDTO dto : currentDtoList) {
+				List<Object> list = new ArrayList<>();
+				list.add(dto.getNormParameterTypeDisplayName());
+				list.add(dto.getSapCode());
+				list.add(dto.getProductName());
+				list.add(dto.getUOM());
+				list.add(dto.getApril());
+				list.add(dto.getMay());
+				list.add(dto.getJune());
+				list.add(dto.getJuly());
+				list.add(dto.getAug());
+				list.add(dto.getSep());
+				list.add(dto.getOct());
+				list.add(dto.getNov());
+				list.add(dto.getDec());
+				list.add(dto.getJan());
+				list.add(dto.getFeb());
+				list.add(dto.getMarch());
+				list.add(dto.getYtd());
+				list.add(dto.getId());
+				isEditable.add(dto.getIsEditable());
+
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Type");
+			innerHeaders.add("SAP MAT Code");
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			List<String> monthsList = Utility.getAcademicYearMonths(year);
+			innerHeaders.addAll(monthsList);
+			innerHeaders.add("YTD");
+			innerHeaders.add("Id");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+
+			for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+				List<Object> rowData = rows.get(rowIndex);
+				boolean isRowEditable = true;
+
+				if (rowIndex < isEditable.size() && isEditable.get(rowIndex) != null) {
+					isRowEditable = isEditable.get(rowIndex);
+				}
+
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+
+					if (isRowEditable) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedStyle);
+					}
+				}
+			}
+			// SAP MAT Code shifts Id to index 17 — hide the Id column
+			sheet.setColumnHidden(17, true);
+
+			try {
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public List<Map<String, String>> extractGradeInfo(AOPMessageVM grades) {
 	    List<Map<String, String>> gradeInfoList = new ArrayList<>();
 

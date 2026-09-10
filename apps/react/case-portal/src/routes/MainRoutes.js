@@ -140,6 +140,7 @@ import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/
 import GradeWiseSteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/grade-wise-steady-state-consumption/index'
 import ConfigurationOtherCostPolyester from 'components/aop-phase-two/polyester/configuration-other-cost/index'
 import ProductGradeSelection from 'components/aop-phase-two/polyester/product-grade-selection/index'
+import ProposedSteadyStateConsumption from 'components/aop-phase-two/polyester/proposed-steady-state-consumption/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -198,8 +199,11 @@ import MaterialGroupedSelectionPolyester from 'components/aop-phase-two/polyeste
 import OtherDocumentUpload from 'components/aop-phase-two/refineryAopBudget/OtherDocumentUpload/index'
 import Outputs from 'components/aop-phase-two/cpp/Outputs'
 import JwBudgetScreen from 'components/aop-phase-two/refineryAopBudget/JwBudget/index'
+import JwBudgetScreenDTA from 'components/aop-phase-two/refineryAopBudget/JwBudgetDTA/index'
 import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
+import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
+import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index'
 
 // Naphthasplitter Ended
 
@@ -423,6 +427,14 @@ export const MainRoutes = (
             ),
           },
           {
+            path: 'jw-budget-source-dta',
+            element: (
+              <PrivateRoute routeId='jw-budget-source-dta'>
+                <JwBudgetScreenDTA />
+              </PrivateRoute>
+            ),
+          },
+          {
             path: 'throughput-norms',
             element: (
               <PrivateRoute routeId='throughput-norms'>
@@ -430,9 +442,22 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
-
-
+          {
+            path: 'jw-unit',
+            element: (
+              <PrivateRoute routeId='jw-unit'>
+                <JwUnitScreen />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'fixed-bed-and-lab-cost',
+            element: (
+              <PrivateRoute routeId='fixed-bed-and-lab-cost'>
+                <FixedBedAndLabCostScreen />
+              </PrivateRoute>
+            ),
+          },
         ],
         // REFINERY AOP BUDGET Ended],
       },
@@ -1096,6 +1121,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'proposed-steady-state-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='proposed-steady-state-consumption-polyester'>
+                <ProposedSteadyStateConsumption />
+              </PrivateRoute>
+            ),
+          },
 
           //Vertical STAPLE (Polyester) Ended ****************************
 
@@ -1222,6 +1255,7 @@ export const MainRoutes = (
             ),
           },
           {
+
             path: 'shutdown-plan-refinery',
             element: (
               <PrivateRoute routeId='shutdown-plan-refinery'>

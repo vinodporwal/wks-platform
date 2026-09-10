@@ -55,6 +55,14 @@ const MONTH_FIELDS = [
 
 const SUB_COLUMN_FIELDS = [
   {
+    field: 'CategoryName',
+    title: 'Fuel Category',
+    type: 'select',
+    widthT: 150,
+    minWidth: 150,
+    showClearOption: true,
+  },
+  {
     field: 'FuelName',
     title: 'Compatible Fuel',
     type: 'select',
@@ -62,6 +70,22 @@ const SUB_COLUMN_FIELDS = [
     minWidth: 180,
     showClearOption: true,
   },
+  {
+    field: 'FuelCode',
+    title: 'Fuel Code',
+    type: 'text',
+    editable: false,
+    widthT: 120,
+    minWidth: 120,
+  },
+  // {
+  //   field: 'Uom',
+  //   title: 'UOM',
+  //   type: 'text',
+  //   editable: false,
+  //   widthT: 100,
+  //   minWidth: 100,
+  // },
   {
     field: 'Priority',
     title: 'Priority',
@@ -109,6 +133,22 @@ const PlantFuelAvailability = ({
     ],
     [plantObject],
   )
+
+  // Category dropdown options derived from the fuel master data. Each fuel
+  // carries its categoryFkId + categoryDisplayName, so we collect the unique
+  // categories that have at least one fuel mapped to them.
+  const categoryOptions = useMemo(() => {
+    const map = new Map()
+    fuelOptions.forEach((f) => {
+      if (f.categoryFkId && !map.has(f.categoryFkId)) {
+        map.set(f.categoryFkId, {
+          value: f.categoryFkId,
+          label: f.categoryDisplayName || f.categoryName || f.categoryFkId,
+        })
+      }
+    })
+    return Array.from(map.values())
+  }, [fuelOptions])
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -159,6 +199,13 @@ const PlantFuelAvailability = ({
           fuelId: fuel.id,
           value: fuel.id,
           label: fuel.fuelName || fuel.fuelDisplayName || fuel.id,
+          fuelName: fuel.fuelName || '',
+          fuelDisplayName: fuel.fuelDisplayName || '',
+          fuelCode: fuel.fuelCode || '',
+          uom: fuel.uom || '',
+          categoryFkId: fuel.categoryFkId || '',
+          categoryName: fuel.categoryName || '',
+          categoryDisplayName: fuel.categoryDisplayName || '',
         }))
         setFuelOptions(formattedOptions)
       } catch (error) {
@@ -170,6 +217,50 @@ const PlantFuelAvailability = ({
     }
   }, [keycloak])
 
+  // Enrich existing rows (loaded from backend) with per-month category /
+  // fuel code / UOM derived from the fuel master. The monthly API response
+  // only carries fuelFkId + fuelName per month, so we look up the rest from
+  // fuelOptions. Only fills fields that are not already set (so user edits
+  // are preserved). Runs whenever fuelOptions become available.
+  useEffect(() => {
+    if (!fuelOptions?.length) return
+    setRows((prev) => {
+      if (!prev?.length) return prev
+      let changed = false
+      const next = prev.map((row) => {
+        const enriched = { ...row }
+        MONTH_FIELDS.forEach((mon) => {
+          const fuelFkId = row[`${mon}FuelFkId`]
+          if (!fuelFkId) return
+          const fuel = fuelOptions.find(
+            (f) => String(f.value) === String(fuelFkId),
+          )
+          if (!fuel) return
+          if (!enriched[`${mon}CategoryFkId`] && fuel.categoryFkId) {
+            enriched[`${mon}CategoryFkId`] = fuel.categoryFkId
+            changed = true
+          }
+          const categoryDisplay =
+            fuel.categoryDisplayName || fuel.categoryName || ''
+          if (!enriched[`${mon}CategoryName`] && categoryDisplay) {
+            enriched[`${mon}CategoryName`] = categoryDisplay
+            changed = true
+          }
+          if (!enriched[`${mon}FuelCode`] && fuel.fuelCode) {
+            enriched[`${mon}FuelCode`] = fuel.fuelCode
+            changed = true
+          }
+          if (!enriched[`${mon}Uom`] && fuel.uom) {
+            enriched[`${mon}Uom`] = fuel.uom
+            changed = true
+          }
+        })
+        return enriched
+      })
+      return changed ? next : prev
+    })
+  }, [fuelOptions, rows])
+
   const MONTH_COLUMNS = useMemo(
     () =>
       MONTH_FIELDS.map((mon) => ({
@@ -180,14 +271,28 @@ const PlantFuelAvailability = ({
             title: sub.title,
             widthT: sub.widthT,
             minWidth: sub.minWidth,
-            editable: true,
+            editable: sub.editable !== false,
           }
           if (sub.type === 'select') {
-            if (sub.field === 'FuelName') {
+            if (sub.field === 'CategoryName') {
               return {
                 ...baseConfig,
                 type: 'select',
-                options: fuelOptions,
+                options: categoryOptions,
+                displayMode: 'label',
+                showClearOption: true,
+                returnFullObject: true,
+              }
+            } else if (sub.field === 'FuelName') {
+              return {
+                ...baseConfig,
+                type: 'select',
+                dynamicOptions: true,
+                getOptions: (dataItem) => {
+                  const catId = dataItem?.[`${mon}CategoryFkId`]
+                  if (!catId) return []
+                  return fuelOptions.filter((f) => f.categoryFkId === catId)
+                },
                 displayMode: 'label',
                 showClearOption: true,
                 returnFullObject: true,
@@ -210,7 +315,7 @@ const PlantFuelAvailability = ({
           }
         }),
       })),
-    [headerMap, fuelOptions, customFormat, valueFormat],
+    [headerMap, fuelOptions, categoryOptions, customFormat, valueFormat],
   )
 
   const ActionCell = ({ dataItem, tdProps }) => (
@@ -336,21 +441,26 @@ const PlantFuelAvailability = ({
         const priorityField = `${mon}Priority`
         const quantityField = `${mon}Quantity`
         const fuelField = `${mon}FuelFkId`
+        const categoryField = `${mon}CategoryFkId`
 
+        const hasCategory = hasValue(row[categoryField])
         const hasFuel = hasValue(row[fuelField])
         const hasPriority = hasValue(row[priorityField])
         const hasQty = hasValue(row[quantityField])
 
-        // For any month: all 3 fields required or none of them
-        if (hasFuel || hasPriority || hasQty) {
+        // For any month: all 4 fields required or none of them
+        if (hasCategory || hasFuel || hasPriority || hasQty) {
+          if (!hasCategory) {
+            return `Row "${row.plantName}": Select a Fuel Category for ${mon.toUpperCase()} — all fields (Category, Fuel, Priority, QTY MMBTU) are required or none`
+          }
           if (!hasFuel) {
-            return `Row "${row.plantName}": Select a Fuel for ${mon.toUpperCase()} — all 3 fields (Fuel, Priority, QTY MMBTU) are required or none`
+            return `Row "${row.plantName}": Select a Fuel for ${mon.toUpperCase()} — all fields (Category, Fuel, Priority, QTY MMBTU) are required or none`
           }
           if (!hasPriority) {
-            return `Row "${row.plantName}": Select a Priority for ${mon.toUpperCase()} — all 3 fields (Fuel, Priority, QTY MMBTU) are required or none`
+            return `Row "${row.plantName}": Select a Priority for ${mon.toUpperCase()} — all fields (Category, Fuel, Priority, QTY MMBTU) are required or none`
           }
           if (!hasQty) {
-            return `Row "${row.plantName}": Enter QTY MMBTU for ${mon.toUpperCase()} — all 3 fields (Fuel, Priority, QTY MMBTU) are required or none`
+            return `Row "${row.plantName}": Enter QTY MMBTU for ${mon.toUpperCase()} — all fields (Category, Fuel, Priority, QTY MMBTU) are required or none`
           }
         } else {
           continue
@@ -467,6 +577,7 @@ const PlantFuelAvailability = ({
 
     // Build list of all monthly fields to check for remarks validation
     const fieldsToCheck = MONTH_FIELDS.flatMap((mon) => [
+      `${mon}CategoryFkId`,
       `${mon}FuelFkId`,
       `${mon}Priority`,
       `${mon}Quantity`,
@@ -696,15 +807,51 @@ const PlantFuelAvailability = ({
       // If field is {mon}FuelName, value is the full option object from SelectCellEditor
       // (returnFullObject: true on column config)
       const updates = { [field]: value }
+
+      // Fuel Category selection (per-month): {mon}CategoryName
+      // value is the full option object { value, label } (returnFullObject: true)
+      if (field.endsWith('CategoryName')) {
+        const catFkField = field.replace('CategoryName', 'CategoryFkId')
+        const monPrefix = field.slice(0, -'CategoryName'.length)
+        if (value && typeof value === 'object' && value.value) {
+          updates[catFkField] = value.value
+          updates[field] = value.label
+        } else {
+          updates[catFkField] = null
+          updates[field] = ''
+        }
+        // Reset fuel fields when category changes
+        updates[`${monPrefix}FuelName`] = ''
+        updates[`${monPrefix}FuelFkId`] = null
+        updates[`${monPrefix}FuelCode`] = ''
+        updates[`${monPrefix}Uom`] = ''
+      }
+
+      // Fuel selection (per-month): {mon}FuelName
+      // value is the full option object { value, label } (returnFullObject: true)
       if (field.endsWith('FuelName')) {
         const fkField = field.replace('FuelName', 'FuelFkId')
-        if (value && typeof value === 'object') {
+        const monPrefix = field.slice(0, -'FuelName'.length)
+        if (value && typeof value === 'object' && value.value) {
           updates[fkField] = value.value // UUID for saving
           updates[field] = value.label // name for display/filter
+          // Auto-populate fuel code, UOM, and category from the selected fuel
+          const fuel = fuelOptions.find((f) => f.value === value.value)
+          if (fuel) {
+            updates[`${monPrefix}FuelCode`] = fuel.fuelCode || ''
+            updates[`${monPrefix}Uom`] = fuel.uom || ''
+            if (fuel.categoryFkId) {
+              updates[`${monPrefix}CategoryFkId`] = fuel.categoryFkId
+              updates[`${monPrefix}CategoryName`] =
+                fuel.categoryDisplayName || fuel.categoryName || ''
+            }
+          }
         } else {
           // Cleared or non-object value
           updates[fkField] = null
-          updates[field] = value || ''
+          updates[field] = ''
+          updates[`${monPrefix}FuelCode`] = ''
+          updates[`${monPrefix}Uom`] = ''
         }
       }
 
@@ -723,7 +870,7 @@ const PlantFuelAvailability = ({
         },
       }))
     },
-    [rows],
+    [rows, fuelOptions],
   )
 
   return (
