@@ -114,6 +114,7 @@ const SlowdownNorms = () => {
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_AROMATICS_PMD = lowerVertName === 'aromatics' && siteName === 'pmd'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_EDC_PLANT = lowerVertName === 'vcm' && plantName === 'edc'
@@ -449,7 +450,7 @@ const SlowdownNorms = () => {
     setLoading(true)
     try {
       var response = []
-      if (lowerVertName == 'pp') {
+      if (lowerVertName == 'pp' || IS_AROMATICS_PMD) {
         response = await DataService.handleCalculateSlowdownNormsPP(
           PLANT_ID,
           AOP_YEAR,
@@ -683,14 +684,14 @@ const SlowdownNorms = () => {
       saveBtn: IS_PE_PP ? false : true,
       showCalculate:
         lowerVertName == 'meg' ||
-        lowerVertName == 'elastomer' ||
-        lowerVertName == 'aromatics' ||
-        lowerVertName == 'pta' ||
-        IS_CHEMICAL ||
-        IS_PE_PP ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_EDC_PLANT ||
-        (IS_HMD_SITE && !IS_VCM_HMD)
+          lowerVertName == 'elastomer' ||
+          (lowerVertName == 'aromatics' && siteName !== 'pmd') ||
+          lowerVertName == 'pta' ||
+          IS_CHEMICAL ||
+          IS_PE_PP ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_EDC_PLANT ||
+          (IS_HMD_SITE && !IS_VCM_HMD)
           ? false
           : true,
 
@@ -698,23 +699,23 @@ const SlowdownNorms = () => {
       dropdownLabel: 'Grade',
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-        lowerVertName === 'vcm' ||
-        IS_PTA ||
-        IS_CHEMICAL ||
-        lowerVertName === 'aromatics' ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR
+          lowerVertName === 'vcm' ||
+          IS_PTA ||
+          IS_CHEMICAL ||
+          lowerVertName === 'aromatics' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
       uploadExcelBtn: true,
       downloadExcelBtn:
         IS_PE_PP ||
-        lowerVertName === 'vcm' ||
-        IS_PTA ||
-        IS_CHEMICAL ||
-        lowerVertName === 'aromatics' ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_ELASTOMER_HMD_SBR
+          lowerVertName === 'vcm' ||
+          IS_PTA ||
+          IS_CHEMICAL ||
+          lowerVertName === 'aromatics' ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_ELASTOMER_HMD_SBR
           ? true
           : false,
       showG: IS_PE_PP || IS_ELASTOMER_JMD_HIIR ? true : false,
