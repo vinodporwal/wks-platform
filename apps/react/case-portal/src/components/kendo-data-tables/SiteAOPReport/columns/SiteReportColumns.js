@@ -254,6 +254,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       widthT: 200,
       minWidth: 200,
       editable: true,
+      type: 'number',
     },
     {
       field: 'outcome',

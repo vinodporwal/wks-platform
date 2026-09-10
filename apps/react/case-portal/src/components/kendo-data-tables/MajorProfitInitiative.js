@@ -38,7 +38,10 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const ExcelExportTitle = generateExcelNameWithoutExt(dataGridStore, tabDisplayName || 'Major Profit and Operability Improvement')
+  const ExcelExportTitle = generateExcelNameWithoutExt(
+    dataGridStore,
+    tabDisplayName || 'Major Profit and Operability Improvement',
+  )
 
   const columns = useMemo(() => {
     const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorProfitInitiative
@@ -58,22 +61,22 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
       const data = res?.data?.plants || res?.data?.Data || res?.data || []
       const formatted = Array.isArray(data)
         ? data.map((p) => ({
-          id: p.id || p.Id,
-          name:
-            p.plantDisplayName ||
-            p.name ||
-            p.displayName ||
-            p.plantName ||
-            '',
-          value:
-            p.plantDisplayName ||
-            p.name ||
-            p.displayName ||
-            p.plantName ||
-            '',
-          plantName: p.plantName || p.name || '',
-          plantDisplayName: p.plantDisplayName || p.displayName || '',
-        }))
+            id: p.id || p.Id,
+            name:
+              p.plantDisplayName ||
+              p.name ||
+              p.displayName ||
+              p.plantName ||
+              '',
+            value:
+              p.plantDisplayName ||
+              p.name ||
+              p.displayName ||
+              p.plantName ||
+              '',
+            plantName: p.plantName || p.name || '',
+            plantDisplayName: p.plantDisplayName || p.displayName || '',
+          }))
         : []
       setPlantOptions(formatted)
     } catch (err) {
@@ -93,15 +96,13 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
       )
 
       if (res?.code === 200) {
-        const mapped = res?.data?.map(
-          (item, index) => ({
-            ...item,
-            id: item.id || index + 1,
-            sno: index + 1,
-            idFromApi: item.id || null,
-            responsibility: item?.remark || '',
-          }),
-        )
+        const mapped = res?.data?.map((item, index) => ({
+          ...item,
+          id: item.id || index + 1,
+          sno: index + 1,
+          idFromApi: item.id || null,
+          responsibility: item?.remark || '',
+        }))
         setRows(mapped)
       } else {
         setRows([])
@@ -132,13 +133,15 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
         return
       }
 
-      const requiredFields = ['initiativeDescription', 'responsibility']
-
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
+      const missing = data.some(
+        (item) => !item.plant || !item.initiativeDescription,
+      )
+      if (missing) {
         setSnackbarOpen(true)
-        setSnackbarData({ message: validationMessage, severity: 'error' })
-        setLoading(false)
+        setSnackbarData({
+          message: 'Plant and Initiative Description are mandatory!',
+          severity: 'error',
+        })
         return
       }
       const payload = data.map((item) => {
@@ -172,7 +175,8 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
             null,
           plantId: matchedPlantId || null,
           plantName: matchedPlant?.plantName || item?.plantName || '',
-          plantDisplayName: matchedPlant?.plantDisplayName || item?.plantDisplayName || '',
+          plantDisplayName:
+            matchedPlant?.plantDisplayName || item?.plantDisplayName || '',
           plant: matchedPlant?.name || item?.plant || '',
           initiativeDescription: item.initiativeDescription,
           category: item.category || '',
