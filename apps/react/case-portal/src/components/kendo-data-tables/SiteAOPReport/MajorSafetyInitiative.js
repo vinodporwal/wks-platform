@@ -187,16 +187,23 @@ export default function MajorSafetyInitiative({ permissions, tabDisplayName }) {
     setLoading(true)
     try {
       const payload = data.map((item) => {
-        let matchedPlantId = item.plantId
-        if (!matchedPlantId && item.plant && plantOptions.length > 0) {
+        let matchedPlantId = null
+        if (item.plant && plantOptions.length > 0) {
+          const plantSearch =
+            typeof item.plant === 'string' ? item.plant.trim().toLowerCase() : ''
           const matched = plantOptions.find(
             (p) =>
-              p.name?.toLowerCase() === item.plant?.toLowerCase() ||
-              p.plantName?.toLowerCase() === item.plant?.toLowerCase(),
+              p.name?.trim().toLowerCase() === plantSearch ||
+              p.plantName?.trim().toLowerCase() === plantSearch ||
+              p.plantDisplayName?.trim().toLowerCase() === plantSearch ||
+              p.value?.trim().toLowerCase() === plantSearch,
           )
           if (matched) {
             matchedPlantId = matched.id
           }
+        }
+        if (!matchedPlantId) {
+          matchedPlantId = item.plantId
         }
 
         return {
