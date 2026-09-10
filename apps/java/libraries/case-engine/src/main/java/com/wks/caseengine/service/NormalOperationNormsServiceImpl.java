@@ -3679,21 +3679,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                || (vertical.getName().equalsIgnoreCase("STAPLE") && gradeId != null && !gradeId.trim().isEmpty())
 	                || pvc) {
 	            data = readSteadyState(file.getInputStream(), plantFKId, year);
+	        }else if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")) {
+	        	data = readConfigurationsSAP(file.getInputStream(), plantFKId, year);
 	        } else {
 	            data = readConfigurations(file.getInputStream(), plantFKId, year);
 	        }
-
-	      
-
 	        boolean hasGradeData = data.stream()
 	                .anyMatch(d -> d.getGradeId() != null && !d.getGradeId().trim().isEmpty());
-
-	      
-
 	 
 	        List<ValidationErrorDTO> gradeValidationErrors =
 	                validateGradeNorms(data, plant, vertical, site, year);
-
 
 	        if (!gradeValidationErrors.isEmpty()) {
 	            System.out.println("[STOP] Grade validation failed on import -> save aborted.");
@@ -3703,7 +3698,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            aopMessageVM.setData(gradeValidationErrors);
 	            return aopMessageVM;
 	        }
-	      
 
 	        List<MCUNormsValueDTO> failedRecords = saveNormalOperationNormsData(data, plantFKId, year, gradeId, true);
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -3714,7 +3708,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    || (vertical.getName().equalsIgnoreCase("STAPLE") && gradeId != null && !gradeId.trim().isEmpty())
 	                    || pvc) {
 	                fileByteArray = exportSteadyStateNorms(year, plantFKId, true, failedRecords, mode);
-	            } else {
+	            }else if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")) {
+	            	fileByteArray = createExcelSAP(year, plantFKId, true, failedRecords, mode, gradeId);
+	            }else {
 	                fileByteArray = createExcel(year, plantFKId, true, failedRecords, mode, gradeId);
 	            }
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
