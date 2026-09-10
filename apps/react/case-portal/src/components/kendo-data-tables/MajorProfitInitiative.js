@@ -367,7 +367,6 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   const adjustedPermissions = getAdjustedPermissions(
     {
       allAction: true,
-      saveBtn: true,
       showTitleNameBusiness: true,
       titleName: tabDisplayName || 'Major Profit and Operability Improvement',
       adjustedPermissions: true,
