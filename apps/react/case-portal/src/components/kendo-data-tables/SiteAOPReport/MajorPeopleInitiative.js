@@ -218,6 +218,8 @@ export default function MajorPeopleInitiative({ permissions, tabDisplayName }) {
           initiativeDescription: item.initiativeDescription,
           expectedOutcome: item.expectedOutcome || item.outcome || '',
           targetDate: item.targetDate ? formatDate(item.targetDate) : null,
+          remarks: item.remarks || item.responsibility || '',
+          responsibility: item.responsibility || item.remarks || '',
           siteId: SITE_ID,
           aopYear: AOP_YEAR,
         }

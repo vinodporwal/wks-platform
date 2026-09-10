@@ -37,6 +37,9 @@ public class MajorPeopleInitiative {
     @Temporal(TemporalType.DATE)
     private Date targetDate;
 
+    @Column(name = "Remarks", columnDefinition = "VARCHAR(MAX)")
+    private String remarks;
+
     @Column(name = "SiteId")
     private UUID siteId;
 

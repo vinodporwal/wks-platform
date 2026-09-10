@@ -27,6 +27,8 @@ public class MajorPeopleInitiativeDTO {
     private String expectedOutcome;
     private String outcome;
     private Date targetDate;
+    private String remarks;
+    private String responsibility;
     private String siteId;
     private String siteFkId;
     private String aopYear;

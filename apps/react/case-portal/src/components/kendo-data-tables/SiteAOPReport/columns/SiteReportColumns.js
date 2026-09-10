@@ -256,6 +256,14 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       editable: true,
       type: 'date',
     },
+    {
+      field: 'responsibility',
+      title: 'Responsibility',
+      width: 200,
+      widthT: 200,
+      minWidth: 150,
+      editable: true,
+    },
   ],
   production: [
     { field: 'id', title: 'ID', editable: false, hidden: true },

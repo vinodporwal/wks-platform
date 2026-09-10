@@ -62,13 +62,15 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
                 dto.setExpectedOutcome(row.length > 6 && row[6] != null ? row[6].toString() : "");
                 dto.setOutcome(row.length > 6 && row[6] != null ? row[6].toString() : "");
                 dto.setTargetDate(row.length > 7 && row[7] != null ? parseDate(row[7]) : null);
-                dto.setSiteId(row.length > 8 && row[8] != null ? row[8].toString() : "");
-                dto.setSiteFkId(row.length > 8 && row[8] != null ? row[8].toString() : "");
-                dto.setAopYear(row.length > 9 && row[9] != null ? row[9].toString() : "");
-                dto.setModifiedBy(row.length > 10 && row[10] != null ? row[10].toString() : "");
-                dto.setUpdatedBy(row.length > 10 && row[10] != null ? row[10].toString() : "");
-                dto.setModifiedOn(row.length > 11 && row[11] != null ? parseDate(row[11]) : null);
-                dto.setUpdatedDateTime(row.length > 11 && row[11] != null ? parseDate(row[11]) : null);
+                dto.setRemarks(row.length > 8 && row[8] != null ? row[8].toString() : "");
+                dto.setResponsibility(row.length > 8 && row[8] != null ? row[8].toString() : "");
+                dto.setSiteId(row.length > 9 && row[9] != null ? row[9].toString() : "");
+                dto.setSiteFkId(row.length > 9 && row[9] != null ? row[9].toString() : "");
+                dto.setAopYear(row.length > 10 && row[10] != null ? row[10].toString() : "");
+                dto.setModifiedBy(row.length > 11 && row[11] != null ? row[11].toString() : "");
+                dto.setUpdatedBy(row.length > 11 && row[11] != null ? row[11].toString() : "");
+                dto.setModifiedOn(row.length > 12 && row[12] != null ? parseDate(row[12]) : null);
+                dto.setUpdatedDateTime(row.length > 12 && row[12] != null ? parseDate(row[12]) : null);
                 list.add(dto);
             }
 
@@ -119,6 +121,8 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
                 String outcomeVal = dto.getExpectedOutcome() != null ? dto.getExpectedOutcome() : dto.getOutcome();
                 entity.setExpectedOutcome(outcomeVal);
                 entity.setTargetDate(dto.getTargetDate());
+                String remarksVal = dto.getRemarks() != null ? dto.getRemarks() : dto.getResponsibility();
+                entity.setRemarks(remarksVal);
                 if (dto.getSiteId() != null && !dto.getSiteId().isBlank()) {
                     entity.setSiteId(UUID.fromString(dto.getSiteId().trim()));
                 } else if (dto.getSiteFkId() != null && !dto.getSiteFkId().isBlank()) {
@@ -244,6 +248,7 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
             headers.add("Initiative Description");
             headers.add("Expected Outcome");
             headers.add("Target Date");
+            headers.add("Responsibility");
             headers.add("Id");
             headers.add("PlantId");
             if (isAfterSave) {
@@ -293,33 +298,41 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
                 }
                 c3.setCellStyle(dateStyle);
 
-                // Col 4: Id (Hidden)
+                // Col 4: Responsibility (Remarks)
                 org.apache.poi.ss.usermodel.Cell c4 = row.createCell(4);
-                c4.setCellValue(dto.getId() != null ? dto.getId() : "");
+                String remarksVal = dto.getRemarks() != null && !dto.getRemarks().isBlank()
+                        ? dto.getRemarks()
+                        : (dto.getResponsibility() != null ? dto.getResponsibility() : "");
+                c4.setCellValue(remarksVal);
                 c4.setCellStyle(textStyle);
 
-                // Col 5: PlantId (Hidden)
+                // Col 5: Id (Hidden)
                 org.apache.poi.ss.usermodel.Cell c5 = row.createCell(5);
-                c5.setCellValue(dto.getPlantId() != null ? dto.getPlantId() : "");
+                c5.setCellValue(dto.getId() != null ? dto.getId() : "");
                 c5.setCellStyle(textStyle);
 
+                // Col 6: PlantId (Hidden)
+                org.apache.poi.ss.usermodel.Cell c6 = row.createCell(6);
+                c6.setCellValue(dto.getPlantId() != null ? dto.getPlantId() : "");
+                c6.setCellStyle(textStyle);
+
                 if (isAfterSave) {
-                    org.apache.poi.ss.usermodel.Cell statusCell = row.createCell(6);
+                    org.apache.poi.ss.usermodel.Cell statusCell = row.createCell(7);
                     String status = dto.getSaveStatus() != null ? dto.getSaveStatus() : "";
                     statusCell.setCellValue(status);
                     statusCell.setCellStyle("Failed".equalsIgnoreCase(status) ? statusFailedStyle : textStyle);
 
-                    org.apache.poi.ss.usermodel.Cell errCell = row.createCell(7);
+                    org.apache.poi.ss.usermodel.Cell errCell = row.createCell(8);
                     errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
                     errCell.setCellStyle(textStyle);
                 }
             }
 
-            sheet.setColumnHidden(4, true); // Hide Id
-            sheet.setColumnHidden(5, true); // Hide PlantId
+            sheet.setColumnHidden(5, true); // Hide Id
+            sheet.setColumnHidden(6, true); // Hide PlantId
 
             for (int col = 0; col < headers.size(); col++) {
-                if (col != 4 && col != 5) {
+                if (col != 5 && col != 6) {
                     sheet.autoSizeColumn(col);
                     int currentWidth = sheet.getColumnWidth(col);
                     sheet.setColumnWidth(col, Math.max(currentWidth + 1200, 5000));
@@ -395,12 +408,13 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
                     String descriptionRaw = getStringCellValue(row.getCell(1));
                     String outcomeRaw = getStringCellValue(row.getCell(2));
                     Date targetDateRaw = parseDateFromCell(row.getCell(3));
-                    String idRaw = getStringCellValue(row.getCell(4));
-                    String plantIdRaw = getStringCellValue(row.getCell(5));
+                    String remarksRaw = getStringCellValue(row.getCell(4));
+                    String idRaw = getStringCellValue(row.getCell(5));
+                    String plantIdRaw = getStringCellValue(row.getCell(6));
 
                     // Skip empty rows
                     if ((plantRaw == null || plantRaw.isBlank()) && (descriptionRaw == null || descriptionRaw.isBlank())
-                            && (outcomeRaw == null || outcomeRaw.isBlank()) && targetDateRaw == null) {
+                            && (outcomeRaw == null || outcomeRaw.isBlank()) && targetDateRaw == null && (remarksRaw == null || remarksRaw.isBlank())) {
                         continue;
                     }
 
@@ -411,6 +425,8 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
                     dto.setExpectedOutcome(outcomeRaw);
                     dto.setOutcome(outcomeRaw);
                     dto.setTargetDate(targetDateRaw);
+                    dto.setRemarks(remarksRaw);
+                    dto.setResponsibility(remarksRaw);
                     dto.setSiteId(siteId);
                     dto.setAopYear(aopYear);
 
@@ -467,6 +483,7 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
                             entity.setInitiativeDescription(dto.getInitiativeDescription());
                             entity.setExpectedOutcome(dto.getExpectedOutcome());
                             entity.setTargetDate(dto.getTargetDate());
+                            entity.setRemarks(dto.getRemarks() != null ? dto.getRemarks() : dto.getResponsibility());
                             entity.setSiteId(UUID.fromString(siteId));
                             entity.setAopYear(aopYear);
                             String currentUser = Utility.getUserName();
