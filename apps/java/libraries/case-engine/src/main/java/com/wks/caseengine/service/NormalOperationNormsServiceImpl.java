@@ -3252,11 +3252,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				viewName = "vwScrn" + vertical.getName() + "NormalOperationNormsGrade";
 			}
 			else if (vertical.getName().equalsIgnoreCase("PCG")) { 
-				// [RIL.AOP.Refinery].[dbo].
 				 viewName = "[RIL.AOP.Refinery].[dbo].[vwScrn" + vertical.getName() + "NormalOperationNorms]";
 			}
-			// Validate or sanitize viewName before using it directly in the query to
-			// prevent SQL injection
 			String sql = null;
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
 					|| vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
@@ -3433,30 +3430,14 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	public AOPMessageVM importAllGradeExcel(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode) {
 		// TODO Auto-generated method stub
 		try {
-			Plants plant = plantsRepository.findById(plantFKId).get();
 			List<MCUNormsValueDTO> data = null;
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			
-			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-					|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty())) {
-			
-				data = readSteadyState(file.getInputStream(), plantFKId, year);
-			} else {
-				data = readConfigurations(file.getInputStream(), plantFKId, year);
-			}
-
+				data = readSAPGradeElastomer(file.getInputStream(), plantFKId, year);
 			List<MCUNormsValueDTO> failedRecords = saveNormalOperationNormsData(data, plantFKId, year, gradeId, true);
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = null;
-				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-						|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty())) {
-					fileByteArray = exportSteadyStateNorms(year, plantFKId, true, failedRecords, mode);
-				} else {
-					fileByteArray = createExcel(year, plantFKId, true, failedRecords, mode, gradeId);
-				}
+					fileByteArray = exportAllGradeSteadyStateNorms(year, plantFKId, true, failedRecords, mode);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
@@ -4133,6 +4114,59 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						// naturalGas.add(dto);
 						// }
 
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+
+					configList.add(dto);
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
+		return configList;
+	}
+
+	public List<MCUNormsValueDTO> readSAPGradeElastomer(InputStream inputStream, UUID plantFKId, String year) {
+		List<MCUNormsValueDTO> configList = new ArrayList<>();
+		Plants plant = plantsRepository.findById(plantFKId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				Iterator<Row> rowIterator = sheet.iterator();
+
+				if (rowIterator.hasNext())
+					rowIterator.next();
+
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					MCUNormsValueDTO dto = new MCUNormsValueDTO();
+
+					try {
+						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+						dto.setSapCode(getStringCellValue(row.getCell(1), dto));
+						dto.setProductName(getStringCellValue(row.getCell(2), dto));
+						dto.setUOM(getStringCellValue(row.getCell(3), dto));
+							dto.setApril(getNumericCellValue(row.getCell(4), dto));
+							dto.setMay(getNumericCellValue(row.getCell(5), dto));
+							dto.setJune(getNumericCellValue(row.getCell(6), dto));
+							dto.setJuly(getNumericCellValue(row.getCell(7), dto));
+							dto.setAugust(getNumericCellValue(row.getCell(8), dto));
+							dto.setSeptember(getNumericCellValue(row.getCell(9), dto));
+							dto.setOctober(getNumericCellValue(row.getCell(10), dto));
+							dto.setNovember(getNumericCellValue(row.getCell(11), dto));
+							dto.setDecember(getNumericCellValue(row.getCell(12), dto));
+							dto.setJanuary(getNumericCellValue(row.getCell(13), dto));
+							dto.setFebruary(getNumericCellValue(row.getCell(14), dto));
+							dto.setMarch(getNumericCellValue(row.getCell(15), dto));
+							dto.setFinancialYear(year);
+							dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+							dto.setId(getStringCellValue(row.getCell(17), dto));
 					} catch (Exception e) {
 						e.printStackTrace();
 						dto.setErrDescription(e.getMessage());
