@@ -29,6 +29,28 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 _READER_CACHE: dict = {}
 
+# ---------------------------------------------------------------------------
+# SEZ-PCG CPP plant ID — used to gate per-asset powergen utility handling.
+# For SEZ-PCG, NormsHeader UtilityName is the power asset name (e.g.,
+# "JMD - SEZ PCG STG Power plant 3") instead of generic "POWERGEN".
+# ---------------------------------------------------------------------------
+_SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
+_SEZ_PCG_STG_PREFIX = "JMD - SEZ PCG STG Power plant"
+
+
+def _is_sez_pcg_powergen_utility(plant_id: str, utility_name: str) -> bool:
+    """Return True if this utility_name is a SEZ-PCG per-asset powergen utility.
+
+    For SEZ-PCG, the NormsHeader UtilityName is the full asset name
+    (e.g., "JMD - SEZ PCG STG Power plant 3") rather than generic "POWERGEN".
+    This helper identifies such rows so they can be treated as powergen.
+    """
+    if plant_id.upper() != _SEZ_PCG_PLANT_ID:
+        return False
+    if not utility_name:
+        return False
+    return utility_name.upper().startswith(_SEZ_PCG_STG_PREFIX.upper())
+
 
 class DBNormsReader:
     """
@@ -162,10 +184,16 @@ class DBNormsReader:
         for row in self._rows:
             utility_name = row["utility_name"]
             material_name = row["material_name"]
-            
+
             if utility_name == "POWERGEN" and material_name == "Power_Dis":
                 plant_name = row["plant_name"].upper()
                 self._powergen_norms[plant_name] = row["norm"]
+            elif (
+                _is_sez_pcg_powergen_utility(self.plant_id, utility_name)
+                and material_name == "Power_Dis"
+            ):
+                # SEZ-PCG: UtilityName is the asset name; key by it directly.
+                self._powergen_norms[utility_name.upper()] = row["norm"]
 
     def _build_steam_letdown_norms(self):
         """Build steam letdown norms (PRDS cascade factors)."""
@@ -189,22 +217,47 @@ class DBNormsReader:
                     "norm": row["norm"],
                 }
 
-        # Build cascade ordered from lowest to highest pressure: LP → MP → HP → SHP
-        # This order is critical for dispatch_engine to correctly identify the top grade
-        pressure_order = {"LP": 0, "MP": 1, "HP": 2, "SHP": 3}
+        # SEZ-PCG: explicit PRDS → produces mapping (from CPPSteamGenerationAsset)
+        is_sez_pcg = self.plant_id.upper() == _SEZ_PCG_PLANT_ID
+        if is_sez_pcg:
+            prds_produces_map = {
+                "HP Steam PRDS":    "HP Steam_Dis",
+                "IHP Steam PRDS":   "IHP Steam_Dis",
+                "IP STEAM PRDS":    "IP Steam_Dis",
+                "LLP Steam PRDS":   "LLP Steam_Dis",
+                "LP Steam PRDS":    "LP Steam_Dis",
+                "MP Steam PRDS SHP": "MP Steam_Dis",
+            }
+            pressure_order = {
+                "LLP": 0, "LP": 1, "MP": 2, "IP": 3,
+                "IHP": 4, "HP": 5, "SHP": 6,
+            }
+        else:
+            prds_produces_map = {}
+            pressure_order = {"LP": 0, "MP": 1, "HP": 2, "SHP": 3}
+
         cascade = []
         for prds_name, info in prds_map.items():
-            # Try to infer what this PRDS produces from its name
-            # This is a simplified approach - may need adjustment based on actual naming
-            if "LP" in prds_name.upper():
-                produces = "LP Steam_Dis"
-            elif "MP" in prds_name.upper():
-                produces = "MP Steam_Dis"
-            elif "HP" in prds_name.upper():
-                produces = "HP Steam_Dis"
+            # Use explicit mapping for SEZ-PCG; infer from name for others
+            if is_sez_pcg and prds_name in prds_produces_map:
+                produces = prds_produces_map[prds_name]
             else:
-                produces = material  # fallback
-            
+                pu = prds_name.upper()
+                if "LP" in pu and "LLP" not in pu:
+                    produces = "LP Steam_Dis"
+                elif "LLP" in pu:
+                    produces = "LLP Steam_Dis"
+                elif "MP" in pu:
+                    produces = "MP Steam_Dis"
+                elif "IHP" in pu:
+                    produces = "IHP Steam_Dis"
+                elif "IP" in pu:
+                    produces = "IP Steam_Dis"
+                elif "HP" in pu:
+                    produces = "HP Steam_Dis"
+                else:
+                    produces = info["consumes"]  # fallback
+
             cascade.append({
                 "prds": prds_name,
                 "produces": produces,
@@ -213,7 +266,8 @@ class DBNormsReader:
             })
         
         # Sort cascade by pressure order (lowest to highest)
-        cascade.sort(key=lambda step: pressure_order.get(step["produces"].replace(" Steam_Dis", ""), 99))
+        cascade.sort(key=lambda step: pressure_order.get(
+            step["produces"].replace(" Steam_Dis", "").replace("_Dis", ""), 99))
 
         # Build flat legacy keys
         norms = {"_cascade": cascade}
@@ -274,11 +328,17 @@ class DBNormsReader:
         for row in self._rows:
             utility = row["utility_name"]
             material = row["material_name"]
-            
+
             if utility == "POWERGEN" and material == "SHP Steam_Dis":
                 plant_name = row["plant_name"].upper()
                 if "STG" in plant_name:
                     self._stg_steam_norms[plant_name] = row["norm"]
+            elif (
+                _is_sez_pcg_powergen_utility(self.plant_id, utility)
+                and material == "SHP Steam_Dis"
+            ):
+                # SEZ-PCG: UtilityName is the asset name; key by it directly.
+                self._stg_steam_norms[utility.upper()] = row["norm"]
 
     def _build_raw_material_norms(self):
         """Build raw material (fuel) norms."""
@@ -423,6 +483,8 @@ class DBNormsReader:
 
             if utility == "POWERGEN":
                 key = source_plant
+            elif _is_sez_pcg_powergen_utility(self.plant_id, utility):
+                key = utility
             else:
                 key = utility
 
@@ -462,6 +524,8 @@ class DBNormsReader:
 
             if utility == "POWERGEN":
                 key = source_plant
+            elif _is_sez_pcg_powergen_utility(self.plant_id, utility):
+                key = utility
             else:
                 key = utility
 

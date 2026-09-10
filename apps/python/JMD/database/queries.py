@@ -1546,7 +1546,7 @@ def fetch_power_generation_assets(plant_id: str) -> list:
     cur = conn.cursor()
     try:
         cur.execute(
-            """
+            f"""
             SELECT AssetId, AssetName, PlantCode
             FROM {T.POWER_GENERATION_ASSETS}
             WHERE {T.PGA_PLANT_FK} = ?

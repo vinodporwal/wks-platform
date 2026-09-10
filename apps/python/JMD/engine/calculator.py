@@ -283,7 +283,7 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
         result["u4u_iterations"] = u4u_result.get("iterations_used", 0)
 
         # Save calculated norms to database
-        save_result = save_calculated_norms(month, year, u4u_result, dry_run=False)
+        save_result = save_calculated_norms(month, year, u4u_result, dry_run=not save_to_db)
         result["norms_save"] = save_result
     except Exception as e:
         logger.warning("  [CALC] U4U iteration loop failed: %s", e)

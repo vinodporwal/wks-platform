@@ -44,6 +44,12 @@ _POWER_DIS_OTHER_PLANT_MATERIAL = "Power"
 _DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
 _SEZ_PLANT_ID = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
 
+# SEZ-PCG CPP plant id — used to gate per-asset powergen utility handling.
+# For SEZ-PCG, NormsHeader UtilityName is the power asset name (e.g.,
+# "JMD - SEZ PCG STG Power plant 3") instead of generic "POWERGEN".
+_SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
+_SEZ_PCG_STG_PREFIX = "JMD - SEZ PCG STG Power plant"
+
 # Constants for reverse MMBTU norm calculation (same as NMD)
 _KCAL_TO_BTU = 3.96567
 _BTU_TO_MMBTU = 1_000_000
@@ -414,6 +420,13 @@ class U4UIterationLoop:
             if u.startswith(("JMD", "Jamnagar")) or u.startswith("No Plant")
                or (short_code and short_code in u.upper())
         }
+        # SEZ-PCG: 'RIL-JW Plant-SEZ PCG' is the plant's own UOM but uses a space
+        # (not underscore) so the short_code check above misses it.  Add it
+        # explicitly so its consumptions are not skipped as inter-plant.
+        if self.plant_id.upper() == _SEZ_PCG_PLANT_ID:
+            for u in uom_plants:
+                if "SEZ PCG" in u.upper() or "SEZ-PCG" in u.upper():
+                    self._inplant_uom_plants.add(u)
 
         # Identify the plant's own utility plant.  This is the in-plant name that
         # contains 'Utility Plant' but is not a power distribution / sub-plant.
@@ -639,12 +652,28 @@ class U4UIterationLoop:
                 and bpc_steam > 0
             ):
                 steam_import_mt = float(bpc_steam)
-            dispatch_demands[ods_material] = (
-                dispatch_demands.get(ods_material, 0.0)
-                + steam_u4u_increment
-                + steam_export_mt
-                - steam_import_mt
-            )
+            # SEZ-PCG: SHP Steam_Dis generation is fixed (BPC gen qty from
+            # superheater + STEAM(SHP)), not dispatched by steam assets.  The
+            # U4U demand for SHP (from Oxygen etc.) is already accounted for
+            # in the BPC generation.  Adding it to dispatch demands creates a
+            # huge虚假 deficit that grows each iteration.  Skip the U4U
+            # increment for SHP — keep only the raw process + fixed + export.
+            if (
+                self.plant_id.upper() == _SEZ_PCG_PLANT_ID
+                and grade.upper() == "SHP"
+            ):
+                dispatch_demands[ods_material] = (
+                    dispatch_demands.get(ods_material, 0.0)
+                    + steam_export_mt
+                    - steam_import_mt
+                )
+            else:
+                dispatch_demands[ods_material] = (
+                    dispatch_demands.get(ods_material, 0.0)
+                    + steam_u4u_increment
+                    + steam_export_mt
+                    - steam_import_mt
+                )
 
         return dispatch_demands
 
@@ -905,6 +934,15 @@ class U4UIterationLoop:
         """
         u4u: dict = {}
         details: list = []
+
+        # SEZ-PCG: each STG has its own NormsHeader utility named after the
+        # asset (e.g., "JMD - SEZ PCG STG Power plant 3").  Match consumptions
+        # by utility name == asset name instead of by source_plant.
+        is_sez_pcg = self.plant_id.upper() == _SEZ_PCG_PLANT_ID
+
+        if is_sez_pcg:
+            return self._calculate_u4u_from_power_sez_pcg(power_result)
+
         power_producer_name, powergen = self._find_power_producer(
             self.consumption_norms, power_result.get("assets", [])
         )
@@ -966,6 +1004,92 @@ class U4UIterationLoop:
                 details.append({
                     "producer": asset_name,
                     "producer_utility": power_producer_name,
+                    "producer_uom": producer_uom,
+                    "generation": gen_kwh,
+                    "account": account,
+                    "material": material,
+                    "material_uom": material_uom,
+                    "norm": norm,
+                    "quantity": quantity,
+                    "norms_header_id": c.get("norms_header_id"),
+                    "norms_month_detail_id": c.get("norms_month_detail_id"),
+                })
+
+        return u4u, details
+
+    def _calculate_u4u_from_power_sez_pcg(self, power_result: dict) -> tuple:
+        """SEZ-PCG variant: each STG has its own NormsHeader utility named
+        after the asset.  Match consumptions by utility name == asset name.
+        """
+        u4u: dict = {}
+        details: list = []
+
+        for asset in power_result.get("assets", []):
+            asset_name = asset.get("asset_name", "")
+            dispatched_mwh = asset.get("dispatched_mwh", 0.0)
+            if dispatched_mwh <= 0:
+                continue
+
+            # Find the producer whose name matches this asset name.
+            producer_info = self.consumption_norms.get(asset_name)
+            if not producer_info:
+                # Try case-insensitive match
+                for pname, pinfo in self.consumption_norms.items():
+                    if pname.upper() == asset_name.upper():
+                        producer_info = pinfo
+                        break
+            if not producer_info:
+                logger.debug(
+                    "  [SEZ-PCG U4U] No norms producer found for asset '%s'",
+                    asset_name,
+                )
+                continue
+
+            consumptions = producer_info.get("consumptions", [])
+            producer_uom = producer_info.get("producer_uom", "KWH")
+            gen_kwh = dispatched_mwh * 1000  # MWh → KWH
+
+            for c in consumptions:
+                if self.allowed_accounts is not None and c["account"] not in self.allowed_accounts:
+                    continue
+
+                norm = c["norm"]
+                if norm == 0:
+                    continue
+
+                material = c["material"]
+                material_uom = c.get("material_uom", "")
+                account = c["account"]
+
+                quantity = gen_kwh * norm
+                u4u_amount = quantity
+
+                # Negative norms are byproduct credits (supply, not consumption).
+                if norm < 0:
+                    details.append({
+                        "producer": asset_name,
+                        "producer_utility": asset_name,
+                        "producer_uom": producer_uom,
+                        "generation": gen_kwh,
+                        "account": account,
+                        "material": material,
+                        "material_uom": material_uom,
+                        "norm": norm,
+                        "quantity": quantity,
+                        "norms_header_id": c.get("norms_header_id"),
+                        "norms_month_detail_id": c.get("norms_month_detail_id"),
+                    })
+                    continue
+
+                if material == "Power_Dis":
+                    u4u_amount = u4u_amount / 1000.0  # KWH → MWh
+
+                if material in self._all_producers:
+                    u4u[material] = u4u.get(material, 0.0) + u4u_amount
+
+                details.append({
+                    "producer": asset_name,
+                    "producer_utility": asset_name,
                     "producer_uom": producer_uom,
                     "generation": gen_kwh,
                     "account": account,
@@ -1106,6 +1230,16 @@ class U4UIterationLoop:
                 continue
 
             generation = total_demands.get(producer_name, 0.0)
+            # SEZ-PCG: intermediate producers like SUPERHEATED STEAM FROM
+            # SUPERHEATER and SHP Steam_Dis may have zero or negative process
+            # demand (supply) but still need to generate.  Use the BPC
+            # generation quantity from the DB norms as a fixed generation
+            # (not max with total_demand) so the U4U feedback loop doesn't
+            # inflate their generation.
+            if self.plant_id.upper() == _SEZ_PCG_PLANT_ID:
+                bpc_gen = self._sez_pcg_bpc_gen(producer_name)
+                if bpc_gen > 0:
+                    generation = bpc_gen
             if generation <= 0:
                 continue
 
@@ -1296,6 +1430,20 @@ class U4UIterationLoop:
                     float(dispatch_detail.get(f"{grade}_net", net_prds_demand)),
                 )
 
+            # SEZ-PCG: use the steam dispatch's net demand as the PRDS
+            # generation so that BFW (and other non-letdown U4U) consumption
+            # matches the display table.  The branching cascade in the steam
+            # dispatch computes the correct net demand per grade, which
+            # includes letdown to lower grades.  The cascade's own
+            # net_prds_demand (from total_demands) does not include the
+            # letdown, so it would undercount BFW consumption.
+            if self.plant_id.upper() == _SEZ_PCG_PLANT_ID:
+                dispatch_detail = (steam_result or {}).get("demand_detail") or {}
+                grade = produces_dis.split()[0].lower()
+                dispatch_net = float(dispatch_detail.get(f"{grade}_net", 0.0))
+                if dispatch_net > 0:
+                    net_prds_demand = dispatch_net
+
             logger.debug(
                 "  [CASCADE] %-25s produces=%-20s gross=%10.2f "
                 "byproduct=%10.2f net=%10.2f -> %-20s consumed=%10.2f",
@@ -1314,7 +1462,16 @@ class U4UIterationLoop:
                 cascade_uplift[consumes_dis] = (
                     cascade_uplift.get(consumes_dis, 0.0) + higher_grade_consumed
                 )
-                if consumes_dis in self._all_producers:
+                # SEZ-PCG: the steam dispatch already computes the branching
+                # cascade letdown for all grades.  Adding PRDS consumption as
+                # U4U demand here would double-count and create a feedback loop
+                # (SHP demand grows each iteration).  Skip the U4U demand
+                # addition for SEZ-PCG; the PRDS consumption is still recorded
+                # in the details for display purposes.
+                if (
+                    self.plant_id.upper() != _SEZ_PCG_PLANT_ID
+                    and consumes_dis in self._all_producers
+                ):
                     u4u[consumes_dis] = u4u.get(consumes_dis, 0.0) + higher_grade_consumed
 
             details.append({
@@ -1331,6 +1488,52 @@ class U4UIterationLoop:
                 "norms_month_detail_id": None,
             })
 
+            # SEZ-PCG: PRDS producers also consume non-steam utilities (e.g.
+            # Boiler Feed Water for desuperheating spray).  These consumptions
+            # are skipped by _calculate_u4u_from_non_dispatchable (which skips
+            # all PRDS producers) and are not captured by the letdown calc
+            # above.  Feed them back as U4U demand on the consumed material so
+            # that the material's generation increases to cover PRDS usage.
+            #
+            # Gated to SEZ-PCG only to avoid impacting other CPP plants.
+            if (
+                self.plant_id.upper() == _SEZ_PCG_PLANT_ID
+                and net_prds_demand > 0
+            ):
+                prds_info = self.all_consumption_norms.get(prds_name)
+                if prds_info:
+                    for pc in prds_info.get("consumptions", []):
+                        pmat = pc.get("material", "")
+                        pnorm = pc.get("norm", 0.0)
+                        # Skip the letdown material (already handled above),
+                        # negative norms (byproduct credits), and zero norms.
+                        if pmat == consumes_dis or pnorm <= 0:
+                            continue
+                        # Skip inter-plant transfers.
+                        issuing_plant = pc.get("issuing_plant") or pc.get("material_uom", "")
+                        if self._is_interplant_uom(issuing_plant):
+                            continue
+                        pqty = net_prds_demand * pnorm
+                        # Convert Power_Dis from KWH to MWh for U4U tracking.
+                        u4u_amount = pqty
+                        if pmat == "Power_Dis":
+                            u4u_amount = u4u_amount / 1000.0
+                        if pmat in self._all_producers:
+                            u4u[pmat] = u4u.get(pmat, 0.0) + u4u_amount
+                        details.append({
+                            "producer": prds_name,
+                            "producer_utility": prds_name,
+                            "producer_uom": "MT",
+                            "generation": net_prds_demand,
+                            "account": pc.get("account", "Utilities"),
+                            "material": pmat,
+                            "material_uom": pc.get("material_uom", ""),
+                            "norm": pnorm,
+                            "quantity": pqty,
+                            "norms_header_id": pc.get("norms_header_id"),
+                            "norms_month_detail_id": pc.get("norms_month_detail_id"),
+                        })
+
         return u4u, details
 
     def _is_dispatchable(self, producer_name: str) -> bool:
@@ -1342,10 +1545,52 @@ class U4UIterationLoop:
         its demand.  PRDS and other pass-through utilities have no raw material
         rows and are therefore non-dispatchable.
         """
+        # SEZ-PCG: SUPERHEATED STEAM FROM SUPERHEATER is a pass-through
+        # producer (Gasifier SHP Steam → SHP steam), not dispatched by
+        # dispatch_steam (which only handles HRSG/AUXBOILER).  Treat it as
+        # non-dispatchable so _calculate_u4u_from_non_dispatchable processes it.
+        if (
+            self.plant_id.upper() == _SEZ_PCG_PLANT_ID
+            and producer_name.upper() == "SUPERHEATED STEAM FROM SUPERHEATER"
+        ):
+            return False
+
         info = self.consumption_norms.get(producer_name)
         if info is None:
             return False
         return any(c["account"] == "Raw Material" for c in info.get("consumptions", []))
+
+    def _sez_pcg_bpc_gen(self, producer_name: str) -> float:
+        """SEZ-PCG-specific BPC generation quantity override.
+
+        For SHP Steam_Dis, the BPC gen qty from `get_bpc_generation_quantities`
+        is wrong because the first row (STEAM(SHP)) has norm 1.0, giving
+        gen = 32,368.73 instead of the correct 529,629.40.  Compute the
+        correct generation as the sum of all BPC input quantities.
+
+        For SUPERHEATED STEAM FROM SUPERHEATER, the BPC gen qty (497,270.13)
+        is correct — use it directly.
+
+        For other producers, return 0 (fall back to total_demand).
+        """
+        if self.plant_id.upper() != _SEZ_PCG_PLANT_ID:
+            return 0.0
+
+        pn_upper = producer_name.upper()
+
+        # SHP Steam_Dis: generation = sum of all BPC input quantities
+        if pn_upper == "SHP STEAM_DIS":
+            bpc_qty = self._bpc_quantities or {}
+            mats = bpc_qty.get(producer_name, {})
+            if mats:
+                return sum(abs(v) for v in mats.values())
+            return 0.0
+
+        # SUPERHEATED STEAM FROM SUPERHEATER: use BPC gen qty directly
+        if pn_upper == "SUPERHEATED STEAM FROM SUPERHEATER":
+            return self._lookup_bpc_gen_qty(producer_name)
+
+        return 0.0
 
     def _lookup_bpc_gen_qty(self, producer_name: str) -> float:
         """Look up BPC generation quantity for a producer from ODS data."""
@@ -1864,9 +2109,17 @@ class U4UIterationLoop:
         power_dis = self._power_ods_material
         power_dis_info = self.consumption_norms.get(power_dis) if power_dis else None
         powergen_pool: list = []
+        is_sez_pcg = self.plant_id.upper() == _SEZ_PCG_PLANT_ID
         if power_dis_info:
             for c in power_dis_info.get("consumptions", []):
-                if _normalize_for_match(str(c.get("material", ""))) == "powergen":
+                mat_norm = _normalize_for_match(str(c.get("material", "")))
+                if mat_norm == "powergen":
+                    powergen_pool.append(c)
+                elif is_sez_pcg and mat_norm.startswith(
+                    _normalize_for_match(_SEZ_PCG_STG_PREFIX)
+                ):
+                    # SEZ-PCG: asset-name materials under Power_Dis act as
+                    # powergen pool entries.
                     powergen_pool.append(c)
 
         used_powergen: set = set()
@@ -2059,6 +2312,33 @@ class U4UIterationLoop:
         elif bpc_other < 0:
             other_plant_mt = bpc_other
 
+        # 3.5 Non-dispatchable producer inputs (e.g. SUPERHEATED STEAM FROM
+        # SUPERHEATER for SHP Steam_Dis in SEZ-PCG).  These are separate
+        # non-dispatchable producers that feed into this Steam_Dis utility
+        # but are not captured by dispatch assets, PRDS letdown, or inter-plant
+        # STEAM(<grade>) exchange.  Use the BPC quantity from the DB norms as
+        # the supply amount.
+        #
+        # SEZ-PCG only: SHP Steam_Dis is generated by the SUPERHEATED STEAM
+        # FROM SUPERHEATER asset (a non-dispatchable producer) in addition to
+        # STEAM(SHP).  Other CPPs do not have this pattern, so this step is
+        # gated to the SEZ-PCG plant ID to avoid any impact on existing plants.
+        if self.plant_id.upper() == _SEZ_PCG_PLANT_ID:
+            for c in utility_info.get("consumptions", []):
+                mat = c.get("material", "")
+                if not mat or mat in supplies or mat == other_material:
+                    continue
+                # Only include materials that are themselves non-dispatchable producers.
+                if mat not in self.consumption_norms:
+                    continue
+                if self._is_dispatchable(mat):
+                    continue
+                if "PRDS" in mat.upper():
+                    continue
+                bpc_qty_val = self._lookup_bpc_qty(utility, mat)
+                if bpc_qty_val and float(bpc_qty_val) > 0:
+                    supplies[mat] = supplies.get(mat, 0.0) + float(bpc_qty_val)
+
         total_supply_mt = sum(supplies.values())
         net_gen_mt = total_supply_mt + min(other_plant_mt, 0.0)
         if net_gen_mt <= 0:
@@ -2167,6 +2447,15 @@ class U4UIterationLoop:
             if sp:
                 power_sub_assets.add(sp)
 
+        # SEZ-PCG: each STG has its own producer utility named after the asset.
+        # Collect all such producers so the detail loop can recognize each one.
+        is_sez_pcg = self.plant_id.upper() == _SEZ_PCG_PLANT_ID
+        sez_pcg_power_producers: set = set()
+        if is_sez_pcg:
+            for pname in self.all_consumption_norms:
+                if pname.upper().startswith(_SEZ_PCG_STG_PREFIX.upper()):
+                    sez_pcg_power_producers.add(pname)
+
         # Map power/steam asset names to their final generation
         power_asset_gens: dict = {}
         power_asset_heat: dict = {}  # asset_name → (heat_rate, free_steam_factor)
@@ -2245,6 +2534,14 @@ class U4UIterationLoop:
                         "producer_utility": producer_name,
                         "generation": total_gen,
                     })
+            elif is_sez_pcg and producer_name in sez_pcg_power_producers:
+                # SEZ-PCG: each STG is its own producer utility; the asset name
+                # IS the producer name, so there is a single gen entry.
+                gen_entries.append({
+                    "producer": producer_name,
+                    "producer_utility": producer_name,
+                    "generation": power_asset_gens.get(producer_name, 0.0),
+                })
             elif self._is_dispatchable(producer_name):
                 # Steam asset producer (HRSG, Aux Boiler, ...)
                 asset_name, gen = _match_steam_asset(producer_name)
@@ -2293,6 +2590,8 @@ class U4UIterationLoop:
                         source_plant = c.get("source_plant", "").strip()
                         if source_plant and source_plant != gen_entry["producer"]:
                             continue
+                    # SEZ-PCG: producer_name IS the asset name; no source_plant
+                    # filter needed since each producer has its own consumptions.
 
                     material = c["material"]
                     material_uom = c.get("material_uom", "")

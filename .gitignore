@@ -145,6 +145,26 @@ apps/python/PPPython-script/
 apps/python/JMD/logs/
 apps/python/JMD/output/
 apps/python/JMD/**/*.pyc
+
+# LibreOffice lock files
+.~lock.*
+*.#lock
+*.lock#
+
+# Temporary check/verify scripts
+**/_tmp_*.py
+
+# Generated import run artifacts (manifests + SQL output)
+apps/python/JMD/scripts/manifests/
+apps/python/JMD/scripts/output/
+apps/python/scripts/manifests/
+apps/python/scripts/output/
+
+# Misc generated output
+apps/python/JMD/dta_cpp/out.txt
+
+# IDE configs
+.windsurf/
 !apps/python/PPPython-script/
 apps/python/PPPython-script/**
 !apps/python/PPPython-script/**/*.py

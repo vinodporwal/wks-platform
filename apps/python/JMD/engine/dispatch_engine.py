@@ -198,6 +198,7 @@ def _get_asset_equipment_type(asset_name: str) -> str:
 # Loaded on first use so it does not affect other plants.
 _DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
 _SEZ_PLANT_ID = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
+_SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
 _DTA_STG_CSV = os.path.join(os.path.dirname(__file__), "..", "data", "dta_stg_extraction.csv")
 _DTA_STG_LOOKUP: list = []
 
@@ -350,11 +351,14 @@ def _get_steam_demands(plant_id: str, month: int, year: int, demands: dict = Non
             # Derive the ODS _Dis material name from the grade prefix
             # e.g. "lp" → "LP Steam_Dis",  "shp" → "SHP Steam_Dis"
             ods_key = f"{g.upper()} Steam_Dis"
+            # Some plants use " Dis" (space) instead of "_Dis" (underscore)
+            # e.g. "IHP Steam Dis", "LLP Steam Dis"
+            ods_key_alt = f"{g.upper()} Steam Dis"
             for kind in ("process", "fixed"):
                 prefix_key = f"{g}_{kind}"
                 # Prefer ODS material key (new format); fall back to prefix key (old)
                 if kind == "process":
-                    val = float(demands.get(ods_key, demands.get(prefix_key, 0.0)))
+                    val = float(demands.get(ods_key, demands.get(ods_key_alt, demands.get(prefix_key, 0.0))))
                 else:
                     val = float(demands.get(prefix_key, 0.0))
                 result[prefix_key] = val
@@ -1256,29 +1260,128 @@ def dispatch_steam(
         else {}
     )
 
+    # SEZ-PCG uses a branching cascade (SHP→HP, SHP→IHP, HP→MP, HP→IP).
+    # Build a parent→children map for the branching calculation.
+    is_sez_pcg = plant_id == _SEZ_PCG_PLANT_ID
+    if is_sez_pcg and cascade:
+        # Map: parent_grade → list of (child_grade, norm, prds_name)
+        children_map = {}
+        for step in cascade:
+            parent = step["consumes"].replace(" Steam_Dis", "").replace("_Dis", "").lower()
+            child = step["produces"].replace(" Steam_Dis", "").replace("_Dis", "").lower()
+            children_map.setdefault(parent, []).append((child, step["norm"], step["prds"]))
+        # All grades that appear as a "produces" in the cascade
+        child_grades = set()
+        for steps in children_map.values():
+            for cg, _, _ in steps:
+                child_grades.add(cg)
+        # Top grade = the grade that is consumed but never produced
+        top_grade_pcg = None
+        for parent in children_map:
+            if parent not in child_grades:
+                top_grade_pcg = parent
+                break
+        if top_grade_pcg is None:
+            top_grade_pcg = top_grade  # fallback
+    else:
+        children_map = None
+
     for iteration in range(5):
         # Dynamic cascade: walk from lowest grade upward, each grade letdowns into the next
         net_by_grade = {}
         letdown_by_grade = {}
-        prev_letdown = 0.0
-        for i, g in enumerate(grade_prefixes):
-            if i == 0:
-                # Lowest grade: include byproduct credit
-                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + byproduct_low_steam
-            elif g == top_grade or (plant_id == _DTA_PLANT_ID and g == "hp"):
-                # Top-grade and DTA HP PRDS consumption is already present in U4U demand.
-                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
-            else:
-                net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
-            net_by_grade[g] = net
-            # Letdown: this grade's net demand drives consumption from the grade above
-            if i < len(cascade):
-                norm = cascade[i]["norm"]
-                letdown = max(0.0, net) * norm
-            else:
-                letdown = 0.0
-            letdown_by_grade[g] = letdown
-            prev_letdown = letdown
+
+        if is_sez_pcg and children_map:
+            # ── SEZ-PCG branching cascade ──────────────────────────────────
+            # Process grades bottom-up: for each grade, net demand =
+            #   process + fixed + sum(letdowns from all children).
+            # If net > 0, letdown from parent = net * norm.
+            # If net <= 0, no letdown (surplus).
+            #
+            # We need to process in the right order: children before parents.
+            # Build a topological order starting from leaf grades (no children).
+            all_grades = set(grade_prefixes)
+            # Leaf grades = grades that are not a parent of any other grade
+            leaf_grades = all_grades - set(children_map.keys())
+            # Topological order: process leaves first, then their parents, etc.
+            topo_order = []
+            remaining = set(all_grades)
+            processed = set()
+            # Start with leaves
+            for g in grade_prefixes:
+                if g in leaf_grades:
+                    topo_order.append(g)
+                    processed.add(g)
+                    remaining.discard(g)
+            # Now process remaining grades in order (children before parents)
+            while remaining:
+                added = False
+                for g in grade_prefixes:
+                    if g in remaining:
+                        # Check if all children of g are already processed
+                        kids = children_map.get(g, [])
+                        if all(cg in processed for cg, _, _ in kids):
+                            topo_order.append(g)
+                            processed.add(g)
+                            remaining.discard(g)
+                            added = True
+                if not added:
+                    # Circular dependency or missing grade; add remaining as-is
+                    for g in grade_prefixes:
+                        if g in remaining:
+                            topo_order.append(g)
+                            processed.add(g)
+                            remaining.discard(g)
+
+            for g in topo_order:
+                base = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
+                # Add byproduct to lowest grade
+                if g == lowest_grade:
+                    base += byproduct_low_steam
+                # Add letdowns from all children (already calculated in topo order)
+                child_letdown_sum = 0.0
+                for cg, norm, prds_name in children_map.get(g, []):
+                    child_letdown_sum += letdown_by_grade.get(cg, 0.0)
+                net = base + child_letdown_sum
+                net_by_grade[g] = net
+
+                # Calculate letdown IMMEDIATELY so parent grades can use it
+                if g == top_grade_pcg:
+                    letdown_by_grade[g] = 0.0
+                else:
+                    # Find which PRDS produces this grade
+                    norm = None
+                    for parent, steps in children_map.items():
+                        for cg, n, pn in steps:
+                            if cg == g:
+                                norm = n
+                                break
+                    if norm is not None:
+                        letdown_by_grade[g] = max(0.0, net) * norm
+                    else:
+                        letdown_by_grade[g] = 0.0
+
+        else:
+            # ── Linear cascade (original logic for other plants) ───────────
+            prev_letdown = 0.0
+            for i, g in enumerate(grade_prefixes):
+                if i == 0:
+                    # Lowest grade: include byproduct credit
+                    net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + byproduct_low_steam
+                elif g == top_grade or (plant_id == _DTA_PLANT_ID and g == "hp"):
+                    # Top-grade and DTA HP PRDS consumption is already present in U4U demand.
+                    net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
+                else:
+                    net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
+                net_by_grade[g] = net
+                # Letdown: this grade's net demand drives consumption from the grade above
+                if i < len(cascade):
+                    norm = cascade[i]["norm"]
+                    letdown = max(0.0, net) * norm
+                else:
+                    letdown = 0.0
+                letdown_by_grade[g] = letdown
+                prev_letdown = letdown
 
         # Adjust the cascade for DTA STG extraction (Option A)
         if stg_totals:
