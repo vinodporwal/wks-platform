@@ -53,6 +53,7 @@ import RawDataSet from 'components/data-tables/Reports/RawDataSet'
 import UtilitiesNormsBasis from 'components/data-tables/Reports/UtilitiesNormsBasis'
 import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
 import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
+import SlodownBasis from 'components/data-tables/Reports/SlodownBasis'
 import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
 import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
 import MaintenanceSummary from 'components/kendo-data-tables/MaintenanceSummary'
@@ -1255,7 +1256,6 @@ export const MainRoutes = (
             ),
           },
           {
-
             path: 'shutdown-plan-refinery',
             element: (
               <PrivateRoute routeId='shutdown-plan-refinery'>
@@ -1373,6 +1373,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='norms-historian-basis'>
                 <NormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-basis',
+            element: (
+              <PrivateRoute routeId='slowdown-basis'>
+                <SlodownBasis />
               </PrivateRoute>
             ),
           },

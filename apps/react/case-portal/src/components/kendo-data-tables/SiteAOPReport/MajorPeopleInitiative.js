@@ -42,15 +42,17 @@ export default function MajorPeopleInitiative({ permissions, tabDisplayName }) {
 
   const columns = useMemo(() => {
     const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorPeopleInitiative
-    return cols.map((col) => {
-      if (col.field === 'plant') {
-        return {
-          ...col,
-          dropdownOptions: plantOptions,
+    return cols
+      .filter((col) => col.field !== 'id')
+      .map((col) => {
+        if (col.field === 'plant') {
+          return {
+            ...col,
+            dropdownOptions: plantOptions,
+          }
         }
-      }
-      return col
-    })
+        return col
+      })
   }, [AOP_YEAR, plantOptions])
 
   // Fetch plant dropdown for this site
@@ -102,7 +104,7 @@ export default function MajorPeopleInitiative({ permissions, tabDisplayName }) {
         const mapped = res?.data?.majorPeopleInitiativeList?.map(
           (item, index) => ({
             ...item,
-            id: item.id || index + 1,
+            id: index + 1,
             sno: index + 1,
             idFromApi: item.id || null,
           }),
@@ -128,11 +130,21 @@ export default function MajorPeopleInitiative({ permissions, tabDisplayName }) {
   }, [fetchData])
 
   const deleteRowData = async (paramsForDelete) => {
+    if (!paramsForDelete?.idFromApi) {
+      setRows((prev) => prev.filter((r) => r.id !== paramsForDelete?.id))
+      setModifiedCells((prev) => {
+        const updated = { ...prev }
+        delete updated[paramsForDelete?.id]
+        return updated
+      })
+      return
+    }
+
     setLoading(true)
     try {
       const response = await SiteReportDataService.deleteMajorPeopleInitiative(
         keycloak,
-        paramsForDelete?.id,
+        paramsForDelete?.idFromApi,
       )
 
       if (response?.code === 200) {
@@ -208,12 +220,7 @@ export default function MajorPeopleInitiative({ permissions, tabDisplayName }) {
         }
 
         return {
-          id:
-            item.idFromApi ||
-            (typeof item.id === 'string' && item.id.startsWith('temp-')
-              ? null
-              : item.id) ||
-            null,
+          id: item.idFromApi || null,
           plantId: matchedPlantId || null,
           initiativeDescription: item.initiativeDescription,
           expectedOutcome: item.expectedOutcome || item.outcome || '',
