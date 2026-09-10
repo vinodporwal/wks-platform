@@ -19,14 +19,21 @@ import lombok.NoArgsConstructor;
 @Data
 public class MajorPeopleInitiativeDTO {
     private String id;
+    private String plantId;
+    private String plantName;
+    private String plantDisplayName;
     private String plant;
     private String initiativeDescription;
+    private String expectedOutcome;
     private String outcome;
-    private String recommendation;
     private Date targetDate;
-    private String remark;
-    private String aopYear;
+    private String siteId;
     private String siteFkId;
+    private String aopYear;
+    private String modifiedBy;
     private String updatedBy;
+    private Date modifiedOn;
     private Date updatedDateTime;
+    private String saveStatus;
+    private String errDescription;
 }

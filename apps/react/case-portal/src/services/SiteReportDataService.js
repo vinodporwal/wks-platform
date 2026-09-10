@@ -30,6 +30,9 @@ export const SiteReportDataService = {
   saveMajorReliabilityImprovement,
   getMajorPeopleInitiative,
   saveMajorPeopleInitiative,
+  deleteMajorPeopleInitiative,
+  exportMajorPeopleInitiative,
+  importMajorPeopleInitiative,
   getMCUCapacityUtilization,
   saveMCUCapacityUtilization,
   getSitesafetyPerformance,
@@ -609,6 +612,86 @@ export async function saveMajorPeopleInitiative(
     return await resp.json()
   } catch (e) {
     console.error('Error saving Major People Initiative data:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function deleteMajorPeopleInitiative(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/major-people-initiative/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting Major People Initiative record:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function exportMajorPeopleInitiative(
+  keycloak,
+  siteId,
+  aopYear,
+  excelName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-people-initiative-export?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName || 'Major_People_Initiative'}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Major People Initiative Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function importMajorPeopleInitiative(
+  file,
+  keycloak,
+  siteId,
+  aopYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-people-initiative-import?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Major People Initiative Excel:', e)
     return Promise.reject(e)
   }
 }
