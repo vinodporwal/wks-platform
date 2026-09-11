@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'utils/excelNameUtil'
 export default function Capex({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -41,6 +42,7 @@ export default function Capex({ permissions, tabDisplayName }) {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
@@ -52,6 +54,10 @@ export default function Capex({ permissions, tabDisplayName }) {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const EXCEL_EXPORT_TITLE = generateExcelName(
+    dataGridStore,
+    tabDisplayName || 'Capex/PIO Plan',
+  )
 
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
 
@@ -91,7 +97,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     },
     { field: 'targetPlan', title: 'Target', editable: true },
     { field: 'statusPlan', title: 'Status', editable: true },
-    { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
+    // { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
   ]
 
   const fetchData = useCallback(async () => {
@@ -100,7 +106,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     try {
       const res = await SiteReportDataService.getCapexData(
         keycloak,
-        SITE_ID,
+        PLANT_ID,
         AOP_YEAR,
       )
 
@@ -115,7 +121,7 @@ export default function Capex({ permissions, tabDisplayName }) {
           benefitRsCr: item.benefitRsCr,
           targetPlan: item.targetPlan,
           statusPlan: item.statusPlan,
-          remarks: item.remarks,
+          // remarks: item.remarks,
           siteId: item.siteId,
           aopYear: item.aopYear,
           updatedBy: item.updatedBy,
@@ -134,7 +140,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID])
 
   useEffect(() => {
     fetchData()
@@ -153,7 +159,7 @@ export default function Capex({ permissions, tabDisplayName }) {
         return
       }
 
-      const requiredFields = ['remarks']
+      const requiredFields = ['proposal']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -185,7 +191,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       // 3. Save to API
       const response = await SiteReportDataService.saveCapexData(
         keycloak,
-        SITE_ID,
+        PLANT_ID,
         AOP_YEAR,
         payload,
       )
@@ -229,7 +235,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       }
 
       if (idFromApi) {
-        await SiteReportDataService.deleteCapexData(idFromApi, keycloak)
+        await SiteReportDataService.deleteCapex(idFromApi, keycloak)
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
@@ -245,8 +251,93 @@ export default function Capex({ permissions, tabDisplayName }) {
     }
   }
 
-  const handleExcelUpload = (type) => (rawFile) => {
-    uploadPeopleDetails(rawFile, type)
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await SiteReportDataService.exportCapexData(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response = await SiteReportDataService.importCapexData(
+        rawFile,
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `Error_File_Capex_Plan_${AOP_YEAR}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred during upload!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleRemarkCellClick = useCallback((row) => {
@@ -277,7 +368,11 @@ export default function Capex({ permissions, tabDisplayName }) {
       titleName: tabDisplayName || 'Capex/PIO Plan',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Capex_Plan_${AOP_YEAR}`,
-      saveBtn: true,
+      saveBtn: permissions?.saveBtn ?? true,
+      addButton: permissions?.addButton ?? true,
+      deleteButton: permissions?.deleteButton ?? true,
+      downloadExcelBtn: permissions?.downloadExcelBtn ?? true,
+      uploadExcelBtn: permissions?.uploadExcelBtn ?? true,
     },
     isOldYear,
   )
@@ -302,7 +397,11 @@ export default function Capex({ permissions, tabDisplayName }) {
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
         deleteRowData={deleteRowData}
+        deleteId={deleteId}
+        setDeleteId={setDeleteId}
         permissions={adjustedPermissions}
       />
       <Notification

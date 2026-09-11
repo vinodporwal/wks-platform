@@ -379,7 +379,7 @@ export async function saveCapexData(keycloak, PLANT_ID, AOP_YEAR, data) {
   }
 }
 export async function deleteCapex(keycloak, id) {
-  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan/${id}`
+  const url = `${Config.CaseEngineUrl}/task/capex-pio/${id}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -399,11 +399,11 @@ export async function deleteCapex(keycloak, id) {
 
 export async function exportCapexData(
   keycloak,
-  siteId,
+  plantId,
   aopYear,
   excelName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan-export?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}&excelName=${encodeURIComponent(excelName || 'capex_pioplan')}`
+  const url = `${Config.CaseEngineUrl}/task/capex-pio-export?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(aopYear)}&excelName=${encodeURIComponent(excelName || 'capex_pioplan')}`
   const headers = {
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     Authorization: `Bearer ${keycloak.token}`,
@@ -431,8 +431,8 @@ export async function exportCapexData(
   }
 }
 
-export async function importCapexData(file, keycloak, siteId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan-import?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
+export async function importCapexData(file, keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/capex-pio-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(aopYear)}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
