@@ -7,7 +7,7 @@ import SiteTeam from './SiteAOPReport/SiteTeam'
 import SiteSafetyPerformanceTarget from './SiteAOPReport/SiteSafetyPerformanceTarget'
 import ConversionVariableCost from './ConversionVariableCost'
 import EnergyPerformance from './SiteAOPReport/EnergyPerformance'
-import FixedExpenses from './FixedExpenses'
+import FixedExpenses from './SiteAOPReport/FixedExpenses'
 import Capex from './Capex'
 import ShutdownSlowdownPlan from './SlowdownPlan'
 import TechnicalAvailability from './TechnicalAvailability'
@@ -16,7 +16,7 @@ import MajorSafetyInitiative from './SiteAOPReport/MajorSafetyInitiative'
 import MajorPeopleInitiative from './SiteAOPReport/MajorPeopleInitiative'
 import MajorReliabilityInitiative from './SiteAOPReport/MajorReliabilityInitiative'
 import MCUCapacityUtilization from './MCUCapacityUtilization'
-import MajorProfitInitiative from './MajorProfitInitiative'
+import MajorProfitInitiative from './SiteAOPReport/MajorProfitInitiative'
 
 // Default hardcoded fallback tabs
 const DEFAULT_TABS = [

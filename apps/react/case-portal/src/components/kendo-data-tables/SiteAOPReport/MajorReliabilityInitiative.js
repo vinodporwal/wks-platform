@@ -133,7 +133,7 @@ export default function MajorReliabilityInitiative({
     setLoading(true)
     try {
       const response =
-        await SiteReportDataService.deleteMajorInitiativeInitiative(
+        await SiteReportDataService.deleteMajorReliabilityImprovement(
           keycloak,
           paramsForDelete?.id,
         )
@@ -277,7 +277,7 @@ export default function MajorReliabilityInitiative({
     })
 
     try {
-      await SiteReportDataService.exportMajorReliabilityInitiative(
+      await SiteReportDataService.exportMajorReliabilityImprovement(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -297,7 +297,7 @@ export default function MajorReliabilityInitiative({
     setLoading(true)
     try {
       const response =
-        await SiteReportDataService.importMajorInitiativeInitiative(
+        await SiteReportDataService.importMajorReliabilityImprovement(
           rawFile,
           keycloak,
           SITE_ID,
@@ -382,8 +382,8 @@ export default function MajorReliabilityInitiative({
       saveBtn: permissions?.saveBtn ?? true,
       addButton: permissions?.addButton ?? true,
       deleteButton: permissions?.deleteButton ?? true,
-      downloadExcelBtn: false, //permissions?.downloadExcelBtn ?? true,
-      uploadExcelBtn: false, //permissions?.uploadExcelBtn ?? true,
+      downloadExcelBtn: permissions?.downloadExcelBtn ?? true,
+      uploadExcelBtn: permissions?.uploadExcelBtn ?? true,
       showTitleNameBusiness: true,
       titleName: tabDisplayName || 'Major Reliability Improvement',
       adjustedPermissions: true,

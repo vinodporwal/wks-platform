@@ -42,10 +42,17 @@ export const SiteReportDataService = {
   getSiteAopReportTabs,
   SiteTeamExport,
   ImportSiteTeamExcel,
-  deleteMajorInitiativeInitiative,
+  deleteMajorReliabilityImprovement,
+  exportMajorReliabilityImprovement,
+  importMajorReliabilityImprovement,
   deleteMajorProfitImprovement,
   exportMajorProfitImprovement,
   importMajorProfitImprovement,
+  exportFixedExpensesData,
+  importFixedExpensesData,
+  exportCapexData,
+  importCapexData,
+  deleteCapex,
 }
 export async function getSiteTeamDetails(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/site-team-transaction?siteId=${SITE_ID}&year=${AOP_YEAR}`
@@ -282,8 +289,63 @@ export async function saveFixedExpensesData(keycloak, SITE_ID, AOP_YEAR, data) {
     return Promise.reject(e)
   }
 }
-export async function getCapexData(keycloak, SITE_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan?siteId=${SITE_ID}&year=${AOP_YEAR}`
+
+export async function exportFixedExpensesData(
+  keycloak,
+  siteId,
+  aopYear,
+  excelName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/report-fixed-expenses-export?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName || 'fixed_expenses'}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Fixed Expenses Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function importFixedExpensesData(file, keycloak, siteId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/report-fixed-expenses-import?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Fixed Expenses Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function getCapexData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/capex-pio?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -297,8 +359,8 @@ export async function getCapexData(keycloak, SITE_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-export async function saveCapexData(keycloak, SITE_ID, AOP_YEAR, data) {
-  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan?siteId=${SITE_ID}&year=${AOP_YEAR}`
+export async function saveCapexData(keycloak, PLANT_ID, AOP_YEAR, data) {
+  const url = `${Config.CaseEngineUrl}/task/capex-pio?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -313,6 +375,79 @@ export async function saveCapexData(keycloak, SITE_ID, AOP_YEAR, data) {
     return await resp.json()
   } catch (e) {
     console.error('Error saving Capex data:', e)
+    return Promise.reject(e)
+  }
+}
+export async function deleteCapex(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting Fixed Expense record:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function exportCapexData(
+  keycloak,
+  siteId,
+  aopYear,
+  excelName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan-export?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}&excelName=${encodeURIComponent(excelName || 'capex_pioplan')}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName || 'fixed_expenses'}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Fixed Expenses Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function importCapexData(file, keycloak, siteId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/report-capex-pioplan-import?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Fixed Expenses Excel:', e)
     return Promise.reject(e)
   }
 }
@@ -657,6 +792,83 @@ export async function saveMajorReliabilityImprovement(
     return Promise.reject(e)
   }
 }
+export async function deleteMajorReliabilityImprovement(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/major-reliability-improvement/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting Major Safety Initiative record:', e)
+    return Promise.reject(e)
+  }
+}
+export async function exportMajorReliabilityImprovement(
+  keycloak,
+  siteId,
+  aopYear,
+  excelName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-reliability-improvement-export?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName || 'Major_Reliability_Improvement'}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Major Reliability Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function importMajorReliabilityImprovement(
+  file,
+  keycloak,
+  siteId,
+  aopYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/major-reliability-improvement-import?siteId=${encodeURIComponent(siteId)}&aopYear=${encodeURIComponent(aopYear)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Major Reliability Improvement Excel:', e)
+    return Promise.reject(e)
+  }
+}
 
 // Major People Initiative
 export async function getMajorPeopleInitiative(keycloak, SITE_ID, AOP_YEAR) {
@@ -964,21 +1176,4 @@ export async function ImportSiteTeamExcel(file, keycloak, siteId, year) {
     return Promise.reject(e)
   }
 }
-export async function deleteMajorInitiativeInitiative(keycloak, id) {
-  const url = `${Config.CaseEngineUrl}/task/major-reliability-improvement/${id}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'DELETE',
-      headers,
-    })
-    return await resp.json()
-  } catch (e) {
-    console.error('Error deleting Major Safety Initiative record:', e)
-    return Promise.reject(e)
-  }
-}
+
