@@ -8,9 +8,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Locale;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -23,21 +24,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.CapexPIOPlanTransactionDTO;
-import com.wks.caseengine.dto.CrackerHMDLoadLIMSSpyroInputDTO;
-import com.wks.caseengine.dto.LIMSSpyroInputDTO;
-import com.wks.caseengine.dto.NaphthaQualityDTO;
+
 import com.wks.caseengine.entity.CapexPIOPlanTransaction;
-import com.wks.caseengine.entity.NormAttributeTransactions;
-import com.wks.caseengine.entity.NormParameters;
+
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.service.AOPReportService;
+
 import com.wks.caseengine.repository.CapexPIOPlanTransactionRepository;
-import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
-import com.wks.caseengine.repository.NormParametersRepository;
+
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -58,9 +55,6 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 
     @Autowired
     private SiteRepository siteRepository;
-
-    @Autowired
-    private VerticalsRepository verticalsRepository;
     
     @Autowired
     private CapexPIOPlanTransactionRepository capexPIOPlanTransactionRepository;
@@ -74,9 +68,6 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 
             Sites site = siteRepository.findById(plant.getSiteFkId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-
-            Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 
             String procedureName = "Sp_GetCapexPIOPlan";
 
@@ -244,15 +235,11 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	        headers.add("Justification");
 	        headers.add("Cost (Rs Cr)");
 	        headers.add("Benefit (Rs Cr)");
-	        headers.add("Target Plan");
-	        headers.add("Status Plan");
+	        headers.add("Target");
+	        headers.add("Status");
 	        headers.add("Remarks");
 	        headers.add("Id");
-	        headers.add("SiteId");
-	        headers.add("AOPYear");
-	        headers.add("UpdatedBy");
-	        headers.add("UpdatedDate");
-
+	        
 	        Row headerRow = sheet.createRow(currentRow++);
 	        for (int col = 0; col < headers.size(); col++) {
 	            Cell cell = headerRow.createCell(col);
@@ -273,14 +260,11 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	            
 	            // Hidden metadata fields
 	            setCellValue(row, 8, dto.getId() != null ? dto.getId().toString() : null);
-	            setCellValue(row, 9, dto.getSiteId() != null ? dto.getSiteId().toString() : null);
-	            setCellValue(row, 10, dto.getAopYear());
-	            setCellValue(row, 11, dto.getUpdatedBy());
-	            setCellValue(row, 12, dto.getUpdatedDate());
+	            
 	        }
 
 	        // Hide ID and metadata columns (columns 8 to 12)
-	        for (int col = 8; col <= 12; col++) {
+	        for (int col = 7; col <= 8; col++) {
 	            sheet.setColumnHidden(col, true);
 	        }
 
@@ -328,11 +312,15 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 
 	public List<CapexPIOPlanTransactionDTO> readCapexPIOExcel(InputStream inputStream, UUID plantId, String year) {
 	    List<CapexPIOPlanTransactionDTO> list = new ArrayList<>();
+	    Plants plant = plantsRepository.findById(plantId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+        Sites site = siteRepository.findById(plant.getSiteFkId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
-
-	        // Skip header row if present
+ 
 	        if (rowIterator.hasNext()) {
 	            rowIterator.next();
 	        }
@@ -340,37 +328,45 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	        while (rowIterator.hasNext()) {
 	            Row row = rowIterator.next();
 
-	            // Skip empty rows
-	            String proposal = getStringCellValue(row.getCell(1));
+	            String proposal = getStringCellValue(row.getCell(0));
 	            if (proposal == null || proposal.isBlank()) {
 	                continue;
 	            }
 
 	            CapexPIOPlanTransactionDTO dto = new CapexPIOPlanTransactionDTO();
-
-	            // Read ID if updating existing records
-	            String idStr = getStringCellValue(row.getCell(0));
-	            if (idStr != null && !idStr.isBlank()) {
-	                dto.setId(UUID.fromString(idStr));
-	            }
-
 	            dto.setProposal(proposal);
-	            dto.setCategory(getStringCellValue(row.getCell(2)));
-	            dto.setJustification(getStringCellValue(row.getCell(3)));
-	            dto.setCostRsCr(getNumericCellValue(row.getCell(4)));
-	            dto.setBenefitRsCr(getNumericCellValue(row.getCell(5)));
-	            
-	            // Handle target plan date
-	            Cell targetPlanCell = row.getCell(6);
-	            if (targetPlanCell != null && DateUtil.isCellDateFormatted(targetPlanCell)) {
-	                dto.setTargetPlan(targetPlanCell.getDateCellValue());
+	            dto.setCategory(getStringCellValue(row.getCell(1)));
+	            dto.setJustification(getStringCellValue(row.getCell(2)));
+	            dto.setCostRsCr(getNumericCellValue(row.getCell(3)));
+	            dto.setBenefitRsCr(getNumericCellValue(row.getCell(4)));
+
+	            Cell targetPlanCell = row.getCell(5);
+	            if (targetPlanCell != null) {
+	                try {
+	                    
+	                    if (targetPlanCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(targetPlanCell)) {
+	                        dto.setTargetPlan(targetPlanCell.getDateCellValue());
+	                    } 
+	                    
+	                    else {
+	                        String dateStr = getStringCellValue(targetPlanCell); // Safe string reader
+	                        if (dateStr != null && !dateStr.isBlank()) {
+	                            dto.setTargetPlan(parseMultiFormatDate(dateStr.trim()));
+	                        }
+	                    }
+	                } catch (Exception e) {
+	                    e.printStackTrace();
+	                }
 	            }
 
-	            dto.setStatusPlan(getStringCellValue(row.getCell(7)));
-	            dto.setRemarks(getStringCellValue(row.getCell(8)));
-	            
-	            // Default contextual metadata
-	            dto.setSiteId(plantId);
+	            dto.setStatusPlan(getStringCellValue(row.getCell(6)));
+	            dto.setRemarks(getStringCellValue(row.getCell(7)));
+
+	            String idStr = getStringCellValue(row.getCell(8));
+	            if (idStr != null && !idStr.isBlank()) {
+	                dto.setId(UUID.fromString(idStr.trim()));
+	            }
+	            dto.setSiteId(site.getId());
 	            dto.setAopYear(year);
 
 	            list.add(dto);
@@ -379,6 +375,27 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	        e.printStackTrace();
 	    }
 	    return list;
+	}
+	
+	private Date parseMultiFormatDate(String dateStr) {
+	    String[] patterns = {
+	        "yyyy-MM-dd",    
+	        "MMM dd, yyyy",  
+	        "dd-MM-yyyy",    
+	        "dd/MM/yyyy",    
+	        "yyyy/MM/dd"     
+	    };
+
+	    for (String pattern : patterns) {
+	        try {
+	            SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
+	            sdf.setLenient(false);
+	            return sdf.parse(dateStr);
+	        } catch (ParseException ignored) {
+	            // Try next format pattern
+	        }
+	    }
+	    return null;
 	}
 	
 	@Override
