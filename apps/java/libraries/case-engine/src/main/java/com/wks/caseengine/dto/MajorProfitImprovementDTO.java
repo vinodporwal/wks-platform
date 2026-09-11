@@ -33,4 +33,6 @@ public class MajorProfitImprovementDTO {
     private String aopYear;
     private String modifiedBy;
     private Date modifiedOn;
+    private String saveStatus;
+    private String errDescription;
 }
