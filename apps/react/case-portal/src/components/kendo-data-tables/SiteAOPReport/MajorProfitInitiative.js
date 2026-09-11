@@ -3,13 +3,13 @@ import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { useSelector } from 'react-redux'
-import { validateFields } from 'utils/validationUtils'
-import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
 import { formatDate } from 'utils/dateUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { generateExcelNameWithoutExt } from 'utils/excelNameUtil'
+import { generateExcelName } from 'utils/excelNameUtil'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import getSiteAOPReportColumns from './columns/SiteReportColumns'
 
 export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   const keycloak = useSession()
@@ -38,17 +38,19 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const ExcelExportTitle = generateExcelNameWithoutExt(
+  const ExcelExportTitle = generateExcelName(
     dataGridStore,
     tabDisplayName || 'Major Profit and Operability Improvement',
   )
+  const valueFormat = ValueFormatterConsumption()
 
   const columns = useMemo(() => {
-    const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorProfitInitiative
-    return cols.map((col) => {
-      return col
-    })
-  }, [AOP_YEAR])
+    const cols = getSiteAOPReportColumns({
+      AOP_YEAR,
+      valueFormat,
+    }).majorProfitInitiative
+    return cols
+  }, [AOP_YEAR, valueFormat])
 
   // Fetch plant dropdown for this site
   const fetchPlantDropdown = useCallback(async () => {
@@ -181,7 +183,7 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
           initiativeDescription: item.initiativeDescription,
           category: item.category || '',
           outcome: item.outcome || '',
-          cost: item.cost || '',
+          cost: item.cost || 0,
           targetDate: item.targetDate ? formatDate(item.targetDate) : null,
           remark: item.responsibility || item.remark || '',
           siteFkId: SITE_ID,
@@ -272,7 +274,7 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
         keycloak,
         SITE_ID,
         AOP_YEAR,
-        EXCEL_EXPORT_TITLE,
+        ExcelExportTitle,
       )
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -379,8 +381,8 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
       saveBtn: permissions?.saveBtn ?? true,
       addButton: permissions?.addButton ?? true,
       deleteButton: permissions?.deleteButton ?? true,
-      downloadExcelBtn: permissions?.downloadExcelBtn ?? false,
-      uploadExcelBtn: permissions?.uploadExcelBtn ?? false,
+      downloadExcelBtn: permissions?.downloadExcelBtn ?? true,
+      uploadExcelBtn: permissions?.uploadExcelBtn ?? true,
     },
     isOldYear,
   )
