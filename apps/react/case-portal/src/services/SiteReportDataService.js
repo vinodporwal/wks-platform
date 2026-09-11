@@ -379,7 +379,7 @@ export async function saveCapexData(keycloak, PLANT_ID, AOP_YEAR, data) {
   }
 }
 export async function deleteCapex(keycloak, id) {
-  const url = `${Config.CaseEngineUrl}/task/capex-pio/${id}`
+  const url = `${Config.CaseEngineUrl}/task/capex-pio?id=${id}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
