@@ -403,7 +403,7 @@ export async function exportCapexData(
   aopYear,
   excelName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/capex-pio-export?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(aopYear)}&excelName=${encodeURIComponent(excelName || 'capex_pioplan')}`
+  const url = `${Config.CaseEngineUrl}/task/capex-pio-export?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(aopYear)}`
   const headers = {
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     Authorization: `Bearer ${keycloak.token}`,

@@ -12,6 +12,7 @@ import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'utils/excelNameUtil'
+import { formatDate } from 'utils/dateUtils'
 export default function Capex({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -95,7 +96,12 @@ export default function Capex({ permissions, tabDisplayName }) {
       editable: true,
       type: 'number',
     },
-    { field: 'targetPlan', title: 'Target', editable: true },
+    {
+      field: 'targetPlan',
+      title: 'Target',
+      editable: true,
+      type: 'date',
+    },
     { field: 'statusPlan', title: 'Status', editable: true },
     // { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
   ]
@@ -177,9 +183,9 @@ export default function Capex({ permissions, tabDisplayName }) {
         proposal: item.proposal,
         category: item.category,
         justification: item.justification,
-        costRsCr: item.costRsCr,
+        costRsCr: item.costRsCr || 0,
         benefitRsCr: item.benefitRsCr,
-        targetPlan: item.targetPlan,
+        targetPlan: item.targetPlan ? formatDate(item.targetPlan) : '',
         statusPlan: item.statusPlan,
         remarks: item.remarks || 'system generated',
         siteId: SITE_ID,
@@ -235,7 +241,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       }
 
       if (idFromApi) {
-        await SiteReportDataService.deleteCapex(idFromApi, keycloak)
+        await SiteReportDataService.deleteCapex(keycloak, idFromApi)
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
@@ -248,6 +254,8 @@ export default function Capex({ permissions, tabDisplayName }) {
       }
     } catch (error) {
       console.error('Error deleting Record!', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -261,7 +269,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     try {
       await SiteReportDataService.exportCapexData(
         keycloak,
-        SITE_ID,
+        PLANT_ID,
         AOP_YEAR,
         EXCEL_EXPORT_TITLE,
       )
@@ -281,7 +289,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       const response = await SiteReportDataService.importCapexData(
         rawFile,
         keycloak,
-        SITE_ID,
+        PLANT_ID,
         AOP_YEAR,
       )
 
