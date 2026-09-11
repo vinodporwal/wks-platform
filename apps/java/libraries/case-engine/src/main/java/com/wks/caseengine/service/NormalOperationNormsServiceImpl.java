@@ -181,6 +181,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setNormParameterTypeDisplayName(row[26] != null ? row[26].toString() : null);
 					mCUNormsValueDTO.setUOM(row[27] != null ? row[27].toString() : null);
 					mCUNormsValueDTO.setIsEditable(row[28] != null ? Boolean.valueOf(row[28].toString()) : null);
+					mCUNormsValueDTO.setProductName(row[29] != null ? row[29].toString() : null);
+					mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
 					if(vertical.getName().equalsIgnoreCase("Filament")) {
 						if(mCUNormsValueDTO.getNormParameterTypeName().equalsIgnoreCase("Manual Entry")) {
 							mCUNormsValueDTO.setIsEditable(true);
@@ -188,13 +190,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							mCUNormsValueDTO.setIsEditable(false);
 						}
 					}
-					mCUNormsValueDTO.setProductName(row[29] != null ? row[29].toString() : null);
-					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || withGrade){
-						mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
-					}
 				} else {
 					mCUNormsValueDTO.setMaterialFkId(row[4].toString());
-
 					mCUNormsValueDTO.setApril(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
 					mCUNormsValueDTO.setMay(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
 					mCUNormsValueDTO.setJune(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
@@ -207,7 +204,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setJanuary(row[14] != null ? Double.parseDouble(row[14].toString()) : null);
 					mCUNormsValueDTO.setFebruary(row[15] != null ? Double.parseDouble(row[15].toString()) : null);
 					mCUNormsValueDTO.setMarch(row[16] != null ? Double.parseDouble(row[16].toString()) : null);
-
 					mCUNormsValueDTO.setFinancialYear(row[17].toString());
 					mCUNormsValueDTO.setRemarks(row[18] != null ? row[18].toString() : "");
 					mCUNormsValueDTO.setCreatedOn(row[19] != null ? (Date) row[19] : null);
@@ -3336,11 +3332,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
-			Boolean elastomerWithGrade = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+			Boolean elastomerWithGrade = (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR")) || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR"));
 			boolean ptaPmdPia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD") && plant.getName().equalsIgnoreCase("PIA");
 
 			if(ptaPmdPia){ 
-				// seperate method to handle sapcode column
 				return importExcelWithSapCode(year, plantFKId, gradeId, file, mode);
 			}
 
@@ -3385,10 +3380,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	public AOPMessageVM importExcelSAPWithoutGrade(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode) {
 		// TODO Auto-generated method stub
 		try {
-			Plants plant = plantsRepository.findById(plantFKId).get();
 			List<MCUNormsValueDTO> data = null;
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			data = readSAPWithoutGrade(file.getInputStream(), plantFKId, year);
 			List<MCUNormsValueDTO> failedRecords = saveNormalOperationNormsData(data, plantFKId, year, gradeId, true);
 
@@ -3401,16 +3393,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				aopMessageVM.setCode(400);
 				aopMessageVM.setMessage("Partial data has been saved");
 			} else {
-				// aopMessageVM.setData();
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("All data has been saved");
 			}
-
 			return aopMessageVM;
-			// return ResponseEntity.ok(data);
 		} catch (Exception e) {
 			e.printStackTrace();
-			// return ResponseEntity.internalServerError().build();
 		}
 		return null;
 	}
