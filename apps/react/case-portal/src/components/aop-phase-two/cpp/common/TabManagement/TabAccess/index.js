@@ -10,13 +10,14 @@ import {
   DialogTitle,
   Autocomplete,
   TextField,
-  Chip,
   Typography,
   IconButton,
 } from '@mui/material'
 import { useSelector } from 'react-redux'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { TabAccessApiService } from 'components/aop-phase-two/services/common/tabAccessApiService'
@@ -327,6 +328,17 @@ const TabAccess = () => {
     setEditingId(null)
   }
 
+  // Reorder selected configuration tabs (sequence is preserved on save & render)
+  const moveTab = (index, direction) => {
+    setForm((prev) => {
+      const tabs = [...prev.configurationTabs]
+      const target = index + direction
+      if (target < 0 || target >= tabs.length) return prev
+      ;[tabs[index], tabs[target]] = [tabs[target], tabs[index]]
+      return { ...prev, configurationTabs: tabs }
+    })
+  }
+
   const handleSave = async () => {
     if (!form.verticalId || !form.siteId || !form.plantId) {
       setSnackbarOpen(true)
@@ -521,46 +533,118 @@ const TabAccess = () => {
               )}
             />
 
-            {/* Configuration Tabs multi-select */}
+            {/* Configuration Tabs - search & add box */}
             <Autocomplete
-              multiple
-              options={tabOptions}
+              options={tabOptions.filter(
+                (tab) =>
+                  !form.configurationTabs.some(
+                    (tabId) =>
+                      String(tab.id).toLowerCase() ===
+                      String(tabId).toLowerCase(),
+                  ),
+              )}
+              value={null}
               getOptionLabel={(option) => option.label || ''}
               isOptionEqualToValue={(option, value) =>
-                option.id?.toLowerCase() === value?.id?.toLowerCase()
+                String(option.id).toLowerCase() ===
+                String(value.id).toLowerCase()
               }
-              value={form.configurationTabs.map(
-                (tabId) =>
-                  tabOptions.find(
-                    (t) => t.id?.toLowerCase() === tabId?.toLowerCase(),
-                  ) || { id: tabId, label: tabId },
-              )}
-              onChange={(e, newValue) =>
-                setForm({
-                  ...form,
-                  configurationTabs: newValue.map((v) => v.id),
-                })
-              }
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    key={option.id}
-                    label={option.label}
-                    size='small'
-                    {...getTagProps({ index })}
-                  />
-                ))
-              }
+              onChange={(event, newValue) => {
+                if (newValue) {
+                  setForm((prev) => ({
+                    ...prev,
+                    configurationTabs: [...prev.configurationTabs, newValue.id],
+                  }))
+                }
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
                   label='Configuration Tabs'
-                  placeholder='Select tabs'
+                  placeholder='Search and add tabs'
                   size='small'
                 />
               )}
             />
 
+            {/* Ordered list of selected tabs with move up/down & remove */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Typography variant='caption' color='text.secondary'>
+                Selected tabs (sequence is saved as shown)
+              </Typography>
+              {form.configurationTabs.length === 0 && (
+                <Typography variant='body2' color='text.disabled'>
+                  No tabs added yet.
+                </Typography>
+              )}
+              {form.configurationTabs.map((tabId, index) => {
+                const tab = tabOptions.find(
+                  (t) =>
+                    String(t.id).toLowerCase() === String(tabId).toLowerCase(),
+                )
+                const label = tab?.label || tabId
+                return (
+                  <Box
+                    key={`${tabId}_${index}`}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      px: 1.5,
+                      py: 1,
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      borderRadius: 1.5,
+                      bgcolor: 'background.paper',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                      cursor: 'default',
+                      '&:hover': {
+                        transform: 'scale(1.02)',
+                        boxShadow: 3,
+                        bgcolor: 'action.hover',
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant='body1'
+                      sx={{ minWidth: 32, color: 'text.secondary' }}
+                    >
+                      {index + 1}.
+                    </Typography>
+                    <Typography variant='body1' sx={{ flex: 1 }}>
+                      {label}
+                    </Typography>
+                    <IconButton
+                      aria-label='Move up'
+                      disabled={index === 0}
+                      onClick={() => moveTab(index, -1)}
+                    >
+                      <ArrowUpwardIcon />
+                    </IconButton>
+                    <IconButton
+                      aria-label='Move down'
+                      disabled={index === form.configurationTabs.length - 1}
+                      onClick={() => moveTab(index, 1)}
+                    >
+                      <ArrowDownwardIcon />
+                    </IconButton>
+                    <IconButton
+                      aria-label='Remove'
+                      color='error'
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          configurationTabs: prev.configurationTabs.filter(
+                            (_, i) => i !== index,
+                          ),
+                        }))
+                      }
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                )
+              })}
+            </Box>
             {/* Type */}
             <TextField
               label='Type (optional)'
