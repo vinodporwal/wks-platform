@@ -25,7 +25,7 @@ public class MajorProfitImprovementDTO {
     private String plant;
     private String initiativeDescription;
     private String category;
-    private String cost;
+    private Double cost;
     private String outcome;
     private Date targetDate;
     private String remark;
@@ -33,4 +33,6 @@ public class MajorProfitImprovementDTO {
     private String aopYear;
     private String modifiedBy;
     private Date modifiedOn;
+    private String saveStatus;
+    private String errDescription;
 }

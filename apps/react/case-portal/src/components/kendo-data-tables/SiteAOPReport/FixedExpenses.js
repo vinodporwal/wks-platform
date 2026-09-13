@@ -5,12 +5,13 @@ import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { DataService } from 'services/DataService'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'utils/excelNameUtil'
 export default function FixedExpenses({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -52,6 +53,11 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  const EXCEL_EXPORT_TITLE = generateExcelName(
+      dataGridStore,
+      tabDisplayName || 'Fixed Expenses',
+    )
 
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
   function getPrevAopYear(aopYear) {
@@ -160,7 +166,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
 
       if (res?.code === 200) {
         const mapped = res?.data?.Data?.map((item, index) => ({
-          id: item.id || null,
+          id: index + 1,
           srNo: index + 1,
           particular: item.particulars,
           fyPrevAOP: item.fyPrevAOP,
@@ -207,21 +213,8 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         return
       }
 
-      const requiredFields = ['remarks']
-
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
-
       const payload = data.map((item) => ({
-        id: item.id || null,
+        id: item.idFromApi || null,
         particulars: item.particular,
         fyPrevAOP: item.fyPrevAOP,
         fyPrevActual: item.fyPrevActual,
@@ -298,8 +291,93 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     }
   }
 
-  const handleExcelUpload = (type) => (rawFile) => {
-    uploadPeopleDetails(rawFile, type)
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await SiteReportDataService.exportFixedExpensesData(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+    try {
+      const response = await SiteReportDataService.importFixedExpensesData(
+        rawFile,
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `Error_File_Fixed_Expenses_${AOP_YEAR}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred during upload!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleRemarkCellClick = useCallback((row) => {
@@ -327,10 +405,12 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     {
       allAction: true,
       saveBtn: true,
-      showTitleNameBusiness: true,
-      titleName: tabDisplayName || 'Fixed Expenses',
+      showTitle: true,
+      title: tabDisplayName || 'Fixed Expenses',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Fixed_Expenses_${AOP_YEAR}`,
+      showExport: permissions?.downloadExcelBtn ?? true,
+      uploadExcelBtn: permissions?.uploadExcelBtn ?? true,
       //addButton: true,
       //deleteButton: true,
     },
@@ -358,6 +438,8 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
+        handleExport={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
       />
       <Notification
         open={snackbarOpen}

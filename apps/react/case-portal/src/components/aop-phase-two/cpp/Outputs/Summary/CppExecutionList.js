@@ -24,12 +24,19 @@ const CppExecutionList = ({ onViewClick }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { jmdSelectedPlants, year } = dataGridStore
+  const { plantObject, siteObject, jmdSelectedPlants, year } = dataGridStore
   const AOP_YEAR = year?.selectedYear
 
+  const PLANT_ID = plantObject?.id
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+
+  // Build plant ID list: JMD uses all selected plants, otherwise single plant
   const PLANT_ID_LIST = useMemo(
-    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-    [jmdSelectedPlants],
+    () =>
+      lowerSiteName === 'jmd'
+        ? jmdSelectedPlants?.map((plant) => plant.id) || []
+        : [PLANT_ID],
+    [jmdSelectedPlants, lowerSiteName, PLANT_ID],
   )
 
   // Custom action cell with view and download icons
