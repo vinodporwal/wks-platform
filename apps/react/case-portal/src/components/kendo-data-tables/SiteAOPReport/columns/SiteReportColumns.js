@@ -616,6 +616,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
           widthT: 100,
           editable: true,
           type: 'number',
+          format: '{0:0.00}',
         },
         {
           field: 'fy26Actual',
@@ -623,6 +624,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
           widthT: 100,
           editable: true,
           type: 'number',
+          format: '{0:0.00}',
         },
       ],
     },
@@ -635,6 +637,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
           widthT: 100,
           editable: true,
           type: 'number',
+          format: '{0:0.00}',
         },
         {
           field: 'percentChange',
@@ -642,6 +645,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
           widthT: 80,
           editable: true,
           type: 'number',
+          format: '{0:0.00}',
         },
         {
           field: 'variance',
@@ -649,10 +653,17 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
           widthT: 80,
           editable: true,
           type: 'number',
+          format: '{0:0.00}',
         },
       ],
     },
-    { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 100,
+      editable: true,
+      type: 'text',
+    },
   ],
   capexPlan: [
     { field: 'id', title: 'ID', editable: false, hidden: true },
@@ -678,6 +689,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       widthT: 100,
       editable: true,
       type: 'number',
+      format: '{0:0.00}',
     },
     {
       field: 'benefit',
@@ -685,6 +697,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       widthT: 100,
       editable: true,
       type: 'number',
+      format: '{0:0.00}',
     },
     { field: 'target', title: 'Target', widthT: 100, editable: true },
     { field: 'status', title: 'Status', widthT: 100, editable: true },

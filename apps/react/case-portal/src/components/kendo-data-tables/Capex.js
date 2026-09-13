@@ -62,49 +62,54 @@ export default function Capex({ permissions, tabDisplayName }) {
 
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
 
-  const capexPlanColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'sno',
-      title: 'S.No',
-      widthT: 60,
-      editable: false,
-      align: 'right',
-      format: '{0:0}',
-    },
-    { field: 'proposal', title: 'Proposal', editable: true },
-    { field: 'category', title: 'Category', editable: true },
-    {
-      field: 'justification',
-      title: 'Justification',
-      editable: true,
-    },
-    {
-      field: 'costRsCr',
-      title: 'Cost (Rs Cr)',
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'benefitRsCr',
-      title: 'Benefit (Rs Cr)',
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'targetPlan',
-      title: 'Target',
-      editable: true,
-      type: 'date',
-    },
-    { field: 'statusPlan', title: 'Status', editable: true },
-    // { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
-  ]
+  const capexPlanColumns = useMemo(
+    () => [
+      {
+        field: 'id',
+        title: 'ID',
+        editable: false,
+        hidden: true,
+      },
+      {
+        field: 'sno',
+        title: 'S.No',
+        widthT: 60,
+        editable: false,
+        align: 'right',
+        format: '{0:0}',
+      },
+      { field: 'proposal', title: 'Proposal', editable: true },
+      { field: 'category', title: 'Category', editable: true },
+      {
+        field: 'justification',
+        title: 'Justification',
+        editable: true,
+      },
+      {
+        field: 'costRsCr',
+        title: 'Cost (Rs Cr)',
+        editable: true,
+        type: 'number',
+        format: '{0:0.00}',
+      },
+      {
+        field: 'benefitRsCr',
+        title: 'Benefit (Rs Cr)',
+        editable: true,
+        type: 'number',
+        format: '{0:0.00}',
+      },
+      {
+        field: 'targetPlan',
+        title: 'Target',
+        editable: true,
+        type: 'date',
+      },
+      { field: 'statusPlan', title: 'Status', editable: true },
+      // { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
+    ],
+    [],
+  )
 
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
