@@ -1,17 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import { Backdrop, Box, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
-import { DataService } from 'services/DataService'
 import { SiteReportDataService } from 'services/SiteReportDataService'
 import KendoDataTables from '../index'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { add } from 'lodash'
-import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'utils/excelNameUtil'
+import { getRoleName } from 'services/role-service'
+
 export default function FixedExpenses({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -25,6 +22,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     verticalObject,
     year,
     screenTitle,
+    isReleased,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -37,17 +35,14 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
-  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
-  const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -55,23 +50,9 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const EXCEL_EXPORT_TITLE = generateExcelName(
-      dataGridStore,
-      tabDisplayName || 'Fixed Expenses',
-    )
-
-  const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
-  function getPrevAopYear(aopYear) {
-    if (!aopYear) return ''
-    const match = aopYear.match(/(\d{4})-(\d{2})/)
-    if (match) {
-      const prevStart = String(Number(match[1]) - 1)
-      const prevEnd = match[1].slice(2)
-      return `${prevStart}-${prevEnd}`
-    }
-    return ''
-  }
-
-  const prevAopYear = getPrevAopYear(AOP_YEAR)
+    dataGridStore,
+    tabDisplayName || 'Fixed Expenses',
+  )
 
   function getAopShortYears(aopYear) {
     if (!aopYear) return { prev: '', next: '' }
@@ -81,83 +62,101 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
       const next = match[2]
       return { prev, next }
     }
-    const year = String(aopYear).slice(-2)
-    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
+    const y = String(aopYear).slice(-2)
+    return { prev: y, next: String(Number(y) + 1).padStart(2, '0') }
   }
   const { prev, next } = getAopShortYears(AOP_YEAR)
 
-  const fixedExpensesColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'srNo',
-      title: 'Sr. No.',
-      widthT: 60,
-      editable: false,
-      align: 'right',
-      format: '{0:0}',
-      type: 'numberNonGrey',
-    },
-    {
-      field: 'particular',
-      title: 'Particulars',
-      widthT: 180,
-      editable: false,
-    },
-    {
-      title: `FY ${prevAopYear}`,
-      children: [
-        {
-          field: 'fyPrevAOP',
-          title: `FY${prev} AOP`,
-          editable: true,
-
-          type: 'numberNonGrey',
-        },
-        {
-          field: 'fyPrevActual',
-          title: `FY${prev} Actual`,
-          editable: true,
-          type: 'numberNonGrey',
-        },
-      ],
-    },
-    {
-      title: `AOP ${AOP_YEAR}`,
-      children: [
-        {
-          field: 'fyCurrAOP',
-          title: `FY${next} AOP`,
-
-          editable: true,
-          type: 'numberNonGrey',
-        },
-        {
-          field: 'percentageChange',
-          title: '% Change',
-          editable: true,
-          type: 'numberNonGrey',
-        },
-        {
-          field: 'variance',
-          title: 'Variance',
-          editable: true,
-          type: 'numberNonGrey',
-        },
-      ],
-    },
-    { field: 'remarks', title: 'Remarks', widthT: 200, editable: true },
-  ]
+  const columns = useMemo(
+    () => [
+      {
+        field: 'id',
+        title: 'ID',
+        editable: false,
+        hidden: true,
+        isVisible: false,
+      },
+      {
+        field: 'srNo',
+        title: 'Sr. No.',
+        width: 70,
+        editable: false,
+        align: 'right',
+        headerAlign: 'right',
+        format: '{0:0}',
+        type: 'number',
+      },
+      {
+        field: 'particular',
+        title: 'Particulars',
+        minWidth: 180,
+        editable: false,
+      },
+      {
+        field: 'fyPrevAOP',
+        title: `FY${prev} AOP`,
+        editable: true,
+        type: 'number',
+        format: '{0:0.00}',
+        minWidth: 120,
+        align: 'right',
+        headerAlign: 'right',
+      },
+      {
+        field: 'fyPrevActual',
+        title: `FY${prev} Actual`,
+        editable: true,
+        type: 'number',
+        format: '{0:0.00}',
+        minWidth: 120,
+        align: 'right',
+        headerAlign: 'right',
+      },
+      {
+        field: 'fyCurrAOP',
+        title: `FY${next} AOP`,
+        editable: true,
+        type: 'number',
+        format: '{0:0.00}',
+        minWidth: 120,
+        align: 'right',
+        headerAlign: 'right',
+      },
+      {
+        field: 'percentageChange',
+        title: '% Change',
+        editable: true,
+        type: 'number',
+        format: '{0:0.00}',
+        minWidth: 110,
+        align: 'right',
+        headerAlign: 'right',
+      },
+      {
+        field: 'variance',
+        title: 'Variance',
+        editable: true,
+        type: 'number',
+        format: '{0:0.00}',
+        minWidth: 110,
+        align: 'right',
+        headerAlign: 'right',
+      },
+      {
+        field: 'responsibility',
+        title: 'Remarks',
+        minWidth: 200,
+        editable: true,
+      },
+    ],
+    [prev, next],
+  )
 
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
     setLoading(true)
     try {
-      // var res = await DataService.getMonthWiseSummary(keycloak)
       const res = await SiteReportDataService.getFixedExpensesData(
         keycloak,
         SITE_ID,
@@ -165,8 +164,8 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
       )
 
       if (res?.code === 200) {
-        const mapped = res?.data?.Data?.map((item, index) => ({
-          id: index + 1,
+        const mapped = (res?.data?.Data || []).map((item, index) => ({
+          id: item.id || index + 1,
           srNo: index + 1,
           particular: item.particulars,
           fyPrevAOP: item.fyPrevAOP,
@@ -175,6 +174,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
           percentageChange: item.percentageChange,
           variance: item.variance,
           remarks: item.remarks,
+          responsibility: item.remarks || '',
           siteId: item.siteId,
           aopYear: item.aopYear,
           updatedBy: item.updatedBy,
@@ -194,7 +194,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, plantID, SITE_ID, AOP_YEAR])
 
   useEffect(() => {
     fetchData()
@@ -221,14 +221,16 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         fyCurrAOP: item.fyCurrAOP,
         percentageChange: item.percentageChange,
         variance: item.variance,
-        remarks: item.remarks || 'system generated',
+        remarks:
+          item.responsibility !== undefined
+            ? item.responsibility
+            : item.remarks || 'system generated',
         siteId: SITE_ID,
         aopYear: AOP_YEAR,
         updatedBy: keycloak?.userName || 'system',
         updatedDate: new Date().toISOString(),
       }))
 
-      // 3. Save to API
       const response = await SiteReportDataService.saveFixedExpensesData(
         keycloak,
         SITE_ID,
@@ -236,7 +238,6 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         payload,
       )
 
-      // 4. Handle API response
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -261,7 +262,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, SITE_ID, fetchData])
 
   const deleteRowData = async (paramsForDelete) => {
     setLoading(true)
@@ -347,7 +348,10 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', `Error_File_Fixed_Expenses_${AOP_YEAR}.xlsx`)
+        link.setAttribute(
+          'download',
+          `Error_File_Fixed_Expenses_${AOP_YEAR}.xlsx`,
+        )
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -380,12 +384,6 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     }
   }
 
-  const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [])
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -397,22 +395,30 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
       showUnit: false,
       saveWithRemark: false,
       saveBtn: false,
+      showLoadBtn: false,
       isOldYear: isOldYear,
+      allAction: false,
     }
   }
 
   const adjustedPermissions = getAdjustedPermissions(
     {
+      showAction: permissions?.showAction ?? true,
+      showUnit: permissions?.showUnit ?? false,
+      saveWithRemark: false,
+      saveBtn: permissions?.saveBtn ?? true,
       allAction: true,
-      saveBtn: true,
-      showTitle: true,
-      title: tabDisplayName || 'Fixed Expenses',
-      adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Fixed_Expenses_${AOP_YEAR}`,
-      showExport: permissions?.downloadExcelBtn ?? true,
+      downloadExcelBtn: permissions?.downloadExcelBtn ?? true,
       uploadExcelBtn: permissions?.uploadExcelBtn ?? true,
-      //addButton: true,
-      //deleteButton: true,
+      showLoadBtn: false,
+      showNoteWhileDeleting: false,
+      showTitleNameBusiness: true,
+      titleName: tabDisplayName || 'Fixed Expenses',
+      ExcelName: `${lowerVertName}_Fixed_Expenses_${AOP_YEAR}`,
+      addButton: false,
+      deleteButton: false,
+      disableColWidth: true,
+      makePagable: false,
     },
     isOldYear,
   )
@@ -420,25 +426,22 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <KendoDataTablesReports
-        columns={fixedExpensesColumns}
-        rows={rows}
-        setRows={setRows}
-        title='Fixed Expenses'
+      <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
-        enableSaveAddBtn={enableSaveAddBtn}
+        setRows={setRows}
+        columns={columns}
+        rows={rows}
+        fetchData={fetchData}
         saveChanges={saveChanges}
-        handleRemarkCellClick={handleRemarkCellClick}
-        deleteRowData={deleteRowData}
+        handleLoad={fetchData}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
         permissions={adjustedPermissions}
-        handleExport={downloadExcelForConfiguration}
+        disableRedHighlight={true}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
       />
       <Notification
@@ -450,3 +453,4 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     </Box>
   )
 }
+
