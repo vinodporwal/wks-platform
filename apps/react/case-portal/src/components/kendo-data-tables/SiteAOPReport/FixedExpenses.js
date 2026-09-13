@@ -166,7 +166,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
 
       if (res?.code === 200) {
         const mapped = res?.data?.Data?.map((item, index) => ({
-          id: item.id || null,
+          id: index + 1,
           srNo: index + 1,
           particular: item.particulars,
           fyPrevAOP: item.fyPrevAOP,
@@ -213,21 +213,8 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         return
       }
 
-      const requiredFields = ['remarks']
-
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
-
       const payload = data.map((item) => ({
-        id: item.id || null,
+        id: item.idFromApi || null,
         particulars: item.particular,
         fyPrevAOP: item.fyPrevAOP,
         fyPrevActual: item.fyPrevActual,
@@ -312,7 +299,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     })
 
     try {
-      await SiteReportDataService.exportMajorProfitImprovement(
+      await SiteReportDataService.exportFixedExpensesData(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -331,7 +318,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
   const handleExcelUpload = async (rawFile) => {
     setLoading(true)
     try {
-      const response = await SiteReportDataService.importMajorProfitImprovement(
+      const response = await SiteReportDataService.importFixedExpensesData(
         rawFile,
         keycloak,
         SITE_ID,
@@ -360,7 +347,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', `Error_File_${EXCEL_EXPORT_TITLE}.xlsx`)
+        link.setAttribute('download', `Error_File_Fixed_Expenses_${AOP_YEAR}.xlsx`)
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -451,7 +438,7 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExport={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
       />
       <Notification

@@ -318,7 +318,7 @@ export default function MajorProfitInitiative({ permissions, tabDisplayName }) {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', `Error_File_${EXCEL_EXPORT_TITLE}.xlsx`)
+        link.setAttribute('download', `Error_File_Major_Profit_Initiative_${AOP_YEAR}.xlsx`)
         document.body.appendChild(link)
         link.click()
         link.remove()
