@@ -67,7 +67,7 @@ public class MajorProfitImprovementServiceImpl implements MajorProfitImprovement
                     .plant(rs.getString("Plant"))
                     .initiativeDescription(rs.getString("InitiativeDescription"))
                     .category(rs.getString("Category"))
-                    .cost(rs.getString("Cost"))
+                    .cost(rs.getDouble("Cost"))
                     .outcome(rs.getString("Outcome"))
                     .targetDate(rs.getDate("TargetDate"))
                     .remark(rs.getString("Responsibility"))
@@ -238,7 +238,9 @@ public class MajorProfitImprovementServiceImpl implements MajorProfitImprovement
 
                 // Col 3 – Cost (Rs Cr)
                 Cell costCell = row.createCell(3);
-                costCell.setCellValue(dto.getCost() != null ? dto.getCost() : "");
+                if (dto.getCost() != null) {
+                    costCell.setCellValue(dto.getCost());
+                }
                 costCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
                 // Col 4 – Outcome (Rs Cr)
@@ -348,9 +350,18 @@ public class MajorProfitImprovementServiceImpl implements MajorProfitImprovement
 
                     // Col 3 – Cost (Rs Cr)
                     Cell costCell = row.getCell(3);
+
                     if (costCell != null) {
-                        costCell.setCellType(CellType.STRING);
-                        dto.setCost(costCell.getStringCellValue().trim());
+                        String costValue = costCell.toString().trim();
+                    
+                        if (!costValue.isEmpty()) {
+                            try {
+                                dto.setCost(Double.parseDouble(costValue));
+                            } catch (NumberFormatException e) {
+                                dto.setSaveStatus("Failed");
+                                dto.setErrDescription("Cost is not a valid number.");
+                            }
+                        }
                     }
 
                     // Col 4 – Outcome (Rs Cr)
