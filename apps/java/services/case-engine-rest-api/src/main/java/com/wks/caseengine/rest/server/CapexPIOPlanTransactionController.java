@@ -45,7 +45,7 @@ public class CapexPIOPlanTransactionController {
         
     @GetMapping(value = "/capex-pio-export")
 	public ResponseEntity<byte[]> exportCapexPIO(
-	         @RequestParam("plantId") String siteId,
+	         @RequestParam("siteId") String siteId,
             @RequestParam("year") String year
            
 	        ) {
@@ -68,7 +68,7 @@ public class CapexPIOPlanTransactionController {
 
 	@PostMapping(value = "/capex-pio-import", consumes = "multipart/form-data")
 	public AOPMessageVM importCapexPIO(
-	        @RequestParam("plantId") String siteId,
+	        @RequestParam("siteId") String siteId,
 	        @RequestParam("year") String year,
 	        @RequestParam("file") MultipartFile file) {
 	    return capexPIOService.importCapexPIO(year, UUID.fromString(siteId), file);
