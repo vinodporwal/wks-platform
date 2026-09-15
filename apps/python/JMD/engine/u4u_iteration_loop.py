@@ -192,6 +192,7 @@ class U4UIterationLoop:
         import_power: Optional[dict] = None,
         gt_heat_rate_df = None,
         hrsg_heat_rate_df = None,
+        interplant_export_demands: Optional[dict] = None,
     ):
         self.plant_id = plant_id
         self.month = month
@@ -206,6 +207,12 @@ class U4UIterationLoop:
         self.max_iterations = max_iterations
         self.import_power = import_power or {"success": False, "total_mwh": 0.0, "per_source": []}
         self.external_import_mwh = max(0.0, float(self.import_power.get("total_mwh", 0.0)))
+
+        # Inter-plant export demands: {ods_material_name: total_qty} for
+        # utilities that this plant must generate for export to another plant.
+        # Calculated dynamically by the calculator from the target plant's
+        # (process + fixed + inter-plant U4U) demand for those utilities.
+        self.interplant_export_demands = interplant_export_demands or {}
 
         self.consumption_norms: dict = {}
         self.all_consumption_norms: dict = {}
@@ -361,6 +368,7 @@ class U4UIterationLoop:
             "final_bpc_gen_quantities": self._bpc_gen_quantities,
             "final_bpc_quantities": self._bpc_quantities,
             "iteration_history": self.iteration_history,
+            "interplant_skipped": dict(self._interplant_skipped),
         }
 
     # ------------------------------------------------------------------
@@ -427,13 +435,22 @@ class U4UIterationLoop:
             if u.startswith(("JMD", "Jamnagar")) or u.startswith("No Plant")
                or (short_code and short_code in u.upper())
         }
-        # SEZ-PCG: 'RIL-JW Plant-SEZ PCG' is the plant's own UOM but uses a space
-        # (not underscore) so the short_code check above misses it.  Add it
-        # explicitly so its consumptions are not skipped as inter-plant.
+        # SEZ-PCG: 'RIL-JW Plant-SEZ PCG' is the plant's own UOM but uses a
+        # space (not underscore) so the short_code check above misses it.
+        #
+        # CRITICAL: 'JMD - SEZ Utility Plant' (36BW) is SEZ-CPP's utility
+        # plant, NOT SEZ-PCG's.  The generic u.startswith("JMD") check above
+        # incorrectly includes it, which prevents SEZ-PCG's U4U loop from
+        # skipping consumptions of D M Water, Utility Water, and Desal
+        # Water Clearing imported from 36BW.  For SEZ-PCG, replace the
+        # in-plant set entirely with only UOMs that explicitly contain
+        # 'SEZ PCG' or 'SEZ-PCG' so that 36BW consumptions are correctly
+        # captured as inter-plant export demand for SEZ-CPP.
         if self.plant_id.upper() == _SEZ_PCG_PLANT_ID:
-            for u in uom_plants:
-                if "SEZ PCG" in u.upper() or "SEZ-PCG" in u.upper():
-                    self._inplant_uom_plants.add(u)
+            self._inplant_uom_plants = {
+                u for u in uom_plants
+                if "SEZ PCG" in u.upper() or "SEZ-PCG" in u.upper()
+            }
 
         # Identify the plant's own utility plant.  This is the in-plant name that
         # contains 'Utility Plant' but is not a power distribution / sub-plant.
@@ -554,25 +571,24 @@ class U4UIterationLoop:
             ods_mat = db_to_ods.get(db_name, db_name)
             demands[ods_mat] = demands.get(ods_mat, 0.0) + float(value)
 
-        # Hard-coded April 2026 export demands to other plants (temporary until
-        # multi-plant CSV loading is implemented dynamically).  These values are
-        # taken from the 'Norm, Qty, Cost .csv' summary for April.
-        if self.month == 4 and self.year == 2026:
-            _april_export_additions = {
-                "D M Water": 390380.45,       # M3
-                "Utility Water": 10153.0,     # M3
-                "Desal Water Clearing": 502450.25,  # M3
-            }
-            for utility_name, export_qty in _april_export_additions.items():
+        # Inter-plant export demands: utilities that this plant must generate
+        # for export to another plant (e.g. SEZ-CPP → SEZ-PCG for Utility Water,
+        # D M Water, Desal Water Clearing).  These are calculated dynamically by
+        # the calculator from the target plant's (process + fixed + inter-plant
+        # U4U) demand for those utilities, and passed in via the constructor.
+        if self.interplant_export_demands:
+            for utility_name, export_qty in self.interplant_export_demands.items():
+                if export_qty <= 0:
+                    continue
                 if utility_name in self._all_producers:
                     demands[utility_name] = demands.get(utility_name, 0.0) + export_qty
                     logger.info(
-                        "  [U4U LOOP] Hard-coded April export demand for '%s': +%.2f",
+                        "  [U4U LOOP] Inter-plant export demand for '%s': +%.2f",
                         utility_name, export_qty,
                     )
                 else:
                     logger.warning(
-                        "  [U4U LOOP] Hard-coded export utility '%s' not in ODS producers, skipped",
+                        "  [U4U LOOP] Inter-plant export utility '%s' not in ODS producers, skipped",
                         utility_name,
                     )
 

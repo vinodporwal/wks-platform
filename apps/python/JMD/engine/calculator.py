@@ -128,6 +128,104 @@ def _log_utility_demand_rollup(process: dict, fixed: dict, month: int, year: int
 
 
 # ---------------------------------------------------------------------------
+# Inter-plant export demands
+# ---------------------------------------------------------------------------
+# When one CPP plant exports utilities to another (e.g. SEZ-CPP exports
+# Utility Water, D M Water, Desal Water Clearing to SEZ-PCG-CPP), the
+# exporting plant must generate enough to meet BOTH its own demand AND the
+# target plant's total demand (process + fixed + inter-plant U4U) for those
+# utilities.
+#
+# This module runs the target plant in dry-run mode, extracts its inter-plant
+# U4U consumptions (skipped because they come from an external source like
+# 36BW), adds the target plant's process + fixed demands, and returns the
+# combined total as the export demand for the source plant.
+
+_SEZ_PLANT_ID     = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
+_SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
+
+# source_plant_id → {target_plant_id, export_utilities: [ODS material names]}
+_INTERPLANT_EXPORTS = {
+    _SEZ_PLANT_ID: {
+        "target_plant_id": _SEZ_PCG_PLANT_ID,
+        "export_utilities": ["D M Water", "Utility Water", "Desal Water Clearing"],
+    },
+}
+
+# Recursion guard — prevents infinite loop if target plant also has exports.
+_interplant_running = False
+
+
+def _get_interplant_export_demands(plant_id: str, month: int, year: int) -> dict:
+    """Calculate inter-plant export demands for utilities this plant must
+    generate for export to another plant.
+
+    For SEZ-CPP, runs SEZ-PCG in dry-run mode and extracts:
+    - SEZ-PCG's process + fixed demands for the export utilities (from DB)
+    - SEZ-PCG's inter-plant U4U demands (consumptions from external sources
+      like 36BW that are skipped in SEZ-PCG's U4U calculation)
+
+    Total export demand = process + fixed + inter-plant U4U
+
+    Returns: {ods_material_name: total_export_qty}
+    """
+    global _interplant_running
+    if _interplant_running:
+        return {}
+
+    config = _INTERPLANT_EXPORTS.get(plant_id.upper())
+    if not config:
+        return {}
+
+    target_plant_id = config["target_plant_id"]
+    export_utilities = config["export_utilities"]
+
+    logger.info("  [INTER-PLANT] Calculating export demands: %s -> %s for %s",
+                plant_id, target_plant_id, export_utilities)
+
+    _interplant_running = True
+    try:
+        target_result = run_month(target_plant_id, month, year, save_to_db=False)
+    finally:
+        _interplant_running = False
+
+    # Extract inter-plant U4U demands from target plant's U4U result
+    u4u_result = target_result.get("u4u_iteration") or {}
+    interplant_skipped = u4u_result.get("interplant_skipped", {})
+
+    # Sum inter-plant U4U by material (across all producers)
+    interplant_u4u_by_material: dict = {}
+    for (producer, material), qty in interplant_skipped.items():
+        if material in export_utilities:
+            interplant_u4u_by_material[material] = (
+                interplant_u4u_by_material.get(material, 0.0) + float(qty)
+            )
+
+    # Fetch target plant's process + fixed demands for export utilities
+    target_process = fetch_process_demands_raw(target_plant_id, month, year)
+    target_fixed   = fetch_fixed_consumption_raw(target_plant_id, month, year)
+
+    # Combine: total = process + fixed + inter-plant U4U
+    export_demands: dict = {}
+    for util in export_utilities:
+        process_val = float(target_process.get(util, 0.0))
+        fixed_val   = float(target_fixed.get(util, 0.0))
+        u4u_val     = float(interplant_u4u_by_material.get(util, 0.0))
+        total = process_val + fixed_val + u4u_val
+        if total > 0:
+            export_demands[util] = total
+            logger.info(
+                "  [INTER-PLANT] %s: process=%.2f, fixed=%.2f, interplant_u4u=%.2f, total_export=%.2f",
+                util, process_val, fixed_val, u4u_val, total,
+            )
+
+    if not export_demands:
+        logger.warning("  [INTER-PLANT] No export demands calculated (all values were 0)")
+
+    return export_demands
+
+
+# ---------------------------------------------------------------------------
 # Single month calculation
 # ---------------------------------------------------------------------------
 
@@ -265,6 +363,13 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
     # U4U consumption cascades until convergence (0.01% tolerance on all utilities).
     # This replaces the standalone power/steam dispatch calls above.
     try:
+        # Calculate inter-plant export demands (e.g. SEZ-CPP must generate
+        # enough Utility Water / D M Water / Desal Water Clearing to meet
+        # SEZ-PCG's total demand for those utilities).  This runs the target
+        # plant in dry-run mode and extracts its inter-plant U4U + process
+        # + fixed demands for the configured export utilities.
+        interplant_export_demands = _get_interplant_export_demands(plant_id, month, year)
+
         u4u_loop = U4UIterationLoop(
             plant_id=plant_id,
             month=month,
@@ -274,6 +379,7 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
             import_power=import_power,
             gt_heat_rate_df=gt_df,
             hrsg_heat_rate_df=hrsg_df,
+            interplant_export_demands=interplant_export_demands,
         )
         u4u_result = u4u_loop.run()
         result["u4u_iteration"] = u4u_result
