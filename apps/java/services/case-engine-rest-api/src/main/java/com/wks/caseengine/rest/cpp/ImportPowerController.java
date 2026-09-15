@@ -16,9 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,8 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.service.ImportPowerCapacityService;
 import com.wks.caseengine.cpp.service.ImportPowerHoursService;
+import com.wks.caseengine.dto.AddImportPowerCapacitySourceRequestDTO;
 import com.wks.caseengine.dto.ImportPowerCapacityDto;
 import com.wks.caseengine.dto.ImportPowerHoursDto;
+import com.wks.caseengine.dto.UpdateImportPowerCapacitySourceRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
 
@@ -240,6 +244,76 @@ public class ImportPowerController {
                     .data(null)
                     .build());
         }
+    }
+
+    // ========================================
+    // CAPACITY SOURCE ENDPOINTS (Add / Update / Delete)
+    // ========================================
+
+    /**
+     * POST /task/import-power/capacity/source
+     *
+     * Adds a new import power capacity source under the given CPP plant.
+     * Creates a NormParameters entry and a CPPImportPowerSourceMapping entry.
+     */
+    @PostMapping("/capacity/source")
+    public ResponseEntity<AOPMessageVM> addImportPowerCapacitySource(
+            @RequestBody AddImportPowerCapacitySourceRequestDTO request) {
+
+        AOPMessageVM response = importPowerCapacityService.addImportPowerCapacitySource(request);
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    /**
+     * PUT /task/import-power/capacity/source/{sourceId}
+     *
+     * Updates name, displayName, sapCode, uom, and materialCode of an existing
+     * import power capacity source (CPPImportPowerSourceMapping + linked NormParameters).
+     */
+    @PutMapping("/capacity/source/{sourceId}")
+    public ResponseEntity<AOPMessageVM> updateImportPowerCapacitySource(
+            @PathVariable UUID sourceId,
+            @RequestBody UpdateImportPowerCapacitySourceRequestDTO request) {
+
+        AOPMessageVM response = importPowerCapacityService.updateImportPowerCapacitySource(sourceId, request);
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    /**
+     * DELETE /task/import-power/capacity/source/{sourceId}
+     *
+     * Soft-deletes the import power capacity source by setting isActive = false
+     * on CPPImportPowerSourceMapping and isVisible = false on the linked NormParameters.
+     */
+    @DeleteMapping("/capacity/source/{sourceId}")
+    public ResponseEntity<AOPMessageVM> deleteImportPowerCapacitySource(
+            @PathVariable UUID sourceId) {
+
+        AOPMessageVM response = importPowerCapacityService.deleteImportPowerCapacitySource(sourceId);
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    /**
+     * GET /task/import-power/capacity/procurement-plants?cppPlant={uuid}
+     *
+     * Returns all procurement/source plants linked to the given CPP plant
+     * (Plants rows whose SourceName column equals the CPP plant UUID).
+     * Used to populate the Procurement Plant dropdown in the Add Source dialog.
+     */
+    @GetMapping("/capacity/procurement-plants")
+    public ResponseEntity<AOPMessageVM> getImportCapacityProcurementPlants(
+            @RequestParam UUID cppPlant) {
+
+        AOPMessageVM response = importPowerCapacityService.getImportCapacityProcurementPlants(cppPlant);
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
     }
 
     // ========================================
