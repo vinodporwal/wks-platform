@@ -32,27 +32,26 @@ public class CapexPIOPlanTransactionController {
     
     @GetMapping(value = "/capex-pio")
     public AOPMessageVM getCapexPIO(
-            @RequestParam String plantId,
+            @RequestParam String siteId,
             @RequestParam String year) {
 
-        return capexPIOService.getCapexPIO(plantId, year);
+        return capexPIOService.getCapexPIO(siteId, year);
     }
     
     @PostMapping(value="/capex-pio")
-	public AOPMessageVM saveCapexPIO(@RequestParam String year,@RequestParam String plantId, @RequestBody List<CapexPIOPlanTransactionDTO> capexPIOPlanTransactionDTOs) {
-		return 	capexPIOService.saveCapexPIO(year,plantId,capexPIOPlanTransactionDTOs);
+	public AOPMessageVM saveCapexPIO(@RequestParam String year,@RequestParam String siteId, @RequestBody List<CapexPIOPlanTransactionDTO> capexPIOPlanTransactionDTOs) {
+		return 	capexPIOService.saveCapexPIO(year,siteId,capexPIOPlanTransactionDTOs);
 	}
         
     @GetMapping(value = "/capex-pio-export")
 	public ResponseEntity<byte[]> exportCapexPIO(
-	         @RequestParam("plantId") String plantId,
+	         @RequestParam("plantId") String siteId,
             @RequestParam("year") String year
            
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = capexPIOService.exportCapexPIO(year, plantId, false, null); 
-
+	        byte[] excelBytes = capexPIOService.exportCapexPIO(year, siteId, false, null); 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
@@ -69,10 +68,10 @@ public class CapexPIOPlanTransactionController {
 
 	@PostMapping(value = "/capex-pio-import", consumes = "multipart/form-data")
 	public AOPMessageVM importCapexPIO(
-	        @RequestParam("plantId") String plantId,
+	        @RequestParam("plantId") String siteId,
 	        @RequestParam("year") String year,
 	        @RequestParam("file") MultipartFile file) {
-	    return capexPIOService.importCapexPIO(year, UUID.fromString(plantId), file);
+	    return capexPIOService.importCapexPIO(year, UUID.fromString(siteId), file);
 	}
 	
 	@DeleteMapping("/capex-pio")
