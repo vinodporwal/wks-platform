@@ -226,6 +226,11 @@ public class PlantReportController {
         return plantReportService.saveConversionVariableCostData(conversionVariableCostDTOs);
     }
 
+    @GetMapping(value = "/conversion-variable-cost-load")
+    public AOPMessageVM loadConversionVariableCostData(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.loadConversionVariableCostData(siteId, aopYear);
+    }
+
     @GetMapping(value = "/site-aop-report-tabs")
     public AOPMessageVM getSiteAopReportTabs(@RequestParam(required = false) String siteId) {
         return plantReportService.getSiteAopReportTabs(siteId);

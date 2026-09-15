@@ -71,4 +71,6 @@ public interface PlantReportService {
     byte[] exportSiteSafetyPerformanceTargets(String siteId, String aopYear, boolean isAfterSave, List<SiteSafetyPerformanceTargetsDTO> dtoList);
 
     AOPMessageVM importSiteSafetyPerformanceTargetsExcel(String siteId, String aopYear, MultipartFile file);
+	
+	AOPMessageVM loadConversionVariableCostData(String siteId, String aopYear);
 }

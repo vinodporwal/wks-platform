@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Backdrop, Box, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -49,33 +49,21 @@ export default function ConversionVariableCost({
   }
   const { prev, next } = getAopShortYears(AOP_YEAR)
 
-  const mcuCapacityUtilizationColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
+  const conversionVariableColumns = [
     {
       field: 'sno',
       title: 'S.No',
-      width: 30,
+      minWidth: 30,
       editable: false,
       align: 'right',
       format: '{0:0}',
       locked: true,
     },
-    {
-      field: 'plantName',
-      title: 'Plant',
-      widthT: 30,
-      editable: false,
-      locked: true,
-    },
+
     {
       field: 'costType',
       title: 'Cost Head',
-      widthT: 30,
+      minWidth: 100,
       editable: false,
       locked: true,
     },
@@ -84,7 +72,7 @@ export default function ConversionVariableCost({
       title: `FY${prev} AOP`,
       editable: false,
       type: 'number',
-      width: 60,
+      minWidth: 150,
       format: '{0:0.00}',
     },
     {
@@ -92,7 +80,7 @@ export default function ConversionVariableCost({
       title: `FY${prev} Actual`,
       editable: false,
       type: 'number',
-      width: 60,
+      minWidth: 150,
       format: '{0:0.00}',
     },
     {
@@ -100,21 +88,20 @@ export default function ConversionVariableCost({
       title: `FY${next} AOP`,
       editable: false,
       type: 'number',
-      width: 60,
+      minWidth: 150,
       format: '{0:0.00}',
     },
     {
       field: 'remark',
       title: 'Rationale/ Reasons',
-      widthT: 270,
+      minWidth: 350,
       editable: true,
     },
   ]
 
   const columns = useMemo(() => {
-    const cols = mcuCapacityUtilizationColumns
-    return cols
-  }, [AOP_YEAR])
+    return conversionVariableColumns
+  }, [AOP_YEAR, prev, next])
 
   const fetchData = useCallback(async () => {
     if (!SITE_ID || !AOP_YEAR) return
@@ -141,6 +128,7 @@ export default function ConversionVariableCost({
           idFromApi: item?.id || null,
           originalRemark: item.remark,
           remark: item.remark,
+          plantName: item?.plantName || item?.plant || item?.Plant || '',
         }))
         setRows(mapped)
       } else {
@@ -178,29 +166,11 @@ export default function ConversionVariableCost({
         return
       }
 
-      const payload = data.map(
-        ({
-          id,
-          plantName,
-          costType,
-          previousAop,
-          previousActual,
-          currentAop,
-          remark,
-          siteFkId,
-          aopYear,
-        }) => ({
-          id: id || null,
-          plantName,
-          costType,
-          previousAop,
-          previousActual,
-          currentAop,
-          remark,
-          siteFkId: siteFkId || SITE_ID,
-          aopYear: aopYear || AOP_YEAR,
-        }),
-      )
+      // Send only id and remark in payload
+      const payload = data.map((item) => ({
+        id: item?.id || null,
+        remark: item?.remark ?? item?.remarks ?? '',
+      }))
 
       const response = await SiteReportDataService.saveConversionVariableCost(
         keycloak,
@@ -263,6 +233,41 @@ export default function ConversionVariableCost({
     }
   }
 
+  const handleLoad = async () => {
+    if (!SITE_ID || !AOP_YEAR) return
+    setLoading(true)
+    try {
+      const data = await SiteReportDataService.loadConversionVariableCost(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+      if (data?.code === 200 || data === 0 || data?.data >= 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data loaded successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: data?.message || 'Data Load Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred during load',
+        severity: 'error',
+      })
+      console.error('Error in handleLoad:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -280,6 +285,7 @@ export default function ConversionVariableCost({
       showUnit: false,
       saveWithRemark: false,
       saveBtn: false,
+      showLoadBtn: false,
       isOldYear: isOldYear,
     }
   }
@@ -289,11 +295,11 @@ export default function ConversionVariableCost({
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: tabDisplayName || 'Conversion & Variable Cost',
+      titleName: tabDisplayName || 'Conversion, Contribution & Variable Cost',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Conversion_Variable_Cost_${AOP_YEAR}`,
-      // addButton: false,
-      // deleteButton: false,
+      ExcelName: `${lowerVertName}_Conversion_Contribution_Variable_Cost_${AOP_YEAR}`,
+      makePagable: false,
+      showLoadBtn: true,
     },
     isOldYear,
   )
@@ -306,7 +312,7 @@ export default function ConversionVariableCost({
         columns={columns}
         rows={rows}
         setRows={setRows}
-        title='Conversion Variable Cost'
+        title='Conversion, Contribution & Variable Cost'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}
@@ -317,9 +323,11 @@ export default function ConversionVariableCost({
         setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
+        handleLoad={handleLoad}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
         deleteRowData={deleteRowData}
+        groupBy={'plantName'}
       />
       <Notification
         open={snackbarOpen}

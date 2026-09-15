@@ -567,23 +567,33 @@ public class PlantReportServiceImpl implements PlantReportService {
     @Transactional
     public AOPMessageVM getConversionVariableCostData(String siteId, String aopYear) {
         try {
-            String sql = "EXEC Sp_GetConversionVariableConstData @siteId = ?, @aopyear = ?";
+            String sql = "EXEC Sp_GetConversionVariableContribution @SiteId = ?, @AOPYear = ?";
 
-            List<ConversionVariableCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
-                ConversionVariableCostDTO.builder()
-                    .id(Optional.ofNullable(rs.getString("Id")).map(UUID::fromString).orElse(null))
-                    .plantName(rs.getString("PlantName"))
-                    .costType(rs.getString("CostType"))
-                    .previousAop(rs.getDouble("PreviousAop"))
-                    .previousActual(rs.getDouble("PreviousActual"))
-                    .currentAop(rs.getDouble("CurrentAop"))
-                    .remark(rs.getString("Remark"))
-                    .siteFkId(Optional.ofNullable(rs.getString("Site_FK_Id")).map(UUID::fromString).orElse(null))
-                    .aopYear(rs.getString("AopYear"))
-                    .modifiedBy(rs.getString("ModifiedBy"))
-                    .modifiedOn(rs.getDate("ModifiedOn"))
-                    .isEditable(rs.getBoolean("IsEditable"))
-                    .build(), siteId, aopYear);
+            List<ConversionVariableCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                String idStr = rs.getString("Id");
+                String plantIdStr = rs.getString("PlantId");
+                String siteIdStr = rs.getString("SiteId");
+
+                Double prevAop = rs.getObject("FYPrevAOP") != null ? rs.getDouble("FYPrevAOP") : null;
+                Double prevActual = rs.getObject("FYPrevActual") != null ? rs.getDouble("FYPrevActual") : null;
+                Double currAop = rs.getObject("FYCurrAOP") != null ? rs.getDouble("FYCurrAOP") : null;
+
+                return ConversionVariableCostDTO.builder()
+                    .id((idStr != null && !idStr.trim().isEmpty()) ? UUID.fromString(idStr.trim()) : null)
+                    .plantId((plantIdStr != null && !plantIdStr.trim().isEmpty()) ? UUID.fromString(plantIdStr.trim()) : null)
+                    .plantName(rs.getString("Plant"))
+                    .costType(rs.getString("CostHead"))
+                    .previousAop(prevAop)
+                    .previousActual(prevActual)
+                    .currentAop(currAop)
+                    .remark(rs.getString("Remarks"))
+                    .siteFkId((siteIdStr != null && !siteIdStr.trim().isEmpty()) ? UUID.fromString(siteIdStr.trim()) : null)
+                    .aopYear(rs.getString("AOPYear"))
+                    .modifiedBy(rs.getString("UpdatedBy"))
+                    .modifiedOn(rs.getTimestamp("UpdatedDate"))
+                    .isEditable(rs.getObject("IsEditable") != null ? rs.getBoolean("IsEditable") : true)
+                    .build();
+            }, siteId, aopYear);
 
             Map<String, Object> map = new HashMap<>();
             map.put("Data", data);
@@ -606,16 +616,18 @@ public class PlantReportServiceImpl implements PlantReportService {
             String modifiedBy = Utility.getUserName();
             Timestamp modifiedOn = new Timestamp(new Date().getTime());
 
-            String updateSql = "UPDATE ConversionVariableCost " +
-                    "SET Remark = ?, ModifiedBy = ?, ModifiedOn = ? " +
-                    "WHERE Id = ?";
+            String updateSql = "UPDATE ConversionVariableContributionTransaction " +
+                    "SET Remarks = ?, ModifiedBy = ?, ModifiedOn = ? " +
+                    "WHERE id = ?";
 
             for (ConversionVariableCostDTO dto : conversionVariableCostDTOs) {
-                jdbcTemplate.update(updateSql,
-                    dto.getRemark(),
-                    modifiedBy,
-                    modifiedOn,
-                    dto.getId().toString());
+                if (dto.getId() != null) {
+                    jdbcTemplate.update(updateSql,
+                        dto.getRemark(),
+                        modifiedBy,
+                        modifiedOn,
+                        dto.getId().toString());
+                }
             }
 
             AOPMessageVM response = new AOPMessageVM();
@@ -1736,6 +1748,17 @@ public class PlantReportServiceImpl implements PlantReportService {
     @Override
     public AOPMessageVM loadSiteSafetyPerformanceData(String siteId, String aopYear) {
         String procedureName = "Sp_LoadSiteSafetyPerformanceTargets";
+        Integer result = executeLoadButtonSP(siteId, aopYear, procedureName);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setCode(200);
+        aopMessageVM.setMessage("Load SP Executed successfully");
+        aopMessageVM.setData(result);
+        return aopMessageVM;
+    }
+
+    @Override
+    public AOPMessageVM loadConversionVariableCostData(String siteId, String aopYear) {
+        String procedureName = "Sp_NMD_LoadConversionVariableContributionCost";
         Integer result = executeLoadButtonSP(siteId, aopYear, procedureName);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         aopMessageVM.setCode(200);
