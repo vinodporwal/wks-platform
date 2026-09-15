@@ -393,6 +393,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       const rowsWithIds = res?.steamResponse?.map((row, index) => ({
         ...row,
         id: row.id || index + 1,
+        remarks: row.remarks || '',
       }))
 
       setRows(rowsWithIds)

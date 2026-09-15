@@ -400,7 +400,11 @@ const PowerGrid = ({ hoursRows = [] }) => {
 
       const rowsWithIds = res?.powerResponse
         ?.filter((row) => row.assetType !== 'Power_Dis')
-        ?.map((row, index) => ({ ...row, id: row.id || index + 1 }))
+        ?.map((row, index) => ({
+          ...row,
+          id: row.id || index + 1,
+          remarks: row.remarks || '',
+        }))
 
       setRows(rowsWithIds)
       setOriginalRows(rowsWithIds)
