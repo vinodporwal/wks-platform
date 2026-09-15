@@ -16,6 +16,7 @@ export const SiteReportDataService = {
   saveFixedExpensesData,
   getCapexData,
   saveCapexData,
+  loadTechnicalAvailability,
   getTechnicalAvailability,
   saveTechnicalAvailability,
   getMajorSafetyInitiative,
@@ -448,6 +449,21 @@ export async function importCapexData(file, keycloak, plantId, aopYear) {
     return await resp.json()
   } catch (e) {
     console.error('Error importing Fixed Expenses Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function loadTechnicalAvailability(keycloak, SITE_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/load-technical-availability?siteId=${SITE_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error loading Technical Availability data:', e)
     return Promise.reject(e)
   }
 }

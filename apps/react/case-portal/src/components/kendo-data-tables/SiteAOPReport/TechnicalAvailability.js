@@ -1,14 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import { Backdrop, Box, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
-import { DataService } from 'services/DataService'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function TechnicalAvailability({ permissions, tabDisplayName }) {
@@ -95,21 +92,21 @@ export default function TechnicalAvailability({ permissions, tabDisplayName }) {
     {
       field: 'fyPrevAOP',
       title: `FY${prev} AOP`,
-      editable: true,
+      editable: false,
       type: 'number',
       minWidth: 100,
     },
     {
       field: 'fyPrevActual',
       title: `FY${prev} Actual`,
-      editable: true,
+      editable: false,
       type: 'number',
       minWidth: 100,
     },
     {
       field: 'fyCurrAOP',
       title: `FY${next} AOP`,
-      editable: true,
+      editable: false,
       type: 'number',
       minWidth: 100,
     },
@@ -239,34 +236,27 @@ export default function TechnicalAvailability({ permissions, tabDisplayName }) {
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
 
-  const deleteRowData = async (paramsForDelete) => {
+  const onLoadHandle = async () => {
     setLoading(true)
 
     try {
-      const { idFromApi, id } = paramsForDelete
-      const deleteId = id
 
-      if (!idFromApi) {
-        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-      }
-
-      if (idFromApi) {
-        await SiteReportDataService.deleteTechnicalAvailability(
-          idFromApi,
+        await SiteReportDataService.loadTechnicalAvailability(
           keycloak,
+          SITE_ID,
+          AOP_YEAR,
         )
-        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        fetchData()
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Record Deleted successfully!',
+          message: 'Loaded successfully!',
           severity: 'success',
         })
         fetchData()
-      } else {
-        setLoading(false)
-      }
     } catch (error) {
-      console.error('Error deleting Record!', error)
+      console.error('Error loading data!', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -299,6 +289,7 @@ export default function TechnicalAvailability({ permissions, tabDisplayName }) {
     {
       allAction: true,
       saveBtn: true,
+      showLoadBtn: true,
       showTitleNameBusiness: true,
       titleName: tabDisplayName || 'Technical Availability',
       adjustedPermissions: true,
@@ -329,8 +320,8 @@ export default function TechnicalAvailability({ permissions, tabDisplayName }) {
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
-        deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
+        handleLoad={onLoadHandle}
       />
       <Notification
         open={snackbarOpen}
