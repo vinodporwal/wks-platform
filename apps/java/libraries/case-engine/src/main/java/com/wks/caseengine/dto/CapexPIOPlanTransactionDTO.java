@@ -30,4 +30,6 @@ public class CapexPIOPlanTransactionDTO {
     private String aopYear;
     private String updatedBy;
     private Date updatedDate;
+    private String saveStatus;
+    private String errDescription;
 }

@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Locale;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -60,18 +61,13 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
     private CapexPIOPlanTransactionRepository capexPIOPlanTransactionRepository;
     
     @Override
-    public AOPMessageVM getCapexPIO(String plantId, String aopYear) {
+    public AOPMessageVM getCapexPIO(String siteId, String aopYear) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         try {
-            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-            Sites site = siteRepository.findById(plant.getSiteFkId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 
             String procedureName = "Sp_GetCapexPIOPlan";
 
-            List<Object[]> results = executeCapexPIO(procedureName, site.getId(), aopYear);
+            List<Object[]> results = executeCapexPIO(procedureName, UUID.fromString(siteId), aopYear);
 
             List<CapexPIOPlanTransactionDTO> dtoList = new ArrayList<>();
 
@@ -138,13 +134,9 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
     }
 
     @Override
-    public AOPMessageVM saveCapexPIO(String year, String plantFKId, List<CapexPIOPlanTransactionDTO> capexPIOPlanTransactionDTOs) {
+    public AOPMessageVM saveCapexPIO(String year, String siteId, List<CapexPIOPlanTransactionDTO> capexPIOPlanTransactionDTOs) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
-        Plants plant = plantsRepository.findById(UUID.fromString(plantFKId))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Sites site = siteRepository.findById(plant.getSiteFkId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+        
         try {
             if (capexPIOPlanTransactionDTOs != null && !capexPIOPlanTransactionDTOs.isEmpty()) {
                 String currentUser = Utility.getUserName();
@@ -170,7 +162,7 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
                     entity.setTargetPlan(dto.getTargetPlan());
                     entity.setStatusPlan(dto.getStatusPlan());
                     entity.setRemarks(dto.getRemarks());
-                    entity.setSiteId(site.getId());
+                    entity.setSiteId(UUID.fromString(siteId));
                     entity.setAopYear(year);
                     entity.setUpdatedBy(currentUser);
                     entity.setUpdatedDate(currentDate);
@@ -179,7 +171,6 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
                     capexPIOPlanTransactionRepository.save(entity);
                 }
             }
-
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data updated successfully");
             aopMessageVM.setData(null);
@@ -210,14 +201,17 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	    }
 	}
 	
-	public byte[] exportCapexPIO(String year, String plantId, boolean isAfterSave, List<CapexPIOPlanTransactionDTO> dtoList) {
+	public byte[] exportCapexPIO(String year, String siteId, boolean isAfterSave, List<CapexPIOPlanTransactionDTO> dtoList) {
 	    try {
 	        if (!isAfterSave) {
-	            AOPMessageVM aopMessageVM = getCapexPIO(plantId, year);
+	            AOPMessageVM aopMessageVM = getCapexPIO(siteId, year);
 	            if (aopMessageVM != null && aopMessageVM.getData() instanceof Map) {
+	                @SuppressWarnings("unchecked")
 	                Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
 	                if (innerMap != null && innerMap.get("Data") instanceof List) {
-	                    dtoList = (List<CapexPIOPlanTransactionDTO>) innerMap.get("Data");
+	                    @SuppressWarnings("unchecked")
+	                    List<CapexPIOPlanTransactionDTO> fetchedList = (List<CapexPIOPlanTransactionDTO>) innerMap.get("Data");
+	                    dtoList = fetchedList;
 	                }
 	            }
 	        }
@@ -229,60 +223,123 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	        Sheet sheet = workbook.createSheet("Capex PIO Plan");
 	        int currentRow = 0;
 
+	        // Styles
+	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+	        CellStyle bodyStyle = Utility.createBorderedStyle(workbook);
+
 	        List<String> headers = new ArrayList<>();
-	        headers.add("Proposal");
-	        headers.add("Category");
-	        headers.add("Justification");
-	        headers.add("Cost (Rs Cr)");
-	        headers.add("Benefit (Rs Cr)");
-	        headers.add("Target");
-	        headers.add("Status");
-	        headers.add("Remarks");
-	        headers.add("Id");
-	        
+	        headers.add("Proposal");          
+	        headers.add("Category");          
+	        headers.add("Justification");    
+	        headers.add("Cost (Rs Cr)");      
+	        headers.add("Benefit (Rs Cr)");  
+	        headers.add("Target");           
+	        headers.add("Status");           
+	        headers.add("Id");               
+
+	        if (isAfterSave) {
+	            headers.add("Save Status");       
+	            headers.add("Error Description"); 
+	        }
+
 	        Row headerRow = sheet.createRow(currentRow++);
 	        for (int col = 0; col < headers.size(); col++) {
 	            Cell cell = headerRow.createCell(col);
 	            cell.setCellValue(headers.get(col));
-	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            cell.setCellStyle(headerStyle);
 	        }
 
 	        for (CapexPIOPlanTransactionDTO dto : dtoList) {
 	            Row row = sheet.createRow(currentRow++);
-	            setCellValue(row, 0, dto.getProposal());
-	            setCellValue(row, 1, dto.getCategory());
-	            setCellValue(row, 2, dto.getJustification());
-	            setCellValue(row, 3, dto.getCostRsCr());
-	            setCellValue(row, 4, dto.getBenefitRsCr());
-	            setCellValue(row, 5, dto.getTargetPlan()); // Handles Date type mapping
-	            setCellValue(row, 6, dto.getStatusPlan());
-	            setCellValue(row, 7, dto.getRemarks());
+
 	            
-	            // Hidden metadata fields
-	            setCellValue(row, 8, dto.getId() != null ? dto.getId().toString() : null);
+	            Cell proposalCell = row.createCell(0);
+	            if (dto.getProposal() != null) {
+	                proposalCell.setCellValue(dto.getProposal());
+	            }
+	            proposalCell.setCellStyle(bodyStyle);
+
 	            
+	            Cell categoryCell = row.createCell(1);
+	            if (dto.getCategory() != null) {
+	                categoryCell.setCellValue(dto.getCategory());
+	            }
+	            categoryCell.setCellStyle(bodyStyle);
+
+	            
+	            Cell justificationCell = row.createCell(2);
+	            if (dto.getJustification() != null) {
+	                justificationCell.setCellValue(dto.getJustification());
+	            }
+	            justificationCell.setCellStyle(bodyStyle);
+
+	            Cell costCell = row.createCell(3);
+	            if (dto.getCostRsCr() != null) {
+	                costCell.setCellValue(dto.getCostRsCr().doubleValue());
+	            }
+	            costCell.setCellStyle(bodyStyle);
+	            
+	            Cell benefitCell = row.createCell(4);
+	            if (dto.getBenefitRsCr() != null) {
+	                benefitCell.setCellValue(dto.getBenefitRsCr().doubleValue());
+	            }
+	            benefitCell.setCellStyle(bodyStyle);
+
+	            
+	            Cell targetCell = row.createCell(5);
+	            if (dto.getTargetPlan() != null) {
+	                targetCell.setCellValue(dto.getTargetPlan().toString());
+	            }
+	            targetCell.setCellStyle(bodyStyle);
+
+	            
+	            Cell statusPlanCell = row.createCell(6);
+	            if (dto.getStatusPlan() != null) {
+	                statusPlanCell.setCellValue(dto.getStatusPlan());
+	            }
+	            statusPlanCell.setCellStyle(bodyStyle);
+
+	            
+	            Cell idCell = row.createCell(7);
+	            idCell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
+	            idCell.setCellStyle(bodyStyle);
+
+	            if (isAfterSave) {
+	               
+	                Cell saveStatusCell = row.createCell(8);
+	                saveStatusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+	                saveStatusCell.setCellStyle(bodyStyle);
+
+	                Cell errCell = row.createCell(9);
+	                errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+	                errCell.setCellStyle(bodyStyle);
+	            }
 	        }
 
-	        // Hide ID and metadata columns (columns 8 to 12)
-	        for (int col = 7; col <= 8; col++) {
-	            sheet.setColumnHidden(col, true);
+	        
+	        int totalCols = isAfterSave ? 10 : 8;
+	        for (int col = 0; col < totalCols; col++) {
+	            sheet.autoSizeColumn(col);
 	        }
+
+	        sheet.setColumnHidden(7, true);
 
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
 	        workbook.close();
 	        return outputStream.toByteArray();
+
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
 	    return null;
 	}
-
+	
 	@Override
-	public AOPMessageVM importCapexPIO(String year, UUID plantId, MultipartFile file) {
+	public AOPMessageVM importCapexPIO(String year, UUID siteId, MultipartFile file) {
 	    try {
-	        List<CapexPIOPlanTransactionDTO> data = readCapexPIOExcel(file.getInputStream(), plantId, year);
-	        AOPMessageVM aopMessageVM = saveCapexPIO(year, plantId.toString(), data);
+	        List<CapexPIOPlanTransactionDTO> data = readCapexPIOExcel(file.getInputStream(), siteId, year);
+	        AOPMessageVM aopMessageVM = saveCapexPIO(year, siteId.toString(), data);
 
 	        if (aopMessageVM.getCode() == 200) {
 	            aopMessageVM.setMessage("All data has been saved");
@@ -290,7 +347,7 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	            @SuppressWarnings("unchecked")
 	            List<CapexPIOPlanTransactionDTO> failedList = (List<CapexPIOPlanTransactionDTO>) aopMessageVM.getData();
 	            if (!failedList.isEmpty()) {
-	                byte[] fileByteArray = exportCapexPIO(year, plantId.toString(), true, failedList);
+	                byte[] fileByteArray = exportCapexPIO(year, siteId.toString(), true, failedList);
 	                if (fileByteArray != null) {
 	                    String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	                    aopMessageVM.setData(base64File);
@@ -310,14 +367,9 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	    }
 	}
 
-	public List<CapexPIOPlanTransactionDTO> readCapexPIOExcel(InputStream inputStream, UUID plantId, String year) {
+	public List<CapexPIOPlanTransactionDTO> readCapexPIOExcel(InputStream inputStream, UUID siteId, String year) {
 	    List<CapexPIOPlanTransactionDTO> list = new ArrayList<>();
-	    Plants plant = plantsRepository.findById(plantId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Sites site = siteRepository.findById(plant.getSiteFkId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	  	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
  
@@ -360,13 +412,12 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	            }
 
 	            dto.setStatusPlan(getStringCellValue(row.getCell(6)));
-	            dto.setRemarks(getStringCellValue(row.getCell(7)));
 
-	            String idStr = getStringCellValue(row.getCell(8));
+	            String idStr = getStringCellValue(row.getCell(7));
 	            if (idStr != null && !idStr.isBlank()) {
 	                dto.setId(UUID.fromString(idStr.trim()));
 	            }
-	            dto.setSiteId(site.getId());
+	            dto.setSiteId(siteId);
 	            dto.setAopYear(year);
 
 	            list.add(dto);
