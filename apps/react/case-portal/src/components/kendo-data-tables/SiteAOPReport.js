@@ -8,7 +8,7 @@ import SiteSafetyPerformanceTarget from './SiteAOPReport/SiteSafetyPerformanceTa
 import ConversionVariableCost from './ConversionVariableCost'
 import EnergyPerformance from './SiteAOPReport/EnergyPerformance'
 import FixedExpenses from './SiteAOPReport/FixedExpenses'
-import Capex from './Capex'
+import Capex from './SiteAOPReport/Capex'
 import ShutdownSlowdownPlan from './SlowdownPlan'
 import TechnicalAvailability from './TechnicalAvailability'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'

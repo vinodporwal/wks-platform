@@ -5,7 +5,7 @@ import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { DataService } from 'services/DataService'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { add } from 'lodash'
@@ -13,6 +13,7 @@ import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'utils/excelNameUtil'
 import { formatDate } from 'utils/dateUtils'
+
 export default function Capex({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -100,7 +101,7 @@ export default function Capex({ permissions, tabDisplayName }) {
         format: '{0:0.00}',
       },
       {
-        field: 'targetPlan',
+        field: 'targetDate',
         title: 'Target',
         editable: true,
         type: 'date',
@@ -130,7 +131,7 @@ export default function Capex({ permissions, tabDisplayName }) {
           justification: item.justification,
           costRsCr: item.costRsCr,
           benefitRsCr: item.benefitRsCr,
-          targetPlan: item.targetPlan,
+          targetDate: item.targetPlan || item.targetDate || item.target || null,
           statusPlan: item.statusPlan,
           // remarks: item.remarks,
           siteId: item.siteId,
@@ -190,7 +191,7 @@ export default function Capex({ permissions, tabDisplayName }) {
         justification: item.justification,
         costRsCr: item.costRsCr || 0,
         benefitRsCr: item.benefitRsCr || null,
-        targetPlan: item.targetPlan ? formatDate(item.targetPlan) : null,
+        targetPlan: item.targetDate ? formatDate(item.targetDate) : (item.targetPlan ? formatDate(item.targetPlan) : null),
         statusPlan: item.statusPlan || '',
         remarks: item.remarks || 'system generated',
         siteId: SITE_ID,
