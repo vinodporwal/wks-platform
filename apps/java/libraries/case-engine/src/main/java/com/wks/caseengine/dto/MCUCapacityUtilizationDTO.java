@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 public class MCUCapacityUtilizationDTO {
     private String id;
     private String plant;
+    private String plantId;
     private Double prevAop;
     private Double prevActual;
     private Double aop;
@@ -28,4 +29,5 @@ public class MCUCapacityUtilizationDTO {
     private String siteFkId;
     private String updatedBy;
     private Date updatedDateTime;
+    private Boolean isEditable;
 }

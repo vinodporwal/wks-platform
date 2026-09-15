@@ -61,18 +61,13 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
     private CapexPIOPlanTransactionRepository capexPIOPlanTransactionRepository;
     
     @Override
-    public AOPMessageVM getCapexPIO(String plantId, String aopYear) {
+    public AOPMessageVM getCapexPIO(String siteId, String aopYear) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         try {
-            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-            Sites site = siteRepository.findById(plant.getSiteFkId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 
             String procedureName = "Sp_GetCapexPIOPlan";
 
-            List<Object[]> results = executeCapexPIO(procedureName, site.getId(), aopYear);
+            List<Object[]> results = executeCapexPIO(procedureName, UUID.fromString(siteId), aopYear);
 
             List<CapexPIOPlanTransactionDTO> dtoList = new ArrayList<>();
 
@@ -139,13 +134,9 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
     }
 
     @Override
-    public AOPMessageVM saveCapexPIO(String year, String plantFKId, List<CapexPIOPlanTransactionDTO> capexPIOPlanTransactionDTOs) {
+    public AOPMessageVM saveCapexPIO(String year, String siteId, List<CapexPIOPlanTransactionDTO> capexPIOPlanTransactionDTOs) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
-        Plants plant = plantsRepository.findById(UUID.fromString(plantFKId))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Sites site = siteRepository.findById(plant.getSiteFkId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+        
         try {
             if (capexPIOPlanTransactionDTOs != null && !capexPIOPlanTransactionDTOs.isEmpty()) {
                 String currentUser = Utility.getUserName();
@@ -171,7 +162,7 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
                     entity.setTargetPlan(dto.getTargetPlan());
                     entity.setStatusPlan(dto.getStatusPlan());
                     entity.setRemarks(dto.getRemarks());
-                    entity.setSiteId(site.getId());
+                    entity.setSiteId(UUID.fromString(siteId));
                     entity.setAopYear(year);
                     entity.setUpdatedBy(currentUser);
                     entity.setUpdatedDate(currentDate);
@@ -210,10 +201,10 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	    }
 	}
 	
-	public byte[] exportCapexPIO(String year, String plantId, boolean isAfterSave, List<CapexPIOPlanTransactionDTO> dtoList) {
+	public byte[] exportCapexPIO(String year, String siteId, boolean isAfterSave, List<CapexPIOPlanTransactionDTO> dtoList) {
 	    try {
 	        if (!isAfterSave) {
-	            AOPMessageVM aopMessageVM = getCapexPIO(plantId, year);
+	            AOPMessageVM aopMessageVM = getCapexPIO(siteId, year);
 	            if (aopMessageVM != null && aopMessageVM.getData() instanceof Map) {
 	                @SuppressWarnings("unchecked")
 	                Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
@@ -345,10 +336,10 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	}
 	
 	@Override
-	public AOPMessageVM importCapexPIO(String year, UUID plantId, MultipartFile file) {
+	public AOPMessageVM importCapexPIO(String year, UUID siteId, MultipartFile file) {
 	    try {
-	        List<CapexPIOPlanTransactionDTO> data = readCapexPIOExcel(file.getInputStream(), plantId, year);
-	        AOPMessageVM aopMessageVM = saveCapexPIO(year, plantId.toString(), data);
+	        List<CapexPIOPlanTransactionDTO> data = readCapexPIOExcel(file.getInputStream(), siteId, year);
+	        AOPMessageVM aopMessageVM = saveCapexPIO(year, siteId.toString(), data);
 
 	        if (aopMessageVM.getCode() == 200) {
 	            aopMessageVM.setMessage("All data has been saved");
@@ -356,7 +347,7 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	            @SuppressWarnings("unchecked")
 	            List<CapexPIOPlanTransactionDTO> failedList = (List<CapexPIOPlanTransactionDTO>) aopMessageVM.getData();
 	            if (!failedList.isEmpty()) {
-	                byte[] fileByteArray = exportCapexPIO(year, plantId.toString(), true, failedList);
+	                byte[] fileByteArray = exportCapexPIO(year, siteId.toString(), true, failedList);
 	                if (fileByteArray != null) {
 	                    String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	                    aopMessageVM.setData(base64File);
@@ -376,14 +367,9 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	    }
 	}
 
-	public List<CapexPIOPlanTransactionDTO> readCapexPIOExcel(InputStream inputStream, UUID plantId, String year) {
+	public List<CapexPIOPlanTransactionDTO> readCapexPIOExcel(InputStream inputStream, UUID siteId, String year) {
 	    List<CapexPIOPlanTransactionDTO> list = new ArrayList<>();
-	    Plants plant = plantsRepository.findById(plantId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Sites site = siteRepository.findById(plant.getSiteFkId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	  	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
  
@@ -431,7 +417,7 @@ public class CapexPIOServiceImpl implements  CapexPIOService {
 	            if (idStr != null && !idStr.isBlank()) {
 	                dto.setId(UUID.fromString(idStr.trim()));
 	            }
-	            dto.setSiteId(site.getId());
+	            dto.setSiteId(siteId);
 	            dto.setAopYear(year);
 
 	            list.add(dto);

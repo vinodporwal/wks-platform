@@ -113,12 +113,12 @@ export default function Capex({ permissions, tabDisplayName }) {
   )
 
   const fetchData = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
+    if (!SITE_ID || !AOP_YEAR) return
     setLoading(true)
     try {
       const res = await SiteReportDataService.getCapexData(
         keycloak,
-        PLANT_ID,
+        SITE_ID,
         AOP_YEAR,
       )
 
@@ -152,7 +152,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, PLANT_ID])
+  }, [keycloak, yearChanged, SITE_ID])
 
   useEffect(() => {
     fetchData()
@@ -203,7 +203,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       // 3. Save to API
       const response = await SiteReportDataService.saveCapexData(
         keycloak,
-        PLANT_ID,
+        SITE_ID,
         AOP_YEAR,
         payload,
       )
@@ -233,7 +233,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
   const deleteRowData = async (paramsForDelete) => {
     setLoading(true)
@@ -275,7 +275,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     try {
       await SiteReportDataService.exportCapexData(
         keycloak,
-        PLANT_ID,
+        SITE_ID,
         AOP_YEAR,
         EXCEL_EXPORT_TITLE,
       )
@@ -295,7 +295,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       const response = await SiteReportDataService.importCapexData(
         rawFile,
         keycloak,
-        PLANT_ID,
+        SITE_ID,
         AOP_YEAR,
       )
 

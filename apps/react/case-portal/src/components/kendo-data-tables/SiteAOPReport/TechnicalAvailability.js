@@ -241,18 +241,17 @@ export default function TechnicalAvailability({ permissions, tabDisplayName }) {
 
     try {
 
-        await SiteReportDataService.loadTechnicalAvailability(
-          keycloak,
-          SITE_ID,
-          AOP_YEAR,
-        )
-        fetchData()
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Loaded successfully!',
-          severity: 'success',
-        })
-        fetchData()
+      await SiteReportDataService.loadTechnicalAvailability(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Loaded successfully!',
+        severity: 'success',
+      })
+      fetchData()
     } catch (error) {
       console.error('Error loading data!', error)
     } finally {
