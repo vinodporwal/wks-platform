@@ -3,7 +3,7 @@ import { Backdrop, Box, CircularProgress } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -59,7 +59,8 @@ export default function MCUCapacityUtilization({
     {
       field: 'sno',
       title: 'S.No',
-      widthT: 60,
+      widthT: 20,
+      minWidth: 30,
       editable: false,
       align: 'right',
       format: '{0:0}',
@@ -68,20 +69,23 @@ export default function MCUCapacityUtilization({
     {
       field: 'prevAop',
       title: `FY${prev} AOP`,
-      editable: true,
+      editable: false,
       type: 'number',
+      minWidth: 150,
     },
     {
-      field: 'prevActual',
+      field: 'prevActualValue',
       title: `FY${prev} Actual`,
-      editable: true,
+      editable: false,
       type: 'number',
+      minWidth: 150,
     },
     {
       field: 'aop',
       title: `FY${next} AOP`,
-      editable: true,
+      editable: false,
       type: 'number',
+      minWidth: 150,
     },
     {
       field: 'remarks',
@@ -110,9 +114,10 @@ export default function MCUCapacityUtilization({
         const mapped = res?.data?.mcuCapacityUtilizationList?.map(
           (item, index) => ({
             ...item,
-            id: item?.id || null,
+            id: item?.id || `new-row-${index}-${crypto.randomUUID()}`,
             sno: index + 1,
-            idFromApi: item?.id || null,
+            idFromApi: item?.id || '',
+            prevActualValue: item.prevActual,
           }),
         )
         setRows(mapped)
@@ -151,13 +156,18 @@ export default function MCUCapacityUtilization({
         return
       }
 
-      const payload = data.map(({ id, prevAop, prevActual, aop, remarks }) => ({
-        id,
-        prevAop,
-        prevActual,
-        aop,
-        remarks,
-      }))
+      const payload = data.map((row) => {
+        const { idFromApi, sno, ...rest } = row
+        return {
+          remarks: rest.remarks,
+          id:
+            idFromApi !== undefined
+              ? idFromApi
+              : row.id?.toString().startsWith('new-row-')
+                ? ''
+                : row.id,
+        }
+      })
 
       const response = await SiteReportDataService.saveMCUCapacityUtilization(
         keycloak,
@@ -225,6 +235,39 @@ export default function MCUCapacityUtilization({
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
+  const handleLoad = async () => {
+    setLoading(true)
+    try {
+      const data = await SiteReportDataService.handleMcuUtilizationCapacity(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+      if (data?.code === 200 || data === 0 || data?.data >= 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: data?.message || 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred during load',
+        severity: 'error',
+      })
+      console.error('Error in handleLoad:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -249,6 +292,7 @@ export default function MCUCapacityUtilization({
       titleName: tabDisplayName || 'MCU Capacity Utilization (%)',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_MCU_Capacity_Utilization_${AOP_YEAR}`,
+      showLoadBtn: true,
       // addButton: false,
       // deleteButton: false,
     },
@@ -276,6 +320,7 @@ export default function MCUCapacityUtilization({
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
+        handleLoad={handleLoad}
         deleteRowData={deleteRowData}
       />
       <Notification

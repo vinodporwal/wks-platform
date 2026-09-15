@@ -55,6 +55,7 @@ export const SiteReportDataService = {
   importCapexData,
   deleteCapex,
   loadConversionVariableCost,
+  handleMcuUtilizationCapacity,
 }
 export async function getSiteTeamDetails(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/site-team-transaction?siteId=${SITE_ID}&year=${AOP_YEAR}`
@@ -1209,4 +1210,18 @@ export async function loadConversionVariableCost(keycloak, SITE_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-
+export async function handleMcuUtilizationCapacity(keycloak, siteId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/load-capacity-utilization?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error loading MCU Utilization Capacity SP data:', e)
+    return Promise.reject(e)
+  }
+}

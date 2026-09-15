@@ -15,7 +15,7 @@ import CrackerReportMannualEntry from './CrackerReportMannualEntry'
 import MajorSafetyInitiative from './SiteAOPReport/MajorSafetyInitiative'
 import MajorPeopleInitiative from './SiteAOPReport/MajorPeopleInitiative'
 import MajorReliabilityInitiative from './SiteAOPReport/MajorReliabilityInitiative'
-import MCUCapacityUtilization from './MCUCapacityUtilization'
+import MCUCapacityUtilization from './SiteAOPReport/McuCapacityUtilization'
 import MajorProfitInitiative from './SiteAOPReport/MajorProfitInitiative'
 
 // Default hardcoded fallback tabs

@@ -271,6 +271,7 @@ const OverallAopConsumption = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
+    showCalulcationPromt:true,
   }
 
   return (
