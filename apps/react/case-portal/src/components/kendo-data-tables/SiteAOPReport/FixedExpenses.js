@@ -453,4 +453,3 @@ export default function FixedExpenses({ permissions, tabDisplayName }) {
     </Box>
   )
 }
-
