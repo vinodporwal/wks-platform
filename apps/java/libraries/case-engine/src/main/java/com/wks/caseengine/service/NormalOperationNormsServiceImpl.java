@@ -128,7 +128,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
-		boolean ptaPmdPia = verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD") && plant.getName().equalsIgnoreCase("PIA");
+		boolean ptaPmdPia = verticalName.equalsIgnoreCase("PTA");
 		Boolean withGrade = false;
 		Boolean elastomer = verticalName.equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		if ((plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
@@ -219,15 +219,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("ELASTOMER")){
 						mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
-					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC")) {
+					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("AROMATICS")) {
 						mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
 					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						mCUNormsValueDTO.setWtAverage(row[29] != null ? Double.parseDouble(row[29].toString()) : null);	
 					}
-					if (chemical || ptaPmdPia) {	
+					if (chemical || ptaPmdPia || vertical.getName().equalsIgnoreCase("VCM")) {	
 						mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
 					}
+
 				}
 				mCUNormsValueDTOList.add(mCUNormsValueDTO);
 			}
@@ -4115,9 +4116,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							dto.setFinancialYear(year);
 
 						if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
-							dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
-							dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-							dto.setId(getStringCellValue(row.getCell(17), dto));
+							dto.setWtAverage(getNumericCellValue(row.getCell(16), dto));
+							dto.setRemarks(getStringCellValue(row.getCell(17), dto));
+							dto.setId(getStringCellValue(row.getCell(18), dto));
 						} else {
 							dto.setRemarks(getStringCellValue(row.getCell(16), dto));
 							dto.setId(getStringCellValue(row.getCell(17), dto));
@@ -4923,7 +4924,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			}
 
 			Workbook workbook = new XSSFWorkbook();
-
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
 

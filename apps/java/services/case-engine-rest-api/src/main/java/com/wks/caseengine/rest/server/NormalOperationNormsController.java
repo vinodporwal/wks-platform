@@ -202,7 +202,7 @@ public class NormalOperationNormsController {
 			Boolean elastomerWithoutGrade= (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3")) || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR"));
 			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC")) {
 				 excelBytes = normalOperationNormsService.createExcelSAP(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
-			}else if(elastomerWithoutGrade) {
+			}else if(elastomerWithoutGrade || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("VCM")) {
 				excelBytes = normalOperationNormsService.createExcelSAPWithoutGrade(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 			}else {
 				 excelBytes = normalOperationNormsService.createExcel(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
@@ -288,7 +288,7 @@ public class NormalOperationNormsController {
 			Boolean elastomerWithoutGrade= (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3")) || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR"));
 			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")) {
 				return	normalOperationNormsService.importExcelSAP(year,UUID.fromString(plantId),gradeId, file,mode); 
-			}if(elastomerWithoutGrade){
+			}if(elastomerWithoutGrade || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("VCM")){
 				return	normalOperationNormsService.importExcelSAPWithoutGrade(year,UUID.fromString(plantId),gradeId, file,mode); 
 			}else {
 				return	normalOperationNormsService.importExcel(year,UUID.fromString(plantId),gradeId, file,mode); 
