@@ -19,6 +19,7 @@ import RemarkDialog from './components/RemarkDialog'
 import FilterChips from './components/FilterChips'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
+import CalculateConfirmationDialog from './components/CalculateConfirmationDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
 import { SelectCellEditor } from '../utilities/SelectCellEditor'
 import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
@@ -287,8 +288,26 @@ const AdvanceKendoTable = ({
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const [openCalculateDialogeBox, setOpenCalculateDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  
+  const openCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(true)
+  }
+
+  const closeCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(false)
+  }
+
+  const handleCalculateConfirmation = async () => {
+    closeCalculateDialogBox()
+    setIsButtonDisabled(true)
+    handleCalculate()
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
   const [edit, setEdit] = useState({})
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
@@ -1005,11 +1024,15 @@ const AdvanceKendoTable = ({
     }
   }
   const handleCalculateBtn = async () => {
-    setIsButtonDisabled(true)
-    handleCalculate()
-    setTimeout(() => {
-      setIsButtonDisabled(false)
-    }, 500)
+    if (permissions?.showCalulcationPromt) {
+      openCalculateDialogBox()
+    } else {
+      setIsButtonDisabled(true)
+      handleCalculate()
+      setTimeout(() => {
+        setIsButtonDisabled(false)
+      }, 500)
+    }
   }
   const handleRefresh = async () => {
     try {
@@ -3249,6 +3272,12 @@ const AdvanceKendoTable = ({
         openSaveDialogeBox={openSaveDialogeBox}
         closeSaveDialogeBox={closeSaveDialogeBox}
         saveConfirmation={saveConfirmation}
+      />
+      {/* Calculate confirmation */}
+      <CalculateConfirmationDialog
+        openCalculateDialogeBox={openCalculateDialogeBox}
+        closeCalculateDialogBox={closeCalculateDialogBox}
+        handleCalculateConfirmation={handleCalculateConfirmation}
       />
       {/* Delete Selected Dialog */}
       <DeleteSelectedDialog

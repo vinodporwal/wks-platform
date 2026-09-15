@@ -16,6 +16,7 @@ export const SiteReportDataService = {
   saveFixedExpensesData,
   getCapexData,
   saveCapexData,
+  loadTechnicalAvailability,
   getTechnicalAvailability,
   saveTechnicalAvailability,
   getMajorSafetyInitiative,
@@ -53,6 +54,8 @@ export const SiteReportDataService = {
   exportCapexData,
   importCapexData,
   deleteCapex,
+  loadConversionVariableCost,
+  handleMcuUtilizationCapacity,
 }
 export async function getSiteTeamDetails(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/site-team-transaction?siteId=${SITE_ID}&year=${AOP_YEAR}`
@@ -344,8 +347,8 @@ export async function importFixedExpensesData(file, keycloak, siteId, aopYear) {
     return Promise.reject(e)
   }
 }
-export async function getCapexData(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/capex-pio?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+export async function getCapexData(keycloak, siteId, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/capex-pio?siteId=${siteId}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -359,8 +362,8 @@ export async function getCapexData(keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-export async function saveCapexData(keycloak, PLANT_ID, AOP_YEAR, data) {
-  const url = `${Config.CaseEngineUrl}/task/capex-pio?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+export async function saveCapexData(keycloak, siteId, AOP_YEAR, data) {
+  const url = `${Config.CaseEngineUrl}/task/capex-pio?siteId=${siteId}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -399,11 +402,11 @@ export async function deleteCapex(keycloak, id) {
 
 export async function exportCapexData(
   keycloak,
-  plantId,
+  siteId,
   aopYear,
   excelName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/capex-pio-export?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(aopYear)}`
+  const url = `${Config.CaseEngineUrl}/task/capex-pio-export?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
   const headers = {
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     Authorization: `Bearer ${keycloak.token}`,
@@ -431,8 +434,8 @@ export async function exportCapexData(
   }
 }
 
-export async function importCapexData(file, keycloak, plantId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/capex-pio-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(aopYear)}`
+export async function importCapexData(file, keycloak, siteId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/capex-pio-import?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -448,6 +451,21 @@ export async function importCapexData(file, keycloak, plantId, aopYear) {
     return await resp.json()
   } catch (e) {
     console.error('Error importing Fixed Expenses Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function loadTechnicalAvailability(keycloak, SITE_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/load-technical-availability?siteId=${SITE_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error loading Technical Availability data:', e)
     return Promise.reject(e)
   }
 }
@@ -1177,3 +1195,33 @@ export async function ImportSiteTeamExcel(file, keycloak, siteId, year) {
   }
 }
 
+export async function loadConversionVariableCost(keycloak, SITE_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/conversion-variable-cost-load?siteId=${encodeURIComponent(SITE_ID)}&aopYear=${encodeURIComponent(AOP_YEAR)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error loading Conversion Variable Cost data:', e)
+    return Promise.reject(e)
+  }
+}
+export async function handleMcuUtilizationCapacity(keycloak, siteId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/load-capacity-utilization?siteId=${encodeURIComponent(siteId)}&year=${encodeURIComponent(aopYear)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error loading MCU Utilization Capacity SP data:', e)
+    return Promise.reject(e)
+  }
+}

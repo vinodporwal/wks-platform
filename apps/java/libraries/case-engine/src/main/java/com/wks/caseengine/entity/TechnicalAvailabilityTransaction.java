@@ -1,22 +1,21 @@
 package com.wks.caseengine.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
+import lombok.*;
 
 import java.util.Date;
 import java.util.UUID;
 
+import org.hibernate.annotations.GenericGenerator;
+
 @Entity
-@Table(name = "MCUCapacityUtilizationTransaction", schema = "dbo")
-@Data
+@Table(name = "TechnicalAvailibilityTransaction")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MCUCapacityUtilization {
+public class TechnicalAvailabilityTransaction {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -39,17 +38,16 @@ public class MCUCapacityUtilization {
     @Column(name = "fyCurrentAOP")
     private Double fyCurrentAOP;
 
-    @Column(name = "Remarks", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "Remarks")
     private String remarks;
 
-    @Column(name = "ModifiedBy", length = 255)
+    @Column(name = "ModifiedBy")
     private String modifiedBy;
 
     @Column(name = "ModifiedOn")
-    @Temporal(TemporalType.TIMESTAMP)
     private Date modifiedOn;
 
-    @Column(name = "aopYear", length = 10)
+    @Column(name = "aopYear")
     private String aopYear;
 
     @Column(name = "isEditable")

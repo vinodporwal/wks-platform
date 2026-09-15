@@ -3,12 +3,12 @@ import { Backdrop, Box, CircularProgress } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function ConversionVariableCost({
+export default function MCUCapacityUtilization({
   permissions,
   tabDisplayName,
 }) {
@@ -59,54 +59,38 @@ export default function ConversionVariableCost({
     {
       field: 'sno',
       title: 'S.No',
-      width: 30,
+      widthT: 20,
+      minWidth: 30,
       editable: false,
       align: 'right',
       format: '{0:0}',
-      locked: true,
     },
+    { field: 'plant', title: 'Plant', widthT: 120, editable: false },
     {
-      field: 'plantName',
-      title: 'Plant',
-      widthT: 30,
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'costType',
-      title: 'Cost Head',
-      widthT: 30,
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'previousAop',
+      field: 'prevAop',
       title: `FY${prev} AOP`,
       editable: false,
       type: 'number',
-      width: 60,
-      format: '{0:0.00}',
+      minWidth: 150,
     },
     {
-      field: 'previousActual',
+      field: 'prevActualValue',
       title: `FY${prev} Actual`,
       editable: false,
       type: 'number',
-      width: 60,
-      format: '{0:0.00}',
+      minWidth: 150,
     },
     {
-      field: 'currentAop',
+      field: 'aop',
       title: `FY${next} AOP`,
       editable: false,
       type: 'number',
-      width: 60,
-      format: '{0:0.00}',
+      minWidth: 150,
     },
     {
-      field: 'remark',
+      field: 'remarks',
       title: 'Rationale/ Reasons',
-      widthT: 270,
+      widthT: 200,
       editable: true,
     },
   ]
@@ -120,28 +104,22 @@ export default function ConversionVariableCost({
     if (!SITE_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const res = await SiteReportDataService.getConversionVariableCost(
+      const res = await SiteReportDataService.getMCUCapacityUtilization(
         keycloak,
         SITE_ID,
         AOP_YEAR,
       )
 
       if (res?.code === 200) {
-        // Handle variations of data wrapping
-        const dataList = Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.data?.Data)
-            ? res.data.Data
-            : []
-
-        const mapped = dataList.map((item, index) => ({
-          ...item,
-          id: item?.id || null,
-          sno: index + 1,
-          idFromApi: item?.id || null,
-          originalRemark: item.remark,
-          remark: item.remark,
-        }))
+        const mapped = res?.data?.mcuCapacityUtilizationList?.map(
+          (item, index) => ({
+            ...item,
+            id: item?.id || `new-row-${index}-${crypto.randomUUID()}`,
+            sno: index + 1,
+            idFromApi: item?.id || '',
+            prevActualValue: item.prevActual,
+          }),
+        )
         setRows(mapped)
       } else {
         setRows([])
@@ -168,7 +146,7 @@ export default function ConversionVariableCost({
         return
       }
 
-      const requiredFields = ['remark']
+      const requiredFields = ['remarks']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -178,31 +156,20 @@ export default function ConversionVariableCost({
         return
       }
 
-      const payload = data.map(
-        ({
-          id,
-          plantName,
-          costType,
-          previousAop,
-          previousActual,
-          currentAop,
-          remark,
-          siteFkId,
-          aopYear,
-        }) => ({
-          id: id || null,
-          plantName,
-          costType,
-          previousAop,
-          previousActual,
-          currentAop,
-          remark,
-          siteFkId: siteFkId || SITE_ID,
-          aopYear: aopYear || AOP_YEAR,
-        }),
-      )
+      const payload = data.map((row) => {
+        const { idFromApi, sno, ...rest } = row
+        return {
+          remarks: rest.remarks,
+          id:
+            idFromApi !== undefined
+              ? idFromApi
+              : row.id?.toString().startsWith('new-row-')
+                ? ''
+                : row.id,
+        }
+      })
 
-      const response = await SiteReportDataService.saveConversionVariableCost(
+      const response = await SiteReportDataService.saveMCUCapacityUtilization(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -264,10 +231,43 @@ export default function ConversionVariableCost({
   }
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
+  const handleLoad = async () => {
+    setLoading(true)
+    try {
+      const data = await SiteReportDataService.handleMcuUtilizationCapacity(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+      if (data?.code === 200 || data === 0 || data?.data >= 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: data?.message || 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred during load',
+        severity: 'error',
+      })
+      console.error('Error in handleLoad:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -289,9 +289,10 @@ export default function ConversionVariableCost({
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: tabDisplayName || 'Conversion & Variable Cost',
+      titleName: tabDisplayName || 'MCU Capacity Utilization (%)',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Conversion_Variable_Cost_${AOP_YEAR}`,
+      ExcelName: `${lowerVertName}_MCU_Capacity_Utilization_${AOP_YEAR}`,
+      showLoadBtn: true,
       // addButton: false,
       // deleteButton: false,
     },
@@ -306,7 +307,7 @@ export default function ConversionVariableCost({
         columns={columns}
         rows={rows}
         setRows={setRows}
-        title='Conversion Variable Cost'
+        title='MCU Capacity Utilization (%)'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}
@@ -319,6 +320,7 @@ export default function ConversionVariableCost({
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
+        handleLoad={handleLoad}
         deleteRowData={deleteRowData}
       />
       <Notification

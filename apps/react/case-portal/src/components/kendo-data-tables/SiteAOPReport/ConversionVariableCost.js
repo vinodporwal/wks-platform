@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Backdrop, Box, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function MCUCapacityUtilization({
+export default function ConversionVariableCost({
   permissions,
   tabDisplayName,
 }) {
@@ -49,72 +49,87 @@ export default function MCUCapacityUtilization({
   }
   const { prev, next } = getAopShortYears(AOP_YEAR)
 
-  const mcuCapacityUtilizationColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
+  const conversionVariableColumns = [
     {
       field: 'sno',
       title: 'S.No',
-      widthT: 60,
+      minWidth: 30,
       editable: false,
       align: 'right',
       format: '{0:0}',
+      locked: true,
     },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: false },
+
     {
-      field: 'prevAop',
+      field: 'costType',
+      title: 'Cost Head',
+      minWidth: 100,
+      editable: false,
+      locked: true,
+    },
+    {
+      field: 'previousAop',
       title: `FY${prev} AOP`,
-      editable: true,
+      editable: false,
       type: 'number',
+      minWidth: 150,
+      format: '{0:0.00}',
     },
     {
-      field: 'prevActual',
+      field: 'previousActual',
       title: `FY${prev} Actual`,
-      editable: true,
+      editable: false,
       type: 'number',
+      minWidth: 150,
+      format: '{0:0.00}',
     },
     {
-      field: 'aop',
+      field: 'currentAop',
       title: `FY${next} AOP`,
-      editable: true,
+      editable: false,
       type: 'number',
+      minWidth: 150,
+      format: '{0:0.00}',
     },
     {
-      field: 'remarks',
+      field: 'remark',
       title: 'Rationale/ Reasons',
-      widthT: 200,
+      minWidth: 350,
       editable: true,
     },
   ]
 
   const columns = useMemo(() => {
-    const cols = mcuCapacityUtilizationColumns
-    return cols
-  }, [AOP_YEAR])
+    return conversionVariableColumns
+  }, [AOP_YEAR, prev, next])
 
   const fetchData = useCallback(async () => {
     if (!SITE_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const res = await SiteReportDataService.getMCUCapacityUtilization(
+      const res = await SiteReportDataService.getConversionVariableCost(
         keycloak,
         SITE_ID,
         AOP_YEAR,
       )
 
       if (res?.code === 200) {
-        const mapped = res?.data?.mcuCapacityUtilizationList?.map(
-          (item, index) => ({
-            ...item,
-            id: item?.id || null,
-            sno: index + 1,
-            idFromApi: item?.id || null,
-          }),
-        )
+        // Handle variations of data wrapping
+        const dataList = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.Data)
+            ? res.data.Data
+            : []
+
+        const mapped = dataList.map((item, index) => ({
+          ...item,
+          id: item?.id || null,
+          sno: index + 1,
+          idFromApi: item?.id || null,
+          originalRemark: item.remark,
+          remark: item.remark,
+          plantName: item?.plantName || item?.plant || item?.Plant || '',
+        }))
         setRows(mapped)
       } else {
         setRows([])
@@ -141,7 +156,7 @@ export default function MCUCapacityUtilization({
         return
       }
 
-      const requiredFields = ['remarks']
+      const requiredFields = ['remark']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -151,15 +166,13 @@ export default function MCUCapacityUtilization({
         return
       }
 
-      const payload = data.map(({ id, prevAop, prevActual, aop, remarks }) => ({
-        id,
-        prevAop,
-        prevActual,
-        aop,
-        remarks,
+      // Send only id and remark in payload
+      const payload = data.map((item) => ({
+        id: item?.id || null,
+        remark: item?.remark ?? item?.remarks ?? '',
       }))
 
-      const response = await SiteReportDataService.saveMCUCapacityUtilization(
+      const response = await SiteReportDataService.saveConversionVariableCost(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -220,8 +233,43 @@ export default function MCUCapacityUtilization({
     }
   }
 
+  const handleLoad = async () => {
+    if (!SITE_ID || !AOP_YEAR) return
+    setLoading(true)
+    try {
+      const data = await SiteReportDataService.loadConversionVariableCost(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+      if (data?.code === 200 || data === 0 || data?.data >= 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data loaded successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: data?.message || 'Data Load Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred during load',
+        severity: 'error',
+      })
+      console.error('Error in handleLoad:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
@@ -237,6 +285,7 @@ export default function MCUCapacityUtilization({
       showUnit: false,
       saveWithRemark: false,
       saveBtn: false,
+      showLoadBtn: false,
       isOldYear: isOldYear,
     }
   }
@@ -246,11 +295,11 @@ export default function MCUCapacityUtilization({
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: tabDisplayName || 'MCU Capacity Utilization (%)',
+      titleName: tabDisplayName || 'Conversion, Contribution & Variable Cost',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_MCU_Capacity_Utilization_${AOP_YEAR}`,
-      // addButton: false,
-      // deleteButton: false,
+      ExcelName: `${lowerVertName}_Conversion_Contribution_Variable_Cost_${AOP_YEAR}`,
+      makePagable: false,
+      showLoadBtn: true,
     },
     isOldYear,
   )
@@ -263,7 +312,7 @@ export default function MCUCapacityUtilization({
         columns={columns}
         rows={rows}
         setRows={setRows}
-        title='MCU Capacity Utilization (%)'
+        title='Conversion, Contribution & Variable Cost'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}
@@ -274,9 +323,11 @@ export default function MCUCapacityUtilization({
         setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
+        handleLoad={handleLoad}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
         deleteRowData={deleteRowData}
+        groupBy={'plantName'}
       />
       <Notification
         open={snackbarOpen}

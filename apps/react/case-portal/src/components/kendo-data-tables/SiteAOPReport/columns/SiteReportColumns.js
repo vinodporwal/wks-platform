@@ -203,7 +203,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
     {
       field: 'responsibility',
       title: 'Responsibility',
-
+      minWidth: 300,
       editable: true,
     },
   ],

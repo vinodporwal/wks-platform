@@ -5,17 +5,17 @@ import { SiteReportDataService } from 'services/SiteReportDataService'
 import AopTabs from 'components/AopTabs'
 import SiteTeam from './SiteAOPReport/SiteTeam'
 import SiteSafetyPerformanceTarget from './SiteAOPReport/SiteSafetyPerformanceTarget'
-import ConversionVariableCost from './ConversionVariableCost'
+import ConversionVariableCost from './SiteAOPReport/ConversionVariableCost'
 import EnergyPerformance from './SiteAOPReport/EnergyPerformance'
 import FixedExpenses from './SiteAOPReport/FixedExpenses'
 import Capex from './SiteAOPReport/Capex'
 import ShutdownSlowdownPlan from './SlowdownPlan'
-import TechnicalAvailability from './TechnicalAvailability'
+import TechnicalAvailability from './SiteAOPReport/TechnicalAvailability'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
 import MajorSafetyInitiative from './SiteAOPReport/MajorSafetyInitiative'
 import MajorPeopleInitiative from './SiteAOPReport/MajorPeopleInitiative'
 import MajorReliabilityInitiative from './SiteAOPReport/MajorReliabilityInitiative'
-import MCUCapacityUtilization from './MCUCapacityUtilization'
+import MCUCapacityUtilization from './SiteAOPReport/McuCapacityUtilization'
 import MajorProfitInitiative from './SiteAOPReport/MajorProfitInitiative'
 
 // Default hardcoded fallback tabs
@@ -100,7 +100,7 @@ const DEFAULT_TABS = [
   },
   {
     tabName: 'ConversionVariableCost',
-    tabDisplayName: 'Conversion & Variable Cost',
+    tabDisplayName: 'Conversion, Contribution & Variable Cost',
     tabSequence: 14,
     isVisible: true,
   },
@@ -242,6 +242,7 @@ const SiteAOPReport = ({ permissions }) => {
           />
         )
       case 'ConversionVariableCost':
+      case 'Conversion, Contribution & Variable Cost':
       case 'Conversion & Variable Cost':
         return (
           <ConversionVariableCost

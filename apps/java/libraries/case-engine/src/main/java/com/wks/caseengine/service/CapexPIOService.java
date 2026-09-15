@@ -12,10 +12,10 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 @Service
 public interface CapexPIOService {
 	
-    AOPMessageVM getCapexPIO(String plantId, String aopYear);
-    AOPMessageVM saveCapexPIO(String year, String plantFKId, List<CapexPIOPlanTransactionDTO> lIMSSpyroInputDTOs);    
-    byte[] exportCapexPIO(String year, String plantFKId, boolean isAfterSave, List<CapexPIOPlanTransactionDTO> dtoList);
-    AOPMessageVM importCapexPIO(String year, UUID plantId, MultipartFile file);
+    AOPMessageVM getCapexPIO(String siteId, String aopYear);
+    AOPMessageVM saveCapexPIO(String year, String siteId, List<CapexPIOPlanTransactionDTO> lIMSSpyroInputDTOs);    
+    byte[] exportCapexPIO(String year, String siteId, boolean isAfterSave, List<CapexPIOPlanTransactionDTO> dtoList);
+    AOPMessageVM importCapexPIO(String year, UUID siteId, MultipartFile file);
     AOPMessageVM deleteCapexPIOById(UUID id);
 }
 
