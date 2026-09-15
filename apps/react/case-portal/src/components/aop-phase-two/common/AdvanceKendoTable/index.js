@@ -2292,6 +2292,29 @@ const AdvanceKendoTable = ({
             cells={{
               edit: {
                 text: (cellProps) => {
+                  // Check if cell is editable based on conditional rules
+                  const cellEditableByCondition = isCellEditableByCondition(
+                    cellProps.dataItem,
+                    col,
+                  )
+                  if (!cellEditableByCondition) {
+                    const resolvedOptions = isDynamic
+                      ? col.getOptions(cellProps.dataItem)
+                      : col.options
+                    return createSelectToolTipRenderer(
+                      resolvedOptions,
+                      toolTipRenderer,
+                    )({
+                      ...cellProps,
+                      displayMode: col.displayMode || 'label',
+                      tdProps: {
+                        ...cellProps.tdProps,
+                        className:
+                          `${cellProps.tdProps?.className || ''} non-editable-cell`.trim(),
+                      },
+                    })
+                  }
+
                   // Resolve options per-row here, where cellProps.dataItem is available
                   const resolvedOptions = isDynamic
                     ? col.getOptions(cellProps.dataItem)
@@ -2315,10 +2338,25 @@ const AdvanceKendoTable = ({
                 const resolvedOptions = isDynamic
                   ? col.getOptions(props.dataItem)
                   : col.options
+                // If conditional rules block editing for this row, add the
+                // non-editable-cell class so the display cell gets gray styling.
+                const blockedByCondition =
+                  col.conditionalEditable &&
+                  !isCellEditableByCondition(props.dataItem, col)
                 return createSelectToolTipRenderer(
                   resolvedOptions,
                   toolTipRenderer,
-                )({ ...props, displayMode: col.displayMode || 'label' })
+                )({
+                  ...props,
+                  displayMode: col.displayMode || 'label',
+                  tdProps: blockedByCondition
+                    ? {
+                        ...props.tdProps,
+                        className:
+                          `${props.tdProps?.className || ''} non-editable-cell`.trim(),
+                      }
+                    : props.tdProps,
+                })
               },
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
@@ -2778,7 +2816,9 @@ const AdvanceKendoTable = ({
     // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
       typeof value === 'boolean'
-        ? (value ? 'Yes' : 'No')
+        ? value
+          ? 'Yes'
+          : 'No'
         : convertFromScientificNotation(value) ?? value
 
     const cellContent =
@@ -2788,7 +2828,7 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}.trim()`}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
