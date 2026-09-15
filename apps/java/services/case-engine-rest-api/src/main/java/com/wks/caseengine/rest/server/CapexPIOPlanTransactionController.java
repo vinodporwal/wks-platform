@@ -52,7 +52,6 @@ public class CapexPIOPlanTransactionController {
 	    try {
 			
 	        byte[] excelBytes = capexPIOService.exportCapexPIO(year, plantId, false, null); 
-
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
