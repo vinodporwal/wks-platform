@@ -1,6 +1,10 @@
 package com.wks.caseengine.rest.model;
 
 public class Recommendations {
+	private String recommendationPlannerGroup;
+
+	private String recommendationPriority;
+
 	private String recommendationHeadline;
 	
     private String recommendationDescription1;
@@ -12,6 +16,8 @@ public class Recommendations {
     private String equipmentFunctionLocation;
     
     private String recommendationTargetCompletionDate1;
+
+    private String recommendationCreationDate;
     
     private String recommendationReviewer;
     
@@ -29,7 +35,23 @@ public class Recommendations {
     
     private String caseNo;
 
-    private String createdBy;
+	private String createdBy;
+	public String getRecommendationPlannerGroup() {
+		return recommendationPlannerGroup;
+	}
+
+	public void setRecommendationPlannerGroup(String recommendationPlannerGroup) {
+		this.recommendationPlannerGroup = recommendationPlannerGroup;
+	}
+
+	public String getRecommendationPriority() {
+		return recommendationPriority;
+	}
+
+	public void setRecommendationPriority(String recommendationPriority) {
+		this.recommendationPriority = recommendationPriority;
+	}
+
 	public String getRecommendationHeadline() {
 		return recommendationHeadline;
 	}
@@ -76,6 +98,14 @@ public class Recommendations {
 
 	public void setRecommendationTargetCompletionDate1(String recommendationTargetCompletionDate1) {
 		this.recommendationTargetCompletionDate1 = recommendationTargetCompletionDate1;
+	}
+
+	public String getRecommendationCreationDate() {
+		return recommendationCreationDate;
+	}
+
+	public void setRecommendationCreationDate(String recommendationCreationDate) {
+		this.recommendationCreationDate = recommendationCreationDate;
 	}
 
 	public String getRecommendationReviewer() {
