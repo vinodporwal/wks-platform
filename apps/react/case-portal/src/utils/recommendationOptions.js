@@ -20,7 +20,15 @@ const loadAndCacheOptions = async (cacheKey, request, mapOption) => {
   try {
     const items = await request()
     const options = items.map(mapOption)
-    localStorage.setItem(cacheKey, JSON.stringify(options))
+    
+    // Only update localStorage if the data has actually changed
+    const cachedOptionsString = JSON.stringify(cachedOptions)
+    const newOptionsString = JSON.stringify(options)
+    
+    if (cachedOptionsString !== newOptionsString) {
+      localStorage.setItem(cacheKey, newOptionsString)
+    }
+    
     return options
   } catch (error) {
     if (cachedOptions.length > 0) return cachedOptions
