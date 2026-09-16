@@ -1,8 +1,8 @@
 import { CaseDefService } from '../services'
 
 export const RECOMMENDATION_OPTION_CACHE_KEYS = {
-  plannerGroup: 'recommendationPlannerGroupOptions',
   priority: 'recommendationPriorityOptions',
+  plannerGroup: 'recommendationPlannerGroupOptions',
 }
 
 const readCachedOptions = (cacheKey) => {
