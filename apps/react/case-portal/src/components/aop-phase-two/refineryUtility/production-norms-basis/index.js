@@ -14,6 +14,7 @@ import Constants from './Constants'
 import PIMSThroughput from './PIMSThroughput'
 import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
 import ProductionDemands from './ProductionDemand'
+import UtilityConsumption from './UtilityConsumption'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -239,6 +240,8 @@ const ProductionNormsBasis = () => {
         return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       case 'Production Demand':
         return <ProductionDemands/>  
+      case 'Utility Consumption' : 
+        return <UtilityConsumption/>
       default:
         return null
     }
