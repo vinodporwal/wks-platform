@@ -11,11 +11,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.GradeSelectionDTO;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
@@ -38,6 +42,12 @@ public class GradeSelectionServiceImpl implements GradeSelectionService {
 
  @Autowired
  private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+ 
+ @Autowired
+	private AopCalculationRepository aopCalculationRepository;
+ 
+ @Autowired
+	private ScreenMappingRepository screenMappingRepository;
 
  @Override
  public AOPMessageVM getGradeSelection(String plantFKId, String year) {
@@ -71,7 +81,7 @@ public class GradeSelectionServiceImpl implements GradeSelectionService {
 
     @Override
     @Transactional
-    public AOPMessageVM saveGradeSelection(List<GradeSelectionDTO> gradeSelectionDTOs, String year) {
+    public AOPMessageVM saveGradeSelection(List<GradeSelectionDTO> gradeSelectionDTOs, String year,String plantId) {
 
         if(gradeSelectionDTOs == null || gradeSelectionDTOs.isEmpty()) {
            throw new RuntimeException("Grade selection data is empty");
@@ -128,7 +138,17 @@ public class GradeSelectionServiceImpl implements GradeSelectionService {
 	normAttributeTransactions.setRemarks(remark);
 	normAttributeTransactions.setUserName(Utility.getUserName());
 	normAttributeTransactionsRepository.save(normAttributeTransactions);
-   
+	List<ScreenMapping> screenMappingList = screenMappingRepository
+			.findByDependentScreen("product-grade-selection-polyester");
+	for (ScreenMapping screenMapping : screenMappingList) {
+		AopCalculation aopCalculation = new AopCalculation();
+		aopCalculation.setAopYear(year);
+		aopCalculation.setIsChanged(true);
+		aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+		aopCalculation.setPlantId(UUID.fromString(plantId));
+		aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+		aopCalculationRepository.save(aopCalculation);
+	}
 
     AOPMessageVM aopMessageVM = new AOPMessageVM();
     aopMessageVM.setCode(200);

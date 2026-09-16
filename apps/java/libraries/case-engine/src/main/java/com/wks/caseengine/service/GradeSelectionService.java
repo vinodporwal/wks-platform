@@ -9,5 +9,5 @@ public interface GradeSelectionService {
     
     public AOPMessageVM getGradeSelection( String plantFKId, String year);
 
-    public AOPMessageVM saveGradeSelection(List<GradeSelectionDTO> gradeSelectionDTOs, String year);
+    public AOPMessageVM saveGradeSelection(List<GradeSelectionDTO> gradeSelectionDTOs, String year,String plantId);
 }
