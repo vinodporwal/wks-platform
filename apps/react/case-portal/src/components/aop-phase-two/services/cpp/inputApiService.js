@@ -399,10 +399,14 @@ async function updateCapacitySource(keycloak, sourceId, updateData) {
   }
 }
 
-// DELETE /task/import-power/capacity/source/{sourceId}
-// Deletes a source row from Import Power Capacity (NMD)
-async function deleteCapacitySource(keycloak, sourceId) {
-  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/source/${sourceId}`
+// DELETE /task/import-power/capacity/source/{sourceId}?financialYear={year}
+// Deletes a source row from Import Power Capacity (NMD).
+// financialYear scopes NormsHeader child-record deletion (mirrors SR Mapping).
+async function deleteCapacitySource(keycloak, sourceId, financialYear) {
+  const query = financialYear
+    ? `?financialYear=${encodeURIComponent(financialYear)}`
+    : ''
+  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/source/${sourceId}${query}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

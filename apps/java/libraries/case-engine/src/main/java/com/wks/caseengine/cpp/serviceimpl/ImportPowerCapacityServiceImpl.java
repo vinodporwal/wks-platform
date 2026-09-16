@@ -7,10 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +54,10 @@ public class ImportPowerCapacityServiceImpl implements ImportPowerCapacityServic
 
     @Autowired
     private PlantsRepository plantsRepository;
+
+    @Autowired
+    @Qualifier("db1JdbcTemplate")
+    private JdbcTemplate db1JdbcTemplate;
 
     /**
      * Get import power capacity for a financial year
@@ -339,6 +346,12 @@ public class ImportPowerCapacityServiceImpl implements ImportPowerCapacityServic
             createAssetNormMappings(sourceMapping.getId(), request.getCppPlant(),
                     request.getProcurementPlant(), request.getMaterialCode());
 
+            // --- Step 9: Create NormsHeader + child records (CPPNorms, NormsMonthDetail,
+            //            CPPMonthWisePrice) so the source appears in the CPPNorms screen ---
+            createNormsHeaderAndChildRecords(request.getProcurementPlant(), request.getCppPlant(),
+                    savedNorm.getId(), request.getName(), request.getSapCode(),
+                    request.getAopYear());
+
             Map<String, Object> data = new HashMap<>();
             data.put("normParameterId", savedNorm.getId());
             data.put("sourceMappingId", sourceMapping.getId());
@@ -440,8 +453,8 @@ public class ImportPowerCapacityServiceImpl implements ImportPowerCapacityServic
 
     @Override
     @Transactional
-    public AOPMessageVM deleteImportPowerCapacitySource(UUID sourceId) {
-        logger.info("[DELETE Capacity Source] Soft-deleting sourceId={}", sourceId);
+    public AOPMessageVM deleteImportPowerCapacitySource(UUID sourceId, String financialYear) {
+        logger.info("[DELETE Capacity Source] Soft-deleting sourceId={}, financialYear={}", sourceId, financialYear);
 
         AOPMessageVM response = new AOPMessageVM();
 
@@ -485,6 +498,13 @@ public class ImportPowerCapacityServiceImpl implements ImportPowerCapacityServic
             // Remove the CPP_AssetNorms_Mapping rows for this source
             importPowerSourceRepository.deleteAssetNormsMappingByAssetId(sourceId);
             logger.info("[DELETE Capacity Source] CPP_AssetNorms_Mapping rows deleted for sourceId={}", sourceId);
+
+            // Delete NormsHeader child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice)
+            // linked to this source's norm parameter, scoped to the given financial year
+            // (mirrors SR Mapping delete behavior — preserves other years)
+            if (sourceMapping.getNormParameterFkId() != null) {
+                deleteNormsHeaderChildRecords(sourceMapping.getNormParameterFkId(), financialYear);
+            }
 
             response.setCode(200);
             response.setMessage("Import power capacity source deleted successfully (soft delete)");
@@ -635,5 +655,341 @@ public class ImportPowerCapacityServiceImpl implements ImportPowerCapacityServic
         norm.setIsVisible(true);
         norm.setIsEditable(true);
         return normParametersRepository.save(norm).getId();
+    }
+
+    // ========================================
+    // NORMS HEADER + CHILD RECORDS (NormsMonthDetail, CPPNorms, CPPMonthWisePrice)
+    // Mirrors CPPSRMappingServiceImpl pattern so import-power sources appear in
+    // the CPPNorms screen (SP: CPP_GetCPPNorms joins NormsHeader → GeneratingPlants).
+    // ========================================
+
+    /** Receiver plant name for import power (NMD - Utility/Power Dist). */
+    private static final String IMPORT_POWER_RECEIVER_PLANT_NAME = "NMD - Utility/Power Dist";
+    /** Receiver utility name for import power (Power_dis norm, NormType=1). */
+    private static final String IMPORT_POWER_UTILITY_NAME = "Power_dis";
+    /** Issuing UOM for import power in NormsHeader (capacity × available hours). */
+    private static final String IMPORT_POWER_ISSUING_UOM = "KWH";
+
+    /**
+     * Creates a NormsHeader row for the import-power source (if absent) and then
+     * inserts child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice) for the
+     * given financial year if they don't already exist.
+     *
+     * NormsHeader column mapping for import power:
+     *
+     *   Receiver side (Power_dis, NormType=1, at NMD - Utility/Power Dist plant):
+     *     Plant_FK_Id                    ← receiver plant (NMD - Utility/Power Dist)
+     *     UtilityName                     ← "Power_dis"
+     *     UtilityId                       ← Power_dis norm's SAPMaterialCode
+     *     UtilityUOM                      ← Power_dis norm's UOM
+     *     Utility_NormParameter_FK_Id     ← Power_dis norm's Id
+     *
+     *   Sender side (source's own norm, NormType=2, at procurement plant):
+     *     MaterialName                    ← source name
+     *     IssuingPlantName                 ← procurement plant display name
+     *     IssuingPlant_FK_Id               ← procurement plant id
+     *     NormParameter_FK_Id              ← source's own normparameter id
+     *     IssuingUOM                      ← "KWH"
+     *
+     *   Other:
+     *     AccountName                      ← "Utilities" (required by CPP_GetCPPNorms filter)
+     *     DisplayOrder                    ← 1
+     *     MaterialId                       ← source's SAP material code
+     *     Remarks                         ← ""
+     *     plantCode                       ← procurement plant code
+     *     IsActive                        ← 1
+     *     CPP_SR_Mapping_Master_Fk_Id     ← NULL
+     */
+    private void createNormsHeaderAndChildRecords(UUID procurementPlantId, UUID cppPlantId,
+                                                   UUID sourceNormParameterId, String sourceName,
+                                                   String sapCode, String aopYear) {
+        if (procurementPlantId == null || sourceNormParameterId == null
+                || aopYear == null || aopYear.isBlank()) {
+            logger.warn("[ADD Capacity Source] Skipped NormsHeader creation – missing required inputs");
+            return;
+        }
+
+        try {
+            // ── Step A: Resolve receiver plant (NMD - Utility/Power Dist) ──
+            // The receiver plant stores the CPP plant UUID in its SourceName column
+            // (same pattern as procurement plants), so we reuse findBySourceNameInAndIsActiveTrue
+            // and filter by name in Java.
+            List<Plants> plantsForCpp = plantsRepository
+                    .findBySourceNameInAndIsActiveTrue(List.of(cppPlantId.toString()));
+            Optional<Plants> receiverPlantOpt = plantsForCpp.stream()
+                    .filter(p -> IMPORT_POWER_RECEIVER_PLANT_NAME.equalsIgnoreCase(p.getName()))
+                    .findFirst();
+            if (receiverPlantOpt.isEmpty()) {
+                logger.warn("[ADD Capacity Source] Receiver plant '{}' not found for cppPlant={} — skipping NormsHeader",
+                        IMPORT_POWER_RECEIVER_PLANT_NAME, cppPlantId);
+                return;
+            }
+            UUID receiverPlantId = receiverPlantOpt.get().getId();
+            logger.info("[ADD Capacity Source] Receiver plant resolved: {} ({})", receiverPlantId,
+                    IMPORT_POWER_RECEIVER_PLANT_NAME);
+
+            // ── Step B: Look up Power_dis norm (NormType=1, at receiver plant) ──
+            Optional<NormParameters> powerDisNormOpt = normParametersRepository
+                    .findFirstByNameAndPlantFkIdAndNormTypeFkId(
+                            IMPORT_POWER_UTILITY_NAME, receiverPlantId, 1);
+            if (powerDisNormOpt.isEmpty()) {
+                logger.warn("[ADD Capacity Source] '{}' norm not found at receiver plant {} — skipping NormsHeader",
+                        IMPORT_POWER_UTILITY_NAME, receiverPlantId);
+                return;
+            }
+            NormParameters powerDisNorm = powerDisNormOpt.get();
+            logger.info("[ADD Capacity Source] Power_dis norm resolved: {} (SAP={}, UOM={})",
+                    powerDisNorm.getId(), powerDisNorm.getSapMaterialCode(), powerDisNorm.getUom());
+
+            // ── Step C: Fetch procurement plant details ──
+            Plants procPlant = plantsRepository.findById(procurementPlantId).orElse(null);
+            String procPlantName = procPlant != null && procPlant.getDisplayName() != null
+                    ? procPlant.getDisplayName()
+                    : (procPlant != null ? procPlant.getName() : null);
+            String procPlantCode = procPlant != null ? procPlant.getPlantCode() : null;
+            String effectiveSapCode = sapCode != null ? sapCode : "";
+
+            // ── Step D: Check if NormsHeader already exists for this receiver plant + source norm ──
+            String lookupSql = "SELECT TOP 1 Id FROM NormsHeader WITH(NOLOCK) " +
+                    "WHERE Plant_FK_Id = ? AND NormParameter_FK_Id = ?";
+            List<String> existing = db1JdbcTemplate.queryForList(lookupSql, String.class,
+                    receiverPlantId.toString(), sourceNormParameterId.toString());
+
+            UUID normsHeaderId;
+            if (!existing.isEmpty()) {
+                normsHeaderId = UUID.fromString(existing.get(0));
+                logger.info("[ADD Capacity Source] Reusing existing NormsHeader Id={}", normsHeaderId);
+            } else {
+                // ── Step E: Insert new NormsHeader ──
+                normsHeaderId = UUID.randomUUID();
+                String insertSql = "INSERT INTO NormsHeader " +
+                        "(Id, Plant_FK_Id, UtilityName, UtilityId, UtilityUOM, AccountName, " +
+                        " MaterialName, IssuingPlantName, IssuingPlant_FK_Id, NormParameter_FK_Id, " +
+                        " Utility_NormParameter_FK_Id, " +
+                        " IsActive, IssuingUOM, DisplayOrder, MaterialId, Remarks, plantCode) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?)";
+                db1JdbcTemplate.update(insertSql,
+                        normsHeaderId.toString(),
+                        receiverPlantId.toString(),               // Plant_FK_Id (receiver plant)
+                        IMPORT_POWER_UTILITY_NAME,                // UtilityName ("Power_dis")
+                        powerDisNorm.getSapMaterialCode(),        // UtilityId (Power_dis SAP code)
+                        powerDisNorm.getUom(),                    // UtilityUOM (Power_dis UOM)
+                        "Utilities",                              // AccountName
+                        sourceName,                               // MaterialName
+                        procPlantName,                            // IssuingPlantName
+                        procurementPlantId.toString(),            // IssuingPlant_FK_Id
+                        sourceNormParameterId.toString(),          // NormParameter_FK_Id (source's own norm)
+                        powerDisNorm.getId().toString(),          // Utility_NormParameter_FK_Id (Power_dis norm)
+                        IMPORT_POWER_ISSUING_UOM,                 // IssuingUOM ("KWH")
+                        effectiveSapCode,                         // MaterialId
+                        "",                                       // Remarks
+                        procPlantCode                             // plantCode
+                );
+                logger.info("[ADD Capacity Source] NormsHeader created Id={} for source={}", normsHeaderId, sourceName);
+            }
+
+            // ── Step F: Insert child records for the financial year (idempotent) ──
+            insertChildRecordsIfAbsent(normsHeaderId, aopYear);
+
+        } catch (Exception e) {
+            logger.error("[ADD Capacity Source] Error creating NormsHeader/child records: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Checks whether child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice) already exist
+     * for the given NormsHeader and financial year.
+     * <p>
+     * Mirrors CPPSRMappingServiceImpl: checks CPPNorms only — if present, all 3 child tables
+     * are assumed to exist and nothing is inserted. If absent, all 3 are inserted.
+     *
+     * @param normsHeaderId UUID of the NormsHeader row
+     * @param financialYear financial year string, e.g. "2026-27"
+     */
+    private void insertChildRecordsIfAbsent(UUID normsHeaderId, String financialYear) {
+        if (normsHeaderId == null || financialYear == null || financialYear.isBlank()) {
+            logger.warn("[ADD Capacity Source] insertChildRecordsIfAbsent skipped – normsHeaderId={}, financialYear={}",
+                    normsHeaderId, financialYear);
+            return;
+        }
+        try {
+            // Check CPPNorms for existing records for this NormsHeader + financialYear
+            List<String> existing = db1JdbcTemplate.queryForList(
+                    "SELECT TOP 1 Id FROM CPPNorms WITH(NOLOCK) WHERE NormsHeader_FK_Id = ? AND FinancialYear = ?",
+                    String.class, normsHeaderId.toString(), financialYear);
+
+            if (!existing.isEmpty()) {
+                logger.info("[ADD Capacity Source] Child records already present for NormsHeader={}, financialYear={} — skipping insert",
+                        normsHeaderId, financialYear);
+                return;
+            }
+
+            // No records for this year — insert all 3 child tables
+            insertNormsMonthDetails(normsHeaderId, financialYear);
+            insertCppNorms(normsHeaderId, financialYear);
+            insertCppMonthWisePrice(normsHeaderId, financialYear);
+            logger.info("[ADD Capacity Source] Child records inserted for NormsHeader={}, financialYear={}",
+                    normsHeaderId, financialYear);
+
+        } catch (Exception e) {
+            logger.error("[ADD Capacity Source] insertChildRecordsIfAbsent error for normsHeaderId={}: {}",
+                    normsHeaderId, e.getMessage(), e);
+        }
+    }
+
+    /** Inserts 12 NormsMonthDetail rows (one per month) with zero defaults. */
+    private void insertNormsMonthDetails(UUID normsHeaderId, String financialYear) {
+        try {
+            int startYear = Integer.parseInt(financialYear.split("-")[0].trim());
+            int endYear = startYear + 1;
+
+            String fymSql = "SELECT Id FROM FinancialYearMonth " +
+                    "WHERE (Year = ? AND Month >= 4) OR (Year = ? AND Month <= 3) " +
+                    "ORDER BY Year, Month";
+            List<String> fymIds = db1JdbcTemplate.queryForList(fymSql, String.class, startYear, endYear);
+            if (fymIds.isEmpty()) {
+                logger.warn("[ADD Capacity Source] No FinancialYearMonth records for year={}", financialYear);
+                return;
+            }
+
+            String insertSql = "INSERT INTO NormsMonthDetail " +
+                    "(Id, NormsHeader_FK_Id, FinancialYearMonth_FK_Id, ScenarioType, " +
+                    " Norms, Quantity, Amount, Price, DisplayOrder, GenerationUOM, QTY, Remarks) " +
+                    "VALUES (?, ?, ?, NULL, 0, 0, 0, 0, 1, NULL, 0, NULL)";
+
+            for (String fymId : fymIds) {
+                db1JdbcTemplate.update(insertSql, UUID.randomUUID().toString(),
+                        normsHeaderId.toString(), fymId);
+            }
+        } catch (Exception e) {
+            logger.error("[ADD Capacity Source] Error inserting NormsMonthDetail: {}", e.getMessage(), e);
+        }
+    }
+
+    /** Inserts a default CPPNorms row (NormType_FK_Id=6 'Fixed', all months=0). */
+    private void insertCppNorms(UUID normsHeaderId, String financialYear) {
+        try {
+            String insertSql = "INSERT INTO CPPNorms " +
+                    "(Id, NormsHeader_FK_Id, FinancialYear, AOPYear, NormType_FK_Id, " +
+                    " Apr_Norms, May_Norms, Jun_Norms, Jul_Norms, Aug_Norms, Sep_Norms, " +
+                    " Oct_Norms, Nov_Norms, Dec_Norms, Jan_Norms, Feb_Norms, Mar_Norms, " +
+                    " Remarks, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, ApplyActualNormToAll) " +
+                    "VALUES (?, ?, ?, ?, 6, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 'Add new record', 'SYSTEM', GETDATE(), 'SYSTEM', GETDATE(), 1)";
+            db1JdbcTemplate.update(insertSql, UUID.randomUUID().toString(),
+                    normsHeaderId.toString(), financialYear, financialYear);
+        } catch (Exception e) {
+            logger.error("[ADD Capacity Source] Error inserting CPPNorms: {}", e.getMessage(), e);
+        }
+    }
+
+    /** Inserts a default CPPMonthWisePrice row (all prices=0). */
+    private void insertCppMonthWisePrice(UUID normsHeaderId, String financialYear) {
+        try {
+            String insertSql = "INSERT INTO CPPMonthWisePrice " +
+                    "(Id, NormsHeader_FK_Id, FinancialYear, AOPYear, " +
+                    " Apr_Price, May_Price, Jun_Price, Jul_Price, Aug_Price, Sep_Price, " +
+                    " Oct_Price, Nov_Price, Dec_Price, Jan_Price, Feb_Price, Mar_Price, " +
+                    " Remarks, PriceSource, CreatedDate, UpdatedDate, ModifiedBy, ValueType) " +
+                    "VALUES (?, ?, ?, ?, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 'Added new norms', 'Calculation', GETDATE(), GETDATE(), 'SYSTEM', 'Calculation')";
+            db1JdbcTemplate.update(insertSql, UUID.randomUUID().toString(),
+                    normsHeaderId.toString(), financialYear, financialYear);
+        } catch (Exception e) {
+            logger.error("[ADD Capacity Source] Error inserting CPPMonthWisePrice: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Deletes child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice) for the
+     * NormsHeader linked to the given source norm, scoped to the given financial year.
+     * The NormsHeader row itself is kept (mirrors SR Mapping delete behavior).
+     *
+     * Lookup: NormsHeader WHERE NormParameter_FK_Id = sourceNormParameterId
+     * (the source's own norm, NormType=2, at procurement plant)
+     *
+     * If financialYear is null/blank, no child records are deleted (preserves all years).
+     *
+     * @param sourceNormParameterId the source's own NormParameters Id (NormParameter_FK_Id on NormsHeader)
+     * @param financialYear         financial year string, e.g. "2026-27" (scopes deletion)
+     */
+    private void deleteNormsHeaderChildRecords(UUID sourceNormParameterId, String financialYear) {
+        if (sourceNormParameterId == null) {
+            return;
+        }
+        if (financialYear == null || financialYear.isBlank()) {
+            logger.info("[DELETE Capacity Source] financialYear not provided — skipping NormsHeader child-record deletion for sourceNorm={}",
+                    sourceNormParameterId);
+            return;
+        }
+        try {
+            // Parse financial year "2026-27" → startYear=2026, endYear=2027
+            int startYear;
+            int endYear;
+            try {
+                startYear = Integer.parseInt(financialYear.split("-")[0].trim());
+                endYear = startYear + 1;
+            } catch (Exception e) {
+                logger.error("[DELETE Capacity Source] Could not parse financialYear='{}' — skipping child-record deletion", financialYear);
+                return;
+            }
+
+            // Find NormsHeader(s) linked to this source's norm parameter
+            String lookupSql = "SELECT Id FROM NormsHeader WITH(NOLOCK) WHERE NormParameter_FK_Id = ?";
+            List<String> normsHeaderIds = db1JdbcTemplate.queryForList(lookupSql, String.class,
+                    sourceNormParameterId.toString());
+
+            if (normsHeaderIds.isEmpty()) {
+                logger.info("[DELETE Capacity Source] No NormsHeader found for sourceNorm={}", sourceNormParameterId);
+                return;
+            }
+
+            String inClause = normsHeaderIds.stream().map(h -> "?").collect(Collectors.joining(","));
+            Object[] headerIdArgs = normsHeaderIds.toArray();
+
+            // ── 1. Delete NormsMonthDetail scoped by financialYear via FinancialYearMonth ──
+            Object[] monthDetailArgs = new Object[normsHeaderIds.size() + 2];
+            System.arraycopy(headerIdArgs, 0, monthDetailArgs, 0, normsHeaderIds.size());
+            monthDetailArgs[normsHeaderIds.size()] = startYear;
+            monthDetailArgs[normsHeaderIds.size() + 1] = endYear;
+
+            int deletedMonthDetail = db1JdbcTemplate.update(
+                    "DELETE nmd FROM NormsMonthDetail nmd " +
+                    "INNER JOIN FinancialYearMonth fym WITH(NOLOCK) ON nmd.FinancialYearMonth_FK_Id = fym.Id " +
+                    "WHERE nmd.NormsHeader_FK_Id IN (" + inClause + ") " +
+                    "AND ((fym.Year = ? AND fym.Month >= 4) OR (fym.Year = ? AND fym.Month <= 3))",
+                    monthDetailArgs);
+            logger.info("[DELETE Capacity Source] Deleted {} NormsMonthDetail row(s) for financialYear={}",
+                    deletedMonthDetail, financialYear);
+
+            // ── 2. Delete CPPNorms scoped by financialYear ──
+            Object[] normsArgs = new Object[normsHeaderIds.size() + 1];
+            System.arraycopy(headerIdArgs, 0, normsArgs, 0, normsHeaderIds.size());
+            normsArgs[normsHeaderIds.size()] = financialYear;
+
+            int deletedNorms = db1JdbcTemplate.update(
+                    "DELETE FROM CPPNorms WHERE NormsHeader_FK_Id IN (" + inClause + ") AND FinancialYear = ?",
+                    normsArgs);
+            logger.info("[DELETE Capacity Source] Deleted {} CPPNorms row(s) for financialYear={}",
+                    deletedNorms, financialYear);
+
+            // ── 3. Delete CPPMonthWisePrice scoped by financialYear ──
+            Object[] priceArgs = new Object[normsHeaderIds.size() + 1];
+            System.arraycopy(headerIdArgs, 0, priceArgs, 0, normsHeaderIds.size());
+            priceArgs[normsHeaderIds.size()] = financialYear;
+
+            int deletedMonthWisePrice = db1JdbcTemplate.update(
+                    "DELETE FROM CPPMonthWisePrice WHERE NormsHeader_FK_Id IN (" + inClause + ") AND FinancialYear = ?",
+                    priceArgs);
+            logger.info("[DELETE Capacity Source] Deleted {} CPPMonthWisePrice row(s) for financialYear={}",
+                    deletedMonthWisePrice, financialYear);
+
+        } catch (Exception e) {
+            logger.error("[DELETE Capacity Source] Error deleting NormsHeader child records: {}", e.getMessage(), e);
+        }
     }
 }

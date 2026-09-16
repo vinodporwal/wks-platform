@@ -37,10 +37,13 @@ public interface ImportPowerCapacityService {
     /**
      * Soft-delete an import power capacity source by setting isActive = false on CPPImportPowerSourceMapping
      * and isVisible = false on the linked NormParameters entry.
+     * Also deletes NormsHeader child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice)
+     * scoped to the given financial year (mirrors SR Mapping delete behavior).
      *
-     * @param sourceId UUID of the CPPImportPowerSourceMapping row to soft-delete
+     * @param sourceId      UUID of the CPPImportPowerSourceMapping row to soft-delete
+     * @param financialYear financial year string, e.g. "2026-27" (scopes child-record deletion)
      */
-    AOPMessageVM deleteImportPowerCapacitySource(UUID sourceId);
+    AOPMessageVM deleteImportPowerCapacitySource(UUID sourceId, String financialYear);
 
     /**
      * Returns all procurement/source plants linked to the given CPP plant

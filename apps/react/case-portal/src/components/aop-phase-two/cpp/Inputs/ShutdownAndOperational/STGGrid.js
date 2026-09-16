@@ -9,6 +9,7 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiS
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const STGGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
@@ -17,7 +18,7 @@ const STGGrid = ({ hoursRows = [] }) => {
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterProduction()
+  const valueFormat = customValueFormatterPhaseTwo(2)
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])

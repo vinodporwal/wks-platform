@@ -284,16 +284,19 @@ public class ImportPowerController {
     }
 
     /**
-     * DELETE /task/import-power/capacity/source/{sourceId}
+     * DELETE /task/import-power/capacity/source/{sourceId}?financialYear={year}
      *
      * Soft-deletes the import power capacity source by setting isActive = false
      * on CPPImportPowerSourceMapping and isVisible = false on the linked NormParameters.
+     * Also deletes NormsHeader child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice)
+     * scoped to the given financial year (mirrors SR Mapping delete behavior).
      */
     @DeleteMapping("/capacity/source/{sourceId}")
     public ResponseEntity<AOPMessageVM> deleteImportPowerCapacitySource(
-            @PathVariable UUID sourceId) {
+            @PathVariable UUID sourceId,
+            @RequestParam(required = false) String financialYear) {
 
-        AOPMessageVM response = importPowerCapacityService.deleteImportPowerCapacitySource(sourceId);
+        AOPMessageVM response = importPowerCapacityService.deleteImportPowerCapacitySource(sourceId, financialYear);
 
         int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
         return ResponseEntity.status(httpStatus).body(response);
