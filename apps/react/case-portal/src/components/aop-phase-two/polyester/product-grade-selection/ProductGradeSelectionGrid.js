@@ -120,7 +120,7 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
                 remarks: currentRemark,
             }))
             
-            const response = await ProductGradeSelectionApiService.saveGradeSelection(keycloak, payload, AOP_YEAR)
+            const response = await ProductGradeSelectionApiService.saveGradeSelection(keycloak, payload, AOP_YEAR, PLANT_ID)
             
             if (response?.code === 200) {
                 setSnackbarOpen(true)
