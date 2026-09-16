@@ -845,6 +845,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 			// Create request body
          Map<String, Object> requestBody = new HashMap<>();
+		requestBody.put("RECOMMENDATION_Des", "EED Headline");
 		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
 		requestBody.put("CC_GENRECOM_SEND_TO_ASM_CHR", "NO");
 		requestBody.put("MI_REC_AUTHO_NM_CHR", dataGridEntry.path("recommendationAuthor").asText());
@@ -1308,7 +1309,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    }
         com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
 
- 	    user.setUserId("123");
+ 	    user.setUserId("nisargi.shah@ril.com");
  	    user.setEmailId("nisargi.shah@ril.com");
  		geUsers.add(user);
 	    return geUsers;
