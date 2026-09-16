@@ -1305,6 +1305,7 @@ console.log('*****  taskId:  ', taskId);
       'deleteRowButton4',
       'RecommendationSubmit3',
       'deleteRowButton5',
+      'eventPkId',
     ] // Add any keys you want to skip here
 
     return dataGrid
