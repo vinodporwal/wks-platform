@@ -27,7 +27,7 @@ public class GradeSelectionController {
     }
 
     @PostMapping("/grade-selection")
-    public AOPMessageVM saveGradeSelection(@RequestBody List<GradeSelectionDTO> gradeSelectionDTOs, @RequestParam String year) {
-        return gradeSelectionService.saveGradeSelection(gradeSelectionDTOs, year);
+    public AOPMessageVM saveGradeSelection(@RequestBody List<GradeSelectionDTO> gradeSelectionDTOs, @RequestParam String year, @RequestParam(required=false) String plantId) {
+        return gradeSelectionService.saveGradeSelection(gradeSelectionDTOs, year,plantId);
     }
 }

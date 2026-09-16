@@ -5,7 +5,6 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgo
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { productionAndNormsBasisConstant } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Constants = () => {
@@ -79,23 +78,19 @@ const Constants = () => {
       // Simulate API call with 1 second delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // const res = await ProductionNormsApiService.getConstantsData(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-
-      const res = productionAndNormsBasisConstant.data
-
-      if (res?.length === 0) {
+      const res = await ProductionNormsApiService.getConstantsData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      const result = Array.isArray(res) ? res : res?.data || []
+      if (result?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
+        setOriginalRows([])
         return
       }
 
-      console.log('Constants data:', res)
-      const formattedData = res?.map((item, index) => ({
+      const formattedData = result?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
@@ -103,9 +98,9 @@ const Constants = () => {
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
+      setRows([])
+      setOriginalRows([])
       console.error('Error fetching constants data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
@@ -326,6 +321,7 @@ const Constants = () => {
         handleExport={handleExport}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
+        groupBy={['normParameterType']}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         paginationConfig={{
