@@ -178,6 +178,11 @@ const ShutDown = ({ permissions }) => {
   const IS_PET_VERTICAL = lowerVertName === 'pet'
   const [allLines, setAllLines] = useState([])
   const [selectedTab, setSelectedTab] = useState(0)
+
+  useEffect(() => {
+    setSelectedTab(0)
+  }, [PLANT_ID, plantObject?.id, lowerPlantName, lowerSiteName, lowerVertName, AOP_YEAR])
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
