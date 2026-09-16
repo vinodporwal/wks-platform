@@ -72,6 +72,8 @@ import com.wks.caseengine.rest.db2.entity.CaseStatus;
 import com.wks.caseengine.rest.db2.entity.CasesAndEventsMapping;
 import com.wks.caseengine.rest.db2.entity.FaultCategory;
 import com.wks.caseengine.rest.db2.entity.OwnerDetails;
+import com.wks.caseengine.rest.db2.entity.RecommendationPlannerGroup;
+import com.wks.caseengine.rest.db2.entity.RecommendationPriority;
 import com.wks.caseengine.rest.db2.repository.CaseCauseCategoryRepository;
 import com.wks.caseengine.rest.db2.repository.CaseCauseDescriptionRepository;
 import com.wks.caseengine.rest.db2.repository.CaseIdSequenceRepository;
@@ -80,6 +82,8 @@ import com.wks.caseengine.rest.db2.repository.CaseRepository;
 import com.wks.caseengine.rest.db2.repository.CaseStatusRepository;
 import com.wks.caseengine.rest.db2.repository.CasesAndEventsMappingRepository;
 import com.wks.caseengine.rest.db2.repository.FaultCategoryRepository;
+import com.wks.caseengine.rest.db2.repository.RecommendationPlannerGroupRepository;
+import com.wks.caseengine.rest.db2.repository.RecommendationPriorityRepository;
 import com.wks.caseengine.rest.db2.repository.UsersRepository;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.EquipmentModel;
@@ -106,6 +110,16 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	private final JavaMailSender mailSender;
 
 	private static final Logger log =LoggerFactory.getLogger(CaseDefinitionServiceImpl.class);
+	private static final String SEND_TO_ASM_DEFAULT = "No";
+
+	// TODO: Replace with client-confirmed GE APM Send to ASM property.
+	private static final String TEMP_GE_SEND_TO_ASM_KEY = "SEND_TO_ASM";
+
+	// TODO: Replace with client-confirmed GE APM Author property.
+	private static final String TEMP_GE_AUTHOR_KEY = "AUTHOR_NAME";
+
+	// TODO: Replace with client-confirmed GE APM Recommendation Creation Date property.
+	private static final String TEMP_GE_RECOMMENDATION_CREATION_DATE_KEY = "TEMP_RECOMMENDATION_CREATION_DATE_DT";
 
     @Autowired
     public CaseDefinitionServiceImpl(JavaMailSender mailSender) {
@@ -117,6 +131,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	
 	@Autowired
 	private FaultCategoryRepository faultCategoryRepository; 
+
+	@Autowired
+	private RecommendationPlannerGroupRepository recommendationPlannerGroupRepository;
+
+	@Autowired
+	private RecommendationPriorityRepository recommendationPriorityRepository;
 //	
 	@Autowired
 	private CaseStatusRepository caseStatusRepository; 
@@ -245,6 +265,16 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<FaultCategory> findCaseCatagories() {
 		List<FaultCategory> faultCategoryList = faultCategoryRepository.findAll();
 		return faultCategoryList;
+	}
+
+	@Override
+	public List<RecommendationPlannerGroup> getRecommendationPlannerGroups() {
+		return recommendationPlannerGroupRepository.findAll();
+	}
+
+	@Override
+	public List<RecommendationPriority> getRecommendationPriorities() {
+		return recommendationPriorityRepository.findAll();
 	}
 	
 	@Override
@@ -511,6 +541,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 					CasesAndEventsMapping mapping = new CasesAndEventsMapping();
 					mapping.setCaseNo(caseDetails.getCaseNo());
 					casesAndEventsMappingRepository.save(mapping);
+					System.out.println("EventId of is: " + eventId + " for case No: " + caseDetails.getCaseNo());
 				}
 				log.info("SQL Server CasesAndEventsMappingRepository persistence completed successfully: caseNo={}, eventCount={}",
 						caseDetails.getCaseNo(), caseData.getEventIds().size());
@@ -546,6 +577,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				"**************************************sending Emails part*************************************************");
 		System.out.println("************************************ Is Draft" + caseData.getIsDraft());
 		attributeValue = attributeValue.replace("\\\"", "\"");
+		System.out.println("Attribute Value: " + attributeValue);
 
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
@@ -804,47 +836,83 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.add("Authorization", "Bearer " + geUserAcsessToken);
 		String targetDateString = dataGridEntry.path("recommendationTargetCompletionDate1").asText();
-		SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-		Date date = inputFormat.parse(targetDateString);
-		SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Date date = parseRecommendationTargetDate(targetDateString);
+		SimpleDateFormat outputFormat = new SimpleDateFormat("M/d/yyyy h:mm:ss a");
 		String targetDate = outputFormat.format(date);
+		String creationDateString = dataGridEntry.path("recommendationCreationDate").asText();
+		Date creationDate = parseRecommendationTargetDate(creationDateString);
+		String geCreationDate = outputFormat.format(creationDate);
 
 			// Create request body
          Map<String, Object> requestBody = new HashMap<>();
 		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
+		requestBody.put("CC_GENRECOM_SEND_TO_ASM_CHR", "NO");
+		requestBody.put("MI_REC_AUTHO_NM_CHR", dataGridEntry.path("recommendationAuthor").asText());
          requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
 		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
-		requestBody.put("RECOMMENDATION_Des", dataGridEntry.path("recommendationDescription1").asText());
-		requestBody.put("MI_REC_BASIS", dataGridEntry.path("recommendationHeadline").asText());
-			requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
-//			requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
+		requestBody.put("MI_REC_BASIS", "EED");
+		requestBody.put("CC_GENRECOM_PRIO_GUID_CHR", "reims.ril.com");
+		requestBody.put("MI_REC_SHORT_DESCR_CHR", dataGridEntry.path("recommendationHeadline").asText());
+		requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
+//		requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
 		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
-         requestBody.put("MI_REC_PRIORITY_C", "2");
-			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
-//			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
+		requestBody.put("MI_REC_CREAT_DATE_DT", geCreationDate);
+		requestBody.put("MI_REC_PRIORITY_C", dataGridEntry.path("recommendationPriority").asText());
+		requestBody.put("CC_REC_RESP_PLAN_GROU_C", dataGridEntry.path("recommendationPlannerGroup").asText());
+		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
+//		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
 		requestBody.put("CaseID", caseNo);
-		 System.out.println("GE APM Create Case body: " + requestBody.toString());
+
+
+		requestBody.put("CC_GENRECOM_SITE_ID_C", "");
+		
+		requestBody.put("CC_GENRECOM_PLANT_ID_C", "");
+	
+		
+
+		System.out.println("==================================================");
+		System.out.println("TEMP DEBUG - GE APM RECOMMENDATION CREATE START");
+		System.out.println("==================================================");
+		System.out.println("Case No: " + caseNo);
+		System.out.println("GE APM Request Body: " + requestBody);
+		System.out.println("==================================================");
 
 		try {
          HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 		 ResponseEntity<Map> response = restTemplate.postForEntity(geCreateCaseAPI, requestEntity, Map.class);
-		 System.out.println("Response Code: " + response.getStatusCode());
-		 System.out.println("Response Body: " + response.getBody());
+		 System.out.println("========== TEMP GE APM RESPONSE ==========");
+		 System.out.println("GE APM Response Status: " + response.getStatusCode());
+		 System.out.println("GE APM Response Body: " + response.getBody());
 
 			if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
 				Map<String, Object> responseBody = response.getBody();
 				if (responseBody != null && responseBody.get("Data") instanceof Map) {
 		            Map<String, Object> responseData = (Map<String, Object>) responseBody.get("Data");
 		            recommendationId = responseData.get("MI_REC_ID") != null ? (String) responseData.get("MI_REC_ID") : "";
-					System.out.println("Recommendation Id: " + recommendationId);
+					System.out.println("GE APM MI_REC_ID: " + recommendationId);
 					recommendationStatusAndId[0] = recommendationId;
 					recommendationStatusAndId[1] = status;
 				}
-			}	
+			}
+			System.out.println("==========================================");
 		}catch(Exception e) {
-       	 System.out.println("GE APM Post Recommendation API failed " + e.getLocalizedMessage());
-       	 e.printStackTrace();
+			Throwable rootCause = e;
+			while (rootCause.getCause() != null) {
+				rootCause = rootCause.getCause();
+			}
+			System.out.println("========== TEMP GE APM ERROR ==========");
+			System.out.println("Exception Type: " + e.getClass().getName());
+			System.out.println("Exception Message: " + e.getMessage());
+			System.out.println("Root Cause: " + rootCause.getClass().getName() + ": " + rootCause.getMessage());
+			if (e instanceof org.springframework.web.client.HttpStatusCodeException) {
+				org.springframework.web.client.HttpStatusCodeException httpError =
+						(org.springframework.web.client.HttpStatusCodeException) e;
+				System.out.println("GE APM Response Status: " + httpError.getStatusCode());
+				System.out.println("GE APM Response Body: " + httpError.getResponseBodyAsString());
+			}
+			System.out.println("=======================================");
+			e.printStackTrace();
         }
 		 sendMailToAssignedPerson(assignedUserId);
 		 sendMailToReviewerPerson(reviewerUserId);
@@ -909,6 +977,30 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private Date parseRecommendationTargetDate(String targetDateString) throws java.text.ParseException {
+		String[] supportedFormats = {
+				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+				"yyyy-MM-dd'T'HH:mm:ssXXX",
+				"M/d/yyyy h:mm:ss a",
+				"yyyy-MM-dd HH:mm:ss",
+				"dd-MM-yyyy"
+		};
+
+		for (String format : supportedFormats) {
+			SimpleDateFormat parser = new SimpleDateFormat(format);
+			parser.setLenient(false);
+			try {
+				return parser.parse(targetDateString);
+			} catch (java.text.ParseException ignored) {
+				// Try the next historical/current representation.
+			}
+		}
+
+		throw new java.text.ParseException(
+				"Unsupported Recommendation Target Completion Date: " + targetDateString,
+				0);
 	}
 	
 	@Override
@@ -1070,6 +1162,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    try {
 	        ObjectMapper objectMapper = new ObjectMapper();
 	        JsonNode rootNode = objectMapper.readTree(attributeValue);
+	        String eedCreatedBy = rootNode.path("createdBy").asText();
 
 	        // Navigate to the "dataGrid1" array
 	        JsonNode recommendationNode = rootNode.path("dataGrid1");
@@ -1078,6 +1171,15 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	            // Convert the new recommendation object to a JSON node
 	            ObjectNode newRecommendationNode = objectMapper.createObjectNode();
+	            String recommendationCreationDate = newRecommendation.getRecommendationCreationDate();
+
+				if (recommendationCreationDate == null
+						|| recommendationCreationDate.isBlank()) {
+					recommendationCreationDate = LocalDateTime.now()
+							.format(DateTimeFormatter.ofPattern("M/d/yyyy h:mm:ss a"));
+}
+	            newRecommendationNode.put("recommendationPlannerGroup", newRecommendation.getRecommendationPlannerGroup());
+	            newRecommendationNode.put("recommendationPriority", newRecommendation.getRecommendationPriority());
 	            newRecommendationNode.put("recommendationHeadline", newRecommendation.getRecommendationHeadline());
 	            newRecommendationNode.put("recommendationDescription1", newRecommendation.getRecommendationDescription1());
 	            newRecommendationNode.put("recommendationAssignedTo1", newRecommendation.getRecommendationAssignedTo1());
@@ -1085,11 +1187,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	            newRecommendationNode.put("recommendationStatus", newRecommendation.getRecommendationStatus());
 	            newRecommendationNode.put("equipmentFunctionLocation", newRecommendation.getEquipmentFunctionLocation());
 	            newRecommendationNode.put("recommendationTargetCompletionDate1", newRecommendation.getRecommendationTargetCompletionDate1());
+	            newRecommendationNode.put("recommendationCreationDate", recommendationCreationDate);
 	            newRecommendationNode.put("recommendationReviewer", newRecommendation.getRecommendationReviewer());
 	            newRecommendationNode.put("recommendationNo1", newRecommendation.getRecommendationNo1());
 	            newRecommendationNode.put("RecommendationSubmit", newRecommendation.getRecommendationSubmit());
 	            newRecommendationNode.put("RecommendationConfirmSAP3", newRecommendation.getRecommendationConfirmSAP3());
 	            newRecommendationNode.put("createdBy", newRecommendation.getCreatedBy());
+	            newRecommendationNode.put("recommendationSendToASM", SEND_TO_ASM_DEFAULT);
+	            newRecommendationNode.put("recommendationAuthor", eedCreatedBy);
 
 	            // Append the new recommendation node to the dataGrid1 array
 	            
@@ -1200,8 +1305,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    } catch (Exception e) {
 	        System.err.println("Unexpected error in getGEUsers(): " + e.getMessage());
 	        e.printStackTrace();
-	                        }
+	    }
+        com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
 
+ 	    user.setUserId("123");
+ 	    user.setEmailId("nisargi.shah@ril.com");
+ 		geUsers.add(user);
 	    return geUsers;
 	}
 	
@@ -1218,6 +1327,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        boolean updated = false; // Track if updates are made
 	        for (Attribute attribute : caseDetails.getAttributes()) {
 	            String attributeValue = attribute.getValue();
+	            System.out.println("Case No: " + caseDetails.getCaseNo() + " :: Attribute: " + attributeValue);
 	            JsonNode rootNode = objectMapper.readTree(attributeValue);
 	            JsonNode recommendationNode = rootNode.path("dataGrid1");
 	            if (recommendationNode.isArray()) {

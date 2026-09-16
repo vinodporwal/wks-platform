@@ -49,6 +49,8 @@ import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.db2.entity.CaseStatus;
 import com.wks.caseengine.rest.db2.entity.FaultCategory;
 import com.wks.caseengine.rest.db2.entity.OwnerDetails;
+import com.wks.caseengine.rest.db2.entity.RecommendationPlannerGroup;
+import com.wks.caseengine.rest.db2.entity.RecommendationPriority;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.FaultEvents;
@@ -193,6 +195,16 @@ public class CaseDefinitionController {
 				.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, limit, offset);
 		attemptOptionalHoneywellSecurityCall();
 		return ResponseEntity.ok(cases);
+	}
+
+	@GetMapping(value = "/recommendation/planner-groups")
+	public ResponseEntity<List<RecommendationPlannerGroup>> getRecommendationPlannerGroups() {
+		return ResponseEntity.ok(caseDefinitionService.getRecommendationPlannerGroups());
+	}
+
+	@GetMapping(value = "/recommendation/priorities")
+	public ResponseEntity<List<RecommendationPriority>> getRecommendationPriorities() {
+		return ResponseEntity.ok(caseDefinitionService.getRecommendationPriorities());
 	}
 
 	@GetMapping("/cases/{caseDefinitionId}/count")

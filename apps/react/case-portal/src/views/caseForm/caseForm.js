@@ -40,7 +40,12 @@ import { useNavigate } from 'react-router-dom'
 import logo from 'assets/images/logo.svg'
 import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 import Config from '../../consts'
-import { buildCreateUrl } from 'utils/util'
+import { buildCreateUrl, formatLocalDateTime } from 'utils/util'
+import {
+  loadRecommendationOptions,
+  RECOMMENDATION_OPTION_CACHE_KEYS,
+  resolveRecommendationOptionLabel,
+} from 'utils/recommendationOptions'
 import { accountStore } from './../../store'
 import html2pdf from "html2pdf.js/dist/html2pdf"
 
@@ -92,6 +97,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 const initialDataRef = useRef(null);
 const isFormReadyRef = useRef(false);
 const hasUnsavedChangesRef = useRef(false); 
+const targetCompletionDateValuesRef = useRef([]);
 
 useEffect(() => {
   hasUnsavedChangesRef.current = hasUnsavedChanges;
@@ -99,7 +105,59 @@ useEffect(() => {
 
 
 
-const handleFormChange = (submission) => {
+const captureTargetCompletionTime = (submission, modified) => {
+  const changed = submission?.changed;
+  if (changed?.component?.key !== 'recommendationTargetCompletionDate1') return;
+
+  const instance = changed.instance;
+  const rowIndex = Number.isInteger(instance?.rowIndex) ? instance.rowIndex : 0;
+  const previousValue = Object.prototype.hasOwnProperty.call(
+    instance,
+    '_previousTargetCompletionDateValue',
+  )
+    ? instance._previousTargetCompletionDateValue
+    : targetCompletionDateValuesRef.current[rowIndex] || '';
+
+  instance._previousTargetCompletionDateValue = changed.value;
+  targetCompletionDateValuesRef.current[rowIndex] = changed.value;
+
+  if (changed.flags?.targetTimeCaptured || !changed.value || !modified) return;
+
+  const selectedDate = new Date(changed.value);
+  if (Number.isNaN(selectedDate.getTime())) return;
+
+  let previousDate = new Date(previousValue);
+  if (Number.isNaN(previousDate.getTime())) {
+    const legacyDate = /^(\d{2})-(\d{2})-(\d{4})$/.exec(previousValue);
+    previousDate = legacyDate
+      ? new Date(legacyDate[3], legacyDate[2] - 1, legacyDate[1])
+      : null;
+  }
+
+  const dateChanged = !previousDate ||
+    previousDate.getFullYear() !== selectedDate.getFullYear() ||
+    previousDate.getMonth() !== selectedDate.getMonth() ||
+    previousDate.getDate() !== selectedDate.getDate();
+
+  if (!dateChanged) return;
+
+  const now = new Date();
+  selectedDate.setHours(
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+    0,
+  );
+  const valueWithCurrentTime = selectedDate.toISOString();
+  instance._previousTargetCompletionDateValue = valueWithCurrentTime;
+  targetCompletionDateValuesRef.current[rowIndex] = valueWithCurrentTime;
+  instance.setValue(valueWithCurrentTime, {
+    targetTimeCaptured: true,
+  });
+};
+
+const handleFormChange = (submission, flags, modified) => {
+  captureTargetCompletionTime(submission, modified);
   if (!submission?.data?.container) return;
   if (!isFormReadyRef.current) return;
 
@@ -286,6 +344,9 @@ const handleFormChange = (submission) => {
         const attributeValue = caseData.attributes[0].value;
         const parsedAttributeValue = JSON.parse(attributeValue);
         parsedAttributeValue.caseNo = aCase.caseNo;
+        targetCompletionDateValuesRef.current = (
+          parsedAttributeValue.dataGrid1 || []
+        ).map((row) => row.recommendationTargetCompletionDate1 || '');
         setCurrentData(parsedAttributeValue)
         initialDataRef.current = JSON.parse(JSON.stringify(parsedAttributeValue));
         const userEmailIds = [];
@@ -611,8 +672,20 @@ const handleFormChange = (submission) => {
               if (level6) {
                 const [submitContainer, addMoreContainer] = level6.components;
 
-                const recommendationSubmit = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[0]?.components?.[0] ?? null;
-                const recommendationDelete = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[1]?.components?.[0] ?? null;
+                const findRecommendationComponent = (node, key) => {
+                  if (!node || typeof node !== 'object') return null;
+                  if (node.key === key) return node;
+
+                  for (const child of [...(node.components || []), ...(node.columns || [])]) {
+                    const match = findRecommendationComponent(child, key);
+                    if (match) return match;
+                  }
+
+                  return null;
+                };
+
+                const recommendationSubmit = findRecommendationComponent(submitContainer, 'RecommendationSubmit3');
+                const recommendationDelete = findRecommendationComponent(submitContainer, 'deleteRowButton5');
                 const recommendationAddMore = addMoreContainer?.columns[0]?.components[0] ?? null;
                 const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
 
@@ -1142,6 +1215,8 @@ const handleFormChange = (submission) => {
     setSnackbarMessages([])
 
     const {
+      recommendationPlannerGroup,
+      recommendationPriority,
       recommendationReviewer,
       recommendationAssignedTo2,
       recommendationHeadline,
@@ -1152,12 +1227,20 @@ const handleFormChange = (submission) => {
     } = event.data
 
     const missingFields = []
+    if (!recommendationPlannerGroup)
+      missingFields.push('Recommendation Planner Group')
+    if (!recommendationPriority)
+      missingFields.push('Recommendation Priority')
     if (!recommendationReviewer)
       missingFields.push('Recommendation Reviewer')
     if (!recommendationAssignedTo2)
       missingFields.push('Recommendation Assigned To')
     if (!recommendationHeadline)
       missingFields.push('Recommendation Headline')
+    else if (recommendationHeadline.length > 40)
+      missingFields.push('Recommendation Headline cannot exceed 40 characters.')
+    else if (!/^[A-Za-z0-9 ]+$/.test(recommendationHeadline))
+      missingFields.push('Special characters are not allowed.')
     if (!recommendationTargetCompletionDate1)
       missingFields.push('Target Completion Date')
     if (!equipmentFunctionLocation)
@@ -1175,11 +1258,14 @@ const handleFormChange = (submission) => {
     setSnackbarMessages([])
 
     const apiBodyData = {
+      recommendationPlannerGroup,
+      recommendationPriority,
       recommendationHeadline,
       recommendationDescription1,
       recommendationAssignedTo2,
       equipmentFunctionLocation,
-      recommendationTargetCompletionDate1,
+      recommendationTargetCompletionDate1: formatLocalDateTime(recommendationTargetCompletionDate1),
+      recommendationCreationDate:event.data.recommendationCreationDate || formatLocalDateTime(new Date()),
       recommendationReviewer,
       RecommendationConfirmSAP3,
       deleteRowButton4: false,
@@ -1424,6 +1510,14 @@ const handleFormChange = (submission) => {
     return location ? location.label : id
   }
 
+  const getRecommendationMasterDataLabel = (key, value) => {
+    const cacheKey =
+      key === 'recommendationPlannerGroup'
+        ? RECOMMENDATION_OPTION_CACHE_KEYS.plannerGroup
+        : RECOMMENDATION_OPTION_CACHE_KEYS.priority
+    return resolveRecommendationOptionLabel(cacheKey, value)
+  }
+
   // Function to dynamically create labelMap from the form structure
   const createLabelMapFromStructure = (structure) => {
     const labelMap = {}
@@ -1565,7 +1659,7 @@ const handleFormChange = (submission) => {
             <div style="flex: 0 0 calc(50% - 8px); max-width: calc(50% - 8px); box-sizing: border-box; border: 1px solid #ddd; margin: 3px; padding: 5px; font-size: 11.5px; line-height: 1.3; word-break: break-word;">
               <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
               <p style="margin: 0;">
-                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : key === 'RecommendationConfirmSAP3' ? getSAPRequestLabel(value) : value || ''}
+                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : key === 'recommendationPlannerGroup' || key === 'recommendationPriority' ? getRecommendationMasterDataLabel(key, value) : key === 'RecommendationConfirmSAP3' ? getSAPRequestLabel(value) : value || ''}
               </p>
             </div>
         `,
@@ -1851,7 +1945,21 @@ const handleFormChange = (submission) => {
     },
   })
 
-  const pdfFaultCard = (item, getLabel, removeMainAsset = false) => {
+  const formatRecommendationPdfDate = (value) => {
+    if (!value) return 'N/A'
+    try {
+      return formatLocalDateTime(value)
+    } catch (error) {
+      return 'N/A'
+    }
+  }
+
+  const pdfFaultCard = (
+    item,
+    getLabel,
+    removeMainAsset = false,
+    fieldRows = null,
+  ) => {
     const fieldsToSkip = [
       'textField1',
       'RecommendationSubmit',
@@ -1871,15 +1979,30 @@ const handleFormChange = (submission) => {
       return !fieldsToSkip.includes(key) && !isMainAsset
     })
 
+    const pairedEntries = fieldRows
+      ? fieldRows.map(([firstKey, secondKey]) => [
+          [firstKey, item[firstKey]],
+          secondKey && secondKey !== 'FULL_WIDTH'
+            ? [secondKey, item[secondKey]]
+            : secondKey,
+        ])
+      : entries.reduce((pairs, entry, index) => {
+          if (index % 2 === 0) pairs.push([entry, entries[index + 1]])
+          return pairs
+        }, [])
+
     const rows = []
 
-    for (let i = 0; i < entries.length; i += 2) {
-      const [key1, value1] = entries[i]
-      const second = entries[i + 1]
+    pairedEntries.forEach(([first, second]) => {
+      const [key1, value1] = first
 
       const firstValue =
         key1 === 'equipmentFunctionLocation'
           ? getEquipmentFunctionLocationLabel(value1)
+          : key1 === 'recommendationPlannerGroup' || key1 === 'recommendationPriority'
+            ? getRecommendationMasterDataLabel(key1, value1)
+          : key1 === 'recommendationTargetCompletionDate1'
+            ? formatRecommendationPdfDate(value1)
           : key1 === 'RecommendationConfirmSAP3'
             ? getSAPRequestLabel(value1)
             : value1
@@ -1892,14 +2015,23 @@ const handleFormChange = (submission) => {
         margin: [4, 3, 4, 3],
       }
 
+      if (second === 'FULL_WIDTH') {
+        rows.push([{ ...firstCell, colSpan: 2 }, {}])
+        return
+      }
+
       let secondCell = { text: '', border: [false, false, false, false] }
 
       if (second) {
         const [key2, value2] = second
 
-        const secondValue =
-          key2 === 'equipmentFunctionLocation'
-            ? getEquipmentFunctionLocationLabel(value2)
+          const secondValue =
+            key2 === 'equipmentFunctionLocation'
+              ? getEquipmentFunctionLocationLabel(value2)
+              : key2 === 'recommendationPlannerGroup' || key2 === 'recommendationPriority'
+                ? getRecommendationMasterDataLabel(key2, value2)
+            : key2 === 'recommendationTargetCompletionDate1'
+              ? formatRecommendationPdfDate(value2)
             : key2 === 'RecommendationConfirmSAP3'
               ? getSAPRequestLabel(value2)
               : value2
@@ -1914,7 +2046,7 @@ const handleFormChange = (submission) => {
       }
 
       rows.push([firstCell, secondCell])
-    }
+    })
 
     return {
       unbreakable: true,
@@ -1937,12 +2069,19 @@ const handleFormChange = (submission) => {
     }
   }
 
-  const pdfDataGrid = (dataGrid, getLabel, removeMainAsset = false) => {
+  const pdfDataGrid = (
+    dataGrid,
+    getLabel,
+    removeMainAsset = false,
+    fieldRows = null,
+  ) => {
     if (!dataGrid || dataGrid.length === 0) {
       return [{ text: 'No data available', fontSize: 8.5 }]
     }
 
-    return dataGrid.map((item) => pdfFaultCard(item, getLabel, removeMainAsset))
+    return dataGrid.map((item) =>
+      pdfFaultCard(item, getLabel, removeMainAsset, fieldRows),
+    )
   }
 
 
@@ -2134,9 +2273,22 @@ const handleFormChange = (submission) => {
     // }
 
     if (containerData.RecommendationsRadio === 'yes') {
+      const recommendationFieldRows = [
+        ['recommendationPlannerGroup', 'recommendationPriority'],
+        ['recommendationHeadline', 'equipmentFunctionLocation'],
+        ['recommendationAssignedTo2', 'recommendationTargetCompletionDate1'],
+        ['recommendationReviewer', 'recommendationNo1'],
+        ['recommendationStatus', 'RecommendationConfirmSAP3'],
+        ['recommendationDescription1', 'FULL_WIDTH'],
+      ]
       const recommendationSection = pdfSection(
         getLabel('dataGrid1'),
-        pdfDataGrid(containerData.dataGrid1, getLabel, false),
+        pdfDataGrid(
+          containerData.dataGrid1,
+          getLabel,
+          false,
+          recommendationFieldRows,
+        ),
         false,
       )
 
@@ -2544,7 +2696,7 @@ const handleFormChange = (submission) => {
                       <Form
                         form={form.structure}
                         submission={formData}
-                        onChange={(submission) => handleFormChange(submission)} // Listen for changes
+                        onChange={handleFormChange} // Listen for changes
                         options={{
                           // readOnly: true,
                           fileService: new StorageService(),
@@ -2814,6 +2966,7 @@ const loadOptions = async (keycloak) => {
     'geAPMUsers',
     (item) => ({ label: item.userId, value: item.emailId })
   );
+  await loadRecommendationOptions(keycloak);
 };
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />

@@ -8,7 +8,9 @@ export const CaseDefService = {
   getAll,
   getCaseDefinitionUsers,
   getCaseDefinitionCategories,
-  getCaseDefinitionGEAPMUsers
+  getCaseDefinitionGEAPMUsers,
+  getRecommendationPlannerGroups,
+  getRecommendationPriorities,
 }
 
 async function create(keycloak, body) {
@@ -129,6 +131,40 @@ async function getCaseDefinitionGEAPMUsers(keycloak) {
     Authorization: `Bearer ${keycloak.token}`,
   }
   var url = `${Config.CaseEngineUrl}/case-definition/users/ge-apm`
+  try {
+    const resp = await fetch(url, { headers })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+
+async function getRecommendationPriorities(keycloak) {
+  if (keycloak.isTokenExpired()) {
+    keycloak.logout({ redirectUri: window.location.origin })
+  }
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const url = `${Config.CaseEngineUrl}/case-definition/recommendation/priorities`
+  try {
+    const resp = await fetch(url, { headers })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+
+async function getRecommendationPlannerGroups(keycloak) {
+  if (keycloak.isTokenExpired()) {
+    keycloak.logout({ redirectUri: window.location.origin })
+  }
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const url = `${Config.CaseEngineUrl}/case-definition/recommendation/planner-groups`
   try {
     const resp = await fetch(url, { headers })
     return json(keycloak, resp)

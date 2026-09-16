@@ -24,6 +24,8 @@ import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.db2.entity.CaseStatus;
 import com.wks.caseengine.rest.db2.entity.FaultCategory;
+import com.wks.caseengine.rest.db2.entity.RecommendationPlannerGroup;
+import com.wks.caseengine.rest.db2.entity.RecommendationPriority;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
@@ -42,6 +44,10 @@ public interface CaseDefinitionService {
 	void delete(final String caseDefinitionId);
 
 	List<FaultCategory> findCaseCatagories();
+
+	List<RecommendationPlannerGroup> getRecommendationPlannerGroups();
+
+	List<RecommendationPriority> getRecommendationPriorities();
 	
 	List<CaseStatus> getAllCaseStatus();
 	

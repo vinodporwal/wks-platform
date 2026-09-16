@@ -17,6 +17,7 @@ import { StorageService } from 'plugins/storage'
 import { Snackbar, SnackbarContent } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { buildCreateUrl } from 'utils/util'
+import { loadRecommendationOptions } from 'utils/recommendationOptions'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
@@ -131,7 +132,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   }, [])
 
   useEffect(() => {
-    CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+    loadRecommendationOptions(keycloak)
+      .then(() => CaseService.getCaseDefinitionsById(keycloak, caseDefId))
       .then((data) => {
         setCaseDef(data)
         return FormService.getByKey(keycloak, data.formKey)

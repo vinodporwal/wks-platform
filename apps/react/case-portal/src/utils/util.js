@@ -37,3 +37,24 @@ export const getQueryParamValue = (url, paramName) => {
     : null
   return value
 }
+
+export const formatLocalDateTime = (value) => {
+  const date = value instanceof Date ? value : new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`Invalid date value: ${value}`)
+  }
+
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const year = date.getFullYear()
+
+  const hours = date.getHours()
+  const displayHour = hours % 12 || 12
+
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  const meridian = hours >= 12 ? 'PM' : 'AM'
+
+  return `${month}/${day}/${year} ${displayHour}:${minutes}:${seconds} ${meridian}`
+}
