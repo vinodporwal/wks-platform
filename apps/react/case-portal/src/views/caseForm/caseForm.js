@@ -408,22 +408,50 @@ const handleFormChange = (submission) => {
           }
         } else {
           if (!isDraft) {
+            const caseInformation = level1.components?.[0] ?? null;
             const analysis = level1.components?.[4] ?? null;
             const recommendationRadio = level1.components?.[5] ?? null;
             const recommendation = level1.components?.[6] ?? null;
             const caseDetails = level1.components?.[3] ?? null;
             const valueRealization = level1.components?.[7] ?? null;
+            // const footerActions = level1.components?.[8] ?? null;
             level1.components?.forEach((component) => {
               if (
                 component.id !== recommendation?.id &&
                 component.id !== caseDetails?.id &&
                 component.id !== analysis?.id &&
                 component.id !== valueRealization?.id &&
-                component.id !== recommendationRadio.id
+                component.id !== recommendationRadio.id &&
+                (!isCreatorOrAssigned ||
+                  component.id !== caseInformation?.id )
               ) {
                 component.disabled = true;
               }
             });
+
+            if (isCreatorOrAssigned && caseInformation) {
+              const setCaseInformationPermissions = (component) => {
+                if (!component || typeof component !== 'object') return;
+
+                const hasChildComponents =
+                  (component.components?.length ?? 0) > 0 ||
+                  component.columns?.some(
+                    (column) => (column.components?.length ?? 0) > 0,
+                  );
+
+                component.disabled =
+                  component.key === 'caseAssignedTo'
+                    ? false
+                    : !hasChildComponents;
+
+                component.components?.forEach(setCaseInformationPermissions);
+                component.columns?.forEach((column) => {
+                  column.components?.forEach(setCaseInformationPermissions);
+                });
+              };
+
+              setCaseInformationPermissions(caseInformation);
+            }
 
             if (parsedAttributeValue.valueRealizationCategory !== '' && !isCreatorOrAssigned) {
               valueRealization.disabled = true;
@@ -460,7 +488,7 @@ const handleFormChange = (submission) => {
               const caseDescriptionField =
                 level2.components.length > 1 ? level2.components[1] : null
               if (caseDescriptionField) {
-                caseDescriptionField.disabled = false
+                caseDescriptionField.disabled = !isDraft && isCreatorOrAssigned
               }
 
               // const recommendation =
@@ -572,6 +600,7 @@ const handleFormChange = (submission) => {
                     : null
                 if (saveButton) {
                   saveButton.hidden = isDraft ? false : true;
+
                   if (shouldDisable) {
                     saveButton.disabled = true;
                   }
@@ -665,9 +694,12 @@ const handleFormChange = (submission) => {
       dueDate,
       faultCategory,
       analysisTeam,
+      caseAssignedTo,
     } = formData.data.container
 
     const missingFields = []
+    if (!caseAssignedTo)
+      missingFields.push('Case Assigned To')
     if (!caseDescription)
       missingFields.push('Case Description')
     if (!dueDate)
