@@ -2778,7 +2778,9 @@ const AdvanceKendoTable = ({
     // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
       typeof value === 'boolean'
-        ? (value ? 'Yes' : 'No')
+        ? value
+          ? 'Yes'
+          : 'No'
         : convertFromScientificNotation(value) ?? value
 
     const cellContent =
@@ -2788,7 +2790,7 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}.trim()`}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
