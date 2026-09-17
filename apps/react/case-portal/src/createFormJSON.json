@@ -4321,7 +4321,7 @@
                           {
                             "label": "Recommendation No.",
                             "applyMaskOn": "change",
-                            "disabled": false,
+                            "disabled": true,
                             "tableView": true,
                             "clearOnHide": false,
                             "key": "recommendationNo1",
