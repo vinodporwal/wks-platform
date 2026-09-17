@@ -789,7 +789,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		            recommendation.setRecommendationSubmit(dataGridEntry.path("RecommendationSubmit").asText());
 		            recommendation.setRecommendationTargetCompletionDate1(dataGridEntry.path("recommendationTargetCompletionDate1").asText());
 		            
-		            String[] recommendationStatusAndId = saveRecommendationMapping(dataGridEntry, caseNo, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationReviewer());
+		            String[] recommendationStatusAndId = saveRecommendationMapping(dataGridEntry, caseNo, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationReviewer(), dataGridEntry.path("recommendationTargetCompletionDate1").asText());
 		            System.out.println("GEPM Recommendation ID: "+recommendationStatusAndId[0]);
 		            System.out.println("GEPM Recommendation Status: "+recommendationStatusAndId[1]);
 		            ((ObjectNode) dataGridEntry).put("recommendationNo1", recommendationStatusAndId[0]);
@@ -807,8 +807,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return null;
 	}
 	
-	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) throws Exception {
-		String[] recommendationStatusAndId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId);
+	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId, String targetCompletionDateForApm) throws Exception {
+		String[] recommendationStatusAndId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId, targetCompletionDateForApm);
 		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
 		caseRecommendationMapping.setCaseNo(caseNo);
 		caseRecommendationMapping.setRecId(recommendationStatusAndId[0]);
@@ -819,7 +819,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId,
-			String reviewerUserId) throws Exception {
+			String reviewerUserId, String targetCompletionDateForApm) throws Exception {
 		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println(dataGridEntry.toPrettyString().toString());
 		 String geUserAcsessToken = authenticateGEUser();
@@ -835,7 +835,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.add("Authorization", "Bearer " + geUserAcsessToken);
-		String targetDateString = dataGridEntry.path("recommendationTargetCompletionDate1").asText();
+		String targetDateString = targetCompletionDateForApm;
 		Date date = parseRecommendationTargetDate(targetDateString);
 		SimpleDateFormat outputFormat = new SimpleDateFormat("M/d/yyyy h:mm:ss a");
 		String targetDate = outputFormat.format(date);
@@ -1199,7 +1199,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	            // Append the new recommendation node to the dataGrid1 array
 	            
-	            String[] recommendationStatusAndId = saveRecommendationMapping(newRecommendationNode, caseNo, newRecommendation.getRecommendationAssignedTo2(), newRecommendation.getRecommendationReviewer());
+		            String[] recommendationStatusAndId = saveRecommendationMapping(newRecommendationNode, caseNo, newRecommendation.getRecommendationAssignedTo2(), newRecommendation.getRecommendationReviewer(), newRecommendation.getRecommendationTargetCompletionDateForApm());
 	            
 	            newRecommendationNode.put("recommendationNo1", recommendationStatusAndId[0]);
 	            newRecommendationNode.put("recommendationStatus", recommendationStatusAndId[1]);

@@ -42,6 +42,7 @@ import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 import Config from '../../consts'
 import { buildCreateUrl, formatLocalDateTime } from 'utils/util'
 import {
+  hydrateRecommendationOptions,
   loadRecommendationOptions,
   RECOMMENDATION_OPTION_CACHE_KEYS,
   resolveRecommendationOptionLabel,
@@ -105,7 +106,7 @@ useEffect(() => {
 
 
 
-const captureTargetCompletionTime = (submission, modified) => {
+const captureTargetCompletionTime = (submission) => {
   const changed = submission?.changed;
   if (changed?.component?.key !== 'recommendationTargetCompletionDate1') return;
 
@@ -118,10 +119,7 @@ const captureTargetCompletionTime = (submission, modified) => {
     ? instance._previousTargetCompletionDateValue
     : targetCompletionDateValuesRef.current[rowIndex] || '';
 
-  instance._previousTargetCompletionDateValue = changed.value;
-  targetCompletionDateValuesRef.current[rowIndex] = changed.value;
-
-  if (changed.flags?.targetTimeCaptured || !changed.value || !modified) return;
+  if (changed.flags?.targetTimeCaptured || !changed.value) return;
 
   const selectedDate = new Date(changed.value);
   if (Number.isNaN(selectedDate.getTime())) return;
@@ -157,7 +155,7 @@ const captureTargetCompletionTime = (submission, modified) => {
 };
 
 const handleFormChange = (submission, flags, modified) => {
-  captureTargetCompletionTime(submission, modified);
+  captureTargetCompletionTime(submission);
   if (!submission?.data?.container) return;
   if (!isFormReadyRef.current) return;
 
@@ -313,6 +311,7 @@ const handleFormChange = (submission, flags, modified) => {
         )
 
         const formData = await FormService.getByKey(keycloak, data.formKey)
+        hydrateRecommendationOptions(formData)
         setFormStructure(formData)
         let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
@@ -1264,7 +1263,8 @@ const handleFormChange = (submission, flags, modified) => {
       recommendationDescription1,
       recommendationAssignedTo2,
       equipmentFunctionLocation,
-      recommendationTargetCompletionDate1: formatLocalDateTime(recommendationTargetCompletionDate1),
+      recommendationTargetCompletionDate1,
+      recommendationTargetCompletionDateForApm: formatLocalDateTime(recommendationTargetCompletionDate1),
       recommendationCreationDate:event.data.recommendationCreationDate || formatLocalDateTime(new Date()),
       recommendationReviewer,
       RecommendationConfirmSAP3,

@@ -17,7 +17,10 @@ import { StorageService } from 'plugins/storage'
 import { Snackbar, SnackbarContent } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { buildCreateUrl } from 'utils/util'
-import { loadRecommendationOptions } from 'utils/recommendationOptions'
+import {
+  hydrateRecommendationOptions,
+  loadRecommendationOptions,
+} from 'utils/recommendationOptions'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
@@ -40,6 +43,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const [currentData, setCurrentData] = useState(null);
   const initialRender = useRef(true);
   const skipChangesCount = useRef(5); // formio fires multiple onChange on init, skip them
+  const targetCompletionDateValuesRef = useRef([])
 
   const handleBeforeUnload = (event) => {
     if (hasUnsavedChanges) {
@@ -94,7 +98,57 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
 };
 
 
+  const captureTargetCompletionTime = (submission) => {
+    const changed = submission?.changed
+    if (changed?.component?.key !== 'recommendationTargetCompletionDate1') return
+
+    const instance = changed.instance
+    const rowIndex = Number.isInteger(instance?.rowIndex) ? instance.rowIndex : 0
+    const previousValue = Object.prototype.hasOwnProperty.call(
+      instance,
+      '_previousTargetCompletionDateValue',
+    )
+      ? instance._previousTargetCompletionDateValue
+      : targetCompletionDateValuesRef.current[rowIndex] || ''
+
+    if (changed.flags?.targetTimeCaptured || !changed.value) return
+
+    const selectedDate = new Date(changed.value)
+    if (Number.isNaN(selectedDate.getTime())) return
+
+    let previousDate = new Date(previousValue)
+    if (Number.isNaN(previousDate.getTime())) {
+      const legacyDate = /^(\d{2})-(\d{2})-(\d{4})$/.exec(previousValue)
+      previousDate = legacyDate
+        ? new Date(legacyDate[3], legacyDate[2] - 1, legacyDate[1])
+        : null
+    }
+
+    const dateChanged = !previousDate ||
+      previousDate.getFullYear() !== selectedDate.getFullYear() ||
+      previousDate.getMonth() !== selectedDate.getMonth() ||
+      previousDate.getDate() !== selectedDate.getDate()
+
+    if (!dateChanged) return
+
+    const now = new Date()
+    selectedDate.setHours(
+      now.getHours(),
+      now.getMinutes(),
+      now.getSeconds(),
+      0,
+    )
+    const valueWithCurrentTime = selectedDate.toISOString()
+    instance._previousTargetCompletionDateValue = valueWithCurrentTime
+    targetCompletionDateValuesRef.current[rowIndex] = valueWithCurrentTime
+    instance.setValue(valueWithCurrentTime, {
+      targetTimeCaptured: true,
+    })
+  }
+
   const handleFormChange = (submission) => {
+    captureTargetCompletionTime(submission)
+
     if (skipChangesCount.current > 0) {
       skipChangesCount.current -= 1
       return
@@ -140,6 +194,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       })
       .then((data) => {
         console.log('new page form data', data)
+        hydrateRecommendationOptions(data)
         setForm(data)
 
         const level1 = data.structure.components[0]

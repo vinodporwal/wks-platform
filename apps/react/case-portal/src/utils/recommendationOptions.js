@@ -1,8 +1,8 @@
 import { CaseDefService } from '../services'
 
 export const RECOMMENDATION_OPTION_CACHE_KEYS = {
-  priority: 'recommendationPriorityOptions',
   plannerGroup: 'recommendationPlannerGroupOptions',
+  priority: 'recommendationPriorityOptions',
 }
 
 const readCachedOptions = (cacheKey) => {
@@ -43,6 +43,37 @@ export const loadRecommendationOptions = async (keycloak) => {
   ])
 
   return { plannerGroups, priorities }
+}
+
+export const hydrateRecommendationOptions = (form) => {
+  const optionsByKey = {
+    recommendationPlannerGroup: readCachedOptions(
+      RECOMMENDATION_OPTION_CACHE_KEYS.plannerGroup,
+    ),
+    recommendationPriority: readCachedOptions(
+      RECOMMENDATION_OPTION_CACHE_KEYS.priority,
+    ),
+  }
+
+  const hydrate = (component) => {
+    const options = optionsByKey[component?.key]
+    if (options?.length > 0) {
+      component.data = { ...component.data, values: options }
+      if (component.key === 'recommendationPriority') {
+        // Hydrated API options are the runtime source of truth for Priority.
+        component.calculateValue = ''
+      }
+    }
+
+    const children = [
+      ...(component?.components || []),
+      ...(component?.columns || []),
+    ]
+    children.forEach(hydrate)
+  }
+
+  hydrate(form?.structure || form)
+  return form
 }
 
 export const resolveRecommendationOptionLabel = (cacheKey, storedValue) => {

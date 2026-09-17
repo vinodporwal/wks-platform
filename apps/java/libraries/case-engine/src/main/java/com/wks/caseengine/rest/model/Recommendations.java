@@ -17,6 +17,8 @@ public class Recommendations {
     
     private String recommendationTargetCompletionDate1;
 
+    private String recommendationTargetCompletionDateForApm;
+
     private String recommendationCreationDate;
     
     private String recommendationReviewer;
@@ -98,6 +100,14 @@ public class Recommendations {
 
 	public void setRecommendationTargetCompletionDate1(String recommendationTargetCompletionDate1) {
 		this.recommendationTargetCompletionDate1 = recommendationTargetCompletionDate1;
+	}
+
+	public String getRecommendationTargetCompletionDateForApm() {
+		return recommendationTargetCompletionDateForApm;
+	}
+
+	public void setRecommendationTargetCompletionDateForApm(String recommendationTargetCompletionDateForApm) {
+		this.recommendationTargetCompletionDateForApm = recommendationTargetCompletionDateForApm;
 	}
 
 	public String getRecommendationCreationDate() {
