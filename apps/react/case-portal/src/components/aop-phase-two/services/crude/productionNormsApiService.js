@@ -21,6 +21,12 @@ export const ProductionNormsApiService = {
   exportPIMSMonthlyThroughputExcel,
   // Norm Calculation API
   loadButtonNormCalculation,
+
+  // Constants APIs
+  getConstantsData,
+  saveConstantsData,
+  importConstantsExcel,
+  exportConstantsExcel,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -378,4 +384,114 @@ async function loadButtonNormCalculation(
     console.log(e)
     return await Promise.reject(e)
   }
+}
+// ========================|| Constants APIs ||=====================================//
+/**
+ * Get Production Norms Constants data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @returns {Promise} Constants data
+ */
+async function getConstantsData(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/constants?aopYear=${aopYear}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+/**
+ * Save Production Norms Constants data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {string} plantId - Plant ID
+ * @param {string} siteId - Site ID
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
+ * @param {Array} payload - Data to save
+ * @returns {Promise} Save response
+ */
+async function saveConstantsData(
+  keycloak,
+  year,
+  plantId,
+  siteId,
+  periodFrom,
+  periodTo,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/constants?aopYear=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Import Constants Excel file
+ * @param {File} file - Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @returns {Promise} Import response
+ */
+async function importConstantsExcel(
+  file,
+  keycloak,
+  plantId,
+  aopYear,
+  periodFrom,
+  periodTo,
+) {
+  return ImportExportApiService.importExcel(file, keycloak, 'constants/import', {
+    aopYear: aopYear,
+    plantId: plantId,
+    periodFrom: periodFrom,
+    periodTo: periodTo,
+  })
+}
+
+/**
+ * Export Constants Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @param {string} excelName - Excel file name
+ * @returns {Promise} Export response
+ */
+async function exportConstantsExcel(keycloak, plantId, aopYear, excelName) {
+  return ImportExportApiService.exportExcelData(keycloak, {
+    endpoint: `constants/export`,
+    queryParams: { plantId, aopYear },
+    fileName: excelName || `Production_Norms_Constants_${aopYear}.xlsx`,
+    method: 'GET',
+  })
 }

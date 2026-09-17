@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/crude/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
@@ -33,7 +33,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
 
   const columns = [
     {
-      field: 'productName',
+      field: 'displayName',
       title: 'Particulars',
       widthT: 300,
       minWidth: 250,
@@ -42,7 +42,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       hidden: false,
     },
     {
-      field: 'UOM',
+      field: 'uom',
       title: 'UOM',
       widthT: 120,
       minWidth: 100,
@@ -50,7 +50,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       editable: false,
     },
     {
-      field: 'value',
+      field: 'attributeValue',
       title: 'Value',
       editable: true,
       widthT: 150,
@@ -106,7 +106,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
-        type: item?.type || item?.Type
+        type: item?.type || item?.normParameterType
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
