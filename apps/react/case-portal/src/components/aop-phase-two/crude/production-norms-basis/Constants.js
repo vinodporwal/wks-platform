@@ -6,8 +6,9 @@ import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const Constants = () => {
+const Constants = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -18,8 +19,9 @@ const Constants = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, siteObject, year } = dataGridStore
   const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -27,9 +29,11 @@ const Constants = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Constants')
+
   const columns = [
     {
-      field: 'Name',
+      field: 'productName',
       title: 'Particulars',
       widthT: 300,
       minWidth: 250,
@@ -46,7 +50,7 @@ const Constants = () => {
       editable: false,
     },
     {
-      field: 'ConstantValue',
+      field: 'value',
       title: 'Value',
       editable: true,
       widthT: 150,
@@ -57,7 +61,7 @@ const Constants = () => {
       format: '{0:0.00}',
     },
     {
-      field: 'Remarks',
+      field: 'remarks',
       title: 'Remark',
       widthT: 350,
       type: 'textarea',
@@ -66,11 +70,19 @@ const Constants = () => {
     },
   ]
 
+  const formatDateForAPI = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConstantsData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, refreshData])
 
   const fetchConstantsData = async () => {
     setLoading(true)
@@ -94,6 +106,7 @@ const Constants = () => {
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
+        type: item?.type || item?.Type
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -166,11 +179,17 @@ const Constants = () => {
 
     const payload = modifiedData
     try {
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
       console.log('Saving constants data:', payload)
 
       const response = await ProductionNormsApiService.saveConstantsData(
         keycloak,
         AOP_YEAR,
+        PLANT_ID,
+        SITE_ID,
+        periodFrom,
+        periodTo,
         payload,
       )
 
@@ -278,6 +297,7 @@ const Constants = () => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -321,7 +341,7 @@ const Constants = () => {
         handleExport={handleExport}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
-        groupBy={['normParameterType']}
+        groupBy={['type']}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         paginationConfig={{
