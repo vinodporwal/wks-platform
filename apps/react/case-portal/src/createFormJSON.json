@@ -3620,7 +3620,7 @@
                               "unique": false,
                               "minLength": "",
                               "maxLength": 40,
-                              "pattern": "^[A-Za-z0-9 ]+$"
+                              "pattern": ""
                             },
                             "conditional": {
                               "eq": ""

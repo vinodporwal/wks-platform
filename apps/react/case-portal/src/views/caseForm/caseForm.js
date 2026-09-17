@@ -298,6 +298,7 @@ const handleFormChange = (submission, flags, modified) => {
   )
 
   const getCaseInfo = async (aCase) => {
+    setIsFormData(false)
     isFormReadyRef.current = false;
     initialDataRef.current = null;
     setHasUnsavedChanges(false);
@@ -321,8 +322,6 @@ const handleFormChange = (submission, flags, modified) => {
         } else {
           console.error('Form structure or components are undefined.')
         }
-        setIsFormData(true)
-
         // return CaseService.getCaseById(keycloak, aCase.businessKey);
 
         const caseData = await CaseService.getCaseById(
@@ -749,6 +748,7 @@ const handleFormChange = (submission, flags, modified) => {
           metadata: {},
           isValid: true,
         })
+        setIsFormData(true)
         setActiveStage(caseData.stage)
       })
       .catch((err) => {
