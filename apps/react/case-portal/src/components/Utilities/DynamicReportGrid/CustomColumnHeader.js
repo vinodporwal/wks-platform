@@ -205,25 +205,48 @@ export const CustomColumnHeader = memo(
 
           {/* Search Input Box */}
           <TextField
-            placeholder='Search'
+            placeholder='Search...'
             size='small'
             fullWidth
+            autoFocus
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            inputProps={{
+              sx: {
+                padding: '4px 0 !important',
+                caretColor: '#0284C7 !important',
+                color: '#1E293B',
+                fontSize: '0.82rem',
+                cursor: 'text',
+              },
+            }}
             InputProps={{
               startAdornment: (
-                <InputAdornment position='start'>
+                <InputAdornment position='start' sx={{ mr: 0.8 }}>
                   <SearchIcon sx={{ fontSize: 16, color: '#64748B' }} />
                 </InputAdornment>
               ),
               endAdornment: searchTerm ? (
-                <InputAdornment position='end'>
-                  <IconButton size='small' onClick={() => setSearchTerm('')}>
+                <InputAdornment position='end' sx={{ ml: 0.5 }}>
+                  <IconButton
+                    size='small'
+                    onClick={() => setSearchTerm('')}
+                    sx={{ p: '2px' }}
+                  >
                     <ClearIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                 </InputAdornment>
               ) : null,
-              sx: { height: 28, fontSize: '0.8rem', borderRadius: '4px' },
+              sx: {
+                height: 32,
+                fontSize: '0.82rem',
+                borderRadius: '4px',
+                backgroundColor: '#FFFFFF',
+                '& .MuiOutlinedInput-input': {
+                  padding: '4px 0 !important',
+                  caretColor: '#0284C7 !important',
+                },
+              },
             }}
             sx={{ mb: 1 }}
           />

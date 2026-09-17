@@ -21,8 +21,21 @@ export const SingleReportGrid = memo(
   }) => {
     const [expanded, setExpanded] = useState(defaultExpanded)
     const [activeFilters, setActiveFilters] = useState({}) // { field: Set of selected values }
+    const [columnWidths, setColumnWidths] = useState({}) // { [field]: width in px }
 
     const headerMap = useMemo(() => generateHeaderNames(aopYear), [aopYear])
+
+    const handleColumnResize = useCallback((params) => {
+      if (params?.colDef?.field && params?.width) {
+        setColumnWidths((prev) => {
+          if (prev[params.colDef.field] === params.width) return prev
+          return {
+            ...prev,
+            [params.colDef.field]: params.width,
+          }
+        })
+      }
+    }, [])
 
     // Lazy unique distinct values generator (computed ONLY when column filter opens)
     const getUniqueValues = useCallback(
@@ -87,12 +100,14 @@ export const SingleReportGrid = memo(
           }
 
           const selectedVals = activeFilters[col.field]
+          const userWidth = columnWidths[col.field]
+          const isResized = userWidth != null
 
           return {
             field: col.field,
             headerName: displayTitle,
-            flex: rawColumns.length > 15 ? undefined : 1,
-            width: rawColumns.length > 15 ? 125 : undefined,
+            flex: isResized ? undefined : rawColumns.length > 15 ? undefined : 1,
+            width: isResized ? userWidth : rawColumns.length > 15 ? 125 : undefined,
             minWidth: 85,
             headerAlign: isNumberCol ? 'right' : 'left',
             align: isNumberCol ? 'right' : 'left',
@@ -146,6 +161,7 @@ export const SingleReportGrid = memo(
       isAromaticsHmd,
       getUniqueValues,
       activeFilters,
+      columnWidths,
       handleApplyFilter,
       handleClearFilter,
     ])
@@ -230,6 +246,8 @@ export const SingleReportGrid = memo(
                 rowHeight={48}
                 headerHeight={38}
                 disableColumnSorting
+                onColumnWidthChange={handleColumnResize}
+                onColumnResize={handleColumnResize}
                 pageSizeOptions={[50, 100]}
                 initialState={{
                   pagination: { paginationModel: { pageSize: 50, page: 0 } },

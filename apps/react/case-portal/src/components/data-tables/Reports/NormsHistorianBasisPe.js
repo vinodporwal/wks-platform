@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Box, Button, Typography } from '@mui/material'
-import DownloadIcon from '@mui/icons-material/Download'
+import { Box, Button } from '@mui/material'
+import { FileExportIcon } from 'assets/images/icons'
 import { ExcelExport } from '@progress/kendo-react-excel-export'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -196,24 +196,19 @@ const NormsHistorianBasisPe = () => {
       {/* Top Action Bar */}
       <Box
         display='flex'
-        justifyContent='space-between'
-        alignItems='center'
-        mb={2}
+        justifyContent='flex-end'
+        sx={{ marginBottom: '8px', mt: '5px' }}
       >
-        <Typography variant='h6' sx={{ fontWeight: 600, color: '#0F172A' }}>
-          Norms Historian Basis Report
-        </Typography>
         <Button
           variant='contained'
+          className='btn-export'
+          startIcon={
+            <Box component='img' src={FileExportIcon} className='w16-icon' />
+          }
           onClick={exportAllGrids}
-          startIcon={<DownloadIcon fontSize='small' />}
-          sx={{
-            textTransform: 'none',
-            backgroundColor: '#0284C7',
-            '&:hover': { backgroundColor: '#0369A1' },
-          }}
+          disabled={loading || isExporting || gridNames.length === 0}
         >
-          Export All Grids
+          Export
         </Button>
       </Box>
 
