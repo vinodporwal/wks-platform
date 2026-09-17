@@ -1964,7 +1964,7 @@
                           "arrowkeys": true
                         },
                         "validate": {
-                          "custom": "valid = true;\r\n\r\n// Access the container object and check if it exists\r\nconst gridData = data['container'] || {};\r\n\r\n// Parse the start date only if `dueDate` exists in `gridData`\r\nconst startDate = gridData.dueDate ? moment(gridData.dueDate).toDate() : null;\r\n\r\n// Parse the end date only if `endDate` exists in `gridData` and is not blank\r\nconst endDate = gridData.endDate ? moment(gridData.endDate).toDate() : null;\r\n\r\n// Check if the start date is valid if it’s provided\r\nif (startDate && isNaN(startDate.getTime())) {\r\n    valid = 'Invalid start date format.';\r\n} else if (endDate) {\r\n    // Only proceed with endDate validation if endDate is provided\r\n    if (isNaN(endDate.getTime())) {\r\n        valid = 'Invalid end date format.';\r\n    } else if (startDate && endDate <= startDate) {\r\n        // Compare start and end dates only if startDate is provided\r\n        valid = 'End date and time must be greater than the start date and time.';\r\n    }\r\n}\r\n",
+                          "custom": "valid = true;\r\n\r\n// Access the container object and check if it exists\r\nconst gridData = data['container'] || {};\r\n\r\n// Parse the start date only if `dueDate` exists in `gridData`\r\nconst startDate = gridData.dueDate ? moment(gridData.dueDate).toDate() : null;\r\n\r\n// Parse the end date only if `endDate` exists in `gridData` and is not blank\r\nconst endDate = gridData.endDate ? moment(gridData.endDate).toDate() : null;\r\n\r\n// Check if the start date is valid if itï¿½s provided\r\nif (startDate && isNaN(startDate.getTime())) {\r\n    valid = 'Invalid start date format.';\r\n} else if (endDate) {\r\n    // Only proceed with endDate validation if endDate is provided\r\n    if (isNaN(endDate.getTime())) {\r\n        valid = 'Invalid end date format.';\r\n    } else if (startDate && endDate <= startDate) {\r\n        // Compare start and end dates only if startDate is provided\r\n        valid = 'End date and time must be greater than the start date and time.';\r\n    }\r\n}\r\n",
                           "required": false,
                           "customPrivate": false,
                           "strictDateValidation": false,
@@ -3665,7 +3665,7 @@
                             "tableView": true,
                             "modalEdit": false,
                             "multiple": false,
-                            "dataSrc": "values",
+                            "dataSrc": "custom",
                             "data": {
                               "values": [
                                 {
@@ -3676,7 +3676,7 @@
                               "resource": "",
                               "url": "",
                               "json": "",
-                              "custom": ""
+                              "custom": "// Custom data source with filtering\r\nvalues = [];\r\n\r\n// Initialize user data cache if not exists\r\nif (!window.assignedToUsersCache) {\r\n  window.assignedToUsersCache = null;\r\n}\r\n\r\n// Function to filter users based on input\r\nconst filterUsers = (searchTerm) => {\r\n  if (!window.assignedToUsersCache) {\r\n    return [];\r\n  }\r\n  \r\n  if (!searchTerm || searchTerm.length < 2) {\r\n    return []; // Don't show options until user types at least 2 characters\r\n  }\r\n  \r\n  const term = searchTerm.toLowerCase();\r\n  return window.assignedToUsersCache\r\n    .filter(user => \r\n      user.label.toLowerCase().includes(term) || \r\n      user.value.toLowerCase().includes(term)\r\n    )\r\n    .slice(0, 50); // Limit to first 50 matches for performance\r\n};\r\n\r\n// Get current input value for filtering\r\nconst currentInput = instance.refs.input && instance.refs.input[0] ? instance.refs.input[0].value : '';\r\n\r\n// Return filtered values\r\nvalues = filterUsers(currentInput);\r\n"
                             },
                             "dataType": "",
                             "idPath": "id",
@@ -3688,7 +3688,10 @@
                             "searchEnabled": true,
                             "selectThreshold": 0.3,
                             "readOnlyValue": false,
-                            "customOptions": {},
+                            "customOptions": {
+                              "searchResultLimit": 50,
+                              "searchFields": ["label", "value"]
+                            },
                             "useExactSearch": false,
                             "persistent": true,
                             "protected": false,
@@ -3696,7 +3699,7 @@
                             "encrypted": false,
                             "clearOnHide": false,
                             "customDefaultValue": "",
-                            "calculateValue": "const callUserApi = async () => {\r\n  // Check if options exist in localStorage\r\n  const cachedOptions = localStorage.getItem('geAPMUsers');\r\n  if (cachedOptions) {\r\n    component.data.values = JSON.parse(cachedOptions); // Use cached options\r\n    console.log('Using cached geAPMUsers');\r\n    return JSON.parse(cachedOptions);\r\n  }\r\n  \r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n  \r\n    const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n\r\n  try {\r\n    const response = await fetch(`${baseUrl}/case-definition/users/ge-apm`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n\r\n    const data = await response.json();\r\n    const userOptions = data.map(user => ({\r\n      label: user.userId, // Use userId as the display label\r\n      value: user.emailId, // Use userId as the unique value\r\n    }));\r\n\r\n    return userOptions;\r\n  } catch (error) {\r\n    console.error('Error calling the User API:', error);\r\n  }\r\n};\r\n\r\n// Example of using the callUserApi function\r\ncallUserApi().then(userOptions => {\r\n  if (userOptions) {\r\n    component.data.values = userOptions; // Assign the fetched options to component's data\r\n  }\r\n});\r\n",
+                            "calculateValue": "// Load user data once and cache it globally\r\nconst loadUserDataOnce = async () => {\r\n  // Check if data already cached\r\n  if (window.assignedToUsersCache) {\r\n    console.log('Using cached assignedTo user data');\r\n    return;\r\n  }\r\n\r\n  const token = localStorage.getItem('keycloakToken');\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n\r\n  const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n\r\n  try {\r\n    console.log('Loading assignedTo user data from API...');\r\n    const response = await fetch(`${baseUrl}/case-definition/users/ge-apm`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n\r\n    const data = await response.json();\r\n    const userOptions = data.map(user => ({\r\n      label: user.userId,\r\n      value: user.emailId\r\n    }));\r\n\r\n    // Cache the data globally for filtering\r\n    window.assignedToUsersCache = userOptions;\r\n    console.log(`Loaded and cached ${userOptions.length} assignedTo users for filtering`);\r\n    \r\n    // Store in localStorage as backup\r\n    localStorage.setItem('geAPMUsers', JSON.stringify(userOptions));\r\n    \r\n  } catch (error) {\r\n    console.error('Error loading assignedTo user data:', error);\r\n    \r\n    // Try to use localStorage backup if API fails\r\n    const cachedOptions = localStorage.getItem('geAPMUsers');\r\n    if (cachedOptions) {\r\n      window.assignedToUsersCache = JSON.parse(cachedOptions);\r\n      console.log('Using localStorage backup for assignedTo users');\r\n    }\r\n  }\r\n};\r\n\r\n// Initialize data loading (only runs once)\r\nif (!window.assignedToUsersCache) {\r\n  loadUserDataOnce();\r\n}\r\n",
                             "calculateServer": false,
                             "allowCalculateOverride": false,
                             "validateOn": "change",
