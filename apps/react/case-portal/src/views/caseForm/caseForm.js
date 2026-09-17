@@ -1409,6 +1409,7 @@ const handleFormChange = (submission, flags, modified) => {
       const response = await CaseService.saveRecommendation(keycloak, apiBody)
       if (response.status !== 500) {
         console.log('Recommendation submitted successfully:', response)
+        setHasUnsavedChanges(false);
         setSnackbarMessages(['Recommendation submitted successfully'])
         setSnackbarOpen(true)
         setIsConfirmationOpen(false)
