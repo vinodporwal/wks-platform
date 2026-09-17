@@ -43,6 +43,8 @@ import Config from '../../consts'
 import { buildCreateUrl, formatLocalDateTime } from 'utils/util'
 import {
   hydrateRecommendationOptions,
+  hydrateRecommendationUserSearch,
+  bindRecommendationUserSearch,
   loadRecommendationOptions,
   RECOMMENDATION_OPTION_CACHE_KEYS,
   resolveRecommendationOptionLabel,
@@ -249,6 +251,9 @@ const validateRecommendationFunctionalLocation = async (rowData, selectedFl, ins
 }
 
 const handleFormChange = (submission, flags, modified) => {
+  if (submission?.changed?.instance?.root) {
+    bindRecommendationUserSearch(submission.changed.instance.root, keycloak)
+  }
   captureTargetCompletionTime(submission);
   const changed = submission?.changed
   if (
@@ -420,6 +425,7 @@ const handleFormChange = (submission, flags, modified) => {
 
         const formData = await FormService.getByKey(keycloak, data.formKey)
         hydrateRecommendationOptions(formData)
+        hydrateRecommendationUserSearch(formData)
         setFormStructure(formData)
         let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
@@ -2820,6 +2826,9 @@ const handleFormChange = (submission, flags, modified) => {
                         form={form.structure}
                         submission={formData}
                         onChange={handleFormChange} // Listen for changes
+                        formReady={(formInstance) => {
+                          bindRecommendationUserSearch(formInstance, keycloak)
+                        }}
                         options={{
                           // readOnly: true,
                           fileService: new StorageService(),
@@ -3103,11 +3112,6 @@ const loadOptions = async (keycloak) => {
     () => CaseDefService.getCaseDefinitionCategories(keycloak),
     'categoryOptions',
     (item) => ({ label: item.name, value: item.id })
-  );
-  const caseDefinitionGEAPMUsers = await fetchAndCacheOptions(
-    () => CaseDefService.getCaseDefinitionGEAPMUsers(keycloak),
-    'geAPMUsers',
-    (item) => ({ label: item.userId, value: item.emailId })
   );
   await loadRecommendationOptions(keycloak);
 };

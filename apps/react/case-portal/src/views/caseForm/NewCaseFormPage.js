@@ -19,6 +19,8 @@ import { useNavigate } from 'react-router-dom'
 import { buildCreateUrl } from 'utils/util'
 import {
   hydrateRecommendationOptions,
+  hydrateRecommendationUserSearch,
+  bindRecommendationUserSearch,
   loadRecommendationOptions,
 } from 'utils/recommendationOptions'
 import {
@@ -241,6 +243,9 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   }
 
   const handleFormChange = (submission) => {
+    if (submission?.changed?.instance?.root) {
+      bindRecommendationUserSearch(submission.changed.instance.root, keycloak)
+    }
     captureTargetCompletionTime(submission)
 
     const changed = submission?.changed
@@ -309,6 +314,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       .then((data) => {
         console.log('new page form data', data)
         hydrateRecommendationOptions(data)
+        hydrateRecommendationUserSearch(data)
         hydrateFunctionalLocationOptions(data, functionalLocationOptions)
         setForm(data)
 
@@ -670,6 +676,9 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               form={form.structure}
               submission={formData}
               onChange={(submission) => handleFormChange(submission)} // Listen for changes
+              formReady={(formInstance) => {
+                bindRecommendationUserSearch(formInstance, keycloak)
+              }}
               options={{
                 fileService: new StorageService(),
               }}
