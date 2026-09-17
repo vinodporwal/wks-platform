@@ -19,6 +19,10 @@ export const InputApiService = {
   saveImportPowerCapacity,
   saveImportPowerCapacityExcel,
   exportImportPowerCapacityExcel,
+  addCapacitySource,
+  updateCapacitySource,
+  deleteCapacitySource,
+  getCapacityProcurementPlants,
   getImportPowerOperationalHours,
   saveImportPowerOperationalHours,
   saveImportPowerOperationalHoursExcel,
@@ -339,6 +343,110 @@ async function exportImportPowerCapacityExcel(keycloak, PLANT_ID, AOP_YEAR) {
     endpoint: `import-power/capacity/export/${PLANT_ID}/${AOP_YEAR}`,
     fileName: `Import Power Capacity - ${PLANT_ID} - ${AOP_YEAR}.xlsx`,
   })
+}
+
+// POST /task/import-power/capacity/source
+// Adds a new source row for Import Power Capacity (NMD)
+async function addCapacitySource(keycloak, sourceData) {
+  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/source`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(sourceData)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error adding capacity source:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// PUT /task/import-power/capacity/source/{sourceId}
+// Updates an existing source row for Import Power Capacity (NMD)
+async function updateCapacitySource(keycloak, sourceId, updateData) {
+  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/source/${sourceId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(updateData)
+  try {
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error updating capacity source:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// DELETE /task/import-power/capacity/source/{sourceId}?financialYear={year}
+// Deletes a source row from Import Power Capacity (NMD).
+// financialYear scopes NormsHeader child-record deletion (mirrors SR Mapping).
+async function deleteCapacitySource(keycloak, sourceId, financialYear) {
+  const query = financialYear
+    ? `?financialYear=${encodeURIComponent(financialYear)}`
+    : ''
+  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/source/${sourceId}${query}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const text = await resp.text()
+    return text ? JSON.parse(text) : { success: true }
+  } catch (e) {
+    console.error('Error deleting capacity source:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/import-power/capacity/procurement-plants?cppPlant={uuid}
+// Returns procurement plants linked to the given CPP plant (Plants.SourceName = cppPlant)
+async function getCapacityProcurementPlants(keycloak, cppPlant) {
+  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/procurement-plants?cppPlant=${cppPlant}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching procurement plants:', e)
+    return await Promise.reject(e)
+  }
 }
 
 async function getImportPowerOperationalHours(keycloak, plantId, year) {

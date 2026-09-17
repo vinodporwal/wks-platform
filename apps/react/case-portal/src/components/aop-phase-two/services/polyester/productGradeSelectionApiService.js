@@ -22,8 +22,8 @@ async function getGradeSelection(keycloak, plantId, year) {
   }
 }
 
-async function saveGradeSelection(keycloak, payload, year) {
-  const url = `${Config.CaseEngineUrl}/task/grade-selection?year=${year}`
+async function saveGradeSelection(keycloak, payload, year, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/grade-selection?year=${year}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

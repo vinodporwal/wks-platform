@@ -101,7 +101,7 @@ async function exportBusinessDemand(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `${excelExportTitle}_${screenName}.xlsx`
+    a.download = `${excelExportTitle}`
     document.body.appendChild(a)
     a.click()
     a.remove()
