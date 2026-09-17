@@ -33,7 +33,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
 
   const columns = [
     {
-      field: 'displayName',
+      field: 'productName',
       title: 'Particulars',
       widthT: 300,
       minWidth: 250,
@@ -42,7 +42,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       hidden: false,
     },
     {
-      field: 'uom',
+      field: 'UOM',
       title: 'UOM',
       widthT: 120,
       minWidth: 100,
@@ -50,7 +50,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       editable: false,
     },
     {
-      field: 'attributeValue',
+      field: 'value',
       title: 'Value',
       editable: true,
       widthT: 150,
@@ -106,7 +106,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
-        type: item?.type || item?.normParameterType
+        type: item?.type || item?.Type
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)

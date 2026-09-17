@@ -390,11 +390,11 @@ async function loadButtonNormCalculation(
  * Get Production Norms Constants data
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
- * @param {string} aopYear - AOP Year
+ * @param {string} year - AOP Year
  * @returns {Promise} Constants data
  */
-async function getConstantsData(keycloak, plantId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/constants?aopYear=${aopYear}&plantId=${plantId}`
+async function getConstantsData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -431,7 +431,7 @@ async function saveConstantsData(
   periodTo,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/constants?aopYear=${year}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -467,13 +467,13 @@ async function importConstantsExcel(
   file,
   keycloak,
   plantId,
-  aopYear,
+  year,
   periodFrom,
   periodTo,
 ) {
-  return ImportExportApiService.importExcel(file, keycloak, 'constants/import', {
-    aopYear: aopYear,
-    plantId: plantId,
+  return ImportExportApiService.importExcel(file, keycloak, 'vgoht/norms-basis/constant/import', {
+    year: year,
+    plantFKId: plantId,
     periodFrom: periodFrom,
     periodTo: periodTo,
   })
@@ -489,8 +489,8 @@ async function importConstantsExcel(
  */
 async function exportConstantsExcel(keycloak, plantId, aopYear, excelName) {
   return ImportExportApiService.exportExcelData(keycloak, {
-    endpoint: `constants/export`,
-    queryParams: { plantId, aopYear },
+    endpoint: `vgoht/norms-basis/constant/export`,
+    queryParams: { year: aopYear, plantFKId: plantId },
     fileName: excelName || `Production_Norms_Constants_${aopYear}.xlsx`,
     method: 'GET',
   })
