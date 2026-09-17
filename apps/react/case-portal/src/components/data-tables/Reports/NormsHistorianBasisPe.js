@@ -26,7 +26,9 @@ import CalculateIcon from '@mui/icons-material/Calculate'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
-const NormsHistorianBasisPe = () => {
+import NormsHistorianBasisPeNew from './DataSetNewUI/NormsHistorianBasisPeNew'
+
+const NormsHistorianBasisPeLegacy = () => {
   const keycloak = useSession()
 
   const [dataMap, setDataMap] = useState({})
@@ -651,4 +653,18 @@ const NormsHistorianBasisPe = () => {
   )
 }
 
+const NormsHistorianBasisPe = () => {
+  const isNewUi =
+    typeof window !== 'undefined' &&
+    (localStorage.getItem('isNewUi') == '1' ||
+      localStorage.getItem('isNewUi') === 'true')
+
+  if (isNewUi) {
+    return <NormsHistorianBasisPeNew />
+  }
+
+  return <NormsHistorianBasisPeLegacy />
+}
+
 export default NormsHistorianBasisPe
+
