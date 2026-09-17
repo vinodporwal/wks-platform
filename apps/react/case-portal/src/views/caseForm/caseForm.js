@@ -84,6 +84,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [snackOpen, setSnackOpen] = useState(false)
   const [formStructure, setFormStructure] = useState(null)
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
+  const [isRecommendationSubmitting, setIsRecommendationSubmitting] = useState(false)
   const [apiBody, setApiBody] = useState(null)
   const [loading, setLoading] = useState(false)
   const [isFinalRecommendationConfirmationOpen, setIsFinalRecommendationConfirmationOpen] = useState(false)
@@ -1278,6 +1279,9 @@ const handleFormChange = (submission, flags, modified) => {
   }
 
   const submitRecommendation = async () => {
+    if (isRecommendationSubmitting) return
+    setIsRecommendationSubmitting(true)
+
     try {
       const response = await CaseService.saveRecommendation(keycloak, apiBody)
       if (response.status !== 500) {
@@ -1301,6 +1305,8 @@ const handleFormChange = (submission, flags, modified) => {
       console.error('Error submitting recommendation:', error)
       setSnackbarMessages(['Error submitting recommendation'])
       setSnackbarOpen(true)
+    } finally {
+      setIsRecommendationSubmitting(false)
     }
   }
 
@@ -2731,7 +2737,10 @@ const handleFormChange = (submission, flags, modified) => {
                     )}
                     <Dialog
                       open={isConfirmationOpen}
-                      onClose={() => setIsConfirmationOpen(false)}
+                      onClose={() => {
+                        if (!isRecommendationSubmitting) setIsConfirmationOpen(false)
+                      }}
+                      PaperProps={{ sx: { position: 'relative' } }}
                     >
                       <DialogTitle>Confirm Submission</DialogTitle>
                       <DialogContent>
@@ -2749,6 +2758,7 @@ const handleFormChange = (submission, flags, modified) => {
                         <Button
                           onClick={() => setIsConfirmationOpen(false)}
                           color='primary'
+                          disabled={isRecommendationSubmitting}
                         >
                           Cancel
                         </Button>
@@ -2756,10 +2766,26 @@ const handleFormChange = (submission, flags, modified) => {
                           onClick={submitRecommendation}
                           color='primary'
                           autoFocus
+                          disabled={isRecommendationSubmitting}
                         >
                           Submit
                         </Button>
                       </DialogActions>
+                      {isRecommendationSubmitting && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.55)',
+                            zIndex: 1,
+                          }}
+                        >
+                          <CircularProgress size={28} color='inherit' />
+                        </Box>
+                      )}
                     </Dialog>
 
                     <Dialog
