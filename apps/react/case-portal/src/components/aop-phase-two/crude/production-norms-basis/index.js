@@ -242,17 +242,17 @@ const ProductionNormsBasis = () => {
           />
         )
       case 'Constants':
-        return <Constants startDate={startDate} endDate={endDate} />
+        return <Constants startDate={startDate} endDate={endDate} refreshData={refreshData} />
       case 'PIMS Throughput':
-        return <PIMSThroughput startDate={startDate} endDate={endDate} />
+        return <PIMSThroughput startDate={startDate} endDate={endDate} refreshData={refreshData} />
       case 'PIMS Monthly Throughput':
       case 'pims-monthly-throughput':
       case 'pims-monthly-throughtput':
-        return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
+        return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} refreshData={refreshData} />
       case 'Job Work Avg Norms':
-        return <JWAvgNorms />
+        return <JWAvgNorms startDate={startDate} endDate={endDate} refreshData={refreshData}  />
       case 'Report Manual Entry':
-        return <ReportManualEntry startDate={startDate} endDate={endDate} />
+        return <ReportManualEntry startDate={startDate} endDate={endDate} refreshData={refreshData}  />
       default:
         return null
     }
