@@ -4,10 +4,13 @@ import {
   Button,
   Checkbox,
   Divider,
+  FormControl,
   FormControlLabel,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   TextField,
   Typography,
 } from '@mui/material'
@@ -15,25 +18,82 @@ import MoreVertIcon from '@mui/icons-material/MoreVert'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
+import FilterListIcon from '@mui/icons-material/FilterList'
+
+const TEXT_OPERATORS = [
+  { value: '', label: 'Select Condition (None)' },
+  { value: 'contains', label: 'Contains' },
+  { value: 'doesNotContain', label: 'Does not contain' },
+  { value: 'startsWith', label: 'Starts with' },
+  { value: 'endsWith', label: 'Ends with' },
+  { value: 'equals', label: 'Is equal to' },
+  { value: 'doesNotEqual', label: 'Is not equal to' },
+  { value: 'isNotEmpty', label: 'Is not empty (Any)' },
+  { value: 'isEmpty', label: 'Is empty (Not Any)' },
+]
+
+const NUMERIC_OPERATORS = [
+  { value: '', label: 'Select Condition (None)' },
+  { value: 'equals', label: 'Is equal to (=)' },
+  { value: 'doesNotEqual', label: 'Is not equal to (!=)' },
+  { value: 'greaterThan', label: 'Greater than (>)' },
+  { value: 'greaterThanOrEqual', label: 'Greater than or equal (>=)' },
+  { value: 'lessThan', label: 'Less than (<)' },
+  { value: 'lessThanOrEqual', label: 'Less than or equal (<=)' },
+  { value: 'isNotEmpty', label: 'Is not empty (Any)' },
+  { value: 'isEmpty', label: 'Is empty (Not Any)' },
+]
+
+const DATE_OPERATORS = [
+  { value: '', label: 'Select Condition (None)' },
+  { value: 'equals', label: 'Is equal to' },
+  { value: 'doesNotEqual', label: 'Is not equal to' },
+  { value: 'isAfter', label: 'Is after (>)' },
+  { value: 'isAfterOrEqual', label: 'Is on or after (>=)' },
+  { value: 'isBefore', label: 'Is before (<)' },
+  { value: 'isBeforeOrEqual', label: 'Is on or before (<=)' },
+  { value: 'contains', label: 'Contains' },
+  { value: 'doesNotContain', label: 'Does not contain' },
+  { value: 'isNotEmpty', label: 'Is not empty (Any)' },
+  { value: 'isEmpty', label: 'Is empty (Not Any)' },
+]
 
 export const CustomColumnHeader = memo(
   ({
     field,
     title,
     getUniqueValues,
-    selectedValues, // Set of selected values, or null if all selected
+    filterState, // { selectedSet, condition: { operator, value } }
     onApplyFilter,
     onClearFilter,
     isNumeric,
+    isDate,
   }) => {
     const [anchorEl, setAnchorEl] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [tempSelected, setTempSelected] = useState(new Set())
     const [uniqueValues, setUniqueValues] = useState([])
 
-    const isFiltered = Boolean(
-      selectedValues != null && selectedValues.size > 0,
-    )
+    const [tempOperator, setTempOperator] = useState('')
+    const [tempCondValue, setTempCondValue] = useState('')
+
+    const operators = isDate
+      ? DATE_OPERATORS
+      : isNumeric
+        ? NUMERIC_OPERATORS
+        : TEXT_OPERATORS
+
+    const isFiltered = useMemo(() => {
+      if (!filterState) return false
+      const hasCondition =
+        Boolean(filterState.condition?.operator) &&
+        (filterState.condition.operator === 'isEmpty' ||
+          filterState.condition.operator === 'isNotEmpty' ||
+          Boolean((filterState.condition.value ?? '').trim()))
+      const hasSelectedSet =
+        Boolean(filterState.selectedSet) && filterState.selectedSet.size > 0
+      return hasCondition || hasSelectedSet
+    }, [filterState])
 
     const handleOpen = (e) => {
       e.stopPropagation()
@@ -41,7 +101,12 @@ export const CustomColumnHeader = memo(
       setSearchTerm('')
       const vals = getUniqueValues ? getUniqueValues(field) : []
       setUniqueValues(vals)
-      setTempSelected(new Set(selectedValues != null ? selectedValues : []))
+
+      setTempSelected(
+        new Set(filterState?.selectedSet != null ? filterState.selectedSet : []),
+      )
+      setTempOperator(filterState?.condition?.operator || '')
+      setTempCondValue(filterState?.condition?.value || '')
     }
 
     const handleClose = () => {
@@ -93,22 +158,38 @@ export const CustomColumnHeader = memo(
     }
 
     const handleApply = () => {
-      if (
-        tempSelected.size === 0 ||
-        tempSelected.size === uniqueValues.length
-      ) {
+      const hasCondition =
+        Boolean(tempOperator) &&
+        (tempOperator === 'isEmpty' ||
+          tempOperator === 'isNotEmpty' ||
+          Boolean(tempCondValue.trim()))
+
+      const hasCustomSelection =
+        tempSelected.size > 0 && tempSelected.size !== uniqueValues.length
+
+      if (!hasCondition && !hasCustomSelection) {
         onClearFilter(field)
       } else {
-        onApplyFilter(field, tempSelected)
+        onApplyFilter(field, {
+          selectedSet: hasCustomSelection ? tempSelected : null,
+          condition: hasCondition
+            ? { operator: tempOperator, value: tempCondValue.trim() }
+            : null,
+        })
       }
       handleClose()
     }
 
     const handleClear = () => {
       setTempSelected(new Set())
+      setTempOperator('')
+      setTempCondValue('')
       onClearFilter(field)
       handleClose()
     }
+
+    const isNoValOperator =
+      tempOperator === 'isEmpty' || tempOperator === 'isNotEmpty' || !tempOperator
 
     return (
       <Box
@@ -153,10 +234,14 @@ export const CustomColumnHeader = memo(
             },
           }}
         >
-          <MoreVertIcon sx={{ fontSize: 16 }} />
+          {isFiltered ? (
+            <FilterListIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <MoreVertIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
 
-        {/* Checkbox Filter Popover Menu */}
+        {/* Filter Popover Menu */}
         <Popover
           open={Boolean(anchorEl)}
           anchorEl={anchorEl}
@@ -165,7 +250,7 @@ export const CustomColumnHeader = memo(
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           PaperProps={{
             sx: {
-              width: 270,
+              width: 290,
               p: 1.5,
               borderRadius: '6px',
               border: '1px solid #CBD5E1',
@@ -203,12 +288,108 @@ export const CustomColumnHeader = memo(
             </IconButton>
           </Box>
 
-          {/* Search Input Box */}
+          {/* Section 1: Filter by Condition (Contains, Does not contain, etc.) */}
+          <Box sx={{ mb: 1.2 }}>
+            <Typography
+              variant='caption'
+              sx={{
+                fontWeight: 600,
+                color: '#475569',
+                display: 'block',
+                mb: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Filter by condition:
+            </Typography>
+
+            <FormControl fullWidth size='small' sx={{ mb: 0.8 }}>
+              <Select
+                value={tempOperator}
+                onChange={(e) => setTempOperator(e.target.value)}
+                displayEmpty
+                sx={{
+                  height: 30,
+                  fontSize: '0.8rem',
+                  borderRadius: '4px',
+                  backgroundColor: '#FFFFFF',
+                }}
+              >
+                {operators.map((op) => (
+                  <MenuItem
+                    key={op.value}
+                    value={op.value}
+                    sx={{ fontSize: '0.8rem' }}
+                  >
+                    {op.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {!isNoValOperator && (
+              <TextField
+                placeholder={isDate ? 'YYYY-MM-DD' : 'Value...'}
+                type={
+                  isDate &&
+                  (tempOperator === 'isAfter' ||
+                    tempOperator === 'isAfterOrEqual' ||
+                    tempOperator === 'isBefore' ||
+                    tempOperator === 'isBeforeOrEqual' ||
+                    tempOperator === 'equals' ||
+                    tempOperator === 'doesNotEqual')
+                    ? 'date'
+                    : 'text'
+                }
+                size='small'
+                fullWidth
+                value={tempCondValue}
+                onChange={(e) => setTempCondValue(e.target.value)}
+                inputProps={{
+                  sx: {
+                    padding: '4px 8px !important',
+                    caretColor: '#0284C7 !important',
+                    color: '#1E293B',
+                    fontSize: '0.82rem',
+                    cursor: 'text',
+                  },
+                }}
+                InputProps={{
+                  endAdornment: tempCondValue ? (
+                    <InputAdornment position='end' sx={{ ml: 0.5 }}>
+                      <IconButton
+                        size='small'
+                        onClick={() => setTempCondValue('')}
+                        sx={{ p: '2px' }}
+                      >
+                        <ClearIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
+                  sx: {
+                    height: 30,
+                    borderRadius: '4px',
+                    backgroundColor: '#FFFFFF',
+                  },
+                }}
+              />
+            )}
+          </Box>
+
+          <Divider sx={{ my: 1 }}>
+            <Typography
+              variant='caption'
+              sx={{ color: '#94A3B8', fontSize: '0.68rem', fontWeight: 600 }}
+            >
+              OR FILTER BY VALUE
+            </Typography>
+          </Divider>
+
+          {/* Section 2: Search Input Box */}
           <TextField
-            placeholder='Search...'
+            placeholder='Search values...'
             size='small'
             fullWidth
-            autoFocus
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             inputProps={{
@@ -238,7 +419,7 @@ export const CustomColumnHeader = memo(
                 </InputAdornment>
               ) : null,
               sx: {
-                height: 32,
+                height: 30,
                 fontSize: '0.82rem',
                 borderRadius: '4px',
                 backgroundColor: '#FFFFFF',
@@ -248,10 +429,8 @@ export const CustomColumnHeader = memo(
                 },
               },
             }}
-            sx={{ mb: 1 }}
+            sx={{ mb: 0.8 }}
           />
-
-          <Divider sx={{ mb: 0.5 }} />
 
           {/* Check All Option */}
           <FormControlLabel
@@ -261,11 +440,11 @@ export const CustomColumnHeader = memo(
                 checked={isAllChecked}
                 indeterminate={isIndeterminate}
                 onChange={handleToggleAll}
-                sx={{ p: '3px 6px' }}
+                sx={{ p: '2px 6px' }}
               />
             }
             label={
-              <Typography sx={{ fontSize: '0.82rem', fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>
                 Check All
               </Typography>
             }
@@ -275,7 +454,7 @@ export const CustomColumnHeader = memo(
           {/* Scrollable Checkbox List for Unique Values */}
           <Box
             sx={{
-              maxHeight: 180,
+              maxHeight: 150,
               overflowY: 'auto',
               border: '1px solid #F1F5F9',
               borderRadius: '4px',
@@ -315,12 +494,12 @@ export const CustomColumnHeader = memo(
                     label={
                       <Typography
                         sx={{
-                          fontSize: '0.8rem',
+                          fontSize: '0.78rem',
                           color: '#334155',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
-                          maxWidth: 190,
+                          maxWidth: 210,
                         }}
                         title={displayLabel}
                       >

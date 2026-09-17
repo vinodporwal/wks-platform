@@ -8,7 +8,7 @@ import {
 } from 'utils/CustomAccrodian'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import CustomColumnHeader from './CustomColumnHeader'
-import { MONTH_MAP } from './reportGridHelpers'
+import { MONTH_MAP, isDateColumn, parseDateSafe } from './reportGridHelpers'
 
 export const SingleReportGrid = memo(
   ({
@@ -63,10 +63,10 @@ export const SingleReportGrid = memo(
       [rawColumns, rawData, isAromaticsHmd],
     )
 
-    const handleApplyFilter = useCallback((field, selectedSet) => {
+    const handleApplyFilter = useCallback((field, filterConfig) => {
       setActiveFilters((prev) => ({
         ...prev,
-        [field]: selectedSet,
+        [field]: filterConfig,
       }))
     }, [])
 
@@ -84,6 +84,7 @@ export const SingleReportGrid = memo(
         .filter((col) => col.field !== 'GRID_TYPE')
         .map((col) => {
           const isNumberCol = col.type === 'number'
+          const isDateCol = isDateColumn(col, rawData)
           const decimalsToShow = isAromaticsHmd ? 5 : 3
 
           let displayTitle = col.title || col.headerName || col.field
@@ -99,7 +100,7 @@ export const SingleReportGrid = memo(
             displayTitle = headerMap[monthNum]
           }
 
-          const selectedVals = activeFilters[col.field]
+          const filterState = activeFilters[col.field]
           const userWidth = columnWidths[col.field]
           const isResized = userWidth != null
 
@@ -118,10 +119,11 @@ export const SingleReportGrid = memo(
                 field={col.field}
                 title={displayTitle}
                 getUniqueValues={getUniqueValues}
-                selectedValues={selectedVals}
+                filterState={filterState}
                 onApplyFilter={handleApplyFilter}
                 onClearFilter={handleClearFilter}
                 isNumeric={isNumberCol}
+                isDate={isDateCol}
               />
             ),
             renderCell: (params) => {
@@ -157,6 +159,7 @@ export const SingleReportGrid = memo(
         })
     }, [
       rawColumns,
+      rawData,
       headerMap,
       isAromaticsHmd,
       getUniqueValues,
@@ -166,7 +169,7 @@ export const SingleReportGrid = memo(
       handleClearFilter,
     ])
 
-    // 2. Filter rows based on active column checkbox selections
+    // 2. Filter rows based on active column condition and checkbox selections
     const filteredRows = useMemo(() => {
       let result = rawData || []
       const activeEntries = Object.entries(activeFilters)
@@ -174,15 +177,186 @@ export const SingleReportGrid = memo(
       if (activeEntries.length === 0) return result
 
       return result.filter((row) => {
-        return activeEntries.every(([field, selectedSet]) => {
-          if (!selectedSet || selectedSet.size === 0) return true
+        return activeEntries.every(([field, filterObj]) => {
+          if (!filterObj) return true
+          const { selectedSet, condition } = filterObj
           const colDef = rawColumns.find((c) => c.field === field)
-          let val = row[field]
-          if (colDef?.type === 'number' && val != null && val !== '') {
-            const num = Number(val)
-            val = isNaN(num) ? val : num.toFixed(isAromaticsHmd ? 5 : 3)
+          const isNum = colDef?.type === 'number'
+          const isDate = isDateColumn(colDef, rawData)
+          const rawCell = row[field]
+
+          // 1. Condition operator check
+          if (condition && condition.operator) {
+            const op = condition.operator
+            const condVal = (condition.value ?? '').trim().toLowerCase()
+            const isCellEmpty = rawCell == null || String(rawCell).trim() === ''
+            const strCell = isCellEmpty ? '' : String(rawCell).toLowerCase()
+
+            if (op === 'isEmpty') {
+              if (!isCellEmpty) return false
+            } else if (op === 'isNotEmpty') {
+              if (isCellEmpty) return false
+            } else if (condVal !== '') {
+              if (isDate) {
+                const cellDate = parseDateSafe(rawCell)
+                const condDate = parseDateSafe(condition.value)
+
+                if (cellDate && condDate) {
+                  const cTime = cellDate.getTime()
+                  const fTime = condDate.getTime()
+
+                  switch (op) {
+                    case 'equals':
+                      if (cTime !== fTime) return false
+                      break
+                    case 'doesNotEqual':
+                      if (cTime === fTime) return false
+                      break
+                    case 'isAfter':
+                    case 'greaterThan':
+                      if (cTime <= fTime) return false
+                      break
+                    case 'isAfterOrEqual':
+                    case 'greaterThanOrEqual':
+                      if (cTime < fTime) return false
+                      break
+                    case 'isBefore':
+                    case 'lessThan':
+                      if (cTime >= fTime) return false
+                      break
+                    case 'isBeforeOrEqual':
+                    case 'lessThanOrEqual':
+                      if (cTime > fTime) return false
+                      break
+                    case 'contains':
+                      if (!strCell.includes(condVal)) return false
+                      break
+                    case 'doesNotContain':
+                      if (strCell.includes(condVal)) return false
+                      break
+                    default:
+                      break
+                  }
+                } else {
+                  // Fall back to string comparison on date string
+                  switch (op) {
+                    case 'equals':
+                      if (strCell !== condVal) return false
+                      break
+                    case 'doesNotEqual':
+                      if (strCell === condVal) return false
+                      break
+                    case 'contains':
+                      if (!strCell.includes(condVal)) return false
+                      break
+                    case 'doesNotContain':
+                      if (strCell.includes(condVal)) return false
+                      break
+                    case 'startsWith':
+                      if (!strCell.startsWith(condVal)) return false
+                      break
+                    case 'endsWith':
+                      if (!strCell.endsWith(condVal)) return false
+                      break
+                    default:
+                      break
+                  }
+                }
+              } else if (isNum) {
+                const numCell = isCellEmpty ? NaN : Number(rawCell)
+                const numCond = !isNaN(Number(condition.value))
+                  ? Number(condition.value)
+                  : NaN
+
+                switch (op) {
+                  case 'equals':
+                    if (!isNaN(numCell) && !isNaN(numCond)) {
+                      if (numCell !== numCond) return false
+                    } else {
+                      if (strCell !== condVal) return false
+                    }
+                    break
+                  case 'doesNotEqual':
+                    if (!isNaN(numCell) && !isNaN(numCond)) {
+                      if (numCell === numCond) return false
+                    } else {
+                      if (strCell === condVal) return false
+                    }
+                    break
+                  case 'greaterThan':
+                  case 'isAfter':
+                    if (isNaN(numCell) || isNaN(numCond) || numCell <= numCond)
+                      return false
+                    break
+                  case 'greaterThanOrEqual':
+                  case 'isAfterOrEqual':
+                    if (isNaN(numCell) || isNaN(numCond) || numCell < numCond)
+                      return false
+                    break
+                  case 'lessThan':
+                  case 'isBefore':
+                    if (isNaN(numCell) || isNaN(numCond) || numCell >= numCond)
+                      return false
+                    break
+                  case 'lessThanOrEqual':
+                  case 'isBeforeOrEqual':
+                    if (isNaN(numCell) || isNaN(numCond) || numCell > numCond)
+                      return false
+                    break
+                  case 'contains':
+                    if (!strCell.includes(condVal)) return false
+                    break
+                  case 'doesNotContain':
+                    if (strCell.includes(condVal)) return false
+                    break
+                  case 'startsWith':
+                    if (!strCell.startsWith(condVal)) return false
+                    break
+                  case 'endsWith':
+                    if (!strCell.endsWith(condVal)) return false
+                    break
+                  default:
+                    break
+                }
+              } else {
+                // Text column
+                switch (op) {
+                  case 'contains':
+                    if (!strCell.includes(condVal)) return false
+                    break
+                  case 'doesNotContain':
+                    if (strCell.includes(condVal)) return false
+                    break
+                  case 'startsWith':
+                    if (!strCell.startsWith(condVal)) return false
+                    break
+                  case 'endsWith':
+                    if (!strCell.endsWith(condVal)) return false
+                    break
+                  case 'equals':
+                    if (strCell !== condVal) return false
+                    break
+                  case 'doesNotEqual':
+                    if (strCell === condVal) return false
+                    break
+                  default:
+                    break
+                }
+              }
+            }
           }
-          return selectedSet.has(val ?? '')
+
+          // 2. Checkbox selection check
+          if (selectedSet && selectedSet.size > 0) {
+            let val = rawCell
+            if (isNum && val != null && val !== '') {
+              const num = Number(val)
+              val = isNaN(num) ? val : num.toFixed(isAromaticsHmd ? 5 : 3)
+            }
+            if (!selectedSet.has(val ?? '')) return false
+          }
+
+          return true
         })
       })
     }, [rawData, activeFilters, rawColumns, isAromaticsHmd])
