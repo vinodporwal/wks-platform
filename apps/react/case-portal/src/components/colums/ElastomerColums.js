@@ -481,6 +481,15 @@ export const NormalOpNormElastomerColumns = [
     minWidth: 100,
   },
   {
+    field: 'sapCode',
+    title: 'SAP MAT Code',
+    widthT: 250,
+    minWidth: 150,
+    type: 'text',
+    editable: false,
+    locked: true,
+  },
+  {
     field: 'productName',
     title: 'Particulars',
     width: 120,

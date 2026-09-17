@@ -15,6 +15,12 @@
     "isVisible": false
   },
   {
+    "field": "sapCode",
+    "title": "SAP MAT Code",
+    "hidden": false,
+    "minWidth": 150
+  },
+  {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
@@ -26,12 +32,6 @@
     "title": "UOM / MT",
     "editable": false,
     "widthT": 80,
-    "minWidth": 120
-  },
-  {
-    "field": "sapCode",
-    "title": "Sap Code",
-    "hidden": false,
     "minWidth": 120
   },
   {
