@@ -93,6 +93,8 @@ import com.wks.caseengine.rest.model.EventsModel;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FaultHistoryModel;
 import com.wks.caseengine.rest.model.FunctionalLocation;
+import com.wks.caseengine.rest.model.FunctionalLocationValidationMetadata;
+import com.wks.caseengine.rest.model.FunctionalLocationValidationResponse;
 import com.wks.caseengine.rest.model.HierarchyNodesModel;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.UserDTO;
@@ -822,6 +824,25 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			String reviewerUserId, String targetCompletionDateForApm) throws Exception {
 		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println(dataGridEntry.toPrettyString().toString());
+		String functionalLocation = dataGridEntry.path("equipmentFunctionLocation").asText();
+		FunctionalLocationValidationResponse flValidation = validateFunctionalLocation(functionalLocation);
+		if (flValidation == null
+				|| !"VALID".equals(flValidation.getStatus())
+				|| flValidation.getRowCount() == null
+				|| flValidation.getRowCount() != 1
+				|| flValidation.getMetadata() == null) {
+			throw new IllegalStateException(
+					"GE APM Recommendation creation blocked because Equipment Function Location validation failed."
+							+ " status=" + (flValidation == null ? null : flValidation.getStatus())
+							+ ", rowCount=" + (flValidation == null ? null : flValidation.getRowCount()));
+		}
+
+		FunctionalLocationValidationMetadata flMetadata = flValidation.getMetadata();
+		String maintenancePlant = flMetadata.getMaintenancePlant() == null
+				? "" : flMetadata.getMaintenancePlant();
+		String planningPlant = flMetadata.getPlanningPlant() == null
+				? "" : flMetadata.getPlanningPlant();
+
 		 String geUserAcsessToken = authenticateGEUser();
 		 System.out.println("GE User Acsess Token: " + geUserAcsessToken);
 //		Boolean isFunctionalLocationAvailableInGEAPM = checkFunctionalLocationAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("equipmentFunctionLocation").asText());
@@ -865,12 +886,16 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
 		requestBody.put("CaseID", caseNo);
 
+		requestBody.put("CC_GENRECOM_SITE_ID_C", planningPlant);
+		requestBody.put("CC_GENRECOM_PLANT_ID_C", maintenancePlant);
 
-		requestBody.put("CC_GENRECOM_SITE_ID_C", "");
-		
-		requestBody.put("CC_GENRECOM_PLANT_ID_C", "");
-	
-		
+		log.info("TEMP FL VALIDATION - Functional Location: {}", functionalLocation);
+		log.info("TEMP FL VALIDATION - Status: {}", flValidation.getStatus());
+		log.info("TEMP FL VALIDATION - Row Count: {}", flValidation.getRowCount());
+		log.info("TEMP FL VALIDATION - Maintenance Plant: {}", maintenancePlant);
+		log.info("TEMP FL VALIDATION - Planning Plant: {}", planningPlant);
+		log.info("TEMP GE SITE ID: {}", requestBody.get("CC_GENRECOM_SITE_ID_C"));
+		log.info("TEMP GE PLANT ID: {}", requestBody.get("CC_GENRECOM_PLANT_ID_C"));
 
 		System.out.println("==================================================");
 		System.out.println("TEMP DEBUG - GE APM RECOMMENDATION CREATE START");
@@ -1262,20 +1287,18 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    
  	    System.out.println("Truststore------------------------: " + System.getProperty("javax.net.ssl.trustStore"));
 
- 	    System.out.println("Truststore Password-------------: " + System.getProperty("javax.net.ssl.trustStorePassword"));  
- 	    
 	    String geAPMAcsessToken = geLogin();
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.add("MeridiumToken", geAPMAcsessToken);
- 	    Map<String, Object> inputsingleParams = new HashMap<>();
- 	    inputsingleParams.put("Domain", "");
- 	    Map<String, Object> requestBody = new HashMap<>();
- 		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API");
- 	    requestBody.put("Page", 0);
- 	    requestBody.put("PageSize", 10000);
- 	    requestBody.put("InputsingleParams", inputsingleParams);
+	    Map<String, Object> inputSingleParams = new HashMap<>();
+	    inputSingleParams.put("UserValidation", "");
+	    Map<String, Object> requestBody = new HashMap<>();
+		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\EED_APM_API_UserList");
+	    requestBody.put("Page", 0);
+	    requestBody.put("PageSize", 50000);
+	    requestBody.put("InputSingleParams", inputSingleParams);
  
  	    try {
  	        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
@@ -1307,11 +1330,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        System.err.println("Unexpected error in getGEUsers(): " + e.getMessage());
 	        e.printStackTrace();
 	    }
-        com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
-
- 	    user.setUserId("nisargi.shah@ril.com");
- 	    user.setEmailId("nisargi.shah@ril.com");
- 		geUsers.add(user);
 	    return geUsers;
 	}
 	
@@ -1858,7 +1876,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 	    try {
 	        ResponseEntity<Map> response = restTemplate.postForEntity(geAuthenticationAPI, requestEntity, Map.class);
-	        System.out.println("Response Body: " + response.getBody());
 	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
 	            return (String) response.getBody().getOrDefault("sessionId", "");
 	        } else {
@@ -1998,37 +2015,126 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     }
 	
 	public Boolean checkFunctionalLocationAvailableInGEAPM(String geAPMAcsessToken, String functionalLocation) throws Exception {
-	    RestTemplate restTemplate = new RestTemplate();
-	    
-	    HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.APPLICATION_JSON);
-	    headers.set("MeridiumToken", geAPMAcsessToken);
-
-	    Map<String, Object> requestBody = Map.of(
-	        "QueryPath", "Public\\Meridium\\Client\\APIs\\EED_APM_API",
-	        "Page", 0,
-	        "PageSize", 100,
-	        "InputsingleParams", Map.of("FL", functionalLocation)
-	    );
-
-	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-
-	    try {
-	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
-
-	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-	            Object rowCount = response.getBody().get("rowCount");
-	            return rowCount != null && Integer.parseInt(rowCount.toString()) == 1;
+	    return validateFunctionalLocationWithToken(geAPMAcsessToken, functionalLocation)
+	            .getStatus().equals("VALID");
 	}
-	    } catch (RestClientException e) {
-//    public void scheduleTask() {
-	        System.err.println("GE APM API request failed: " + e.getMessage());
-	        throw new Exception("GE APM Check Available FL API request failed:"+ e.getMessage());
-	    } catch (NumberFormatException e) {
-	        System.err.println("Invalid rowCount format in response: " + e.getMessage());
-	    }
-//    }
-	    return false;
+
+	@Override
+	public FunctionalLocationValidationResponse validateFunctionalLocation(String functionalLocation) {
+		log.info("GE APM functional location validation started: functionalLocation={}", functionalLocation);
+
+		try {
+			String sessionId = geLogin();
+			FunctionalLocationValidationResponse result =
+					validateFunctionalLocationWithToken(sessionId, functionalLocation);
+			log.info("GE APM functional location validation completed: functionalLocation={}, rowCount={}, status={}",
+					functionalLocation, result.getRowCount(), result.getStatus());
+			return result;
+		} catch (Exception e) {
+			log.error("GE APM functional location validation failed: functionalLocation={}",
+					functionalLocation, e);
+			return validationResponse(functionalLocation, "ERROR", null,
+					"Unable to validate Equipment Function Location with GE APM.", null);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private FunctionalLocationValidationResponse validateFunctionalLocationWithToken(
+			String sessionId, String functionalLocation) {
+		RestTemplate restTemplate = new RestTemplate();
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("MeridiumToken", sessionId);
+
+		Map<String, Object> requestBody = Map.of(
+				"QueryPath", "Public\\Meridium\\Client\\APIs\\EED_APM_API_FL",
+				"Page", 0,
+				"PageSize", 1000,
+				"InputSingleParams", Map.of("FL", functionalLocation));
+
+		HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+		ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
+		Map<String, Object> responseBody = response.getBody();
+
+		if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
+			return validationResponse(functionalLocation, "ERROR", null,
+					"Unable to validate Equipment Function Location with GE APM.", null);
+		}
+
+		Integer rowCount = parseFunctionalLocationRowCount(responseBody.get("rowCount"));
+		if (rowCount == null || rowCount < 0) {
+			return validationResponse(functionalLocation, "ERROR", null,
+					"GE APM returned an invalid functional location response.", null);
+		}
+
+		log.info("GE APM functional location validation row count: functionalLocation={}, rowCount={}",
+				functionalLocation, rowCount);
+
+		if (rowCount == 0) {
+			return validationResponse(functionalLocation, "INVALID", rowCount,
+					"Selected Equipment Function Location is not available in GE APM.", null);
+		}
+		if (rowCount > 1) {
+			return validationResponse(functionalLocation, "DUPLICATE", rowCount,
+					"Multiple GE APM records were found for the selected Equipment Function Location.", null);
+		}
+
+		Object outputValue = responseBody.get("output");
+		if (!(outputValue instanceof Map)) {
+			return validationResponse(functionalLocation, "ERROR", rowCount,
+					"GE APM returned an invalid functional location response.", null);
+		}
+		Object dataValue = ((Map<String, Object>) outputValue).get("data");
+		if (!(dataValue instanceof Map)) {
+			return validationResponse(functionalLocation, "ERROR", rowCount,
+					"GE APM returned an invalid functional location response.", null);
+		}
+		Object rowsValue = ((Map<String, Object>) dataValue).get("rows");
+		if (!(rowsValue instanceof List) || ((List<?>) rowsValue).size() != 1
+				|| !(((List<?>) rowsValue).get(0) instanceof Map)) {
+			return validationResponse(functionalLocation, "ERROR", rowCount,
+					"GE APM returned an invalid functional location response.", null);
+		}
+
+		Map<String, Object> row = (Map<String, Object>) ((List<?>) rowsValue).get(0);
+		FunctionalLocationValidationMetadata metadata = new FunctionalLocationValidationMetadata();
+		metadata.setFunctionalLocation(stringValue(row.get("Functional Location")));
+		metadata.setMaintenancePlant(stringValue(row.get("Maintenance Plant")));
+		metadata.setMaintenancePlantDescription(stringValue(row.get("Maintenance Plant Description")));
+		metadata.setPlanningPlant(stringValue(row.get("Planning Plant")));
+		metadata.setPlanningPlantDescription(stringValue(row.get("Planning Plant Description")));
+		metadata.setCmmsSystem(stringValue(row.get("CMMS System")));
+		metadata.setSortField(stringValue(row.get("Sort Field")));
+
+		return validationResponse(functionalLocation, "VALID", rowCount,
+				"Equipment Function Location is valid in GE APM.", metadata);
+	}
+
+	private Integer parseFunctionalLocationRowCount(Object rowCount) {
+		if (rowCount == null) {
+			return null;
+		}
+		try {
+			return Integer.valueOf(rowCount.toString());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	private String stringValue(Object value) {
+		return value == null ? null : value.toString();
+	}
+
+	private FunctionalLocationValidationResponse validationResponse(
+			String functionalLocation, String status, Integer rowCount, String message,
+			FunctionalLocationValidationMetadata metadata) {
+		FunctionalLocationValidationResponse response = new FunctionalLocationValidationResponse();
+		response.setFunctionalLocation(functionalLocation);
+		response.setStatus(status);
+		response.setRowCount(rowCount);
+		response.setMessage(message);
+		response.setMetadata(metadata);
+		return response;
 	}
 	
 	public Boolean checkUserAvailableInGEAPM(String geAPMAcsessToken, String userId) throws Exception {

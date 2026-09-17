@@ -47,6 +47,10 @@ import {
   RECOMMENDATION_OPTION_CACHE_KEYS,
   resolveRecommendationOptionLabel,
 } from 'utils/recommendationOptions'
+import {
+  hydrateFunctionalLocationOptions,
+  loadFunctionalLocationOptions,
+} from 'utils/functionalLocationOptions'
 import { accountStore } from './../../store'
 import html2pdf from "html2pdf.js/dist/html2pdf"
 
@@ -100,6 +104,8 @@ const initialDataRef = useRef(null);
 const isFormReadyRef = useRef(false);
 const hasUnsavedChangesRef = useRef(false); 
 const targetCompletionDateValuesRef = useRef([]);
+const functionalLocationValidationByRowRef = useRef(new WeakMap());
+const functionalLocationRequestSequenceRef = useRef(0);
 
 useEffect(() => {
   hasUnsavedChangesRef.current = hasUnsavedChanges;
@@ -155,8 +161,108 @@ const captureTargetCompletionTime = (submission) => {
   });
 };
 
+const showFunctionalLocationValidationMessage = (message) => {
+  setSnackbarMessages([message])
+  setSnackbarOpen(true)
+  setTimeout(() => setSnackbarOpen(false), 2000)
+}
+
+const clearRejectedFunctionalLocation = (rowData, instance) => {
+  if (instance?.setValue) {
+    instance.setValue('', {
+      modified: true,
+      functionalLocationValidationReset: true,
+    })
+  } else {
+    rowData.equipmentFunctionLocation = ''
+  }
+}
+
+const validateRecommendationFunctionalLocation = async (rowData, selectedFl, instance) => {
+  if (!rowData || typeof rowData !== 'object') return
+
+  selectedFl = selectedFl || ''
+  const requestSequence = ++functionalLocationRequestSequenceRef.current
+  functionalLocationValidationByRowRef.current.set(rowData, {
+    selectedFl,
+    validatedFl: null,
+    status: selectedFl ? 'VALIDATING' : 'NOT_VALIDATED',
+    rowCount: null,
+    metadata: null,
+    requestSequence,
+  })
+  if (!selectedFl) return
+
+  try {
+    const response = await CaseService.validateFunctionalLocation(keycloak, selectedFl)
+    const current = functionalLocationValidationByRowRef.current.get(rowData)
+    if (current?.requestSequence !== requestSequence ||
+      current.selectedFl !== selectedFl ||
+      rowData.equipmentFunctionLocation !== selectedFl) return
+
+    const isValid = response?.status === 'VALID' && response?.rowCount === 1
+    const status = isValid
+      ? 'VALID'
+      : ['INVALID', 'DUPLICATE', 'ERROR'].includes(response?.status)
+        ? response.status
+        : 'ERROR'
+    functionalLocationValidationByRowRef.current.set(rowData, {
+      selectedFl,
+      validatedFl: isValid ? selectedFl : null,
+      status,
+      rowCount: response?.rowCount ?? null,
+      metadata: isValid ? response?.metadata ?? null : null,
+      requestSequence,
+    })
+    if (status === 'INVALID') {
+      showFunctionalLocationValidationMessage(
+        'Selected Equipment Function Location is not available in GE APM.',
+      )
+    } else if (status === 'DUPLICATE') {
+      showFunctionalLocationValidationMessage(
+        'Multiple GE APM records were found for the selected Equipment Function Location.',
+      )
+    } else if (status === 'ERROR') {
+      showFunctionalLocationValidationMessage(
+        'Unable to validate Equipment Function Location with GE APM.',
+      )
+    }
+    if (!isValid) clearRejectedFunctionalLocation(rowData, instance)
+  } catch (error) {
+    const current = functionalLocationValidationByRowRef.current.get(rowData)
+    if (current?.requestSequence !== requestSequence ||
+      current.selectedFl !== selectedFl ||
+      rowData.equipmentFunctionLocation !== selectedFl) return
+    functionalLocationValidationByRowRef.current.set(rowData, {
+      selectedFl,
+      validatedFl: null,
+      status: 'ERROR',
+      rowCount: null,
+      metadata: null,
+      requestSequence,
+    })
+    showFunctionalLocationValidationMessage(
+      'Unable to validate Equipment Function Location with GE APM.',
+    )
+    clearRejectedFunctionalLocation(rowData, instance)
+  }
+}
+
 const handleFormChange = (submission, flags, modified) => {
   captureTargetCompletionTime(submission);
+  const changed = submission?.changed
+  if (
+    changed?.component?.key === 'equipmentFunctionLocation' &&
+    !changed.flags?.functionalLocationValidationReset &&
+    changed.value
+  ) {
+    void validateRecommendationFunctionalLocation(
+      changed.instance?.data,
+      changed.value,
+      changed.instance,
+    )
+  }
+
   if (!submission?.data?.container) return;
   if (!isFormReadyRef.current) return;
 
@@ -184,7 +290,7 @@ const handleFormChange = (submission, flags, modified) => {
 
   setHasUnsavedChanges(!isEqual);
 };
-  
+
   const handleBeforeUnload = (event) => {
     if (hasUnsavedChangesRef.current) {
       const message = "You have unsaved changes. Are you sure you want to leave?";
@@ -335,7 +441,7 @@ const handleFormChange = (submission, flags, modified) => {
 
         return { caseData: aCase, updatedFormStructure }
       })
-      .then(({ caseData, updatedFormStructure }) => {
+      .then(async ({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
         setIsDraft(isDraft);
         const isFinalRecommendationSubmitted = caseData?.isFinalRecommendationSubmitted;
@@ -343,6 +449,17 @@ const handleFormChange = (submission, flags, modified) => {
         const attributeValue = caseData.attributes[0].value;
         const parsedAttributeValue = JSON.parse(attributeValue);
         parsedAttributeValue.caseNo = aCase.caseNo;
+        const functionalLocationOptions = await loadFunctionalLocationOptions(
+          keycloak,
+          parsedAttributeValue.textField1,
+        )
+        hydrateFunctionalLocationOptions(
+          updatedFormStructure,
+          functionalLocationOptions,
+          (parsedAttributeValue.dataGrid1 || []).map(
+            (row) => row.equipmentFunctionLocation,
+          ),
+        )
         targetCompletionDateValuesRef.current = (
           parsedAttributeValue.dataGrid1 || []
         ).map((row) => row.recommendationTargetCompletionDate1 || '');
@@ -1685,7 +1802,7 @@ const handleFormChange = (submission, flags, modified) => {
     console.log('labelMap', labelMap)
     const getLabel = (key) => labelMap[key] || key || ''
 
-    // Files are stored inside the container attribute JSON by formio — same source as the detail page
+    // Files are stored inside the container attribute JSON by formio same source as the detail page
 
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">

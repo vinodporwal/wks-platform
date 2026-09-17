@@ -21,6 +21,7 @@ export const CaseService = {
   saveCase,
   getCasesById,
   saveRecommendation,
+  validateFunctionalLocation,
   saveAnalysis,
   saveValueRealization,
   submitFinalRecommendation,
@@ -266,6 +267,21 @@ async function saveRecommendation(keycloak, body) {
     console.error('Error in saveRecommendation API:', err);
     throw err;
   }
+}
+
+async function validateFunctionalLocation(keycloak, functionalLocation) {
+  const url = `${Config.CaseEngineUrl}/case-definition/ge-apm/functional-location/validate`
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${keycloak.token}`,
+    },
+    body: JSON.stringify({ functionalLocation }),
+  })
+  return json(keycloak, resp)
 }
 
 async function addDocuments(keycloak, businessKey, document) {

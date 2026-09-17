@@ -55,6 +55,8 @@ import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FunctionalLocation;
+import com.wks.caseengine.rest.model.FunctionalLocationValidationRequest;
+import com.wks.caseengine.rest.model.FunctionalLocationValidationResponse;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.UserDTO;
 import com.wks.caseengine.rest.honeywell.HoneywellCaseSecurityService;
@@ -311,6 +313,20 @@ public class CaseDefinitionController {
 		} catch (CaseDefinitionNotFoundException e) {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
+	}
+
+	@PostMapping(value = "/ge-apm/functional-location/validate")
+	public ResponseEntity<FunctionalLocationValidationResponse> validateFunctionalLocation(
+			@RequestBody FunctionalLocationValidationRequest request) {
+		if (request == null || request.getFunctionalLocation() == null
+				|| request.getFunctionalLocation().isBlank()) {
+			throw new RestInvalidArgumentException(
+					"functionalLocation",
+					new IllegalArgumentException("Functional location is required"));
+		}
+
+		return ResponseEntity.ok(
+				caseDefinitionService.validateFunctionalLocation(request.getFunctionalLocation().trim()));
 	}
 	
 	@DeleteMapping(value = "/{caseDefId}")

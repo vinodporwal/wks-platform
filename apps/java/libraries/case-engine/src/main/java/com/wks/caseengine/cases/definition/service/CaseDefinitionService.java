@@ -28,6 +28,7 @@ import com.wks.caseengine.rest.db2.entity.RecommendationPlannerGroup;
 import com.wks.caseengine.rest.db2.entity.RecommendationPriority;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FunctionalLocation;
+import com.wks.caseengine.rest.model.FunctionalLocationValidationResponse;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
 
@@ -78,6 +79,8 @@ public interface CaseDefinitionService {
 	List<com.wks.caseengine.rest.model.UserDTO> searchUsers(String search, int limit, int skip);
 
 	List<FunctionalLocation> getFunctionalLocations(String AssetName);
+
+	FunctionalLocationValidationResponse validateFunctionalLocation(String functionalLocation);
 
 	Case addRecommendation(Recommendations recommendations);
 

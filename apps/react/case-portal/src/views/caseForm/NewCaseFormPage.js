@@ -21,6 +21,10 @@ import {
   hydrateRecommendationOptions,
   loadRecommendationOptions,
 } from 'utils/recommendationOptions'
+import {
+  hydrateFunctionalLocationOptions,
+  loadFunctionalLocationOptions,
+} from 'utils/functionalLocationOptions'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
@@ -44,6 +48,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const initialRender = useRef(true);
   const skipChangesCount = useRef(5); // formio fires multiple onChange on init, skip them
   const targetCompletionDateValuesRef = useRef([])
+  const functionalLocationValidationByRowRef = useRef(new WeakMap())
+  const functionalLocationRequestSequenceRef = useRef(0)
 
   const handleBeforeUnload = (event) => {
     if (hasUnsavedChanges) {
@@ -146,8 +152,109 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
     })
   }
 
+  const showFunctionalLocationValidationMessage = (message) => {
+    setSnackbarMessages([message])
+    setSnackbarOpen(true)
+    setTimeout(() => setSnackbarOpen(false), 2000)
+  }
+
+  const clearRejectedFunctionalLocation = (rowData, instance) => {
+    if (instance?.setValue) {
+      instance.setValue('', {
+        modified: true,
+        functionalLocationValidationReset: true,
+      })
+    } else {
+      rowData.equipmentFunctionLocation = ''
+    }
+  }
+
+  const validateRecommendationFunctionalLocation = async (rowData, selectedFl, instance) => {
+    if (!rowData || typeof rowData !== 'object') return
+
+    selectedFl = selectedFl || ''
+    const requestSequence = ++functionalLocationRequestSequenceRef.current
+    functionalLocationValidationByRowRef.current.set(rowData, {
+      selectedFl,
+      validatedFl: null,
+      status: selectedFl ? 'VALIDATING' : 'NOT_VALIDATED',
+      rowCount: null,
+      metadata: null,
+      requestSequence,
+    })
+    if (!selectedFl) return
+
+    try {
+      const response = await CaseService.validateFunctionalLocation(keycloak, selectedFl)
+      const current = functionalLocationValidationByRowRef.current.get(rowData)
+      if (current?.requestSequence !== requestSequence ||
+        current.selectedFl !== selectedFl ||
+        rowData.equipmentFunctionLocation !== selectedFl) return
+
+      const isValid = response?.status === 'VALID' && response?.rowCount === 1
+      const status = isValid
+        ? 'VALID'
+        : ['INVALID', 'DUPLICATE', 'ERROR'].includes(response?.status)
+          ? response.status
+          : 'ERROR'
+      functionalLocationValidationByRowRef.current.set(rowData, {
+        selectedFl,
+        validatedFl: isValid ? selectedFl : null,
+        status,
+        rowCount: response?.rowCount ?? null,
+        metadata: isValid ? response?.metadata ?? null : null,
+        requestSequence,
+      })
+
+      if (status === 'INVALID') {
+        showFunctionalLocationValidationMessage(
+          'Selected Equipment Function Location is not available in GE APM.',
+        )
+      } else if (status === 'DUPLICATE') {
+        showFunctionalLocationValidationMessage(
+          'Multiple GE APM records were found for the selected Equipment Function Location.',
+        )
+      } else if (status === 'ERROR') {
+        showFunctionalLocationValidationMessage(
+          'Unable to validate Equipment Function Location with GE APM.',
+        )
+      }
+      if (!isValid) clearRejectedFunctionalLocation(rowData, instance)
+    } catch (error) {
+      const current = functionalLocationValidationByRowRef.current.get(rowData)
+      if (current?.requestSequence !== requestSequence ||
+        current.selectedFl !== selectedFl ||
+        rowData.equipmentFunctionLocation !== selectedFl) return
+      functionalLocationValidationByRowRef.current.set(rowData, {
+        selectedFl,
+        validatedFl: null,
+        status: 'ERROR',
+        rowCount: null,
+        metadata: null,
+        requestSequence,
+      })
+      showFunctionalLocationValidationMessage(
+        'Unable to validate Equipment Function Location with GE APM.',
+      )
+      clearRejectedFunctionalLocation(rowData, instance)
+    }
+  }
+
   const handleFormChange = (submission) => {
     captureTargetCompletionTime(submission)
+
+    const changed = submission?.changed
+    if (
+      changed?.component?.key === 'equipmentFunctionLocation' &&
+      !changed.flags?.functionalLocationValidationReset &&
+      changed.value
+    ) {
+      void validateRecommendationFunctionalLocation(
+        changed.instance?.data,
+        changed.value,
+        changed.instance,
+      )
+    }
 
     if (skipChangesCount.current > 0) {
       skipChangesCount.current -= 1
@@ -186,8 +293,15 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   }, [])
 
   useEffect(() => {
-    loadRecommendationOptions(keycloak)
-      .then(() => CaseService.getCaseDefinitionsById(keycloak, caseDefId))
+    let functionalLocationOptions = []
+    Promise.all([
+      loadRecommendationOptions(keycloak),
+      loadFunctionalLocationOptions(keycloak),
+    ])
+      .then(([, options]) => {
+        functionalLocationOptions = options
+        return CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+      })
       .then((data) => {
         setCaseDef(data)
         return FormService.getByKey(keycloak, data.formKey)
@@ -195,6 +309,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       .then((data) => {
         console.log('new page form data', data)
         hydrateRecommendationOptions(data)
+        hydrateFunctionalLocationOptions(data, functionalLocationOptions)
         setForm(data)
 
         const level1 = data.structure.components[0]
