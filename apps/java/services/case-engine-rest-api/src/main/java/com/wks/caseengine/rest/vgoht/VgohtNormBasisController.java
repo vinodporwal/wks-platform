@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.vgoht.dto.ConstantDTO;
 import com.wks.caseengine.vgoht.dto.VgohtNormConfigurationDTO;
 import com.wks.caseengine.vgoht.serviceimpl.VgohtNormBasisServiceImpl;
 
@@ -326,5 +327,72 @@ public class VgohtNormBasisController {
             return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
         }
 
+    }
+
+    @GetMapping("/constants")
+    public ResponseEntity<List<ConstantDTO>> getConstantsData(@RequestParam String plantId, @RequestParam String aopYear) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+           throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<ConstantDTO> constantDTOs = vgohtNormBasisServiceImpl.getConstantsData(UUID.fromString(plantId), aopYear);
+       
+        return ResponseEntity.ok(constantDTOs);
+    }
+
+    @PostMapping("/constants")
+    public ResponseEntity<AOPMessageVM> updateConstants(@RequestBody List<ConstantDTO> constantDTOs, @RequestParam String plantId, @RequestParam String aopYear) {
+        List<ConstantDTO> failedRecords = vgohtNormBasisServiceImpl.updateConstants(constantDTOs, UUID.fromString(plantId), aopYear);
+        if(failedRecords.isEmpty()) {
+            return ResponseEntity.ok(new AOPMessageVM(200, "Constants updated successfully", null));
+        } else {
+            return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Saved", failedRecords));
+        }
+        
+    }
+
+    @GetMapping(value = "/constants/export")
+    public ResponseEntity<byte[]> exportConstants(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        try {
+            byte[] excelBytes = vgohtNormBasisServiceImpl
+                    .createConstantsExcel(UUID.fromString(plantId), aopYear, false, null);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("constants.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/constants/import", consumes = "multipart/form-data")
+    public ResponseEntity<AOPMessageVM> importConstants(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        AOPMessageVM result = vgohtNormBasisServiceImpl
+                .importConstants(UUID.fromString(plantId), aopYear, file);
+
+        return ResponseEntity.ok(result);
     }
 }

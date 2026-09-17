@@ -1,6 +1,7 @@
 package com.wks.caseengine.vgoht.serviceimpl;
 
 import com.wks.caseengine.dto.AOPConsumptionNormDTO;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -9,6 +10,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +33,9 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.vgoht.dto.ConstantDTO;
 import com.wks.caseengine.vgoht.dto.VgohtNormConfigurationDTO;
+import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.vgoht.service.VgohtHelperService;
 import com.wks.caseengine.vgoht.service.VgohtNormBasisService;
 import jakarta.persistence.Query;
@@ -59,6 +63,9 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
     @PersistenceContext
 	private EntityManager entityManager;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
     
 	public AOPMessageVM getConfigurationData(String year, UUID plantFKId,String version) {
 		try {
@@ -1691,4 +1698,298 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		
 	}
+
+
+	public List<ConstantDTO> getConstantsData(UUID plantId, String aopYear) {
+        
+      
+        Plants plant = plantsRepository.findById(plantId)
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+        String procedureName = vertical.getName()+"_"+"GetConfiguration";
+  
+
+        List<ConstantDTO> constantDTOs = fetchConstantsFromProcedure(plantId, aopYear, procedureName);
+
+ 
+           return constantDTOs;
+
+    }
+
+    private List<ConstantDTO> fetchConstantsFromProcedure(UUID plantId, String aopYear, String procedureName) {
+        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+            ConstantDTO.builder()
+                .id(rs.getString("Id"))
+                .name(rs.getString("Name"))
+                .displayName(rs.getString("DisplayName"))
+                .uom(rs.getString("UOM"))
+                .attributeValue(rs.getString("AttributeValue"))
+                .remarks(rs.getString("Remarks"))
+                .type(rs.getString("Type"))
+                .normParameterType(rs.getString("NormParameterType"))
+                .displayOrder(rs.getString("DisplayOrder"))
+                .isEditable(rs.getBoolean("IsEditable"))
+                .config(rs.getString("Config"))
+                .build(),
+            plantId.toString(), aopYear
+        );
+    }
+
+	@Transactional
+	public List<ConstantDTO> updateConstants(List<ConstantDTO> constantDTOs, UUID plantId, String aopYear) {
+       
+		List<ConstantDTO> failedRecords = new ArrayList<>();
+        List<Object[]> updates = new ArrayList<>();
+
+        for(ConstantDTO constantDTO : constantDTOs) {
+			if(constantDTO.getId() == null || constantDTO.getId().isEmpty()) { 
+				constantDTO.setSaveStatus("Failed");
+				constantDTO.setErrDescription("Id is required");
+				failedRecords.add(constantDTO);
+				continue;
+			}
+            updates.add(new Object[]{constantDTO.getAttributeValue(), constantDTO.getRemarks(), constantDTO.getId()});
+        }
+
+        if(updates.size() > 0) {
+            String sql = "update NormAttributeTransactions set AttributeValue = ?, Remarks = ? where Id = ?";
+            jdbcTemplate.batchUpdate(sql, updates);
+        }
+
+		return failedRecords;
+
+    }
+
+	// ─── Constants Export ───────────────────────────────────────────────────────
+
+	
+	public byte[] createConstantsExcel(UUID plantId, String aopYear, boolean isAfterSave,
+			List<ConstantDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				dtoList = getConstantsData(plantId, aopYear);
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Constants");
+			int currentRow = 0;
+
+			// Visible columns: Parameter(0), UOM(1), Value(2), Remarks(3) | hidden: Id(4)
+			List<String> headerNames = new ArrayList<>(
+					Arrays.asList("Parameter", "UOM", "Value", "Remarks", "Id"));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerNames.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerNames.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			// Wrap style for Remarks column
+			CellStyle wrapStyle = workbook.createCellStyle();
+			wrapStyle.setWrapText(true);
+			wrapStyle.setBorderBottom(BorderStyle.THIN);
+			wrapStyle.setBorderTop(BorderStyle.THIN);
+			wrapStyle.setBorderLeft(BorderStyle.THIN);
+			wrapStyle.setBorderRight(BorderStyle.THIN);
+
+			for (ConstantDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+
+				// Col 0 – Parameter (displayName)
+				Cell paramCell = row.createCell(0);
+				paramCell.setCellValue(dto.getDisplayName() != null ? dto.getDisplayName() : "");
+				paramCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 1 – UOM
+				Cell uomCell = row.createCell(1);
+				uomCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+				uomCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 2 – Value (attributeValue)
+				Cell valueCell = row.createCell(2);
+				valueCell.setCellValue(dto.getAttributeValue() != null ? dto.getAttributeValue() : "");
+				valueCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 3 – Remarks (wrapped text, auto row height)
+				Cell remarksCell = row.createCell(3);
+				remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+				remarksCell.setCellStyle(wrapStyle);
+
+				// Col 4 – Id (hidden, required by import/save)
+				Cell idCell = row.createCell(4);
+				idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+				idCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				if (isAfterSave) {
+					Cell statusCell = row.createCell(5);
+					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+					Cell errCell = row.createCell(6);
+					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+					errCell.setCellStyle(Utility.createBorderedStyle(workbook));
+				}
+
+				// Let POI auto-calculate row height for wrapped remarks
+				row.setHeight((short) -1);
+			}
+
+			// Column widths – fixed larger width for Remarks(3), auto-size for others
+			int totalCols = isAfterSave ? 7 : 5;
+			for (int col = 0; col < totalCols; col++) {
+				if (col == 3) {
+					sheet.setColumnWidth(col, 15000); // ~60 chars wide for Remarks
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
+
+			// Hide the Id column from end-users
+			sheet.setColumnHidden(4, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// ─── Constants Import – Excel Reader ────────────────────────────────────────
+
+	private List<ConstantDTO> readConstantsExcel(InputStream inputStream) {
+		List<ConstantDTO> resultList = new ArrayList<>();
+
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); // Skip header row
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+
+				// Skip completely empty rows
+				boolean allEmpty = true;
+				for (int c = 0; c <= 4; c++) {
+					Cell cell = row.getCell(c);
+					if (cell != null && cell.getCellType() != CellType.BLANK) {
+						String val = "";
+						cell.setCellType(CellType.STRING);
+						val = cell.getStringCellValue().trim();
+						if (!val.isEmpty()) {
+							allEmpty = false;
+							break;
+						}
+					}
+				}
+				if (allEmpty) continue;
+
+				ConstantDTO dto = new ConstantDTO();
+
+				try {
+					// Col 0 – Parameter (displayName) – read-only, not persisted
+					Cell paramCell = row.getCell(0);
+					if (paramCell != null) {
+						paramCell.setCellType(CellType.STRING);
+						dto.setDisplayName(paramCell.getStringCellValue().trim());
+					}
+
+					// Col 1 – UOM – read-only, not persisted
+					Cell uomCell = row.getCell(1);
+					if (uomCell != null) {
+						uomCell.setCellType(CellType.STRING);
+						dto.setUom(uomCell.getStringCellValue().trim());
+					}
+
+					// Col 2 – Value (attributeValue)
+					Cell valueCell = row.getCell(2);
+					if (valueCell != null) {
+						valueCell.setCellType(CellType.STRING);
+						dto.setAttributeValue(valueCell.getStringCellValue().trim());
+					}
+
+					// Col 3 – Remarks
+					Cell remarksCell = row.getCell(3);
+					if (remarksCell != null) {
+						remarksCell.setCellType(CellType.STRING);
+						dto.setRemarks(remarksCell.getStringCellValue().trim());
+					}
+
+					// Col 4 – Id (hidden; required for update)
+					Cell idCell = row.getCell(4);
+					if (idCell != null) {
+						idCell.setCellType(CellType.STRING);
+						String idVal = idCell.getStringCellValue().trim();
+						dto.setId(idVal.isEmpty() ? null : idVal);
+					}
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+				}
+
+				resultList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Constants Excel", e);
+		}
+
+		return resultList;
+	}
+
+	// ─── Constants Import – API ─────────────────────────────────────────────────
+
+	public AOPMessageVM importConstants(UUID plantId, String aopYear, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<ConstantDTO> data = readConstantsExcel(file.getInputStream());
+
+			// Delegate to updateConstants which returns its own failed records
+			List<ConstantDTO> failedFromUpdate = updateConstants(data, plantId, aopYear);
+
+			// Merge any rows that failed during Excel reading
+			List<ConstantDTO> allFailed = new ArrayList<>();
+			for (ConstantDTO dto : data) {
+				if ("Failed".equals(dto.getSaveStatus())) {
+					allFailed.add(dto);
+				}
+			}
+			allFailed.addAll(failedFromUpdate);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!allFailed.isEmpty()) {
+				byte[] fileByteArray = createConstantsExcel(plantId, aopYear, true, allFailed);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import Constants data", ex);
+		}
+	}
+
 }
