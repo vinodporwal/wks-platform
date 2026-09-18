@@ -1304,7 +1304,6 @@ const handleFormChange = (submission, flags, modified) => {
   //   }
 
   //   try {
-  //     console.log('apiBody', apiBody, event.data);
   //     const response = await CaseService.saveRecommendation(keycloak, apiBody)
 
   //     console.log('Recommendation submitted successfully:', response)
