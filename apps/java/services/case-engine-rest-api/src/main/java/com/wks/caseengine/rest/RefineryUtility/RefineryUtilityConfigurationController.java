@@ -46,4 +46,36 @@ public class RefineryUtilityConfigurationController {
         return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
        }
     }
+    @GetMapping(value = "/refinery-utility-constants-export")
+	public ResponseEntity<byte[]> exportMonthWiseConstants(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = refineryUtilityConfigurationService.exportMonthWiseConstants(year,plantId,false,null); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("MonthWiseConstants.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/refinery-utility-constants-import", consumes = "multipart/form-data")
+	public AOPMessageVM importMonthWiseConstants(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	refineryUtilityConfigurationService.importMonthWiseConstants(year,UUID.fromString(plantId), file); 
+	}
+
 }
