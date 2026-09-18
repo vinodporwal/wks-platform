@@ -1783,7 +1783,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 	public List<Object[]> getUtilityConsumptionFromSP(String aopYear, String plantId, String procedureName) {
 		try {
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
@@ -1863,7 +1863,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 	public List<Object[]> geCatChemDataFromSP(String aopYear, String plantId, String procedureName) {
 		try {
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
