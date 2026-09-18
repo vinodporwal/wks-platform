@@ -31,24 +31,26 @@ const App = () => {
       keycloak.token = storedToken;
     }
 
-const inIframe = window.self !== window.top
+    const inIframe = window.self !== window.top
 
-keycloak.init({
-  onLoad: inIframe ? 'check-sso' : 'login-required',
-  checkLoginIframe: true,
-  silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
-}).then((authenticated) => {
-  setKeycloak(keycloak)
-  setAuthenticated(authenticated)
+    keycloak.init({
+      onLoad: inIframe ? 'check-sso' : 'login-required',
+      checkLoginIframe: true,
+      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
+    }).then((authenticated) => {
+      setKeycloak(keycloak)
+      setAuthenticated(authenticated)
 
-  if (!authenticated) {
-    if (inIframe) {
-    //
-    } else {
-      keycloak.login() // standalone: normal redirect flow, unchanged behavior
-    }
-    return;
-  }
+      if (!authenticated) {
+        if (inIframe) {
+          // No session anywhere — escape the iframe so the real login page
+          // can render top-level (Keycloak blocks it inside a frame)
+          window.top.location.href = keycloak.createLoginUrl()
+        } else {
+          keycloak.login() // standalone: normal redirect flow, unchanged behavior
+        }
+        return
+      }
       if (authenticated) {
         localStorage.setItem('keycloakToken', keycloak.token)
         localStorage.setItem('keycloak', JSON.stringify(keycloak))
@@ -84,12 +86,12 @@ keycloak.init({
           } else {
             console.info(
               'Token not refreshed, valid for ' +
-                Math.round(
-                  keycloak.tokenParsed.exp +
-                    keycloak.timeSkew -
-                    new Date().getTime() / 1000,
-                ) +
-                ' seconds',
+              Math.round(
+                keycloak.tokenParsed.exp +
+                keycloak.timeSkew -
+                new Date().getTime() / 1000,
+              ) +
+              ' seconds',
             )
           }
         })
@@ -150,7 +152,7 @@ keycloak.init({
       delete menu.items[2]
     }
 
-    if(accountStore.isManagerUser(keycloak)){
+    if (accountStore.isManagerUser(keycloak)) {
       return setMenu(menu)
     }
   }
