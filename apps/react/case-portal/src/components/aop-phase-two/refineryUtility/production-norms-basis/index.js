@@ -15,6 +15,7 @@ import PIMSThroughput from './PIMSThroughput'
 import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
 import ProductionDemands from './ProductionDemand'
 import UtilityConsumption from './UtilityConsumption'
+import CatChemConsumption from './CatChemConsumption'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -242,6 +243,8 @@ const ProductionNormsBasis = () => {
         return <ProductionDemands/>  
       case 'Utility Consumption' : 
         return <UtilityConsumption/>
+      case 'CAT CHEM Consumption' : 
+        return <CatChemConsumption/>
       default:
         return null
     }
