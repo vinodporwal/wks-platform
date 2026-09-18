@@ -360,7 +360,7 @@ public class VgohtNormBasisController {
     }
     
     @GetMapping(value = "/cat-chem-export")
-	public ResponseEntity<byte[]> exportQualityTransaction(
+	public ResponseEntity<byte[]> exportCatChemData(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year
 	        ) {
@@ -383,7 +383,7 @@ public class VgohtNormBasisController {
 	}
 	
 	@PostMapping(value = "/cat-chem-import", consumes = "multipart/form-data")
-	public AOPMessageVM importQualityTransaction(
+	public AOPMessageVM importCatChemData(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
 			@RequestParam("file") MultipartFile file

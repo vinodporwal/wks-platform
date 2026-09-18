@@ -1,7 +1,11 @@
 package com.wks.caseengine.RefineryUtility.serviceImpl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -11,9 +15,16 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
@@ -100,7 +111,215 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+    public byte[] exportMonthWiseConstants(String year, String plantId, boolean isAfterSave, List<MonthWiseConstantsDTO> dtoList) {
+	    try {   
+	        if (!isAfterSave) {
+	            AOPMessageVM aopMessageVM = getMonthWiseConstants(year, plantId);
 
+	            if (aopMessageVM != null && aopMessageVM.getData() != null) {
+	                @SuppressWarnings("unchecked")
+	                List<MonthWiseConstantsDTO> fetchedData = (List<MonthWiseConstantsDTO>) aopMessageVM.getData();
+	                dtoList = fetchedData;
+	            }
+	        }
+
+	        if (dtoList == null) {
+	            dtoList = new ArrayList<>();
+	        }
+
+	        try (Workbook workbook = new XSSFWorkbook();
+	             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+	            Sheet sheet = workbook.createSheet("Sheet1");
+	            int currentRow = 0;
+
+	            List<String> innerHeaders = new ArrayList<>();
+	            innerHeaders.add("Type");
+	            innerHeaders.add("Particulars");
+	            innerHeaders.add("UOM");
+	            innerHeaders.add("Value");
+	            innerHeaders.add("Remark");
+	            innerHeaders.add("NormParameterId");
+
+	            if (isAfterSave) {
+	                innerHeaders.add("Status");
+	                innerHeaders.add("Error Description");
+	            }
+
+	            Row headerRow = sheet.createRow(currentRow++);
+	            for (int col = 0; col < innerHeaders.size(); col++) {
+	                Cell cell = headerRow.createCell(col);
+	                cell.setCellValue(innerHeaders.get(col));
+	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            }
+
+	            for (MonthWiseConstantsDTO dto : dtoList) {
+	                Row row = sheet.createRow(currentRow++);
+	                List<Object> rowData = new ArrayList<>();
+	                rowData.add(dto.getNormTypeName());
+	                rowData.add(dto.getDisplayName());
+	                rowData.add(dto.getUOM());
+	                rowData.add(dto.getApr());
+	                rowData.add(dto.getRemarks());
+	                rowData.add(dto.getNormParameterFKId());
+
+	                if (isAfterSave) {
+	                    rowData.add(dto.getSaveStatus());
+	                    rowData.add(dto.getErrDescription());
+	                }
+
+	                for (int col = 0; col < rowData.size(); col++) {
+	                    Cell cell = row.createCell(col);
+	                    Object value = rowData.get(col);
+
+	                    if (value instanceof Number) {
+	                        cell.setCellValue(((Number) value).doubleValue());
+	                    } else if (value instanceof Boolean) {
+	                        cell.setCellValue((Boolean) value);
+	                    } else if (value != null) {
+	                        cell.setCellValue(value.toString());
+	                    } else {
+	                        cell.setCellValue("");
+	                    }   
+	                }
+	            }
+
+	            // Hide Id column (column index 5)
+	            sheet.setColumnHidden(5, true);
+
+	            workbook.write(outputStream);
+	            return outputStream.toByteArray();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return new byte[0];
+	}
+
+    public AOPMessageVM importMonthWiseConstants(String year, UUID plantId, MultipartFile file) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<MonthWiseConstantsDTO> data = readMonthWiseConstants(file.getInputStream(), plantId, year);
+	        List<MonthWiseConstantsDTO> failedList = saveMonthWiseConstants(year, plantId.toString(), data);
+
+	        if (failedList != null && !failedList.isEmpty()) {
+	            byte[] fileByteArray = exportMonthWiseConstants(year, plantId.toString(), true, failedList);
+	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+	            
+	            aopMessageVM.setData(base64File);
+	            aopMessageVM.setCode(400);
+	            aopMessageVM.setMessage("Partial data has been saved");
+	        } else {
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("All data has been saved successfully");
+	        }
+
+	        return aopMessageVM;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        aopMessageVM.setCode(500);
+	        aopMessageVM.setMessage("Error importing data: " + e.getMessage());
+	        return aopMessageVM;
+	    }
+	}
+
+    public List<MonthWiseConstantsDTO> readMonthWiseConstants(InputStream inputStream, UUID plantFKId, String year) {
+	    List<MonthWiseConstantsDTO> monthWiseConstantsDTOs = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext()) {
+	            rowIterator.next();  
+	        }
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+
+	            if (row == null || isRowEmpty(row)) {
+	                continue;
+	            }
+
+	            MonthWiseConstantsDTO dto = new MonthWiseConstantsDTO();
+	            try {
+	                dto.setNormTypeName(getStringCellValue(row.getCell(0), dto));
+	                dto.setDisplayName(getStringCellValue(row.getCell(1), dto));
+	                dto.setUOM(getStringCellValue(row.getCell(2), dto));
+	                dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+	                
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+
+	            monthWiseConstantsDTOs.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return monthWiseConstantsDTOs;
+	}
+
+	// Helper method to skip empty rows
+	private boolean isRowEmpty(Row row) {
+	    for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
+	        Cell cell = row.getCell(c);
+	        if (cell != null && cell.getCellType() != CellType.BLANK) {
+	            return false;
+	        }
+	    }
+	    return true;
+	}
+	private static String getStringCellValue(Cell cell, MonthWiseConstantsDTO dto) {
+	    try {
+	        if (cell == null || cell.getCellType() == CellType.BLANK) {
+	            return null;
+	        }
+	        
+	        cell.setCellType(CellType.STRING);
+	        String val = cell.getStringCellValue().trim();
+	        
+	        // Return null if the string is empty after trimming
+	        return val.isEmpty() ? null : val;
+	        
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Please enter correct values");
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	private static Double getNumericCellValue(Cell cell, MonthWiseConstantsDTO dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } 
+	    
+	    if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        if (val.isEmpty()) {
+	            return null; // Return null for blank strings
+	        }
+	        try {
+	            return Double.parseDouble(val);
+	        } catch (NumberFormatException e) {
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    }
+	    return null;
+	}
 
 	public List<Object[]> getMonthWiseConstantsFromSP(String aopYear, String plantId, String procedureName) {
 		try {
