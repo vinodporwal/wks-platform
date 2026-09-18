@@ -31,9 +31,23 @@ const App = () => {
       keycloak.token = storedToken;
     }
 
-    // keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
-    keycloak.init({ onLoad: 'check-sso', checkLoginIframe: true }).then((authenticated) => {
+    // Detect if running in iframe
+    const isInIframe = window !== window.parent;
+    
+    // Use different strategies based on context  
+    const initConfig = isInIframe 
+      ? { onLoad: 'check-sso', checkLoginIframe: false }
+      : { onLoad: 'login-required', checkLoginIframe: true };
+    
+    keycloak.init(initConfig).then((authenticated) => {
       if(!authenticated){
+        if (isInIframe) {
+          // In iframe context, try alternative auth or notify parent
+          console.warn('Authentication failed in iframe context');
+          // You might want to communicate with parent window here
+          // window.parent.postMessage({ type: 'AUTH_REQUIRED' }, '*');
+          return;
+        }
         keycloak.login();
       }
       setKeycloak(keycloak)
