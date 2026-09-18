@@ -9,6 +9,7 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import { useDebounce } from 'hooks/useDebounce'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const SR_MAPPING_ROLE = 'sr_mapping'
@@ -843,14 +844,14 @@ const SenderReceiverMapping = () => {
       disableActionButtons: !(isSRMappingRole || isSRMappingEditRole),
       downloadExcelBtnFromUI: false,
       showExport: true,
-      ExcelName: 'Sender Receiver Mapping',
+      ExcelName: generateExcelName(dataGridStore, 'Sender_Receiver_Mapping'),
       showImport: false,
       showTitleNameBusiness: true,
       showTitle: true,
       titleName:
         screenTitle?.title || 'Sender Receiver Mapping (Utility for Utility)',
     }),
-    [isSRMappingRole, isSRMappingEditRole, screenTitle],
+    [isSRMappingRole, isSRMappingEditRole, screenTitle, dataGridStore],
   )
 
   // ── Save / Export / Import ───────────────────────────────────────────────
