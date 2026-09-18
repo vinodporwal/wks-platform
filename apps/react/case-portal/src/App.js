@@ -43,11 +43,11 @@ keycloak.init({
 
   if (!authenticated) {
     if (inIframe) {
-      // don't force login inside the frame — surface it to the parent instead
-      // (or just leave blank/show a message; up to how APM expects to handle it)
+    //
     } else {
       keycloak.login() // standalone: normal redirect flow, unchanged behavior
     }
+    return;
   }
       if (authenticated) {
         localStorage.setItem('keycloakToken', keycloak.token)
