@@ -414,7 +414,6 @@ const handleFormChange = (submission, flags, modified) => {
     initialDataRef.current = null;
     setHasUnsavedChanges(false);
     await loadOptions(keycloak);
-    console.log('Fetching EED case data of ', aCase)
     // setLoading(true)
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {
