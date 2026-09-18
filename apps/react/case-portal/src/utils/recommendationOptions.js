@@ -191,63 +191,101 @@ export const bindRecommendationUserSearch = (formInstance, keycloak) => {
   void usersPromise.catch((error) => {
     console.error('Unable to preload GE APM users:', error)
   })
-  formInstance.everyComponent((instance) => {
-    if (
-      instance?.component?.key !== 'recommendationAssignedTo2' &&
-      instance?.component?.key !== 'recommendationReviewer'
-    ) {
-      return
-    }
-
-    void restoreRecommendationUserValue(instance, usersPromise)
-    const searchInput = instance.choices?.input?.element
-    if (!searchInput || instance._geUserSearchBound) return
-
-    instance._geUserSearchBound = true
-    instance._geUserSearchSequence = 0
-    instance.addEventListener(searchInput, 'input', (event) => {
-      const searchText = event.target.value.trim()
-      const searchSequence = ++instance._geUserSearchSequence
-      clearTimeout(instance._geUserSearchTimer)
-
-      if (searchText.length < GE_APM_USERS_MIN_SEARCH) {
-        const selectedValue = instance.getValue()
-        const selectedUser = recommendationUsersMemoryCache.find(
-          (user) =>
-            user.value === selectedValue || user.label === selectedValue,
-        )
-        instance.setItems(
-          selectedValue
-            ? [selectedUser || { label: selectedValue, value: selectedValue }]
-            : [],
-        )
+  const bindCurrentRecommendationUserInputs = () => {
+    formInstance.everyComponent((instance) => {
+      if (
+        instance?.component?.key !== 'recommendationAssignedTo2' &&
+        instance?.component?.key !== 'recommendationReviewer'
+      ) {
         return
       }
 
-      instance._geUserSearchTimer = setTimeout(async () => {
-        try {
-          const users = await ensureRecommendationUsersLoaded(keycloak)
-          if (
-            searchSequence !== instance._geUserSearchSequence ||
-            searchInput.value.trim() !== searchText
-          ) {
-            return
-          }
-          const term = searchText.toLowerCase()
-          const matches = users
-            .filter(
-              (user) =>
-                user.label?.toLowerCase().startsWith(term) ||
-                user.value?.toLowerCase().startsWith(term),
-            )
-            .slice(0, GE_APM_USERS_MAX_RESULTS)
-          instance.setItems(matches)
-        } catch (error) {
-          instance.setItems([])
+      void restoreRecommendationUserValue(instance, usersPromise)
+      const searchInput = instance.choices?.input?.element
+      if (!searchInput || instance._geUserSearchInput === searchInput) return
+
+      clearTimeout(instance._geUserSearchTimer)
+      instance._geUserSearchSequence =
+        (instance._geUserSearchSequence || 0) + 1
+      if (instance._geUserSearchInput && instance._geUserSearchHandler) {
+        instance.removeEventListener(
+          instance._geUserSearchInput,
+          'input',
+          instance._geUserSearchHandler,
+        )
+      }
+
+      const searchHandler = (event) => {
+        const searchText = event.target.value.trim()
+        const searchSequence = ++instance._geUserSearchSequence
+        clearTimeout(instance._geUserSearchTimer)
+
+        if (searchText.length < GE_APM_USERS_MIN_SEARCH) {
+          const selectedValue = instance.getValue()
+          const selectedUser = recommendationUsersMemoryCache.find(
+            (user) =>
+              user.value === selectedValue || user.label === selectedValue,
+          )
+          instance.setItems(
+            selectedValue
+              ? [
+                  selectedUser || {
+                    label: selectedValue,
+                    value: selectedValue,
+                  },
+                ]
+              : [],
+          )
+          return
         }
-      }, 300)
+
+        instance._geUserSearchTimer = setTimeout(async () => {
+          try {
+            const users = await usersPromise
+            if (
+              searchSequence !== instance._geUserSearchSequence ||
+              searchInput.value.trim() !== searchText
+            ) {
+              return
+            }
+            const term = searchText.toLowerCase()
+            const matches = users
+              .filter(
+                (user) =>
+                  user.label?.toLowerCase().startsWith(term) ||
+                  user.value?.toLowerCase().startsWith(term),
+              )
+              .slice(0, GE_APM_USERS_MAX_RESULTS)
+            instance.setItems(matches)
+          } catch (error) {
+            instance.setItems([])
+          }
+        }, 300)
+      }
+
+      instance._geUserSearchInput = searchInput
+      instance._geUserSearchHandler = searchHandler
+      instance.addEventListener(searchInput, 'input', searchHandler)
     })
-  })
+  }
+
+  bindCurrentRecommendationUserInputs()
+
+  const dataGrid = formInstance.getComponent('dataGrid1')
+  const observerTarget = dataGrid?.element?.parentNode
+  if (!observerTarget) return
+
+  if (formInstance._geUserDataGridObserverTarget !== observerTarget) {
+    formInstance._geUserDataGridObserver?.disconnect()
+    formInstance._geUserDataGridObserverTarget = observerTarget
+    formInstance._geUserDataGridObserver = new MutationObserver(() => {
+      bindCurrentRecommendationUserInputs()
+    })
+    formInstance._geUserDataGridObserver.observe(observerTarget, {
+      childList: true,
+      subtree: true,
+    })
+  }
 }
 
 export const hydrateRecommendationUserSearch = (form) => {

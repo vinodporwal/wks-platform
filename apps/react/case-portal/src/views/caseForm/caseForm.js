@@ -1396,6 +1396,7 @@ const handleFormChange = (submission, flags, modified) => {
       RecommendationSubmit3: false,
       caseNo: aCase?.caseNo,
       createdBy: keycloak.idTokenParsed.sub,
+      recommendationsRadio: formData.data.container.RecommendationsRadio,
     }
     setApiBody(apiBodyData)
     setIsConfirmationOpen(true)

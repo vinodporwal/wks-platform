@@ -699,10 +699,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
 		}
 		Case savedCase = caseRepository.getByCaseNo(caseNo);
+		boolean wasAlreadySubmitted = isSubmittedCase(savedCase);
+		String oldAssignedTo = getPersistedAssignedTo(savedCase);
 		caseData.setCreationDate(savedCase.getCreationDate());
 		caseDetails = caseRepository.save(caseData);
+		sendSubmittedReassignmentEmailIfRequired(
+				wasAlreadySubmitted, oldAssignedTo, caseDetails);
 
-		if (!caseData.getIsDraft().equals("y")) {
+		if (!caseData.getIsDraft().equals("y") && !wasAlreadySubmitted) {
 			attributeValue = attributeValue.replace("\\\"", "\"");
 			System.out.println("Attribute Value: " + attributeValue);
 
@@ -751,6 +755,86 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			}
 		}
 		return caseDetails;
+	}
+
+	private boolean isSubmittedCase(Case persistedCase) {
+		return persistedCase != null
+				&& "n".equalsIgnoreCase(
+						persistedCase.getIsDraft() == null ? "" : persistedCase.getIsDraft().trim());
+	}
+
+	private String getPersistedAssignedTo(Case persistedCase) {
+		if (persistedCase == null) {
+			return "";
+		}
+		if (persistedCase.getAssignedTo() != null
+				&& persistedCase.getAssignedTo().getEmailId() != null) {
+			return persistedCase.getAssignedTo().getEmailId();
+		}
+		try {
+			if (persistedCase.getAttributes() != null && !persistedCase.getAttributes().isEmpty()) {
+				String attributeValue = persistedCase.getAttributes().get(0).getValue().replace("\\\"", "\"");
+				return new ObjectMapper().readTree(attributeValue).path("caseAssignedTo").asText("");
+			}
+		} catch (Exception e) {
+			log.warn("Unable to read legacy Case Assigned To from attributes: caseNo={}",
+					persistedCase.getCaseNo(), e);
+		}
+		return "";
+	}
+
+	private String normalizeEmail(String assignedTo) {
+		return assignedTo == null ? "" : assignedTo.trim();
+	}
+
+	private void sendSubmittedReassignmentEmailIfRequired(
+			boolean wasAlreadySubmitted, String oldAssignedTo, Case savedCase) {
+		String newAssignedTo = normalizeEmail(getPersistedAssignedTo(savedCase));
+		boolean assignedToChanged = !normalizeEmail(oldAssignedTo).equalsIgnoreCase(newAssignedTo);
+		if (!wasAlreadySubmitted || !assignedToChanged || newAssignedTo.isEmpty()) {
+			return;
+		}
+
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			String attributeValue = savedCase.getAttributes().get(0).getValue().replace("\\\"", "\"");
+			JsonNode rootNode = objectMapper.readTree(attributeValue);
+			String caseTitle = rootNode.path("caseTitle").asText();
+			String caseStatusValue = savedCase.getStatus() == null ? "" : savedCase.getStatus().getName();
+			List<String> reviewersList = new ArrayList<>();
+			JsonNode analysisTeam = rootNode.path("analysisTeam");
+			if (analysisTeam.isArray()) {
+				analysisTeam.forEach(node -> {
+					String email = node.asText(null);
+					if (email != null && !email.trim().isEmpty()) {
+						reviewersList.add(email.trim());
+					}
+				});
+			}
+			if (savedCase.getOwner() != null && savedCase.getOwner().getEmail() != null) {
+				reviewersList.add(convertEmail(savedCase.getOwner().getEmail()));
+			}
+			String[] reviewers = reviewersList.stream()
+					.filter(Objects::nonNull)
+					.map(String::trim)
+					.filter(email -> !email.isEmpty())
+					.distinct()
+					.toArray(String[]::new);
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("subject", "New case has been assigned to you.");
+			data.put("caseTitle", "This is to inform you, the new case has been assigned to you");
+			data.put("caseNumber", savedCase.getCaseNo());
+			data.put("status", caseStatusValue);
+			data.put("caseName", caseTitle);
+			data.put("caseUrl", savedCase.getCaseUrl());
+			data.put("environment", "");
+			caseEmailService.send(from, newAssignedTo, "CASE MANAGEMENT :" + caseTitle,
+					reviewers, null, null, "email-template", data);
+		} catch (Exception e) {
+			log.error("Unable to send submitted Case reassignment email: caseNo={}",
+					savedCase.getCaseNo(), e);
+		}
 	}
 	
 	private String saveRecommendations(String attributeValue, String caseNo) {
@@ -1189,6 +1273,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        ObjectMapper objectMapper = new ObjectMapper();
 	        JsonNode rootNode = objectMapper.readTree(attributeValue);
 	        String eedCreatedBy = rootNode.path("createdBy").asText();
+	        String recommendationsRadio = newRecommendation.getRecommendationsRadio();
+	        if (recommendationsRadio != null && !recommendationsRadio.isBlank() && rootNode.isObject()) {
+	            ((ObjectNode) rootNode).put("RecommendationsRadio", recommendationsRadio);
+	        }
 
 	        // Navigate to the "dataGrid1" array
 	        JsonNode recommendationNode = rootNode.path("dataGrid1");
@@ -1416,8 +1504,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
 		}
 		Case savedCase = caseRepository.getByCaseNo(caseNo);
+		boolean wasAlreadySubmitted = isSubmittedCase(savedCase);
+		String oldAssignedTo = getPersistedAssignedTo(savedCase);
 		caseData.setCreationDate(savedCase.getCreationDate());
 		caseDetails = caseRepository.save(caseData);
+		sendSubmittedReassignmentEmailIfRequired(
+				wasAlreadySubmitted, oldAssignedTo, caseDetails);
 		return caseDetails;
 	}
 	
@@ -1693,8 +1785,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
 		}
 		Case savedCase = caseRepository.getByCaseNo(caseNo);
+		boolean wasAlreadySubmitted = isSubmittedCase(savedCase);
+		String oldAssignedTo = getPersistedAssignedTo(savedCase);
 		caseData.setCreationDate(savedCase.getCreationDate());
 		caseDetails = caseRepository.save(caseData);
+		sendSubmittedReassignmentEmailIfRequired(
+				wasAlreadySubmitted, oldAssignedTo, caseDetails);
 		return caseDetails;
 	}
 	

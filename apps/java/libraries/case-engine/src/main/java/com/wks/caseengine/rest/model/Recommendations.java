@@ -38,6 +38,8 @@ public class Recommendations {
     private String caseNo;
 
 	private String createdBy;
+
+	private String recommendationsRadio;
 	public String getRecommendationPlannerGroup() {
 		return recommendationPlannerGroup;
 	}
@@ -186,5 +188,11 @@ public class Recommendations {
 	}
 	public void setCreatedBy(String createdBy) {
 		this.createdBy = createdBy;
+	}
+	public String getRecommendationsRadio() {
+		return recommendationsRadio;
+	}
+	public void setRecommendationsRadio(String recommendationsRadio) {
+		this.recommendationsRadio = recommendationsRadio;
 	}
 }
