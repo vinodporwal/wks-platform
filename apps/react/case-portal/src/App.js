@@ -31,8 +31,8 @@ const App = () => {
       keycloak.token = storedToken;
     }
 
-    keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
-    // keycloak.init({ onLoad: 'check-sso', checkLoginIframe: true }).then((authenticated) => {
+    // keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
+    keycloak.init({ onLoad: 'check-sso', checkLoginIframe: true }).then((authenticated) => {
       if(!authenticated){
         keycloak.login();
       }
