@@ -19,6 +19,7 @@ import RemarkDialog from './components/RemarkDialog'
 import FilterChips from './components/FilterChips'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
+import CalculateConfirmationDialog from './components/CalculateConfirmationDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
 import { SelectCellEditor } from '../utilities/SelectCellEditor'
 import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
@@ -287,8 +288,26 @@ const AdvanceKendoTable = ({
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const [openCalculateDialogeBox, setOpenCalculateDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  
+  const openCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(true)
+  }
+
+  const closeCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(false)
+  }
+
+  const handleCalculateConfirmation = async () => {
+    closeCalculateDialogBox()
+    setIsButtonDisabled(true)
+    handleCalculate()
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
   const [edit, setEdit] = useState({})
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
@@ -1005,11 +1024,15 @@ const AdvanceKendoTable = ({
     }
   }
   const handleCalculateBtn = async () => {
-    setIsButtonDisabled(true)
-    handleCalculate()
-    setTimeout(() => {
-      setIsButtonDisabled(false)
-    }, 500)
+    if (permissions?.showCalulcationPromt) {
+      openCalculateDialogBox()
+    } else {
+      setIsButtonDisabled(true)
+      handleCalculate()
+      setTimeout(() => {
+        setIsButtonDisabled(false)
+      }, 500)
+    }
   }
   const handleRefresh = async () => {
     try {
@@ -2292,29 +2315,6 @@ const AdvanceKendoTable = ({
             cells={{
               edit: {
                 text: (cellProps) => {
-                  // Check if cell is editable based on conditional rules
-                  const cellEditableByCondition = isCellEditableByCondition(
-                    cellProps.dataItem,
-                    col,
-                  )
-                  if (!cellEditableByCondition) {
-                    const resolvedOptions = isDynamic
-                      ? col.getOptions(cellProps.dataItem)
-                      : col.options
-                    return createSelectToolTipRenderer(
-                      resolvedOptions,
-                      toolTipRenderer,
-                    )({
-                      ...cellProps,
-                      displayMode: col.displayMode || 'label',
-                      tdProps: {
-                        ...cellProps.tdProps,
-                        className:
-                          `${cellProps.tdProps?.className || ''} non-editable-cell`.trim(),
-                      },
-                    })
-                  }
-
                   // Resolve options per-row here, where cellProps.dataItem is available
                   const resolvedOptions = isDynamic
                     ? col.getOptions(cellProps.dataItem)
@@ -2338,25 +2338,10 @@ const AdvanceKendoTable = ({
                 const resolvedOptions = isDynamic
                   ? col.getOptions(props.dataItem)
                   : col.options
-                // If conditional rules block editing for this row, add the
-                // non-editable-cell class so the display cell gets gray styling.
-                const blockedByCondition =
-                  col.conditionalEditable &&
-                  !isCellEditableByCondition(props.dataItem, col)
                 return createSelectToolTipRenderer(
                   resolvedOptions,
                   toolTipRenderer,
-                )({
-                  ...props,
-                  displayMode: col.displayMode || 'label',
-                  tdProps: blockedByCondition
-                    ? {
-                        ...props.tdProps,
-                        className:
-                          `${props.tdProps?.className || ''} non-editable-cell`.trim(),
-                      }
-                    : props.tdProps,
-                })
+                )({ ...props, displayMode: col.displayMode || 'label' })
               },
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
@@ -2816,9 +2801,7 @@ const AdvanceKendoTable = ({
     // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
       typeof value === 'boolean'
-        ? value
-          ? 'Yes'
-          : 'No'
+        ? (value ? 'Yes' : 'No')
         : convertFromScientificNotation(value) ?? value
 
     const cellContent =
@@ -2828,7 +2811,7 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}.trim()`}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
@@ -3289,6 +3272,12 @@ const AdvanceKendoTable = ({
         openSaveDialogeBox={openSaveDialogeBox}
         closeSaveDialogeBox={closeSaveDialogeBox}
         saveConfirmation={saveConfirmation}
+      />
+      {/* Calculate confirmation */}
+      <CalculateConfirmationDialog
+        openCalculateDialogeBox={openCalculateDialogeBox}
+        closeCalculateDialogBox={closeCalculateDialogBox}
+        handleCalculateConfirmation={handleCalculateConfirmation}
       />
       {/* Delete Selected Dialog */}
       <DeleteSelectedDialog

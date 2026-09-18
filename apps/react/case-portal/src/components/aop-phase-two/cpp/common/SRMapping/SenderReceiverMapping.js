@@ -9,11 +9,9 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import { useDebounce } from 'hooks/useDebounce'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const SR_MAPPING_ROLE = 'sr_mapping'
-const SR_MAPPING_EDIT_ROLE = 'sr_mapping_edit'
 
 // Mandatory fields that must be filled for each row
 const REQUIRED_FIELDS = [
@@ -188,12 +186,6 @@ const SenderReceiverMapping = () => {
     [keycloak?.realmAccess?.roles],
   )
 
-  // sr_mapping_edit role: can update cost centers (and remarks) on existing rows
-  const isSRMappingEditRole = useMemo(
-    () => keycloak?.realmAccess?.roles?.includes(SR_MAPPING_EDIT_ROLE) || false,
-    [keycloak?.realmAccess?.roles],
-  )
-
   const PLANT_ID = plantObject?.id
   const lowerSiteName = siteObject?.name?.toLowerCase()
   const AOP_YEAR = year?.selectedYear
@@ -311,10 +303,7 @@ const SenderReceiverMapping = () => {
         remarks: item?.remarks || '',
         id: item?.id || index + 1,
         apiId: item?.id,
-        // Existing rows are only editable by sr_mapping_edit role.
-        // sr_mapping-only users cannot edit any cell on existing rows
-        // (they can still add new rows and delete via the ActionCell).
-        isEditable: isSRMappingEditRole,
+        isEditable: false,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -325,7 +314,7 @@ const SenderReceiverMapping = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, isSRMappingEditRole])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
   useDebounce(
     () => {
@@ -614,7 +603,6 @@ const SenderReceiverMapping = () => {
         widthT: 200,
         minWidth: 200,
         editable: isSRMappingRole,
-        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
         type: 'select',
         searchable: true,
         displayMode: 'label',
@@ -629,7 +617,7 @@ const SenderReceiverMapping = () => {
         dynamicOptions: true,
         displayMode: 'label',
         getOptions: getFilteredCostCenters,
-        editable: isSRMappingRole || isSRMappingEditRole,
+        editable: isSRMappingRole,
       },
       {
         field: 'senderCostCenterCode',
@@ -649,7 +637,6 @@ const SenderReceiverMapping = () => {
         displayMode: 'label',
         getOptions: getFilteredPlants,
         editable: isSRMappingRole,
-        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
       },
       {
         field: 'senderPlantCode',
@@ -669,7 +656,6 @@ const SenderReceiverMapping = () => {
         displayMode: 'label',
         getOptions: getFilteredSenderUtilities,
         editable: isSRMappingRole,
-        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
       },
       {
         field: 'senderUtilityCode',
@@ -692,7 +678,7 @@ const SenderReceiverMapping = () => {
         title: 'Receiver Cost Center',
         widthT: 180,
         minWidth: 180,
-        editable: isSRMappingRole || isSRMappingEditRole,
+        editable: isSRMappingRole,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
@@ -716,7 +702,6 @@ const SenderReceiverMapping = () => {
         displayMode: 'label',
         getOptions: getFilteredPlants,
         editable: isSRMappingRole,
-        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
       },
       {
         field: 'receiverPlantCode',
@@ -736,7 +721,6 @@ const SenderReceiverMapping = () => {
         displayMode: 'label',
         getOptions: getFilteredReceiverUtilities,
         editable: isSRMappingRole,
-        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
         hidden: false,
       },
       {
@@ -762,7 +746,7 @@ const SenderReceiverMapping = () => {
         widthT: 200,
         minWidth: 200,
         type: 'textarea',
-        editable: isSRMappingRole || isSRMappingEditRole,
+        editable: isSRMappingRole,
       },
       {
         field: 'customActions',
@@ -778,7 +762,6 @@ const SenderReceiverMapping = () => {
     ],
     [
       isSRMappingRole,
-      isSRMappingEditRole,
       cppPlantList,
       getFilteredCostCenters,
       getFilteredPlants,
@@ -836,22 +819,22 @@ const SenderReceiverMapping = () => {
   const permissions = useMemo(
     () => ({
       showAction: true,
-      addButton: isSRMappingRole,
+      addButton: true,
       deleteButton: false,
       editButton: true,
       saveBtn: true,
       allAction: true,
-      disableActionButtons: !(isSRMappingRole || isSRMappingEditRole),
+      disableActionButtons: !isSRMappingRole,
       downloadExcelBtnFromUI: false,
       showExport: true,
-      ExcelName: generateExcelName(dataGridStore, 'Sender_Receiver_Mapping'),
+      ExcelName: 'Sender Receiver Mapping',
       showImport: false,
       showTitleNameBusiness: true,
       showTitle: true,
       titleName:
         screenTitle?.title || 'Sender Receiver Mapping (Utility for Utility)',
     }),
-    [isSRMappingRole, isSRMappingEditRole, screenTitle, dataGridStore],
+    [isSRMappingRole, screenTitle],
   )
 
   // ── Save / Export / Import ───────────────────────────────────────────────
@@ -875,55 +858,27 @@ const SenderReceiverMapping = () => {
       return
     }
 
-    // Split into new rows (full multi-table save) and existing rows
-    // (lightweight cost-center-only update).
-    const newRows = dataToSave.filter((row) => row.isNew)
-    const existingRows = dataToSave.filter((row) => !row.isNew)
-
-    // ── Validate new rows: all REQUIRED_FIELDS must be filled ──────────────
-    if (newRows.length > 0) {
-      const missingNew = newRows.find((row) =>
-        REQUIRED_FIELDS.some(
-          (field) => !row[field] || row[field].toString().trim() === '',
-        ),
+    // Mandatory fields validation: every required field must be filled
+    const missingFields = dataToSave.find((row) =>
+      REQUIRED_FIELDS.some(
+        (field) => !row[field] || row[field].toString().trim() === '',
+      ),
+    )
+    if (missingFields) {
+      const emptyField = REQUIRED_FIELDS.find(
+        (field) =>
+          !missingFields[field] ||
+          missingFields[field].toString().trim() === '',
       )
-      if (missingNew) {
-        const emptyField = REQUIRED_FIELDS.find(
-          (field) =>
-            !missingNew[field] || missingNew[field].toString().trim() === '',
-        )
-        const rowIndex = rows.findIndex((r) => r.id === missingNew.id)
-        const rowLabel = `Row ${rowIndex >= 0 ? rowIndex + 1 : missingNew.id}`
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `${FIELD_LABELS[emptyField]} is required for: ${rowLabel}`,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
-    }
-
-    // ── Validate existing rows: at least one cost-center field must be filled
-    if (existingRows.length > 0) {
-      const missingBoth = existingRows.find(
-        (row) =>
-          (!row.senderCostCenterName ||
-            row.senderCostCenterName.toString().trim() === '') &&
-          (!row.receiverCostCenterName ||
-            row.receiverCostCenterName.toString().trim() === ''),
-      )
-      if (missingBoth) {
-        const rowIndex = rows.findIndex((r) => r.id === missingBoth.id)
-        const rowLabel = `Row ${rowIndex >= 0 ? rowIndex + 1 : missingBoth.id}`
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `At least one of Sender or Receiver Cost Center is required for: ${rowLabel}`,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
+      const rowIndex = rows.findIndex((r) => r.id === missingFields.id)
+      const rowLabel = `Row ${rowIndex >= 0 ? rowIndex + 1 : missingFields.id}`
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `${FIELD_LABELS[emptyField]} is required for: ${rowLabel}`,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
     }
 
     // Remarks validation: if any row data was updated, remarks must be filled
@@ -941,89 +896,38 @@ const SenderReceiverMapping = () => {
       return
     }
 
+    const payload = dataToSave.map((item) => {
+      const { inEdit, isNew, saveStatus, errDescription, ...rest } = item
+      return {
+        ...rest,
+        aopYear: AOP_YEAR,
+        ...(isNew ? { id: null } : {}),
+      }
+    })
+
     try {
-      const messages = []
-      let allSuccess = true
+      const response = await UtilityPlantApiServiceV2.updateSRMappingsByPlant(
+        keycloak,
+        payload,
+        AOP_YEAR,
+      )
 
-      // ── Save new rows via the full multi-table API ──────────────────────
-      if (newRows.length > 0) {
-        const newPayload = newRows.map((item) => {
-          const {
-            inEdit,
-            isNew,
-            saveStatus,
-            errDescription,
-            isEditable,
-            apiId,
-            ...rest
-          } = item
-          return {
-            ...rest,
-            aopYear: AOP_YEAR,
-            id: null,
-          }
-        })
-
-        const newResponse =
-          await UtilityPlantApiServiceV2.updateSRMappingsByPlant(
-            keycloak,
-            newPayload,
-            AOP_YEAR,
-          )
-
-        if (newResponse?.code === 200) {
-          messages.push(
-            newResponse?.message || `${newRows.length} new record(s) created.`,
-          )
-        } else {
-          allSuccess = false
-          messages.push(newResponse?.message || 'Failed to save new records.')
-        }
-      }
-
-      // ── Update existing rows via the lightweight cost-center API ────────
-      if (existingRows.length > 0) {
-        const ccPayload = existingRows.map((item) => {
-          const payload = {
-            id: item.apiId || item.id,
-            remarks: item.remarks,
-          }
-          if (item.senderCostCenterId) {
-            payload.senderCostCenterId = item.senderCostCenterId
-          }
-          if (item.receiverCostCenterId) {
-            payload.receiverCostCenterId = item.receiverCostCenterId
-          }
-          return payload
-        })
-
-        const ccResponse =
-          await UtilityPlantApiServiceV2.updateSRMappingCostCenters(
-            keycloak,
-            ccPayload,
-          )
-
-        if (ccResponse?.code === 200) {
-          messages.push(
-            ccResponse?.message ||
-              `${existingRows.length} cost-center record(s) updated.`,
-          )
-        } else {
-          allSuccess = false
-          messages.push(ccResponse?.message || 'Failed to update cost centers.')
-        }
-      }
+      const isSuccess = response?.code === 200
 
       setSnackbarOpen(true)
       setSnackbarData({
-        message: messages.join(' '),
-        severity: allSuccess ? 'success' : 'error',
+        message: isSuccess
+          ? response?.message || 'Successfully saved changes!'
+          : response?.message || 'Failed to save changes. Please try again.',
+        severity: isSuccess ? 'success' : 'error',
       })
 
-      if (allSuccess) {
+      if (isSuccess) {
         setModifiedCells({})
         await fetchData()
       }
+
+      return response
     } catch (error) {
       console.error('Error saving SR mapping:', error)
       setSnackbarOpen(true)

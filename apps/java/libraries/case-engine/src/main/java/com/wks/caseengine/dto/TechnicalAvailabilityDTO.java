@@ -18,22 +18,23 @@ public class TechnicalAvailabilityDTO {
 	
 	
     private String id;
-    
+
+    private String plantId;
+
     private String plant;
 
- 
     private Double fyPrevAOP;
     private Double fyPrevActual;
     private Double fyCurrAOP;
 
     private String remarks;
-    
-   
+
     private String siteId;
-    
+
     private String aopYear;
 
-    
     private String updatedBy;
     private Date updatedDate;
+
+    private Boolean isEditable;
 }

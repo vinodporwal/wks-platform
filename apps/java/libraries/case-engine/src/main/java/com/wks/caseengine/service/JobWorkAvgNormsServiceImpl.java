@@ -216,11 +216,12 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
             whiteEditableStyle.setBorderLeft(BorderStyle.THIN);
             whiteEditableStyle.setBorderRight(BorderStyle.THIN);
 
-            // Headers without UOM and Remarks
+            // Headers with UOM
             List<String> headerNames = new ArrayList<>(Arrays.asList(
                 "Unit",
                 "SAP MAT Code",
                 "Cat-Chem Material Description",
+                "UOM",
                 "JW Avg Norms",
                 "Material Group",
                 "Group Name"
@@ -266,37 +267,42 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
                     c2.setCellValue(dto.getMaterialDisplayName() != null ? dto.getMaterialDisplayName() : (dto.getMaterialName() != null ? dto.getMaterialName() : ""));
                     c2.setCellStyle(greyLockedStyle);
 
-                    // 3: JW Avg Norms (White & Editable)
+                    // 3: UOM (Grey & Locked)
                     Cell c3 = row.createCell(3);
-                    if (dto.getValue() != null) {
-                        c3.setCellValue(dto.getValue());
-                    } else {
-                        c3.setCellValue("");
-                    }
-                    c3.setCellStyle(whiteEditableStyle);
+                    c3.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+                    c3.setCellStyle(greyLockedStyle);
 
-                    // 4: Material Group (Grey & Locked)
-                    boolean hasGroup = dto.getGroupFkId() != null || (dto.getGroupDisplayName() != null && !dto.getGroupDisplayName().trim().isEmpty());
+                    // 4: JW Avg Norms (White & Editable)
                     Cell c4 = row.createCell(4);
-                    c4.setCellValue(hasGroup ? "YES" : "NO");
-                    c4.setCellStyle(greyLockedStyle);
+                    if (dto.getValue() != null) {
+                        c4.setCellValue(dto.getValue());
+                    } else {
+                        c4.setCellValue("");
+                    }
+                    c4.setCellStyle(whiteEditableStyle);
 
-                    // 5: Group Name (Grey & Locked)
+                    // 5: Material Group (Grey & Locked)
+                    boolean hasGroup = dto.getGroupFkId() != null || (dto.getGroupDisplayName() != null && !dto.getGroupDisplayName().trim().isEmpty());
                     Cell c5 = row.createCell(5);
-                    c5.setCellValue(dto.getGroupDisplayName() != null ? dto.getGroupDisplayName() : "");
+                    c5.setCellValue(hasGroup ? "YES" : "NO");
                     c5.setCellStyle(greyLockedStyle);
+
+                    // 6: Group Name (Grey & Locked)
+                    Cell c6 = row.createCell(6);
+                    c6.setCellValue(dto.getGroupDisplayName() != null ? dto.getGroupDisplayName() : "");
+                    c6.setCellStyle(greyLockedStyle);
 
                     // If after save, add Status and Error Description
                     if (isAfterSave) {
-                        Cell c6 = row.createCell(6);
-                        String statusStr = dto.getSaveStatus() != null ? dto.getSaveStatus() : (dto.getStatus() != null ? dto.getStatus() : "");
-                        c6.setCellValue(statusStr);
-                        c6.setCellStyle(greyLockedStyle);
-
                         Cell c7 = row.createCell(7);
-                        String errStr = dto.getErrDescription() != null ? dto.getErrDescription() : (dto.getErrorDescription() != null ? dto.getErrorDescription() : "");
-                        c7.setCellValue(errStr);
+                        String statusStr = dto.getSaveStatus() != null ? dto.getSaveStatus() : (dto.getStatus() != null ? dto.getStatus() : "");
+                        c7.setCellValue(statusStr);
                         c7.setCellStyle(greyLockedStyle);
+
+                        Cell c8 = row.createCell(8);
+                        String errStr = dto.getErrDescription() != null ? dto.getErrDescription() : (dto.getErrorDescription() != null ? dto.getErrorDescription() : "");
+                        c8.setCellValue(errStr);
+                        c8.setCellStyle(greyLockedStyle);
                     }
                 }
             }
@@ -354,24 +360,61 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
             List<JobWorkAvgNormsDTO> toSaveList = new ArrayList<>();
             List<JobWorkAvgNormsDTO> failedList = new ArrayList<>();
 
+            // Identify column indices dynamically from header row (Row 0)
+            int unitCol = 0;
+            int sapMatCol = 1;
+            int descCol = 2;
+            int uomCol = 3;
+            int valCol = 4;
+            int matGroupCol = 5;
+            int groupNameCol = 6;
+
+            Row headerRow = sheet.getRow(0);
+            if (headerRow != null) {
+                int totalCols = headerRow.getLastCellNum();
+                for (int c = 0; c < totalCols; c++) {
+                    String h = getCellValueAsString(headerRow.getCell(c));
+                    if (h != null) {
+                        String hClean = h.trim().toLowerCase();
+                        if (hClean.contains("sap") && hClean.contains("mat")) {
+                            sapMatCol = c;
+                        } else if (hClean.contains("cat-chem") || hClean.contains("description")) {
+                            descCol = c;
+                        } else if (hClean.equals("uom")) {
+                            uomCol = c;
+                        } else if (hClean.contains("jw") || (hClean.contains("avg") && hClean.contains("norm"))) {
+                            valCol = c;
+                        } else if (hClean.contains("material group")) {
+                            matGroupCol = c;
+                        } else if (hClean.contains("group name")) {
+                            groupNameCol = c;
+                        } else if (hClean.equals("unit")) {
+                            unitCol = c;
+                        }
+                    }
+                }
+            }
+
             int lastRow = sheet.getLastRowNum();
             for (int r = 1; r <= lastRow; r++) {
                 Row row = sheet.getRow(r);
                 if (row == null) continue;
 
-                // Column 0: Unit
-                String plantName = getCellValueAsString(row.getCell(0));
-                // Column 1: SAP MAT Code
-                String sapMatCode = getCellValueAsString(row.getCell(1));
-                // Column 2: Material Description
-                String matDescription = getCellValueAsString(row.getCell(2));
-                // Column 4: Material Group
-                String materialGroup = getCellValueAsString(row.getCell(4));
-                // Column 5: Group Name
-                String groupName = getCellValueAsString(row.getCell(5));
+                // Column: Unit
+                String plantName = getCellValueAsString(row.getCell(unitCol));
+                // Column: SAP MAT Code
+                String sapMatCode = getCellValueAsString(row.getCell(sapMatCol));
+                // Column: Material Description
+                String matDescription = getCellValueAsString(row.getCell(descCol));
+                // Column: UOM
+                String uom = uomCol >= 0 ? getCellValueAsString(row.getCell(uomCol)) : null;
+                // Column: Material Group
+                String materialGroup = matGroupCol >= 0 ? getCellValueAsString(row.getCell(matGroupCol)) : null;
+                // Column: Group Name
+                String groupName = groupNameCol >= 0 ? getCellValueAsString(row.getCell(groupNameCol)) : null;
 
                 // Check if the entire row is blank
-                Cell valCell = row.getCell(3);
+                Cell valCell = row.getCell(valCol);
                 String valStr = getCellValueAsString(valCell);
                 if ((sapMatCode == null || sapMatCode.trim().isEmpty())
                         && (matDescription == null || matDescription.trim().isEmpty())
@@ -383,6 +426,7 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
                 dto.setPlantName(plantName);
                 dto.setSapMatCode(sapMatCode);
                 dto.setMaterialDisplayName(matDescription);
+                dto.setUom(uom);
                 dto.setGroupDisplayName(groupName);
                 dto.setAopYear(aopYear);
 
@@ -406,6 +450,9 @@ public class JobWorkAvgNormsServiceImpl implements JobWorkAvgNormsService {
                 dto.setGroupFkId(matchDto.getGroupFkId());
                 dto.setGroupDisplayName(matchDto.getGroupDisplayName());
                 dto.setMaterialDisplayName(matchDto.getMaterialDisplayName());
+                if (dto.getUom() == null || dto.getUom().trim().isEmpty()) {
+                    dto.setUom(matchDto.getUom());
+                }
                 dto.setRemarks(matchDto.getRemarks());
 
                 // Number Validation on Column 3: JW Avg Norms

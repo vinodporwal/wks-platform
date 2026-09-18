@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const generateMonthHours = (aopYear) => {
   if (!aopYear) return {}
@@ -35,7 +34,7 @@ const HoursGrid = ({ onHoursRowsChange }) => {
   const { year } = dataGridStore
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = customValueFormatterPhaseTwo(2)
+  const valueFormat = ValueFormatterProduction()
 
   const [hoursRows, setHoursRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})

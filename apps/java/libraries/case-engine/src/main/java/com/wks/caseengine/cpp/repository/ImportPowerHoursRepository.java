@@ -15,8 +15,6 @@ import com.wks.caseengine.entity.CPPImportPowerOperationalHours;
 public interface ImportPowerHoursRepository extends JpaRepository<CPPImportPowerOperationalHours, UUID> {
     
     List<CPPImportPowerOperationalHours> findByImportPowerSourceFkId(UUID importPowerSourceFkId);
-
-    void deleteByImportPowerSourceFkId(UUID importPowerSourceFkId);
     
     Optional<CPPImportPowerOperationalHours> findByImportPowerSourceFkIdAndFinancialYear(UUID importPowerSourceFkId, String financialYear);
     

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
@@ -12,9 +12,6 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-
-// Only users with this role can edit the Value Type column.
-const CPP_MASTER_ROLE = 'cpp-master'
 
 // Account for which the backend exposes "Amount" as "Percentage" (0-100 range).
 // The DB stores "Amount"; the backend converts in GET/POST. The UI only needs to
@@ -44,12 +41,6 @@ const Prices = () => {
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Prices')
-
-  // Only cpp-master users may edit the Value Type column.
-  const isCppMasterRole = useMemo(
-    () => keycloak?.realmAccess?.roles?.includes(CPP_MASTER_ROLE) || false,
-    [keycloak?.realmAccess?.roles],
-  )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
@@ -150,130 +141,129 @@ const Prices = () => {
   const [customModifiedCells, setCustomModifiedCells] = useState({})
 
   // ── Column definitions (mirrors FixedNorms / existing Prices skeleton) ──
-  const columns = useMemo(
-    () => [
-      {
-        field: 'generatingPlantName',
-        title: 'Generating Plant',
-        widthT: 180,
-        type: 'text',
-        editable: false,
-        locked: true,
-        minWidth: 180,
-      },
-      {
-        field: 'utilityName',
-        title: 'Utility',
-        widthT: 120,
-        type: 'text',
-        editable: false,
-        locked: false,
-        minWidth: 120,
-      },
-      {
-        field: 'utilityId',
-        title: 'Utility ID',
-        widthT: 120,
-        type: 'text',
-        editable: false,
-        locked: false,
-        minWidth: 120,
-      },
-      {
-        field: 'uom',
-        title: 'Generation UOM',
-        widthT: 180,
-        type: 'text',
-        editable: false,
-        minWidth: 180,
-      },
-      {
-        field: 'accountName',
-        title: 'Account',
-        widthT: 150,
-        type: 'text',
-        editable: false,
-        minWidth: 150,
-      },
-      {
-        field: 'materialName',
-        title: 'Material',
-        widthT: 130,
-        type: 'text',
-        editable: false,
-        locked: true,
-        minWidth: 130,
-      },
-      {
-        field: 'materialId',
-        title: 'SAP Code',
-        widthT: 130,
-        type: 'text',
-        editable: false,
-        minWidth: 130,
-      },
-      {
-        field: 'issuingPlantName',
-        title: 'Issuing Plant',
-        widthT: 150,
-        type: 'text',
-        editable: false,
-        hidden: true,
-        minWidth: 150,
-      },
-      {
-        field: 'issuingUom',
-        title: 'Issuing UOM',
-        widthT: 150,
-        type: 'text',
-        editable: false,
-        minWidth: 150,
-        locked: true,
-      },
-      {
-        field: 'valueType',
-        title: 'Value Type',
-        widthT: 150,
-        type: 'select',
-        editable: isCppMasterRole,
-        minWidth: 150,
-        dynamicOptions: true,
-        getOptions: getValueTypeOptions,
-      },
+  const baseColumns = [
+    {
+      field: 'generatingPlantName',
+      title: 'Generating Plant',
+      widthT: 180,
+      type: 'text',
+      editable: false,
+      locked: true,
+      minWidth: 180,
+    },
+    {
+      field: 'utilityName',
+      title: 'Utility',
+      widthT: 120,
+      type: 'text',
+      editable: false,
+      locked: false,
+      minWidth: 120,
+    },
+    {
+      field: 'utilityId',
+      title: 'Utility ID',
+      widthT: 120,
+      type: 'text',
+      editable: false,
+      locked: false,
+      minWidth: 120,
+    },
+    {
+      field: 'uom',
+      title: 'Generation UOM',
+      widthT: 180,
+      type: 'text',
+      editable: false,
+      minWidth: 180,
+    },
+    {
+      field: 'accountName',
+      title: 'Account',
+      widthT: 150,
+      type: 'text',
+      editable: false,
+      minWidth: 150,
+    },
+    {
+      field: 'materialName',
+      title: 'Material',
+      widthT: 130,
+      type: 'text',
+      editable: false,
+      locked: true,
+      minWidth: 130,
+    },
+    {
+      field: 'materialId',
+      title: 'SAP Code',
+      widthT: 130,
+      type: 'text',
+      editable: false,
+      minWidth: 130,
+    },
+    {
+      field: 'issuingPlantName',
+      title: 'Issuing Plant',
+      widthT: 150,
+      type: 'text',
+      editable: false,
+      hidden: true,
+      minWidth: 150,
+    },
+    {
+      field: 'issuingUom',
+      title: 'Issuing UOM',
+      widthT: 150,
+      type: 'text',
+      editable: false,
+      minWidth: 150,
+      locked: true,
+    },
+    {
+      field: 'valueType',
+      title: 'Value Type',
+      widthT: 150,
+      type: 'select',
+      editable: true,
+      minWidth: 150,
+      locked: true,
+      dynamicOptions: true,
+      getOptions: getValueTypeOptions,
+    },
 
-      // Monthly norms ─ Apr → Mar (editable only when valueType is Price or Amount)
-      ...MONTH_COLUMNS,
-      // {
-      //   field: 'total',
-      //   title: 'Total',
-      //   widthT: 150,
-      //   type: 'text',
-      //   editable: false,
-      //   format: customFormat,
-      // },
-      {
-        field: 'priceSource',
-        title: 'Price Source',
-        widthT: 250,
-        type: 'long-text',
-        editable: true,
-        minWidth: 250,
-        conditionalEditable: {
-          dependsOn: 'valueType',
-          editableValues: ['Price', 'Amount', 'Percentage'],
-        },
+    // Monthly norms ─ Apr → Mar (editable only when valueType is Price or Amount)
+    ...MONTH_COLUMNS,
+    // {
+    //   field: 'total',
+    //   title: 'Total',
+    //   widthT: 150,
+    //   type: 'text',
+    //   editable: false,
+    //   format: customFormat,
+    // },
+    {
+      field: 'priceSource',
+      title: 'Price Source',
+      widthT: 250,
+      type: 'long-text',
+      editable: true,
+      minWidth: 250,
+      conditionalEditable: {
+        dependsOn: 'valueType',
+        editableValues: ['Price', 'Amount', 'Percentage'],
       },
-      {
-        field: 'remarks',
-        title: 'Remarks',
-        widthT: 250,
-        type: 'textarea',
-        editable: true,
-        minWidth: 250,
-      },
-    ],
-    [isCppMasterRole, headerMap, customFormat],
-  )
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 250,
+      type: 'textarea',
+      editable: true,
+      minWidth: 250,
+    },
+  ]
+  const columns = baseColumns
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchPricesData = async () => {

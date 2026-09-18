@@ -4462,14 +4462,16 @@ const KendoDataTables = ({
                             edit: {
                               text:
                                 col?.field === 'actuals' ||
-                                col?.field === 'prevActuals'
+                                col?.field === 'prevActuals' ||
+                                col?.field === 'prevActual'
                                   ? StableCurrentPlanEditCellWithUOMValidation
                                   : NoSpinnerNumericEditorWithUOMValidation,
                             },
                             data: (props) => {
                               const isNotEditable =
                                 (col?.field === 'actuals' ||
-                                  col?.field === 'prevActuals') &&
+                                  col?.field === 'prevActuals' ||
+                                  col?.field === 'prevActual') &&
                                 !props?.dataItem?.currentPlanEditable
 
                               const mergedTdProps = isNotEditable
@@ -4904,6 +4906,7 @@ const KendoDataTables = ({
 
                     if (
                       col?.field === 'prevActuals' ||
+                      col?.field === 'prevActual' ||
                       col?.field === 'actuals'
                     ) {
                       return (
