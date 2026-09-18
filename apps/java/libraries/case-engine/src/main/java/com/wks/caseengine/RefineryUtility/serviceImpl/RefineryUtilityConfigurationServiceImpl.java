@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -112,91 +112,122 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 		}
 	}
     public byte[] exportMonthWiseConstants(String year, String plantId, boolean isAfterSave, List<MonthWiseConstantsDTO> dtoList) {
-	    try {   
-	        if (!isAfterSave) {
-	            AOPMessageVM aopMessageVM = getMonthWiseConstants(year, plantId);
+        try {   
+            if (!isAfterSave) {
+                AOPMessageVM aopMessageVM = getMonthWiseConstants(year, plantId);
 
-	            if (aopMessageVM != null && aopMessageVM.getData() != null) {
-	                @SuppressWarnings("unchecked")
-	                List<MonthWiseConstantsDTO> fetchedData = (List<MonthWiseConstantsDTO>) aopMessageVM.getData();
-	                dtoList = fetchedData;
-	            }
-	        }
+                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+                    @SuppressWarnings("unchecked")
+                    List<MonthWiseConstantsDTO> fetchedData = (List<MonthWiseConstantsDTO>) aopMessageVM.getData();
+                    dtoList = fetchedData;
+                }
+            }
 
-	        if (dtoList == null) {
-	            dtoList = new ArrayList<>();
-	        }
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
 
-	        try (Workbook workbook = new XSSFWorkbook();
-	             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            try (Workbook workbook = new XSSFWorkbook();
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-	            Sheet sheet = workbook.createSheet("Sheet1");
-	            int currentRow = 0;
+                Sheet sheet = workbook.createSheet("Sheet1");
+                int currentRow = 0;
 
-	            List<String> innerHeaders = new ArrayList<>();
-	            innerHeaders.add("Type");
-	            innerHeaders.add("Particulars");
-	            innerHeaders.add("UOM");
-	            innerHeaders.add("Value");
-	            innerHeaders.add("Remark");
-	            innerHeaders.add("NormParameterId");
+                List<String> innerHeaders = new ArrayList<>();
+                innerHeaders.add("Type");
+                innerHeaders.add("Particulars");
+                innerHeaders.add("UOM");
+                innerHeaders.add("Value");
+                innerHeaders.add("Remark");
+                innerHeaders.add("NormParameterId");
 
-	            if (isAfterSave) {
-	                innerHeaders.add("Status");
-	                innerHeaders.add("Error Description");
-	            }
+                if (isAfterSave) {
+                    innerHeaders.add("Status");
+                    innerHeaders.add("Error Description");
+                }
 
-	            Row headerRow = sheet.createRow(currentRow++);
-	            for (int col = 0; col < innerHeaders.size(); col++) {
-	                Cell cell = headerRow.createCell(col);
-	                cell.setCellValue(innerHeaders.get(col));
-	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-	            }
+                // Create Header Row with Bold Bordered Style
+                Row headerRow = sheet.createRow(currentRow++);
+                for (int col = 0; col < innerHeaders.size(); col++) {
+                    Cell cell = headerRow.createCell(col);
+                    cell.setCellValue(innerHeaders.get(col));
+                    cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                }
 
-	            for (MonthWiseConstantsDTO dto : dtoList) {
-	                Row row = sheet.createRow(currentRow++);
-	                List<Object> rowData = new ArrayList<>();
-	                rowData.add(dto.getNormTypeName());
-	                rowData.add(dto.getDisplayName());
-	                rowData.add(dto.getUOM());
-	                rowData.add(dto.getApr());
-	                rowData.add(dto.getRemarks());
-	                rowData.add(dto.getNormParameterFKId());
+                // Cell Styles matched from exportBusinessDemand
+                CellStyle unlockedBorderedStyle = workbook.createCellStyle();
+                unlockedBorderedStyle.setLocked(false);
+                unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+                unlockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+                unlockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+                unlockedBorderedStyle.setBorderRight(BorderStyle.THIN);
 
-	                if (isAfterSave) {
-	                    rowData.add(dto.getSaveStatus());
-	                    rowData.add(dto.getErrDescription());
-	                }
+                CellStyle lockedBorderedStyle = workbook.createCellStyle();
+                lockedBorderedStyle.setLocked(true);
+                lockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+                lockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+                lockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+                lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
 
-	                for (int col = 0; col < rowData.size(); col++) {
-	                    Cell cell = row.createCell(col);
-	                    Object value = rowData.get(col);
+                for (MonthWiseConstantsDTO dto : dtoList) {
+                    Row row = sheet.createRow(currentRow++);
+                    List<Object> rowData = new ArrayList<>();
+                    rowData.add(dto.getNormTypeName());
+                    rowData.add(dto.getDisplayName());
+                    rowData.add(dto.getUOM());
+                    rowData.add(dto.getApr());
+                    rowData.add(dto.getRemarks());
+                    rowData.add(dto.getNormParameterFKId());
 
-	                    if (value instanceof Number) {
-	                        cell.setCellValue(((Number) value).doubleValue());
-	                    } else if (value instanceof Boolean) {
-	                        cell.setCellValue((Boolean) value);
-	                    } else if (value != null) {
-	                        cell.setCellValue(value.toString());
-	                    } else {
-	                        cell.setCellValue("");
-	                    }   
-	                }
-	            }
+                    if (isAfterSave) {
+                        rowData.add(dto.getSaveStatus());
+                        rowData.add(dto.getErrDescription());
+                    }
 
-	            // Hide Id column (column index 5)
-	            sheet.setColumnHidden(5, true);
+                    for (int col = 0; col < rowData.size(); col++) {
+                        Cell cell = row.createCell(col);
+                        Object value = rowData.get(col);
 
-	            workbook.write(outputStream);
-	            return outputStream.toByteArray();
-	        }
+                        if (value instanceof Number) {
+                            cell.setCellValue(((Number) value).doubleValue());
+                        } else if (value instanceof Boolean) {
+                            cell.setCellValue((Boolean) value);
+                        } else if (value != null) {
+                            cell.setCellValue(value.toString());
+                        } else {
+                            cell.setCellValue("");
+                        }   
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	    return new byte[0];
-	}
+                        // Column 3 ("Value") and Column 4 ("Remark") are editable; all others locked
+                        if (col == 3 || col == 4) {
+                            cell.setCellStyle(unlockedBorderedStyle);
+                        } else {
+                            cell.setCellStyle(lockedBorderedStyle);
+                        }
+                    }
+                }
 
+                // Protect the sheet so locked cells cannot be modified
+                sheet.protectSheet("");
+
+                // Auto-size all visible data columns (0–4)
+                for (int col = 0; col <= 4; col++) {
+                    sheet.autoSizeColumn(col);
+                }
+
+                // Hide NormParameterId column (column index 5)
+                sheet.setColumnHidden(5, true);
+
+                workbook.write(outputStream);
+                return outputStream.toByteArray();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new byte[0];
+    }
+    
     public AOPMessageVM importMonthWiseConstants(String year, UUID plantId, MultipartFile file) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
