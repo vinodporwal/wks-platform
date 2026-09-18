@@ -81,6 +81,15 @@ const CatChemConsumption = () => {
   const colDefs = useMemo(() => {
     return [
       {
+        field: 'ParticularG',
+        title: 'Particulars',
+        editable: false,
+        width: 300,
+        minWidth: 300,
+        locked: true,
+        hidden: true,
+      },
+      {
         field: 'productName',
         title: 'Particulars',
         editable: false,
@@ -115,7 +124,7 @@ const CatChemConsumption = () => {
         title: 'Remark',
         editable: true,
         width: 100,
-        minWidth: 100,
+        minWidth: 200,
       },
     ]
   }, [])
@@ -147,7 +156,6 @@ const CatChemConsumption = () => {
       const payload = modifiedData.map((row) => ({
         normParameterFKId: row.normParameterFKId,
         apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
-        may: row.may !== undefined && row.may !== '' ? Number(row.may) : null,
         remarks: row.remarks || '',
         auditYear: row.auditYear || AOP_YEAR,
         UOM: row.UOM || '',

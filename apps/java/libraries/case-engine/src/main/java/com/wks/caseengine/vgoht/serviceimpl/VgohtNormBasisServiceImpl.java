@@ -1745,7 +1745,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
-			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"UtilityConsumption";
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetUtilityConsumption";
 		
 			List<Object[]> resultList = new ArrayList<>();
 		
@@ -1783,7 +1783,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 	public List<Object[]> getUtilityConsumptionFromSP(String aopYear, String plantId, String procedureName) {
 		try {
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
@@ -1825,7 +1825,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
-			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"CatChem";
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetCatChemConsumption";
 		
 			List<Object[]> resultList = new ArrayList<>();
 		
@@ -1863,7 +1863,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 	public List<Object[]> geCatChemDataFromSP(String aopYear, String plantId, String procedureName) {
 		try {
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);

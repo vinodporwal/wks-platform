@@ -3194,6 +3194,7 @@ const AdvanceKendoTable = ({
                 size='small'
                 pageable={pagable && getPaginationConfig()}
                 onRowClick={handleRowClick}
+                lockGroups={true}
               >
                 {permissions?.deleteMultiple &&
                   renderMultipleSelectionCheckbox()}
