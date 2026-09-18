@@ -1745,7 +1745,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
-			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"UtilityConsumption";
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetUtilityConsumption";
 		
 			List<Object[]> resultList = new ArrayList<>();
 		
@@ -1825,7 +1825,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
-			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"CatChem";
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetCatChemConsumption";
 		
 			List<Object[]> resultList = new ArrayList<>();
 		
