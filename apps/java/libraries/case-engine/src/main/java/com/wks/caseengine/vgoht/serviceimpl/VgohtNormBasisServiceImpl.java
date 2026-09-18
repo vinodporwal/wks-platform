@@ -1,16 +1,13 @@
 package com.wks.caseengine.vgoht.serviceimpl;
 
-import com.wks.caseengine.dto.AOPConsumptionNormDTO;
-import com.wks.caseengine.dto.OtherCostsTransactionDto;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.HashSet;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1908,6 +1905,21 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 	            }
 
+	            // Cell Styles matching exportBusinessDemand / exportMonthWiseConstants
+	            CellStyle unlockedBorderedStyle = workbook.createCellStyle();
+	            unlockedBorderedStyle.setLocked(false);
+	            unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
+	            CellStyle lockedBorderedStyle = workbook.createCellStyle();
+	            lockedBorderedStyle.setLocked(true);
+	            lockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
 	            for (VgohtNormConfigurationDTO dto : dtoList) {
 	                Row row = sheet.createRow(currentRow++);
 	                List<Object> rowData = new ArrayList<>();
@@ -1936,10 +1948,24 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	                    } else {
 	                        cell.setCellValue("");
 	                    }   
+
+	                    if (col == 3 || col == 4) {
+	                        cell.setCellStyle(unlockedBorderedStyle);
+	                    } else {
+	                        cell.setCellStyle(lockedBorderedStyle);
+	                    }
 	                }
 	            }
 
-	            // Hide Id column (column index 5)
+	            // Protect sheet to enforce locked/unlocked boundaries
+	            sheet.protectSheet("");
+
+	            // Auto-size all visible data columns (0–4)
+	            for (int col = 0; col <= 4; col++) {
+	                sheet.autoSizeColumn(col);
+	            }
+
+	            // Hide NormParameterId column (column index 5)
 	            sheet.setColumnHidden(5, true);
 
 	            workbook.write(outputStream);
