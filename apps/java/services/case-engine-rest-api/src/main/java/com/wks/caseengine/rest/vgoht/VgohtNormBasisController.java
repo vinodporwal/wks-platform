@@ -298,4 +298,34 @@ public class VgohtNormBasisController {
 
         return vgohtNormBasisServiceImpl.importConfigurationDataWithTwoValues(year, plantFKId, file);
     }
+
+    // fetch summer winter as april and oct
+    @GetMapping(value="/utility-consumption")
+    public AOPMessageVM getUtilityConsumption(@RequestParam String year, @RequestParam String plantFKId) {
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.getUtilityConsumption(year, plantFKId);
+    }
+
+    @PostMapping(value = "/utility-consumption")
+    public AOPMessageVM saveUtilityConsumption(
+        @RequestParam String year,
+        @RequestParam UUID plantFKId,
+        @RequestBody List<VgohtNormConfigurationDTO> configurationDataList)  {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<VgohtNormConfigurationDTO> failedRecords = vgohtNormBasisServiceImpl.saveUtilityConsumption(year, plantFKId, configurationDataList);
+
+        if(failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "Utility consumption data saved successfully", null);
+        } else {
+            return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
+        }
+
+    }
 }
