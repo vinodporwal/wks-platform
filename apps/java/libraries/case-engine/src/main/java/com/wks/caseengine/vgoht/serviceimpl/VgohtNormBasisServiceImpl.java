@@ -7,16 +7,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-
-
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -1880,8 +1876,11 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 	}
 	
-	public byte[] exportCatChemData(String year, String plantId, boolean isAfterSave, List<VgohtNormConfigurationDTO> dtoList) {
+	public byte[] exportCatChemData(String year, String plantId, boolean isAfterSave, List<VgohtNormConfigurationDTO> dtoList, Boolean isSummerWinter) {
 	    try {   
+	        // Handle null flag safely
+	        boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
+
 	        if (!isAfterSave) {
 	            AOPMessageVM aopMessageVM = getCatChemData(year, plantId);
 
@@ -1903,12 +1902,19 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	            int currentRow = 0;
 
 	            List<String> innerHeaders = new ArrayList<>();
-	            innerHeaders.add("Type");
-	            innerHeaders.add("Particulars");
-	            innerHeaders.add("UOM");
-	            innerHeaders.add("Value");
-	            innerHeaders.add("Remark");
-	            innerHeaders.add("NormParameterId");
+	            innerHeaders.add("Type");         
+	            innerHeaders.add("Particulars");  
+	            innerHeaders.add("UOM");         
+	            
+	            if (summerWinterFlag) {
+	                innerHeaders.add("Summer");  
+	                innerHeaders.add("Winter");   
+	            } else {
+	                innerHeaders.add("Value");    
+	            }
+	            
+	            innerHeaders.add("Remark");           
+	            innerHeaders.add("NormParameterId");  
 
 	            if (isAfterSave) {
 	                innerHeaders.add("Status");
@@ -1937,13 +1943,24 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	            lockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
 	            lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
 
+	            // Determine column indexes dynamically based on flag
+	            int normParamIdIndex = summerWinterFlag ? 6 : 5;
+	            int lastVisibleColIndex = summerWinterFlag ? 5 : 4;
+
 	            for (VgohtNormConfigurationDTO dto : dtoList) {
 	                Row row = sheet.createRow(currentRow++);
 	                List<Object> rowData = new ArrayList<>();
 	                rowData.add(dto.getTypeDisplayName());
 	                rowData.add(dto.getProductDisplayName());
 	                rowData.add(dto.getUOM());
-	                rowData.add(dto.getApr());
+	                
+	                if (summerWinterFlag) {
+	                    rowData.add(dto.getApr()); // Summer
+	                    rowData.add(dto.getOct()); // Winter
+	                } else {
+	                    rowData.add(dto.getApr()); // Value
+	                }
+	                
 	                rowData.add(dto.getRemarks());
 	                rowData.add(dto.getNormParameterFKId());
 
@@ -1966,7 +1983,9 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	                        cell.setCellValue("");
 	                    }   
 
-	                    if (col == 3 || col == 4) {
+	                    boolean isEditableCol = summerWinterFlag ? (col >= 3 && col <= 5) : (col == 3 || col == 4);
+
+	                    if (isEditableCol) {
 	                        cell.setCellStyle(unlockedBorderedStyle);
 	                    } else {
 	                        cell.setCellStyle(lockedBorderedStyle);
@@ -1977,13 +1996,13 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	            // Protect sheet to enforce locked/unlocked boundaries
 	            sheet.protectSheet("");
 
-	            // Auto-size all visible data columns (0–4)
-	            for (int col = 0; col <= 4; col++) {
+	            // Auto-size all visible data columns dynamically
+	            for (int col = 0; col <= lastVisibleColIndex; col++) {
 	                sheet.autoSizeColumn(col);
 	            }
 
-	            // Hide NormParameterId column (column index 5)
-	            sheet.setColumnHidden(5, true);
+	            // Hide NormParameterId column dynamically
+	            sheet.setColumnHidden(normParamIdIndex, true);
 
 	            workbook.write(outputStream);
 	            return outputStream.toByteArray();
@@ -1995,14 +2014,14 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	    return new byte[0];
 	}
 	
-	public AOPMessageVM importCatChemData(String year, UUID plantId, MultipartFile file) {
+	public AOPMessageVM importCatChemData(String year, UUID plantId, MultipartFile file,Boolean isSummerWinter) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
-	        List<VgohtNormConfigurationDTO> data = readCatChemData(file.getInputStream(), plantId, year);
+	        List<VgohtNormConfigurationDTO> data = readCatChemData(file.getInputStream(), plantId, year, isSummerWinter);
 	        List<VgohtNormConfigurationDTO> failedList = saveCatChemData(year, plantId, data);
 
 	        if (failedList != null && !failedList.isEmpty()) {
-	            byte[] fileByteArray = exportCatChemData(year, plantId.toString(), true, failedList);
+	            byte[] fileByteArray = exportCatChemData(year, plantId.toString(), true, failedList,isSummerWinter);
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	            
 	            aopMessageVM.setData(base64File);
@@ -2023,15 +2042,18 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	    }
 	}
 	
-	public List<VgohtNormConfigurationDTO> readCatChemData(InputStream inputStream, UUID plantFKId, String year) {
+	public List<VgohtNormConfigurationDTO> readCatChemData(InputStream inputStream, UUID plantFKId, String year, Boolean isSummerWinter) {
 	    List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOs = new ArrayList<>();
+	    
+	    // Handle null flag safely
+	    boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
 
 	        if (rowIterator.hasNext()) {
-	            rowIterator.next();  
+	            rowIterator.next(); // Skip header row
 	        }
 
 	        while (rowIterator.hasNext()) {
@@ -2046,10 +2068,19 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	                dto.setTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 	                dto.setProductDisplayName(getStringCellValue(row.getCell(1), dto));
 	                dto.setUOM(getStringCellValue(row.getCell(2), dto));
-	                dto.setApr(getNumericCellValue(row.getCell(3), dto));
-	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
-	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
 	                
+	                if (summerWinterFlag) {
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setOct(getNumericCellValue(row.getCell(4), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(5), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(6), dto));
+	                } else {
+	                   
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+	                }
+
 	            } catch (Exception e) {
 	                e.printStackTrace();
 	                dto.setErrDescription(e.getMessage());
@@ -2065,7 +2096,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 	    return vgohtNormConfigurationDTOs;
 	}
-
+	
 	// Helper method to skip empty rows
 	private boolean isRowEmpty(Row row) {
 	    for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
