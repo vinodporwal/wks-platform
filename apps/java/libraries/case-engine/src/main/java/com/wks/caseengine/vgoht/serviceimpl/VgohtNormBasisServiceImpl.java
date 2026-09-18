@@ -416,6 +416,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		query.executeUpdate();
 	}
 
+
 	private List<VgohtNormConfigurationDTO> validateConstantRemarks(
 			List<VgohtNormConfigurationDTO> dtoList,
 			Map<String, VgohtNormConfigurationDTO> existingMap) {
@@ -446,6 +447,38 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		return failedRecords;
 	}
+
+	// considered april and oct as summer and winter
+	private List<VgohtNormConfigurationDTO> validateUtilityConsumptionRemarks(
+		List<VgohtNormConfigurationDTO> dtoList,
+		Map<String, VgohtNormConfigurationDTO> existingMap) {
+
+	List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+
+	for (VgohtNormConfigurationDTO dto : dtoList) {
+
+		VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
+
+		double existingApr = (existing != null && existing.getApr() != null) ? existing.getApr() : 0.0;
+		double existingOct = (existing != null && existing.getOct() != null) ? existing.getOct() : 0.0;
+		String existingRemarks = (existing != null && existing.getRemarks() != null) ? existing.getRemarks().trim() : "";
+
+		double incomingApr = dto.getApr() != null ? dto.getApr() : 0.0;
+		double incomingOct = dto.getOct() != null ? dto.getOct() : 0.0;
+		String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+		boolean aprChanged = Double.compare(incomingApr, existingApr) != 0;
+		boolean octChanged = Double.compare(incomingOct, existingOct) != 0;
+
+		if ((aprChanged || octChanged) && incomingRemarks.equals(existingRemarks)) {
+			dto.setSaveStatus("FAILED");
+			dto.setErrDescription("Please update remarks.");
+			failedRecords.add(dto);
+		}
+	}
+
+	return failedRecords;
+}
 
 	private Map<String, VgohtNormConfigurationDTO> fetchExistingConstantData(
 			String year,
@@ -493,6 +526,53 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		return existingMap;
 	}
+
+	private Map<String, VgohtNormConfigurationDTO> fetchExistingUtilityConsumptionData(
+		String year,
+		List<VgohtNormConfigurationDTO> dtoList) {
+
+	List<String> normParameterIds = dtoList.stream()
+			.map(VgohtNormConfigurationDTO::getNormParameterFKId)
+			.filter(id -> id != null && !id.isEmpty())
+			.collect(Collectors.toList());
+
+	if (normParameterIds.isEmpty()) {
+		return new HashMap<>();
+	}
+
+	String inClause = normParameterIds.stream()
+			.map(id -> "'" + id + "'")
+			.collect(Collectors.joining(", "));
+
+	String sql = "SELECT NP.Id, " +
+			"MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr, " +
+			"MAX(CASE WHEN NAT.AOPMonth = 10 THEN NAT.AttributeValue END) AS Oct, " +
+			"MAX(NAT.Remarks) AS Remarks " +
+			"FROM NormParameters NP " +
+			"LEFT JOIN NormAttributeTransactions NAT " +
+			"    ON NAT.NormParameter_FK_Id = NP.Id " +
+			"    AND NAT.AuditYear = :year " +
+			"WHERE NP.Id IN (" + inClause + ") " +
+			"GROUP BY NP.Id";
+
+	Query query = entityManager.createNativeQuery(sql);
+	query.setParameter("year", year);
+
+	@SuppressWarnings("unchecked")
+	List<Object[]> results = query.getResultList();
+	Map<String, VgohtNormConfigurationDTO> existingMap = new HashMap<>();
+
+	for (Object[] row : results) {
+		VgohtNormConfigurationDTO existing = new VgohtNormConfigurationDTO();
+		existing.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+		existing.setApr(parseDouble(row[1]));
+		existing.setOct(parseDouble(row[2]));
+		existing.setRemarks(row[3] != null ? row[3].toString() : "");
+		existingMap.put(existing.getNormParameterFKId(), existing);
+	}
+
+	return existingMap;
+}
 
 
 	@Transactional
@@ -1682,7 +1762,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setUOM(row[3] != null ? row[3].toString() : null);
 				dto.setTypeDisplayName(row[4] != null ? row[4].toString() : null);
 				dto.setApr(parseDouble(row[5]));
-				dto.setMay(parseDouble(row[6]));
+				dto.setOct(parseDouble(row[6]));
 				dto.setAuditYear(row[7] != null ? row[7].toString() : null);
 				dto.setRemarks(row[8] != null ? row[8].toString() : null);
 				dto.setProductDisplayOrder(row[9] != null ? row[9].toString() : null);
@@ -1720,16 +1800,16 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	@Transactional
 	public List<VgohtNormConfigurationDTO> saveUtilityConsumption(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
 
-		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingConstantData(year, dtoList);
+		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingUtilityConsumptionData(year, dtoList);
 
-		List<VgohtNormConfigurationDTO> failedRecords = validateConstantRemarks(dtoList, existingMap);
+		List<VgohtNormConfigurationDTO> failedRecords = validateUtilityConsumptionRemarks(dtoList, existingMap);
 
 		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
 	
 			for (VgohtNormConfigurationDTO dto : dtoList) {
 				if (failedIds.contains(dto.getNormParameterFKId())) continue;
 				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getApr()), dto.getRemarks(), 4);
-				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getMay()), dto.getRemarks(), 5);
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getOct()), dto.getRemarks(), 10);
 				
 			}
 

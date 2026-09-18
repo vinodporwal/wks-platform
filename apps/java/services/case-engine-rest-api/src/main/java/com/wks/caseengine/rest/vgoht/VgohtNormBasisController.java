@@ -299,6 +299,7 @@ public class VgohtNormBasisController {
         return vgohtNormBasisServiceImpl.importConfigurationDataWithTwoValues(year, plantFKId, file);
     }
 
+    // fetch summer winter as april and oct
     @GetMapping(value="/utility-consumption")
     public AOPMessageVM getUtilityConsumption(@RequestParam String year, @RequestParam String plantFKId) {
         if (plantFKId == null || year == null || year.isEmpty()) {
