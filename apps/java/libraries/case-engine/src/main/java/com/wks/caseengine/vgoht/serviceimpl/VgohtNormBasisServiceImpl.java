@@ -1817,4 +1817,84 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		
 	}
+
+	public AOPMessageVM getCatChemData(String year, String plantFKId) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"CatChem";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = geCatChemDataFromSP(year, plantFKId, procedureName);
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+				dto.setProductName(row[1] != null ? row[1].toString() : null);
+				dto.setProductDisplayName(row[2] != null ? row[2].toString() : null);
+				dto.setUOM(row[3] != null ? row[3].toString() : null);
+				dto.setTypeDisplayName(row[4] != null ? row[4].toString() : null);
+				dto.setApr(parseDouble(row[5]));
+				dto.setOct(parseDouble(row[6]));
+				dto.setAuditYear(row[7] != null ? row[7].toString() : null);
+				dto.setRemarks(row[8] != null ? row[8].toString() : null);
+				dto.setProductDisplayOrder(row[9] != null ? row[9].toString() : null);
+				dto.setIsEditable(row[10] != null ? Boolean.parseBoolean(row[10].toString()) : false);
+				
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage(" Cat-Chem Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> geCatChemDataFromSP(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional
+	public List<VgohtNormConfigurationDTO> saveCatChemData(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
+
+		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingUtilityConsumptionData(year, dtoList);
+
+		List<VgohtNormConfigurationDTO> failedRecords = validateUtilityConsumptionRemarks(dtoList, existingMap);
+
+		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
+	
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				if (failedIds.contains(dto.getNormParameterFKId())) continue;
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getApr()), dto.getRemarks(), 4);
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getOct()), dto.getRemarks(), 10);
+				
+			}
+
+		return failedRecords;
+
+		
+	}
 }
