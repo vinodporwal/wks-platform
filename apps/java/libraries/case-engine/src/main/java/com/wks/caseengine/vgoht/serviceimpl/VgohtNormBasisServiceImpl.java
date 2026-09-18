@@ -57,6 +57,9 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	@Autowired
 	private VgohtHelperService vgohtHelperService;
 
+    @Autowired
+	private JdbcTemplate jdbcTemplate;
+
     @PersistenceContext
 	private EntityManager entityManager;
     
@@ -413,6 +416,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		query.executeUpdate();
 	}
 
+
 	private List<VgohtNormConfigurationDTO> validateConstantRemarks(
 			List<VgohtNormConfigurationDTO> dtoList,
 			Map<String, VgohtNormConfigurationDTO> existingMap) {
@@ -443,6 +447,38 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		return failedRecords;
 	}
+
+	// considered april and oct as summer and winter
+	private List<VgohtNormConfigurationDTO> validateUtilityConsumptionRemarks(
+		List<VgohtNormConfigurationDTO> dtoList,
+		Map<String, VgohtNormConfigurationDTO> existingMap) {
+
+	List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+
+	for (VgohtNormConfigurationDTO dto : dtoList) {
+
+		VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
+
+		double existingApr = (existing != null && existing.getApr() != null) ? existing.getApr() : 0.0;
+		double existingOct = (existing != null && existing.getOct() != null) ? existing.getOct() : 0.0;
+		String existingRemarks = (existing != null && existing.getRemarks() != null) ? existing.getRemarks().trim() : "";
+
+		double incomingApr = dto.getApr() != null ? dto.getApr() : 0.0;
+		double incomingOct = dto.getOct() != null ? dto.getOct() : 0.0;
+		String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+		boolean aprChanged = Double.compare(incomingApr, existingApr) != 0;
+		boolean octChanged = Double.compare(incomingOct, existingOct) != 0;
+
+		if ((aprChanged || octChanged) && incomingRemarks.equals(existingRemarks)) {
+			dto.setSaveStatus("FAILED");
+			dto.setErrDescription("Please update remarks.");
+			failedRecords.add(dto);
+		}
+	}
+
+	return failedRecords;
+}
 
 	private Map<String, VgohtNormConfigurationDTO> fetchExistingConstantData(
 			String year,
@@ -490,6 +526,53 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		return existingMap;
 	}
+
+	private Map<String, VgohtNormConfigurationDTO> fetchExistingUtilityConsumptionData(
+		String year,
+		List<VgohtNormConfigurationDTO> dtoList) {
+
+	List<String> normParameterIds = dtoList.stream()
+			.map(VgohtNormConfigurationDTO::getNormParameterFKId)
+			.filter(id -> id != null && !id.isEmpty())
+			.collect(Collectors.toList());
+
+	if (normParameterIds.isEmpty()) {
+		return new HashMap<>();
+	}
+
+	String inClause = normParameterIds.stream()
+			.map(id -> "'" + id + "'")
+			.collect(Collectors.joining(", "));
+
+	String sql = "SELECT NP.Id, " +
+			"MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr, " +
+			"MAX(CASE WHEN NAT.AOPMonth = 10 THEN NAT.AttributeValue END) AS Oct, " +
+			"MAX(NAT.Remarks) AS Remarks " +
+			"FROM NormParameters NP " +
+			"LEFT JOIN NormAttributeTransactions NAT " +
+			"    ON NAT.NormParameter_FK_Id = NP.Id " +
+			"    AND NAT.AuditYear = :year " +
+			"WHERE NP.Id IN (" + inClause + ") " +
+			"GROUP BY NP.Id";
+
+	Query query = entityManager.createNativeQuery(sql);
+	query.setParameter("year", year);
+
+	@SuppressWarnings("unchecked")
+	List<Object[]> results = query.getResultList();
+	Map<String, VgohtNormConfigurationDTO> existingMap = new HashMap<>();
+
+	for (Object[] row : results) {
+		VgohtNormConfigurationDTO existing = new VgohtNormConfigurationDTO();
+		existing.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+		existing.setApr(parseDouble(row[1]));
+		existing.setOct(parseDouble(row[2]));
+		existing.setRemarks(row[3] != null ? row[3].toString() : "");
+		existingMap.put(existing.getNormParameterFKId(), existing);
+	}
+
+	return existingMap;
+}
 
 
 	@Transactional
@@ -1108,54 +1191,90 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	public AOPMessageVM getYearlyValues(String year, UUID plantFKId) {
 
 		try {
-			String sql = """
-				SELECT NP.Id AS NormParameter_FK_Id,
-					NP.DisplayName,
-					MAX(NAT.AttributeValue) AS value,
-					MAX(NAT.Remarks) AS remarks,
-					NP.UOM,
-					MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
-					NP.Type
-				FROM NormParameters NP
-				JOIN NormParameterType NPT on NP.NormParameterType_FK_Id = NPT.Id
-				LEFT JOIN NormAttributeTransactions NAT
-					ON NAT.NormParameter_FK_Id = NP.Id
-					AND NAT.AuditYear = :year
-					AND NAT.AOPMonth = 4
-				WHERE NP.Plant_FK_Id = :plantFKId AND NPT.Name = 'Constant'
-				GROUP BY NP.Id, NP.DisplayName, NP.DisplayOrder, NP.UOM, NP.Type
-				ORDER BY NP.DisplayOrder
-			""";
 
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("year", year);
-			query.setParameter("plantFKId", plantFKId);
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
-			List<Object[]> resultList = query.getResultList();
+			String procedureName = vertical.getName()+ "_GetConstantData";
+
 			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
 
-			for (Object[] row : resultList) {
-				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
-				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
-				dto.setProductName(row[1] != null ? row[1].toString() : "");
-					if (row[2] != null) {
-					String rawValue = row[2].toString().trim();
-					try {
-						dto.setValue(new BigDecimal(rawValue).toPlainString());
-					} catch (NumberFormatException e) {
-						dto.setValue(rawValue);
-					}
-				} else {
-					dto.setValue("");
-				}
-				dto.setRemarks(row[3] != null ? row[3].toString() : "");
-				dto.setUOM(row[4] != null ? row[4].toString() : "");
-				dto.setTypeDisplayName(row[5] != null ? row[5].toString() : "");
-				dto.setType(row[6] != null ? row[6].toString() : "");
-				dtoList.add(dto);
-			}
+			// 1. Check whether the stored procedure Crude_GetConstantData exists
+			boolean spExists = checkStoredProcedureExists(procedureName);
 
-			
+			if (spExists) {
+				// 2a. SP path: execute Crude_GetConstantData
+				String spSql = "EXEC " +  "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+				dtoList = jdbcTemplate.query(spSql, (rs, rowNum) -> {
+					VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+					dto.setNormParameterFKId(rs.getString("NormParameter_FK_Id") != null ? rs.getString("NormParameter_FK_Id") : null);
+					dto.setProductName(rs.getString("DisplayName") != null ? rs.getString("DisplayName") : null);
+					String rawValue = rs.getString("value");
+					if (rawValue != null && !rawValue.trim().isEmpty()) {
+						try {
+							dto.setValue(new BigDecimal(rawValue.trim()).toPlainString());
+						} catch (NumberFormatException e) {
+							dto.setValue(rawValue.trim());
+						}
+					} else {
+						dto.setValue("");
+					}
+					dto.setRemarks(rs.getString("remarks") != null ? rs.getString("remarks") : null);
+					dto.setUOM(rs.getString("UOM") != null ? rs.getString("UOM") : null);
+					dto.setTypeDisplayName(rs.getString("NormParameterTypeDisplayName") != null ? rs.getString("NormParameterTypeDisplayName") : null);
+					dto.setType(rs.getString("Type") != null ? rs.getString("Type") : null);
+					return dto;
+				}, plantFKId.toString(), year);
+
+			} else {
+				// 2b. Fallback: execute existing Java query (unchanged behavior)
+				String sql = """
+					SELECT NP.Id AS NormParameter_FK_Id,
+						NP.DisplayName,
+						MAX(NAT.AttributeValue) AS value,
+						MAX(NAT.Remarks) AS remarks,
+						NP.UOM,
+						MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
+						NP.Type
+					FROM NormParameters NP
+					JOIN NormParameterType NPT on NP.NormParameterType_FK_Id = NPT.Id
+					LEFT JOIN NormAttributeTransactions NAT
+						ON NAT.NormParameter_FK_Id = NP.Id
+						AND NAT.AuditYear = :year
+						AND NAT.AOPMonth = 4
+					WHERE NP.Plant_FK_Id = :plantFKId AND NPT.Name = 'Constant'
+					GROUP BY NP.Id, NP.DisplayName, NP.DisplayOrder, NP.UOM, NP.Type
+					ORDER BY NP.DisplayOrder
+				""";
+
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("year", year);
+				query.setParameter("plantFKId", plantFKId);
+
+				List<Object[]> resultList = query.getResultList();
+
+				for (Object[] row : resultList) {
+					VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+					dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+					dto.setProductName(row[1] != null ? row[1].toString() : "");
+					if (row[2] != null) {
+						String rawValue = row[2].toString().trim();
+						try {
+							dto.setValue(new BigDecimal(rawValue).toPlainString());
+						} catch (NumberFormatException e) {
+							dto.setValue(rawValue);
+						}
+					} else {
+						dto.setValue("");
+					}
+					dto.setRemarks(row[3] != null ? row[3].toString() : "");
+					dto.setUOM(row[4] != null ? row[4].toString() : "");
+					dto.setTypeDisplayName(row[5] != null ? row[5].toString() : "");
+					dto.setType(row[6] != null ? row[6].toString() : "");
+					dtoList.add(dto);
+				}
+			}
 
 			AOPMessageVM response = new AOPMessageVM();
 			response.setCode(200);
@@ -1168,6 +1287,13 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			// System.out.println(e);
 			throw new RuntimeException("Failed to fetch yearly values", e);
 		}
+	}
+
+
+	private boolean checkStoredProcedureExists(String procedureName) {
+		String checkSql = "SELECT CASE WHEN OBJECT_ID(?, 'P') IS NOT NULL THEN 1 ELSE 0 END";
+		Integer result = jdbcTemplate.queryForObject(checkSql, Integer.class, procedureName);
+		return result != null && result == 1;
 	}
 
 	public byte[] exportMonthlyValues(String year, UUID plantFKId) {
@@ -1636,7 +1762,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setUOM(row[3] != null ? row[3].toString() : null);
 				dto.setTypeDisplayName(row[4] != null ? row[4].toString() : null);
 				dto.setApr(parseDouble(row[5]));
-				dto.setMay(parseDouble(row[6]));
+				dto.setOct(parseDouble(row[6]));
 				dto.setAuditYear(row[7] != null ? row[7].toString() : null);
 				dto.setRemarks(row[8] != null ? row[8].toString() : null);
 				dto.setProductDisplayOrder(row[9] != null ? row[9].toString() : null);
@@ -1674,16 +1800,16 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	@Transactional
 	public List<VgohtNormConfigurationDTO> saveUtilityConsumption(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
 
-		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingConstantData(year, dtoList);
+		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingUtilityConsumptionData(year, dtoList);
 
-		List<VgohtNormConfigurationDTO> failedRecords = validateConstantRemarks(dtoList, existingMap);
+		List<VgohtNormConfigurationDTO> failedRecords = validateUtilityConsumptionRemarks(dtoList, existingMap);
 
 		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
 	
 			for (VgohtNormConfigurationDTO dto : dtoList) {
 				if (failedIds.contains(dto.getNormParameterFKId())) continue;
 				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getApr()), dto.getRemarks(), 4);
-				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getMay()), dto.getRemarks(), 5);
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getOct()), dto.getRemarks(), 10);
 				
 			}
 
