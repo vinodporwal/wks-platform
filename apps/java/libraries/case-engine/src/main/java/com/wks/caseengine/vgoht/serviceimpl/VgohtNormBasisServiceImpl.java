@@ -1771,7 +1771,16 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setAuditYear(row[17] != null ? row[17].toString() : null);
 				dto.setRemarks(row[18] != null ? row[18].toString() : null);
 				dto.setProductDisplayOrder(row[19] != null ? row[19].toString() : null);
-				dto.setIsEditable(row[20] != null ? Boolean.parseBoolean(row[20].toString()) : false);
+				//dto.setIsEditable(row[20] != null ? Boolean.parseBoolean(row[20].toString()) : false);
+				Boolean isEditable = null;
+				if (row[20] != null) {
+					if (row[20] instanceof Boolean) {
+						isEditable = (Boolean) row[20];
+					} else if (row[20] instanceof Number) {
+						isEditable = ((Number) row[20]).intValue() == 1;
+					}
+				}
+				dto.setIsEditable(isEditable);
 				
 				dtoList.add(dto);
 			}
@@ -1847,12 +1856,20 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setUOM(row[3] != null ? row[3].toString() : null);
 				dto.setTypeDisplayName(row[4] != null ? row[4].toString() : null);
 				dto.setApr(parseDouble(row[5]));
-				dto.setOct(parseDouble(row[6]));
-				dto.setAuditYear(row[7] != null ? row[7].toString() : null);
-				dto.setRemarks(row[8] != null ? row[8].toString() : null);
-				dto.setProductDisplayOrder(row[9] != null ? row[9].toString() : null);
-				dto.setIsEditable(row[10] != null ? Boolean.parseBoolean(row[10].toString()) : false);
-				
+				dto.setOct(parseDouble(row[11]));
+				dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+				dto.setRemarks(row[18] != null ? row[18].toString() : null);
+				dto.setProductDisplayOrder(row[19] != null ? row[19].toString() : null);
+			//	dto.setIsEditable(row[20] != null ? Boolean.parseBoolean(row[20].toString()) : false);
+				Boolean isEditable = null;
+				if (row[20] != null) {
+					if (row[20] instanceof Boolean) {
+						isEditable = (Boolean) row[20];
+					} else if (row[20] instanceof Number) {
+						isEditable = ((Number) row[20]).intValue() == 1;
+					}
+				}
+				dto.setIsEditable(isEditable);
 				dtoList.add(dto);
 			}
 			aopMessageVM.setCode(200);
