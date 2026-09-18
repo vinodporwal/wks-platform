@@ -36,16 +36,45 @@ const App = () => {
     
     // Use different strategies based on context  
     const initConfig = isInIframe 
-      ? { onLoad: 'check-sso', checkLoginIframe: false }
+      ? { 
+          onLoad: 'check-sso', 
+          checkLoginIframe: false,
+          enableLogging: true,
+          // Try to use silent iframe for token
+          silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
+        }
       : { onLoad: 'login-required', checkLoginIframe: true };
     
     keycloak.init(initConfig).then((authenticated) => {
       if(!authenticated){
         if (isInIframe) {
-          // In iframe context, try alternative auth or notify parent
-          console.warn('Authentication failed in iframe context');
-          // You might want to communicate with parent window here
-          // window.parent.postMessage({ type: 'AUTH_REQUIRED' }, '*');
+          // Try to get authentication from parent window
+          console.warn('Authentication failed in iframe context - requesting auth from parent');
+          
+          // Listen for auth response from parent
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'AUTH_TOKEN') {
+              keycloak.token = event.data.token;
+              if (event.data.refreshToken) {
+                keycloak.refreshToken = event.data.refreshToken;
+              }
+              // Retry initialization with token
+              setKeycloak(keycloak);
+              setAuthenticated(true);
+              if (keycloak.token) {
+                localStorage.setItem('keycloakToken', keycloak.token);
+                buildMenuItems(keycloak);
+                RegisterInjectUserSession(keycloak);
+                RegisteOptions(keycloak);
+              }
+            }
+          });
+          
+          // Request authentication from parent
+          window.parent.postMessage({ 
+            type: 'AUTH_REQUIRED', 
+            origin: window.location.origin 
+          }, '*');
           return;
         }
         keycloak.login();
