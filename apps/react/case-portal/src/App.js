@@ -31,52 +31,8 @@ const App = () => {
       keycloak.token = storedToken;
     }
 
-    // Detect if running in iframe
-    const isInIframe = window !== window.parent;
-    
-    // Use different strategies based on context  
-    const initConfig = isInIframe 
-      ? { 
-          onLoad: 'check-sso', 
-          checkLoginIframe: false,
-          enableLogging: true,
-          // Try to use silent iframe for token
-          silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
-        }
-      : { onLoad: 'login-required', checkLoginIframe: true };
-    
-    keycloak.init(initConfig).then((authenticated) => {
+    keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
       if(!authenticated){
-        if (isInIframe) {
-          // Try to get authentication from parent window
-          console.warn('Authentication failed in iframe context - requesting auth from parent');
-          
-          // Listen for auth response from parent
-          window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'AUTH_TOKEN') {
-              keycloak.token = event.data.token;
-              if (event.data.refreshToken) {
-                keycloak.refreshToken = event.data.refreshToken;
-              }
-              // Retry initialization with token
-              setKeycloak(keycloak);
-              setAuthenticated(true);
-              if (keycloak.token) {
-                localStorage.setItem('keycloakToken', keycloak.token);
-                buildMenuItems(keycloak);
-                RegisterInjectUserSession(keycloak);
-                RegisteOptions(keycloak);
-              }
-            }
-          });
-          
-          // Request authentication from parent
-          window.parent.postMessage({ 
-            type: 'AUTH_REQUIRED', 
-            origin: window.location.origin 
-          }, '*');
-          return;
-        }
         keycloak.login();
       }
       setKeycloak(keycloak)
