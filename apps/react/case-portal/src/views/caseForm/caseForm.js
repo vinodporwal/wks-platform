@@ -1306,7 +1306,6 @@ const handleFormChange = (submission, flags, modified) => {
   //   try {
   //     const response = await CaseService.saveRecommendation(keycloak, apiBody)
 
-  //     console.log('Recommendation submitted successfully:', response)
   //     setSnackbarMessages(['Recommendation submitted successfully'])
   //     setSnackbarOpen(true)
   //   } catch (error) {
