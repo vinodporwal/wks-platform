@@ -17,6 +17,7 @@ import SpinningMargin from '../../common/SpinningMargin/index'
 import SRMapping from '../../common/SRMapping/index'
 import useConfigurationTabs from 'components/aop-phase-two/common/hooks/useConfigurationTabs'
 import StandByLoad from './StandByLoad'
+import EfficiencyAndFuelRatio from './EfficiencyAndFuelRatio/index'
 
 const InputsDMD = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -70,6 +71,8 @@ const InputsDMD = () => {
         return <Prices />
       case 'Stand By Load':
         return <StandByLoad />
+      case 'Efficiency & Fuel Ratio':
+        return <EfficiencyAndFuelRatio />
       default:
         return null
     }
