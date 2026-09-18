@@ -34,7 +34,8 @@ const App = () => {
     const inIframe = window.self !== window.top
 
     keycloak.init({
-      onLoad: inIframe ? 'check-sso' : 'login-required',
+      // onLoad: inIframe ? 'check-sso' : 'login-required',
+      // onLoad: inIframe ? 'login-required' : 'login-required',
       checkLoginIframe: true,
       silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
     }).then((authenticated) => {
@@ -45,7 +46,7 @@ const App = () => {
         if (inIframe) {
           // No session anywhere — escape the iframe so the real login page
           // can render top-level (Keycloak blocks it inside a frame)
-          window.top.location.href = keycloak.createLoginUrl()
+         // window.top.location.href = keycloak.createLoginUrl()
         } else {
           keycloak.login() // standalone: normal redirect flow, unchanged behavior
         }
