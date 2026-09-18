@@ -114,7 +114,6 @@ const SlowdownNorms = () => {
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
-  const IS_AROMATICS_PMD = lowerVertName === 'aromatics' && siteName === 'pmd'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_EDC_PLANT = lowerVertName === 'vcm' && plantName === 'edc'
@@ -450,7 +449,7 @@ const SlowdownNorms = () => {
     setLoading(true)
     try {
       var response = []
-      if (lowerVertName == 'pp' || IS_AROMATICS_PMD) {
+      if (lowerVertName == 'pp') {
         response = await DataService.handleCalculateSlowdownNormsPP(
           PLANT_ID,
           AOP_YEAR,
@@ -685,7 +684,7 @@ const SlowdownNorms = () => {
       showCalculate:
         lowerVertName == 'meg' ||
         lowerVertName == 'elastomer' ||
-        (lowerVertName == 'aromatics' && siteName !== 'pmd') ||
+        lowerVertName == 'aromatics' ||
         lowerVertName == 'pta' ||
         IS_CHEMICAL ||
         IS_PE_PP ||

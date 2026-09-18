@@ -150,7 +150,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       format: valueFormat,
     },
     {
-      field: 'responsibility',
+      field: 'remark',
       title: 'Remark',
       editable: true,
       hidden: false,
@@ -223,7 +223,6 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
           idFromAPI: item.id,
           isEditable: item?.isEditable,
           remark: item.remark,
-          responsibility: item.remark,
           originalRemark: item.remark,
         }))
         setRows(mapped)
@@ -252,6 +251,20 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         return
       }
 
+      // adjust to whichever fields are actually mandatory on this grid
+      const requiredFields = ['remark']
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
       const payload = data.map((item) => ({
         id: item.idFromAPI || null,
         kpiName: item.kpiName,
@@ -260,7 +273,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         prevAOP: item.prevAOP,
         prevActual: item.prevActual,
         currentPlan: item.currentPlan,
-        remark: item.responsibility ?? item.remark ?? '',
+        remark: item.remark,
         aopYear: AOP_YEAR,
         siteFkId: SITE_ID,
         masterId: item.masterId,

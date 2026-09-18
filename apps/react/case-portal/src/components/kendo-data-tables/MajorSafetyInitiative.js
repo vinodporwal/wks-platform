@@ -3,15 +3,14 @@ import { Backdrop, Box, CircularProgress } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from '../index'
+import KendoDataTables from './index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
+import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
+import { formatDate } from 'utils/dateUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function MCUCapacityUtilization({
-  permissions,
-  tabDisplayName,
-}) {
+export default function MajorSafetyInitiative() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, siteObject, year } = dataGridStore
@@ -36,88 +35,30 @@ export default function MCUCapacityUtilization({
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  function getAopShortYears(aopYear) {
-    if (!aopYear) return { prev: '', next: '' }
-    const match = aopYear.match(/(\d{4})-(\d{2})/)
-    if (match) {
-      const prev = match[1].slice(-2)
-      const next = match[2]
-      return { prev, next }
-    }
-    const year = String(aopYear).slice(-2)
-    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
-  }
-  const { prev, next } = getAopShortYears(AOP_YEAR)
-
-  const mcuCapacityUtilizationColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'sno',
-      title: 'S.No',
-      widthT: 20,
-      minWidth: 30,
-      editable: false,
-      align: 'right',
-      format: '{0:0}',
-    },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: false },
-    {
-      field: 'prevAop',
-      title: `FY${prev} AOP`,
-      editable: false,
-      type: 'number',
-      minWidth: 150,
-    },
-    {
-      field: 'prevActualValue',
-      title: `FY${prev} Actual`,
-      editable: false,
-      type: 'number',
-      minWidth: 150,
-    },
-    {
-      field: 'aop',
-      title: `FY${next} AOP`,
-      editable: false,
-      type: 'number',
-      minWidth: 150,
-    },
-    {
-      field: 'remarks',
-      title: 'Rationale/ Reasons',
-      widthT: 200,
-      editable: true,
-    },
-  ]
-
   const columns = useMemo(() => {
-    const cols = mcuCapacityUtilizationColumns
-    return cols
+    const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorSafetyInitiative
+    return cols.map((col) => {
+      return col
+    })
   }, [AOP_YEAR])
 
   const fetchData = useCallback(async () => {
     if (!SITE_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const res = await SiteReportDataService.getMCUCapacityUtilization(
+      const res = await SiteReportDataService.getMajorSafetyInitiative(
         keycloak,
         SITE_ID,
         AOP_YEAR,
       )
 
       if (res?.code === 200) {
-        const mapped = res?.data?.mcuCapacityUtilizationList?.map(
+        const mapped = res?.data?.majorSafetyImprovementInitiativeList?.map(
           (item, index) => ({
             ...item,
-            id: item?.id || `new-row-${index}-${crypto.randomUUID()}`,
+            id: item.id || index + 1,
             sno: index + 1,
-            idFromApi: item?.id || '',
-            prevActualValue: item.prevActual,
+            idFromApi: item.id || null,
           }),
         )
         setRows(mapped)
@@ -142,34 +83,49 @@ export default function MCUCapacityUtilization({
       const data = Object.values(modifiedCells)
       if (data.length === 0) {
         setSnackbarOpen(true)
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
         return
       }
 
-      const requiredFields = ['remarks']
+      const requiredFields = ['initiativeDescription', 'remark']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
         setSnackbarOpen(true)
-        setSnackbarData({ message: validationMessage, severity: 'error' })
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
         setLoading(false)
         return
       }
 
-      const payload = data.map((row) => {
-        const { idFromApi, sno, ...rest } = row
-        return {
-          remarks: rest.remarks,
-          id:
-            idFromApi !== undefined
-              ? idFromApi
-              : row.id?.toString().startsWith('new-row-')
-                ? ''
-                : row.id,
-        }
-      })
+      const payload = data.map(
+        ({
+          id,
+          initiativeDescription,
+          category,
+          outcome,
+          recommendation,
+          remark,
+          targetDate,
+        }) => ({
+          id,
+          initiativeDescription,
+          category,
+          outcome,
+          recommendation,
+          remark,
+          targetDate: formatDate(
+            targetDate ? new Date(targetDate) : new Date(),
+          ),
+        }),
+      )
 
-      const response = await SiteReportDataService.saveMCUCapacityUtilization(
+      const response = await SiteReportDataService.saveMajorSafetyInitiative(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -178,7 +134,10 @@ export default function MCUCapacityUtilization({
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
-        setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
         setModifiedCells({})
         fetchData()
       } else {
@@ -199,75 +158,11 @@ export default function MCUCapacityUtilization({
     }
   }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
-  const deleteRowData = async (paramsForDelete) => {
-    setLoading(true)
-
-    try {
-      const { idFromApi, id } = paramsForDelete
-      const deleteId = id
-
-      if (!idFromApi) {
-        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-      }
-
-      if (idFromApi) {
-        await SiteReportDataService.deleteTechnicalAvailability(
-          idFromApi,
-          keycloak,
-        )
-        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Record Deleted successfully!',
-          severity: 'success',
-        })
-        fetchData()
-      } else {
-        setLoading(false)
-      }
-    } catch (error) {
-      console.error('Error deleting Record!', error)
-    }
-  }
-
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
-  const handleLoad = async () => {
-    setLoading(true)
-    try {
-      const data = await SiteReportDataService.handleMcuUtilizationCapacity(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-      )
-      if (data?.code === 200 || data === 0 || data?.data >= 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data refreshed successfully!',
-          severity: 'success',
-        })
-        fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: data?.message || 'Data Refresh Failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: error.message || 'An error occurred during load',
-        severity: 'error',
-      })
-      console.error('Error in handleLoad:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -289,12 +184,11 @@ export default function MCUCapacityUtilization({
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: tabDisplayName || 'MCU Capacity Utilization (%)',
+      titleName: 'Major Safety Improvement Initiative',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_MCU_Capacity_Utilization_${AOP_YEAR}`,
-      showLoadBtn: true,
-      // addButton: false,
-      // deleteButton: false,
+      ExcelName: `${lowerVertName}_Major_Safety_Initiative_${AOP_YEAR}`,
+      // addButton: true,
+      // deleteButton: true,
     },
     isOldYear,
   )
@@ -307,7 +201,7 @@ export default function MCUCapacityUtilization({
         columns={columns}
         rows={rows}
         setRows={setRows}
-        title='MCU Capacity Utilization (%)'
+        title='B2.2. Major Safety Improvement Initiative FY27 (Max 5)'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}
@@ -320,8 +214,6 @@ export default function MCUCapacityUtilization({
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
-        handleLoad={handleLoad}
-        deleteRowData={deleteRowData}
       />
       <Notification
         open={snackbarOpen}

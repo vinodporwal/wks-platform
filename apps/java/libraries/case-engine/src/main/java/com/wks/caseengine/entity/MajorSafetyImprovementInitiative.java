@@ -24,38 +24,38 @@ public class MajorSafetyImprovementInitiative {
     @Column(name = "Id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "PlantId")
-    private UUID plantId;
+    @Column(name = "Plant", length = 255)
+    private String plant;
 
-    @Column(name = "InitiativeDescription", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "InitiativeDescription", length = 500)
     private String initiativeDescription;
 
     @Column(name = "Category", length = 255)
     private String category;
 
-    @Column(name = "Outcome", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "Outcome", length = 255)
     private String outcome;
 
-    @Column(name = "Recommendation", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "Recommendation", length = 500)
     private String recommendation;
 
     @Column(name = "TargetDate")
     @Temporal(TemporalType.DATE)
     private Date targetDate;
 
-    @Column(name = "Responsibility", length = 255)
-    private String responsibility;
-
-    @Column(name = "SiteId")
-    private UUID siteId;
+    @Column(name = "Remark", length = 500)
+    private String remark;
 
     @Column(name = "AOPYear", length = 7)
     private String aopYear;
 
-    @Column(name = "ModifiedBy", length = 100)
-    private String modifiedBy;
+    @Column(name = "Site_FK_Id")
+    private UUID siteFkId;
 
-    @Column(name = "ModifiedOn")
+    @Column(name = "UpdatedBy", length = 255)
+    private String updatedBy;
+
+    @Column(name = "UpdatedDateTime")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date modifiedOn;
+    private Date updatedDateTime;
 }

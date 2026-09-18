@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "SiteTeamTransaction")
+@Table(name = "SiteTeam")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,12 +27,6 @@ public class SiteTeam {
     @Column(name = "Id", nullable = false, updatable = false)
     private UUID id;
 	
-    @Column(name = "MasterId")
-    private UUID masterId;
-
-    @Column(name = "Functions")
-    private String functions;
-
     @Column(name = "JobRole")
     private String jobRole;
 
@@ -44,6 +38,9 @@ public class SiteTeam {
 
     @Column(name = "TeamSize")
     private Integer teamSize;
+
+    @Column(name = "Remark")
+    private String remark;
 
     @Column(name = "SiteId")
     private UUID siteId;

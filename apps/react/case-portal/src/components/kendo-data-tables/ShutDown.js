@@ -131,25 +131,6 @@ const ShutDown = ({ permissions }) => {
       lowerPlantName === 'pdeb')
   const IS_AROMATIC_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
-  const IS_CHEMICAL_HMD_BUTADIENE =
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'hmd' &&
-    lowerPlantName === 'butadiene'
-  const IS_CHEMICAL_HMD_BUTENE =
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'hmd' &&
-    (lowerPlantName === 'butene' ||
-      lowerPlantName === 'butene-1' ||
-      lowerPlantName === 'butene 1')
-  const IS_CHEMICAL_HMD_MTBE =
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'hmd' &&
-    lowerPlantName === 'mtbe'
-  const SHOW_SHUTDOWN_HISTORY_CONFIG =
-    IS_AROMATIC_HMD ||
-    IS_CHEMICAL_HMD_BUTADIENE ||
-    IS_CHEMICAL_HMD_BUTENE ||
-    IS_CHEMICAL_HMD_MTBE
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -178,11 +159,6 @@ const ShutDown = ({ permissions }) => {
   const IS_PET_VERTICAL = lowerVertName === 'pet'
   const [allLines, setAllLines] = useState([])
   const [selectedTab, setSelectedTab] = useState(0)
-
-  useEffect(() => {
-    setSelectedTab(0)
-  }, [PLANT_ID, plantObject?.id, lowerPlantName, lowerSiteName, lowerVertName, AOP_YEAR])
-
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
@@ -1616,11 +1592,11 @@ const ShutDown = ({ permissions }) => {
   return (
     <div>
       <LoaderBackdrop open={!!loading} />
-      {SHOW_SHUTDOWN_HISTORY_CONFIG && (
+      {IS_AROMATIC_HMD && (
         <Box style={{ margin: 0, padding: 0 }}>
           <AopTabs
             tabIndex={selectedTab}
-            setTabIndex={(index) => setSelectedTab(index)}
+            setTabIndex={(index) => handleTabChange(null, index)}
             tabs={[`${SCREEN_NAME}`, 'Shutdown History Config']}
           >
             {[`${SCREEN_NAME}`, 'Shutdown History Config'].map((label, idx) => (
@@ -1685,9 +1661,7 @@ const ShutDown = ({ permissions }) => {
           allLines={allLines}
         />
       )}
-      {selectedTab === 1 && SHOW_SHUTDOWN_HISTORY_CONFIG && (
-        <ShutdownHistoryConfig />
-      )}
+      {selectedTab === 1 && IS_AROMATIC_HMD && <ShutdownHistoryConfig />}
     </div>
   )
 }

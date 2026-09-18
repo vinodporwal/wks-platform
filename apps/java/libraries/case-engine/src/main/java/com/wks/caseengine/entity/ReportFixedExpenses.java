@@ -9,7 +9,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "FixedExpensesTransaction")
+@Table(name = "Report_FixedExpenses")
 @Getter
 @Setter
 @NoArgsConstructor

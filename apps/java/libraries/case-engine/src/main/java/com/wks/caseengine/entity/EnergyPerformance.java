@@ -1,15 +1,24 @@
 package com.wks.caseengine.entity;
 
+
 import java.util.Date;
 import java.util.UUID;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+
+import lombok.NoArgsConstructor;
+
 import jakarta.persistence.*;
 import lombok.*;
 
+
+
+
 @Entity
-@Table(name = "EnergyPerformanceTransaction")
+@Table(name = "EnergyPerformance")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,33 +26,39 @@ import lombok.*;
 @Builder
 public class EnergyPerformance {
 
-	@Id
-	@GeneratedValue(generator = "UUID")
-	@GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-	@Column(name = "Id", nullable = false, updatable = false)
-	private UUID id;
+	 @Id
+	 @GeneratedValue(generator = "UUID")
+	 @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+	 @Column(name = "Id", nullable = false, updatable = false)
+	 private UUID id;
+	 
+    @Column(name = "Plant")
+    private String plant;
 
-	@Column(name = "MasterId", nullable = false)
-	private UUID masterId;
+    @Column(name = "UOM")
+    private String uom;
 
-	@Column(name = "AOPYear")
-	private String aopYear;
+    @Column(name = "AOPValue")
+    private Double aopValue;
 
-	@Column(name = "FYAOP")
-	private Double fyAop;
+    @Column(name = "ActualValue")
+    private Double actualValue;
 
-	@Column(name = "FYActual")
-	private Double fyActual;
+    @Column(name = "PlanValue")
+    private Double planValue;
 
-	@Column(name = "FYPlan")
-	private Double fyPlan;
+    @Column(name = "Remark")
+    private String remark;
 
-	@Column(name = "Remarks", columnDefinition = "VARCHAR(MAX)")
-	private String remarks;
+    @Column(name = "SiteId")
+    private UUID siteId;
 
-	@Column(name = "ModifiedBy")
-	private String modifiedBy;
+    @Column(name = "AOPYear")
+    private String aopYear;
 
-	@Column(name = "ModifiedOn")
-	private Date modifiedOn;
+    @Column(name = "UpdatedBy")
+    private String updatedBy;
+
+    @Column(name = "UpdatedDateTime")
+    private Date updatedDateTime;
 }

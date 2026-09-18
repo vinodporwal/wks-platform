@@ -39,7 +39,6 @@ public class VgohtNormConfigurationDTO {
     private String TypeName;
     private Boolean isEditable;
 	private String productName;
-    private String productDisplayName;
     private String productDisplayOrder;
     private String saveStatus;
     private String errDescription;

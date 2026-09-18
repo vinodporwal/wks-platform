@@ -33,9 +33,4 @@ public class MCUCapacityUtilizationController {
             @RequestBody List<MCUCapacityUtilizationDTO> dtoList) {
         return mcuCapacityUtilizationService.updateMCUCapacityUtilization(dtoList);
     }
-    
-    @GetMapping(value = "/load-capacity-utilization")
-	public AOPMessageVM loadCapacityUtilization(@RequestParam String siteId, @RequestParam String year) {
-		return mcuCapacityUtilizationService.LoadCapacityUtilization(siteId, year);
-	}
 }

@@ -89,25 +89,6 @@ const ShutdownHistoryConfig = ({ permissions }) => {
 
   const IS_AROMATIC_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
-  const IS_CHEMICAL_HMD_BUTADIENE =
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'hmd' &&
-    lowerPlantName === 'butadiene'
-  const IS_CHEMICAL_HMD_BUTENE =
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'hmd' &&
-    (lowerPlantName === 'butene' ||
-      lowerPlantName === 'butene-1' ||
-      lowerPlantName === 'butene 1')
-  const IS_CHEMICAL_HMD_MTBE =
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'hmd' &&
-    lowerPlantName === 'mtbe'
-  const SHOW_SHUTDOWN_HISTORY_CONFIG =
-    IS_AROMATIC_HMD ||
-    IS_CHEMICAL_HMD_BUTADIENE ||
-    IS_CHEMICAL_HMD_BUTENE ||
-    IS_CHEMICAL_HMD_MTBE
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -156,7 +137,7 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       try {
         let data = []
 
-        if (SHOW_SHUTDOWN_HISTORY_CONFIG) {
+        if (IS_AROMATIC_HMD) {
           data = await DataService.dropdownValuesDMD(
             keycloak,
             PLANT_ID,
@@ -180,8 +161,8 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       }
     }
 
-    if (SHOW_SHUTDOWN_HISTORY_CONFIG) getAllDescriptionDrpdwn()
-  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName, lowerSiteName, lowerPlantName])
+    if (IS_AROMATIC_HMD) getAllDescriptionDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
   // Financial-year date bounds, clamped to an absolute 2021-07-01 .. 2028-06-30 window
   useEffect(() => {

@@ -5,16 +5,13 @@ import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 import { DataService } from 'services/DataService'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from '../index'
+import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { generateExcelName } from 'utils/excelNameUtil'
-import { formatDate } from 'utils/dateUtils'
-
-export default function Capex({ permissions, tabDisplayName }) {
+export default function FixedExpenses() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -44,7 +41,6 @@ export default function Capex({ permissions, tabDisplayName }) {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
-  const [deleteId, setDeleteId] = useState(null)
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
@@ -56,67 +52,107 @@ export default function Capex({ permissions, tabDisplayName }) {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const EXCEL_EXPORT_TITLE = generateExcelName(
-    dataGridStore,
-    tabDisplayName || 'Capex/PIO Plan',
-  )
 
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
+  function getPrevAopYear(aopYear) {
+    if (!aopYear) return ''
+    const match = aopYear.match(/(\d{4})-(\d{2})/)
+    if (match) {
+      const prevStart = String(Number(match[1]) - 1)
+      const prevEnd = match[1].slice(2)
+      return `${prevStart}-${prevEnd}`
+    }
+    return ''
+  }
 
-  const capexPlanColumns = useMemo(
-    () => [
-      {
-        field: 'id',
-        title: 'ID',
-        editable: false,
-        hidden: true,
-      },
-      {
-        field: 'sno',
-        title: 'S.No',
-        widthT: 60,
-        editable: false,
-        align: 'right',
-        format: '{0:0}',
-      },
-      { field: 'proposal', title: 'Proposal', editable: true },
-      { field: 'category', title: 'Category', editable: true },
-      {
-        field: 'justification',
-        title: 'Justification',
-        editable: true,
-      },
-      {
-        field: 'costRsCr',
-        title: 'Cost (Rs Cr)',
-        editable: true,
-        type: 'number',
-        format: '{0:0.00}',
-      },
-      {
-        field: 'benefitRsCr',
-        title: 'Benefit (Rs Cr)',
-        editable: true,
-        type: 'number',
-        format: '{0:0.00}',
-      },
-      {
-        field: 'targetDate',
-        title: 'Target',
-        editable: true,
-        type: 'date',
-      },
-      { field: 'statusPlan', title: 'Status', editable: true },
-      // { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
-    ],
-    [],
-  )
+  const prevAopYear = getPrevAopYear(AOP_YEAR)
+
+  function getAopShortYears(aopYear) {
+    if (!aopYear) return { prev: '', next: '' }
+    const match = aopYear.match(/(\d{4})-(\d{2})/)
+    if (match) {
+      const prev = match[1].slice(-2)
+      const next = match[2]
+      return { prev, next }
+    }
+    const year = String(aopYear).slice(-2)
+    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
+  }
+  const { prev, next } = getAopShortYears(AOP_YEAR)
+
+  const fixedExpensesColumns = [
+    {
+      field: 'id',
+      title: 'ID',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'srNo',
+      title: 'Sr. No.',
+      widthT: 60,
+      editable: false,
+      align: 'right',
+      format: '{0:0}',
+      type: 'numberNonGrey',
+    },
+    {
+      field: 'particular',
+      title: 'Particulars',
+      widthT: 180,
+      editable: false,
+    },
+    {
+      title: `FY ${prevAopYear}`,
+      children: [
+        {
+          field: 'fyPrevAOP',
+          title: `FY${prev} AOP`,
+          editable: true,
+
+          type: 'numberNonGrey',
+        },
+        {
+          field: 'fyPrevActual',
+          title: `FY${prev} Actual`,
+          editable: true,
+          type: 'numberNonGrey',
+        },
+      ],
+    },
+    {
+      title: `AOP ${AOP_YEAR}`,
+      children: [
+        {
+          field: 'fyCurrAOP',
+          title: `FY${next} AOP`,
+
+          editable: true,
+          type: 'numberNonGrey',
+        },
+        {
+          field: 'percentageChange',
+          title: '% Change',
+          editable: true,
+          type: 'numberNonGrey',
+        },
+        {
+          field: 'variance',
+          title: 'Variance',
+          editable: true,
+          type: 'numberNonGrey',
+        },
+      ],
+    },
+    { field: 'remarks', title: 'Remarks', widthT: 200, editable: true },
+  ]
 
   const fetchData = useCallback(async () => {
-    if (!SITE_ID || !AOP_YEAR) return
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const res = await SiteReportDataService.getCapexData(
+      // var res = await DataService.getMonthWiseSummary(keycloak)
+      const res = await SiteReportDataService.getFixedExpensesData(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -125,21 +161,21 @@ export default function Capex({ permissions, tabDisplayName }) {
       if (res?.code === 200) {
         const mapped = res?.data?.Data?.map((item, index) => ({
           id: item.id || null,
-          sno: index + 1,
-          proposal: item.proposal,
-          category: item.category,
-          justification: item.justification,
-          costRsCr: item.costRsCr,
-          benefitRsCr: item.benefitRsCr,
-          targetDate: item.targetPlan || item.targetDate || item.target || null,
-          statusPlan: item.statusPlan,
-          // remarks: item.remarks,
+          srNo: index + 1,
+          particular: item.particulars,
+          fyPrevAOP: item.fyPrevAOP,
+          fyPrevActual: item.fyPrevActual,
+          fyCurrAOP: item.fyCurrAOP,
+          percentageChange: item.percentageChange,
+          variance: item.variance,
+          remarks: item.remarks,
           siteId: item.siteId,
           aopYear: item.aopYear,
           updatedBy: item.updatedBy,
           updatedDate: item.updatedDate,
           idFromApi: item.id || null,
-          isEditable: item?.isEditable,
+          isEditable: true,
+          isdisabled: false,
           originalRemark: item.remarks,
         }))
         setRows(mapped)
@@ -152,7 +188,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, SITE_ID])
+  }, [keycloak, yearChanged, plantID])
 
   useEffect(() => {
     fetchData()
@@ -171,7 +207,7 @@ export default function Capex({ permissions, tabDisplayName }) {
         return
       }
 
-      const requiredFields = ['proposal']
+      const requiredFields = ['remarks']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -186,13 +222,12 @@ export default function Capex({ permissions, tabDisplayName }) {
 
       const payload = data.map((item) => ({
         id: item.id || null,
-        proposal: item.proposal,
-        category: item.category,
-        justification: item.justification,
-        costRsCr: item.costRsCr || 0,
-        benefitRsCr: item.benefitRsCr || null,
-        targetPlan: item.targetDate ? formatDate(item.targetDate) : (item.targetPlan ? formatDate(item.targetPlan) : null),
-        statusPlan: item.statusPlan || '',
+        particulars: item.particular,
+        fyPrevAOP: item.fyPrevAOP,
+        fyPrevActual: item.fyPrevActual,
+        fyCurrAOP: item.fyCurrAOP,
+        percentageChange: item.percentageChange,
+        variance: item.variance,
         remarks: item.remarks || 'system generated',
         siteId: SITE_ID,
         aopYear: AOP_YEAR,
@@ -201,7 +236,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       }))
 
       // 3. Save to API
-      const response = await SiteReportDataService.saveCapexData(
+      const response = await SiteReportDataService.saveFixedExpensesData(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -233,7 +268,7 @@ export default function Capex({ permissions, tabDisplayName }) {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
 
   const deleteRowData = async (paramsForDelete) => {
     setLoading(true)
@@ -247,7 +282,7 @@ export default function Capex({ permissions, tabDisplayName }) {
       }
 
       if (idFromApi) {
-        await SiteReportDataService.deleteCapex(keycloak, idFromApi)
+        await SiteReportDataService.deleteFixedExpensesData(idFromApi, keycloak)
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
@@ -260,98 +295,11 @@ export default function Capex({ permissions, tabDisplayName }) {
       }
     } catch (error) {
       console.error('Error deleting Record!', error)
-    } finally {
-      setLoading(false)
     }
   }
 
-  const downloadExcelForConfiguration = async () => {
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Excel download started!',
-      severity: 'success',
-    })
-
-    try {
-      await SiteReportDataService.exportCapexData(
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-        EXCEL_EXPORT_TITLE,
-      )
-    } catch (error) {
-      console.error('Error downloading Excel:', error)
-      setSnackbarData({
-        message: 'Failed to download Excel.',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
-    }
-  }
-
-  const handleExcelUpload = async (rawFile) => {
-    setLoading(true)
-    try {
-      const response = await SiteReportDataService.importCapexData(
-        rawFile,
-        keycloak,
-        SITE_ID,
-        AOP_YEAR,
-      )
-
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Uploaded Successfully!',
-          severity: 'success',
-        })
-        setModifiedCells({})
-        fetchData()
-      } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
-
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', `Error_File_Capex_Plan_${AOP_YEAR}.xlsx`)
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message:
-            response?.message || 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        setModifiedCells({})
-        fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Upload Failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      console.error('Error uploading excel:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred during upload!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
+  const handleExcelUpload = (type) => (rawFile) => {
+    uploadPeopleDetails(rawFile, type)
   }
 
   const handleRemarkCellClick = useCallback((row) => {
@@ -378,15 +326,13 @@ export default function Capex({ permissions, tabDisplayName }) {
   const adjustedPermissions = getAdjustedPermissions(
     {
       allAction: true,
+      saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: tabDisplayName || 'Capex/PIO Plan',
+      titleName: 'Fixed Expenses',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Capex_Plan_${AOP_YEAR}`,
-      saveBtn: permissions?.saveBtn ?? true,
-      addButton: permissions?.addButton ?? true,
-      deleteButton: permissions?.deleteButton ?? true,
-      downloadExcelBtn: permissions?.downloadExcelBtn ?? true,
-      uploadExcelBtn: permissions?.uploadExcelBtn ?? true,
+      ExcelName: `${lowerVertName}_Fixed_Expenses_${AOP_YEAR}`,
+      //addButton: true,
+      //deleteButton: true,
     },
     isOldYear,
   )
@@ -394,12 +340,11 @@ export default function Capex({ permissions, tabDisplayName }) {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-
-      <KendoDataTables
-        columns={capexPlanColumns}
+      <KendoDataTablesReports
+        columns={fixedExpensesColumns}
         rows={rows}
         setRows={setRows}
-        title='Capex Plan'
+        title='Fixed Expenses'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}
@@ -411,11 +356,7 @@ export default function Capex({ permissions, tabDisplayName }) {
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
-        handleExcelUpload={handleExcelUpload}
         deleteRowData={deleteRowData}
-        deleteId={deleteId}
-        setDeleteId={setDeleteId}
         permissions={adjustedPermissions}
       />
       <Notification

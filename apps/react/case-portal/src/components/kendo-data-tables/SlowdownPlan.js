@@ -11,7 +11,7 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function ShutdownSlowdownPlan({ permissions, tabDisplayName }) {
+export default function ShutdownSlowdownPlan() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -293,7 +293,7 @@ export default function ShutdownSlowdownPlan({ permissions, tabDisplayName }) {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: tabDisplayName || 'Shutdown / Slowdown plan',
+      titleName: 'Shutdown / Slowdown Plan',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Shutdown_Slowdown_Plan_${AOP_YEAR}`,
       //addButton: true,

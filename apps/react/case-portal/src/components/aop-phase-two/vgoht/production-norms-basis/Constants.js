@@ -91,7 +91,6 @@ const Constants = ({ startDate, endDate, refreshData }) => {
           headerAlign: 'left',
           type: 'number1',
           format: valueFormat,
-          allowNegative: true,
         },
         {
           field: 'may',
@@ -103,7 +102,6 @@ const Constants = ({ startDate, endDate, refreshData }) => {
           headerAlign: 'left',
           type: 'number1',
           format: valueFormat,
-          allowNegative: true,
         }
       )
     } else {
@@ -117,7 +115,6 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         headerAlign: 'left',
         type: 'number1',
         format: valueFormat,
-        allowNegative: true,
       })
     }
 

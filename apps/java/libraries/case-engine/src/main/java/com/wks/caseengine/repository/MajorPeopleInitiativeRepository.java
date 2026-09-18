@@ -12,5 +12,5 @@ import java.util.UUID;
 public interface MajorPeopleInitiativeRepository
         extends JpaRepository<MajorPeopleInitiative, UUID> {
 
-    List<MajorPeopleInitiative> findByAopYearAndSiteId(String aopYear, UUID siteId);
+    List<MajorPeopleInitiative> findByAopYearAndSiteFkId(String aopYear, UUID siteFkId);
 }

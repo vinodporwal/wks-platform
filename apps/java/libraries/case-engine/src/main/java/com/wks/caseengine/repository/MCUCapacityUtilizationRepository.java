@@ -12,5 +12,5 @@ import java.util.UUID;
 public interface MCUCapacityUtilizationRepository
         extends JpaRepository<MCUCapacityUtilization, UUID> {
 
-    List<MCUCapacityUtilization> findByAopYearAndSiteId(String aopYear, UUID siteFkId);
+    List<MCUCapacityUtilization> findByAopYearAndSiteFkId(String aopYear, UUID siteFkId);
 }

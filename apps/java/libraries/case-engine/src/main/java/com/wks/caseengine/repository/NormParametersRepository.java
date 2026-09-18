@@ -48,6 +48,11 @@ public interface NormParametersRepository extends JpaRepository<NormParameters, 
     UUID findIdByPlantFkIdAndNameAndType(@Param("plantFKId") UUID plantFKId,
                                          @Param("name") String name,
                                          @Param("type") String type);
+
+    @Query(value = "SELECT TOP 1 * FROM NormParameters WITH(NOLOCK) WHERE Name = :name AND Plant_FK_Id = :plantFkId AND NormType_FK_Id = :normTypeFkId", nativeQuery = true)
+    Optional<NormParameters> findFirstByNameAndPlantFkIdAndNormTypeFkId(@Param("name") String name,
+                                                                      @Param("plantFkId") UUID plantFkId,
+                                                                      @Param("normTypeFkId") Integer normTypeFkId);
     
     @Query(
     	      value = "SELECT * FROM NormParameters " +

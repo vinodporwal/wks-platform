@@ -105,7 +105,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     siteObject,
     verticalObject,
     year,
-    screenTitle,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -119,12 +118,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const PLANT_NAME_UPPERCASE = plantObject?.name
   const SITE_NAME_UPPERCASE = siteObject?.name
   const VERTICAL_NAME_UPPERCASE = verticalObject?.name
-  const SCREEN_NAME = (screenTitle?.title || 'Stream_Hours_Details').replace(
-    /\s+/g,
-    '_',
-  )
 
-  const EXCEL_NAME = `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_${SCREEN_NAME}`
+  const EXCEL_NAME = `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Stream_Hours_Details_${AOP_YEAR}`
 
   const IS_OLD_YEAR = oldYear?.oldYear
   const isOldYear = false
@@ -270,10 +265,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         .filter((row) => row.inEdit)
         .map((row) => {
           const metricName = (row.Metric || '').trim()
-          const isTargetMetric = [
-            'Total S/D Hours',
-            'Net Operating Hrs',
-          ].includes(metricName)
+          const isTargetMetric = ['Total S/D Hours', 'Net Operating Hrs'].includes(metricName)
           if (isTargetMetric) {
             const nextRemark = getNextRemark(row.originalRemark)
             return {
@@ -297,17 +289,12 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       // 1. Filter the data to only include non-target editable rows for validation
       const editableRowsForValidation = processedData.filter((row) => {
         const metricName = (row.Metric || '').trim()
-        const isTargetMetric = [
-          'Total S/D Hours',
-          'Net Operating Hrs',
-        ].includes(metricName)
+        const isTargetMetric = ['Total S/D Hours', 'Net Operating Hrs'].includes(metricName)
         return !isTargetMetric
       })
 
       // 2. Run the validation only on those filtered rows
-      const validationMessage = validateFields(editableRowsForValidation, [
-        'Remarks',
-      ])
+      const validationMessage = validateFields(editableRowsForValidation, ['Remarks'])
 
       if (validationMessage) {
         setSnackbarOpen(true)
@@ -645,8 +632,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           showRefresh: false,
           showCalculate: false,
           showCalculateVisibility: true,
-          downloadExcelBtnFromUI: true,
-          ExcelName: EXCEL_NAME,
 
           //BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
           // showCalculateVisibility: false,
@@ -655,7 +640,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         },
         isOldYear,
       ),
-    [isOldYear, EXCEL_NAME],
+    [isOldYear],
   )
 
   return (

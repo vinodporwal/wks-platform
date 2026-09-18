@@ -609,18 +609,12 @@ export default function RelPerf() {
     setRemarkDialogOpenCommonParameter(true)
   }
 
-  const parseNumericOrNull = (val) => {
-    if (val === '' || val === null || val === undefined) return null
-    const num = Number(val)
-    return isNaN(num) ? null : num
-  }
-
   const saveIncidents = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
         initiative: row?.initiative,
         outcome: row?.outcome,
-        bestAchieved: parseNumericOrNull(row?.bestAchieved),
+        bestAchieved: row?.bestAchieved,
         id: row?.idFromAPI || null,
         recommendation: row?.recommendation,
         responsible: row?.responsible,
@@ -657,7 +651,7 @@ export default function RelPerf() {
       const payloadData = newRows.map((row) => ({
         initiative: row?.initiative,
         outcome: row?.outcome,
-        bestAchieved: parseNumericOrNull(row?.bestAchieved),
+        bestAchieved: row?.bestAchieved,
         id: row?.idFromAPI || null,
         recommendation: row?.recommendation,
         responsible: row?.responsible,
@@ -733,14 +727,12 @@ export default function RelPerf() {
   const saveCommonParameter = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
-        actual: parseNumericOrNull(
-          row?.actual !== undefined ? row.actual : row?.actuals,
-        ),
-        aop: parseNumericOrNull(row?.aop),
-        bestAchieved: parseNumericOrNull(row?.bestAchieved),
+        actual: row?.actual,
+        aop: row?.aop,
+        bestAchieved: row?.bestAchieved,
         id: row?.idFromAPI || null,
-        limit: row?.limit === '' ? null : (row?.limit ?? null),
-        plann: parseNumericOrNull(row?.plann),
+        limit: row?.limit,
+        plann: row?.plann,
         rationale: row?.rationale,
         remarks: row?.remarks,
         reportType: row?.reportType,
@@ -772,14 +764,12 @@ export default function RelPerf() {
   const saveFinancial = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
-        actual: parseNumericOrNull(
-          row?.actual !== undefined ? row.actual : row?.actuals,
-        ),
-        aop: parseNumericOrNull(row?.aop),
-        bestAchieved: parseNumericOrNull(row?.bestAchieved),
+        actual: row?.actual,
+        aop: row?.aop,
+        bestAchieved: row?.bestAchieved,
         id: row?.idFromAPI || null,
-        limit: row?.limit === '' ? null : (row?.limit ?? null),
-        plann: parseNumericOrNull(row?.plann),
+        limit: row?.limit,
+        plann: row?.plann,
         rationale: row?.rationale,
         remarks: row?.remarks,
         reportType: row?.reportType,
@@ -811,14 +801,12 @@ export default function RelPerf() {
   const saveReliabilityPerformance = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
-        actual: parseNumericOrNull(
-          row?.actual !== undefined ? row.actual : row?.actuals,
-        ),
-        aop: parseNumericOrNull(row?.aop),
-        bestAchieved: parseNumericOrNull(row?.bestAchieved),
+        actual: row?.actual,
+        aop: row?.aop,
+        bestAchieved: row?.bestAchieved,
         id: row?.idFromAPI || null,
-        limit: row?.limit === '' ? null : (row?.limit ?? null),
-        plann: parseNumericOrNull(row?.plann),
+        limit: row?.limit,
+        plann: row?.plann,
         rationale: row?.rationale,
         remarks: row?.remarks,
         reportType: row?.reportType,

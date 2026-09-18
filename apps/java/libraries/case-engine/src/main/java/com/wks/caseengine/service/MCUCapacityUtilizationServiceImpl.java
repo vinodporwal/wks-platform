@@ -8,16 +8,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.MCUCapacityUtilizationDTO;
 import com.wks.caseengine.entity.MCUCapacityUtilization;
-import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.MCUCapacityUtilizationRepository;
-import com.wks.caseengine.repository.SiteRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -28,12 +25,6 @@ public class MCUCapacityUtilizationServiceImpl implements MCUCapacityUtilization
 
     @PersistenceContext
     private EntityManager entityManager;
-    
-    @Autowired
-	private SiteRepository siteRepository;
-    
-    @Autowired
-	private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private MCUCapacityUtilizationRepository mcuCapacityUtilizationRepository;
@@ -56,18 +47,15 @@ public class MCUCapacityUtilizationServiceImpl implements MCUCapacityUtilization
             for (Object[] row : results) {
                 MCUCapacityUtilizationDTO dto = new MCUCapacityUtilizationDTO();
                 dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : "");
-                dto.setPlantId(row.length > 1 && row[1] != null ? row[1].toString() : "");
-                dto.setPlant(row.length > 2 && row[2] != null ? row[2].toString() : "");
-                dto.setPrevAop(row.length > 3 && row[3] instanceof Number ? ((Number) row[3]).doubleValue() : 0.0);
-                dto.setPrevActual(row.length > 4 && row[4] instanceof Number ? ((Number) row[4]).doubleValue() : 0.0);
-                dto.setAop(row.length > 5 && row[5] instanceof Number ? ((Number) row[5]).doubleValue() : 0.0);
-                dto.setRemarks(row.length > 6 && row[6] != null ? row[6].toString() : "");
+                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : "");
+                dto.setPrevAop(row.length > 2 && row[2] instanceof Number ? ((Number) row[2]).doubleValue() : 0.0);
+                dto.setPrevActual(row.length > 3 && row[3] instanceof Number ? ((Number) row[3]).doubleValue() : 0.0);
+                dto.setAop(row.length > 4 && row[4] instanceof Number ? ((Number) row[4]).doubleValue() : 0.0);
+                dto.setRemarks(row.length > 5 && row[5] != null ? row[5].toString() : "");
+                dto.setAopYear(row.length > 6 && row[6] != null ? row[6].toString() : "");
                 dto.setSiteFkId(row.length > 7 && row[7] != null ? row[7].toString() : "");
-                dto.setAopYear(row.length > 8 && row[8] != null ? row[8].toString() : "");
-                dto.setUpdatedBy(row.length > 9 && row[9] != null ? row[9].toString() : "");
-                dto.setUpdatedDateTime(row.length > 10 && row[10] != null ? (java.util.Date) row[10] : null);
-                dto.setIsEditable(row.length > 11 && row[11] != null ? Boolean.parseBoolean(row[11].toString()) : true);
-                
+                dto.setUpdatedBy(row.length > 8 && row[8] != null ? row[8].toString() : "");
+                dto.setUpdatedDateTime(row.length > 9 && row[9] != null ? (java.util.Date) row[9] : null);
                 list.add(dto);
             }
 
@@ -103,7 +91,13 @@ public class MCUCapacityUtilizationServiceImpl implements MCUCapacityUtilization
                     continue;
                 }
                 MCUCapacityUtilization entity = optional.get();
+                entity.setPrevAop(dto.getPrevAop() != null ? dto.getPrevAop().intValue() : null);
+                entity.setPrevActual(dto.getPrevActual() != null ? dto.getPrevActual().intValue() : null);
+                entity.setAop(dto.getAop() != null ? dto.getAop().intValue() : null);
                 entity.setRemarks(dto.getRemarks());
+                entity.setAopYear(dto.getAopYear());
+                entity.setUpdatedBy(dto.getUpdatedBy());
+                entity.setUpdatedDateTime(dto.getUpdatedDateTime());
                 mcuCapacityUtilizationRepository.save(entity);
             }
             aopMessageVM.setCode(200);
@@ -115,32 +109,4 @@ public class MCUCapacityUtilizationServiceImpl implements MCUCapacityUtilization
             throw new RuntimeException("Failed to update MCU capacity utilization", ex);
         }
     }
-    @Override
-    public AOPMessageVM LoadCapacityUtilization(String siteId, String aopYear) {
-        
-		Sites site = siteRepository.findById(UUID.fromString(siteId)).orElseThrow();
-		String procedureName = "Sp_" + site.getName() + "_LoadMcuCapacityUtilization";
-
-
-        Integer result = executeLoadCapacityUtilizationSP(siteId, aopYear, procedureName);
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		aopMessageVM.setCode(200);
-		aopMessageVM.setMessage("Load Technical Availability SP Executed successfully");
-		aopMessageVM.setData(result);
-		
-		return aopMessageVM;
-    }
-    
-    public Integer executeLoadCapacityUtilizationSP( String siteId, String aopYear, String procedureName) {
-		try {
-
-			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
-
-
-			return jdbcTemplate.update(callSql, siteId, aopYear);
-
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to execute stored procedure", e);
-		}
-	}
 }

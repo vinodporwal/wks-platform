@@ -477,7 +477,6 @@ const SteadyStateConsumption = () => {
     titleName: 'Steady State Consumption (Norm/Quantity)',
     showDropdown: false,
     remarksEditable: true,
-    showCalulcationPromt:true,
   }
 
   return (

@@ -243,7 +243,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     // showExport: true,
     downloadExcelBtnFromUI: true,
     ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
-    showImport: true,
+    showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Configuration',

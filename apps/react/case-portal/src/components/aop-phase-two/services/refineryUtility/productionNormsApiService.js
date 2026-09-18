@@ -27,9 +27,6 @@ export const ProductionNormsApiService = {
   getProductionDemandData,
   saveProductionDemandData,
 
-  // Utility Consumption APIS
-  getUtilityConsumptionData,
-  saveUtilityConsumptionData,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -518,54 +515,6 @@ async function getProductionDemandData(keycloak, plantId, year) {
 
 async function saveProductionDemandData(keycloak, PlantId, AOP_YEAR, payload) {
   const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/production-demand?year=${AOP_YEAR}&plantFKId=${PlantId}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    const result = await json(keycloak, resp)
-    return result || { success: true }
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-
-async function getUtilityConsumptionData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/utility-consumption?year=${year}&plantFKId=${plantId}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-
-async function saveUtilityConsumptionData(
-  keycloak,
-  PlantId,
-  AOP_YEAR,
-  payload,
-) {
-  const url = `${Config.CaseEngineUrl}/task/utility-consumption?year=${AOP_YEAR}&plantFKId=${PlantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
