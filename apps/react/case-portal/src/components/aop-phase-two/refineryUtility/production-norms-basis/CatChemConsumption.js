@@ -107,6 +107,7 @@ const CatChemConsumption = () => {
         field: 'apr',
         title: 'Value',
         width: 120,
+        minWidth: 200,
         type: 'number',
         format: valueFormat,
         editable: true,
@@ -251,6 +252,8 @@ const CatChemConsumption = () => {
 
   const downloadExcelForConfiguration = async () => {
     try {
+      setSnackbarData({ message: 'Export Started!', severity: 'success' })
+      setSnackbarOpen(true)
       const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Material_Balance`
       await ProductionNormsApiService.exportCatChemUtilityConsumptionExcel(
         keycloak,
@@ -258,7 +261,7 @@ const CatChemConsumption = () => {
         AOP_YEAR,
         excelName,
       )
-      setSnackbarData({ message: 'Export Started!', severity: 'success' })
+      setSnackbarData({ message: 'Export Successful!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (error) {
       console.error('Error exporting Matbal data:', error)
@@ -276,9 +279,9 @@ const CatChemConsumption = () => {
       saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
-      showExport: false,
+      showExport: true,
       ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
-      showImport: false,
+      showImport: true,
       showCalculate: false,
       showCalculateVisibility: true,
     }
@@ -290,7 +293,8 @@ const CatChemConsumption = () => {
         addButton: false,
         deleteButton: false,
         downloadExcelBtn: false,
-        uploadExcelBtn: false,
+        showExport: false,
+        showImport: false,
         editButton: false,
         showUnit: false,
         saveWithRemark: false,
@@ -322,7 +326,7 @@ const CatChemConsumption = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         handleExcelUpload={handleExcelUpload}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExport={downloadExcelForConfiguration}
         plantID={PLANT_ID}
         groupBy='ParticularG'
       />

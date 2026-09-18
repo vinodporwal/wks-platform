@@ -595,7 +595,7 @@ async function saveUtilityConsumptionData(
 }
 
 async function getCatChemUtilityConsumptionData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/cat-chem?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/cat-chem?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -619,7 +619,7 @@ async function saveCatChemUtilityConsumptionData(
   AOP_YEAR,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/cat-chem?year=${AOP_YEAR}&plantFKId=${PlantId}`
+  const url = `${Config.CaseEngineUrl}/task/cat-chem?year=${AOP_YEAR}&plantId=${PlantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -648,9 +648,9 @@ async function importCatChemUtilityConsumptionExcel(
   plantId,
   year,
 ) {
-  return saveExcelData(file, keycloak, 'cat-chem/import', {
+  return saveExcelData(file, keycloak, 'cat-chem-import', {
     year: year,
-    plantFKId: plantId,
+    plantId: plantId,
   })
 }
 
@@ -662,8 +662,8 @@ async function exportCatChemUtilityConsumptionExcel(
 ) {
   return exportExcelData(
     keycloak,
-    'cat-chem/export',
-    { year: year, plantFKId: plantId },
+    'cat-chem-export',
+    { year: year, plantId: plantId },
     fileName,
   )
 }

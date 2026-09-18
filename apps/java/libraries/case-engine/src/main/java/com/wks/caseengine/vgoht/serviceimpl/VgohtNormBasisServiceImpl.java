@@ -1,6 +1,8 @@
 package com.wks.caseengine.vgoht.serviceimpl;
 
 import com.wks.caseengine.dto.AOPConsumptionNormDTO;
+import com.wks.caseengine.dto.OtherCostsTransactionDto;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -9,6 +11,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +34,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.vgoht.dto.VgohtNormConfigurationDTO;
 import com.wks.caseengine.vgoht.service.VgohtHelperService;
 import com.wks.caseengine.vgoht.service.VgohtNormBasisService;
@@ -39,6 +43,7 @@ import jakarta.transaction.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 import org.apache.poi.ss.usermodel.*;
 
@@ -1762,11 +1767,11 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setUOM(row[3] != null ? row[3].toString() : null);
 				dto.setTypeDisplayName(row[4] != null ? row[4].toString() : null);
 				dto.setApr(parseDouble(row[5]));
-				dto.setOct(parseDouble(row[6]));
-				dto.setAuditYear(row[7] != null ? row[7].toString() : null);
-				dto.setRemarks(row[8] != null ? row[8].toString() : null);
-				dto.setProductDisplayOrder(row[9] != null ? row[9].toString() : null);
-				dto.setIsEditable(row[10] != null ? Boolean.parseBoolean(row[10].toString()) : false);
+				dto.setOct(parseDouble(row[11]));
+				dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+				dto.setRemarks(row[18] != null ? row[18].toString() : null);
+				dto.setProductDisplayOrder(row[19] != null ? row[19].toString() : null);
+				dto.setIsEditable(row[20] != null ? Boolean.parseBoolean(row[20].toString()) : false);
 				
 				dtoList.add(dto);
 			}
@@ -1860,7 +1865,218 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	public byte[] exportCatChemData(String year, String plantId, boolean isAfterSave, List<VgohtNormConfigurationDTO> dtoList) {
+	    try {   
+	        if (!isAfterSave) {
+	            AOPMessageVM aopMessageVM = getCatChemData(year, plantId);
 
+	            if (aopMessageVM != null && aopMessageVM.getData() != null) {
+	                @SuppressWarnings("unchecked")
+	                List<VgohtNormConfigurationDTO> fetchedData = (List<VgohtNormConfigurationDTO>) aopMessageVM.getData();
+	                dtoList = fetchedData;
+	            }
+	        }
+
+	        if (dtoList == null) {
+	            dtoList = new ArrayList<>();
+	        }
+
+	        try (Workbook workbook = new XSSFWorkbook();
+	             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+	            Sheet sheet = workbook.createSheet("Sheet1");
+	            int currentRow = 0;
+
+	            List<String> innerHeaders = new ArrayList<>();
+	            innerHeaders.add("Type");
+	            innerHeaders.add("Particulars");
+	            innerHeaders.add("UOM");
+	            innerHeaders.add("Value");
+	            innerHeaders.add("Remark");
+	            innerHeaders.add("NormParameterId");
+
+	            if (isAfterSave) {
+	                innerHeaders.add("Status");
+	                innerHeaders.add("Error Description");
+	            }
+
+	            Row headerRow = sheet.createRow(currentRow++);
+	            for (int col = 0; col < innerHeaders.size(); col++) {
+	                Cell cell = headerRow.createCell(col);
+	                cell.setCellValue(innerHeaders.get(col));
+	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            }
+
+	            for (VgohtNormConfigurationDTO dto : dtoList) {
+	                Row row = sheet.createRow(currentRow++);
+	                List<Object> rowData = new ArrayList<>();
+	                rowData.add(dto.getTypeDisplayName());
+	                rowData.add(dto.getProductDisplayName());
+	                rowData.add(dto.getUOM());
+	                rowData.add(dto.getApr());
+	                rowData.add(dto.getRemarks());
+	                rowData.add(dto.getNormParameterFKId());
+
+	                if (isAfterSave) {
+	                    rowData.add(dto.getSaveStatus());
+	                    rowData.add(dto.getErrDescription());
+	                }
+
+	                for (int col = 0; col < rowData.size(); col++) {
+	                    Cell cell = row.createCell(col);
+	                    Object value = rowData.get(col);
+
+	                    if (value instanceof Number) {
+	                        cell.setCellValue(((Number) value).doubleValue());
+	                    } else if (value instanceof Boolean) {
+	                        cell.setCellValue((Boolean) value);
+	                    } else if (value != null) {
+	                        cell.setCellValue(value.toString());
+	                    } else {
+	                        cell.setCellValue("");
+	                    }   
+	                }
+	            }
+
+	            // Hide Id column (column index 5)
+	            sheet.setColumnHidden(5, true);
+
+	            workbook.write(outputStream);
+	            return outputStream.toByteArray();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return new byte[0];
+	}
+	
+	public AOPMessageVM importCatChemData(String year, UUID plantId, MultipartFile file) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<VgohtNormConfigurationDTO> data = readCatChemData(file.getInputStream(), plantId, year);
+	        List<VgohtNormConfigurationDTO> failedList = saveCatChemData(year, plantId, data);
+
+	        if (failedList != null && !failedList.isEmpty()) {
+	            byte[] fileByteArray = exportCatChemData(year, plantId.toString(), true, failedList);
+	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+	            
+	            aopMessageVM.setData(base64File);
+	            aopMessageVM.setCode(400);
+	            aopMessageVM.setMessage("Partial data has been saved");
+	        } else {
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("All data has been saved successfully");
+	        }
+
+	        return aopMessageVM;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        aopMessageVM.setCode(500);
+	        aopMessageVM.setMessage("Error importing data: " + e.getMessage());
+	        return aopMessageVM;
+	    }
+	}
+	
+	public List<VgohtNormConfigurationDTO> readCatChemData(InputStream inputStream, UUID plantFKId, String year) {
+	    List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOs = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext()) {
+	            rowIterator.next();  
+	        }
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+
+	            if (row == null || isRowEmpty(row)) {
+	                continue;
+	            }
+
+	            VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+	            try {
+	                dto.setTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                dto.setProductDisplayName(getStringCellValue(row.getCell(1), dto));
+	                dto.setUOM(getStringCellValue(row.getCell(2), dto));
+	                dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+	                
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+
+	            vgohtNormConfigurationDTOs.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return vgohtNormConfigurationDTOs;
+	}
+
+	// Helper method to skip empty rows
+	private boolean isRowEmpty(Row row) {
+	    for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
+	        Cell cell = row.getCell(c);
+	        if (cell != null && cell.getCellType() != CellType.BLANK) {
+	            return false;
+	        }
+	    }
+	    return true;
+	}
+	private static String getStringCellValue(Cell cell, VgohtNormConfigurationDTO dto) {
+	    try {
+	        if (cell == null || cell.getCellType() == CellType.BLANK) {
+	            return null;
+	        }
+	        
+	        cell.setCellType(CellType.STRING);
+	        String val = cell.getStringCellValue().trim();
+	        
+	        // Return null if the string is empty after trimming
+	        return val.isEmpty() ? null : val;
+	        
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Please enter correct values");
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	private static Double getNumericCellValue(Cell cell, VgohtNormConfigurationDTO dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } 
+	    
+	    if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        if (val.isEmpty()) {
+	            return null; // Return null for blank strings
+	        }
+	        try {
+	            return Double.parseDouble(val);
+	        } catch (NumberFormatException e) {
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    }
+	    return null;
+	}
+
+	
 	public List<Object[]> geCatChemDataFromSP(String aopYear, String plantId, String procedureName) {
 		try {
 			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
