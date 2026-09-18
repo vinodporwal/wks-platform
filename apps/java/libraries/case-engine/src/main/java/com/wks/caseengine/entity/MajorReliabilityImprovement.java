@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
-@Table(name = "MajorReliabilityImprovement")
+@Table(name = "MajorReliabilityImprovementInitiative")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,38 +24,38 @@ public class MajorReliabilityImprovement {
     @Column(name = "Id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "Plant", length = 255)
-    private String plant;
+    @Column(name = "PlantId")
+    private UUID plantId;
 
-    @Column(name = "InitiativeDescription", length = 500)
+    @Column(name = "InitiativeDescription", columnDefinition = "varchar(max)")
     private String initiativeDescription;
 
     @Column(name = "Category", length = 255)
     private String category;
 
-    @Column(name = "Outcome", length = 255)
-    private String outcome;
+    @Column(name = "Cost", columnDefinition = "varchar(max)")
+    private String cost;
 
-    @Column(name = "Recommendation", length = 500)
-    private String recommendation;
+    @Column(name = "Outcome", columnDefinition = "varchar(max)")
+    private String outcome;
 
     @Column(name = "TargetDate")
     @Temporal(TemporalType.DATE)
     private Date targetDate;
 
-    @Column(name = "Remark", length = 500)
-    private String remark;
+    @Column(name = "Responsibility", length = 255)
+    private String responsibility;
 
-    @Column(name = "AOPYear", length = 7)
+    @Column(name = "SiteId", nullable = false)
+    private UUID siteId;
+
+    @Column(name = "AOPYear", length = 7, nullable = false)
     private String aopYear;
 
-    @Column(name = "Site_FK_Id")
-    private UUID siteFkId;
+    @Column(name = "ModifiedBy", length = 100)
+    private String modifiedBy;
 
-    @Column(name = "UpdatedBy", length = 255)
-    private String updatedBy;
-
-    @Column(name = "UpdatedDateTime")
+    @Column(name = "ModifiedOn")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDateTime;
+    private Date modifiedOn;
 }

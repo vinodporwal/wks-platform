@@ -1,24 +1,15 @@
 package com.wks.caseengine.entity;
 
-
 import java.util.Date;
 import java.util.UUID;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-
-import lombok.NoArgsConstructor;
-
 import jakarta.persistence.*;
 import lombok.*;
 
-
-
-
 @Entity
-@Table(name = "EnergyPerformance")
+@Table(name = "EnergyPerformanceTransaction")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,39 +17,33 @@ import lombok.*;
 @Builder
 public class EnergyPerformance {
 
-	 @Id
-	 @GeneratedValue(generator = "UUID")
-	 @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-	 @Column(name = "Id", nullable = false, updatable = false)
-	 private UUID id;
-	 
-    @Column(name = "Plant")
-    private String plant;
+	@Id
+	@GeneratedValue(generator = "UUID")
+	@GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+	@Column(name = "Id", nullable = false, updatable = false)
+	private UUID id;
 
-    @Column(name = "UOM")
-    private String uom;
+	@Column(name = "MasterId", nullable = false)
+	private UUID masterId;
 
-    @Column(name = "AOPValue")
-    private Double aopValue;
+	@Column(name = "AOPYear")
+	private String aopYear;
 
-    @Column(name = "ActualValue")
-    private Double actualValue;
+	@Column(name = "FYAOP")
+	private Double fyAop;
 
-    @Column(name = "PlanValue")
-    private Double planValue;
+	@Column(name = "FYActual")
+	private Double fyActual;
 
-    @Column(name = "Remark")
-    private String remark;
+	@Column(name = "FYPlan")
+	private Double fyPlan;
 
-    @Column(name = "SiteId")
-    private UUID siteId;
+	@Column(name = "Remarks", columnDefinition = "VARCHAR(MAX)")
+	private String remarks;
 
-    @Column(name = "AOPYear")
-    private String aopYear;
+	@Column(name = "ModifiedBy")
+	private String modifiedBy;
 
-    @Column(name = "UpdatedBy")
-    private String updatedBy;
-
-    @Column(name = "UpdatedDateTime")
-    private Date updatedDateTime;
+	@Column(name = "ModifiedOn")
+	private Date modifiedOn;
 }
