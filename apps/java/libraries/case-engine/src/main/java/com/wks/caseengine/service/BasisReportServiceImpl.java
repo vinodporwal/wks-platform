@@ -121,9 +121,11 @@ public class BasisReportServiceImpl implements BasisReportService {
 
        if(type.equalsIgnoreCase("PlantWiseNormsHistorian")){
 		storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() + "_NormsBasisReport";
-	   }  else 
-	
-	    if(type.equalsIgnoreCase("NormsHistorian")) {
+	   } else if (type.equalsIgnoreCase("PlantWiseSlowdownBasis")) {
+		storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() + "_SlowdownBasisReport";
+	   } else if (type.equalsIgnoreCase("SlowdownBasis")) {
+		storedProcedure = vertical.getName() + "_" + site.getName() + "_SlowdownBasisReport";
+	   } else if(type.equalsIgnoreCase("NormsHistorian")) {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_NormsBasisReport";
 	    }else if(type.equalsIgnoreCase("ProductionTarget")) {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionBasisReport";

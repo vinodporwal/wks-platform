@@ -10,6 +10,6 @@ import com.wks.caseengine.entity.SiteTeam;
 @Repository
 public interface SiteTeamRepository extends JpaRepository<SiteTeam, UUID>{
 	
-	
+    java.util.Optional<SiteTeam> findBySiteIdAndAopYearAndMasterId(UUID siteId, String aopYear, UUID masterId);
 	
 }

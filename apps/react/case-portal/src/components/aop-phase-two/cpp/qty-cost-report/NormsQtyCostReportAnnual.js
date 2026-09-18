@@ -102,7 +102,7 @@ const NormsQtyCostReportAnnual = () => {
             widthT: 130,
             minWidth: 130,
             type: 'number1',
-            format: valueFormatTwo,
+            format: valueFormat,
             editable: false,
           },
           {
@@ -120,7 +120,7 @@ const NormsQtyCostReportAnnual = () => {
             widthT: 130,
             minWidth: 130,
             type: 'number1',
-            format: valueFormatTwo,
+            format: valueFormat,
             editable: false,
           },
           {
@@ -130,7 +130,7 @@ const NormsQtyCostReportAnnual = () => {
             minWidth: 130,
             editable: false,
             type: 'number1',
-            format: valueFormatTwo,
+            format: valueFormat,
           },
           {
             field: 'annual.amount',
@@ -138,7 +138,7 @@ const NormsQtyCostReportAnnual = () => {
             widthT: 130,
             minWidth: 130,
             type: 'number1',
-            format: valueFormatTwo,
+            format: valueFormat,
             editable: false,
           },
         ],

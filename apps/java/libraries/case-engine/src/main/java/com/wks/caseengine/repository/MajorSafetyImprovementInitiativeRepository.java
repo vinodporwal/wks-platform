@@ -12,5 +12,6 @@ import java.util.UUID;
 public interface MajorSafetyImprovementInitiativeRepository
         extends JpaRepository<MajorSafetyImprovementInitiative, UUID> {
 
-    List<MajorSafetyImprovementInitiative> findByAopYearAndSiteFkId(String aopYear, UUID siteFkId);
+    List<MajorSafetyImprovementInitiative> findByAopYearAndSiteId(String aopYear, UUID siteId);
 }
+

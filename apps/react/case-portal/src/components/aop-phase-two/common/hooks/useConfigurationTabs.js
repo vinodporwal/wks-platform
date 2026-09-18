@@ -157,23 +157,13 @@ const useConfigurationTabs = (type, options = {}) => {
     }
   }, [sortedFilteredTabs])
 
-  // Clamp tabIndex to the valid range synchronously during render so that
-  // when sortedFilteredTabs changes (e.g. site/plant/vertical change) but the
-  // useEffect above hasn't yet reset tabIndex to 0, we don't render with an
-  // out-of-bounds index (which would show no tab content and a wrong tab
-  // highlight in AopTabs for one render cycle).
-  const safeTabIndex =
-    tabIndex != null && tabIndex >= 0 && tabIndex < sortedFilteredTabs.length
-      ? tabIndex
-      : 0
-
-  const currentTab = sortedFilteredTabs[safeTabIndex] || null
+  const currentTab = sortedFilteredTabs[tabIndex] || null
 
   return {
     tabs,
     filteredTabs: sortedFilteredTabs,
     availableTabs,
-    tabIndex: safeTabIndex,
+    tabIndex,
     setTabIndex,
     currentTab,
     loading,

@@ -1,17 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import { Backdrop, Box, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
-import { DataService } from 'services/DataService'
 import { SiteReportDataService } from 'services/SiteReportDataService'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function Capex() {
+export default function TechnicalAvailability({ permissions, tabDisplayName }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -54,13 +51,27 @@ export default function Capex() {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
+  function getAopShortYears(aopYear) {
+    if (!aopYear) return { prev: '', next: '' }
+    const match = aopYear.match(/(\d{4})-(\d{2})/)
+    if (match) {
+      const prev = match[1].slice(-2)
+      const next = match[2]
+      return { prev, next }
+    }
+    const year = String(aopYear).slice(-2)
+    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
+  }
+  const { prev, next } = getAopShortYears(AOP_YEAR)
 
-  const capexPlanColumns = [
+  const technicalAvailabilityColumns = [
     {
       field: 'id',
       title: 'ID',
       editable: false,
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
     {
       field: 'sno',
@@ -69,36 +80,50 @@ export default function Capex() {
       editable: false,
       align: 'right',
       format: '{0:0}',
-    },
-    { field: 'proposal', title: 'Proposal', editable: true },
-    { field: 'category', title: 'Category', editable: true },
-    {
-      field: 'justification',
-      title: 'Justification',
-      editable: true,
+      minWidth: 100,
     },
     {
-      field: 'costRsCr',
-      title: 'Cost (Rs Cr)',
-      editable: true,
+      field: 'plant',
+      title: 'Plant',
+      widthT: 120,
+      editable: false,
+      minWidth: 100,
+    },
+    {
+      field: 'fyPrevAOP',
+      title: `FY${prev} AOP`,
+      editable: false,
       type: 'number',
+      minWidth: 100,
     },
     {
-      field: 'benefitRsCr',
-      title: 'Benefit (Rs Cr)',
-      editable: true,
+      field: 'fyPrevActual',
+      title: `FY${prev} Actual`,
+      editable: false,
       type: 'number',
+      minWidth: 100,
     },
-    { field: 'targetPlan', title: 'Target', editable: true },
-    { field: 'statusPlan', title: 'Status', editable: true },
-    { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
+    {
+      field: 'fyCurrAOP',
+      title: `FY${next} AOP`,
+      editable: false,
+      type: 'number',
+      minWidth: 100,
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
+      minWidth: 100,
+    },
   ]
 
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const res = await SiteReportDataService.getCapexData(
+      const res = await SiteReportDataService.getTechnicalAvailability(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -108,13 +133,10 @@ export default function Capex() {
         const mapped = res?.data?.Data?.map((item, index) => ({
           id: item.id || null,
           sno: index + 1,
-          proposal: item.proposal,
-          category: item.category,
-          justification: item.justification,
-          costRsCr: item.costRsCr,
-          benefitRsCr: item.benefitRsCr,
-          targetPlan: item.targetPlan,
-          statusPlan: item.statusPlan,
+          plant: item.plant,
+          fyPrevAOP: item.fyPrevAOP,
+          fyPrevActual: item.fyPrevActual,
+          fyCurrAOP: item.fyCurrAOP,
           remarks: item.remarks,
           siteId: item.siteId,
           aopYear: item.aopYear,
@@ -168,13 +190,10 @@ export default function Capex() {
 
       const payload = data.map((item) => ({
         id: item.id || null,
-        proposal: item.proposal,
-        category: item.category,
-        justification: item.justification,
-        costRsCr: item.costRsCr,
-        benefitRsCr: item.benefitRsCr,
-        targetPlan: item.targetPlan,
-        statusPlan: item.statusPlan,
+        plant: item.plant,
+        fyPrevAOP: item.fyPrevAOP,
+        fyPrevActual: item.fyPrevActual,
+        fyCurrAOP: item.fyCurrAOP,
         remarks: item.remarks || 'system generated',
         siteId: SITE_ID,
         aopYear: AOP_YEAR,
@@ -183,7 +202,7 @@ export default function Capex() {
       }))
 
       // 3. Save to API
-      const response = await SiteReportDataService.saveCapexData(
+      const response = await SiteReportDataService.saveTechnicalAvailability(
         keycloak,
         SITE_ID,
         AOP_YEAR,
@@ -217,31 +236,26 @@ export default function Capex() {
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
 
-  const deleteRowData = async (paramsForDelete) => {
+  const onLoadHandle = async () => {
     setLoading(true)
 
     try {
-      const { idFromApi, id } = paramsForDelete
-      const deleteId = id
 
-      if (!idFromApi) {
-        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-      }
-
-      if (idFromApi) {
-        await SiteReportDataService.deleteCapexData(idFromApi, keycloak)
-        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Record Deleted successfully!',
-          severity: 'success',
-        })
-        fetchData()
-      } else {
-        setLoading(false)
-      }
+      await SiteReportDataService.loadTechnicalAvailability(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Loaded successfully!',
+        severity: 'success',
+      })
+      fetchData()
     } catch (error) {
-      console.error('Error deleting Record!', error)
+      console.error('Error loading data!', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -273,11 +287,14 @@ export default function Capex() {
   const adjustedPermissions = getAdjustedPermissions(
     {
       allAction: true,
-      showTitleNameBusiness: true,
-      titleName: 'Capex Plan',
-      adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Capex_Plan_${AOP_YEAR}`,
       saveBtn: true,
+      showLoadBtn: true,
+      showTitleNameBusiness: true,
+      titleName: tabDisplayName || 'Technical Availability',
+      adjustedPermissions: true,
+      ExcelName: `${lowerVertName}_Technical_Availability_${AOP_YEAR}`,
+      //addButton: true,
+      //deleteButton: true,
     },
     isOldYear,
   )
@@ -287,10 +304,10 @@ export default function Capex() {
       <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
-        columns={capexPlanColumns}
+        columns={technicalAvailabilityColumns}
         rows={rows}
         setRows={setRows}
-        title='Capex Plan'
+        title='Technical Availability'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}
@@ -302,8 +319,8 @@ export default function Capex() {
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
-        deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
+        handleLoad={onLoadHandle}
       />
       <Notification
         open={snackbarOpen}

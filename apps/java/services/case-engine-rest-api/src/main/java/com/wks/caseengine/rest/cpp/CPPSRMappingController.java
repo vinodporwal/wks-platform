@@ -131,15 +131,6 @@ public class CPPSRMappingController {
         int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
         return ResponseEntity.status(httpStatus).body(response);
     }
- 
-   @PutMapping("/sr-mapping/cost-centers")
-    public ResponseEntity<AOPMessageVM> updateSRMappingCostCenters(
-            @RequestBody List<SRMappingDTO> dtoList) {
-
-        AOPMessageVM response = service.updateSRMappingCostCenters(dtoList);
-        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
-        return ResponseEntity.status(httpStatus).body(response);
-    }
 
     // DELETE SR Mapping
     /**

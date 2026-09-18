@@ -38,6 +38,7 @@ const defs = {
     shutdownPlan: 'Plano de Parada',
     shutdownNorms: 'Shutdown Norms',
     slowdownNorms: 'Slowdown Norms',
+    slowdownBasis: 'Slowdown Basis',
 
     normalOpNorms: 'Normal Operation Norms',
     slowdownPlan: 'Plano de Redução',

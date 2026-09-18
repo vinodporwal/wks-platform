@@ -653,13 +653,26 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 //         dto.getSenderCostCenterCode()
                 // );
 
-                // ── Step 3: Receiver NormParameter ID — taken directly from payload ──────────
-                // The frontend provides receiverUtilityId via a dropdown; no DB lookup needed.
-                UUID resolvedReceiverUtilityId = dto.getReceiverUtilityId();
+                // ── Step 3: Resolve Receiver NormParameter (Utility_NormParameter_FK_Id) ─────
+                // NormType_FK_Id = 1 for receiver, Plant_FK_Id = receiverPlantId.
+                // Search by utility name + Plant_FK_Id + NormType. Reuse or create.
+                UUID resolvedReceiverUtilityId = resolveOrCreateNormParameter(
+                        dto.getReceiverUtilityName(),
+                        dto.getReceiverUtilityCode(),
+                        dto.getReceiverUtilityUOM(),
+                        dto.getReceiverPlantId(),
+                        1
+                );
 
-                // ── Step 4: Sender NormParameter ID — taken directly from payload ────────────
-                // The frontend provides senderUtilityId via a dropdown; no DB lookup needed.
-                UUID resolvedSenderUtilityId = dto.getSenderUtilityId();
+                // ── Step 4: Resolve Sender NormParameter (Generation_NormParameter_FK_Id) ────
+                // NormType_FK_Id = 2 for sender, Plant_FK_Id = senderPlantId.
+                UUID resolvedSenderUtilityId = resolveOrCreateNormParameter(
+                        dto.getSenderUtilityName(),
+                        dto.getSenderUtilityCode(),
+                        dto.getSenderUtilityUOM(),
+                        dto.getSenderPlantId(),
+                        2
+                );
 
                 // ── Step 5: Check if CPP_SR_Mapping_Master already exists with same NormParameter IDs ─
                 // If both resolved NormParameter IDs match an existing master record, reuse it and skip
@@ -811,86 +824,6 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
         } catch (Exception e) {
             logger.error("updateSRMappingsByPlant error: {}", e.getMessage(), e);
-            response.setCode(500);
-            response.setMessage("Error: " + e.getMessage());
-        }
-        return response;
-    }
-
-    @Override
-    @Transactional
-    public AOPMessageVM updateSRMappingCostCenters(List<SRMappingDTO> dtoList) {
-        logger.info("updateSRMappingCostCenters: processing {} records", dtoList == null ? 0 : dtoList.size());
-        AOPMessageVM response = new AOPMessageVM();
-        try {
-            if (dtoList == null || dtoList.isEmpty()) {
-                response.setCode(400);
-                response.setMessage("No records provided for cost-center update.");
-                return response;
-            }
-
-            int updatedCount = 0;
-            int skippedCount = 0;
-
-            for (SRMappingDTO dto : dtoList) {
-                if (dto.getId() == null) {
-                    logger.warn("updateSRMappingCostCenters: skipping record with null id");
-                    skippedCount++;
-                    continue;
-                }
-
-                // Build dynamic SQL so only provided cost-center columns are
-                // updated (allows updating just sender OR just receiver).
-                List<String> setClauses = new ArrayList<>();
-                List<Object> params = new ArrayList<>();
-
-                if (dto.getSenderCostCenterId() != null) {
-                    setClauses.add("Utility_CostCenter_FK_Id = ?");
-                    params.add(dto.getSenderCostCenterId().toString());
-                }
-                if (dto.getReceiverCostCenterId() != null) {
-                    setClauses.add("Generation_CostCenter_FK_Id = ?");
-                    params.add(dto.getReceiverCostCenterId().toString());
-                }
-                if (dto.getRemarks() != null) {
-                    setClauses.add("Remarks = ?");
-                    params.add(dto.getRemarks());
-                }
-
-                if (setClauses.isEmpty()) {
-                    logger.warn("updateSRMappingCostCenters: no fields to update for ID={}", dto.getId());
-                    skippedCount++;
-                    continue;
-                }
-
-                setClauses.add("UpdatedDate = GETDATE()");
-                params.add(dto.getId().toString());
-
-                String updateSql = "UPDATE CPP_SR_Mapping_Master SET " +
-                        String.join(", ", setClauses) + " WHERE ID = ?";
-
-                int rows = db1JdbcTemplate.update(updateSql, params.toArray());
-
-                if (rows > 0) {
-                    updatedCount++;
-                    logger.info("updateSRMappingCostCenters: updated cost centers for ID={}", dto.getId());
-                } else {
-                    skippedCount++;
-                    logger.warn("updateSRMappingCostCenters: no row found for ID={}", dto.getId());
-                }
-            }
-
-            String msg = updatedCount + " record(s) cost-center updated successfully.";
-            if (skippedCount > 0) {
-                msg += " " + skippedCount + " record(s) skipped (missing id or not found).";
-            }
-
-            response.setCode(200);
-            response.setMessage(msg);
-            response.setData(null);
-
-        } catch (Exception e) {
-            logger.error("updateSRMappingCostCenters error: {}", e.getMessage(), e);
             response.setCode(500);
             response.setMessage("Error: " + e.getMessage());
         }
@@ -1056,7 +989,6 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
      *   IssuingPlantName     ← dto.senderPlantName
      *   IssuingPlant_FK_Id   ← dto.senderPlantId
      *   NormParameter_FK_Id  ← resolvedSenderUtilityId
-     *   // [PENDING-DB] Utility_NormParameter_FK_Id ← resolvedReceiverUtilityId
      *   IsActive             ← 1
      *   IssuingUOM           ← dto.senderUtilityUOM
      *   DisplayOrder         ← 1
@@ -1079,76 +1011,77 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             return null;
         }
         try {
-            // ── Step 1: Check for an ORPHAN NormsHeader ──────────────────────────────────
-            // Since every request always creates a brand-new SR Mapping record (new UUID),
-            // searching by CPP_SR_Mapping_Master_Fk_Id = srMappingId would always return empty.
-            // Instead, go straight to the orphan check:
-            // find a NormsHeader that matches Plant_FK_Id + UtilityUOM + NormParameter_FK_Id
-            // but has no SR Mapping linked yet (CPP_SR_Mapping_Master_Fk_Id IS NULL).
-            // If found → link it; if not → INSERT a new row.
+            // Search for an existing NormsHeader row linked to this SR Mapping record
+            String searchSql = "SELECT TOP 1 Id FROM NormsHeader WHERE CPP_SR_Mapping_Master_Fk_Id = ?";
+            List<String> results = db1JdbcTemplate.queryForList(searchSql, String.class, srMappingId.toString());
 
-            String orphanCheckSql = "SELECT TOP 1 Id FROM NormsHeader " +
-                    "WHERE Plant_FK_Id = ? " +
-                    "AND UtilityName = ? " +
-                    "AND NormParameter_FK_Id = ? " +
-                    // [PENDING-DB] receiver norm parameter column not yet added to NormsHeader
-                    "AND Utility_NormParameter_FK_Id = ? " +
-                    "AND CPP_SR_Mapping_Master_Fk_Id IS NULL";
-
-            List<String> orphanResults = db1JdbcTemplate.queryForList(
-                    orphanCheckSql,
-                    String.class,
-                    dto.getReceiverPlantId()  != null ? dto.getReceiverPlantId().toString()  : null,
-                    dto.getReceiverUtilityName(),
-                    resolvedSenderUtilityId   != null ? resolvedSenderUtilityId.toString()   : null,
-                    // [PENDING-DB] 
-                    resolvedReceiverUtilityId != null ? resolvedReceiverUtilityId.toString() : null
-            );
-
-            if (!orphanResults.isEmpty()) {
-                // ── Orphan NormsHeader found — link it to the new SR Mapping ─────────────────
-                UUID orphanId = UUID.fromString(orphanResults.get(0));
-                db1JdbcTemplate.update(
-                        "UPDATE NormsHeader SET CPP_SR_Mapping_Master_Fk_Id = ? WHERE Id = ?",
-                        srMappingId.toString(),
-                        orphanId.toString()
+            if (!results.isEmpty()) {
+                // ── UPDATE existing row ───────────────────────────────────────────────────────
+                UUID existingId = UUID.fromString(results.get(0));
+                String updateSql = "UPDATE NormsHeader SET " +
+                        "Plant_FK_Id = ?, " +
+                        "UtilityName = ?, " +
+                        "UtilityId = ?, " +
+                        "UtilityUOM = ?, " +
+                        "AccountName = ?, " +
+                        "MaterialName = ?, " +
+                        "IssuingPlantName = ?, " +
+                        "IssuingPlant_FK_Id = ?, " +
+                        "NormParameter_FK_Id = ?, " +
+                        "IssuingUOM = ?, " +
+                        "MaterialId = ?, " +
+                        "Remarks = ?, " +
+                        "plantCode = ?, " +
+                        "IsActive = 1 " +
+                        "WHERE Id = ?";
+                db1JdbcTemplate.update(updateSql,
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // Plant_FK_Id
+                        dto.getReceiverUtilityName(),                                                             // UtilityName
+                        dto.getReceiverUtilityCode(),                                                             // UtilityId
+                        dto.getReceiverUtilityUOM(),                                                              // UtilityUOM
+                        "Utilities",                                                                              // AccountName
+                        dto.getSenderUtilityName(),                                                               // MaterialName
+                        dto.getSenderPlantName(),                                                                 // IssuingPlantName
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // IssuingPlant_FK_Id
+                        resolvedSenderUtilityId          != null ? resolvedSenderUtilityId.toString()          : null,  // NormParameter_FK_Id
+                        dto.getSenderUtilityUOM(),                                                                // IssuingUOM
+                        dto.getSenderUtilityCode(),                                                               // MaterialId
+                        dto.getRemarks(),                                                                         // Remarks
+                        dto.getSenderPlantCode(),                                                                 // plantCode
+                        existingId.toString()
                 );
-                logger.info("resolveOrUpdateNormsHeader: linked orphan NormsHeader Id={} to srMappingId={} via CPP_SR_Mapping_Master_Fk_Id",
-                        orphanId, srMappingId);
-                return orphanId; // Existing row reused → Step 7 will check/insert child records for the financial year
-            }
+                logger.info("resolveOrUpdateNormsHeader: updated NormsHeader Id={} for srMappingId={}", existingId, srMappingId);
+                return null; // No new row → Step 7 should NOT run
 
-            // ── Step 2: No orphan found — INSERT a new NormsHeader row ───────────────────────
-            UUID newId = UUID.randomUUID();
-            String insertSql = "INSERT INTO NormsHeader " +
-                    "(Id, Plant_FK_Id, UtilityName, UtilityId, UtilityUOM, AccountName, " +
-                    " MaterialName, IssuingPlantName, IssuingPlant_FK_Id, NormParameter_FK_Id, " +
-                    // [PENDING-DB] 
-                    " Utility_NormParameter_FK_Id, " +
-                    " IsActive, IssuingUOM, DisplayOrder, MaterialId, Remarks, plantCode, " +
-                    " CPP_SR_Mapping_Master_Fk_Id) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?)";
-            db1JdbcTemplate.update(insertSql,
-                    newId.toString(),
-                    dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // Plant_FK_Id
-                    dto.getReceiverUtilityName(),                                                             // UtilityName
-                    dto.getReceiverUtilityCode(),                                                             // UtilityId
-                    dto.getReceiverUtilityUOM(),                                                              // UtilityUOM
-                    "Utilities",                                                                              // AccountName
-                    dto.getSenderUtilityName(),                                                               // MaterialName
-                    dto.getSenderPlantName(),                                                                 // IssuingPlantName
-                    dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // IssuingPlant_FK_Id
-                    resolvedSenderUtilityId          != null ? resolvedSenderUtilityId.toString()          : null,  // NormParameter_FK_Id (sender)
-                    // [PENDING-DB] 
-                    resolvedReceiverUtilityId != null ? resolvedReceiverUtilityId.toString() : null,  // Utility_NormParameter_FK_Id (receiver)
-                    dto.getSenderUtilityUOM(),                                                                // IssuingUOM
-                    dto.getSenderUtilityCode(),                                                               // MaterialId
-                    dto.getRemarks(),                                                                         // Remarks
-                    dto.getSenderPlantCode(),                                                                 // plantCode
-                    srMappingId.toString()
-            );
-            logger.info("resolveOrUpdateNormsHeader: inserted new NormsHeader Id={} for srMappingId={}", newId, srMappingId);
-            return newId; // New row → Step 7 will insert child records for the financial year
+            } else {
+                // ── INSERT new row ────────────────────────────────────────────────────────────
+                UUID newId = UUID.randomUUID();
+                String insertSql = "INSERT INTO NormsHeader " +
+                        "(Id, Plant_FK_Id, UtilityName, UtilityId, UtilityUOM, AccountName, " +
+                        " MaterialName, IssuingPlantName, IssuingPlant_FK_Id, NormParameter_FK_Id, " +
+                        " IsActive, IssuingUOM, DisplayOrder, MaterialId, Remarks, plantCode, " +
+                        " CPP_SR_Mapping_Master_Fk_Id) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?)";
+                db1JdbcTemplate.update(insertSql,
+                        newId.toString(),
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // Plant_FK_Id
+                        dto.getReceiverUtilityName(),                                                             // UtilityName
+                        dto.getReceiverUtilityCode(),                                                             // UtilityId
+                        dto.getReceiverUtilityUOM(),                                                              // UtilityUOM
+                        "Utilities",                                                                              // AccountName
+                        dto.getSenderUtilityName(),                                                               // MaterialName
+                        dto.getSenderPlantName(),                                                                 // IssuingPlantName
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // IssuingPlant_FK_Id
+                        resolvedSenderUtilityId          != null ? resolvedSenderUtilityId.toString()          : null,  // NormParameter_FK_Id
+                        dto.getSenderUtilityUOM(),                                                                // IssuingUOM
+                        dto.getSenderUtilityCode(),                                                               // MaterialId
+                        dto.getRemarks(),                                                                         // Remarks
+                        dto.getSenderPlantCode(),                                                                 // plantCode
+                        srMappingId.toString()
+                );
+                logger.info("resolveOrUpdateNormsHeader: inserted NormsHeader Id={} for srMappingId={}", newId, srMappingId);
+                return newId; // New row → Step 7 should insert NormsMonthDetail records
+            }
 
         } catch (Exception e) {
             logger.error("resolveOrUpdateNormsHeader error for srMappingId={}: {}", srMappingId, e.getMessage(), e);
@@ -1334,14 +1267,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
     /**
      * Checks whether child records (CPPNorms, NormsMonthDetail, CPPMonthWisePrice) already exist
      * for the given NormsHeader and financial year.
-     * <p>
-     * Each child table is checked <strong>independently</strong>: if a table is missing its records
-     * for the requested year they are inserted regardless of the state of the other tables.
      * <ul>
-     *   <li>All 3 already present → returns "ALREADY_EXISTS".</li>
-     *   <li>At least 1 was inserted → returns "INSERTED".</li>
-     *   <li>Null / blank inputs    → returns "SKIPPED".</li>
-     *   <li>Unexpected error       → returns "ERROR".</li>
+     *   <li>If records are already present → logs a skip message and returns "ALREADY_EXISTS".</li>
+     *   <li>If no records for that year → inserts all 3 child tables and returns "INSERTED".</li>
      * </ul>
      *
      * @param normsHeaderId UUID of the NormsHeader row
@@ -1354,72 +1282,23 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             return "SKIPPED";
         }
         try {
-            boolean anyInserted = false;
-
-            // ── 1. CPPNorms ───────────────────────────────────────────────────────────────────
-            List<String> cppNormsExisting = db1JdbcTemplate.queryForList(
+            // Check CPPNorms for existing records for this NormsHeader + financialYear
+            List<String> existing = db1JdbcTemplate.queryForList(
                     "SELECT TOP 1 Id FROM CPPNorms WITH(NOLOCK) WHERE NormsHeader_FK_Id = ? AND FinancialYear = ?",
                     String.class, normsHeaderId.toString(), financialYear);
 
-            if (cppNormsExisting.isEmpty()) {
-                insertCppNorms(normsHeaderId, financialYear);
-                logger.info("insertChildRecordsIfAbsent: inserted CPPNorms for NormsHeader={}, financialYear={}", normsHeaderId, financialYear);
-                anyInserted = true;
-            } else {
-                logger.info("insertChildRecordsIfAbsent: CPPNorms already present for NormsHeader={}, financialYear={} — skipping", normsHeaderId, financialYear);
-            }
-
-            // ── 2. NormsMonthDetail ───────────────────────────────────────────────────────────
-            // NormsMonthDetail has no FinancialYear column; year is resolved via FinancialYearMonth.
-            // Parse "2025-26" → startYear=2025, endYear=2026 and check using the same range used on insert.
-            int startYear;
-            int endYear;
-            try {
-                startYear = Integer.parseInt(financialYear.split("-")[0].trim());
-                endYear   = startYear + 1;
-            } catch (NumberFormatException e) {
-                logger.error("insertChildRecordsIfAbsent: could not parse year from financialYear='{}' — skipping NormsMonthDetail check", financialYear);
-                startYear = -1;
-                endYear   = -1;
-            }
-
-            if (startYear > 0) {
-                List<String> monthDetailExisting = db1JdbcTemplate.queryForList(
-                        "SELECT TOP 1 nmd.Id FROM NormsMonthDetail nmd WITH(NOLOCK) " +
-                        "INNER JOIN FinancialYearMonth fym WITH(NOLOCK) ON nmd.FinancialYearMonth_FK_Id = fym.Id " +
-                        "WHERE nmd.NormsHeader_FK_Id = ? " +
-                        "AND ((fym.Year = ? AND fym.Month >= 4) OR (fym.Year = ? AND fym.Month <= 3))",
-                        String.class, normsHeaderId.toString(), startYear, endYear);
-
-                if (monthDetailExisting.isEmpty()) {
-                    insertNormsMonthDetails(normsHeaderId, financialYear);
-                    logger.info("insertChildRecordsIfAbsent: inserted NormsMonthDetail for NormsHeader={}, financialYear={}", normsHeaderId, financialYear);
-                    anyInserted = true;
-                } else {
-                    logger.info("insertChildRecordsIfAbsent: NormsMonthDetail already present for NormsHeader={}, financialYear={} — skipping", normsHeaderId, financialYear);
-                }
-            }
-
-            // ── 3. CPPMonthWisePrice ──────────────────────────────────────────────────────────
-            List<String> monthWisePriceExisting = db1JdbcTemplate.queryForList(
-                    "SELECT TOP 1 Id FROM CPPMonthWisePrice WITH(NOLOCK) WHERE NormsHeader_FK_Id = ? AND FinancialYear = ?",
-                    String.class, normsHeaderId.toString(), financialYear);
-
-            if (monthWisePriceExisting.isEmpty()) {
-                insertCppMonthWisePrice(normsHeaderId, financialYear);
-                logger.info("insertChildRecordsIfAbsent: inserted CPPMonthWisePrice for NormsHeader={}, financialYear={}", normsHeaderId, financialYear);
-                anyInserted = true;
-            } else {
-                logger.info("insertChildRecordsIfAbsent: CPPMonthWisePrice already present for NormsHeader={}, financialYear={} — skipping", normsHeaderId, financialYear);
-            }
-
-            if (anyInserted) {
-                logger.info("insertChildRecordsIfAbsent: completed — one or more child tables inserted for NormsHeader={}, financialYear={}", normsHeaderId, financialYear);
-                return "INSERTED";
-            } else {
-                logger.info("insertChildRecordsIfAbsent: all child records already present for NormsHeader={}, financialYear={}", normsHeaderId, financialYear);
+            if (!existing.isEmpty()) {
+                logger.info("insertChildRecordsIfAbsent: child records already present for NormsHeader={}, financialYear={} — skipping insert",
+                        normsHeaderId, financialYear);
                 return "ALREADY_EXISTS";
             }
+
+            // No records for this year — insert all 3 child tables
+            insertNormsMonthDetails(normsHeaderId, financialYear);
+            insertCppNorms(normsHeaderId, financialYear);
+            insertCppMonthWisePrice(normsHeaderId, financialYear);
+            logger.info("insertChildRecordsIfAbsent: inserted child records for NormsHeader={}, financialYear={}", normsHeaderId, financialYear);
+            return "INSERTED";
 
         } catch (Exception e) {
             logger.error("insertChildRecordsIfAbsent error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
