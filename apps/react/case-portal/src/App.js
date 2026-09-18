@@ -31,13 +31,24 @@ const App = () => {
       keycloak.token = storedToken;
     }
 
-    keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
-      if(!authenticated){
-        keycloak.login();
-      }
-      setKeycloak(keycloak)
-      setAuthenticated(authenticated)
+const inIframe = window.self !== window.top
 
+keycloak.init({
+  onLoad: inIframe ? 'check-sso' : 'login-required',
+  checkLoginIframe: true,
+  silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
+}).then((authenticated) => {
+  setKeycloak(keycloak)
+  setAuthenticated(authenticated)
+
+  if (!authenticated) {
+    if (inIframe) {
+      // don't force login inside the frame — surface it to the parent instead
+      // (or just leave blank/show a message; up to how APM expects to handle it)
+    } else {
+      keycloak.login() // standalone: normal redirect flow, unchanged behavior
+    }
+  }
       if (authenticated) {
         localStorage.setItem('keycloakToken', keycloak.token)
         localStorage.setItem('keycloak', JSON.stringify(keycloak))
