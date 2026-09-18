@@ -629,6 +629,41 @@ async function createCaseManagement(keycloak) {
       
       {/* Main App - only render if not blocked */}
       {(!isInIframe || !isBlocked) && keycloak && authenticated && (
+        (() => {
+          // Check if the user has at least one valid role
+          const userRoles = keycloak.tokenParsed?.resource_access?.['wks-portal']?.roles || [];
+          const hasAccess = userRoles.includes('admin') || 
+                            userRoles.includes('case_creator') || 
+                            userRoles.includes('case_editor') || 
+                            userRoles.includes('case_viewer');
+
+          if (!hasAccess) {
+            return (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100vh',
+                backgroundColor: '#f8f9fa'
+              }}>
+                <div style={{
+                  backgroundColor: '#fff',
+                  border: '1px solid #dc3545',
+                  borderRadius: '8px',
+                  padding: '40px',
+                  textAlign: 'center',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                }}>
+                  <h1 style={{ color: '#dc3545', marginBottom: '10px' }}>Access Denied</h1>
+                  <p style={{ color: '#6c757d', fontSize: '16px' }}>
+                    You do not have the required permissions to view the Case Management System.
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          return (
         <ThemeCustomization>
           <Suspense fallback={<div>Loading...</div>}>
             <ScrollTop>
@@ -643,6 +678,8 @@ async function createCaseManagement(keycloak) {
             </ScrollTop>
           </Suspense>
         </ThemeCustomization>
+          );
+        })()
       )}
     </>
   )
