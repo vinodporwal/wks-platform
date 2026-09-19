@@ -39,6 +39,7 @@ _DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 # Map plant_id → JSON filename. Add more entries as new plants get JSON fallbacks.
 _JSON_FILES = {
     "2DFEE33F-4CFD-4887-B9DD-53388AA95271": "sez_heat_rates.json",
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": "dta_pcg_heat_rates.json",
 }
 
 _cache: dict = {}

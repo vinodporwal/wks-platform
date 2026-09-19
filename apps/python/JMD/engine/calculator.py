@@ -143,12 +143,27 @@ def _log_utility_demand_rollup(process: dict, fixed: dict, month: int, year: int
 
 _SEZ_PLANT_ID     = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
 _SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
+_DTA_PCG_PLANT_ID = "F6D82E68-C3B6-494F-9905-48F19DC611E3"
 
 # source_plant_id → {target_plant_id, export_utilities: [ODS material names]}
 _INTERPLANT_EXPORTS = {
     _SEZ_PLANT_ID: {
         "target_plant_id": _SEZ_PCG_PLANT_ID,
         "export_utilities": ["D M Water", "Utility Water", "Desal Water Clearing"],
+    },
+}
+
+# Static inter-plant export quantities keyed by
+# (source_plant_id, month, year) → {ODS material name: export qty}.
+# These are the AOP-approved offtake amounts the source plant must generate
+# on top of its own demand — used until the dynamic import/export utility
+# quantity calculation is implemented across all CPP plants.
+_STATIC_INTERPLANT_EXPORTS = {
+    # DTA-PCG supplies Desalinated water and NITROGEN_ASU to
+    # JMD - Utility Plant (36BJ, under DTA-CPP) — April 2026.
+    (_DTA_PCG_PLANT_ID, 4, 2026): {
+        "Desalinated water": 180_664.0,
+        "NITROGEN_ASU":     10_548_215.0,
     },
 }
 
@@ -167,60 +182,75 @@ def _get_interplant_export_demands(plant_id: str, month: int, year: int) -> dict
 
     Total export demand = process + fixed + inter-plant U4U
 
+    Static AOP export quantities from _STATIC_INTERPLANT_EXPORTS are added
+    on top (e.g. DTA-PCG's Desalinated water / NITROGEN_ASU offtake by
+    JMD - Utility Plant) until dynamic import/export is implemented.
+
     Returns: {ods_material_name: total_export_qty}
     """
     global _interplant_running
-    if _interplant_running:
-        return {}
-
-    config = _INTERPLANT_EXPORTS.get(plant_id.upper())
-    if not config:
-        return {}
-
-    target_plant_id = config["target_plant_id"]
-    export_utilities = config["export_utilities"]
-
-    logger.info("  [INTER-PLANT] Calculating export demands: %s -> %s for %s",
-                plant_id, target_plant_id, export_utilities)
-
-    _interplant_running = True
-    try:
-        target_result = run_month(target_plant_id, month, year, save_to_db=False)
-    finally:
-        _interplant_running = False
-
-    # Extract inter-plant U4U demands from target plant's U4U result
-    u4u_result = target_result.get("u4u_iteration") or {}
-    interplant_skipped = u4u_result.get("interplant_skipped", {})
-
-    # Sum inter-plant U4U by material (across all producers)
-    interplant_u4u_by_material: dict = {}
-    for (producer, material), qty in interplant_skipped.items():
-        if material in export_utilities:
-            interplant_u4u_by_material[material] = (
-                interplant_u4u_by_material.get(material, 0.0) + float(qty)
-            )
-
-    # Fetch target plant's process + fixed demands for export utilities
-    target_process = fetch_process_demands_raw(target_plant_id, month, year)
-    target_fixed   = fetch_fixed_consumption_raw(target_plant_id, month, year)
-
-    # Combine: total = process + fixed + inter-plant U4U
     export_demands: dict = {}
-    for util in export_utilities:
-        process_val = float(target_process.get(util, 0.0))
-        fixed_val   = float(target_fixed.get(util, 0.0))
-        u4u_val     = float(interplant_u4u_by_material.get(util, 0.0))
-        total = process_val + fixed_val + u4u_val
-        if total > 0:
-            export_demands[util] = total
-            logger.info(
-                "  [INTER-PLANT] %s: process=%.2f, fixed=%.2f, interplant_u4u=%.2f, total_export=%.2f",
-                util, process_val, fixed_val, u4u_val, total,
-            )
 
-    if not export_demands:
-        logger.warning("  [INTER-PLANT] No export demands calculated (all values were 0)")
+    # Dynamic extraction via the target plant's dry-run (recursion-guarded).
+    config = _INTERPLANT_EXPORTS.get(plant_id.upper())
+    if config and not _interplant_running:
+        target_plant_id = config["target_plant_id"]
+        export_utilities = config["export_utilities"]
+
+        logger.info("  [INTER-PLANT] Calculating export demands: %s -> %s for %s",
+                    plant_id, target_plant_id, export_utilities)
+
+        _interplant_running = True
+        try:
+            target_result = run_month(target_plant_id, month, year, save_to_db=False)
+        finally:
+            _interplant_running = False
+
+        # Extract inter-plant U4U demands from target plant's U4U result
+        u4u_result = target_result.get("u4u_iteration") or {}
+        interplant_skipped = u4u_result.get("interplant_skipped", {})
+
+        # Sum inter-plant U4U by material (across all producers)
+        interplant_u4u_by_material: dict = {}
+        for (producer, material), qty in interplant_skipped.items():
+            if material in export_utilities:
+                interplant_u4u_by_material[material] = (
+                    interplant_u4u_by_material.get(material, 0.0) + float(qty)
+                )
+
+        # Fetch target plant's process + fixed demands for export utilities
+        target_process = fetch_process_demands_raw(target_plant_id, month, year)
+        target_fixed   = fetch_fixed_consumption_raw(target_plant_id, month, year)
+
+        # Combine: total = process + fixed + inter-plant U4U
+        for util in export_utilities:
+            process_val = float(target_process.get(util, 0.0))
+            fixed_val   = float(target_fixed.get(util, 0.0))
+            u4u_val     = float(interplant_u4u_by_material.get(util, 0.0))
+            total = process_val + fixed_val + u4u_val
+            if total > 0:
+                export_demands[util] = total
+                logger.info(
+                    "  [INTER-PLANT] %s: process=%.2f, fixed=%.2f, interplant_u4u=%.2f, total_export=%.2f",
+                    util, process_val, fixed_val, u4u_val, total,
+                )
+
+        if not export_demands:
+            logger.warning("  [INTER-PLANT] No export demands calculated (all values were 0)")
+
+    # Static AOP export quantities — applied until the dynamic import/export
+    # utility quantity calculation is implemented across all CPP plants.
+    static = _STATIC_INTERPLANT_EXPORTS.get((plant_id.upper(), month, year))
+    if static:
+        for util, qty in static.items():
+            qty = float(qty)
+            if qty <= 0:
+                continue
+            export_demands[util] = export_demands.get(util, 0.0) + qty
+            logger.info(
+                "  [INTER-PLANT] %s: static export qty=%.2f, total_export=%.2f",
+                util, qty, export_demands[util],
+            )
 
     return export_demands
 

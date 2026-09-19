@@ -199,6 +199,14 @@ def _get_asset_equipment_type(asset_name: str) -> str:
 _DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
 _SEZ_PLANT_ID = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
 _SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
+_DTA_PCG_PLANT_ID = "F6D82E68-C3B6-494F-9905-48F19DC611E3"
+
+# Plants whose PRDS cascade is branching (one grade lets down to multiple
+# lower grades — e.g. SEZ-PCG SHP→{HP,IHP}, DTA-PCG SHP→{HP,IHP,IP}).
+# These use the topological children_map calculation instead of the
+# linear chain.  Linear-cascade plants (DTA-CPP, C2-CPP, SEZ-CPP) are
+# unaffected.
+_BRANCHING_CASCADE_PLANTS = {_SEZ_PCG_PLANT_ID, _DTA_PCG_PLANT_ID}
 _DTA_STG_CSV = os.path.join(os.path.dirname(__file__), "..", "data", "dta_stg_extraction.csv")
 _DTA_STG_LOOKUP: list = []
 
@@ -1133,7 +1141,13 @@ def dispatch_steam(
     raw_demands = _get_steam_demands(plant_id, month, year, demands=demands,
                                       grade_prefixes=grade_prefixes)
     
-    byproduct_norms = ods_reader.get_hrsg_byproduct_norms()
+    # Byproduct norms grouped by steam grade ({'lp': {util: norm}, 'mp': ...}).
+    # Negative norms = co-product supply credited against that grade's demand.
+    byproduct_by_grade_norms = (
+        ods_reader.get_hrsg_byproduct_norms_by_grade()
+        if hasattr(ods_reader, "get_hrsg_byproduct_norms_by_grade")
+        else {"lp": ods_reader.get_hrsg_byproduct_norms()}
+    )
     
     # 3. Load DB assets, operational hours, priority, capacity
     steam_assets = fetch_steam_generation_assets(plant_id)
@@ -1248,9 +1262,11 @@ def dispatch_steam(
             a["free_steam_tph"] = fs_tph
 
     # 4. Convergence loop (5 iterations)
-    # byproduct applies to the lowest grade (first in cascade)
+    # byproduct applies per grade (lp/mp) — a co-product reduces that grade's
+    # net demand.  For plants with only LP byproducts this is identical to the
+    # previous behaviour since their lowest grade is 'lp'.
     lowest_grade = grade_prefixes[0] if grade_prefixes else "lp"
-    byproduct_low_steam = 0.0
+    byproduct_by_grade: dict = {}  # {grade: total byproduct MT (negative)}
     demand_details = {}
     free_steam = float(power_result.get("total_free_steam_mt", 0.0))
     
@@ -1260,10 +1276,11 @@ def dispatch_steam(
         else {}
     )
 
-    # SEZ-PCG uses a branching cascade (SHP→HP, SHP→IHP, HP→MP, HP→IP).
-    # Build a parent→children map for the branching calculation.
-    is_sez_pcg = plant_id == _SEZ_PCG_PLANT_ID
-    if is_sez_pcg and cascade:
+    # SEZ-PCG / DTA-PCG use a branching cascade (SHP→HP, SHP→IHP, HP→MP,
+    # SHP→IP for DTA-PCG, LP→LLP).  Build a parent→children map for the
+    # branching calculation.
+    is_branching = plant_id in _BRANCHING_CASCADE_PLANTS
+    if is_branching and cascade:
         # Map: parent_grade → list of (child_grade, norm, prds_name)
         children_map = {}
         for step in cascade:
@@ -1291,7 +1308,7 @@ def dispatch_steam(
         net_by_grade = {}
         letdown_by_grade = {}
 
-        if is_sez_pcg and children_map:
+        if is_branching and children_map:
             # ── SEZ-PCG branching cascade ──────────────────────────────────
             # Process grades bottom-up: for each grade, net demand =
             #   process + fixed + sum(letdowns from all children).
@@ -1335,9 +1352,8 @@ def dispatch_steam(
 
             for g in topo_order:
                 base = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
-                # Add byproduct to lowest grade
-                if g == lowest_grade:
-                    base += byproduct_low_steam
+                # Co-product supply credits this grade's demand (negative value)
+                base += byproduct_by_grade.get(g, 0.0)
                 # Add letdowns from all children (already calculated in topo order)
                 child_letdown_sum = 0.0
                 for cg, norm, prds_name in children_map.get(g, []):
@@ -1365,14 +1381,15 @@ def dispatch_steam(
             # ── Linear cascade (original logic for other plants) ───────────
             prev_letdown = 0.0
             for i, g in enumerate(grade_prefixes):
-                if i == 0:
-                    # Lowest grade: include byproduct credit
-                    net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + byproduct_low_steam
-                elif g == top_grade or (plant_id == _DTA_PLANT_ID and g == "hp"):
+                if g == top_grade or (plant_id == _DTA_PLANT_ID and g == "hp"):
                     # Top-grade and DTA HP PRDS consumption is already present in U4U demand.
                     net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
                 else:
                     net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
+                # Co-product supply credits this grade's demand (negative value).
+                # For existing plants only 'lp' is populated — same as the
+                # previous lowest-grade behaviour.
+                net += byproduct_by_grade.get(g, 0.0)
                 net_by_grade[g] = net
                 # Letdown: this grade's net demand drives consumption from the grade above
                 if i < len(cascade):
@@ -1403,7 +1420,8 @@ def dispatch_steam(
 
         demand_details = {
             **raw_demands,
-            f"{lowest_grade}_byproduct": byproduct_low_steam,
+            **{f"{g}_byproduct": byproduct_by_grade.get(g, 0.0) for g in grade_prefixes},
+            f"{lowest_grade}_byproduct": byproduct_by_grade.get(lowest_grade, 0.0),
             **{f"{g}_letdown": letdown_by_grade[g] for g in grade_prefixes},
             **{f"{g}_net": round(net_by_grade[g], 2) for g in grade_prefixes},
             "_cascade_grades": grade_prefixes,
@@ -1518,19 +1536,22 @@ def dispatch_steam(
             else:
                 a["total_output_mt"] = a["dispatched_mt"]
 
-        # Recalculate byproduct steam for lowest grade (based on total SHP output)
-        byproduct_low_steam = 0.0
+        # Recalculate byproduct steam per grade (based on total SHP output).
+        # Co-products (negative norms) are supply credited against that grade's
+        # demand — lp byproduct → lp demand, mp byproduct → mp demand, etc.
+        byproduct_by_grade = {}
         for a in dispatch_assets:
-            norm_val = byproduct_norms.get(a["asset_name"].upper())
-            if norm_val is None:
-                norm_val = next(
-                    (v for k, v in byproduct_norms.items() if k in a["asset_name"].upper() or a["asset_name"].upper() in k),
-                    None
-                )
-            if norm_val is None:
-                logger.debug("  [DISPATCH] No byproduct norm in ODS for asset '%s'; using 0.0", a["asset_name"])
-                norm_val = 0.0
-            byproduct_low_steam += a["total_output_mt"] * norm_val
+            for grade, grade_norms in byproduct_by_grade_norms.items():
+                norm_val = grade_norms.get(a["asset_name"].upper())
+                if norm_val is None:
+                    norm_val = next(
+                        (v for k, v in grade_norms.items() if k in a["asset_name"].upper() or a["asset_name"].upper() in k),
+                        None
+                    )
+                if norm_val is None:
+                    logger.debug("  [DISPATCH] No %s byproduct norm in ODS for asset '%s'; using 0.0", grade, a["asset_name"])
+                    continue
+                byproduct_by_grade[grade] = byproduct_by_grade.get(grade, 0.0) + a["total_output_mt"] * norm_val
             
     # Final total-output computation for returned assets
     for a in dispatch_assets:

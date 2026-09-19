@@ -2340,7 +2340,15 @@ def fetch_gt_heat_rate_lookup(plant_id: str, month: int = None, year: int = None
 # Interpolation helpers (mirror PPPython-script power_asset_queries.py)
 # ---------------------------------------------------------------------------
 
-BTU_LB_TO_MMBTU_MT = 0.00396567  # 1 kcal/kg = 3.96567 BTU/lb
+# HRSG/AuxBoiler heat rate → NG norm (MMBTU per MT of steam).
+#
+# NOTE ON UNITS: despite the name and the "BTU/lb" curve labels, this is
+# 1 kcal/kg expressed in MMBTU/MT (1 kcal/kg = 1000 kcal/MT x 3.96567 BTU/kcal
+# = 0.00396567 MMBTU/MT).  The literal BTU/lb factor would be
+# 2204.6226/1e6 = 0.00220462.  This convention is corroborated by the C2 ODS
+# HRSG NG norms (see u4u_iteration_loop._BTU_LB_TO_MMBTU_MT) — do not change
+# the value without re-validating against BPC.
+BTU_LB_TO_MMBTU_MT = 0.00396567
 
 
 def get_stg_extraction_for_load(

@@ -40,9 +40,11 @@ if _HAS_OPENPYXL:
     _HDR_FILL    = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
     _SUB_FILL    = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
     _TOTAL_FILL  = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+    _WARN_FILL   = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
     _HDR_FONT    = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
     _BOLD_FONT   = Font(name="Calibri", size=11, bold=True)
     _NORMAL_FONT = Font(name="Calibri", size=10)
+    _WARN_FONT   = Font(name="Calibri", size=10, bold=True, color="9C0006")
     _THIN = Border(
         left=Side(style="thin"), right=Side(style="thin"),
         top=Side(style="thin"),  bottom=Side(style="thin"),
@@ -71,6 +73,27 @@ def _header_row(ws, col_start, row, values: list):
     for i, v in enumerate(values):
         c = ws.cell(row=row, column=col_start + i)
         _style_cell(c, v, font=_HDR_FONT, fill=_HDR_FILL, align="center")
+
+
+def _bpc_baseline_warning(ws, row, col_start, headers_count: int, u4u: dict):
+    """Flag the BPC columns when the baseline did not come from the ODS file.
+
+    Without this the 'BPC Gen Qty' / 'BPC Quantity' columns can show ~0%
+    differences against values this model wrote back on a previous run, which
+    reads as a perfect match.
+    """
+    if not _HAS_OPENPYXL:
+        return
+    if u4u.get("bpc_baseline_authoritative", True):
+        return
+    c = ws.cell(row=row, column=col_start + headers_count + 1)
+    _style_cell(
+        c,
+        "NOT A VALIDATION BASELINE: BPC values came from the norms reader, "
+        "not the original ODS file — a 0% difference here only means the model "
+        "reproduced its own previous output.",
+        font=_WARN_FONT, fill=_WARN_FILL, align="left",
+    )
 
 
 def _data_row(ws, row, values: list, bold=False, fill=None):
@@ -270,6 +293,7 @@ def _write_u4u_consumption(ws, result: dict):
         "Quantity", "BPC Quantity", "Qty Diff %",
     ]
     _header_row(ws, 1, 1, headers)
+    _bpc_baseline_warning(ws, 1, 1, len(headers), u4u)
 
     # Build BPC lookup from u4u result
     bpc_gen = u4u.get("final_bpc_gen_quantities", {})
@@ -289,14 +313,14 @@ def _write_u4u_consumption(ws, result: dict):
             rec.get("producer_uom", ""),
             round(rec["generation"], 2),
             round(bg, 2),
-            round(gen_diff, 2),
+            _round_or_blank(gen_diff),
             rec.get("account", ""),
             rec.get("material", ""),
             rec.get("material_uom", ""),
             round(rec.get("norm", 0.0), 6),
             round(rec["quantity"], 2),
             round(bq, 2),
-            round(qty_diff, 2),
+            _round_or_blank(qty_diff),
         ])
 
     # Freeze header + auto filter
@@ -337,6 +361,7 @@ def _write_u4u_summary(ws, result: dict):
         "Gen Diff %", "# Materials", "Materials Consumed",
     ]
     _header_row(ws, 1, 1, headers)
+    _bpc_baseline_warning(ws, 1, 1, len(headers), u4u)
 
     for r, p in enumerate(sorted(producer_summary.keys()), start=2):
         s = producer_summary[p]
@@ -348,7 +373,7 @@ def _write_u4u_summary(ws, result: dict):
             s["uom"],
             round(s["generation"], 2),
             round(s["bpc_gen"], 2),
-            round(gen_diff, 2),
+            _round_or_blank(gen_diff),
             s["material_count"],
             ", ".join(s["materials"]),
         ], fill=fill)
@@ -368,11 +393,20 @@ def _write_u4u_summary(ws, result: dict):
     _auto_width(ws)
 
 
-def _pct_diff(actual: float, bpc: float) -> float:
-    """Calculate percentage difference between actual and BPC value."""
-    if bpc == 0:
-        return 0.0
+def _pct_diff(actual: float, bpc: float):
+    """Calculate percentage difference between actual and BPC value.
+
+    Returns None when there is no baseline to compare against, so the cell is
+    left blank rather than showing a misleading 0.00%.
+    """
+    if not bpc:
+        return None if actual else 0.0
     return (actual - bpc) / bpc * 100.0
+
+
+def _round_or_blank(value, digits: int = 2):
+    """Round a value, leaving it blank when there is no baseline."""
+    return None if value is None else round(value, digits)
 
 
 # ---------------------------------------------------------------------------

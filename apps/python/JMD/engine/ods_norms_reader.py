@@ -83,6 +83,10 @@ def _resolve_excel_path(plant_id: str) -> str:
         short_code = "C2"
 
     filenames = [f"{short_code}_JMD.ods", f"JMD_{short_code}.ods"]
+    # Some files use a hyphenated short code (e.g. DTA-PCG_JMD.ods)
+    hyphen_code = short_code.replace("_", "-")
+    if hyphen_code != short_code:
+        filenames += [f"{hyphen_code}_JMD.ods", f"JMD_{hyphen_code}.ods"]
     for filename in filenames:
         # Try common paths including files/ directory
         for path in [filename, f"../{filename}", f"engine/{filename}", f"files/{filename}", f"../files/{filename}"]:
@@ -124,6 +128,13 @@ class ODSNormsReader:
         self._month_col_idx: Optional[int] = None
         self._cols_per_month: int = _COLS_PER_MONTH
         self._loaded = False
+        # Layout-dependent positions — resolved by _detect_layout().  The
+        # defaults reproduce the original C2 layout so an unrecognised file
+        # keeps the previous behaviour.
+        self._data_start_row: int = _DATA_START_ROW
+        self._col_material_uom: int = _COL_MATERIAL_UOM
+        self._col_issuing_plant: int = _COL_ISSUING_PLANT
+        self._col_issuing_plant_id: int = _COL_ISSUING_PLANT_ID
 
     # ------------------------------------------------------------------
     # Public class method for cached access
@@ -160,7 +171,7 @@ class ODSNormsReader:
 
         try:
             self._df = pd.read_excel(self.filepath, engine="odf", header=None)
-            self._month_col_idx = self._find_month_column()
+            self._month_col_idx = self._detect_layout()
             self._loaded = True
 
             if self._month_col_idx is not None:
@@ -182,50 +193,120 @@ class ODSNormsReader:
     def _find_month_column(self) -> Optional[int]:
         """Find the column index for the target month/year.
 
-        Supports two ODS formats:
+        Supports three ODS formats:
           - C2: Row 1 has numeric month-year values (e.g. 2026.04), 6 cols/month
           - DTA: Row 1 has quarter labels (Q1-Q4), Row 2 has month names, 4 cols/month
+          - SEZ-PCG / DTA-PCG: Row 0 has month names, 4 cols/month
+        """
+        return self._detect_layout()
+
+    def _detect_layout(self) -> Optional[int]:
+        """Resolve the month column and the layout-dependent positions.
+
+        Determines, for the loaded file:
+          - the month column index
+          - columns per month (6 for C2, 4 for the month-name layouts)
+          - the first data row (4 for C2/DTA, 2 for SEZ-PCG/DTA-PCG)
+          - the positions of Material UOM / Issuing Plant / Issuing Plant ID,
+            which are ordered differently between C2 and the month-name layouts
+
+        Column positions are resolved from the header row *by name* so the
+        ordering difference is handled without hardcoding an offset per format.
+        If the header row cannot be identified the original C2 constants are
+        kept, so an unrecognised file behaves exactly as before.
         """
         if self._df is None:
             return None
 
-        # --- Try C2 format: numeric month-year in row 1 ---
-        target_val = float(self.year) + float(self.month) / 100.0
-        row_1 = self._df.iloc[1].tolist()
-
-        for col_idx, val in enumerate(row_1):
-            try:
-                if pd.notna(val) and abs(float(val) - target_val) < 1e-5:
-                    self._cols_per_month = 6
-                    return col_idx
-            except (ValueError, TypeError):
-                continue
-
-        # --- Try DTA format: month names in row 2 ---
         _MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june',
                         'july', 'august', 'september', 'october', 'november', 'december']
         target_month_name = _MONTH_NAMES[self.month - 1]
-        row_2 = self._df.iloc[2].tolist()
+        target_val = float(self.year) + float(self.month) / 100.0
 
-        for col_idx, val in enumerate(row_2):
+        month_col = None
+        header_row = None
+
+        # --- C2 format: numeric month-year in row 1, headers in row 3 ---
+        for col_idx, val in enumerate(self._df.iloc[1].tolist()):
             try:
-                if pd.notna(val) and str(val).strip().lower() == target_month_name:
-                    self._cols_per_month = 4
-                    return col_idx
+                if pd.notna(val) and abs(float(val) - target_val) < 1e-5:
+                    self._cols_per_month = 6
+                    self._data_start_row = 4
+                    month_col, header_row = col_idx, 3
+                    break
             except (ValueError, TypeError):
                 continue
 
-        return None
+        # --- Month-name layouts: month names in row 2 (DTA) or row 0 (PCG) ---
+        if month_col is None:
+            for month_row, data_start in ((2, 4), (0, 2)):
+                for col_idx, val in enumerate(self._df.iloc[month_row].tolist()):
+                    if pd.notna(val) and str(val).strip().lower() == target_month_name:
+                        self._cols_per_month = 4
+                        self._data_start_row = data_start
+                        month_col, header_row = col_idx, month_row + 1
+                        break
+                if month_col is not None:
+                    break
+
+        if month_col is not None:
+            self._resolve_metadata_columns(header_row)
+
+        return month_col
+
+    def _resolve_metadata_columns(self, header_row: Optional[int]) -> None:
+        """Resolve Material UOM / Issuing Plant / Issuing Plant ID by header text.
+
+        C2 orders these as (Material UOM, Issuing Plant, Issuing Plant ID)
+        while the month-name layouts order them as (Issuing Plant,
+        Issuing Plant ID, Material UOM).  Matching on the header text avoids
+        hardcoding either order; unmatched files keep the C2 defaults.
+        """
+        if self._df is None or header_row is None or header_row >= len(self._df):
+            return
+
+        found: dict = {}
+        plain_uom_cols: list = []
+        for col_idx, val in enumerate(self._df.iloc[header_row].tolist()):
+            if pd.isna(val):
+                continue
+            name = str(val).strip().lower().replace(" ", "").replace("_", "")
+            if name == "materialuom":
+                found["materialuom"] = col_idx
+            elif name.startswith("issuingplant"):
+                found["issuingplantid" if name.endswith("id") else "issuingplant"] = col_idx
+            elif name == "uom":
+                plain_uom_cols.append(col_idx)
+
+        # Some files label the material UOM column simply "UOM" (the utility
+        # UOM column shares that label).  It is the last such column before the
+        # month data starts.
+        if "materialuom" not in found and plain_uom_cols:
+            before_months = [c for c in plain_uom_cols
+                             if self._month_col_idx is None or c < self._month_col_idx]
+            if before_months:
+                found["materialuom"] = max(before_months)
+
+        if "materialuom" in found:
+            self._col_material_uom = found["materialuom"]
+        if "issuingplant" in found:
+            self._col_issuing_plant = found["issuingplant"]
+        if "issuingplantid" in found:
+            self._col_issuing_plant_id = found["issuingplantid"]
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
     def _iter_data_rows(self):
-        """Iterate over data rows (row 4 onwards), yielding (row_idx, row_list)."""
+        """Iterate over data rows, yielding (row_idx, row_list).
+
+        Starts at the layout-dependent first data row (4 for C2/DTA,
+        2 for the month-name layouts).
+        """
         if self._df is None:
             return
-        for idx in range(_DATA_START_ROW, len(self._df)):
+        for idx in range(self._data_start_row, len(self._df)):
             yield idx, self._df.iloc[idx].tolist()
 
     def _get_norm_val(self, row_list: list) -> float:
@@ -440,6 +521,35 @@ class ODSNormsReader:
 
         return byproducts
 
+    def get_hrsg_byproduct_norms_by_grade(self) -> dict:
+        """Return byproduct norms grouped by steam grade.
+
+        {grade: {UTILITY_NAME: norm}} where grade is 'lp'/'mp'/'llp'.
+        Norms are negative (credits)."""
+        if not self.is_available:
+            return {}
+
+        by_grade: dict = {}
+        for _, row in self._iter_data_rows():
+            utility = str(row[_COL_UTILITY]).strip()
+            material = str(row[_COL_MATERIAL]).strip()
+
+            mu = material.upper()
+            # NOTE: check LLP before LP — "LLP STEAM" contains "LP STEAM".
+            if "LLP STEAM" in mu:
+                grade = "llp"
+            elif "MP STEAM" in mu:
+                grade = "mp"
+            elif "LP STEAM" in mu:
+                grade = "lp"
+            else:
+                continue
+            norm_val = self._get_norm_val(row)
+            if norm_val is not None and norm_val < 0:
+                by_grade.setdefault(grade, {})[utility.upper()] = norm_val
+
+        return by_grade
+
     # ------------------------------------------------------------------
     # 4. U4U Norms Matrix — Utility-for-Utility dependency matrix
     # ------------------------------------------------------------------
@@ -468,7 +578,7 @@ class ODSNormsReader:
             consumer = f"{consumer_name}::{consumer_plant_id}" if consumer_plant_id else consumer_name
 
             producer_name = str(row[_COL_MATERIAL]).strip()
-            producer_plant_id = str(row[_COL_ISSUING_PLANT_ID]).strip() if pd.notna(row[_COL_ISSUING_PLANT_ID]) else ""
+            producer_plant_id = str(row[self._col_issuing_plant_id]).strip() if pd.notna(row[self._col_issuing_plant_id]) else ""
             producer = f"{producer_name}::{producer_plant_id}" if producer_plant_id else producer_name
 
             if not consumer_name or not producer_name or consumer_name == "nan" or producer_name == "nan":
@@ -671,9 +781,9 @@ class ODSNormsReader:
             utility_plant = str(row[_COL_UTILITY_PLANT]).strip() if pd.notna(row[_COL_UTILITY_PLANT]) else ""
             utility_plant_id = str(row[_COL_UTILITY_PLANT_ID]).strip() if pd.notna(row[_COL_UTILITY_PLANT_ID]) else ""
             material_id = str(row[_COL_MATERIAL_ID]).strip() if pd.notna(row[_COL_MATERIAL_ID]) else ""
-            issuing_plant_id = str(row[_COL_ISSUING_PLANT_ID]).strip() if pd.notna(row[_COL_ISSUING_PLANT_ID]) else ""
+            issuing_plant_id = str(row[self._col_issuing_plant_id]).strip() if pd.notna(row[self._col_issuing_plant_id]) else ""
             producer_uom = str(row[_COL_UTILITY_UOM]).strip() if pd.notna(row[_COL_UTILITY_UOM]) else ""
-            material_uom = str(row[_COL_MATERIAL_UOM]).strip() if pd.notna(row[_COL_MATERIAL_UOM]) else ""
+            material_uom = str(row[self._col_material_uom]).strip() if pd.notna(row[self._col_material_uom]) else ""
             norm_val = self._get_norm_val(row)
             qty_val = self._get_quantity_val(row)
 

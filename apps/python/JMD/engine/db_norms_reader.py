@@ -37,6 +37,16 @@ _READER_CACHE: dict = {}
 _SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
 _SEZ_PCG_STG_PREFIX = "JMD - SEZ PCG STG Power plant"
 
+# DTA-PCG CPP plant ID — every norm row shares one generating plant
+# ("RIL-JW Plant-DTA PCG"), so producer utilities are mapped to dispatch
+# assets by name.  POWERGEN carries the STG's consumptions.
+_DTA_PCG_PLANT_ID = "F6D82E68-C3B6-494F-9905-48F19DC611E3"
+_DTA_PCG_POWER_PRODUCER_ASSETS = {
+    "POWERGEN": "JMD - DTA PCG STG Power plant 1",
+    "POWERGEN_GT1": "JMD - DTA PCG GT Power plant 1",
+    "POWERGEN_GT2": "JMD - DTA PCG GT Power plant 2",
+}
+
 
 def _is_sez_pcg_powergen_utility(plant_id: str, utility_name: str) -> bool:
     """Return True if this utility_name is a SEZ-PCG per-asset powergen utility.
@@ -74,6 +84,7 @@ class DBNormsReader:
         self._powergen_norms: Dict[str, float] = {}
         self._steam_letdown_norms: Dict[str, Dict] = {}
         self._hrsg_byproduct_norms: Dict[str, float] = {}
+        self._hrsg_byproduct_by_grade: Dict[str, Dict[str, float]] = {}
         self._u4u_norms_matrix: Dict[str, Dict] = {}
         self._steam_distribution: Dict[str, Dict] = {}
         self._stg_steam_norms: Dict[str, float] = {}
@@ -187,8 +198,22 @@ class DBNormsReader:
             material_name = row["material_name"]
 
             if utility_name == "POWERGEN" and material_name == "Power_Dis":
-                plant_name = row["plant_name"].upper()
-                self._powergen_norms[plant_name] = row["norm"]
+                if self.plant_id.upper() == _DTA_PCG_PLANT_ID:
+                    # DTA-PCG: POWERGEN is the STG producer — key by the
+                    # mapped asset name so dispatch can match it.
+                    key = _DTA_PCG_POWER_PRODUCER_ASSETS["POWERGEN"].upper()
+                else:
+                    key = row["plant_name"].upper()
+                self._powergen_norms[key] = row["norm"]
+            elif (
+                self.plant_id.upper() == _DTA_PCG_PLANT_ID
+                and utility_name in _DTA_PCG_POWER_PRODUCER_ASSETS
+                and material_name == "Power_Dis"
+            ):
+                # DTA-PCG: POWERGEN_GT1/GT2 are per-GT producers; key their
+                # aux norm by the mapped asset name.
+                key = _DTA_PCG_POWER_PRODUCER_ASSETS[utility_name].upper()
+                self._powergen_norms[key] = row["norm"]
             elif (
                 _is_sez_pcg_powergen_utility(self.plant_id, utility_name)
                 and material_name == "Power_Dis"
@@ -235,7 +260,13 @@ class DBNormsReader:
             }
         else:
             prds_produces_map = {}
-            pressure_order = {"LP": 0, "MP": 1, "HP": 2, "SHP": 3}
+            # Full grade ordering (same as SEZ-PCG).  Only DTA-PCG has
+            # LLP/IHP/IP PRDS stations among non-SEZ-PCG plants; plants with
+            # simple LP/MP/HP cascades are unaffected.
+            pressure_order = {
+                "LLP": 0, "LP": 1, "MP": 2, "IP": 3,
+                "IHP": 4, "HP": 5, "SHP": 6,
+            }
 
         cascade = []
         for prds_name, info in prds_map.items():
@@ -280,12 +311,31 @@ class DBNormsReader:
         self._steam_letdown_norms = norms
 
     def _build_hrsg_byproduct_norms(self):
-        """Build byproduct norms (LP steam credits) for all steam generation assets."""
+        """Build byproduct norms (steam credits) for all steam generation assets.
+
+        Negative-norm steam materials are co-products (e.g. HRSG generating
+        SHP also produces LP and MP steam).  Capture them per grade so each
+        grade's demand can be credited correctly.  ``_hrsg_byproduct_norms``
+        keeps the legacy LP-only view for backward compatibility.
+        """
         for row in self._rows:
             utility = row["utility_name"]
             material = row["material_name"]
-            
-            if "LP STEAM" in material.upper() and row["norm"] is not None and row["norm"] < 0:
+
+            if row["norm"] is None or row["norm"] >= 0:
+                continue
+            mu = material.upper()
+            # NOTE: check LLP before LP — "LLP STEAM" contains "LP STEAM".
+            if "LLP STEAM" in mu:
+                grade = "llp"
+            elif "MP STEAM" in mu:
+                grade = "mp"
+            elif "LP STEAM" in mu:
+                grade = "lp"
+            else:
+                continue
+            self._hrsg_byproduct_by_grade.setdefault(grade, {})[utility.upper()] = row["norm"]
+            if grade == "lp":
                 self._hrsg_byproduct_norms[utility.upper()] = row["norm"]
 
     def _build_u4u_norms_matrix(self):
@@ -422,6 +472,13 @@ class DBNormsReader:
     def get_hrsg_byproduct_norms(self) -> dict:
         """Return LP steam byproduct norms for HRSG assets."""
         return self._hrsg_byproduct_norms
+
+    def get_hrsg_byproduct_norms_by_grade(self) -> dict:
+        """Return byproduct norms grouped by steam grade.
+
+        {grade: {UTILITY_NAME: norm}} where grade is 'lp'/'mp'/'llp'.
+        Norms are negative (credits)."""
+        return self._hrsg_byproduct_by_grade
 
     def get_u4u_norms_matrix(self) -> dict:
         """Return U4U dependency matrix."""

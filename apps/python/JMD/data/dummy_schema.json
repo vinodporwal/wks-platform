@@ -37,10 +37,10 @@
       {"LoadMW": 25, "LPExtractionTPH": 15.0, "MPExtractionTPH": 7.5,  "SHPInletTPH": 52.0,  "CondensateM3hr": 2.5, "FreeSteamFactor": 2.0}
     ],
     "F6D82E68-C3B6-494F-9905-48F19DC611E3": [
-      {"LoadMW": 5,  "LPExtractionTPH": 2.5,  "MPExtractionTPH": 1.2,  "SHPInletTPH": 10.0,  "CondensateM3hr": 0.4, "FreeSteamFactor": 2.0},
-      {"LoadMW": 10, "LPExtractionTPH": 5.0,  "MPExtractionTPH": 2.5,  "SHPInletTPH": 18.0,  "CondensateM3hr": 0.9, "FreeSteamFactor": 2.0},
-      {"LoadMW": 15, "LPExtractionTPH": 7.5,  "MPExtractionTPH": 3.8,  "SHPInletTPH": 26.0,  "CondensateM3hr": 1.3, "FreeSteamFactor": 2.0},
-      {"LoadMW": 20, "LPExtractionTPH": 10.0, "MPExtractionTPH": 5.0,  "SHPInletTPH": 34.0,  "CondensateM3hr": 1.7, "FreeSteamFactor": 2.0}
+      {"LoadMW": 5,  "LPExtractionTPH": 3.0,  "MPExtractionTPH": 1.5,  "SHPInletTPH": 11.0,  "CondensateM3hr": 0.5, "FreeSteamFactor": 2.0},
+      {"LoadMW": 10, "LPExtractionTPH": 6.0,  "MPExtractionTPH": 3.0,  "SHPInletTPH": 21.0,  "CondensateM3hr": 1.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 20, "LPExtractionTPH": 12.0, "MPExtractionTPH": 6.0,  "SHPInletTPH": 40.0,  "CondensateM3hr": 2.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 28, "LPExtractionTPH": 17.0, "MPExtractionTPH": 8.5,  "SHPInletTPH": 56.0,  "CondensateM3hr": 2.8, "FreeSteamFactor": 2.0}
     ],
     "2DFEE33F-4CFD-4887-B9DD-53388AA95271": [
       {"LoadMW": 5,  "LPExtractionTPH": 3.5,  "MPExtractionTPH": 1.8,  "SHPInletTPH": 14.0,  "CondensateM3hr": 0.6, "FreeSteamFactor": 2.0},
