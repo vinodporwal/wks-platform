@@ -49,11 +49,11 @@ public class RefineryUtilityConfigurationController {
     @GetMapping(value = "/refinery-utility-constants-export")
 	public ResponseEntity<byte[]> exportMonthWiseConstants(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year
+            @RequestParam("year") String year,@RequestParam Boolean isSummerWinter
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = refineryUtilityConfigurationService.exportMonthWiseConstants(year,plantId,false,null); 
+	        byte[] excelBytes = refineryUtilityConfigurationService.exportMonthWiseConstants(year,plantId,false,null,isSummerWinter); 
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -73,9 +73,9 @@ public class RefineryUtilityConfigurationController {
 	public AOPMessageVM importMonthWiseConstants(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,Boolean isSummerWinter
 	        ) {
-			return	refineryUtilityConfigurationService.importMonthWiseConstants(year,UUID.fromString(plantId), file); 
+			return	refineryUtilityConfigurationService.importMonthWiseConstants(year,UUID.fromString(plantId), file,isSummerWinter); 
 	}
 
 }

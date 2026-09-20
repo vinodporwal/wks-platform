@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -111,100 +111,153 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-    public byte[] exportMonthWiseConstants(String year, String plantId, boolean isAfterSave, List<MonthWiseConstantsDTO> dtoList) {
-	    try {   
-	        if (!isAfterSave) {
-	            AOPMessageVM aopMessageVM = getMonthWiseConstants(year, plantId);
+    public byte[] exportMonthWiseConstants(String year, String plantId, boolean isAfterSave, List<MonthWiseConstantsDTO> dtoList, Boolean isSummerWinter) {
+        try {   
+            // Handle null flag safely
+            boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
 
-	            if (aopMessageVM != null && aopMessageVM.getData() != null) {
-	                @SuppressWarnings("unchecked")
-	                List<MonthWiseConstantsDTO> fetchedData = (List<MonthWiseConstantsDTO>) aopMessageVM.getData();
-	                dtoList = fetchedData;
-	            }
-	        }
+            if (!isAfterSave) {
+                AOPMessageVM aopMessageVM = getMonthWiseConstants(year, plantId);
 
-	        if (dtoList == null) {
-	            dtoList = new ArrayList<>();
-	        }
+                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+                    @SuppressWarnings("unchecked")
+                    List<MonthWiseConstantsDTO> fetchedData = (List<MonthWiseConstantsDTO>) aopMessageVM.getData();
+                    dtoList = fetchedData;
+                }
+            }
 
-	        try (Workbook workbook = new XSSFWorkbook();
-	             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
 
-	            Sheet sheet = workbook.createSheet("Sheet1");
-	            int currentRow = 0;
+            try (Workbook workbook = new XSSFWorkbook();
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-	            List<String> innerHeaders = new ArrayList<>();
-	            innerHeaders.add("Type");
-	            innerHeaders.add("Particulars");
-	            innerHeaders.add("UOM");
-	            innerHeaders.add("Value");
-	            innerHeaders.add("Remark");
-	            innerHeaders.add("NormParameterId");
+                Sheet sheet = workbook.createSheet("Sheet1");
+                int currentRow = 0;
 
-	            if (isAfterSave) {
-	                innerHeaders.add("Status");
-	                innerHeaders.add("Error Description");
-	            }
+                List<String> innerHeaders = new ArrayList<>();
+                innerHeaders.add("Type");         // Col 0
+                innerHeaders.add("Particulars");  // Col 1
+                innerHeaders.add("UOM");          // Col 2
 
-	            Row headerRow = sheet.createRow(currentRow++);
-	            for (int col = 0; col < innerHeaders.size(); col++) {
-	                Cell cell = headerRow.createCell(col);
-	                cell.setCellValue(innerHeaders.get(col));
-	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-	            }
+                if (summerWinterFlag) {
+                    innerHeaders.add("Summer");   // Col 3
+                    innerHeaders.add("Winter");   // Col 4
+                } else {
+                    innerHeaders.add("Value");    // Col 3
+                }
 
-	            for (MonthWiseConstantsDTO dto : dtoList) {
-	                Row row = sheet.createRow(currentRow++);
-	                List<Object> rowData = new ArrayList<>();
-	                rowData.add(dto.getNormTypeName());
-	                rowData.add(dto.getDisplayName());
-	                rowData.add(dto.getUOM());
-	                rowData.add(dto.getApr());
-	                rowData.add(dto.getRemarks());
-	                rowData.add(dto.getNormParameterFKId());
+                innerHeaders.add("Remark");           // Col 4 (if false) or Col 5 (if true)
+                innerHeaders.add("NormParameterId");  // Col 5 (if false) or Col 6 (if true)
 
-	                if (isAfterSave) {
-	                    rowData.add(dto.getSaveStatus());
-	                    rowData.add(dto.getErrDescription());
-	                }
+                if (isAfterSave) {
+                    innerHeaders.add("Status");
+                    innerHeaders.add("Error Description");
+                }
 
-	                for (int col = 0; col < rowData.size(); col++) {
-	                    Cell cell = row.createCell(col);
-	                    Object value = rowData.get(col);
+                // Create Header Row with Bold Bordered Style
+                Row headerRow = sheet.createRow(currentRow++);
+                for (int col = 0; col < innerHeaders.size(); col++) {
+                    Cell cell = headerRow.createCell(col);
+                    cell.setCellValue(innerHeaders.get(col));
+                    cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+                }
 
-	                    if (value instanceof Number) {
-	                        cell.setCellValue(((Number) value).doubleValue());
-	                    } else if (value instanceof Boolean) {
-	                        cell.setCellValue((Boolean) value);
-	                    } else if (value != null) {
-	                        cell.setCellValue(value.toString());
-	                    } else {
-	                        cell.setCellValue("");
-	                    }   
-	                }
-	            }
+                // Cell Styles matched from exportBusinessDemand
+                CellStyle unlockedBorderedStyle = workbook.createCellStyle();
+                unlockedBorderedStyle.setLocked(false);
+                unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+                unlockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+                unlockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+                unlockedBorderedStyle.setBorderRight(BorderStyle.THIN);
 
-	            // Hide Id column (column index 5)
-	            sheet.setColumnHidden(5, true);
+                CellStyle lockedBorderedStyle = workbook.createCellStyle();
+                lockedBorderedStyle.setLocked(true);
+                lockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+                lockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+                lockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+                lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
 
-	            workbook.write(outputStream);
-	            return outputStream.toByteArray();
-	        }
+                // Determine dynamic column index thresholds
+                int normParamIdIndex = summerWinterFlag ? 6 : 5;
+                int lastVisibleColIndex = summerWinterFlag ? 5 : 4;
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	    return new byte[0];
-	}
+                for (MonthWiseConstantsDTO dto : dtoList) {
+                    Row row = sheet.createRow(currentRow++);
+                    List<Object> rowData = new ArrayList<>();
+                    rowData.add(dto.getNormTypeName());
+                    rowData.add(dto.getDisplayName());
+                    rowData.add(dto.getUOM());
 
-    public AOPMessageVM importMonthWiseConstants(String year, UUID plantId, MultipartFile file) {
+                    if (summerWinterFlag) {
+                        rowData.add(dto.getApr()); // Summer
+                        rowData.add(dto.getOct()); // Winter
+                    } else {
+                        rowData.add(dto.getApr()); // Value
+                    }
+
+                    rowData.add(dto.getRemarks());
+                    rowData.add(dto.getNormParameterFKId());
+
+                    if (isAfterSave) {
+                        rowData.add(dto.getSaveStatus());
+                        rowData.add(dto.getErrDescription());
+                    }
+
+                    for (int col = 0; col < rowData.size(); col++) {
+                        Cell cell = row.createCell(col);
+                        Object value = rowData.get(col);
+
+                        if (value instanceof Number) {
+                            cell.setCellValue(((Number) value).doubleValue());
+                        } else if (value instanceof Boolean) {
+                            cell.setCellValue((Boolean) value);
+                        } else if (value != null) {
+                            cell.setCellValue(value.toString());
+                        } else {
+                            cell.setCellValue("");
+                        }   
+
+                        boolean isEditableCol = summerWinterFlag ? (col >= 3 && col <= 5) : (col == 3 || col == 4);
+
+                        if (isEditableCol) {
+                            cell.setCellStyle(unlockedBorderedStyle);
+                        } else {
+                            cell.setCellStyle(lockedBorderedStyle);
+                        }
+                    }
+                }
+
+                // Protect the sheet so locked cells cannot be modified
+                sheet.protectSheet("");
+
+                // Auto-size all visible data columns dynamically
+                for (int col = 0; col <= lastVisibleColIndex; col++) {
+                    sheet.autoSizeColumn(col);
+                }
+
+                // Hide NormParameterId column dynamically
+                sheet.setColumnHidden(normParamIdIndex, true);
+
+                workbook.write(outputStream);
+                return outputStream.toByteArray();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new byte[0];
+    }
+    
+    public AOPMessageVM importMonthWiseConstants(String year, UUID plantId, MultipartFile file,Boolean isSummerWinter) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
-	        List<MonthWiseConstantsDTO> data = readMonthWiseConstants(file.getInputStream(), plantId, year);
+	        List<MonthWiseConstantsDTO> data = readMonthWiseConstants(file.getInputStream(), plantId, year,isSummerWinter);
 	        List<MonthWiseConstantsDTO> failedList = saveMonthWiseConstants(year, plantId.toString(), data);
 
 	        if (failedList != null && !failedList.isEmpty()) {
-	            byte[] fileByteArray = exportMonthWiseConstants(year, plantId.toString(), true, failedList);
+	            byte[] fileByteArray = exportMonthWiseConstants(year, plantId.toString(), true, failedList,isSummerWinter);
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	            
 	            aopMessageVM.setData(base64File);
@@ -225,49 +278,62 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 	    }
 	}
 
-    public List<MonthWiseConstantsDTO> readMonthWiseConstants(InputStream inputStream, UUID plantFKId, String year) {
-	    List<MonthWiseConstantsDTO> monthWiseConstantsDTOs = new ArrayList<>();
+    public List<MonthWiseConstantsDTO> readMonthWiseConstants(InputStream inputStream, UUID plantFKId, String year, Boolean isSummerWinter) {
+        List<MonthWiseConstantsDTO> monthWiseConstantsDTOs = new ArrayList<>();
 
-	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-	        Sheet sheet = workbook.getSheetAt(0);
-	        Iterator<Row> rowIterator = sheet.iterator();
+        // Safely handle null boolean flag
+        boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
 
-	        if (rowIterator.hasNext()) {
-	            rowIterator.next();  
-	        }
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
 
-	        while (rowIterator.hasNext()) {
-	            Row row = rowIterator.next();
+            if (rowIterator.hasNext()) {
+                rowIterator.next(); // Skip header row
+            }
 
-	            if (row == null || isRowEmpty(row)) {
-	                continue;
-	            }
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
 
-	            MonthWiseConstantsDTO dto = new MonthWiseConstantsDTO();
-	            try {
-	                dto.setNormTypeName(getStringCellValue(row.getCell(0), dto));
-	                dto.setDisplayName(getStringCellValue(row.getCell(1), dto));
-	                dto.setUOM(getStringCellValue(row.getCell(2), dto));
-	                dto.setApr(getNumericCellValue(row.getCell(3), dto));
-	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
-	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
-	                
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	                dto.setErrDescription(e.getMessage());
-	                dto.setSaveStatus("Failed");
-	            }
+                if (row == null || isRowEmpty(row)) {
+                    continue;
+                }
 
-	            monthWiseConstantsDTOs.add(dto);
-	        }
+                MonthWiseConstantsDTO dto = new MonthWiseConstantsDTO();
+                try {
+                    dto.setNormTypeName(getStringCellValue(row.getCell(0), dto));
+                    dto.setDisplayName(getStringCellValue(row.getCell(1), dto));
+                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+                    if (summerWinterFlag) {
+                        
+                        dto.setApr(getNumericCellValue(row.getCell(3), dto));
+                        dto.setOct(getNumericCellValue(row.getCell(4), dto));
+                        dto.setRemarks(getStringCellValue(row.getCell(5), dto));
+                        dto.setNormParameterFKId(getStringCellValue(row.getCell(6), dto));
+                    } else {
+                       
+                        dto.setApr(getNumericCellValue(row.getCell(3), dto));
+                        dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+                        dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+                    }
 
-	    return monthWiseConstantsDTOs;
-	}
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    dto.setErrDescription(e.getMessage());
+                    dto.setSaveStatus("Failed");
+                }
 
+                monthWiseConstantsDTOs.add(dto);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return monthWiseConstantsDTOs;
+    } 
+    
 	// Helper method to skip empty rows
 	private boolean isRowEmpty(Row row) {
 	    for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {

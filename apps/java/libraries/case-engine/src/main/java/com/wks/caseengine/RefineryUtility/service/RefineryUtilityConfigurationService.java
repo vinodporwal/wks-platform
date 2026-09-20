@@ -12,6 +12,6 @@ public interface RefineryUtilityConfigurationService {
     
     public AOPMessageVM getMonthWiseConstants(String year, String plantFKId);
     public List<MonthWiseConstantsDTO> saveMonthWiseConstants(String year, String plantFKId, List<MonthWiseConstantsDTO> monthWiseConstantsDTOList);
-    public byte[] exportMonthWiseConstants(String year, String plantFKId,boolean isAfterSave,List<MonthWiseConstantsDTO> dtoList);
-	public AOPMessageVM importMonthWiseConstants(String year,UUID plantId,MultipartFile file);
+    public byte[] exportMonthWiseConstants(String year, String plantFKId,boolean isAfterSave,List<MonthWiseConstantsDTO> dtoList,Boolean isSummerWinter);
+	public AOPMessageVM importMonthWiseConstants(String year,UUID plantId,MultipartFile file,Boolean isSummerWinter);
 }
