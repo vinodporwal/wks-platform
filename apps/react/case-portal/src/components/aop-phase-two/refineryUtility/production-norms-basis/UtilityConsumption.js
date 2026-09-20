@@ -5,12 +5,15 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/ref
 import { validateFields } from 'utils/validationUtils'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
-import Backdrop from '@mui/material/Backdrop'
-import CircularProgress from '@mui/material/CircularProgress'
 import Notification from 'components/Utilities/Notification'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+
+// List of plants (VERTICAL_SITE_PLANT) that require 2 columns (Summer: April, Winter: October)
+const TWO_COLUMN_PLANTS = [
+  'Refinery Utility_DTA_PCG ASU',
+]
 
 const UtilityConsumption = () => {
   const keycloak = useSession()
@@ -19,14 +22,12 @@ const UtilityConsumption = () => {
     dataGridStore
 
   const PLANT_ID = plantObject?.id
-  const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const valueFormat = ValueFormatterPhaseTwo()
+
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
@@ -39,7 +40,10 @@ const UtilityConsumption = () => {
     severity: 'info',
   })
 
-  const fetchMatbalData = useCallback(async () => {
+  const currentPlantKey = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}`
+  const isTwoColumnPlant = TWO_COLUMN_PLANTS.includes(currentPlantKey)
+
+  const fetchUtilityData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
@@ -64,7 +68,7 @@ const UtilityConsumption = () => {
         setRows([])
       }
     } catch (error) {
-      console.error('Error fetching Matbal data:', error)
+      console.error('Error fetching Utility Consumption data:', error)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
@@ -75,11 +79,11 @@ const UtilityConsumption = () => {
   useEffect(() => {
     setRows([])
     setModifiedCells({})
-    fetchMatbalData()
-  }, [fetchMatbalData, PLANT_ID, AOP_YEAR])
+    fetchUtilityData()
+  }, [fetchUtilityData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(() => {
-    return [
+    const columns = [
       {
         field: 'productName',
         title: 'Particulars',
@@ -94,31 +98,48 @@ const UtilityConsumption = () => {
         width: 80,
         minWidth: 80,
       },
-      {
-        field: 'apr',
-        title: 'Summer',
-        width: 120,
-        type: 'number',
-        format: valueFormat,
-        editable: true,
-      },
-      {
-        field: 'may',
-        title: 'Winter',
-        width: 120,
-        type: 'number',
-        format: valueFormat,
-        editable: true,
-      },
-      {
-        field: 'remarks',
-        title: 'Remark',
-        editable: true,
-        width: 100,
-        minWidth: 100,
-      },
     ]
-  }, [])
+
+    if (isTwoColumnPlant) {
+      columns.push(
+        {
+          field: 'apr',
+          title: 'Summer',
+          width: 120,
+          type: 'number',
+          format: valueFormat,
+          editable: true,
+        },
+        {
+          field: 'oct',
+          title: 'Winter',
+          width: 120,
+          type: 'number',
+          format: valueFormat,
+          editable: true,
+        },
+      )
+    } else {
+      columns.push({
+        field: 'apr',
+        title: 'Value',
+        width: 120,
+        type: 'number',
+        format: valueFormat,
+        editable: true,
+      })
+    }
+
+    columns.push({
+      field: 'remarks',
+      title: 'Remark',
+      editable: true,
+      width: 100,
+      minWidth: 100,
+    })
+
+    return columns
+  }, [isTwoColumnPlant, valueFormat])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -143,19 +164,12 @@ const UtilityConsumption = () => {
 
     setLoading(true)
     try {
-      // Payload matches colDefs: only 'apr' (Winter) and 'may' (Summer) are editable
       const payload = modifiedData.map((row) => ({
         normParameterFKId: row.normParameterFKId,
         apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
-        may: row.may !== undefined && row.may !== '' ? Number(row.may) : null,
+        oct: row.oct !== undefined && row.oct !== '' ? Number(row.oct) : null,
         remarks: row.remarks || '',
         auditYear: row.auditYear || AOP_YEAR,
-        UOM: row.UOM || '',
-        TypeDisplayName: row.TypeDisplayName || 'Utility Consumption',
-        isEditable: row.isEditable ?? true,
-        productName: row.productName || '',
-        productDisplayName: row.productDisplayName || '',
-        productDisplayOrder: row.productDisplayOrder || ''
       }))
 
       const response = await ProductionNormsApiService.saveUtilityConsumptionData(
@@ -168,99 +182,20 @@ const UtilityConsumption = () => {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setSnackbarOpen(true)
         setModifiedCells({})
-        fetchMatbalData()
+        fetchUtilityData()
       } else {
         setSnackbarData({ message: 'Save Failed!', severity: 'error' })
         setSnackbarOpen(true)
       }
     } catch (error) {
-      console.error('Error saving Matbal data:', error)
+      console.error('Error saving Utility Consumption data:', error)
       setSnackbarData({ message: 'Error saving data', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, PLANT_ID, AOP_YEAR, keycloak, fetchMatbalData])
+  }, [modifiedCells, PLANT_ID, AOP_YEAR, keycloak, fetchUtilityData])
 
-  const handleExcelUpload = async (file) => {
-    setLoading(true)
-    try {
-      const response =
-        await ProductionNormsApiService.saveProductionDemandExcel(
-          file,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      if (response?.code === 200) {
-        setSnackbarData({
-          message: 'Imported Successfully!',
-          severity: 'success',
-        })
-        setSnackbarOpen(true)
-        fetchMatbalData()
-      } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
-
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'Error File - Production Demand.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        fetchMatbalData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Upload Failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      console.error('Error importing Matbal data:', error)
-      setSnackbarData({ message: 'Error importing data', severity: 'error' })
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const downloadExcelForConfiguration = async () => {
-    try {
-      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Material_Balance`
-      await ProductionNormsApiService.productionDemandExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        excelName,
-      )
-      setSnackbarData({ message: 'Export Started!', severity: 'success' })
-      setSnackbarOpen(true)
-    } catch (error) {
-      console.error('Error exporting Matbal data:', error)
-      setSnackbarData({ message: 'Error exporting data', severity: 'error' })
-      setSnackbarOpen(true)
-    }
-  }
-
-  // Simplified: no vertical/site conditions — same permissions apply to everyone.
-  // If it's an old year, everything gets locked down via the overrides below.
   const adjustedPermissions = useMemo(() => {
     const basePermissions = {
       showAction: true,
@@ -269,31 +204,23 @@ const UtilityConsumption = () => {
       allAction: true,
       showTitleNameBusiness: true,
       showExport: false,
-      ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
       showImport: false,
       showCalculate: false,
-      showCalculateVisibility: true,
+      showCalculateVisibility: false,
     }
 
-    if (isOldYear) {
+    if (READ_ONLY || IS_OLD_YEAR) {
       return {
         ...basePermissions,
         showAction: false,
-        addButton: false,
-        deleteButton: false,
-        downloadExcelBtn: false,
-        uploadExcelBtn: false,
-        editButton: false,
-        showUnit: false,
         saveWithRemark: false,
         saveBtn: false,
-        isOldYear: true,
         allAction: false,
       }
     }
 
     return basePermissions
-  }, [isOldYear])
+  }, [READ_ONLY, IS_OLD_YEAR])
 
   return (
     <Box>
@@ -313,8 +240,6 @@ const UtilityConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        handleExcelUpload={handleExcelUpload}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
         plantID={PLANT_ID}
         groupBy='ParticularG'
       />
