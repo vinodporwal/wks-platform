@@ -30,6 +30,12 @@ export const ProductionNormsApiService = {
   // Utility Consumption APIS
   getUtilityConsumptionData,
   saveUtilityConsumptionData,
+
+  // Cat Chem Utility Consumption APIS
+  getCatChemUtilityConsumptionData,
+  saveCatChemUtilityConsumptionData,
+  importCatChemUtilityConsumptionExcel,
+  exportCatChemUtilityConsumptionExcel,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -586,4 +592,78 @@ async function saveUtilityConsumptionData(
     console.log(e)
     return await Promise.reject(e)
   }
+}
+
+async function getCatChemUtilityConsumptionData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/cat-chem?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveCatChemUtilityConsumptionData(
+  keycloak,
+  PlantId,
+  AOP_YEAR,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cat-chem?year=${AOP_YEAR}&plantId=${PlantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function importCatChemUtilityConsumptionExcel(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
+  return saveExcelData(file, keycloak, 'cat-chem-import', {
+    year: year,
+    plantId: plantId,
+  })
+}
+
+async function exportCatChemUtilityConsumptionExcel(
+  keycloak,
+  plantId,
+  year,
+  fileName,
+) {
+  return exportExcelData(
+    keycloak,
+    'cat-chem-export',
+    { year: year, plantId: plantId },
+    fileName,
+  )
 }
