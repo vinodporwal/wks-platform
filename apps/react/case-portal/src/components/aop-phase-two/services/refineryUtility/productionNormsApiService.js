@@ -19,9 +19,12 @@ export const ProductionNormsApiService = {
 
   // Constants APIs
   getConstantsData,
+  refinaryConstantData,
   saveConstantsData,
   importConstantsExcel,
   exportConstantsExcel,
+  checkIsSummerWinterPlant,
+  checkIsTwoColumnPlant: checkIsSummerWinterPlant,
 
   // Production Demand APIS
   getProductionDemandData,
@@ -400,6 +403,57 @@ async function loadButtonNormCalculation(
  */
 async function getConstantsData(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Get Refinery Utility Constants data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Constants data
+ */
+async function refinaryConstantData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/refinery-utility-constants?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Check if Refinery Utility Plant requires Summer/Winter columns
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @returns {Promise} Plant column configuration
+ */
+async function checkIsSummerWinterPlant(keycloak, plantId) {
+  const url = `${Config.CaseEngineUrl}/task/refinery-utility/check-is-summer-winter-plant?plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

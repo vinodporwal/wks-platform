@@ -78,4 +78,9 @@ public class RefineryUtilityConfigurationController {
 			return	refineryUtilityConfigurationService.importMonthWiseConstants(year,UUID.fromString(plantId), file,isSummerWinter); 
 	}
 
+	@GetMapping("/refinery-utility/check-is-summer-winter-plant")
+	public ResponseEntity<AOPMessageVM> checkIsSummerWinterPlant(@RequestParam String plantId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.checkIsSummerWinterPlant(plantId));
+	}
+
 }

@@ -10,11 +10,6 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
-// List of plants (VERTICAL_SITE_PLANT) that require 2 columns (Summer: April, Winter: October)
-const TWO_COLUMN_PLANTS = [
-  'Refinery Utility_DTA_PCG ASU',
-]
-
 const UtilityConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -30,6 +25,7 @@ const UtilityConsumption = () => {
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [isTwoColumnPlant, setIsTwoColumnPlant] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -40,8 +36,21 @@ const UtilityConsumption = () => {
     severity: 'info',
   })
 
-  const currentPlantKey = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}`
-  const isTwoColumnPlant = TWO_COLUMN_PLANTS.includes(currentPlantKey)
+  useEffect(() => {
+    const fetchPlantColumnConfig = async () => {
+      if (!PLANT_ID) return
+      try {
+        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(keycloak, PLANT_ID)
+        setIsTwoColumnPlant(Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn))
+      } catch (err) {
+        console.error('Error checking plant column config:', err)
+        setIsTwoColumnPlant(false)
+      }
+    }
+    if (PLANT_ID) {
+      fetchPlantColumnConfig()
+    }
+  }, [PLANT_ID, keycloak])
 
   const fetchUtilityData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -85,18 +94,30 @@ const UtilityConsumption = () => {
   const colDefs = useMemo(() => {
     const columns = [
       {
+        field: 'ParticularG',
+        title: 'Particulars',
+        editable: false,
+        width: 300,
+        minWidth: 250,
+        widthT: 300,
+        locked: true,
+        hidden: true,
+      },
+      {
         field: 'productName',
         title: 'Particulars',
         editable: false,
         width: 300,
-        minWidth: 300,
+        minWidth: 250,
+        widthT: 300,
       },
       {
         field: 'UOM',
         title: 'UOM',
         editable: false,
-        width: 80,
+        width: 100,
         minWidth: 80,
+        widthT: 100,
       },
     ]
 
@@ -105,7 +126,9 @@ const UtilityConsumption = () => {
         {
           field: 'apr',
           title: 'Summer',
-          width: 120,
+          width: 150,
+          minWidth: 120,
+          widthT: 150,
           type: 'number',
           format: valueFormat,
           editable: true,
@@ -113,7 +136,9 @@ const UtilityConsumption = () => {
         {
           field: 'oct',
           title: 'Winter',
-          width: 120,
+          width: 150,
+          minWidth: 120,
+          widthT: 150,
           type: 'number',
           format: valueFormat,
           editable: true,
@@ -123,7 +148,9 @@ const UtilityConsumption = () => {
       columns.push({
         field: 'apr',
         title: 'Value',
-        width: 120,
+        width: 150,
+        minWidth: 120,
+        widthT: 150,
         type: 'number',
         format: valueFormat,
         editable: true,
@@ -134,8 +161,9 @@ const UtilityConsumption = () => {
       field: 'remarks',
       title: 'Remark',
       editable: true,
-      width: 100,
-      minWidth: 100,
+      width: 300,
+      minWidth: 250,
+      widthT: 300,
     })
 
     return columns

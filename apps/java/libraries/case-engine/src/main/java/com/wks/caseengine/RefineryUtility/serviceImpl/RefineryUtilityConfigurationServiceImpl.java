@@ -5,8 +5,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -540,5 +542,68 @@ private boolean isRemarkValidationPassed(Double newValue, Double existingValue, 
     return true;
 }
 
+@Override
+public AOPMessageVM checkIsSummerWinterPlant(String plantId) {
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	try {
+		boolean isSummerWinter = false;
+		try {
+			String sql = "SELECT IsSummerWinter FROM vwScrnRefineryUtilityIsSummerWinter WHERE PlantId = :plantId";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			List<?> resultList = query.getResultList();
+
+			if (resultList != null && !resultList.isEmpty()) {
+				Object val = resultList.get(0);
+				if (val instanceof Boolean) {
+					isSummerWinter = (Boolean) val;
+				} else if (val instanceof Number) {
+					isSummerWinter = ((Number) val).intValue() == 1;
+				} else if (val != null) {
+					isSummerWinter = Boolean.parseBoolean(val.toString()) || "1".equals(val.toString().trim()) || "true".equalsIgnoreCase(val.toString().trim());
+				}
+			} else {
+				String countSql = "SELECT COUNT(*) FROM vwScrnRefineryUtilityIsSummerWinter WHERE PlantId = :plantId";
+				Query countQuery = entityManager.createNativeQuery(countSql);
+				countQuery.setParameter("plantId", plantId);
+				Number count = (Number) countQuery.getSingleResult();
+				isSummerWinter = (count != null && count.intValue() > 0);
+			}
+		} catch (Exception ex) {
+			// Try fallback view name or plant name
+			try {
+				String sqlAlt = "SELECT IsSummerWinter FROM vwScrnRefineryUtilityCheckIsSummerWinterPlant WHERE PlantId = :plantId";
+				Query altQuery = entityManager.createNativeQuery(sqlAlt);
+				altQuery.setParameter("plantId", plantId);
+				List<?> altList = altQuery.getResultList();
+				if (altList != null && !altList.isEmpty()) {
+					Object val = altList.get(0);
+					isSummerWinter = Boolean.parseBoolean(val.toString()) || "1".equals(val.toString().trim()) || "true".equalsIgnoreCase(val.toString().trim());
+				}
+			} catch (Exception e1) {
+				try {
+					Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElse(null);
+					if (plant != null && "PCG ASU".equalsIgnoreCase(plant.getName())) {
+						isSummerWinter = true;
+					}
+				} catch (Exception e2) {
+					// ignore
+				}
+			}
+		}
+
+		Map<String, Object> responseData = new HashMap<>();
+		responseData.put("isSummerWinter", isSummerWinter);
+		responseData.put("isTwoColumn", isSummerWinter);
+		responseData.put("plantId", plantId);
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Fetched plant summer/winter configuration successfully");
+		aopMessageVM.setData(responseData);
+		return aopMessageVM;
+	} catch (Exception e) {
+		throw new RuntimeException("Failed to check summer/winter plant configuration", e);
+	}
+}
 
 }

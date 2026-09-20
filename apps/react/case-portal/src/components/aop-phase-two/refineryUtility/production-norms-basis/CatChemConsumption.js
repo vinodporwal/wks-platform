@@ -29,6 +29,7 @@ const CatChemConsumption = () => {
   const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [isTwoColumnPlant, setIsTwoColumnPlant] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -38,6 +39,22 @@ const CatChemConsumption = () => {
     message: '',
     severity: 'info',
   })
+
+  useEffect(() => {
+    const fetchPlantColumnConfig = async () => {
+      if (!PLANT_ID) return
+      try {
+        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(keycloak, PLANT_ID)
+        setIsTwoColumnPlant(Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn))
+      } catch (err) {
+        console.error('Error checking plant column config:', err)
+        setIsTwoColumnPlant(false)
+      }
+    }
+    if (PLANT_ID) {
+      fetchPlantColumnConfig()
+    }
+  }, [PLANT_ID, keycloak])
 
   const fetchMatbalData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -79,13 +96,14 @@ const CatChemConsumption = () => {
   }, [fetchMatbalData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(() => {
-    return [
+    const columns = [
       {
         field: 'ParticularG',
         title: 'Particulars',
         editable: false,
         width: 300,
-        minWidth: 300,
+        minWidth: 250,
+        widthT: 300,
         locked: true,
         hidden: true,
       },
@@ -94,41 +112,66 @@ const CatChemConsumption = () => {
         title: 'Particulars',
         editable: false,
         width: 300,
-        minWidth: 300,
+        minWidth: 250,
+        widthT: 300,
       },
       {
         field: 'UOM',
         title: 'UOM',
         editable: false,
-        width: 80,
+        width: 100,
         minWidth: 80,
+        widthT: 100,
       },
-      {
+    ]
+
+    if (isTwoColumnPlant) {
+      columns.push(
+        {
+          field: 'apr',
+          title: 'Summer',
+          width: 150,
+          minWidth: 120,
+          widthT: 150,
+          type: 'number',
+          format: valueFormat,
+          editable: true,
+        },
+        {
+          field: 'oct',
+          title: 'Winter',
+          width: 150,
+          minWidth: 120,
+          widthT: 150,
+          type: 'number',
+          format: valueFormat,
+          editable: true,
+        },
+      )
+    } else {
+      columns.push({
         field: 'apr',
         title: 'Value',
-        width: 120,
-        minWidth: 200,
+        width: 150,
+        minWidth: 120,
+        widthT: 150,
         type: 'number',
         format: valueFormat,
         editable: true,
-      },
-      // {
-      //   field: 'may',
-      //   title: 'Winter',
-      //   width: 120,
-      //   type: 'number',
-      //   format: valueFormat,
-      //   editable: true,
-      // },
-      {
-        field: 'remarks',
-        title: 'Remark',
-        editable: true,
-        width: 100,
-        minWidth: 200,
-      },
-    ]
-  }, [])
+      })
+    }
+
+    columns.push({
+      field: 'remarks',
+      title: 'Remark',
+      editable: true,
+      width: 300,
+      minWidth: 250,
+      widthT: 300,
+    })
+
+    return columns
+  }, [isTwoColumnPlant, valueFormat])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -279,9 +322,9 @@ const CatChemConsumption = () => {
       saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
-      showExport: true,
+      showExport: false,
       ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
-      showImport: true,
+      showImport: false,
       showCalculate: false,
       showCalculateVisibility: true,
     }
