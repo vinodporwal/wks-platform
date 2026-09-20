@@ -154,4 +154,6 @@ const CustomColumnHeader = memo(
   },
 )
 
+CustomColumnHeader.displayName = 'CustomColumnHeader'
+
 export default CustomColumnHeader
