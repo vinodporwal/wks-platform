@@ -3,7 +3,9 @@ import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import NestedKendoTable from '../common/NestedKendoTable/index'
@@ -48,7 +50,8 @@ const Norms = () => {
   const IS_CPP = lowerVertName === 'cpp'
 
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(4)
+  const valueFormatTwoDigits = customValueFormatterPhaseTwo(2)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -161,7 +164,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'apr.amount',
@@ -169,7 +172,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -179,7 +182,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -203,7 +206,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'may.amount',
@@ -211,7 +214,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -221,7 +224,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -245,7 +248,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'jun.amount',
@@ -253,7 +256,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -263,7 +266,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -287,7 +290,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'jul.amount',
@@ -295,7 +298,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -305,7 +308,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -329,7 +332,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'aug.amount',
@@ -337,7 +340,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -347,7 +350,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -371,7 +374,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'sep.amount',
@@ -379,7 +382,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -389,7 +392,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -413,7 +416,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'oct.amount',
@@ -421,7 +424,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -431,7 +434,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -455,7 +458,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'nov.amount',
@@ -463,7 +466,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -473,7 +476,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -497,7 +500,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'dec.amount',
@@ -505,7 +508,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -515,7 +518,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -539,7 +542,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'jan.amount',
@@ -547,7 +550,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -557,7 +560,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -581,7 +584,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'feb.amount',
@@ -589,7 +592,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -599,7 +602,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],
@@ -623,7 +626,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
         },
         {
           field: 'mar.amount',
@@ -631,7 +634,7 @@ const Norms = () => {
           widthT: 120,
           minWidth: 120,
           type: 'number',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
         {
@@ -641,7 +644,7 @@ const Norms = () => {
           minWidth: 120,
           editable: true,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwoDigits,
           hidden: true,
         },
       ],

@@ -751,17 +751,33 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 					year = dto.getAopYear();
 				}
 
-				String updateSql = "UPDATE MCUNormsValue_Proposed " +
+				// update MCUNormsValue_Proposed
+				String update_NormsValue_Proposed = "UPDATE MCUNormsValue_Proposed " +
 						"SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
 						"October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, Remarks = ? "
 						+
-						"WHERE Material_FK_Id = ? and FinancialYear = ?";
-				jdbcTemplate.update(updateSql,
+						"WHERE Material_FK_Id = ? and FinancialYear = ? and Plant_FK_Id = ?";
+				jdbcTemplate.update(update_NormsValue_Proposed,
 						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
 						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
 						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
 						dto.getRemarks(),
-						dto.getNormParameterId(), dto.getAopYear());
+						dto.getNormParameterId(), dto.getAopYear(), dto.getPlantId());
+
+						
+				// update MCUNormsValue
+				String update_NormsValue = "UPDATE MCUNormsValue " +
+						"SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
+						"October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, Remarks = ? "
+						+
+						"WHERE Material_FK_Id = ? and FinancialYear = ? and Plant_FK_Id = ?";
+
+						jdbcTemplate.update(update_NormsValue,
+							dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+							dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+							dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+							dto.getRemarks(),
+							dto.getNormParameterId(), dto.getAopYear(), dto.getPlantId());
 
 			}
 

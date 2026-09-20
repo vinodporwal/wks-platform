@@ -593,6 +593,4 @@ const SingleReportGrid = memo(
   },
 )
 
-SingleReportGrid.displayName = 'SingleReportGrid'
-
 export default SingleReportGrid

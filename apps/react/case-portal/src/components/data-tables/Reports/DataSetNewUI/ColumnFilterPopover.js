@@ -527,6 +527,4 @@ const ColumnFilterPopover = memo(
   },
 )
 
-ColumnFilterPopover.displayName = 'ColumnFilterPopover'
-
 export default ColumnFilterPopover

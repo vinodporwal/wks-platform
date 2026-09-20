@@ -12,7 +12,9 @@ import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/g
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 as JMDUtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -60,7 +62,7 @@ const FixedConsumption = () => {
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(2)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')

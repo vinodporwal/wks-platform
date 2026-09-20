@@ -479,7 +479,7 @@ const SteadyStateConsumption = () => {
     allAction: true,
     showExport: true,
     showImport: true,
-    showCalculate: true,
+    showCalculate: false,
     // Disable Calculate if no calculationObject from API (same as NormalOpNorms showCalculateVisibility)
     calculateDisabled:
       !calculationObject || Object.keys(calculationObject).length === 0,
