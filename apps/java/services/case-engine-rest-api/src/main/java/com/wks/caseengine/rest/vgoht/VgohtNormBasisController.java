@@ -328,4 +328,67 @@ public class VgohtNormBasisController {
         }
 
     }
+
+
+    @GetMapping(value="/cat-chem")
+    public AOPMessageVM getCatChemData(@RequestParam String year, @RequestParam String plantId) {
+        if (plantId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.getCatChemData(year, plantId);
+    }
+
+    @PostMapping(value = "/cat-chem")
+    public AOPMessageVM saveCatChemData(
+        @RequestParam String year,
+        @RequestParam UUID plantId,
+        @RequestBody List<VgohtNormConfigurationDTO> configurationDataList)  {
+
+        if (plantId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<VgohtNormConfigurationDTO> failedRecords = vgohtNormBasisServiceImpl.saveCatChemData(year, plantId, configurationDataList);
+
+        if(failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "Cat-Chem data saved successfully", null);
+        } else {
+            return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
+        }
+
+    }
+    
+    @GetMapping(value = "/cat-chem-export")
+	public ResponseEntity<byte[]> exportCatChemData(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year, @RequestParam Boolean isSummerWinter
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = vgohtNormBasisServiceImpl.exportCatChemData(year,plantId,false,null,isSummerWinter); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("CatChemData.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/cat-chem-import", consumes = "multipart/form-data")
+	public AOPMessageVM importCatChemData(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file,@RequestParam Boolean isSummerWinter
+	        ) {
+			return	vgohtNormBasisServiceImpl.importCatChemData(year,UUID.fromString(plantId), file,isSummerWinter); 
+	}
+
 }
