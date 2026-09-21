@@ -326,8 +326,39 @@ public class VgohtNormBasisController {
         } else {
             return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
         }
-
     }
+
+    @GetMapping(value = "/utility-consumption-export")
+	public ResponseEntity<byte[]> exportUtilityConsumptionData(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = vgohtNormBasisServiceImpl.exportUtilityConsumptionData(year,plantId,false,null); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("utility-consumption.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/utility-consumption-import", consumes = "multipart/form-data")
+	public AOPMessageVM importUtilityConsumptionData(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	vgohtNormBasisServiceImpl.importUtilityConsumptionData(year,UUID.fromString(plantId), file); 
+	}
 
 
     @GetMapping(value="/cat-chem")
