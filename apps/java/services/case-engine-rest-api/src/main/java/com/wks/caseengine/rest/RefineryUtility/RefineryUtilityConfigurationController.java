@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ContentDisposition;
 
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 
 @RestController
@@ -82,5 +83,20 @@ public class RefineryUtilityConfigurationController {
 	public ResponseEntity<AOPMessageVM> checkIsSummerWinterPlant(@RequestParam String plantId) {
 		return ResponseEntity.ok(refineryUtilityConfigurationService.checkIsSummerWinterPlant(plantId));
 	}
+
+	@GetMapping("/treatment-vendor")
+    public ResponseEntity<AOPMessageVM> getTreatmentVendorData(@RequestParam String year, @RequestParam String plantFKId) {
+        return ResponseEntity.ok(refineryUtilityConfigurationService.getTreatmentVendorData(year, plantFKId));
+    }
+
+	@PostMapping("/treatment-vendor")
+    public ResponseEntity<AOPMessageVM> saveTreatmentVendorData(@RequestBody List<TreatmentVendorDTO> treatmentVendorDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+        List<TreatmentVendorDTO> failedList = refineryUtilityConfigurationService.saveTreatmentVendorData(year, plantFKId, treatmentVendorDTOList);
+        if(failedList.isEmpty()) {
+            return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+        } else {
+            return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+        }
+    }
 
 }

@@ -172,16 +172,49 @@ const ConfigurationAccordian = ({
     }
   }
 
-  // Initial load with configurable year period
-  const onLoadTest = async (startDateObj, endDateObj) => {
-    const today = new Date()
-    const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
-    const startDate = new Date(
-      today.getFullYear() - yearGap,
-      today.getMonth(),
-      1,
-    )
+  // Calculate Last 1 Year dates from selected AOP_YEAR
+  const getDatesFromAopYear = useCallback(
+    (aopYear, gap = yearGap) => {
+      let startYear = null
+      if (typeof aopYear === 'string' && aopYear.includes('-')) {
+        startYear = parseInt(aopYear.split('-')[0], 10)
+      } else if (aopYear) {
+        startYear = parseInt(aopYear, 10)
+      }
 
+      if (startYear && !isNaN(startYear)) {
+        const calcStartDate = new Date(startYear - (gap || 1), 3, 1) // 1st April of (startYear - gap)
+        const calcEndDate = new Date(startYear, 2, 31) // 31st March of startYear
+        return { startDate: calcStartDate, endDate: calcEndDate }
+      }
+
+      const today = new Date()
+      const calcEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
+      const calcStartDate = new Date(
+        today.getFullYear() - (gap || 1),
+        today.getMonth(),
+        1,
+      )
+      return { startDate: calcStartDate, endDate: calcEndDate }
+    },
+    [yearGap],
+  )
+
+  // Initial load with configurable year period
+  const onLoadTest = async (
+    startDateObj,
+    endDateObj,
+  ) => {
+    const { startDate: aopStartDate, endDate: aopEndDate } =
+      getDatesFromAopYear(AOP_YEAR, yearGap)
+    let effectiveStartDate = startDate 
+    let effectiveEndDate = endDate
+    if(isHideLoadButton){
+      effectiveStartDate = aopStartDate
+      effectiveEndDate = aopEndDate
+    }
+
+    
     const createPayloadItem = (obj, date) => ({
       apr: date,
       UOM: '',
@@ -193,8 +226,8 @@ const ConfigurationAccordian = ({
     })
 
     const payload = [
-      createPayloadItem(startDateObj, formatDate(startDate)),
-      createPayloadItem(endDateObj, formatDate(endDate)),
+      createPayloadItem(startDateObj, formatDate(effectiveStartDate)),
+      createPayloadItem(endDateObj, formatDate(effectiveEndDate)),
     ]
 
     try {
@@ -445,11 +478,16 @@ const ConfigurationAccordian = ({
     computeAndSetDates()
   }, [computeAndSetDates])
 
-  useEffect(() => {
-    if (isHideLoadButton){
-      handleConfirmLoad()
-    }
-  }, [isHideLoadButton, startDate, endDate])
+  // useEffect(() => {
+  //   if (isHideLoadButton && !hasExecutedRef.current && configurationExecutionDetails.length > 0) {
+  //     const startDateObj = configurationExecutionDetails.find((item) => item.Name === 'StartDate')
+  //     const endDateObj = configurationExecutionDetails.find((item) => item.Name === 'EndDate')
+  //     if (startDateObj && endDateObj) {
+  //       hasExecutedRef.current = true
+  //       onLoadTest(startDateObj, endDateObj)
+  //     }
+  //   }
+  // }, [isHideLoadButton, configurationExecutionDetails])
 
   // Notify parent component when dates change
   useEffect(() => {

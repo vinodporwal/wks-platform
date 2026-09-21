@@ -757,7 +757,7 @@ async function exportCatChemUtilityConsumptionExcel(
 }
 
 async function getTreatmentVendorData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/treatment-vendor?year=${year}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/treatment-vendor?year=${year}&plantFKId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -781,7 +781,7 @@ async function saveTreatmentVendorData(
   AOP_YEAR,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/treatment-vendor?year=${AOP_YEAR}&plantId=${PlantId}`
+  const url = `${Config.CaseEngineUrl}/task/treatment-vendor?year=${AOP_YEAR}&plantFKId=${PlantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

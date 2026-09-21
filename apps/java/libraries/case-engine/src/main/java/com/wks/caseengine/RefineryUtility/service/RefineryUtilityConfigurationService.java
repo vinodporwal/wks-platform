@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface RefineryUtilityConfigurationService {
@@ -15,4 +16,6 @@ public interface RefineryUtilityConfigurationService {
     public byte[] exportMonthWiseConstants(String year, String plantFKId,boolean isAfterSave,List<MonthWiseConstantsDTO> dtoList);
 	public AOPMessageVM importMonthWiseConstants(String year,UUID plantId,MultipartFile file);
     public AOPMessageVM checkIsSummerWinterPlant(String plantId);
+    public AOPMessageVM getTreatmentVendorData(String year, String plantFKId);
+    public List<TreatmentVendorDTO> saveTreatmentVendorData(String year, String plantFKId, List<TreatmentVendorDTO> treatmentVendorDTOList);
 }
