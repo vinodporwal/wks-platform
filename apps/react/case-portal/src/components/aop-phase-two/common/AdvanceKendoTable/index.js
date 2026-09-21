@@ -291,7 +291,7 @@ const AdvanceKendoTable = ({
   const [openCalculateDialogeBox, setOpenCalculateDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
-  
+
   const openCalculateDialogBox = () => {
     setOpenCalculateDialogeBox(true)
   }

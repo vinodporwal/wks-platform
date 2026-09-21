@@ -10,7 +10,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
-const CatChemConsumption = () => {
+const TreatmentVendor = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year, oldYear, isReleased } =
@@ -37,11 +37,11 @@ const CatChemConsumption = () => {
     severity: 'info',
   })
 
-  const fetchMatbalData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.getCatChemUtilityConsumptionData(
+      const response = await ProductionNormsApiService.getTreatmentVendorData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -72,8 +72,8 @@ const CatChemConsumption = () => {
   useEffect(() => {
     setRows([])
     setModifiedCells({})
-    fetchMatbalData()
-  }, [fetchMatbalData, PLANT_ID, AOP_YEAR])
+    fetchData()
+  }, [fetchData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(() => {
     const columns = [
@@ -88,29 +88,20 @@ const CatChemConsumption = () => {
         hidden: true,
       },
       {
-        field: 'productName',
-        title: 'Particulars',
+        field: 'DisplayName',
+        title: 'Vendors',
         editable: false,
         width: 300,
         minWidth: 250,
         widthT: 300,
       },
       {
-        field: 'UOM',
-        title: 'UOM',
-        editable: false,
-        width: 100,
-        minWidth: 80,
-        widthT: 100,
-      },
-      {
-        field: 'apr',
-        title: 'Value',
+        field: 'isChecked',
+        title: 'Is Active',
         width: 150,
         minWidth: 120,
         widthT: 150,
-        type: 'number',
-        format: valueFormat,
+        type: 'checkbox',
         editable: true,
       },
       {
@@ -152,18 +143,17 @@ const CatChemConsumption = () => {
       // Payload matches colDefs: only 'apr' (Winter) and 'may' (Summer) are editable
       const payload = modifiedData.map((row) => ({
         normParameterFKId: row.normParameterFKId,
-        apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
+        isChecked: row.isChecked,
         remarks: row.remarks || '',
         auditYear: row.auditYear || AOP_YEAR,
-        UOM: row.UOM || '',
-        TypeDisplayName: row.TypeDisplayName || 'Utility Consumption',
+        uom: row.UOM || '',
+        TypeDisplayName: row.TypeDisplayName || 'Treatment Vendor',
         isEditable: row.isEditable ?? true,
-        productName: row.productName || '',
-        productDisplayName: row.productDisplayName || '',
-        productDisplayOrder: row.productDisplayOrder || ''
+        DisplayName: row.DisplayName || '',
+        Name: row.Name || '',
       }))
 
-      const response = await ProductionNormsApiService.saveCatChemUtilityConsumptionData(
+      const response = await ProductionNormsApiService.saveTreatmentVendorData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -173,7 +163,7 @@ const CatChemConsumption = () => {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setSnackbarOpen(true)
         setModifiedCells({})
-        fetchMatbalData()
+        fetchData()
       } else {
         setSnackbarData({ message: 'Save Failed!', severity: 'error' })
         setSnackbarOpen(true)
@@ -185,13 +175,13 @@ const CatChemConsumption = () => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, PLANT_ID, AOP_YEAR, keycloak, fetchMatbalData])
+  }, [modifiedCells, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
   const handleExcelUpload = async (file) => {
     setLoading(true)
     try {
       const response =
-        await ProductionNormsApiService.importCatChemUtilityConsumptionExcel(
+        await ProductionNormsApiService.importTreatmentVendorExcel(
           file,
           keycloak,
           PLANT_ID,
@@ -203,7 +193,7 @@ const CatChemConsumption = () => {
           severity: 'success',
         })
         setSnackbarOpen(true)
-        fetchMatbalData()
+        fetchData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -218,7 +208,7 @@ const CatChemConsumption = () => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - CAT CHEM Consumption.xlsx')
+        link.setAttribute('download', 'Error File - Treatment Vendor.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -229,7 +219,7 @@ const CatChemConsumption = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        fetchMatbalData()
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -238,7 +228,7 @@ const CatChemConsumption = () => {
         })
       }
     } catch (error) {
-      console.error('Error importing CAT CHEM Consumption data:', error)
+      console.error('Error importing Treatment Vendor data:', error)
       setSnackbarData({ message: 'Error importing data', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
@@ -250,8 +240,8 @@ const CatChemConsumption = () => {
     try {
       setSnackbarData({ message: 'Export Started!', severity: 'success' })
       setSnackbarOpen(true)
-      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_CAT CHEM Consumption`
-      await ProductionNormsApiService.exportCatChemUtilityConsumptionExcel(
+      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Treatment Vendor`
+      await ProductionNormsApiService.exportTreatmentVendorExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -260,7 +250,7 @@ const CatChemConsumption = () => {
       setSnackbarData({ message: 'Export Successful!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (error) {
-      console.error('Error exporting CAT CHEM Consumption data:', error)
+      console.error('Error exporting Treatment Vendor data:', error)
       setSnackbarData({ message: 'Error exporting data', severity: 'error' })
       setSnackbarOpen(true)
     }
@@ -275,9 +265,9 @@ const CatChemConsumption = () => {
       saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
-      showExport: true,
-      ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
-      showImport: true,
+      showExport: false,
+      ExcelName: `Treatment Vendor_${AOP_YEAR}`,
+      showImport: false,
       showCalculate: false,
       showCalculateVisibility: true,
     }
@@ -313,7 +303,7 @@ const CatChemConsumption = () => {
         permissions={adjustedPermissions}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='CAT CHEM Consumption'
+        title='Treatment Vendor'
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -337,4 +327,4 @@ const CatChemConsumption = () => {
   )
 }
 
-export default CatChemConsumption
+export default TreatmentVendor

@@ -74,6 +74,18 @@ const ConfigurationAccordian = ({
     )
   }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
+  const isHideLoadButton = useMemo(() => {
+    const validConfigs = [
+      { vertical: 'refinery utility', site: 'dta', plant: 'fcc-1_ct-1' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.vertical === VERTICAL_NAME &&
+        config.site === SITE_NAME &&
+        config.plant === PLANT_NAME
+    )
+  }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
+
   // State management
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
@@ -160,16 +172,49 @@ const ConfigurationAccordian = ({
     }
   }
 
-  // Initial load with configurable year period
-  const onLoadTest = async (startDateObj, endDateObj) => {
-    const today = new Date()
-    const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
-    const startDate = new Date(
-      today.getFullYear() - yearGap,
-      today.getMonth(),
-      1,
-    )
+  // Calculate Last 1 Year dates from selected AOP_YEAR
+  const getDatesFromAopYear = useCallback(
+    (aopYear, gap = yearGap) => {
+      let startYear = null
+      if (typeof aopYear === 'string' && aopYear.includes('-')) {
+        startYear = parseInt(aopYear.split('-')[0], 10)
+      } else if (aopYear) {
+        startYear = parseInt(aopYear, 10)
+      }
 
+      if (startYear && !isNaN(startYear)) {
+        const calcStartDate = new Date(startYear - (gap || 1), 3, 1) // 1st April of (startYear - gap)
+        const calcEndDate = new Date(startYear, 2, 31) // 31st March of startYear
+        return { startDate: calcStartDate, endDate: calcEndDate }
+      }
+
+      const today = new Date()
+      const calcEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
+      const calcStartDate = new Date(
+        today.getFullYear() - (gap || 1),
+        today.getMonth(),
+        1,
+      )
+      return { startDate: calcStartDate, endDate: calcEndDate }
+    },
+    [yearGap],
+  )
+
+  // Initial load with configurable year period
+  const onLoadTest = async (
+    startDateObj,
+    endDateObj,
+  ) => {
+    const { startDate: aopStartDate, endDate: aopEndDate } =
+      getDatesFromAopYear(AOP_YEAR, yearGap)
+    let effectiveStartDate = startDate 
+    let effectiveEndDate = endDate
+    if(isHideLoadButton){
+      effectiveStartDate = aopStartDate
+      effectiveEndDate = aopEndDate
+    }
+
+    
     const createPayloadItem = (obj, date) => ({
       apr: date,
       UOM: '',
@@ -181,8 +226,8 @@ const ConfigurationAccordian = ({
     })
 
     const payload = [
-      createPayloadItem(startDateObj, formatDate(startDate)),
-      createPayloadItem(endDateObj, formatDate(endDate)),
+      createPayloadItem(startDateObj, formatDate(effectiveStartDate)),
+      createPayloadItem(endDateObj, formatDate(effectiveEndDate)),
     ]
 
     try {
@@ -433,6 +478,17 @@ const ConfigurationAccordian = ({
     computeAndSetDates()
   }, [computeAndSetDates])
 
+  // useEffect(() => {
+  //   if (isHideLoadButton && !hasExecutedRef.current && configurationExecutionDetails.length > 0) {
+  //     const startDateObj = configurationExecutionDetails.find((item) => item.Name === 'StartDate')
+  //     const endDateObj = configurationExecutionDetails.find((item) => item.Name === 'EndDate')
+  //     if (startDateObj && endDateObj) {
+  //       hasExecutedRef.current = true
+  //       onLoadTest(startDateObj, endDateObj)
+  //     }
+  //   }
+  // }, [isHideLoadButton, configurationExecutionDetails])
+
   // Notify parent component when dates change
   useEffect(() => {
     if (onDatesChange && startDate && endDate) {
@@ -458,8 +514,8 @@ const ConfigurationAccordian = ({
           component='img'
           src={CalenderIcon}
           className='w16-icon'
-          style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
-          onClick={() => !READ_ONLY && setShow((v) => !v)}
+          style={{ cursor: (READ_ONLY || isHideLoadButton) ? 'not-allowed' : 'pointer' }}
+          onClick={() => !(READ_ONLY || isHideLoadButton) && setShow((v) => !v)}
         />
         <Box component='span' className='header-dropdown-label'>
           {label}:
@@ -474,16 +530,16 @@ const ConfigurationAccordian = ({
             setValue(e.value)
             setDateEdited(true)
           }}
-          disabled={READ_ONLY}
+          disabled={READ_ONLY || isHideLoadButton}
         />
         <IconButton
           style={{
-            cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+            cursor: (READ_ONLY || isHideLoadButton) ? 'not-allowed' : 'pointer',
             p: 0,
             width: 0,
             height: 0,
           }}
-          onClick={() => !READ_ONLY && setShow((v) => !v)}
+          onClick={() => !(READ_ONLY || isHideLoadButton) && setShow((v) => !v)}
           size='small'
         >
           <ExpandMoreIcon
@@ -587,7 +643,7 @@ const ConfigurationAccordian = ({
                 </Stack>
 
                 {/* LOAD BUTTON */}
-                {!isOldYear && (
+                {!(isOldYear || isHideLoadButton) && (
                   <Tooltip title='Refresh Data'>
                     <Button
                       variant='outlined'
@@ -629,7 +685,8 @@ const ConfigurationAccordian = ({
               )}
 
               {/* ROW 2: AOP DESIGN BASIS */}
-              <Box sx={{ width: '100%' }}>
+              {!isHideLoadButton && (
+                <Box sx={{ width: '100%' }}>
                 <Typography
                   variant='caption'
                   className='aop-design-basis-label'
@@ -647,6 +704,7 @@ const ConfigurationAccordian = ({
                   }}
                 />
               </Box>
+              )}
             </Stack>
           </CustomAccordionDetails>
         </CompactAccordion>

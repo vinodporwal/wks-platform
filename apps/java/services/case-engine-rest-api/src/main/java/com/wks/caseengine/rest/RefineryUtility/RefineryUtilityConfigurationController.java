@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ContentDisposition;
 
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 
 @RestController
@@ -49,11 +50,11 @@ public class RefineryUtilityConfigurationController {
     @GetMapping(value = "/refinery-utility-constants-export")
 	public ResponseEntity<byte[]> exportMonthWiseConstants(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year,@RequestParam Boolean isSummerWinter
+            @RequestParam("year") String year
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = refineryUtilityConfigurationService.exportMonthWiseConstants(year,plantId,false,null,isSummerWinter); 
+	        byte[] excelBytes = refineryUtilityConfigurationService.exportMonthWiseConstants(year,plantId,false,null); 
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -73,14 +74,29 @@ public class RefineryUtilityConfigurationController {
 	public AOPMessageVM importMonthWiseConstants(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file,Boolean isSummerWinter
+			@RequestParam("file") MultipartFile file
 	        ) {
-			return	refineryUtilityConfigurationService.importMonthWiseConstants(year,UUID.fromString(plantId), file,isSummerWinter); 
+			return	refineryUtilityConfigurationService.importMonthWiseConstants(year,UUID.fromString(plantId), file); 
 	}
 
 	@GetMapping("/refinery-utility/check-is-summer-winter-plant")
 	public ResponseEntity<AOPMessageVM> checkIsSummerWinterPlant(@RequestParam String plantId) {
 		return ResponseEntity.ok(refineryUtilityConfigurationService.checkIsSummerWinterPlant(plantId));
 	}
+
+	@GetMapping("/treatment-vendor")
+    public ResponseEntity<AOPMessageVM> getTreatmentVendorData(@RequestParam String year, @RequestParam String plantFKId) {
+        return ResponseEntity.ok(refineryUtilityConfigurationService.getTreatmentVendorData(year, plantFKId));
+    }
+
+	@PostMapping("/treatment-vendor")
+    public ResponseEntity<AOPMessageVM> saveTreatmentVendorData(@RequestBody List<TreatmentVendorDTO> treatmentVendorDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+        List<TreatmentVendorDTO> failedList = refineryUtilityConfigurationService.saveTreatmentVendorData(year, plantFKId, treatmentVendorDTOList);
+        if(failedList.isEmpty()) {
+            return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+        } else {
+            return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+        }
+    }
 
 }

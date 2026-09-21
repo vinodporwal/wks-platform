@@ -174,9 +174,9 @@ const Constants = ({ startDate, endDate }) => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showExport: false,
+    showExport: true,
     ExcelName: `Production_Norms_Constants_${AOP_YEAR}`,
-    showImport: false,
+    showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Constants',
@@ -255,7 +255,15 @@ const Constants = ({ startDate, endDate }) => {
       return
     }
 
-    const payload = modifiedData
+    // const payload = modifiedData
+    const payload = modifiedData.map((row) => ({
+        ...row,
+        normParameterFKId: row.normParameterFKId,
+        apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
+        oct: row.oct !== undefined && row.oct !== '' ? Number(row.oct) : null,
+        remarks: row.remarks || '',
+        auditYear: row.auditYear || AOP_YEAR,
+      }))
     try {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
@@ -278,6 +286,7 @@ const Constants = ({ startDate, endDate }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await fetchConstantsData()
     } catch (error) {
       console.error('Error saving constants data:', error)
       setSnackbarOpen(true)

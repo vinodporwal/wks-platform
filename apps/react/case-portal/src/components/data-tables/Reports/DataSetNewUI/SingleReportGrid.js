@@ -7,7 +7,7 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 import CustomColumnHeader from './CustomColumnHeader'
-import { isDateColumn, parseDateSafe } from './reportGridHelpers'
+import { isDateColumn, parseDateSafe, formatDateLocal } from './reportGridHelpers'
 
 function countDecimals(value) {
   if (value == null) return 0
@@ -16,6 +16,171 @@ function countDecimals(value) {
   const frac = s.split('.')[1] || ''
   const fracNoTrailing = frac.replace(/0+$/, '')
   return fracNoTrailing.length
+}
+
+function getDefaultColumnWidth(col, isDate, isNum) {
+  if (col?.width) return col.width
+  if (isDate) return 200
+  if (isNum) return 200
+  return 300
+}
+
+function rowMatchesFilter(row, field, filter, rawColumns, isAromaticsHmd) {
+  if (!filter) return true
+  const rawCell = row[field]
+  const isNum =
+    typeof rawCell === 'number' ||
+    !isNaN(Number(String(rawCell).replace(/,/g, '')))
+  const colDef = rawColumns.find((c) => c.field === field)
+  const isDate = isDateColumn(colDef, [row])
+
+  const condition = filter.condition
+  const selectedSet = filter.selected
+
+  // 1. Condition check
+  if (condition) {
+    const { operator, value } = condition
+    const op = operator
+
+    if (op === 'isEmpty') {
+      if (
+        rawCell !== null &&
+        rawCell !== undefined &&
+        String(rawCell).trim() !== ''
+      ) {
+        return false
+      }
+    } else if (op === 'isNotEmpty') {
+      if (
+        rawCell === null ||
+        rawCell === undefined ||
+        String(rawCell).trim() === ''
+      ) {
+        return false
+      }
+    } else if (value !== undefined && value !== '') {
+      const strCell = String(rawCell ?? '').toLowerCase()
+      const condVal = String(value).toLowerCase().trim()
+
+      if (isDate) {
+        const rowDate = parseDateSafe(rawCell)
+        const filterDate = parseDateSafe(value)
+
+        if (rowDate && filterDate) {
+          const rowTime = rowDate.getTime()
+          const filterTime = filterDate.getTime()
+
+          switch (op) {
+            case 'equals':
+              if (rowTime !== filterTime) return false
+              break
+            case 'doesNotEqual':
+              if (rowTime === filterTime) return false
+              break
+            case 'isAfter':
+              if (rowTime <= filterTime) return false
+              break
+            case 'isAfterOrEqual':
+              if (rowTime < filterTime) return false
+              break
+            case 'isBefore':
+              if (rowTime >= filterTime) return false
+              break
+            case 'isBeforeOrEqual':
+              if (rowTime > filterTime) return false
+              break
+            default:
+              break
+          }
+        } else {
+          if (op === 'equals' && strCell !== condVal) return false
+          if (op === 'doesNotEqual' && strCell === condVal) return false
+          if (op === 'contains' && !strCell.includes(condVal)) return false
+          if (op === 'doesNotContain' && strCell.includes(condVal))
+            return false
+        }
+      } else if (
+        isNum &&
+        !isNaN(Number(rawCell)) &&
+        !isNaN(Number(value))
+      ) {
+        const cellNum = Number(rawCell)
+        const filterNum = Number(value)
+
+        switch (op) {
+          case 'equals':
+            if (cellNum !== filterNum) return false
+            break
+          case 'doesNotEqual':
+            if (cellNum === filterNum) return false
+            break
+          case 'greaterThan':
+            if (cellNum <= filterNum) return false
+            break
+          case 'greaterThanOrEqual':
+            if (cellNum < filterNum) return false
+            break
+          case 'lessThan':
+            if (cellNum >= filterNum) return false
+            break
+          case 'lessThanOrEqual':
+            if (cellNum > filterNum) return false
+            break
+          case 'contains':
+            if (!strCell.includes(condVal)) return false
+            break
+          case 'doesNotContain':
+            if (strCell.includes(condVal)) return false
+            break
+          case 'startsWith':
+            if (!strCell.startsWith(condVal)) return false
+            break
+          case 'endsWith':
+            if (!strCell.endsWith(condVal)) return false
+            break
+          default:
+            break
+        }
+      } else {
+        switch (op) {
+          case 'contains':
+            if (!strCell.includes(condVal)) return false
+            break
+          case 'doesNotContain':
+            if (strCell.includes(condVal)) return false
+            break
+          case 'startsWith':
+            if (!strCell.startsWith(condVal)) return false
+            break
+          case 'endsWith':
+            if (!strCell.endsWith(condVal)) return false
+            break
+          case 'equals':
+            if (strCell !== condVal) return false
+            break
+          case 'doesNotEqual':
+            if (strCell === condVal) return false
+            break
+          default:
+            break
+        }
+      }
+    }
+  }
+
+  // 2. Checkbox selection check
+  if (selectedSet && selectedSet.size > 0) {
+    let val = rawCell
+    if (isNum && val != null && val !== '') {
+      const num = Number(val)
+      val = isNaN(num) ? val : num.toFixed(isAromaticsHmd ? 5 : 3)
+    } else if (isDate && val != null && val !== '') {
+      val = formatDateLocal(val)
+    }
+    if (!selectedSet.has(val ?? '')) return false
+  }
+
+  return true
 }
 
 const SingleReportGrid = memo(
@@ -60,7 +225,6 @@ const SingleReportGrid = memo(
         )
         return
       }
-
       setSortConfig((prev) => {
         if (!prev || prev.field !== field) {
           return { field, direction: 'asc' }
@@ -74,12 +238,23 @@ const SingleReportGrid = memo(
 
     const columns = useMemo(() => {
       const validCols = rawColumns.filter((c) => c.field !== 'GRID_TYPE')
-      const isManyColumns = validCols.length > 15
 
       return validCols.map((col) => {
         const isNum = col.type === 'number'
         const isDate = isDateColumn(col, rawData)
         const customWidth = columnWidths[col.field]
+        const resolvedWidth = customWidth || getDefaultColumnWidth(col, isDate, isNum)
+
+        // Cascading filter: compute available rows for this column's header filter dropdown
+        const otherFilterKeys = Object.keys(activeFilters).filter((k) => k !== col.field)
+        const rowsForCol =
+          otherFilterKeys.length === 0
+            ? rawData
+            : rawData.filter((row) =>
+                otherFilterKeys.every((f) =>
+                  rowMatchesFilter(row, f, activeFilters[f], rawColumns, isAromaticsHmd),
+                ),
+              )
 
         return {
           field: col.field,
@@ -88,15 +263,14 @@ const SingleReportGrid = memo(
           sortable: false,
           filterable: false,
           disableColumnMenu: true,
-          flex: customWidth ? undefined : isManyColumns ? undefined : 1,
-          width: customWidth || (isManyColumns ? 150 : undefined),
-          minWidth: 120,
+          width: resolvedWidth,
+          minWidth: 100,
           headerAlign: isNum ? 'right' : 'left',
           align: isNum ? 'right' : 'left',
           renderHeader: () => (
             <CustomColumnHeader
               colDef={col}
-              rows={rawData}
+              rows={rowsForCol}
               activeFilter={activeFilters[col.field]}
               onFilterChange={handleFilterChange}
               sortConfig={sortConfig}
@@ -112,8 +286,7 @@ const SingleReportGrid = memo(
             }
 
             if (isDate) {
-              const d = parseDateSafe(rawVal)
-              const formattedDate = d ? d.toISOString().split('T')[0] : String(rawVal)
+              const formattedDate = formatDateLocal(rawVal)
               return (
                 <Tooltip title={String(rawVal)} placement='top' arrow enterDelay={400}>
                   <Box
@@ -202,177 +375,11 @@ const SingleReportGrid = memo(
       const activeFilterKeys = Object.keys(activeFilters)
       if (activeFilterKeys.length === 0) return rawData
 
-      return rawData.filter((row) => {
-        return activeFilterKeys.every((field) => {
-          const filter = activeFilters[field]
-          if (!filter) return true
-
-          const rawCell = row[field]
-          const isNum =
-            typeof rawCell === 'number' ||
-            !isNaN(Number(String(rawCell).replace(/,/g, '')))
-          const colDef = rawColumns.find((c) => c.field === field)
-          const isDate = isDateColumn(colDef, [row])
-
-          const condition = filter.condition
-          const selectedSet = filter.selected
-
-          // 1. Condition check
-          if (condition) {
-            const { operator, value } = condition
-            const op = operator
-
-            if (op === 'isEmpty') {
-              if (
-                rawCell !== null &&
-                rawCell !== undefined &&
-                String(rawCell).trim() !== ''
-              ) {
-                return false
-              }
-            } else if (op === 'isNotEmpty') {
-              if (
-                rawCell === null ||
-                rawCell === undefined ||
-                String(rawCell).trim() === ''
-              ) {
-                return false
-              }
-            } else if (op === 'isAnyOf') {
-              const tokens = (value || '')
-                .split(',')
-                .map((t) => t.trim().toLowerCase())
-                .filter(Boolean)
-              if (tokens.length > 0) {
-                const cellStr = String(rawCell ?? '').toLowerCase()
-                const matchesAny = tokens.some(
-                  (t) => cellStr.includes(t) || cellStr === t,
-                )
-                if (!matchesAny) return false
-              }
-            } else if (value !== undefined && value !== '') {
-              const strCell = String(rawCell ?? '').toLowerCase()
-              const condVal = String(value).toLowerCase().trim()
-
-              if (isDate) {
-                const rowDate = parseDateSafe(rawCell)
-                const filterDate = parseDateSafe(value)
-
-                if (rowDate && filterDate) {
-                  const rowTime = rowDate.getTime()
-                  const filterTime = filterDate.getTime()
-
-                  switch (op) {
-                    case 'equals':
-                      if (rowTime !== filterTime) return false
-                      break
-                    case 'doesNotEqual':
-                      if (rowTime === filterTime) return false
-                      break
-                    case 'isAfter':
-                      if (rowTime <= filterTime) return false
-                      break
-                    case 'isAfterOrEqual':
-                      if (rowTime < filterTime) return false
-                      break
-                    case 'isBefore':
-                      if (rowTime >= filterTime) return false
-                      break
-                    case 'isBeforeOrEqual':
-                      if (rowTime > filterTime) return false
-                      break
-                    default:
-                      break
-                  }
-                } else {
-                  if (op === 'equals' && strCell !== condVal) return false
-                  if (op === 'doesNotEqual' && strCell === condVal) return false
-                  if (op === 'contains' && !strCell.includes(condVal)) return false
-                  if (op === 'doesNotContain' && strCell.includes(condVal))
-                    return false
-                }
-              } else if (
-                isNum &&
-                !isNaN(Number(rawCell)) &&
-                !isNaN(Number(value))
-              ) {
-                const cellNum = Number(rawCell)
-                const filterNum = Number(value)
-
-                switch (op) {
-                  case 'equals':
-                    if (cellNum !== filterNum) return false
-                    break
-                  case 'doesNotEqual':
-                    if (cellNum === filterNum) return false
-                    break
-                  case 'greaterThan':
-                    if (cellNum <= filterNum) return false
-                    break
-                  case 'greaterThanOrEqual':
-                    if (cellNum < filterNum) return false
-                    break
-                  case 'lessThan':
-                    if (cellNum >= filterNum) return false
-                    break
-                  case 'lessThanOrEqual':
-                    if (cellNum > filterNum) return false
-                    break
-                  case 'contains':
-                    if (!strCell.includes(condVal)) return false
-                    break
-                  case 'doesNotContain':
-                    if (strCell.includes(condVal)) return false
-                    break
-                  case 'startsWith':
-                    if (!strCell.startsWith(condVal)) return false
-                    break
-                  case 'endsWith':
-                    if (!strCell.endsWith(condVal)) return false
-                    break
-                  default:
-                    break
-                }
-              } else {
-                switch (op) {
-                  case 'contains':
-                    if (!strCell.includes(condVal)) return false
-                    break
-                  case 'doesNotContain':
-                    if (strCell.includes(condVal)) return false
-                    break
-                  case 'startsWith':
-                    if (!strCell.startsWith(condVal)) return false
-                    break
-                  case 'endsWith':
-                    if (!strCell.endsWith(condVal)) return false
-                    break
-                  case 'equals':
-                    if (strCell !== condVal) return false
-                    break
-                  case 'doesNotEqual':
-                    if (strCell === condVal) return false
-                    break
-                  default:
-                    break
-                }
-              }
-            }
-          }
-
-          // 2. Checkbox selection check
-          if (selectedSet && selectedSet.size > 0) {
-            let val = rawCell
-            if (isNum && val != null && val !== '') {
-              const num = Number(val)
-              val = isNaN(num) ? val : num.toFixed(isAromaticsHmd ? 5 : 3)
-            }
-            if (!selectedSet.has(val ?? '')) return false
-          }
-
-          return true
-        })
-      })
+      return rawData.filter((row) =>
+        activeFilterKeys.every((field) =>
+          rowMatchesFilter(row, field, activeFilters[field], rawColumns, isAromaticsHmd),
+        ),
+      )
     }, [rawData, activeFilters, rawColumns, isAromaticsHmd])
 
     // ===================== SORTING APPLICATION =====================
@@ -491,7 +498,8 @@ const SingleReportGrid = memo(
                 disableRowSelectionOnClick
                 disableColumnMenu
                 sx={{
-                  border: 'none',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '4px',
                   fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                   fontSize: '0.82rem',
                   '& .MuiDataGrid-sortIcon': {
@@ -501,17 +509,17 @@ const SingleReportGrid = memo(
                     display: 'none !important',
                   },
                   '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: '#F8FAFC',
-                    color: '#1E293B',
-                    fontWeight: 600,
-                    borderBottom: '1px solid #CBD5E1',
+                    backgroundColor: '#E2E8F0',
+                    color: '#0F172A',
+                    fontWeight: 700,
+                    borderBottom: '2px solid #94A3B8',
                     minHeight: '38px !important',
                     maxHeight: '38px !important',
                     lineHeight: '38px !important',
                   },
                   '& .MuiDataGrid-columnHeader': {
                     padding: '0 !important',
-                    borderRight: '1px solid #E2E8F0',
+                    borderRight: '1px solid #CBD5E1',
                     height: '38px !important',
                     '&:focus, &:focus-within': { outline: 'none' },
                   },
@@ -530,28 +538,31 @@ const SingleReportGrid = memo(
                     alignItems: 'stretch !important',
                   },
                   '& .MuiDataGrid-cell': {
-                    borderRight: '1px solid #F1F5F9',
-                    borderBottom: '1px solid #F1F5F9',
+                    borderRight: '1px solid #CBD5E1',
+                    borderBottom: '1px solid #CBD5E1',
                     padding: '0 8px',
-                    color: '#1E293B',
+                    color: '#0F172A',
                     '&:focus, &:focus-within': { outline: 'none' },
                   },
+                  '& .MuiDataGrid-row': {
+                    backgroundColor: '#FFFFFF',
+                  },
                   '& .MuiDataGrid-row:nth-of-type(even)': {
-                    backgroundColor: '#FAFAFA',
+                    backgroundColor: '#F1F5F9',
                   },
                   '& .MuiDataGrid-row:hover': {
-                    backgroundColor: '#F0F7FF',
+                    backgroundColor: '#DBEAFE !important',
                   },
                   '& .MuiDataGrid-footerContainer': {
                     minHeight: '48px !important',
                     maxHeight: '48px !important',
-                    borderTop: '1px solid #E2E8F0',
-                    backgroundColor: '#F8FAFC',
+                    borderTop: '2px solid #CBD5E1',
+                    backgroundColor: '#F1F5F9',
                     display: 'flex',
                     alignItems: 'center',
                   },
                   '& .MuiTablePagination-root': {
-                    color: '#475569',
+                    color: '#334155',
                     fontSize: '0.82rem',
                     overflow: 'visible',
                   },
@@ -562,12 +573,13 @@ const SingleReportGrid = memo(
                     paddingRight: '16px',
                   },
                   '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows':
-                    {
-                      fontSize: '0.82rem',
-                      color: '#475569',
-                      margin: 0,
-                      lineHeight: '48px',
-                    },
+                  {
+                    fontSize: '0.82rem',
+                    color: '#334155',
+                    margin: 0,
+                    lineHeight: '48px',
+                    fontWeight: 500,
+                  },
                   '& .MuiTablePagination-select': {
                     fontSize: '0.82rem',
                     paddingTop: '6px',
@@ -579,7 +591,7 @@ const SingleReportGrid = memo(
                       padding: '6px',
                       color: '#0284C7',
                       '&.Mui-disabled': {
-                        color: '#CBD5E1',
+                        color: '#94A3B8',
                       },
                     },
                   },
