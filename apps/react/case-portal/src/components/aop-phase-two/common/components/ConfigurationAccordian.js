@@ -74,6 +74,18 @@ const ConfigurationAccordian = ({
     )
   }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
+  const isHideLoadButton = useMemo(() => {
+    const validConfigs = [
+      { vertical: 'refinery utility', site: 'dta', plant: 'fcc-1_ct-1' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.vertical === VERTICAL_NAME &&
+        config.site === SITE_NAME &&
+        config.plant === PLANT_NAME
+    )
+  }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
+
   // State management
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
@@ -433,6 +445,12 @@ const ConfigurationAccordian = ({
     computeAndSetDates()
   }, [computeAndSetDates])
 
+  useEffect(() => {
+    if (isHideLoadButton){
+      handleConfirmLoad()
+    }
+  }, [isHideLoadButton, startDate, endDate])
+
   // Notify parent component when dates change
   useEffect(() => {
     if (onDatesChange && startDate && endDate) {
@@ -458,8 +476,8 @@ const ConfigurationAccordian = ({
           component='img'
           src={CalenderIcon}
           className='w16-icon'
-          style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
-          onClick={() => !READ_ONLY && setShow((v) => !v)}
+          style={{ cursor: (READ_ONLY || isHideLoadButton) ? 'not-allowed' : 'pointer' }}
+          onClick={() => !(READ_ONLY || isHideLoadButton) && setShow((v) => !v)}
         />
         <Box component='span' className='header-dropdown-label'>
           {label}:
@@ -474,16 +492,16 @@ const ConfigurationAccordian = ({
             setValue(e.value)
             setDateEdited(true)
           }}
-          disabled={READ_ONLY}
+          disabled={READ_ONLY || isHideLoadButton}
         />
         <IconButton
           style={{
-            cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+            cursor: (READ_ONLY || isHideLoadButton) ? 'not-allowed' : 'pointer',
             p: 0,
             width: 0,
             height: 0,
           }}
-          onClick={() => !READ_ONLY && setShow((v) => !v)}
+          onClick={() => !(READ_ONLY || isHideLoadButton) && setShow((v) => !v)}
           size='small'
         >
           <ExpandMoreIcon
@@ -587,7 +605,7 @@ const ConfigurationAccordian = ({
                 </Stack>
 
                 {/* LOAD BUTTON */}
-                {!isOldYear && (
+                {!(isOldYear || isHideLoadButton) && (
                   <Tooltip title='Refresh Data'>
                     <Button
                       variant='outlined'
@@ -629,7 +647,8 @@ const ConfigurationAccordian = ({
               )}
 
               {/* ROW 2: AOP DESIGN BASIS */}
-              <Box sx={{ width: '100%' }}>
+              {!isHideLoadButton && (
+                <Box sx={{ width: '100%' }}>
                 <Typography
                   variant='caption'
                   className='aop-design-basis-label'
@@ -647,6 +666,7 @@ const ConfigurationAccordian = ({
                   }}
                 />
               </Box>
+              )}
             </Stack>
           </CustomAccordionDetails>
         </CompactAccordion>
