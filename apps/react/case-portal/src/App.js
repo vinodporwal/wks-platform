@@ -37,7 +37,7 @@ const App = () => {
       onLoad: inIframe ? 'check-sso' : 'login-required',
       // onLoad: inIframe ? 'login-required' : 'login-required',
       // checkLoginIframe: true,
-      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
+      // silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
     }).then((authenticated) => {
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
