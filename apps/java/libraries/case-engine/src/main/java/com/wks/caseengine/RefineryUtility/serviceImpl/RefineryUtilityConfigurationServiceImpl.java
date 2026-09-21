@@ -113,10 +113,21 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-    public byte[] exportMonthWiseConstants(String year, String plantId, boolean isAfterSave, List<MonthWiseConstantsDTO> dtoList, Boolean isSummerWinter) {
+    public byte[] exportMonthWiseConstants(String year, String plantId, boolean isAfterSave, List<MonthWiseConstantsDTO> dtoList) {
         try {   
-            // Handle null flag safely
-            boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
+        
+        	AOPMessageVM response = checkIsSummerWinterPlant(plantId);
+
+            boolean isSummerWinter = false;
+            if (response != null && response.getData() instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> data = (Map<String, Object>) response.getData();
+                
+                if (data.containsKey("isSummerWinter") && data.get("isSummerWinter") != null) {
+                    isSummerWinter = (Boolean) data.get("isSummerWinter");
+                }
+            }
+            boolean summerWinterFlag = isSummerWinter;
 
             if (!isAfterSave) {
                 AOPMessageVM aopMessageVM = getMonthWiseConstants(year, plantId);
@@ -251,15 +262,26 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
         }
         return new byte[0];
     }
-    
-    public AOPMessageVM importMonthWiseConstants(String year, UUID plantId, MultipartFile file,Boolean isSummerWinter) {
+    @Transactional
+    public AOPMessageVM importMonthWiseConstants(String year, UUID plantId, MultipartFile file) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
+	    	AOPMessageVM response = checkIsSummerWinterPlant(plantId.toString());
+
+	        boolean isSummerWinter = false;
+	        if (response != null && response.getData() instanceof Map) {
+	            @SuppressWarnings("unchecked")
+	            Map<String, Object> data = (Map<String, Object>) response.getData();
+	            
+	            if (data.containsKey("isSummerWinter") && data.get("isSummerWinter") != null) {
+	                isSummerWinter = (Boolean) data.get("isSummerWinter");
+	            }
+	        }
 	        List<MonthWiseConstantsDTO> data = readMonthWiseConstants(file.getInputStream(), plantId, year,isSummerWinter);
 	        List<MonthWiseConstantsDTO> failedList = saveMonthWiseConstants(year, plantId.toString(), data);
 
 	        if (failedList != null && !failedList.isEmpty()) {
-	            byte[] fileByteArray = exportMonthWiseConstants(year, plantId.toString(), true, failedList,isSummerWinter);
+	            byte[] fileByteArray = exportMonthWiseConstants(year, plantId.toString(), true, failedList);
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	            
 	            aopMessageVM.setData(base64File);

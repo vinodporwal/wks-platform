@@ -33,12 +33,20 @@ export const ProductionNormsApiService = {
   // Utility Consumption APIS
   getUtilityConsumptionData,
   saveUtilityConsumptionData,
+  importUtilityConsumptionExcel,
+  exportUtilityConsumptionExcel,
 
   // Cat Chem Utility Consumption APIS
   getCatChemUtilityConsumptionData,
   saveCatChemUtilityConsumptionData,
   importCatChemUtilityConsumptionExcel,
   exportCatChemUtilityConsumptionExcel,
+
+  // Treatment Vendor APIS
+  getTreatmentVendorData,
+  saveTreatmentVendorData,
+  importTreatmentVendorExcel,
+  exportTreatmentVendorExcel,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -491,7 +499,7 @@ async function saveConstantsData(
   periodTo,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const url = `${Config.CaseEngineUrl}/task/refinery-utility-constants?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -533,9 +541,9 @@ async function importConstantsExcel(
   periodFrom,
   periodTo,
 ) {
-  return saveExcelData(file, keycloak, 'vgoht/norms-basis/constant/import', {
+  return saveExcelData(file, keycloak, 'refinery-utility-constants-import', {
     year: year,
-    plantFKId: plantId,
+    plantId: plantId,
     periodFrom: periodFrom,
     periodTo: periodTo,
   })
@@ -551,8 +559,8 @@ async function importConstantsExcel(
 async function exportConstantsExcel(keycloak, plantId, year, fileName) {
   return exportExcelData(
     keycloak,
-    'vgoht/norms-basis/constant/export',
-    { year: year, plantFKId: plantId },
+    'refinery-utility-constants-export',
+    { year: year, plantId: plantId },
     fileName,
   )
 }
@@ -648,6 +656,32 @@ async function saveUtilityConsumptionData(
   }
 }
 
+async function importUtilityConsumptionExcel(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
+  return saveExcelData(file, keycloak, 'utility-consumption-import', {
+    year: year,
+    plantId: plantId,
+  })
+}
+
+async function exportUtilityConsumptionExcel(
+  keycloak,
+  plantId,
+  year,
+  fileName,
+) {
+  return exportExcelData(
+    keycloak,
+    'utility-consumption-export',
+    { year: year, plantId: plantId },
+    fileName,
+  )
+}
+
 async function getCatChemUtilityConsumptionData(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/cat-chem?year=${year}&plantId=${plantId}`
   const headers = {
@@ -717,6 +751,80 @@ async function exportCatChemUtilityConsumptionExcel(
   return exportExcelData(
     keycloak,
     'cat-chem-export',
+    { year: year, plantId: plantId },
+    fileName,
+  )
+}
+
+async function getTreatmentVendorData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/treatment-vendor?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveTreatmentVendorData(
+  keycloak,
+  PlantId,
+  AOP_YEAR,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/treatment-vendor?year=${AOP_YEAR}&plantId=${PlantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function importTreatmentVendorExcel(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
+  return saveExcelData(file, keycloak, 'treatment-vendor-import', {
+    year: year,
+    plantId: plantId,
+  })
+}
+
+async function exportTreatmentVendorExcel(
+  keycloak,
+  plantId,
+  year,
+  fileName,
+) {
+  return exportExcelData(
+    keycloak,
+    'treatment-vendor-export',
     { year: year, plantId: plantId },
     fileName,
   )
