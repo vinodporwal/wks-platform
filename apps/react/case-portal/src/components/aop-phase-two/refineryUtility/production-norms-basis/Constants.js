@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/refineryUtility/productionNormsApiService'
@@ -14,6 +14,7 @@ const Constants = ({ startDate, endDate }) => {
 
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
+  const [isTwoColumnPlant, setIsTwoColumnPlant] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -31,44 +32,100 @@ const Constants = ({ startDate, endDate }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const valueFormat = customValueFormatterPhaseTwo(5)
-  const columns = [
-    {
-      field: 'productName',
-      title: 'Particulars',
-      widthT: 300,
-      minWidth: 250,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      widthT: 120,
-      minWidth: 100,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'value',
-      title: 'Value',
-      editable: true,
-      widthT: 150,
-      minWidth: 120,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
+
+  useEffect(() => {
+    const fetchPlantColumnConfig = async () => {
+      if (!PLANT_ID) return
+      try {
+        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(keycloak, PLANT_ID)
+        setIsTwoColumnPlant(Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn))
+      } catch (err) {
+        console.error('Error checking plant column config:', err)
+        setIsTwoColumnPlant(false)
+      }
+    }
+    if (PLANT_ID) {
+      fetchPlantColumnConfig()
+    }
+  }, [PLANT_ID, keycloak])
+
+  const columns = useMemo(() => {
+    const baseCols = [
+      {
+        field: 'productName',
+        title: 'Particulars',
+        width: 300,
+        minWidth: 250,
+        widthT: 300,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'UOM',
+        title: 'UOM',
+        width: 100,
+        minWidth: 80,
+        widthT: 100,
+        type: 'text',
+        editable: false,
+      },
+    ]
+
+    if (isTwoColumnPlant) {
+      baseCols.push(
+        {
+          field: 'apr',
+          title: 'Summer',
+          editable: true,
+          width: 150,
+          minWidth: 120,
+          widthT: 150,
+          align: 'left',
+          headerAlign: 'left',
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'oct',
+          title: 'Winter',
+          editable: true,
+          width: 150,
+          minWidth: 120,
+          widthT: 150,
+          align: 'left',
+          headerAlign: 'left',
+          type: 'number1',
+          format: valueFormat,
+        },
+      )
+    } else {
+      baseCols.push({
+        field: 'value',
+        title: 'Value',
+        editable: true,
+        width: 150,
+        minWidth: 120,
+        widthT: 150,
+        align: 'left',
+        headerAlign: 'left',
+        type: 'number1',
+        format: valueFormat,
+      })
+    }
+
+    baseCols.push({
       field: 'remarks',
       title: 'Remark',
-      widthT: 350,
+      width: 300,
+      minWidth: 250,
+      widthT: 300,
       type: 'textarea',
       editable: true,
-      minWidth: 300,
-    },
-  ]
+    })
+
+    return baseCols
+  }, [isTwoColumnPlant, valueFormat])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -79,7 +136,7 @@ const Constants = ({ startDate, endDate }) => {
   const fetchConstantsData = async () => {
     setLoading(true)
     try {
-      const res = await ProductionNormsApiService.getConstantsData(
+      const res = await ProductionNormsApiService.refinaryConstantData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -90,11 +147,15 @@ const Constants = ({ startDate, endDate }) => {
         return
       }
 
-      console.log('Constants data:', res)
+      // console.log('Constants data:', res)
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
-        remarks: item.remarks || '',
-        id: item?.id || index + 1,
+        productName: item?.DisplayName || item?.Name || item?.productName || '',
+        value: item?.apr !== undefined && item?.apr !== null ? item?.apr : (item?.value ?? ''),
+        apr: item?.apr !== undefined && item?.apr !== null ? item?.apr : (item?.value ?? ''),
+        oct: item?.oct !== undefined && item?.oct !== null ? item?.oct : '',
+        remarks: item?.remarks || '',
+        id: item?.normParameterFKId || item?.id || index + 1,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -113,9 +174,9 @@ const Constants = ({ startDate, endDate }) => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showExport: true,
+    showExport: false,
     ExcelName: `Production_Norms_Constants_${AOP_YEAR}`,
-    showImport: true,
+    showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Constants',
@@ -176,7 +237,7 @@ const Constants = ({ startDate, endDate }) => {
       return
     }
 
-    const fieldsToCheck = ['value']
+    const fieldsToCheck = isTwoColumnPlant ? ['apr', 'oct'] : ['value']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
@@ -368,7 +429,7 @@ const Constants = ({ startDate, endDate }) => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
@@ -376,7 +437,7 @@ const Constants = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['type']}
+        groupBy={['normTypeName']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
