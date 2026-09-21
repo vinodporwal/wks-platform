@@ -2013,7 +2013,310 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	    }
 	    return new byte[0];
 	}
+
+	public byte[] exportUtilityConsumptionData(String year, String plantId, boolean isAfterSave, List<VgohtNormConfigurationDTO> dtoList) {
+	    try {   
+	        // Handle null flag safely
+	    	AOPMessageVM response = checkIsSummerWinterPlant(plantId.toString());
+
+	        boolean isSummerWinter = false;
+	        if (response != null && response.getData() instanceof Map) {
+	            @SuppressWarnings("unchecked")
+	            Map<String, Object> data = (Map<String, Object>) response.getData();
+	            
+	            if (data.containsKey("isSummerWinter") && data.get("isSummerWinter") != null) {
+	                isSummerWinter = (Boolean) data.get("isSummerWinter");
+	            }
+	        }
+
+	        boolean summerWinterFlag = isSummerWinter;
+
+	        if (!isAfterSave) {
+	            AOPMessageVM aopMessageVM = getUtilityConsumption(year, plantId);
+
+	            if (aopMessageVM != null && aopMessageVM.getData() != null) {
+	                @SuppressWarnings("unchecked")
+	                List<VgohtNormConfigurationDTO> fetchedData = (List<VgohtNormConfigurationDTO>) aopMessageVM.getData();
+	                dtoList = fetchedData;
+	            }
+	        }
+
+	        if (dtoList == null) {
+	            dtoList = new ArrayList<>();
+	        }
+
+	        try (Workbook workbook = new XSSFWorkbook();
+	             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+	            Sheet sheet = workbook.createSheet("Sheet1");
+	            int currentRow = 0;
+
+	            List<String> innerHeaders = new ArrayList<>();
+	            innerHeaders.add("Type");         
+	            innerHeaders.add("Particulars");  
+	            innerHeaders.add("UOM");         
+	            
+	            if (summerWinterFlag) {
+	                innerHeaders.add("Summer");  
+	                innerHeaders.add("Winter");   
+	            } else {
+	                innerHeaders.add("Value");    
+	            }
+	            
+	            innerHeaders.add("Remark");           
+	            innerHeaders.add("NormParameterId");  
+
+	            if (isAfterSave) {
+	                innerHeaders.add("Status");
+	                innerHeaders.add("Error Description");
+	            }
+
+	            Row headerRow = sheet.createRow(currentRow++);
+	            for (int col = 0; col < innerHeaders.size(); col++) {
+	                Cell cell = headerRow.createCell(col);
+	                cell.setCellValue(innerHeaders.get(col));
+	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            }
+
+	            // Cell Styles matching exportBusinessDemand / exportMonthWiseConstants
+	            CellStyle unlockedBorderedStyle = workbook.createCellStyle();
+	            unlockedBorderedStyle.setLocked(false);
+	            unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
+	            CellStyle lockedBorderedStyle = workbook.createCellStyle();
+	            lockedBorderedStyle.setLocked(true);
+	            lockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
+	            // Determine column indexes dynamically based on flag
+	            int normParamIdIndex = summerWinterFlag ? 6 : 5;
+	            int lastVisibleColIndex = summerWinterFlag ? 5 : 4;
+
+	            for (VgohtNormConfigurationDTO dto : dtoList) {
+	                Row row = sheet.createRow(currentRow++);
+	                List<Object> rowData = new ArrayList<>();
+	                rowData.add(dto.getTypeDisplayName());
+	                rowData.add(dto.getProductDisplayName());
+	                rowData.add(dto.getUOM());
+	                
+	                if (summerWinterFlag) {
+	                    rowData.add(dto.getApr()); // Summer
+	                    rowData.add(dto.getOct()); // Winter
+	                } else {
+	                    rowData.add(dto.getApr()); // Value
+	                }
+	                
+	                rowData.add(dto.getRemarks());
+	                rowData.add(dto.getNormParameterFKId());
+
+	                if (isAfterSave) {
+	                    rowData.add(dto.getSaveStatus());
+	                    rowData.add(dto.getErrDescription());
+	                }
+
+	                for (int col = 0; col < rowData.size(); col++) {
+	                    Cell cell = row.createCell(col);
+	                    Object value = rowData.get(col);
+
+	                    if (value instanceof Number) {
+	                        cell.setCellValue(((Number) value).doubleValue());
+	                    } else if (value instanceof Boolean) {
+	                        cell.setCellValue((Boolean) value);
+	                    } else if (value != null) {
+	                        cell.setCellValue(value.toString());
+	                    } else {
+	                        cell.setCellValue("");
+	                    }   
+
+	                    boolean isEditableCol = summerWinterFlag ? (col >= 3 && col <= 5) : (col == 3 || col == 4);
+
+	                    if (isEditableCol) {
+	                        cell.setCellStyle(unlockedBorderedStyle);
+	                    } else {
+	                        cell.setCellStyle(lockedBorderedStyle);
+	                    }
+	                }
+	            }
+
+	            sheet.protectSheet("");
+
+	            for (int col = 0; col <= lastVisibleColIndex; col++) {
+	                sheet.autoSizeColumn(col);
+	            }
+	            sheet.setColumnHidden(normParamIdIndex, true);
+
+	            workbook.write(outputStream);
+	            return outputStream.toByteArray();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return new byte[0];
+	}
 	
+	public AOPMessageVM importUtilityConsumptionData(String year, UUID plantId, MultipartFile file) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	    	AOPMessageVM response = checkIsSummerWinterPlant(plantId.toString());
+
+	        boolean isSummerWinter = false;
+	        if (response != null && response.getData() instanceof Map) {
+	            @SuppressWarnings("unchecked")
+	            Map<String, Object> data = (Map<String, Object>) response.getData();
+	            
+	            if (data.containsKey("isSummerWinter") && data.get("isSummerWinter") != null) {
+	                isSummerWinter = (Boolean) data.get("isSummerWinter");
+	            }
+	        }
+	        List<VgohtNormConfigurationDTO> data = readUtilityConsumptionData(file.getInputStream(), plantId, year, isSummerWinter);
+	        List<VgohtNormConfigurationDTO> failedList = saveUtilityConsumption(year, plantId, data);
+
+	        if (failedList != null && !failedList.isEmpty()) {
+	            byte[] fileByteArray = exportUtilityConsumptionData(year, plantId.toString(), true, failedList);
+	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+	            
+	            aopMessageVM.setData(base64File);
+	            aopMessageVM.setCode(400);
+	            aopMessageVM.setMessage("Partial data has been saved");
+	        } else {
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("All data has been saved successfully");
+	        }
+
+	        return aopMessageVM;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        aopMessageVM.setCode(500);
+	        aopMessageVM.setMessage("Error importing data: " + e.getMessage());
+	        return aopMessageVM;
+	    }
+	}
+	
+	public List<VgohtNormConfigurationDTO> readUtilityConsumptionData(InputStream inputStream, UUID plantFKId, String year, Boolean isSummerWinter) {
+	    List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOs = new ArrayList<>();
+	    
+	    // Handle null flag safely
+	    boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext()) {
+	            rowIterator.next(); // Skip header row
+	        }
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+
+	            if (row == null || isRowEmpty(row)) {
+	                continue;
+	            }
+
+	            VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+	            try {
+	                dto.setTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                dto.setProductDisplayName(getStringCellValue(row.getCell(1), dto));
+	                dto.setUOM(getStringCellValue(row.getCell(2), dto));
+	                
+	                if (summerWinterFlag) {
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setOct(getNumericCellValue(row.getCell(4), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(5), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(6), dto));
+	                } else {
+	                   
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+	                }
+
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+
+	            vgohtNormConfigurationDTOs.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return vgohtNormConfigurationDTOs;
+	}
+	
+	public AOPMessageVM checkIsSummerWinterPlant(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			boolean isSummerWinter = false;
+			try {
+				String sql = "SELECT IsSummerWinter FROM vwScrnRefineryUtilityIsSummerWinter WHERE PlantId = :plantId";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("plantId", plantId);
+				List<?> resultList = query.getResultList();
+
+				if (resultList != null && !resultList.isEmpty()) {
+					Object val = resultList.get(0);
+					if (val instanceof Boolean) {
+						isSummerWinter = (Boolean) val;
+					} else if (val instanceof Number) {
+						isSummerWinter = ((Number) val).intValue() == 1;
+					} else if (val != null) {
+						isSummerWinter = Boolean.parseBoolean(val.toString()) || "1".equals(val.toString().trim()) || "true".equalsIgnoreCase(val.toString().trim());
+					}
+				} else {
+					String countSql = "SELECT COUNT(*) FROM vwScrnRefineryUtilityIsSummerWinter WHERE PlantId = :plantId";
+					Query countQuery = entityManager.createNativeQuery(countSql);
+					countQuery.setParameter("plantId", plantId);
+					Number count = (Number) countQuery.getSingleResult();
+					isSummerWinter = (count != null && count.intValue() > 0);
+				}
+			} catch (Exception ex) {
+				// Try fallback view name or plant name
+				try {
+					String sqlAlt = "SELECT IsSummerWinter FROM vwScrnRefineryUtilityCheckIsSummerWinterPlant WHERE PlantId = :plantId";
+					Query altQuery = entityManager.createNativeQuery(sqlAlt);
+					altQuery.setParameter("plantId", plantId);
+					List<?> altList = altQuery.getResultList();
+					if (altList != null && !altList.isEmpty()) {
+						Object val = altList.get(0);
+						isSummerWinter = Boolean.parseBoolean(val.toString()) || "1".equals(val.toString().trim()) || "true".equalsIgnoreCase(val.toString().trim());
+					}
+				} catch (Exception e1) {
+					try {
+						Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElse(null);
+						if (plant != null && "PCG ASU".equalsIgnoreCase(plant.getName())) {
+							isSummerWinter = true;
+						}
+					} catch (Exception e2) {
+						// ignore
+					}
+				}
+			}
+
+			Map<String, Object> responseData = new HashMap<>();
+			responseData.put("isSummerWinter", isSummerWinter);
+			responseData.put("isTwoColumn", isSummerWinter);
+			responseData.put("plantId", plantId);
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Fetched plant summer/winter configuration successfully");
+			aopMessageVM.setData(responseData);
+			return aopMessageVM;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to check summer/winter plant configuration", e);
+		}
+	}
+
 	public AOPMessageVM importCatChemData(String year, UUID plantId, MultipartFile file,Boolean isSummerWinter) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
