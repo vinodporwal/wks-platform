@@ -2159,7 +2159,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	    }
 	    return new byte[0];
 	}
-	
+	@Transactional
 	public AOPMessageVM importUtilityConsumptionData(String year, UUID plantId, MultipartFile file) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
@@ -2317,6 +2317,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 	}
 
+	@Transactional
 	public AOPMessageVM importCatChemData(String year, UUID plantId, MultipartFile file,Boolean isSummerWinter) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
