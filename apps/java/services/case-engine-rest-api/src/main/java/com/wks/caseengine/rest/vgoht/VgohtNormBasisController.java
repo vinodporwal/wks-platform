@@ -362,11 +362,11 @@ public class VgohtNormBasisController {
     @GetMapping(value = "/cat-chem-export")
 	public ResponseEntity<byte[]> exportCatChemData(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year, @RequestParam Boolean isSummerWinter
+            @RequestParam("year") String year
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = vgohtNormBasisServiceImpl.exportCatChemData(year,plantId,false,null,isSummerWinter); 
+	        byte[] excelBytes = vgohtNormBasisServiceImpl.exportCatChemData(year,plantId,false,null,false); 
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -386,9 +386,9 @@ public class VgohtNormBasisController {
 	public AOPMessageVM importCatChemData(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file,@RequestParam Boolean isSummerWinter
+			@RequestParam("file") MultipartFile file
 	        ) {
-			return	vgohtNormBasisServiceImpl.importCatChemData(year,UUID.fromString(plantId), file,isSummerWinter); 
+			return	vgohtNormBasisServiceImpl.importCatChemData(year,UUID.fromString(plantId), file,false); 
 	}
 
 }
