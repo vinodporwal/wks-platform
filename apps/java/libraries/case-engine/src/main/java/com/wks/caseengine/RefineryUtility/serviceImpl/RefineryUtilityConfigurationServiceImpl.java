@@ -262,7 +262,7 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
         }
         return new byte[0];
     }
-    
+    @Transactional
     public AOPMessageVM importMonthWiseConstants(String year, UUID plantId, MultipartFile file) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
