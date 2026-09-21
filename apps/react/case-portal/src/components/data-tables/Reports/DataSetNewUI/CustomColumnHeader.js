@@ -4,7 +4,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import SwapVertIcon from '@mui/icons-material/SwapVert'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import { isDateColumn } from './reportGridHelpers'
+import { isDateColumn, formatDateLocal } from './reportGridHelpers'
 import ColumnFilterPopover from './ColumnFilterPopover'
 
 const CustomColumnHeader = memo(
@@ -34,6 +34,8 @@ const CustomColumnHeader = memo(
         if (isNum && val != null && val !== '') {
           const num = Number(val)
           val = isNaN(num) ? val : num.toFixed(isAromaticsHmd ? 5 : 3)
+        } else if (isDate && val != null && val !== '') {
+          val = formatDateLocal(val)
         }
         set.add(val ?? '')
       })
@@ -43,7 +45,7 @@ const CustomColumnHeader = memo(
         if (typeof a === 'number' && typeof b === 'number') return a - b
         return String(a).localeCompare(String(b), undefined, { numeric: true })
       })
-    }, [rows, field, isNum, isAromaticsHmd])
+    }, [rows, field, isNum, isDate, isAromaticsHmd])
 
     const isFiltered = Boolean(
       (activeFilter?.selected && activeFilter.selected.size > 0) ||

@@ -5,7 +5,6 @@ export const TEXT_OPERATORS = [
   { value: 'endsWith', label: 'Ends with' },
   { value: 'equals', label: 'Equals' },
   { value: 'doesNotEqual', label: 'Does not equal' },
-  { value: 'isAnyOf', label: 'Is any of' },
   { value: 'isEmpty', label: 'Is empty' },
   { value: 'isNotEmpty', label: 'Is not empty' },
 ]
@@ -17,7 +16,6 @@ export const NUMERIC_OPERATORS = [
   { value: 'greaterThanOrEqual', label: '>=' },
   { value: 'lessThan', label: '<' },
   { value: 'lessThanOrEqual', label: '<=' },
-  { value: 'isAnyOf', label: 'Is any of' },
   { value: 'isEmpty', label: 'Is empty' },
   { value: 'isNotEmpty', label: 'Is not empty' },
 ]
@@ -29,7 +27,6 @@ export const DATE_OPERATORS = [
   { value: 'isAfterOrEqual', label: 'Is on or after' },
   { value: 'isBefore', label: 'Is before' },
   { value: 'isBeforeOrEqual', label: 'Is on or before' },
-  { value: 'isAnyOf', label: 'Is any of' },
   { value: 'isEmpty', label: 'Is empty' },
   { value: 'isNotEmpty', label: 'Is not empty' },
 ]
