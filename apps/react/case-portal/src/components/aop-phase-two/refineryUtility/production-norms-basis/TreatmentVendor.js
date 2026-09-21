@@ -96,7 +96,7 @@ const TreatmentVendor = () => {
         widthT: 300,
       },
       {
-        field: 'isChecked ',
+        field: 'isChecked',
         title: 'Is Active',
         width: 150,
         minWidth: 120,
@@ -143,7 +143,7 @@ const TreatmentVendor = () => {
       // Payload matches colDefs: only 'apr' (Winter) and 'may' (Summer) are editable
       const payload = modifiedData.map((row) => ({
         normParameterFKId: row.normParameterFKId,
-        isChecked: row.isChecked !== undefined && row.isChecked !== '' ? Number(row.isChecked) : null,
+        isChecked: row.isChecked,
         remarks: row.remarks || '',
         auditYear: row.auditYear || AOP_YEAR,
         uom: row.UOM || '',
