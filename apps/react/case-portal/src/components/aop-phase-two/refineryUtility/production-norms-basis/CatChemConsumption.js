@@ -29,7 +29,6 @@ const CatChemConsumption = () => {
   const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
-  const [isTwoColumnPlant, setIsTwoColumnPlant] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -39,22 +38,6 @@ const CatChemConsumption = () => {
     message: '',
     severity: 'info',
   })
-
-  useEffect(() => {
-    const fetchPlantColumnConfig = async () => {
-      if (!PLANT_ID) return
-      try {
-        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(keycloak, PLANT_ID)
-        setIsTwoColumnPlant(Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn))
-      } catch (err) {
-        console.error('Error checking plant column config:', err)
-        setIsTwoColumnPlant(false)
-      }
-    }
-    if (PLANT_ID) {
-      fetchPlantColumnConfig()
-    }
-  }, [PLANT_ID, keycloak])
 
   const fetchMatbalData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -123,33 +106,7 @@ const CatChemConsumption = () => {
         minWidth: 80,
         widthT: 100,
       },
-    ]
-
-    if (isTwoColumnPlant) {
-      columns.push(
-        {
-          field: 'apr',
-          title: 'Summer',
-          width: 150,
-          minWidth: 120,
-          widthT: 150,
-          type: 'number',
-          format: valueFormat,
-          editable: true,
-        },
-        {
-          field: 'oct',
-          title: 'Winter',
-          width: 150,
-          minWidth: 120,
-          widthT: 150,
-          type: 'number',
-          format: valueFormat,
-          editable: true,
-        },
-      )
-    } else {
-      columns.push({
+      {
         field: 'apr',
         title: 'Value',
         width: 150,
@@ -158,20 +115,19 @@ const CatChemConsumption = () => {
         type: 'number',
         format: valueFormat,
         editable: true,
-      })
-    }
-
-    columns.push({
-      field: 'remarks',
-      title: 'Remark',
-      editable: true,
-      width: 300,
-      minWidth: 250,
-      widthT: 300,
-    })
+      },
+      {
+        field: 'remarks',
+        title: 'Remark',
+        editable: true,
+        width: 300,
+        minWidth: 250,
+        widthT: 300,
+      },
+    ]
 
     return columns
-  }, [isTwoColumnPlant, valueFormat])
+  }, [valueFormat])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
