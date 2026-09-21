@@ -134,62 +134,110 @@ const NormsHistorianBasisPeNew = () => {
 
   // ===================== EXCEL EXPORT =====================
   const exportAllGrids = useCallback(() => {
-    const sheets = gridNames
-      .map((gridName) => {
-        const d = dataMap[gridName] || { rows: [], columns: [] }
-        if (!d.rows.length) return null
-
-        const cols = (d.columns || []).filter((c) => c.field !== 'GRID_TYPE')
-        return {
-          title: gridName.slice(0, 31).replace(/[/\\?*:[\]]/g, ' '),
-          columns: cols.map((c) => ({
-            title: c.title || c.field,
-            width: 120,
-          })),
-          rows: [
-            {
-              cells: cols.map((c) => ({
-                value: c.title || c.field,
-                background: '#D9D9D9',
-                bold: true,
-              })),
-            },
-            ...d.rows.map((r) => ({
-              cells: cols.map((c) => ({
-                value: r[c.field] ?? '',
-              })),
-            })),
-          ],
-        }
-      })
-      .filter(Boolean)
-
-    if (!sheets.length) return
-    workbookRef.current = { sheets }
+    if (!gridNames.length || isExporting) return
     setIsExporting(true)
-  }, [gridNames, dataMap])
 
-  useEffect(() => {
-    if (!isExporting) return
-    if (excelExportRef.current && workbookRef.current) {
-      excelExportRef.current.save(workbookRef.current)
-      setIsExporting(false)
-    }
-  }, [isExporting])
+    setTimeout(async () => {
+      try {
+        const cellBorder = { size: 1, color: '#000000' }
+
+        const headerStyle = {
+          background: '#D9D9D9',
+          bold: true,
+          color: '#000000',
+          borderTop: cellBorder,
+          borderBottom: cellBorder,
+          borderLeft: cellBorder,
+          borderRight: cellBorder,
+        }
+
+        const dataCellStyle = {
+          borderTop: cellBorder,
+          borderBottom: cellBorder,
+          borderLeft: cellBorder,
+          borderRight: cellBorder,
+        }
+
+        const sheets = gridNames
+          .map((gridName) => {
+            const d = dataMap[gridName] || { rows: [], columns: [] }
+            if (!d.rows.length) return null
+
+            const cols = (d.columns || []).filter((c) => c.field !== 'GRID_TYPE')
+            return {
+              title: gridName.slice(0, 31).replace(/[/\\?*:[\]]/g, ' '),
+              columns: cols.map((c) => ({
+                title: c.title || c.field,
+                width: 140,
+              })),
+              rows: [
+                {
+                  cells: cols.map((c) => ({
+                    value: c.title || c.field,
+                    ...headerStyle,
+                  })),
+                },
+                ...d.rows.map((r) => ({
+                  cells: cols.map((c) => ({
+                    value: r[c.field] ?? '',
+                    ...dataCellStyle,
+                  })),
+                })),
+              ],
+            }
+          })
+          .filter(Boolean)
+
+        if (!sheets.length) {
+          setIsExporting(false)
+          return
+        }
+
+        const workbook = { sheets }
+
+        if (excelExportRef.current) {
+          if (typeof excelExportRef.current.toDataURL === 'function') {
+            const dataUrl = await excelExportRef.current.toDataURL(workbook)
+            const base64 = dataUrl.split(',')[1]
+            const byteString = atob(base64)
+            const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0]
+            const ab = new ArrayBuffer(byteString.length)
+            const ia = new Uint8Array(ab)
+            for (let i = 0; i < byteString.length; i++) {
+              ia[i] = byteString.charCodeAt(i)
+            }
+            const blob = new Blob([ab], { type: mimeString })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = fileName
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+          } else if (typeof excelExportRef.current.save === 'function') {
+            excelExportRef.current.save(workbook)
+          }
+        }
+      } catch (err) {
+        console.error('Export failed:', err)
+      } finally {
+        setIsExporting(false)
+      }
+    }, 150)
+  }, [gridNames, dataMap, fileName, isExporting])
 
   return (
     <div>
       <LoaderBackdrop open={loading || isExporting} />
 
-      {isExporting && (
-        <div style={{ display: 'none' }}>
-          <ExcelExport
-            data={[]}
-            ref={(r) => (excelExportRef.current = r)}
-            fileName={fileName}
-          />
-        </div>
-      )}
+      <div style={{ display: 'none' }}>
+        <ExcelExport
+          data={[]}
+          ref={(r) => (excelExportRef.current = r)}
+          fileName={fileName}
+        />
+      </div>
 
       {/* Top Action Bar */}
       <Box

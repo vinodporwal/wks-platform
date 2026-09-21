@@ -67,6 +67,16 @@ export function parseDateSafe(val) {
   return null
 }
 
+export function formatDateLocal(val) {
+  if (val == null || val === '') return ''
+  const d = parseDateSafe(val)
+  if (!d) return String(val)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function isDateColumn(colDef, sampleRows = []) {
   if (colDef?.type === 'date') return true
   const fieldName = String(colDef?.field || '').toLowerCase()
