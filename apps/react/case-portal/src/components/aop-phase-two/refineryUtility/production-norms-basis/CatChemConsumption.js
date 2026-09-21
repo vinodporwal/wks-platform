@@ -65,8 +65,7 @@ const CatChemConsumption = () => {
       }
     } catch (error) {
       console.error('Error fetching Matbal data:', error)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-      setSnackbarOpen(true)
+      setRows([])
     } finally {
       setLoading(false)
     }
@@ -221,7 +220,7 @@ const CatChemConsumption = () => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Production Demand.xlsx')
+        link.setAttribute('download', 'Error File - CAT CHEM Consumption.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -241,7 +240,7 @@ const CatChemConsumption = () => {
         })
       }
     } catch (error) {
-      console.error('Error importing Matbal data:', error)
+      console.error('Error importing CAT CHEM Consumption data:', error)
       setSnackbarData({ message: 'Error importing data', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
@@ -253,7 +252,7 @@ const CatChemConsumption = () => {
     try {
       setSnackbarData({ message: 'Export Started!', severity: 'success' })
       setSnackbarOpen(true)
-      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Material_Balance`
+      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_CAT CHEM Consumption`
       await ProductionNormsApiService.exportCatChemUtilityConsumptionExcel(
         keycloak,
         PLANT_ID,
@@ -263,7 +262,7 @@ const CatChemConsumption = () => {
       setSnackbarData({ message: 'Export Successful!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (error) {
-      console.error('Error exporting Matbal data:', error)
+      console.error('Error exporting CAT CHEM Consumption data:', error)
       setSnackbarData({ message: 'Error exporting data', severity: 'error' })
       setSnackbarOpen(true)
     }
@@ -278,9 +277,9 @@ const CatChemConsumption = () => {
       saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
-      showExport: false,
+      showExport: true,
       ExcelName: `PIMS_THROUGHPUT_${AOP_YEAR}`,
-      showImport: false,
+      showImport: true,
       showCalculate: false,
       showCalculateVisibility: true,
     }

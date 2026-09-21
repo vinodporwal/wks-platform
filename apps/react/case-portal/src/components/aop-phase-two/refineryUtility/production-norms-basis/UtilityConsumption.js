@@ -224,6 +224,85 @@ const UtilityConsumption = () => {
     }
   }, [modifiedCells, PLANT_ID, AOP_YEAR, keycloak, fetchUtilityData])
 
+  const handleExcelUpload = async (file) => {
+    setLoading(true)
+    try {
+      const response =
+        await ProductionNormsApiService.importUtilityConsumptionExcel(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      if (response?.code === 200) {
+        setSnackbarData({
+          message: 'Imported Successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+        fetchUtilityData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Utility Consumption.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchUtilityData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error importing Utility Consumption data:', error)
+      setSnackbarData({ message: 'Error importing data', severity: 'error' })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    try {
+      setSnackbarData({ message: 'Export Started!', severity: 'success' })
+      setSnackbarOpen(true)
+      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Utility Consumption`
+      await ProductionNormsApiService.exportUtilityConsumptionExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        excelName,
+      )
+      setSnackbarData({ message: 'Export Successful!', severity: 'success' })
+      setSnackbarOpen(true)
+    } catch (error) {
+      console.error('Error exporting Utility Consumption data:', error)
+      setSnackbarData({ message: 'Error exporting data', severity: 'error' })
+      setSnackbarOpen(true)
+    }
+  }
+
   const adjustedPermissions = useMemo(() => {
     const basePermissions = {
       showAction: true,
@@ -231,8 +310,8 @@ const UtilityConsumption = () => {
       saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
-      showExport: false,
-      showImport: false,
+      showExport: true,
+      showImport: true,
       showCalculate: false,
       showCalculateVisibility: false,
     }
@@ -270,6 +349,8 @@ const UtilityConsumption = () => {
         currentRowId={currentRowId}
         plantID={PLANT_ID}
         groupBy='ParticularG'
+        handleExcelUpload={handleExcelUpload}
+        handleExport={downloadExcelForConfiguration}
       />
 
       <Notification
