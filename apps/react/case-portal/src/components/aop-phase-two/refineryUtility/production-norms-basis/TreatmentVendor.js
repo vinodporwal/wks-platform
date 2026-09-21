@@ -143,15 +143,14 @@ const TreatmentVendor = () => {
       // Payload matches colDefs: only 'apr' (Winter) and 'may' (Summer) are editable
       const payload = modifiedData.map((row) => ({
         normParameterFKId: row.normParameterFKId,
-        apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
+        isChecked: row.isChecked !== undefined && row.isChecked !== '' ? Number(row.isChecked) : null,
         remarks: row.remarks || '',
         auditYear: row.auditYear || AOP_YEAR,
-        UOM: row.UOM || '',
+        uom: row.UOM || '',
         TypeDisplayName: row.TypeDisplayName || 'Treatment Vendor',
         isEditable: row.isEditable ?? true,
-        productName: row.productName || '',
-        productDisplayName: row.productDisplayName || '',
-        productDisplayOrder: row.productDisplayOrder || ''
+        DisplayName: row.DisplayName || '',
+        Name: row.Name || '',
       }))
 
       const response = await ProductionNormsApiService.saveTreatmentVendorData(

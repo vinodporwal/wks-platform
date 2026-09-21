@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.Plants;
@@ -99,7 +100,15 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 				dto.setAuditYear(row[17] != null ? row[17].toString() : null);
 				dto.setRemarks(row[18] != null ? row[18].toString() : null);
 				dto.setDisplayOrder(row[19] != null ? row[19].toString() : null);
-				dto.setIsEditable(row[20] != null ? Boolean.parseBoolean(row[20].toString()) : false);
+				Boolean isEditable = null;
+				if (row[20] != null) {
+					if (row[20] instanceof Boolean) {
+						isEditable = (Boolean) row[20];
+					} else if (row[20] instanceof Number) {
+						isEditable = ((Number) row[20]).intValue() == 1;
+					}
+				}
+				dto.setIsEditable(isEditable);
 				
 				dtoList.add(dto);
 			}
@@ -626,6 +635,138 @@ public AOPMessageVM checkIsSummerWinterPlant(String plantId) {
 	} catch (Exception e) {
 		throw new RuntimeException("Failed to check summer/winter plant configuration", e);
 	}
+}
+
+@Override
+public AOPMessageVM getTreatmentVendorData(String year, String plantFKId) {
+	try {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetTreatmentVendor";
+	
+		List<Object[]> resultList = new ArrayList<>();
+	
+		resultList = getTreatmentVendorsFromSP(year, plantFKId, procedureName);
+		List<TreatmentVendorDTO> dtoList = new ArrayList<>();
+
+		for (Object[] row : resultList) {
+
+			TreatmentVendorDTO dto = new TreatmentVendorDTO();
+
+			dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+			dto.setName(row[1] != null ? row[1].toString() : null);
+			dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+			dto.setUom(row[3] != null ? row[3].toString() : null);
+			dto.setNormTypeName(row[4] != null ? row[4].toString() : null);
+			dto.setIsChecked(row[5] != null ? row[5].toString() : null);
+			dto.setAuditYear(row[6] != null ? row[6].toString() : null);
+			dto.setRemarks(row[7] != null ? row[7].toString() : null);
+			dto.setDisplayOrder(row[8] != null ? Integer.parseInt(row[8].toString()) : null);
+		
+		Boolean isEditable = null;
+		if (row[9] != null) {
+			if (row[9] instanceof Boolean) {
+				isEditable = (Boolean) row[9];
+			} else if (row[9] instanceof Number) {
+				isEditable = ((Number) row[9]).intValue() == 1;
+			}
+		}
+		dto.setIsEditable(isEditable);
+			dtoList.add(dto);
+		}
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(dtoList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
+
+public List<Object[]> getTreatmentVendorsFromSP(String aopYear, String plantId, String procedureName) {
+	try {
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantId);
+		query.setParameter("aopYear", aopYear);
+
+		return query.getResultList();
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
+
+@Transactional 
+@Override
+	public List<TreatmentVendorDTO> saveTreatmentVendorData(String year, String plantFKId,
+			List<TreatmentVendorDTO> treatmentVendorDTOList) {
+		try {
+			List<TreatmentVendorDTO> failedList = new ArrayList<>();
+	
+			for (TreatmentVendorDTO treatmentVendorDTO : treatmentVendorDTOList) {
+				
+				if (treatmentVendorDTO.getSaveStatus() != null
+						&& treatmentVendorDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(treatmentVendorDTO);
+					continue;
+				}
+
+			
+				
+				saveTreatmentVendorInDB(treatmentVendorDTO, 4, year, treatmentVendorDTO.getIsChecked());
+				
+			
+			
+			if("Failed".equalsIgnoreCase(treatmentVendorDTO.getSaveStatus())) {
+				failedList.add(treatmentVendorDTO);
+			}
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save month wise constants", ex);
+		}
+	}
+
+	public void saveTreatmentVendorInDB(TreatmentVendorDTO treatmentVendorDTO, Integer i, String year, String attributeValue) {
+
+		UUID normParameterFKId = UUID.fromString(treatmentVendorDTO.getNormParameterFKId());
+		String remark = treatmentVendorDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue);
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
 }
 
 }
