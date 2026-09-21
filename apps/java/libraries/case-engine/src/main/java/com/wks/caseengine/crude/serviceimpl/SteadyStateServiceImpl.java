@@ -138,11 +138,13 @@ public class SteadyStateServiceImpl implements SteadyStateService {
         
                 query.execute();
         
+                String errorMessage = null;
                 try {
-                    query.getResultList(); // flush any pending result sets
+                    Object outVal = query.getOutputParameterValue("ErrorMessage");
+                    if (outVal != null) {
+                        errorMessage = outVal.toString();
+                    }
                 } catch (Exception ignored) {}
-        
-                String errorMessage = (String) query.getOutputParameterValue("ErrorMessage");
         
                 System.out.println("errorMessage string: " + errorMessage);
         

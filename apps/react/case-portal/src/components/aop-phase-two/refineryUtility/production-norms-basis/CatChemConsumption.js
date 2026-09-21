@@ -12,7 +12,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
-const ProductionDemands = () => {
+const CatChemConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year, oldYear, isReleased } =
@@ -29,6 +29,7 @@ const ProductionDemands = () => {
   const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [isTwoColumnPlant, setIsTwoColumnPlant] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -39,11 +40,27 @@ const ProductionDemands = () => {
     severity: 'info',
   })
 
+  useEffect(() => {
+    const fetchPlantColumnConfig = async () => {
+      if (!PLANT_ID) return
+      try {
+        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(keycloak, PLANT_ID)
+        setIsTwoColumnPlant(Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn))
+      } catch (err) {
+        console.error('Error checking plant column config:', err)
+        setIsTwoColumnPlant(false)
+      }
+    }
+    if (PLANT_ID) {
+      fetchPlantColumnConfig()
+    }
+  }, [PLANT_ID, keycloak])
+
   const fetchMatbalData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.getProductionDemandData(
+      const response = await ProductionNormsApiService.getCatChemUtilityConsumptionData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -51,16 +68,13 @@ const ProductionDemands = () => {
       if (response?.code === 200) {
         const formattedData = (response?.data || []).map((item, index) => ({
           ...item,
-          idFromApi: item?.normParameterFKId, // <-- was item?.id (doesn't exist in response)
+          idFromApi: item?.normParameterFKId,
           id: index,
-          Type: item?.type || item?.TypeDisplayName, // <-- was item?.Type (doesn't exist)
+          Type: item?.TypeDisplayName || 'Utility Consumption',
           remarks: item?.remarks || '',
           originalRemark: item?.remarks || '',
-          isEditable: true,
-          ParticularG:
-            item?.type && String(item.type).trim()
-              ? item.type
-              : item?.TypeDisplayName || 'MatBal',
+          isEditable: item?.isEditable ?? true,
+          ParticularG: item?.TypeDisplayName || 'Utility Consumption',
         }))
         setRows(formattedData)
       } else {
@@ -76,34 +90,43 @@ const ProductionDemands = () => {
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
+    setRows([])
+    setModifiedCells({})
     fetchMatbalData()
-  }, [fetchMatbalData])
+  }, [fetchMatbalData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(() => {
-    const isRefineryUtilityCondition =
-      verticalObject?.name === 'Refinery Utility' &&
-      (siteObject?.name?.toLowerCase() === 'sez' ||
-        siteObject?.name?.toLowerCase() === 'dta') &&
-      plantObject?.name?.toLowerCase() === 'pcg asu'
+    const columns = [
+      {
+        field: 'ParticularG',
+        title: 'Particulars',
+        editable: false,
+        width: 300,
+        minWidth: 250,
+        widthT: 300,
+        locked: true,
+        hidden: true,
+      },
+      {
+        field: 'productName',
+        title: 'Particulars',
+        editable: false,
+        width: 300,
+        minWidth: 250,
+        widthT: 300,
+      },
+      {
+        field: 'UOM',
+        title: 'UOM',
+        editable: false,
+        width: 100,
+        minWidth: 80,
+        widthT: 100,
+      },
+    ]
 
-    if (isRefineryUtilityCondition) {
-      return [
-        {
-          field: 'productName',
-          title: 'Particulars',
-          editable: false,
-          width: 300,
-          minWidth: 250,
-          widthT: 300,
-        },
-        {
-          field: 'UOM',
-          title: 'UOM',
-          editable: false,
-          width: 100,
-          minWidth: 80,
-          widthT: 100,
-        },
+    if (isTwoColumnPlant) {
+      columns.push(
         {
           field: 'apr',
           title: 'Summer',
@@ -124,35 +147,9 @@ const ProductionDemands = () => {
           format: valueFormat,
           editable: true,
         },
-        {
-          field: 'remarks',
-          title: 'Remark',
-          editable: true,
-          width: 300,
-          minWidth: 250,
-          widthT: 300,
-        },
-      ]
-    }
-
-    return [
-      {
-        field: 'productName',
-        title: 'Particulars',
-        editable: false,
-        width: 300,
-        minWidth: 250,
-        widthT: 300,
-      },
-      {
-        field: 'UOM',
-        title: 'UOM',
-        editable: false,
-        width: 100,
-        minWidth: 80,
-        widthT: 100,
-      },
-      {
+      )
+    } else {
+      columns.push({
         field: 'apr',
         title: 'Value',
         width: 150,
@@ -161,17 +158,20 @@ const ProductionDemands = () => {
         type: 'number',
         format: valueFormat,
         editable: true,
-      },
-      {
-        field: 'remarks',
-        title: 'Remark',
-        editable: true,
-        width: 300,
-        minWidth: 250,
-        widthT: 300,
-      },
-    ]
-  }, [verticalObject?.name, siteObject?.name, plantObject?.name])
+      })
+    }
+
+    columns.push({
+      field: 'remarks',
+      title: 'Remark',
+      editable: true,
+      width: 300,
+      minWidth: 250,
+      widthT: 300,
+    })
+
+    return columns
+  }, [isTwoColumnPlant, valueFormat])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -196,18 +196,21 @@ const ProductionDemands = () => {
 
     setLoading(true)
     try {
-      // Payload matches colDefs: only 'apr' (Winter) and 'oct' (Summer) are editable
+      // Payload matches colDefs: only 'apr' (Winter) and 'may' (Summer) are editable
       const payload = modifiedData.map((row) => ({
-        apr: row.apr ?? row.Apr ?? row.ConstantValue ?? null,
-        oct: row.oct ?? row.Oct ?? null,
-        UOM: row.UOM || '', // <-- was hardcoded '', now uses the API's UOM
-        auditYear: AOP_YEAR,
-        normParameterFKId: row.normParameterFKId, // <-- was row.NormParameterId (undefined)
-        remarks: row.remarks,
-        id: row.idFromApi || row.normParameterFKId || null, // fallback since idFromApi = normParameterFKId now
+        normParameterFKId: row.normParameterFKId,
+        apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
+        remarks: row.remarks || '',
+        auditYear: row.auditYear || AOP_YEAR,
+        UOM: row.UOM || '',
+        TypeDisplayName: row.TypeDisplayName || 'Utility Consumption',
+        isEditable: row.isEditable ?? true,
+        productName: row.productName || '',
+        productDisplayName: row.productDisplayName || '',
+        productDisplayOrder: row.productDisplayOrder || ''
       }))
 
-      const response = await ProductionNormsApiService.saveProductionDemandData(
+      const response = await ProductionNormsApiService.saveCatChemUtilityConsumptionData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -235,7 +238,7 @@ const ProductionDemands = () => {
     setLoading(true)
     try {
       const response =
-        await ProductionNormsApiService.saveProductionDemandExcel(
+        await ProductionNormsApiService.importCatChemUtilityConsumptionExcel(
           file,
           keycloak,
           PLANT_ID,
@@ -292,14 +295,16 @@ const ProductionDemands = () => {
 
   const downloadExcelForConfiguration = async () => {
     try {
+      setSnackbarData({ message: 'Export Started!', severity: 'success' })
+      setSnackbarOpen(true)
       const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Material_Balance`
-      await ProductionNormsApiService.productionDemandExport(
+      await ProductionNormsApiService.exportCatChemUtilityConsumptionExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
         excelName,
       )
-      setSnackbarData({ message: 'Export Started!', severity: 'success' })
+      setSnackbarData({ message: 'Export Successful!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (error) {
       console.error('Error exporting Matbal data:', error)
@@ -331,7 +336,8 @@ const ProductionDemands = () => {
         addButton: false,
         deleteButton: false,
         downloadExcelBtn: false,
-        uploadExcelBtn: false,
+        showExport: false,
+        showImport: false,
         editButton: false,
         showUnit: false,
         saveWithRemark: false,
@@ -354,7 +360,7 @@ const ProductionDemands = () => {
         permissions={adjustedPermissions}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='Production Demand'
+        title='CAT CHEM Consumption'
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -363,7 +369,7 @@ const ProductionDemands = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         handleExcelUpload={handleExcelUpload}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExport={downloadExcelForConfiguration}
         plantID={PLANT_ID}
         groupBy='ParticularG'
       />
@@ -378,4 +384,4 @@ const ProductionDemands = () => {
   )
 }
 
-export default ProductionDemands
+export default CatChemConsumption

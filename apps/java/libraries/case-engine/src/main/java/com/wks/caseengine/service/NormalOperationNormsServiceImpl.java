@@ -180,7 +180,17 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setNormParameterTypeName(row[25] != null ? row[25].toString() : null);
 					mCUNormsValueDTO.setNormParameterTypeDisplayName(row[26] != null ? row[26].toString() : null);
 					mCUNormsValueDTO.setUOM(row[27] != null ? row[27].toString() : null);
-					mCUNormsValueDTO.setIsEditable(row[28] != null ? Boolean.valueOf(row[28].toString()) : null);
+					//mCUNormsValueDTO.setIsEditable(row[28] != null ? Boolean.valueOf(row[28].toString()) : null);
+					Boolean isEditable = null;
+					if (row[28] != null) {
+						if (row[28] instanceof Boolean) {
+							isEditable = (Boolean) row[28];
+						} else if (row[28] instanceof Number) {
+							isEditable = ((Number) row[28]).intValue() == 1;
+						}
+					}
+					mCUNormsValueDTO.setIsEditable(isEditable);
+					
 					if(vertical.getName().equalsIgnoreCase("Filament")) {
 						if(mCUNormsValueDTO.getNormParameterTypeName().equalsIgnoreCase("Manual Entry")) {
 							mCUNormsValueDTO.setIsEditable(true);
@@ -218,7 +228,17 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setNormParameterTypeName(row[24] != null ? row[24].toString() : null);
 					mCUNormsValueDTO.setNormParameterTypeDisplayName(row[25] != null ? row[25].toString() : null);
 					mCUNormsValueDTO.setUOM(row[26] != null ? row[26].toString() : null);
-					mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
+				//	mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
+			     	Boolean isEditable = null;
+                    	if (row[27] != null) {
+					if (row[27] instanceof Boolean) {
+						isEditable = (Boolean) row[27];
+					} else if (row[27] instanceof Number) {
+						isEditable = ((Number) row[27]).intValue() == 1;
+					}
+				}
+				mCUNormsValueDTO.setIsEditable(isEditable);
+				
 					mCUNormsValueDTO.setProductName(row[28] != null ? row[28].toString() : null);
 					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
 					mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
