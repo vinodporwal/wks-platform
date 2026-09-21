@@ -9,6 +9,10 @@ const DUMMY_ROWS = [
   { id: 'eff_3', assetName: 'CCPP STG-3', uom: '%', value: 90, remarks: '' },
   { id: 'eff_4', assetName: 'CPP STG-1', uom: '%', value: 90, remarks: '' },
   { id: 'eff_5', assetName: 'CPP STG-2', uom: '%', value: 90, remarks: '' },
+  { id: 'eff_6', assetName: 'CCPP1 SHP', uom: '%', value: 90, remarks: '' },
+  { id: 'eff_7', assetName: 'CCPP2 SHP', uom: '%', value: 90, remarks: '' },
+  { id: 'eff_8', assetName: 'CCPP3 SHP', uom: '%', value: 90, remarks: '' },
+  { id: 'eff_9', assetName: 'CCPP4 SHP', uom: '%', value: 90, remarks: '' },
 ]
 
 const Efficiency = () => {
