@@ -141,12 +141,12 @@ const OverallAopConsumption = () => {
     if (isFilament || isStaple) {
       defaultColumns.push({
         field: 'ytd',
-        title: 'YTD',
+        title: 'WtAvg (YTD)',
         editable: false,
         type: 'number1',
         hidden: false,
         format: valueFormat,
-        minWidth: 120,
+        minWidth: 150,
       })
     }
 
@@ -517,11 +517,12 @@ const OverallAopConsumption = () => {
     ),
     allAction: true,
     showDropdown: false,
-    showExport: true,
+    downloadExcelBtnFromUI: true,
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: `${SCREEN_NAME}`,
+    ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${SCREEN_NAME}-${AOP_YEAR}`,
   }
 
   const dropdownConfig = {

@@ -100,8 +100,8 @@ const GradeWiseSteadyStateConsumption = () => {
     },
     {
       field: 'YTD',
-      title: 'YTD Norm',
-      minWidth: 100,
+      title: 'Overall AOP WtAvg',
+      minWidth: 200,
       type: 'number',
       editable: false,
       format: valueFormat
