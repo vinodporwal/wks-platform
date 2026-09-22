@@ -798,7 +798,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			innerHeaders.add("Type");
 			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
+			innerHeaders.add("UOM / MT");
 			List<String> monthsList = Utility.getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
 			innerHeaders.add("YTD");
