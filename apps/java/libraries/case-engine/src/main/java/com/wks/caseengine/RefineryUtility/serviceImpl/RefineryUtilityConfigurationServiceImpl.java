@@ -555,7 +555,7 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 
 private boolean isRemarkValidationPassed(Double newValue, Double existingValue, String newRemark, String existingRemark) {
   
-	if(existingValue == null) {
+	if(existingValue == null || newValue == null) {
 		return true;
 	}
 	// Check if the value has changed (null-safe)
