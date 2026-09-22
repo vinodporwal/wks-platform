@@ -882,10 +882,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
                     } else if (sanitized.equalsIgnoreCase("UOM")) {
                         mappedKey = "UOM";
                         value = getStringCellValue(cell);
-                    } else if (sanitized.equalsIgnoreCase("YTDNorms") || sanitized.equalsIgnoreCase("YTD")) {
+                    } else if (sanitized.equalsIgnoreCase("YTDNorms") || sanitized.equalsIgnoreCase("YTD") || sanitized.equalsIgnoreCase("OverallAOPWtAvg")) {
                         mappedKey = "YTD";
                         value = getStringCellValue(cell);
-                    } else if (sanitized.equalsIgnoreCase("WtAvg")) {
+                    } else if (sanitized.equalsIgnoreCase("WtAvg") || sanitized.equalsIgnoreCase("WtAvg(YTD)")) {
 	                        mappedKey = "WtAvg";
 	                        value = getNumericCellValue(cell);
 	                    } else if (sanitized.equalsIgnoreCase("Remarks")) {
