@@ -55,7 +55,7 @@ const TreatmentVendor = () => {
           remarks: item?.remarks || '',
           originalRemark: item?.remarks || '',
           isEditable: item?.isEditable ?? true,
-          ParticularG: item?.TypeDisplayName || 'Utility Consumption',
+          ParticularG: item?.normTypeName|| 'Vendors',
         }))
         setRows(formattedData)
       } else {

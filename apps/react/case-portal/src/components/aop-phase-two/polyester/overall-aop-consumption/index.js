@@ -109,9 +109,9 @@ const OverallAopConsumption = () => {
       },
       {
         field: 'UOM',
-        title: 'UOM',
+        title: 'UOM / MT',
         editable: false,
-        minWidth: 100,
+        minWidth: 120,
       },
       ...monthsConfig.map((m) => ({
         field: m.field,
