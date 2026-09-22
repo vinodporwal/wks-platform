@@ -849,7 +849,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		// Columns 13-14: isAfterSave only (Status, Error Description)
 		// Col 0: SAP MAT Code | Col 1: Particulars
 		List<String> headerNames = new ArrayList<>(Arrays.asList(
-				"SAP MAT Code", "Particulars", "UOM", "Last FY", "Actual Last FY", "Sys Gen", "Proposed", "Remarks",
+				"SAP MAT Code", "Particulars", "UOM / MT", "Last FY", "Actual Last FY", "Sys Gen", "Proposed", "Remarks",
 				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
 		if (isAfterSave) {
 			headerNames.add("Status");
