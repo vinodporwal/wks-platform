@@ -45,7 +45,7 @@ const ConfigurationAccordian = ({
   isSummaryRequired = false,
   yearGap = 1,
   onDatesChange,
-  onLoadNormCalculation = () => {},
+  onLoadNormCalculation = () => { },
   normCalculationLoading = false,
 }) => {
   const keycloak = useSession()
@@ -74,17 +74,18 @@ const ConfigurationAccordian = ({
     )
   }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
+
+  //HIDE FOR CT's Plants 
   const isHideLoadButton = useMemo(() => {
     const validConfigs = [
-      { vertical: 'refinery utility', site: 'dta', plant: 'fcc-1_ct-1' },
+      { vertical: 'refinery utility', site: 'dmd' },
     ]
     return validConfigs.some(
       (config) =>
         config.vertical === VERTICAL_NAME &&
-        config.site === SITE_NAME &&
-        config.plant === PLANT_NAME
+        config.site === SITE_NAME
     )
-  }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
+  }, [VERTICAL_NAME, SITE_NAME])
 
   // State management
   const [startDate, setStartDate] = useState()
@@ -207,14 +208,14 @@ const ConfigurationAccordian = ({
   ) => {
     const { startDate: aopStartDate, endDate: aopEndDate } =
       getDatesFromAopYear(AOP_YEAR, yearGap)
-    let effectiveStartDate = startDate 
+    let effectiveStartDate = startDate
     let effectiveEndDate = endDate
-    if(isHideLoadButton){
+    if (isHideLoadButton) {
       effectiveStartDate = aopStartDate
       effectiveEndDate = aopEndDate
     }
 
-    
+
     const createPayloadItem = (obj, date) => ({
       apr: date,
       UOM: '',
@@ -441,26 +442,26 @@ const ConfigurationAccordian = ({
   }
 
   const carryForwardRecords = async () => {
-      try {
-        const response = await HistoricPeriodBasisApiService.carryForwardRecords(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
+    try {
+      const response = await HistoricPeriodBasisApiService.carryForwardRecords(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response && response.code === 200) {
+        // console.log('Carry forward successful, status 200.')
+      } else {
+        console.warn(
+          `Carry forward request completed but status was not 200: ${response?.status}`,
         )
-  
-        if (response && response.code === 200) {
-          // console.log('Carry forward successful, status 200.')
-        } else {
-          console.warn(
-            `Carry forward request completed but status was not 200: ${response?.status}`,
-          )
-        }
-      } catch (error) {
-        console.error('Error fetching getConfigurationExecutionDetails:', error)
-      } finally {
-        // setLoading1(false)
       }
+    } catch (error) {
+      console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // setLoading1(false)
     }
+  }
 
   // Initialize on mount and when PLANT_ID/AOP_YEAR changes
   useEffect(() => {
@@ -687,23 +688,23 @@ const ConfigurationAccordian = ({
               {/* ROW 2: AOP DESIGN BASIS */}
               {!isHideLoadButton && (
                 <Box sx={{ width: '100%' }}>
-                <Typography
-                  variant='caption'
-                  className='aop-design-basis-label'
-                >
-                  AOP DESIGN BASIS
-                </Typography>
-                <TextArea
-                  className='vertical-resize-textarea'
-                  disabled={READ_ONLY}
-                  value={summary}
-                  rows={2}
-                  onChange={(e) => {
-                    setSummary(e.target.value)
-                    setSummaryEdited(true)
-                  }}
-                />
-              </Box>
+                  <Typography
+                    variant='caption'
+                    className='aop-design-basis-label'
+                  >
+                    AOP DESIGN BASIS
+                  </Typography>
+                  <TextArea
+                    className='vertical-resize-textarea'
+                    disabled={READ_ONLY}
+                    value={summary}
+                    rows={2}
+                    onChange={(e) => {
+                      setSummary(e.target.value)
+                      setSummaryEdited(true)
+                    }}
+                  />
+                </Box>
               )}
             </Stack>
           </CustomAccordionDetails>
