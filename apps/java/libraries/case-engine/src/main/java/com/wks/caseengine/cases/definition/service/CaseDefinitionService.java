@@ -96,11 +96,11 @@ public interface CaseDefinitionService {
 
 	List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName);
 
-	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
+	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, String userName);
 
-	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset);
+	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset, String userName);
 
-	long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
+	long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, String userName);
 
 	Case savePICase(Case caseData);
 	
@@ -116,7 +116,7 @@ public interface CaseDefinitionService {
 
 	
 
-	byte[] exportCasesToExcel(String caseDefinitionId,String assetName,String hierarchyName);
+	byte[] exportCasesToExcel(String caseDefinitionId, String assetName, String hierarchyName, String userName);
 
 
 }

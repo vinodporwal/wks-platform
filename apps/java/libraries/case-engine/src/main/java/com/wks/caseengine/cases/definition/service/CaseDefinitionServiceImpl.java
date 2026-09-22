@@ -19,11 +19,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -1531,13 +1534,26 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 
 	@Override
-	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus) {
-		return filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, 10, 0);
+	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, String userName) {
+		return filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, 10, 0, userName);
 	}
 
-	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset) {
-		StringBuilder query = new StringBuilder(
-			"SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
+	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset, String userName) {
+		UserScopeAccess scopeAccess = getUserScopeAccess(userName);
+		if (!scopeAccess.allCaseAccess() && scopeAccess.allowedScopes().isEmpty()) {
+			log.debug("[USER_SCOPE] username={} has no usable scopes; returning an empty case list", userName);
+			return List.of();
+		}
+
+		StringBuilder query = new StringBuilder("SELECT c.* FROM [CaseManagement].[dbo].[Cases] c ");
+		if (!scopeAccess.allCaseAccess()) {
+			query.append(
+				"CROSS APPLY (VALUES (CHARINDEX('\\', c.path))) first_separator(position) " +
+				"CROSS APPLY (VALUES (CHARINDEX('\\', c.path, first_separator.position + 1))) second_separator(position) " +
+				"CROSS APPLY (VALUES (CHARINDEX('\\', c.path, second_separator.position + 1))) third_separator(position) "
+			);
+		}
+		query.append(
 			"WHERE c.caseDefinitionId = :caseDefinitionId " +
 			"AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
 				"SELECT hn.HierarchyNode_PK_ID " +
@@ -1547,8 +1563,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				"WHERE hn.IsDeleted = 0 " +
 				"AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
 				"AND ht.HierarchyType = :hierarchyName" +
-			")"
+			") "
 		);
+		if (!scopeAccess.allCaseAccess()) {
+			query.append(
+				"AND first_separator.position > 0 " +
+				"AND second_separator.position > first_separator.position " +
+				"AND UPPER(LTRIM(RTRIM(SUBSTRING(c.path, second_separator.position + 1, " +
+				"CASE WHEN third_separator.position > 0 THEN third_separator.position ELSE LEN(c.path) + 1 END " +
+				"- second_separator.position - 1)))) IN (" + scopeParameterList(scopeAccess.allowedScopes().size()) + ")"
+			);
+		}
 
 		boolean hasSearch = search != null && !search.isBlank();
 		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
@@ -1569,6 +1594,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		nativeQuery.setParameter("hierarchyName", hierarchyName);
 		nativeQuery.setParameter("offset", offset);
 		nativeQuery.setParameter("limit", limit);
+		if (!scopeAccess.allCaseAccess()) {
+			setScopeParameters(nativeQuery, scopeAccess.allowedScopes());
+		}
 		if (hasSearch) {
 			nativeQuery.setParameter("search", "%" + search + "%");
 		}
@@ -1576,13 +1604,28 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			nativeQuery.setParameter("caseStatus", Long.parseLong(caseStatus));
 		}
 
-		return nativeQuery.getResultList();
+		List<Case> cases = nativeQuery.getResultList();
+		log.debug("[USER_SCOPE] username={} returnedCases={}", userName, cases.size());
+		return cases;
 	}
 
 	@Override
-	public long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus) {
-		StringBuilder query = new StringBuilder(
-			"SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
+	public long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, String userName) {
+		UserScopeAccess scopeAccess = getUserScopeAccess(userName);
+		if (!scopeAccess.allCaseAccess() && scopeAccess.allowedScopes().isEmpty()) {
+			log.debug("[USER_SCOPE] username={} has no usable scopes; returning count=0", userName);
+			return 0L;
+		}
+
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c ");
+		if (!scopeAccess.allCaseAccess()) {
+			query.append(
+				"CROSS APPLY (VALUES (CHARINDEX('\\', c.path))) first_separator(position) " +
+				"CROSS APPLY (VALUES (CHARINDEX('\\', c.path, first_separator.position + 1))) second_separator(position) " +
+				"CROSS APPLY (VALUES (CHARINDEX('\\', c.path, second_separator.position + 1))) third_separator(position) "
+			);
+		}
+		query.append(
 			"WHERE c.caseDefinitionId = :caseDefinitionId " +
 			"AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
 				"SELECT hn.HierarchyNode_PK_ID " +
@@ -1592,8 +1635,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				"WHERE hn.IsDeleted = 0 " +
 				"AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
 				"AND ht.HierarchyType = :hierarchyName" +
-			")"
+			") "
 		);
+		if (!scopeAccess.allCaseAccess()) {
+			query.append(
+				"AND first_separator.position > 0 " +
+				"AND second_separator.position > first_separator.position " +
+				"AND UPPER(LTRIM(RTRIM(SUBSTRING(c.path, second_separator.position + 1, " +
+				"CASE WHEN third_separator.position > 0 THEN third_separator.position ELSE LEN(c.path) + 1 END " +
+				"- second_separator.position - 1)))) IN (" + scopeParameterList(scopeAccess.allowedScopes().size()) + ")"
+			);
+		}
 
 		boolean hasSearch = search != null && !search.isBlank();
 		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
@@ -1609,6 +1661,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
 		nativeQuery.setParameter("assetName", assetName);
 		nativeQuery.setParameter("hierarchyName", hierarchyName);
+		if (!scopeAccess.allCaseAccess()) {
+			setScopeParameters(nativeQuery, scopeAccess.allowedScopes());
+		}
 		if (hasSearch) {
 			nativeQuery.setParameter("search", "%" + search + "%");
 		}
@@ -1617,7 +1672,64 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		}
 
 		Object result = nativeQuery.getSingleResult();
-		return ((Number) result).longValue();
+		long count = ((Number) result).longValue();
+		log.debug("[USER_SCOPE] username={} count={}", userName, count);
+		return count;
+	}
+
+	private UserScopeAccess getUserScopeAccess(String userName) {
+		if (userName == null || userName.isBlank()) {
+			throw new IllegalArgumentException("userName must not be blank");
+		}
+
+		Query scopeQuery = entityManager.createNativeQuery("EXEC dbo.usp_GetUserScopes @UserName = :userName");
+		scopeQuery.setParameter("userName", userName);
+		List<?> rows = scopeQuery.getResultList();
+		Set<String> allowedScopes = new LinkedHashSet<>();
+		boolean allCaseAccess = false;
+		for (Object row : rows) {
+			if (row instanceof Object[] columns && columns.length > 1) {
+				String rawScopeName = columns[1] == null ? null : columns[1].toString().trim();
+				Optional<String> normalizedScope = normalizeScopeName(rawScopeName);
+				if (normalizedScope.isPresent()) {
+					if ("Power".equalsIgnoreCase(normalizedScope.get())) {
+						allCaseAccess = true;
+					} else {
+						allowedScopes.add(normalizedScope.get());
+					}
+				}
+			}
+		}
+		log.debug("[USER_SCOPE] username={} rawScopeRows={} allCaseAccess={} normalizedScopes={}",
+				userName, rows.size(), allCaseAccess, allowedScopes);
+		return new UserScopeAccess(allCaseAccess, allowedScopes);
+	}
+
+	private record UserScopeAccess(boolean allCaseAccess, Set<String> allowedScopes) {
+	}
+
+	private Optional<String> normalizeScopeName(String scopeName) {
+		if (scopeName == null || scopeName.isBlank()) {
+			return Optional.empty();
+		}
+		String[] tokens = scopeName.trim().split("\\s+");
+		String normalized = tokens[tokens.length > 1 ? 1 : 0].trim().toUpperCase(Locale.ROOT);
+		return normalized.isBlank() ? Optional.empty() : Optional.of(normalized);
+	}
+
+	private String scopeParameterList(int scopeCount) {
+		List<String> parameters = new ArrayList<>(scopeCount);
+		for (int index = 0; index < scopeCount; index++) {
+			parameters.add(":scope" + index);
+		}
+		return String.join(", ", parameters);
+	}
+
+	private void setScopeParameters(Query query, Set<String> allowedScopes) {
+		int index = 0;
+		for (String scope : allowedScopes) {
+			query.setParameter("scope" + index++, scope);
+		}
 	}
 	
 	@Override
@@ -2320,11 +2432,19 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 @Override
 public byte[] exportCasesToExcel(String caseDefinitionId,
                                  String assetName,
-                                 String hierarchyName) {
+                                 String hierarchyName,
+                                 String userName) {
 
     validateExportInputs(caseDefinitionId, assetName, hierarchyName);
 
-    List<Case> cases = getCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName);
+    UserScopeAccess scopeAccess = getUserScopeAccess(userName);
+    log.debug("[USER_SCOPE] export username={} allCaseAccess={} normalizedScopes={}",
+            userName, scopeAccess.allCaseAccess(), scopeAccess.allowedScopes());
+    if (!scopeAccess.allCaseAccess() && scopeAccess.allowedScopes().isEmpty()) {
+        return generateExcel(List.of());
+    }
+
+    List<Case> cases = getCasesForExport(caseDefinitionId, assetName, hierarchyName, scopeAccess);
 
     if (cases.isEmpty()) {
         throw new IllegalArgumentException("No records found for export");
@@ -2335,6 +2455,42 @@ public byte[] exportCasesToExcel(String caseDefinitionId,
     }
 
     return generateExcel(cases);
+}
+
+private List<Case> getCasesForExport(String caseDefinitionId,
+                                     String assetName,
+                                     String hierarchyName,
+                                     UserScopeAccess scopeAccess) {
+    String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c "
+            + (scopeAccess.allCaseAccess() ? "" :
+                "CROSS APPLY (VALUES (CHARINDEX('\\', c.path))) first_separator(position) "
+                + "CROSS APPLY (VALUES (CHARINDEX('\\', c.path, first_separator.position + 1))) second_separator(position) "
+                + "CROSS APPLY (VALUES (CHARINDEX('\\', c.path, second_separator.position + 1))) third_separator(position) ")
+            + "WHERE c.caseDefinitionId = :caseDefinitionId "
+            + "AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN ("
+            + "SELECT hn.HierarchyNode_PK_ID "
+            + "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn "
+            + "JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht "
+            + "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID "
+            + "WHERE hn.IsDeleted = 0 "
+            + "AND hn.Path LIKE CONCAT('%', :assetName, '%') "
+            + "AND ht.HierarchyType = :hierarchyName) "
+            + (scopeAccess.allCaseAccess() ? "" :
+                "AND first_separator.position > 0 "
+                + "AND second_separator.position > first_separator.position "
+                + "AND UPPER(LTRIM(RTRIM(SUBSTRING(c.path, second_separator.position + 1, "
+                + "CASE WHEN third_separator.position > 0 THEN third_separator.position ELSE LEN(c.path) + 1 END "
+                + "- second_separator.position - 1)))) IN (" + scopeParameterList(scopeAccess.allowedScopes().size()) + ") ")
+            + "ORDER BY c.case_no DESC";
+
+    Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
+    nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+    nativeQuery.setParameter("assetName", assetName);
+    nativeQuery.setParameter("hierarchyName", hierarchyName);
+    if (!scopeAccess.allCaseAccess()) {
+        setScopeParameters(nativeQuery, scopeAccess.allowedScopes());
+    }
+    return nativeQuery.getResultList();
 }
 
 private byte[] generateExcel(List<Case> cases) {

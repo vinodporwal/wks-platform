@@ -193,9 +193,12 @@ public class CaseDefinitionController {
 			@RequestParam(required = false) String caseStatus,
 			@RequestParam(defaultValue = "10") int limit,
 			@RequestParam(defaultValue = "0") int offset) {
+		String userName = getCurrentUserName();
 		List<Case> cases = caseDefinitionService
-				.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, limit, offset);
-		attemptOptionalHoneywellSecurityCall();
+				.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, limit, offset, userName);
+		// TEMP: Honeywell case-security integration is on hold.
+		// Scope authorization is currently handled using CaseManagement dbo.usp_GetUserScopes.
+		// attemptOptionalHoneywellSecurityCall();
 		return ResponseEntity.ok(cases);
 	}
 
@@ -216,8 +219,20 @@ public class CaseDefinitionController {
 			@RequestParam String hierarchyName,
 			@RequestParam(required = false) String search,
 			@RequestParam(required = false) String caseStatus) {
-		long count = caseDefinitionService.countCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus);
+		String userName = getCurrentUserName();
+		long count = caseDefinitionService.countCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, userName);
 		return ResponseEntity.ok(count);
+	}
+
+	private String getCurrentUserName() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
+			String userName = jwtAuthentication.getToken().getClaimAsString("preferred_username");
+			if (userName != null && !userName.isBlank()) {
+				return userName;
+			}
+		}
+		throw new IllegalStateException("Authenticated JWT does not contain a valid preferred_username claim");
 	}
 
 	private void attemptOptionalHoneywellSecurityCall() {
@@ -427,8 +442,9 @@ public class CaseDefinitionController {
 			@RequestParam String assetName,
 			@RequestParam String hierarchyName) {
 
+		String userName = getCurrentUserName();
 		byte[] excel = caseDefinitionService.exportCasesToExcel(
-				caseDefinitionId, assetName, hierarchyName);
+				caseDefinitionId, assetName, hierarchyName, userName);
 
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION,
