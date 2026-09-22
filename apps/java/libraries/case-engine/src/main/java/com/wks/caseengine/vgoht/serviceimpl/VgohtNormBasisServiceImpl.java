@@ -2483,7 +2483,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			for (VgohtNormConfigurationDTO dto : dtoList) {
 				if (failedIds.contains(dto.getNormParameterFKId())) continue;
 				saveConfigurationData(dto.getNormParameterFKId(), year, dto.getApr() != null ? String.valueOf(dto.getApr()) : null, dto.getRemarks(), 4);
-				saveConfigurationData(dto.getNormParameterFKId(), year, dto.getOct() != null ? String.valueOf(dto.getOct()) : null, dto.getRemarks(), 10);
+				// saveConfigurationData(dto.getNormParameterFKId(), year, dto.getOct() != null ? String.valueOf(dto.getOct()) : null, dto.getRemarks(), 10);
 				
 			}
 
