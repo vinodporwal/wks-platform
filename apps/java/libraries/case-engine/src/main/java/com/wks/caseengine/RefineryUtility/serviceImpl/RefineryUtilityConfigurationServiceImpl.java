@@ -358,6 +358,8 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
                     dto.setSaveStatus("Failed");
                 }
 
+                validateIntegerUOMConstraint(dto, summerWinterFlag);
+
                 monthWiseConstantsDTOs.add(dto);
             }
 
@@ -368,6 +370,28 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
         return monthWiseConstantsDTOs;
     } 
     
+	// Helper method to validate integer-only constraint for UOM "%" or "M3/Kt"
+	private void validateIntegerUOMConstraint(MonthWiseConstantsDTO dto, boolean summerWinterFlag) {
+	    if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+	        return;
+	    }
+	    String uom = dto.getUOM();
+	    if (uom == null || (!uom.trim().equalsIgnoreCase("%") && !uom.trim().equalsIgnoreCase("M3/Kt"))) {
+	        return;
+	    }
+	    List<String> nonIntegerColumns = new ArrayList<>();
+	    if (dto.getApr() != null && dto.getApr() % 1 != 0) {
+	        nonIntegerColumns.add("Apr");
+	    }
+	    if (summerWinterFlag && dto.getOct() != null && dto.getOct() % 1 != 0) {
+	        nonIntegerColumns.add("Oct");
+	    }
+	    if (!nonIntegerColumns.isEmpty()) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Only integer values are allowed for UOM " + uom.trim());
+	    }
+	}
+
 	// Helper method to skip empty rows
 	private boolean isRowEmpty(Row row) {
 	    for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
