@@ -50,6 +50,7 @@ const ModeSelectionCracker = () => {
           idFromApi: item?.normParameterFKId,
           id: index,
           isEditable: item?.isEditable ?? true,
+          isChecked: item?.isChecked === 'false' ? false : Boolean(item?.isChecked)
         }))
         setRows(formattedData)
       } else {
