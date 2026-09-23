@@ -1,4 +1,5 @@
 export { default as NormsHistorianBasisPeNew } from './NormsHistorianBasisPeNew'
+export { default as ProductionVolumeDataBasisPeNew } from './ProductionVolumeDataBasisPeNew'
 export { default as SingleReportGrid } from './SingleReportGrid'
 export { default as CustomColumnHeader } from './CustomColumnHeader'
 export { default as ColumnFilterPopover } from './ColumnFilterPopover'

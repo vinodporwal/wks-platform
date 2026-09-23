@@ -10,7 +10,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
-const TreatmentVendor = () => {
+const CommoditySelection = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year, oldYear, isReleased } =
@@ -41,21 +41,22 @@ const TreatmentVendor = () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.getTreatmentVendorData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ProductionNormsApiService.getCommoditySelectionData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       if (response?.code === 200) {
         const formattedData = (response?.data || []).map((item, index) => ({
           ...item,
           idFromApi: item?.normParameterFKId,
           id: index,
-          Type: item?.TypeDisplayName || 'Utility Consumption',
+          Type: item?.TypeDisplayName || 'Commodity Chemicals',
           remarks: item?.remarks || '',
           originalRemark: item?.remarks || '',
           isEditable: item?.isEditable ?? true,
-          ParticularG: item?.normTypeName || 'Vendors',
+          ParticularG: item?.normTypeName || 'Commodity Chemicals',
           isChecked:
             item?.isChecked === 'false' ? false : Boolean(item?.isChecked),
         }))
@@ -91,7 +92,7 @@ const TreatmentVendor = () => {
       },
       {
         field: 'DisplayName',
-        title: 'Vendors',
+        title: 'Particular',
         editable: false,
         width: 300,
         minWidth: 250,
@@ -149,18 +150,19 @@ const TreatmentVendor = () => {
         remarks: row.remarks || '',
         auditYear: row.auditYear || AOP_YEAR,
         uom: row.UOM || '',
-        TypeDisplayName: row.TypeDisplayName || 'Treatment Vendor',
+        TypeDisplayName: row.TypeDisplayName || 'Commodity Chemicals',
         isEditable: row.isEditable ?? true,
         DisplayName: row.DisplayName || '',
         Name: row.Name || '',
       }))
 
-      const response = await ProductionNormsApiService.saveTreatmentVendorData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        payload,
-      )
+      const response =
+        await ProductionNormsApiService.saveCommoditySelectionData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          payload,
+        )
       if (response) {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setSnackbarOpen(true)
@@ -171,7 +173,7 @@ const TreatmentVendor = () => {
         setSnackbarOpen(true)
       }
     } catch (error) {
-      console.error('Error saving Matbal data:', error)
+      console.error('Error saving Commodity Chemicals data:', error)
       setSnackbarData({ message: 'Error saving data', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
@@ -210,7 +212,7 @@ const TreatmentVendor = () => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Treatment Vendor.xlsx')
+        link.setAttribute('download', 'Error File - Commodity Chemicals.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -230,7 +232,7 @@ const TreatmentVendor = () => {
         })
       }
     } catch (error) {
-      console.error('Error importing Treatment Vendor data:', error)
+      console.error('Error importing Commodity Chemicals data:', error)
       setSnackbarData({ message: 'Error importing data', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
@@ -242,7 +244,7 @@ const TreatmentVendor = () => {
     try {
       setSnackbarData({ message: 'Export Started!', severity: 'success' })
       setSnackbarOpen(true)
-      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Treatment Vendor`
+      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Commodity Chemicals`
       await ProductionNormsApiService.exportTreatmentVendorExcel(
         keycloak,
         PLANT_ID,
@@ -252,7 +254,7 @@ const TreatmentVendor = () => {
       setSnackbarData({ message: 'Export Successful!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (error) {
-      console.error('Error exporting Treatment Vendor data:', error)
+      console.error('Error exporting Commodity Chemicals data:', error)
       setSnackbarData({ message: 'Error exporting data', severity: 'error' })
       setSnackbarOpen(true)
     }
@@ -268,7 +270,7 @@ const TreatmentVendor = () => {
       allAction: true,
       showTitleNameBusiness: true,
       showExport: false,
-      ExcelName: `Treatment Vendor_${AOP_YEAR}`,
+      ExcelName: `Commodity Chemicals_${AOP_YEAR}`,
       showImport: false,
       showCalculate: false,
       showCalculateVisibility: true,
@@ -305,7 +307,7 @@ const TreatmentVendor = () => {
         permissions={adjustedPermissions}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='Treatment Vendor'
+        title='Commodity Chemicals'
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -329,4 +331,4 @@ const TreatmentVendor = () => {
   )
 }
 
-export default TreatmentVendor
+export default CommoditySelection

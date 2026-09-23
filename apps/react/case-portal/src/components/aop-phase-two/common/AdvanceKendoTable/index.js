@@ -26,6 +26,7 @@ import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
 import { ConditionalCellEditor } from '../utilities/ConditionalCellEditor'
 import { ExcelExport } from '../../../../../node_modules/@progress/kendo-react-excel-export/index'
 import { NumberCellEditor } from '../utilities/NumberCellEditor'
+import { UomNumberCellEditor } from '../utilities/UomNumberCellEditor'
 import { SvgIcon } from '../../../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../../../node_modules/@progress/kendo-svg-icons/dist/index'
 import { Tooltip } from '../../../../../node_modules/@progress/kendo-react-tooltip/index'
@@ -72,6 +73,7 @@ import {
   getMonthStartEndDate,
 } from '../utilities/durationHelpers'
 import { convertFromScientificNotation } from '../commonUtilityFunctions'
+import SegmentedSwitch from 'components/kendo-data-tables/components/SegmentedSwitch'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -239,6 +241,7 @@ const AdvanceKendoTable = ({
   handleRemarkCellClick = () => {},
   handleExport = () => {},
   handleExcelUpload = () => {},
+  handleToggleShowAll = (val) => {},
   showThreeColors = false,
   groupBy = null,
   dropdownConfig = {},
@@ -261,6 +264,8 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  showToggleAllOptions = [],
+  showToggleAllState = null,
   defaultGridExpanded = true,
   showFilters = false,
   convertScientificValue = false,
@@ -2069,6 +2074,59 @@ const AdvanceKendoTable = ({
         )
       }
 
+      if (col.type === 'uomWholeNumber' || col.uomWholeNumber) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <UomNumberCellEditor
+                    {...cellProps}
+                    allowNegative={col.allowNegative === true}
+                  />
+                ),
+              },
+              data: (props) =>
+                showThreeColors ? (
+                  <RedHighlightCell2
+                    {...props}
+                    customModifiedCells={customModifiedCells}
+                    allRedCell={allRedCell}
+                    allRedCell2={allRedCell2}
+                    disableRedHighlight={disableRedHighlight}
+                    format={col.format}
+                  />
+                ) : (
+                  <RedHighlightCell
+                    {...props}
+                    customModifiedCells={customModifiedCells}
+                    allRedCell={allRedCell}
+                    disableRedHighlight={disableRedHighlight}
+                    format={col.format}
+                  />
+                ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
       //New Creted Code for Text Type
       if (col.type == 'text') {
         return (
@@ -3167,6 +3225,14 @@ const AdvanceKendoTable = ({
                 >
                   Delete
                 </Button>
+              )}
+              {permissions?.showToggleAll && (
+                <SegmentedSwitch
+                  options={showToggleAllOptions}
+                  value={showToggleAllState}
+                  onChange={handleToggleShowAll}
+                  disabled={isButtonDisabled || READ_ONLY}
+                />
               )}
             </Box>
           </Box>

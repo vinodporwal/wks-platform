@@ -18,6 +18,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
 import javax.sql.DataSource;
+import java.time.Month;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -37,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.dto.NetProductionDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.BusinessDemand;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -191,7 +196,127 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		}
 	}
 
+	@Override
+	public AOPMessageVM getNetProductionData(String year, String plantId) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedure = vertical.getName()+"_"+site.getName()+"_GetNetProduction";
+			List<Object[]> obj=null;
+			
+			obj = findNetProductionData(year, UUID.fromString(plantId), procedure);
+			 
+			System.out.println("obj" + obj);
+			
+			Map<String, NetProductionDTO> dtoMap = new LinkedHashMap<>();
 
+			for (Object[] row : obj) {
+			    String sapMATCode = row[0] != null ? row[0].toString() : "";
+			    String product = row[1] != null ? row[1].toString() : "";
+			    String monthStr = row[2] != null ? row[2].toString() : null; 
+			    Double actualQty = row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0;
+			    String uom = row[4] != null ? row[4].toString() : "";
+
+			    
+			    String groupKey = sapMATCode + "_" + product;
+
+
+			    NetProductionDTO dto = dtoMap.computeIfAbsent(groupKey, k -> {
+			        NetProductionDTO newDto = new NetProductionDTO();
+			        newDto.setSapMATCode(sapMATCode);
+			        newDto.setProduct(product);
+			        newDto.setUom(uom);
+			        
+			        
+			        newDto.setJan(0.0);
+			        newDto.setFeb(0.0);
+			        newDto.setMar(0.0);
+			        newDto.setApr(0.0);
+			        newDto.setMay(0.0);
+			        newDto.setJun(0.0);
+			        newDto.setJul(0.0);
+			        newDto.setAug(0.0);
+			        newDto.setSep(0.0);
+			        newDto.setOct(0.0);
+			        newDto.setNov(0.0);
+			        newDto.setDec(0.0);
+			        
+			        return newDto;
+			    });
+
+			   
+			    if (monthStr != null && !monthStr.isEmpty()) {
+			        try {
+			            
+			            String monthPart = monthStr.split("-")[0].toUpperCase();
+			            
+			            switch (monthPart) {
+			                case "JAN": case "JANUARY": case "01": case "1": dto.setJan(actualQty); break;
+			                case "FEB": case "FEBRUARY": case "02": case "2": dto.setFeb(actualQty); break;
+			                case "MAR": case "MARCH": case "03": case "3": dto.setMar(actualQty); break;
+			                case "APR": case "APRIL": case "04": case "4": dto.setApr(actualQty); break;
+			                case "MAY": dto.setMay(actualQty); break;
+			                case "JUN": case "JUNE": case "06": case "6": dto.setJun(actualQty); break;
+			                case "JUL": case "JULY": case "07": case "7": dto.setJul(actualQty); break;
+			                case "AUG": case "AUGUST": case "08": case "8": dto.setAug(actualQty); break;
+			                case "SEP": case "SEPTEMBER": case "09": case "9": dto.setSep(actualQty); break;
+			                case "OCT": case "OCTOBER": case "10": dto.setOct(actualQty); break;
+			                case "NOV": case "NOVEMBER": case "11": dto.setNov(actualQty); break;
+			                case "DEC": case "DECEMBER": case "12": dto.setDec(actualQty); break;
+			            }
+			        } catch (Exception e) {
+			           
+			        }
+			    }
+			}
+
+			
+			List<NetProductionDTO> netProductionDTOs = new ArrayList<>(dtoMap.values());
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(netProductionDTOs);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> findNetProductionData(String aopYear, UUID plantId, String procedureName) {
+	    try {
+	     
+	        String[] years = aopYear.split("-");
+	        String startYear = years[0].trim();
+	        String endYearPrefix = startYear.substring(0, 2); 
+	        String endYear = endYearPrefix + years[1].trim(); 
+
+	        String periodFrom = startYear + "-04-01"; 
+	        String periodTo = endYear + "-03-31";    
+
+	        String sql = "EXEC " + "[" + procedureName + "]"
+	                + " @PlantId = :plantId, @aopYear = :aopYear, @PeriodFrom = :periodFrom, @PeriodTo = :periodTo";
+
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("plantId", plantId);
+	        query.setParameter("aopYear", aopYear);
+	        query.setParameter("periodFrom", periodFrom);
+	        query.setParameter("periodTo", periodTo);
+
+	        return query.getResultList();
+	    } catch (RestInvalidArgumentException e) {
+	        throw e;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+	
 	@Override
 	public AOPMessageVM getBusinessDemandLineData(String year, String plantId, String lineId) {
 		try {
@@ -736,7 +861,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 			}
 		}
-	// Bordered + unlocked style for editable BD cells (months col 3–14 and Remark col 15)
+	// Bordered + unlocked style for editable BD cells (months col 3â€“14 and Remark col 15)
 	CellStyle unlockedBorderedStyle = workbook.createCellStyle();
 	unlockedBorderedStyle.setLocked(false);
 	unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
@@ -770,7 +895,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 			}
 
 			if (showProductionTarget) {
-				// Month columns (3–14) and Remark (15) remain editable; all others locked
+				// Month columns (3â€“14) and Remark (15) remain editable; all others locked
 				if ((col >= 3 && col <= 14) || col == 15) {
 					cell.setCellStyle(unlockedBorderedStyle);
 				} else {
@@ -787,7 +912,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 			sheet.protectSheet("");
 		}
 
-	// Auto-size all visible columns (0–15)
+	// Auto-size all visible columns (0â€“15)
 	for (int col = 0; col <= 15; col++) {
 		sheet.autoSizeColumn(col);
 	}
@@ -1452,7 +1577,7 @@ public byte[] exportBusinessDemandWithTotal(String year, String plantId, boolean
 			cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 		}
 	}
-// Bordered + unlocked style for editable BD cells (months col 3–14 and Remark col 15)
+// Bordered + unlocked style for editable BD cells (months col 3â€“14 and Remark col 15)
 CellStyle unlockedBorderedStyle = workbook.createCellStyle();
 unlockedBorderedStyle.setLocked(false);
 unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
@@ -1491,7 +1616,7 @@ for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
 		if (isTotalRow) {
 			cell.setCellStyle(totalRowStyle);
 		} else if (showProductionTarget) {
-			// Month columns (3–14) and Remark (col 16) remain editable; Total (col 15) and others locked
+			// Month columns (3â€“14) and Remark (col 16) remain editable; Total (col 15) and others locked
 			if ((col >= 3 && col <= 14) || col == 16) {
 				cell.setCellStyle(unlockedBorderedStyle);
 			} else {
@@ -1508,7 +1633,7 @@ for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
 		sheet.protectSheet("");
 	}
 
-// Auto-size all visible columns (0–16)
+// Auto-size all visible columns (0â€“16)
 for (int col = 0; col <= 16; col++) {
 	sheet.autoSizeColumn(col);
 }
@@ -2870,7 +2995,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			titleCell.setCellValue("Proposed Operating Capacity / Production Volume Target (PVT)");
 			titleCell.setCellStyle(boldLockedGreyStyle);
 
-			// Header row – Particulars + 12 academic-year months; NO Remarks column
+			// Header row â€“ Particulars + 12 academic-year months; NO Remarks column
 			List<String> ptHeaders = new ArrayList<>();
 			ptHeaders.add("Particulars");
 			ptHeaders.add(getMonth(year, 4));
@@ -2893,7 +3018,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				cell.setCellStyle(boldLockedGreyStyle);
 			}
 
-			// Data rows – locked and greyed out; no ID or metadata columns
+			// Data rows â€“ locked and greyed out; no ID or metadata columns
 			if (ptList != null) {
 				for (AOPMCCalculatedDataDTO dto : ptList) {
 					Row row = sheet.createRow(startRow++);
@@ -2992,7 +3117,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
 				try {
 				dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
-				// col 1 is "Type" (display/export only) — not read or persisted during import
+				// col 1 is "Type" (display/export only) â€” not read or persisted during import
 				dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
 			// Read each month individually from its own column (shifted +1 due to Type column)
