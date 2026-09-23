@@ -251,10 +251,10 @@ const SingleReportGrid = memo(
           otherFilterKeys.length === 0
             ? rawData
             : rawData.filter((row) =>
-                otherFilterKeys.every((f) =>
-                  rowMatchesFilter(row, f, activeFilters[f], rawColumns, isAromaticsHmd),
-                ),
-              )
+              otherFilterKeys.every((f) =>
+                rowMatchesFilter(row, f, activeFilters[f], rawColumns, isAromaticsHmd),
+              ),
+            )
 
         return {
           field: col.field,
@@ -430,6 +430,15 @@ const SingleReportGrid = memo(
       })
     }, [filteredRows, sortConfig, rawColumns, rawData])
 
+    const gridHeight = useMemo(() => {
+      const rowCount = sortedAndFilteredRows.length
+      if (rowCount === 0) return 160
+      // 34px (header) + (rowCount * 36px) + 40px (footer) + 2px (borders)
+      const calculated = 34 + rowCount * 36 + 40 + 2
+      // Fits small row counts exactly (e.g. 2 rows = 148px), caps at 520px for large datasets
+      return Math.min(520, Math.max(120, calculated))
+    }, [sortedAndFilteredRows.length])
+
     return (
       <CustomAccordion
         expanded={expanded}
@@ -481,13 +490,14 @@ const SingleReportGrid = memo(
 
         <CustomAccordionDetails sx={{ p: 0, backgroundColor: '#FFFFFF' }}>
           {expanded && (
-            <Box sx={{ height: 540, width: '100%', overflow: 'hidden' }}>
+            <Box sx={{ height: gridHeight, width: '100%', overflow: 'hidden' }}>
               <DataGrid
                 rows={sortedAndFilteredRows}
                 columns={columns}
                 getRowId={(row) => row.id}
-                rowHeight={48}
-                headerHeight={38}
+                rowHeight={36}
+                headerHeight={34}
+                density='compact'
                 disableColumnSorting
                 onColumnWidthChange={handleColumnResize}
                 onColumnResize={handleColumnResize}
@@ -498,29 +508,45 @@ const SingleReportGrid = memo(
                 disableRowSelectionOnClick
                 disableColumnMenu
                 sx={{
+                  '--DataGrid-rowBorderColor': 'transparent',
                   border: '1px solid #CBD5E1',
                   borderRadius: '4px',
+                  backgroundColor: '#FFFFFF',
                   fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  fontSize: '0.82rem',
+                  fontSize: '0.78rem',
                   '& .MuiDataGrid-sortIcon': {
                     display: 'none !important',
                   },
                   '& .MuiDataGrid-iconButtonContainer': {
                     display: 'none !important',
                   },
+                  // --- Filler / scrollbar filler: blank white space ---
+                  '& .MuiDataGrid-filler, & .MuiDataGrid-scrollbarFiller, & .MuiDataGrid-filler--pinnedLeft, & .MuiDataGrid-filler--pinnedRight, & .MuiDataGrid-filler--borderBottom, & .MuiDataGrid-scrollbarFiller--header, & .MuiDataGrid-scrollbarFiller--borderTop, & .MuiDataGrid-scrollbarFiller--borderBottom': {
+                    backgroundColor: '#FFFFFF !important',
+                    border: 'none !important',
+                    boxShadow: 'none !important',
+                  },
+                  // --- Header containers: white so filler space is white ---
                   '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: '#E2E8F0',
+                    backgroundColor: '#FFFFFF !important',
                     color: '#0F172A',
                     fontWeight: 700,
-                    borderBottom: '2px solid #94A3B8',
-                    minHeight: '38px !important',
-                    maxHeight: '38px !important',
-                    lineHeight: '38px !important',
+                    minHeight: '34px !important',
+                    maxHeight: '34px !important',
+                    lineHeight: '34px !important',
+                    borderBottom: 'none !important',
                   },
+                  '& .MuiDataGrid-columnHeaderRow': {
+                    backgroundColor: 'transparent !important',
+                    borderBottom: 'none !important',
+                  },
+                  // --- Individual column headers: grey background + borders ---
                   '& .MuiDataGrid-columnHeader': {
+                    backgroundColor: '#E2E8F0 !important',
                     padding: '0 !important',
-                    borderRight: '1px solid #CBD5E1',
-                    height: '38px !important',
+                    borderRight: '1px solid #CBD5E1 !important',
+                    borderBottom: '2px solid #94A3B8 !important',
+                    height: '34px !important',
                     '&:focus, &:focus-within': { outline: 'none' },
                   },
                   '& .MuiDataGrid-columnHeaderTitleContainer': {
@@ -537,25 +563,46 @@ const SingleReportGrid = memo(
                     display: 'flex !important',
                     alignItems: 'stretch !important',
                   },
+                  // --- Body area: white background ---
+                  '& .MuiDataGrid-virtualScroller, & .MuiDataGrid-virtualScrollerContent, & .MuiDataGrid-virtualScrollerRenderZone': {
+                    backgroundColor: '#FFFFFF !important',
+                  },
                   '& .MuiDataGrid-cell': {
-                    borderRight: '1px solid #CBD5E1',
-                    borderBottom: '1px solid #CBD5E1',
-                    padding: '0 8px',
+                    borderRight: '1px solid #CBD5E1 !important',
+                    borderBottom: '1px solid #CBD5E1 !important',
+                    padding: '0 7px',
                     color: '#0F172A',
+                    backgroundColor: '#FFFFFF',
                     '&:focus, &:focus-within': { outline: 'none' },
                   },
-                  '& .MuiDataGrid-row': {
-                    backgroundColor: '#FFFFFF',
+                  // --- Empty cell filler at end of each row: blank white ---
+                  '& .MuiDataGrid-cellEmpty': {
+                    border: 'none !important',
+                    borderTop: 'none !important',
+                    borderBottom: 'none !important',
+                    borderRight: 'none !important',
+                    borderLeft: 'none !important',
+                    background: '#FFFFFF !important',
+                    backgroundColor: '#FFFFFF !important',
                   },
-                  '& .MuiDataGrid-row:nth-of-type(even)': {
-                    backgroundColor: '#F1F5F9',
+                  '& .MuiDataGrid-row, & .MuiDataGrid-row:nth-of-type(even), & .MuiDataGrid-row:nth-child(even), & .MuiDataGrid-row.Mui-even, & .MuiDataGrid-row.MuiDataGrid-row--even': {
+                    background: 'transparent !important',
+                    backgroundColor: 'transparent !important',
+                    border: 'none !important',
                   },
                   '& .MuiDataGrid-row:hover': {
+                    background: 'transparent !important',
+                    backgroundColor: 'transparent !important',
+                  },
+                  '& .MuiDataGrid-row:nth-of-type(even) .MuiDataGrid-cell, & .MuiDataGrid-row:nth-child(even) .MuiDataGrid-cell, & .MuiDataGrid-row.Mui-even .MuiDataGrid-cell, & .MuiDataGrid-row.MuiDataGrid-row--even .MuiDataGrid-cell': {
+                    backgroundColor: '#F1F5F9',
+                  },
+                  '& .MuiDataGrid-row:hover .MuiDataGrid-cell': {
                     backgroundColor: '#DBEAFE !important',
                   },
                   '& .MuiDataGrid-footerContainer': {
-                    minHeight: '48px !important',
-                    maxHeight: '48px !important',
+                    minHeight: '40px !important',
+                    maxHeight: '40px !important',
                     borderTop: '2px solid #CBD5E1',
                     backgroundColor: '#F1F5F9',
                     display: 'flex',
@@ -563,32 +610,32 @@ const SingleReportGrid = memo(
                   },
                   '& .MuiTablePagination-root': {
                     color: '#334155',
-                    fontSize: '0.82rem',
+                    fontSize: '0.75rem',
                     overflow: 'visible',
                   },
                   '& .MuiTablePagination-toolbar': {
-                    minHeight: '48px !important',
-                    height: '48px !important',
-                    paddingLeft: '16px',
-                    paddingRight: '16px',
+                    minHeight: '40px !important',
+                    height: '40px !important',
+                    paddingLeft: '12px',
+                    paddingRight: '12px',
                   },
                   '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows':
                   {
-                    fontSize: '0.82rem',
+                    fontSize: '0.75rem',
                     color: '#334155',
                     margin: 0,
-                    lineHeight: '48px',
+                    lineHeight: '40px',
                     fontWeight: 500,
                   },
                   '& .MuiTablePagination-select': {
-                    fontSize: '0.82rem',
-                    paddingTop: '6px',
-                    paddingBottom: '6px',
+                    fontSize: '0.75rem',
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
                   },
                   '& .MuiTablePagination-actions': {
-                    marginLeft: '12px',
+                    marginLeft: '8px',
                     '& .MuiIconButton-root': {
-                      padding: '6px',
+                      padding: '4px',
                       color: '#0284C7',
                       '&.Mui-disabled': {
                         color: '#94A3B8',
