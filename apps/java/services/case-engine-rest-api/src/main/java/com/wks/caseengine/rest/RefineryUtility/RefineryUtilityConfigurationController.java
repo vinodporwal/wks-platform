@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ContentDisposition;
 
+import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
@@ -92,6 +93,21 @@ public class RefineryUtilityConfigurationController {
 	@PostMapping("/treatment-vendor")
     public ResponseEntity<AOPMessageVM> saveTreatmentVendorData(@RequestBody List<TreatmentVendorDTO> treatmentVendorDTOList, @RequestParam String year, @RequestParam String plantFKId) {
         List<TreatmentVendorDTO> failedList = refineryUtilityConfigurationService.saveTreatmentVendorData(year, plantFKId, treatmentVendorDTOList);
+        if(failedList.isEmpty()) {
+            return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+        } else {
+            return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+        }
+    }
+
+	@GetMapping("/commodity-chemicals")
+    public ResponseEntity<AOPMessageVM> getCommodityChemicalsData(@RequestParam String year, @RequestParam String plantFKId) {
+        return ResponseEntity.ok(refineryUtilityConfigurationService.getCommodityChemicalsData(year, plantFKId));
+    }
+
+	@PostMapping("/commodity-chemicals")
+    public ResponseEntity<AOPMessageVM> saveCommodityChemicalsData(@RequestBody List<CommoditySelectionDTO> commoditySelectionDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+        List<CommoditySelectionDTO> failedList = refineryUtilityConfigurationService.saveCommodityChemicalsData(year, plantFKId, commoditySelectionDTOList);
         if(failedList.isEmpty()) {
             return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
         } else {

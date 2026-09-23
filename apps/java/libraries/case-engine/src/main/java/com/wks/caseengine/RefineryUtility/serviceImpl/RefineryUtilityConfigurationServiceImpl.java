@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
@@ -742,6 +743,138 @@ public List<Object[]> getTreatmentVendorsFromSP(String aopYear, String plantId, 
 
 		UUID normParameterFKId = UUID.fromString(treatmentVendorDTO.getNormParameterFKId());
 		String remark = treatmentVendorDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue);
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+@Override
+public AOPMessageVM getCommodityChemicalsData(String year, String plantFKId) {
+	try {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetCommodityChemicals";
+	
+		List<Object[]> resultList = new ArrayList<>();
+	
+		resultList = getCommodityChemicalsDataFromSP(year, plantFKId, procedureName);
+		List<CommoditySelectionDTO> dtoList = new ArrayList<>();
+
+		for (Object[] row : resultList) {
+
+			CommoditySelectionDTO dto = new CommoditySelectionDTO();
+
+			dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+			dto.setName(row[1] != null ? row[1].toString() : null);
+			dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+			dto.setUom(row[3] != null ? row[3].toString() : null);
+			dto.setNormTypeName(row[4] != null ? row[4].toString() : null);
+			dto.setIsChecked(row[5] != null ? row[5].toString() : null);
+			dto.setAuditYear(row[6] != null ? row[6].toString() : null);
+			dto.setRemarks(row[7] != null ? row[7].toString() : null);
+			dto.setDisplayOrder(row[8] != null ? Integer.parseInt(row[8].toString()) : null);
+		
+		Boolean isEditable = null;
+		if (row[9] != null) {
+			if (row[9] instanceof Boolean) {
+				isEditable = (Boolean) row[9];
+			} else if (row[9] instanceof Number) {
+				isEditable = ((Number) row[9]).intValue() == 1;
+			}
+		}
+		dto.setIsEditable(isEditable);
+			dtoList.add(dto);
+		}
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(dtoList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
+
+public List<Object[]> getCommodityChemicalsDataFromSP(String aopYear, String plantId, String procedureName) {
+	try {
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantId);
+		query.setParameter("aopYear", aopYear);
+
+		return query.getResultList();
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
+
+@Transactional 
+@Override
+	public List<CommoditySelectionDTO> saveCommodityChemicalsData(String year, String plantFKId,
+			List<CommoditySelectionDTO> commoditySelectionDTOList) {
+		try {
+			List<CommoditySelectionDTO> failedList = new ArrayList<>();
+	
+			for (CommoditySelectionDTO commoditySelectionDTO : commoditySelectionDTOList) {
+				
+				if (commoditySelectionDTO.getSaveStatus() != null
+						&& commoditySelectionDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(commoditySelectionDTO);
+					continue;
+				}
+
+			
+				
+				saveCommodityChemicalsInDB(commoditySelectionDTO, 4, year, commoditySelectionDTO.getIsChecked());
+				
+			
+			
+			if("Failed".equalsIgnoreCase(commoditySelectionDTO.getSaveStatus())) {
+				failedList.add(commoditySelectionDTO);
+			}
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save commodity selection data", ex);
+		}
+	}
+
+	public void saveCommodityChemicalsInDB(CommoditySelectionDTO commoditySelectionDTO, Integer i, String year, String attributeValue) {
+
+		UUID normParameterFKId = UUID.fromString(commoditySelectionDTO.getNormParameterFKId());
+		String remark = commoditySelectionDTO.getRemarks();
 
 	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
 			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
