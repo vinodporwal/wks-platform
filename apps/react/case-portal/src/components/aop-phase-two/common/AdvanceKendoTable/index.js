@@ -72,6 +72,7 @@ import {
   getMonthStartEndDate,
 } from '../utilities/durationHelpers'
 import { convertFromScientificNotation } from '../commonUtilityFunctions'
+import SegmentedSwitch from 'components/kendo-data-tables/components/SegmentedSwitch'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -239,6 +240,7 @@ const AdvanceKendoTable = ({
   handleRemarkCellClick = () => {},
   handleExport = () => {},
   handleExcelUpload = () => {},
+  handleToggleShowAll = (val) => {},
   showThreeColors = false,
   groupBy = null,
   dropdownConfig = {},
@@ -261,6 +263,8 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  showToggleAllOptions = [],
+  showToggleAllState = null,
   defaultGridExpanded = true,
   showFilters = false,
   convertScientificValue = false,
@@ -3167,6 +3171,14 @@ const AdvanceKendoTable = ({
                 >
                   Delete
                 </Button>
+              )}
+              {permissions?.showToggleAll && (
+                <SegmentedSwitch
+                  options={showToggleAllOptions}
+                  value={showToggleAllState}
+                  onChange={handleToggleShowAll}
+                  disabled={isButtonDisabled || READ_ONLY}
+                />
               )}
             </Box>
           </Box>

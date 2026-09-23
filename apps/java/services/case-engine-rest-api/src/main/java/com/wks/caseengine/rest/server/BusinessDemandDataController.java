@@ -37,6 +37,11 @@ public class BusinessDemandDataController {
 		return businessDemandDataService.getBusinessDemandData(year,plantId);	
 	}
 	
+	@GetMapping(value="/net-production")
+	public	AOPMessageVM getNetProductionData(@RequestParam String year,@RequestParam String plantId){
+		return businessDemandDataService.getNetProductionData(year,plantId);	
+	}
+	
     @GetMapping(value="/business-demand-line")
 	public	AOPMessageVM getBusinessDemandLineData(@RequestParam String year,@RequestParam String plantId,@RequestParam String lineId){
 		return businessDemandDataService.getBusinessDemandLineData(year,plantId,lineId);	

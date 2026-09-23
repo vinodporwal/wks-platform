@@ -765,10 +765,6 @@ const AopDesignBasis = () => {
         return (
           <ModeSelectionCracker />
         )
-      case 'Feed':
-        return (
-          <ModeSelectionCracker />
-        )
       default:
         return null
     }

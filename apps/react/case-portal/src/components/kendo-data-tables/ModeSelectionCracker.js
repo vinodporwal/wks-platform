@@ -39,7 +39,7 @@ const ModeSelectionCracker = () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.getTreatmentVendorData(
+      const response = await ProductionNormsApiService.getModeSelectionCrackerData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -50,14 +50,14 @@ const ModeSelectionCracker = () => {
           idFromApi: item?.normParameterFKId,
           id: index,
           isEditable: item?.isEditable ?? true,
-          ParticularG: item?.normTypeName || 'Vendors',
+          isChecked: item?.isChecked === 'false' ? false : Boolean(item?.isChecked)
         }))
         setRows(formattedData)
       } else {
         setRows([])
       }
     } catch (error) {
-      console.error('Error fetching Matbal data:', error)
+      console.error('Error fetching data:', error)
       setRows([])
     } finally {
       setLoading(false)
@@ -83,7 +83,7 @@ const ModeSelectionCracker = () => {
         hidden: true,
       },
       {
-        field: 'DisplayName',
+        field: 'displayName',
         title: 'Mode Name',
         editable: false,
         width: 300,
@@ -114,37 +114,18 @@ const ModeSelectionCracker = () => {
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) return
-    const requiredFields = ['remarks']
-    const validationData = modifiedData.map((row) => ({
-      ...row,
-    }))
-    const validationMessage = validateFields(validationData, requiredFields)
-    if (validationMessage) {
-      setSnackbarData({ message: validationMessage, severity: 'error' })
-      setSnackbarOpen(true)
-      return
-    }
-
     setLoading(true)
     try {
-      // Payload matches colDefs: only 'apr' (Winter) and 'may' (Summer) are editable
       const payload = modifiedData.map((row) => ({
-        normParameterFKId: row.normParameterFKId,
-        isChecked: row.isChecked,
-        remarks: row.remarks || '',
-        auditYear: row.auditYear || AOP_YEAR,
-        uom: row.UOM || '',
-        TypeDisplayName: row.TypeDisplayName || 'Treatment Vendor',
-        isEditable: row.isEditable ?? true,
-        DisplayName: row.DisplayName || '',
-        Name: row.Name || '',
+        ...row,
+        id: row.idFromApi
       }))
 
-      const response = await ProductionNormsApiService.saveTreatmentVendorData(
-        keycloak,
+      const response = await ProductionNormsApiService.saveModeSelectionCrackerData(
         PLANT_ID,
-        AOP_YEAR,
         payload,
+        keycloak,
+        AOP_YEAR,
       )
       if (response) {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
@@ -156,7 +137,7 @@ const ModeSelectionCracker = () => {
         setSnackbarOpen(true)
       }
     } catch (error) {
-      console.error('Error saving Matbal data:', error)
+      console.error('Error saving data:', error)
       setSnackbarData({ message: 'Error saving data', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
@@ -214,7 +195,7 @@ const ModeSelectionCracker = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         plantID={PLANT_ID}
-        groupBy='ParticularG'
+        // groupBy='ParticularG'
       />
 
       <Notification
