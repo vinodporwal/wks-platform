@@ -40,6 +40,9 @@ export const ProductionNormsApiService = {
   saveMxoRegenerationData,
   getMxoStockData,
   saveMxoStockData,
+  // mode-selection tab cracker
+  getModeSelectionCrackerData,
+  saveModeSelectionCrackerData,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -831,3 +834,40 @@ async function saveMxoStockData(PLANT_ID, PAYLOAD, keycloak, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+
+async function getModeSelectionCrackerData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/mode-selection?plantFKId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error getting MXO Stock data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveModeSelectionCrackerData(PLANT_ID, PAYLOAD, keycloak, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/mode-selection?plantFKId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(PAYLOAD),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error saving MXO Stock data:', e)
+    return await Promise.reject(e)
+  }
+}
+
