@@ -370,13 +370,13 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
         return monthWiseConstantsDTOs;
     } 
     
-	// Helper method to validate integer-only constraint for UOM "%" or "M3/Kt"
+	// Helper method to validate integer-only constraint for UOM "%" or "M3/hr"
 	private void validateIntegerUOMConstraint(MonthWiseConstantsDTO dto, boolean summerWinterFlag) {
 	    if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
 	        return;
 	    }
 	    String uom = dto.getUOM();
-	    if (uom == null || (!uom.trim().equalsIgnoreCase("%") && !uom.trim().equalsIgnoreCase("M3/Kt"))) {
+	    if (uom == null || (!uom.trim().equalsIgnoreCase("%") && !uom.trim().equalsIgnoreCase("M3/hr"))) {
 	        return;
 	    }
 	    List<String> nonIntegerColumns = new ArrayList<>();
