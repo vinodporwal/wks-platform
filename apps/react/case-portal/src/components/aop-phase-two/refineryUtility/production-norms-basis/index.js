@@ -17,6 +17,7 @@ import ProductionDemands from './ProductionDemand'
 import UtilityConsumption from './UtilityConsumption'
 import CatChemConsumption from './CatChemConsumption'
 import TreatmentVendor from './TreatmentVendor'
+import CommoditySelection from './CommoditySelection'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -241,13 +242,15 @@ const ProductionNormsBasis = () => {
       case 'pims-monthly-throughtput':
         return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       case 'Production Demand':
-        return <ProductionDemands/>  
-      case 'Utility Consumption' : 
-        return <UtilityConsumption/>
-      case 'CAT CHEM Consumption' : 
-        return <CatChemConsumption/>
-      case 'Treatment Vendor' : 
+        return <ProductionDemands />
+      case 'Utility Consumption':
+        return <UtilityConsumption />
+      case 'CAT CHEM Consumption':
+        return <CatChemConsumption />
+      case 'Treatment Vendor':
         return <TreatmentVendor />
+      case 'Commodity Chemicals':
+        return <CommoditySelection />
       default:
         return null
     }
