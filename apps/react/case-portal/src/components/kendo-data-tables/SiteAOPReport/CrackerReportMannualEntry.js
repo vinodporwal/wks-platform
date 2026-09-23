@@ -1,4 +1,4 @@
-import { Box } from '@mui/material'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -8,11 +8,7 @@ import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import {
-  Backdrop,
-  CircularProgress,
-} from '../../../node_modules/@mui/material/index'
-import KendoDataTables from './index'
+import KendoDataTables from '../index'
 import { validateFields } from 'utils/validationUtils'
 import { ReportMannualEntryApiService } from 'services/report-mannual-entry-api-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
