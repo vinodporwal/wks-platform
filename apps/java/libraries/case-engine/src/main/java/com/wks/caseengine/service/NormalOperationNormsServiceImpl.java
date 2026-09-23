@@ -524,9 +524,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
                 sapCodeKey = key;
             } else if (sanitizedKey.equalsIgnoreCase("UOM")) {
                 uomKey = key;
-            } else if (sanitizedKey.equalsIgnoreCase("YTD")) {
+            } else if (sanitizedKey.equalsIgnoreCase("YTD") || sanitizedKey.equalsIgnoreCase("OverallAOPWtAvg")) {
                 ytdKey = key;
-            } else if (sanitizedKey.equalsIgnoreCase("WtAvg")) {
+            } else if (sanitizedKey.equalsIgnoreCase("WtAvg") || sanitizedKey.equalsIgnoreCase("WtAvg(YTD)")) {
                 wtAvgKey = key;
             } else if (sanitizedKey.equalsIgnoreCase("Remarks")) {
                 remarksKey = key;
@@ -585,7 +585,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
             } else if (key != null && key.equals(sapCodeKey)) {
                 displayHeader = "SAP MAT Code";
             } else if (key != null && key.equals(ytdKey)) {
-                displayHeader = "YTD Norms";
+                displayHeader = "Overall AOP WtAvg";
             }
 			else if (key != null && key.equals(uomKey)) { 
                  displayHeader = "UOM / MT";
