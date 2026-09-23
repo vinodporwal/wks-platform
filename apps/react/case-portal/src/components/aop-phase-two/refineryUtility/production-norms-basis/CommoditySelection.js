@@ -92,7 +92,7 @@ const CommoditySelection = () => {
       },
       {
         field: 'DisplayName',
-        title: 'Commodity',
+        title: 'Particular',
         editable: false,
         width: 300,
         minWidth: 250,
