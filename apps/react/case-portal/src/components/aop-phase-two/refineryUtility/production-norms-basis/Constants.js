@@ -101,7 +101,7 @@ const Constants = ({ startDate, endDate }) => {
       )
     } else {
       baseCols.push({
-        field: 'value',
+        field: 'apr',
         title: 'Value',
         editable: true,
         width: 150,
@@ -257,13 +257,13 @@ const Constants = ({ startDate, endDate }) => {
 
     // const payload = modifiedData
     const payload = modifiedData.map((row) => ({
-        ...row,
-        normParameterFKId: row.normParameterFKId,
-        apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
-        oct: row.oct !== undefined && row.oct !== '' ? Number(row.oct) : null,
-        remarks: row.remarks || '',
-        auditYear: row.auditYear || AOP_YEAR,
-      }))
+      ...row,
+      normParameterFKId: row.normParameterFKId,
+      apr: row.apr !== undefined && row.apr !== '' ? Number(row.apr) : null,
+      oct: row.oct !== undefined && row.oct !== '' ? Number(row.oct) : null,
+      remarks: row.remarks || '',
+      auditYear: row.auditYear || AOP_YEAR,
+    }))
     try {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)

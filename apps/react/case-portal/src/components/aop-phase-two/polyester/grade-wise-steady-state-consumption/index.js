@@ -93,15 +93,15 @@ const GradeWiseSteadyStateConsumption = () => {
     },
     {
       field: 'UOM',
-      title: 'UOM',
-      minWidth: 100,
+      title: 'UOM / MT',
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
     {
       field: 'YTD',
-      title: 'YTD Norm',
-      minWidth: 100,
+      title: 'Overall AOP WtAvg',
+      minWidth: 200,
       type: 'number',
       editable: false,
       format: valueFormat

@@ -49,6 +49,8 @@ import CrakcerProductionConst from './CrakcerProductionConst'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import './common/ConfigurationAccordian.css'
 import { CalenderIcon } from 'assets/images/icons/index'
+import AopTabs from 'components/AopTabs'
+import ModeSelectionCracker from './ModeSelectionCracker'
 
 const StyledConfirmDialog = styled(Dialog)(() => ({
   '& .MuiPaper-root': {
@@ -665,6 +667,113 @@ const AopDesignBasis = () => {
     )
   }, [openConfirmDialog, startDate, endDate])
 
+  const getConfigurationTabsMatrix = async () => {
+    setLoading(true)
+    try {
+      var response = await DataService.getConfigurationTabsMatrix(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        SITE_ID,
+        VERTICAL_ID,
+        'aop-basis'
+      )
+      if (response?.code == 200) {
+        const parsedData = JSON.parse(response?.data)
+
+        setTabs(parsedData)
+
+        setLoading(false)
+      } else {
+        setTabs([])
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setTabs([])
+      setLoading(false)
+    }
+  }
+  const getConfigurationAvailableTabs = async () => {
+    setLoading(true)
+    try {
+      var response = await DataService.getConfigurationAvailableTabs(keycloak)
+      if (response?.code == 200) {
+        const originalTabs = response?.data?.configurationTypeList || []
+
+        setAvailableTabs(originalTabs)
+
+        setLoading(false)
+      } else {
+        setAvailableTabs([])
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setAvailableTabs([])
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (lowerVertName === 'cracker' && lowerSiteName === 'nmd') {
+      getConfigurationTabsMatrix()
+      getConfigurationAvailableTabs()
+    }
+  }, [PLANT_ID, AOP_YEAR])
+
+  // Helper function to get tab display name by matching the UUID from tabs array
+  const getTabName = (tabId) => {
+    if (!tabId || !availableTabs.length) return null
+    const tab = availableTabs.find(
+      (t) => t.id.toLowerCase() === tabId.toLowerCase(),
+    )
+    return tab ? tab.displayName : null
+  }
+
+  // Dynamic tab list from API
+  const filteredTabs = tabs
+    .map((tabId) => {
+      const tabInfo = availableTabs.find(
+        (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+      )
+
+      if (!tabInfo) return null
+
+      const name = tabInfo.displayName
+
+      return {
+        id: tabId,
+        name,
+      }
+    })
+    .filter(Boolean)
+
+  const renderTab = () => {
+    if (!filteredTabs.length || !availableTabs.length) {
+      return null
+    }
+
+    const currentTabId = filteredTabs[tabIndex]?.id
+    if (!currentTabId) return null
+
+    const tabData = getTabName(currentTabId)
+    const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
+
+    switch (currentTabName) {
+      case 'Mode Selection':
+        return (
+          <ModeSelectionCracker />
+        )
+      case 'Feed':
+        return (
+          <ModeSelectionCracker />
+        )
+      default:
+        return null
+    }
+  }
+
   return (
     <React.Fragment>
       <Box className='configuration-accordion-wrapper'>
@@ -892,6 +1001,33 @@ const AopDesignBasis = () => {
         />
         {ConfigurationDialog}
       </Box>
+      {(lowerVertName === 'cracker' && lowerSiteName === 'nmd') && (
+        <React.Fragment>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <AopTabs
+              tabIndex={tabIndex}
+              setTabIndex={setTabIndex}
+              tabs={tabs.map((tabId) => {
+                const tabInfo = availableTabs.find(
+                  (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+                )
+                if (tabInfo) {
+                  const originalName = tabInfo.displayName
+                  return originalName
+                }
+              })}
+            />
+            <Box>
+              {renderTab()}
+            </Box>
+          </div>
+        </React.Fragment>
+      )}
       {(SITE_NAME === 'VMD' || SITE_NAME === 'C2') && (
         <CrakcerProductionConst />
       )}

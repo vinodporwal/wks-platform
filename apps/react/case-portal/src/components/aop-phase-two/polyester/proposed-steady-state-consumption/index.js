@@ -287,7 +287,7 @@ const ProposedSteadyStateConsumption = () => {
     },
     {
       field: 'UOM',
-      title: 'UOM',
+      title: 'UOM  / MT',
       editable: false,
       fixedWidth: 100,
     },
