@@ -14,6 +14,9 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { useDebounce } from 'hooks/useDebounce'
 
+// Only users with this role can edit the Value Type column.
+const CPP_MASTER_ROLE = 'cpp-master'
+
 const Prices = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -40,6 +43,12 @@ const Prices = () => {
           ? [PLANT_ID]
           : [],
     [plantObject, jmdSelectedPlants, siteObject],
+  )
+
+  // Only cpp-master users may edit the Value Type column.
+  const isCppMasterRole = useMemo(
+    () => keycloak?.realmAccess?.roles?.includes(CPP_MASTER_ROLE) || false,
+    [keycloak?.realmAccess?.roles],
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -225,13 +234,13 @@ const Prices = () => {
       title: 'Value Type',
       widthT: 150,
       type: 'select',
-      editable: true,
+      editable: isCppMasterRole,
       minWidth: 150,
-      locked: true,
       options: [
         { value: 'Price', label: 'Price' },
         { value: 'Amount', label: 'Amount' },
         { value: 'Calculation', label: 'Calculation' },
+        { value: 'Percentage', label: 'Percentage' },
       ],
     },
 
