@@ -22,7 +22,10 @@ const Constants = ({ startDate, endDate }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, siteObject } = dataGridStore
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
+  const EXCEL_NAME = generateExcelName(
+    dataGridStore,
+    'Production_Norms_Basis_Constants',
+  )
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -37,8 +40,13 @@ const Constants = ({ startDate, endDate }) => {
     const fetchPlantColumnConfig = async () => {
       if (!PLANT_ID) return
       try {
-        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(keycloak, PLANT_ID)
-        setIsTwoColumnPlant(Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn))
+        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(
+          keycloak,
+          PLANT_ID,
+        )
+        setIsTwoColumnPlant(
+          Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn),
+        )
       } catch (err) {
         console.error('Error checking plant column config:', err)
         setIsTwoColumnPlant(false)
@@ -63,7 +71,7 @@ const Constants = ({ startDate, endDate }) => {
       },
       {
         field: 'UOM',
-        title: 'UOM',
+        title: '%',
         width: 100,
         minWidth: 80,
         widthT: 100,
@@ -151,8 +159,14 @@ const Constants = ({ startDate, endDate }) => {
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         productName: item?.DisplayName || item?.Name || item?.productName || '',
-        value: item?.apr !== undefined && item?.apr !== null ? item?.apr : (item?.value ?? ''),
-        apr: item?.apr !== undefined && item?.apr !== null ? item?.apr : (item?.value ?? ''),
+        value:
+          item?.apr !== undefined && item?.apr !== null
+            ? item?.apr
+            : item?.value ?? '',
+        apr:
+          item?.apr !== undefined && item?.apr !== null
+            ? item?.apr
+            : item?.value ?? '',
         oct: item?.oct !== undefined && item?.oct !== null ? item?.oct : '',
         remarks: item?.remarks || '',
         id: item?.normParameterFKId || item?.id || index + 1,
@@ -438,7 +452,7 @@ const Constants = ({ startDate, endDate }) => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
