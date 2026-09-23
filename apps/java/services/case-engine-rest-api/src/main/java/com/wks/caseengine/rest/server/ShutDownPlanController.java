@@ -264,6 +264,10 @@ public class ShutDownPlanController {
 			  return shutDownPlanService.getShutdownDescription(plantId);
 		  }
 		  
-		  
+		  @GetMapping("/shutdown-months-staple")
+		    public ResponseEntity<List> getShutdownMonths(@RequestParam UUID plantId,@RequestParam(required=false) String maintenanceName,@RequestParam String year,@RequestParam(required=false) String gradeId){
+		        List data = shutDownPlanService.getShutdownMonths(plantId, maintenanceName,year,gradeId);
+		        return ResponseEntity.ok(data);
+		  }  
 }
 

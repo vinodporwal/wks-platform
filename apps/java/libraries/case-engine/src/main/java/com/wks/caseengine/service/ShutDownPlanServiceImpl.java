@@ -5003,6 +5003,26 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		}
 	}
 
+	@Override
+	@Transactional
+	public List<String> getShutdownMonths(UUID plantId, String maintenanceName, String year, String gradeId) {
+        String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+        Plants plant = plantsRepository.findById(plantId)
+                .orElseThrow(() -> new RuntimeException("Plant not found"));
+        Sites site = siteRepository.findById(plant.getSiteFkId())
+                .orElseThrow(() -> new RuntimeException("Site not found"));
+
+        String siteCode = site.getName(); 
+        String spName = String.format("[%s_%s_GetShutDownMonths]", verticalName, siteCode);
+        String sql = String.format("EXEC %s @plantId = :plantId, @aopYear = :aopYear", spName);
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", plantId.toString());
+        query.setParameter("aopYear", year);
+        @SuppressWarnings("unchecked")
+        List<String> resultList = query.getResultList();
+        return resultList != null ? resultList : Collections.emptyList();
+    }
+	
 	private boolean isValidShutdownDescription(String description, List<Map<String, Object>> validDescriptions) {
 		if (description == null || description.trim().isEmpty()) {
 			return false;
