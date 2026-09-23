@@ -1,16 +1,15 @@
 import { Box } from '@mui/material'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/refineryUtility/productionNormsApiService'
 import { validateFields } from 'utils/validationUtils'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import Notification from 'components/Utilities/Notification'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import KendoDataTables from './index'
+import { ProductionNormsApiService } from 'services/production-norms-api-service'
 
-const TreatmentVendor = () => {
+const ModeSelectionCracker = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year, oldYear, isReleased } =
@@ -24,7 +23,6 @@ const TreatmentVendor = () => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
@@ -51,11 +49,8 @@ const TreatmentVendor = () => {
           ...item,
           idFromApi: item?.normParameterFKId,
           id: index,
-          Type: item?.TypeDisplayName || 'Utility Consumption',
-          remarks: item?.remarks || '',
-          originalRemark: item?.remarks || '',
           isEditable: item?.isEditable ?? true,
-          ParticularG: item?.normTypeName|| 'Vendors',
+          ParticularG: item?.normTypeName || 'Vendors',
         }))
         setRows(formattedData)
       } else {
@@ -89,7 +84,7 @@ const TreatmentVendor = () => {
       },
       {
         field: 'DisplayName',
-        title: 'Vendors',
+        title: 'Mode Name',
         editable: false,
         width: 300,
         minWidth: 250,
@@ -103,19 +98,11 @@ const TreatmentVendor = () => {
         widthT: 150,
         type: 'checkbox',
         editable: true,
-      },
-      {
-        field: 'remarks',
-        title: 'Remark',
-        editable: true,
-        width: 300,
-        minWidth: 250,
-        widthT: 300,
-      },
+      }
     ]
 
     return columns
-  }, [valueFormat])
+  }, [])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -177,116 +164,31 @@ const TreatmentVendor = () => {
     }
   }, [modifiedCells, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
-  const handleExcelUpload = async (file) => {
-    setLoading(true)
-    try {
-      const response =
-        await ProductionNormsApiService.importTreatmentVendorExcel(
-          file,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      if (response?.code === 200) {
-        setSnackbarData({
-          message: 'Imported Successfully!',
-          severity: 'success',
-        })
-        setSnackbarOpen(true)
-        fetchData()
-      } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
 
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'Error File - Treatment Vendor.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Upload Failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      console.error('Error importing Treatment Vendor data:', error)
-      setSnackbarData({ message: 'Error importing data', severity: 'error' })
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const downloadExcelForConfiguration = async () => {
-    try {
-      setSnackbarData({ message: 'Export Started!', severity: 'success' })
-      setSnackbarOpen(true)
-      const excelName = `${verticalObject?.name}_${siteObject?.name}_${plantObject?.name}_Treatment Vendor`
-      await ProductionNormsApiService.exportTreatmentVendorExcel(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        excelName,
-      )
-      setSnackbarData({ message: 'Export Successful!', severity: 'success' })
-      setSnackbarOpen(true)
-    } catch (error) {
-      console.error('Error exporting Treatment Vendor data:', error)
-      setSnackbarData({ message: 'Error exporting data', severity: 'error' })
-      setSnackbarOpen(true)
-    }
-  }
-
-  // Simplified: no vertical/site conditions — same permissions apply to everyone.
-  // If it's an old year, everything gets locked down via the overrides below.
   const adjustedPermissions = useMemo(() => {
     const basePermissions = {
-      showAction: true,
-      saveWithRemark: true,
-      saveBtn: true,
       allAction: true,
+      saveBtn: true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      titleName: 'Mode Selection',
       showTitleNameBusiness: true,
-      showExport: false,
-      ExcelName: `Treatment Vendor_${AOP_YEAR}`,
-      showImport: false,
-      showCalculate: false,
-      showCalculateVisibility: true,
+      isTotalFooterActive: false,
     }
 
     if (isOldYear) {
       return {
         ...basePermissions,
-        showAction: false,
+        allAction: false,
         addButton: false,
         deleteButton: false,
-        downloadExcelBtn: false,
-        showExport: false,
-        showImport: false,
         editButton: false,
         showUnit: false,
         saveWithRemark: false,
         saveBtn: false,
-        isOldYear: true,
-        allAction: false,
+        isOldYear: isOldYear,
+        downloadExcelBtn: false,
+        uploadExcelBtn: false,
       }
     }
 
@@ -296,14 +198,14 @@ const TreatmentVendor = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <AdvanceKendoTable
+      <KendoDataTables
         rows={rows}
         setRows={setRows}
         columns={colDefs}
         permissions={adjustedPermissions}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='Treatment Vendor'
+        title='Mode Selection'
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -311,8 +213,6 @@ const TreatmentVendor = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        handleExcelUpload={handleExcelUpload}
-        handleExport={downloadExcelForConfiguration}
         plantID={PLANT_ID}
         groupBy='ParticularG'
       />
@@ -327,4 +227,4 @@ const TreatmentVendor = () => {
   )
 }
 
-export default TreatmentVendor
+export default ModeSelectionCracker

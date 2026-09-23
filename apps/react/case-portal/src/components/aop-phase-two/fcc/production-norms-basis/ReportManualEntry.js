@@ -71,7 +71,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -82,7 +83,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -93,7 +95,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -104,7 +107,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -115,7 +119,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -126,7 +131,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -137,7 +143,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -148,7 +155,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -159,7 +167,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -170,7 +179,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -181,7 +191,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {
@@ -192,7 +203,8 @@ const ReportManualEntry = ({ startDate, endDate }) => {
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
-      type: 'number',
+      type: 'number1',
+      allowNegative: true,
       format: valueFormat,
     },
     {

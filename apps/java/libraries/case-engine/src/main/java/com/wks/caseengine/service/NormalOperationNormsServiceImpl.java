@@ -586,9 +586,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
                 displayHeader = "SAP MAT Code";
             } else if (key != null && key.equals(ytdKey)) {
                 displayHeader = "YTD Norms";
-            } else if (fieldToTitleMap.containsKey(key)) {
+            }
+			else if (key != null && key.equals(uomKey)) { 
+                 displayHeader = "UOM / MT";
+			}
+			else if (fieldToTitleMap.containsKey(key)) {
                 displayHeader = fieldToTitleMap.get(key);
-            } else {
+            } 
+	
+			else {
                 displayHeader = formatTitle(key);
             }
 
@@ -882,10 +888,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
                     } else if (sanitized.equalsIgnoreCase("UOM")) {
                         mappedKey = "UOM";
                         value = getStringCellValue(cell);
-                    } else if (sanitized.equalsIgnoreCase("YTDNorms") || sanitized.equalsIgnoreCase("YTD")) {
+                    } else if (sanitized.equalsIgnoreCase("YTDNorms") || sanitized.equalsIgnoreCase("YTD") || sanitized.equalsIgnoreCase("OverallAOPWtAvg")) {
                         mappedKey = "YTD";
                         value = getStringCellValue(cell);
-                    } else if (sanitized.equalsIgnoreCase("WtAvg")) {
+                    } else if (sanitized.equalsIgnoreCase("WtAvg") || sanitized.equalsIgnoreCase("WtAvg(YTD)")) {
 	                        mappedKey = "WtAvg";
 	                        value = getNumericCellValue(cell);
 	                    } else if (sanitized.equalsIgnoreCase("Remarks")) {
@@ -4784,6 +4790,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			AOPMessageVM aopMessageVM = getNormalOperationNormsData(year, plantFKId.toString(), gradeId, mode);
 			List<Boolean> isEditable = new ArrayList<>();
 			Plants plant = plantsRepository.findById(plantFKId).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean polyester = vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("Staple");
 			if (!isAfterSave) {
 				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
 				dtoList = (List<MCUNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
@@ -4867,7 +4875,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			innerHeaders.add("Type");
 			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
+			if(polyester) {
+				innerHeaders.add("UOM / MT");
+			} else {
+				innerHeaders.add("UOM");
+			}
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
 			

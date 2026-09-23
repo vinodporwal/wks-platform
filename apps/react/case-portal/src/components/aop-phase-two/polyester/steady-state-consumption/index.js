@@ -88,8 +88,8 @@ const SteadyStateConsumption = () => {
     },
     {
       field: 'UOM',
-      title: 'UOM',
-      minWidth: 100,
+      title: 'UOM / MT',
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
