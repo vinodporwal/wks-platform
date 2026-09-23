@@ -84,7 +84,7 @@ const Constants = ({ startDate, endDate }) => {
           align: 'left',
           headerAlign: 'left',
           type: 'uomWholeNumber',
-          // format: valueFormat,
+          format: valueFormat,
         },
         {
           field: 'oct',
@@ -96,7 +96,7 @@ const Constants = ({ startDate, endDate }) => {
           align: 'left',
           headerAlign: 'left',
           type: 'uomWholeNumber',
-          // format: valueFormat,
+          format: valueFormat,
         },
       )
     } else {
@@ -110,7 +110,7 @@ const Constants = ({ startDate, endDate }) => {
         align: 'left',
         headerAlign: 'left',
         type: 'uomWholeNumber',
-        // format: valueFormat,
+        format: valueFormat,
       })
     }
 
