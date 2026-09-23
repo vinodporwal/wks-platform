@@ -1774,7 +1774,9 @@ data.put("assignedToLabel", assignedToLabel);
             throw new IllegalStateException("Export limit exceeded (100,000 max)");
         }
 
-        return generateExcel(cases);
+        byte[] excelBytes = generateExcel(cases);
+        log.info("Successfully generated Excel export with {} cases for caseDefinitionId: {}", cases.size(), caseDefinitionId);
+        return excelBytes;
     }
 
 private byte[] generateExcel(List<Case> cases) {
@@ -1816,6 +1818,7 @@ private byte[] generateExcel(List<Case> cases) {
 
             String caseTitle = "";
             String mainAsset = "";
+            String caseAssignedTo = "";
 
             try {
                 if (c.getAttributes() != null && !c.getAttributes().isEmpty()) {
@@ -1828,6 +1831,7 @@ private byte[] generateExcel(List<Case> cases) {
 
                     caseTitle = root.path("caseTitle").asText("");
                     mainAsset = root.path("textField1").asText("");
+                    caseAssignedTo = root.path("caseAssignedTo").asText("");
                 }
 
             } catch (Exception e) {
@@ -1858,11 +1862,11 @@ private byte[] generateExcel(List<Case> cases) {
                             :  "n".equalsIgnoreCase(c.getIsDraft()) ? "Submitted" : "Overdue"
             );
 
-            row.createCell(5).setCellValue(
-                    c.getAssignedTo() != null && c.getAssignedTo().get(0).getEmailId() != null
-                            ? c.getAssignedTo().get(0).getEmailId()
-                            : ""
-            );
+          if (caseAssignedTo.isEmpty() && c.getAssignedTo() != null && !c.getAssignedTo().isEmpty() &&
+          c.getAssignedTo().get(0).getEmailId() != null) {
+                caseAssignedTo = c.getAssignedTo().get(0).getEmailId();
+             }
+            row.createCell(5).setCellValue(caseAssignedTo);
 
             // Write Created On as a proper Excel date cell
             Cell dateCell = row.createCell(6);
