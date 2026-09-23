@@ -276,27 +276,27 @@ const ProposedSteadyStateConsumption = () => {
       field: 'sapCode',
       title: 'SAP MAT Code',
       editable: false,
-      fixedWidth: 100,
+      minWidth: 130,
     },
     {
       field: 'productName',
       title: 'Particulars',
       editable: false,
-      fixedWidth: 250,
+      minWidth: 250,
       locked: true,
     },
     {
       field: 'UOM',
       title: 'UOM  / MT',
       editable: false,
-      fixedWidth: 100,
+      minWidth: 100,
     },
     {
       field: 'lastFY',
       title: 'Last FY',
       editable: false,
       type: 'number',
-      fixedWidth: 150,
+      minWidth: 130,
       format: valueFormat
     },
     {
@@ -304,7 +304,7 @@ const ProposedSteadyStateConsumption = () => {
       title: 'Actual Last FY',
       editable: false,
       type: 'number',
-      fixedWidth: 150,
+      minWidth: 130,
       format: valueFormat
     },
     {
@@ -312,7 +312,7 @@ const ProposedSteadyStateConsumption = () => {
       title: 'Sys Gen',
       editable: false,
       type: 'number',
-      fixedWidth: 150,
+      minWidth: 130,
       format: valueFormat
     },
     {
@@ -320,14 +320,14 @@ const ProposedSteadyStateConsumption = () => {
       title: 'Proposed',
       editable: true,
       type: 'numberNonGrey',
-      fixedWidth: 150,
+      minWidth: 130,
       format: valueFormat
     },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
-      fixedWidth: 200,
+      minWidth: 200,
     },
   ]
 

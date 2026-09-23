@@ -369,7 +369,7 @@ const ManualEntry = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // groupBy={['type']}
+        groupBy={['type']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
