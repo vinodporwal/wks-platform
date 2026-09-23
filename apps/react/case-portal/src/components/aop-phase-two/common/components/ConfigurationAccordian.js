@@ -79,13 +79,16 @@ const ConfigurationAccordian = ({
   const isHideLoadButton = useMemo(() => {
     const validConfigs = [
       { vertical: 'refinery utility', site: 'dmd' },
+      { vertical: 'refinery utility', site: 'sez', plant: 'air' },
+      { vertical: 'refinery utility', site: 'sez', plant: 'c2_asu' },
     ]
     return validConfigs.some(
       (config) =>
         config.vertical === VERTICAL_NAME &&
-        config.site === SITE_NAME
+        config.site === SITE_NAME &&
+        (!config.plant || config.plant === PLANT_NAME)
     )
-  }, [VERTICAL_NAME, SITE_NAME])
+  }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
   // State management
   const [startDate, setStartDate] = useState()
