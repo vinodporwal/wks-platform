@@ -3,6 +3,7 @@ package com.wks.caseengine.service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -99,6 +101,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	
 	@Autowired
 	private SlowdownNormsService slowdownNormsService;
+	
+	@Autowired
+	private ShutDownPlanService shutDownPlanService;
 
 	// Inject or set your DataSource (e.g., via constructor or setter)
 	public ShutdownNormsServiceImpl(DataSource dataSource) {
@@ -1752,21 +1757,18 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 	public byte[] exportShutdownConsumption(String year, UUID plantFKId, boolean isAfterSave, List<ShutdownNormsValueDTO> dtoList,String gradeId) {
 		try {
-			AOPMessageVM aopMessageVM = getShutdownNormsData( year,  plantFKId.toString(), gradeId);
-
+			
 			Plants plant = plantsRepository.findById(plantFKId).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
 			boolean filament = vertical.getName().equalsIgnoreCase("Filament");
 			boolean staple = vertical.getName().equalsIgnoreCase("Staple");
 
 			if(filament || staple) {
-				// seperate method to include sap code in export 
 				return exportShutdownConsumptionWithSapCode(year, plantFKId, isAfterSave, dtoList, gradeId);
 			}
 			
-					
+			AOPMessageVM aopMessageVM = getShutdownNormsData( year,  plantFKId.toString(), gradeId);		
 			List<Boolean> isEditable = new ArrayList<>();
 
 			if (!isAfterSave) {
@@ -1894,10 +1896,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			e.printStackTrace();
 		}
 		return null;
-
 	}
 	
-	// ref: exportShutdownConsumption | new method to include sap code in export 
 	public byte[] exportShutdownConsumptionWithSapCode(String year, UUID plantFKId, boolean isAfterSave, List<ShutdownNormsValueDTO> dtoList, String gradeId) {
 		try {
 			AOPMessageVM aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), gradeId);
@@ -1908,19 +1908,50 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				dtoList = (List<ShutdownNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
 			}
 
+			List<String> activeShutdownMonths = shutDownPlanService.getShutdownMonths(plantFKId, null, year, gradeId);
+			Set<String> activeMonthSet = new HashSet<>();
+			if (activeShutdownMonths != null) {
+				for (Object monthObj : activeShutdownMonths) {
+					if (monthObj != null) {
+						activeMonthSet.add(String.valueOf(monthObj).trim());
+					}
+				}
+			}
+			Map<Integer, String> colToMonthMap = new HashMap<>();
+			colToMonthMap.put(4, "4");   
+			colToMonthMap.put(5, "5");   
+			colToMonthMap.put(6, "6");   
+			colToMonthMap.put(7, "7");   
+			colToMonthMap.put(8, "8");   
+			colToMonthMap.put(9, "9");   
+			colToMonthMap.put(10, "10"); 
+			colToMonthMap.put(11, "11"); 
+			colToMonthMap.put(12, "12"); 
+			colToMonthMap.put(13, "1");  
+			colToMonthMap.put(14, "2");  
+			colToMonthMap.put(15, "3");  
+
 			Workbook workbook = new XSSFWorkbook();
 			Sheet sheet = workbook.createSheet("Sheet1");
+			sheet.protectSheet("");
+
+			CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
+
+			CellStyle headerStyle = workbook.createCellStyle();
+			headerStyle.setBorderTop(BorderStyle.THIN);
+			headerStyle.setBorderBottom(BorderStyle.THIN);
+			headerStyle.setBorderLeft(BorderStyle.THIN);
+			headerStyle.setBorderRight(BorderStyle.THIN);
+			headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			Font headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			headerStyle.setFont(headerFont);
+
 			int currentRow = 0;
 
 			List<List<Object>> rows = new ArrayList<>();
-
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
 
 			for (ShutdownNormsValueDTO dto : dtoList) {
 				List<Object> list = new ArrayList<>();
@@ -1965,24 +1996,24 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				innerHeaders.add("Status");
 				innerHeaders.add("Error Description");
 			}
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
 
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-				}
+			int numCols = innerHeaders.size();
+
+			Row headerRow = sheet.createRow(currentRow++);
+			headerRow.setHeightInPoints(20f);
+			for (int col = 0; col < numCols; col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(innerHeaders.get(col));
+				cell.setCellStyle(headerStyle);
 			}
-			for (List<Object> rowData : rows) {
-				boolean isRowEditable = true;
-				if (isEditable.get(currentRow - 1) != null) {
-					isRowEditable = isEditable.get(currentRow - 1);
-				}
+
+			for (int i = 0; i < rows.size(); i++) {
+				List<Object> rowData = rows.get(i);
+				boolean isRowEditable = Boolean.TRUE.equals(isEditable.get(i));
 
 				Row row = sheet.createRow(currentRow++);
+				row.setHeightInPoints(16.5f);
+
 				for (int col = 0; col < rowData.size(); col++) {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
@@ -1996,24 +2027,35 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 					} else {
 						cell.setCellValue("");
 					}
-					if (isRowEditable) {
-						cell.setCellStyle(unlockedStyle);
-					} else {
-						cell.setCellStyle(lockedStyle);
-					}
+
+					if (col >= 4 && col <= 15) {
+						String monthNumber = colToMonthMap.get(col);
+						boolean isMonthActive = activeMonthSet.contains(monthNumber);
+
+						if (isRowEditable && isMonthActive) {
+							cell.setCellStyle(unlockedStyle);
+						} else {
+							cell.setCellStyle(lockedStyle);
+						}
+					} 
 				}
 			}
-			// Id at col 17, Material Id at col 18 (shifted by 1 due to Sap Code column)
+
 			sheet.setColumnHidden(17, true);
 			sheet.setColumnHidden(18, true);
 
-			try {
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			for (int col = 0; col < numCols; col++) {
+				if (col != 17 && col != 18) {
+					sheet.autoSizeColumn(col);
+					int currentWidth = sheet.getColumnWidth(col);
+					sheet.setColumnWidth(col, Math.max(currentWidth + 1200, 5000));
+				}
+			}
+
+			try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 				workbook.write(outputStream);
 				workbook.close();
 				return outputStream.toByteArray();
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
 
 		} catch (Exception e) {
@@ -2021,7 +2063,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		}
 		return null;
 	}
-
 	public byte[] exportDMDShutdownConsumption(String year, UUID plantFKId, boolean isAfterSave, List<ShutdownNormsValueDTO> dtoList, String gradeId) {
 		
 		Plants plant = plantsRepository.findById(plantFKId).get();
@@ -2137,12 +2178,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                    cell.setCellValue("");
 	                }
 
-	            
-	                // if (!isRowEditable) {
-	                    
-	                //     cell.setCellStyle(lockedGrayStyle);
-	                // } else
-						 if (col >= 3 && col <= 14) {
+					if (col >= 3 && col <= 14) {
 	                    
 	                    int monthNumber = getMonthNumberFromColumnIndex(col);
 	                    
