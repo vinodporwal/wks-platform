@@ -86,7 +86,7 @@ const LastFinacialYearGrid = () => {
       minWidth: 100,
     },
     {
-      field: 'displayName',
+      field: 'product',
       title: 'Particulars',
       editable: false,
       minWidth: 200,
@@ -110,15 +110,15 @@ const LastFinacialYearGrid = () => {
   ]
 
   const fetchData = useCallback(async () => {
-    if (!PLANT_ID || !previousFYFormatted) return
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await BusinessDemandApiService.getBusinessDemand(
+      const response = await BusinessDemandApiService.getLastFYNetProduction(
         keycloak,
         PLANT_ID,
-        previousFYFormatted,
+        AOP_YEAR,
       )
-      const data = response?.data?.businessDemandDataDTOList || []
+      const data = response?.data || []
       if (data && Array.isArray(data)) {
         const MONTH_FIELDS = monthsConfig.map((m) => m.field)
         const formattedData = data.map((item, index) => ({
@@ -137,7 +137,7 @@ const LastFinacialYearGrid = () => {
         // Vertical totals row (column-wise sum) — always built from raw TPM
         const totals = {
           id: '__totals__',
-          displayName: 'Total',
+          product: 'Total',
           isFooter: true,
           isEditable: false,
         }
@@ -156,7 +156,7 @@ const LastFinacialYearGrid = () => {
 
         // Convert to the selected unit once — stored directly in rows state
         // When selectedUnit changes this function re-runs via the useEffect below
-        setRows(convertRows(allRows, selectedUnit, previousFYFormatted))
+        setRows(convertRows(allRows, selectedUnit, AOP_YEAR))
         setModifiedCells({})
       } else {
         setRows([])
@@ -361,7 +361,6 @@ const LastFinacialYearGrid = () => {
         setSnackbarOpen={setSnackbarOpen}
         snackbarData={snackbarData}
         setSnackbarData={setSnackbarData}
-        customHeight={70}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
