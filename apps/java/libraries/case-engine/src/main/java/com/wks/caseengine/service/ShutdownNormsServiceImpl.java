@@ -2037,7 +2037,13 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						} else {
 							cell.setCellStyle(lockedStyle);
 						}
-					} 
+					} else {
+						if (isRowEditable) {
+							cell.setCellStyle(unlockedStyle);
+						} else {
+							cell.setCellStyle(lockedStyle);
+						}
+					}
 				}
 			}
 
