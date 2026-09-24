@@ -62,6 +62,8 @@ import pdfFonts from 'pdfmake/build/vfs_fonts'
 pdfMake.vfs = pdfFonts?.pdfMake?.vfs || pdfFonts?.vfs
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
+  const isClosedCase =
+    aCase?.status?.name?.toLowerCase() === 'closed'
   const [caseDef, setCaseDef] = useState(null)
   const [form, setForm] = useState(null)
   const [formData, setFormData] = useState(null)
@@ -1534,6 +1536,7 @@ const handleFormChange = (submission, flags, modified) => {
   // }
 
   const handleUpdateCaseStatus = (newStatus) => {
+    if (isClosedCase) return
     CaseService.patch(
       keycloak,
       aCase.businessKey,
@@ -2667,7 +2670,7 @@ const handleFormChange = (submission, flags, modified) => {
               >
                 Open Image
               </Button> */}
-              {aCase.status === CaseStatus.ClosedCaseStatus.description && (
+              {!isClosedCase && aCase.status === CaseStatus.ClosedCaseStatus.description && (
                 <React.Fragment>
                   <Button
                     color='inherit'
@@ -2829,7 +2832,7 @@ const handleFormChange = (submission, flags, modified) => {
                           bindRecommendationUserSearch(formInstance, keycloak)
                         }}
                         options={{
-                          // readOnly: true,
+                          readOnly: isClosedCase,
                           fileService: new StorageService(),
                         }}
                         // onSubmit={(submission) => {
@@ -2840,6 +2843,7 @@ const handleFormChange = (submission, flags, modified) => {
                         // }}
                         onCustomEvent={(event) => {
                           console.log('Form event:', event)
+                          if (isClosedCase) return
                           if (event.component.key === 'saveAsDraft') {
                             onSubmitForm()
                           } else if (
