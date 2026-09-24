@@ -189,7 +189,7 @@ const ShutdownConsumption = () => {
               remarks: item.remarks?.trim() || '',
               originalRemark: item.remarks?.trim() || '',
               id: index,
-              isEditable: true,
+              isEditable: item?.isEditable,
             }),
           )
           setRows(formattedData)
