@@ -1,11 +1,10 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/refineryUtility/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
@@ -31,7 +30,16 @@ const Constants = ({ startDate, endDate }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const valueFormat = customValueFormatterPhaseTwo(5)
+  const formatUomValue = (val, uom) => {
+    if (val === null || val === undefined || val === '') return ''
+    const num = parseFloat(val)
+    if (isNaN(num)) return val
+    const cleanUom = String(uom ?? '').trim().toLowerCase()
+    if (cleanUom === '%' || cleanUom.toLocaleLowerCase() === 'm3/hr') {
+      return Math.trunc(num).toString()
+    }
+    return (Math.trunc(num * 100) / 100).toFixed(2)
+  }
 
   useEffect(() => {
     const fetchPlantColumnConfig = async () => {
@@ -84,7 +92,6 @@ const Constants = ({ startDate, endDate }) => {
           align: 'left',
           headerAlign: 'left',
           type: 'uomWholeNumber',
-          format: valueFormat,
         },
         {
           field: 'oct',
@@ -96,7 +103,6 @@ const Constants = ({ startDate, endDate }) => {
           align: 'left',
           headerAlign: 'left',
           type: 'uomWholeNumber',
-          format: valueFormat,
         },
       )
     } else {
@@ -110,7 +116,6 @@ const Constants = ({ startDate, endDate }) => {
         align: 'left',
         headerAlign: 'left',
         type: 'uomWholeNumber',
-        format: valueFormat,
       })
     }
 
@@ -125,7 +130,7 @@ const Constants = ({ startDate, endDate }) => {
     })
 
     return baseCols
-  }, [isTwoColumnPlant, valueFormat])
+  }, [isTwoColumnPlant])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -148,15 +153,31 @@ const Constants = ({ startDate, endDate }) => {
       }
 
       // console.log('Constants data:', res)
-      const formattedData = res?.data?.map((item, index) => ({
-        ...item,
-        productName: item?.DisplayName || item?.Name || item?.productName || '',
-        value: item?.apr !== undefined && item?.apr !== null ? item?.apr : (item?.value ?? ''),
-        apr: item?.apr !== undefined && item?.apr !== null ? item?.apr : (item?.value ?? ''),
-        oct: item?.oct !== undefined && item?.oct !== null ? item?.oct : '',
-        remarks: item?.remarks || '',
-        id: item?.normParameterFKId || item?.id || index + 1,
-      }))
+      const formattedData = res?.data?.map((item, index) => {
+        const uom = item?.UOM || item?.uom || ''
+        const rawApr =
+          item?.apr !== undefined && item?.apr !== null
+            ? item?.apr
+            : item?.value ?? ''
+        const rawOct =
+          item?.oct !== undefined && item?.oct !== null ? item?.oct : ''
+        const formattedApr = formatUomValue(rawApr, uom)
+        const formattedOct =
+          rawOct !== '' && rawOct !== null && rawOct !== undefined
+            ? formatUomValue(rawOct, uom)
+            : ''
+
+        return {
+          ...item,
+          productName:
+            item?.DisplayName || item?.Name || item?.productName || '',
+          value: formattedApr,
+          apr: formattedApr,
+          oct: formattedOct,
+          remarks: item?.remarks || '',
+          id: item?.normParameterFKId || item?.id || index + 1,
+        }
+      })
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
@@ -421,6 +442,31 @@ const Constants = ({ startDate, endDate }) => {
     setRemarkDialogOpen(true)
   }
 
+  const handleItemChange = useCallback((e, setRows, setModifiedCells) => {
+    const { dataItem, field, value } = e
+    if (field === 'apr' || field === 'oct' || field === 'value') {
+      const uom = dataItem?.UOM || dataItem?.uom || ''
+      const formatted = formatUomValue(value, uom)
+      if (formatted !== value) {
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === dataItem.id ? { ...r, [field]: formatted } : r,
+          ),
+        )
+        setModifiedCells((prev) => {
+          const rowMod = prev[dataItem.id] || {}
+          return {
+            ...prev,
+            [dataItem.id]: {
+              ...rowMod,
+              [field]: formatted,
+            },
+          }
+        })
+      }
+    }
+  }, [])
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -433,6 +479,7 @@ const Constants = ({ startDate, endDate }) => {
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
+        customItemChange={handleItemChange}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}
