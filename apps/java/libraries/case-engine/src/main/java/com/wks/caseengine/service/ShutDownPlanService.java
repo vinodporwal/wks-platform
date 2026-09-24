@@ -45,6 +45,7 @@ public interface ShutDownPlanService {
 	public AOPMessageVM getShutdownDescription(String plantId);
 	public List getShutdownMonths(UUID plantId,String maintenanceName,String year,String gradeId);
 	void deleteShutPlanData(UUID plantMaintenanceTransactionId, UUID plantId);
+	void deleteShutdown(UUID plantMaintenanceTransactionId, UUID plantId);
 	AOPMessageVM deleteMultipleShutdown(List<UUID> plantMaintenanceTransactionId, UUID plantId);
 	
 }
