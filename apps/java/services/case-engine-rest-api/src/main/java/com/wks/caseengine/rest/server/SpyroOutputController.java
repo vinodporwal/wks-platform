@@ -2,7 +2,7 @@ package com.wks.caseengine.rest.server;
 
 
 import java.util.List;
-
+import java.util.Map;
 import java.util.UUID;
 
 import com.wks.caseengine.service.SpyroOutputService;
@@ -49,6 +49,12 @@ public class SpyroOutputController {
 		return	spyroOutputService.getSpyroOutputYieldData(year, plantId);
 	}
 
+	// ref: /spyro-output/yield | new api for without mode logic
+	@GetMapping(value="/spyro-output/yield-cracker")
+	public AOPMessageVM getDynamicYieldCracker(@RequestParam String plantId,@RequestParam String year){
+		return	spyroOutputService.getDynamicYieldCracker(plantId, year);
+	}
+
 
 	@GetMapping(value="/spyro-output/yield-dynamic")
 	public AOPMessageVM getDynamicYield(
@@ -56,6 +62,14 @@ public class SpyroOutputController {
 			@RequestParam String year,
 			@RequestParam String mode) {
 		return spyroOutputService.getDynamicYield(plantId, year, mode);
+	}
+
+	@PostMapping(value="/spyro-output/yield-cracker")
+	public AOPMessageVM updateDynamicYieldCracker(
+			@RequestParam String plantId,
+			@RequestParam String year,
+			@RequestBody List<Map<String, Object>> payload) {
+		return spyroOutputService.updateDynamicYieldCracker(plantId, year, payload);
 	}
 	
 	@GetMapping(value="/spyro-output/yield-dmd")
