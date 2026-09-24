@@ -62,4 +62,8 @@ public interface SpyroOutputService {
 	byte[] createExcelWithPilotFurnace(String year, String plantId, String mode, boolean isAfterSave,
 			Map<String, List<SpyroOutputDTO>> mapForExcel);
 
+	AOPMessageVM updateDynamicYieldCracker(String plantId, String year, List<Map<String, Object>> payload);
+
+	AOPMessageVM getDynamicYieldCracker(String plantId, String year);
+
 }
