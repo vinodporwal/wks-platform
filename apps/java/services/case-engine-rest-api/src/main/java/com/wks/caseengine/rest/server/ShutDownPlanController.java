@@ -255,6 +255,12 @@ public class ShutDownPlanController {
 		  	    
 		  	    return ResponseEntity.ok("Shutdown records " + plantMaintenanceTransactionId + " deleted successfully for Plant ID " + plantId);
 		  	}
+		  	
+		  	@DeleteMapping("/delete-shutdown/{plantMaintenanceTransactionId}/{plantId}")
+		    public ResponseEntity<String> deleteShutdown(@PathVariable UUID plantMaintenanceTransactionId,@PathVariable UUID plantId) {	
+			  shutDownPlanService.deleteShutdown(plantMaintenanceTransactionId,plantId);
+		      return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
+		    }
 		  
 		  	@DeleteMapping("/shutdown")
 		    public AOPMessageVM deleteMultipleShutdown(@RequestParam List<UUID> plantMaintenanceTransactionIds,@RequestParam UUID plantId) {	
