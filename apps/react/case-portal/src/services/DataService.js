@@ -145,6 +145,9 @@ export const DataService = {
   ImportSlowdownElastomerDetails,
   getConfigurationExcelType,
 
+  getDynamicYieldCracker,
+  updateDynamicYieldCracker,
+
   getProductionReports,
   gradeDetails,
   carryForwardRecords,
@@ -639,6 +642,43 @@ async function getProductionVolDataBasisPe(
     return Promise.reject(e)
   }
 }
+
+async function getDynamicYieldCracker(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-output/yield-cracker?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
+async function updateDynamicYieldCracker(keycloak, payload, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-output/yield-cracker?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
 async function getBestAchievedNorms(keycloak, reportType, PLANT_ID, AOP_YEAR) {
   let url = `${Config.CaseEngineUrl}/task/report/best-achieved?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${reportType}`
 
