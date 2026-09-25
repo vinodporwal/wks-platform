@@ -21,6 +21,18 @@ public class NetProductionDTO {
     private String sapMATCode;
     private String product;
     private String month;
+    private Double jan;
+    private Double feb;
+    private Double mar;
+    private Double apr;
+    private Double may;
+    private Double jun;
+    private Double jul;
+    private Double aug;
+    private Double sep;
+    private Double oct;
+    private Double nov;
+    private Double dec;
     private Double actualQty;
     private String uom;
 

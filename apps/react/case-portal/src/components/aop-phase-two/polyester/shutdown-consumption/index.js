@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
@@ -46,6 +46,7 @@ const ShutdownConsumption = () => {
   const [selectedUnit, setSelectedUnit] = useState('TPH')
   const [loading, setLoading] = useState(false)
   const [grades, setGrades] = useState([])
+  const [shutdownMonths, setShutdownMonths] = useState([])
   const [selectedGradeId, setSelectedGradeId] = useState(null)
 
   const [snackbarData, setSnackbarData] = useState({
@@ -72,7 +73,8 @@ const ShutdownConsumption = () => {
     { field: 'march', key: 3, title: 'Mar' },
   ]
 
-  const columns = [
+  const columns = useMemo(() => {
+    return [
     {
       field: 'idFromApi',
       title: 'ID',
@@ -125,7 +127,7 @@ const ShutdownConsumption = () => {
     ...monthsConfig.map((m) => ({
       field: m.field,
       title: headerMap[m.key] || m.title,
-      editable: true,
+      editable: shutdownMonths.some(month => Number(month) === m.key),
       type: 'numberNonGrey',
       format: valueFormat,
       minWidth: 100,
@@ -138,33 +140,25 @@ const ShutdownConsumption = () => {
       minWidth: 160,
     },
   ]
+  }, [headerMap, valueFormat, shutdownMonths])
 
   // Fetch shutdown consumption data
-  const fetchGrades = useCallback(async () => {
+  const fetchActiveMonths = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
       const response =
-        await ShutdownConsumptionApiService.getGradesForShutdownNorms(
+        await ShutdownConsumptionApiService.getShutdownMonths(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-
-      if (response?.code === 200) {
-        const gradeList = response?.data || []
-        setGrades(gradeList)
-        // Auto-select first grade on initial load
-        if (gradeList.length > 0 && !selectedGradeId) {
-          setSelectedGradeId(gradeList[0].gradeId || gradeList[0].id)
-        }
-      } else {
-        setGrades([])
+        const monthsList = Array.isArray(response) ? response : response?.data || []
+        setShutdownMonths(monthsList)
+      } catch (error) {
+        setShutdownMonths([])
+        console.error('Error fetching data:', error)
       }
-    } catch (error) {
-      setGrades([])
-      console.error('Error fetching shutdown consumption data:', error)
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak])
+    }, [PLANT_ID, AOP_YEAR, keycloak])
 
   const fetchData = useCallback(
     async (gradeId) => {
@@ -195,7 +189,7 @@ const ShutdownConsumption = () => {
               remarks: item.remarks?.trim() || '',
               originalRemark: item.remarks?.trim() || '',
               id: index,
-              isEditable: true,
+              isEditable: item?.isEditable,
             }),
           )
           setRows(formattedData)
@@ -216,9 +210,9 @@ const ShutdownConsumption = () => {
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
-    setGrades([])
-    setSelectedGradeId(null)
+    setShutdownMonths([])
     fetchData()
+    fetchActiveMonths()
   }, [PLANT_ID, AOP_YEAR])
 
   // Re-fetch data when selectedGradeId or selectedUnit changes

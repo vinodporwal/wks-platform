@@ -30,6 +30,15 @@ const OverallAopConsumption = () => {
 
   const columns = [
     {
+      field: 'sapCode',
+      title: 'SAP MAT Code',
+      widthT: 250,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+      locked: true,
+    },
+    {
       field: 'productName',
       title: 'Particulars',
       widthT: 250,
@@ -271,7 +280,7 @@ const OverallAopConsumption = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
-    showCalulcationPromt:true,
+    showCalulcationPromt: true,
   }
 
   return (

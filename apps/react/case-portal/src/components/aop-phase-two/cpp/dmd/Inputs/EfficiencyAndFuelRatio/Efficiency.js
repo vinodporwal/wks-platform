@@ -1,22 +1,34 @@
-import { useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
+import { useSelector } from 'react-redux'
+import { useSession } from 'SessionStoreContext'
+import { EfficiencyAndFuelRatioAPIService } from 'components/aop-phase-two/services/cpp/jmd/efficiencyAndFuelRatioApiService'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-
-// TODO: replace dummy data with API integration once endpoints are ready
-const DUMMY_ROWS = [
-  { id: 'eff_1', assetName: 'CCPP STG-1', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_2', assetName: 'CCPP STG-2', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_3', assetName: 'CCPP STG-3', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_4', assetName: 'CPP STG-1', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_5', assetName: 'CPP STG-2', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_6', assetName: 'CCPP1 SHP', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_7', assetName: 'CCPP2 SHP', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_8', assetName: 'CCPP3 SHP', uom: '%', value: 90, remarks: '' },
-  { id: 'eff_9', assetName: 'CCPP4 SHP', uom: '%', value: 90, remarks: '' },
-]
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
 
 const Efficiency = () => {
+  const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { plantObject, siteObject, jmdSelectedPlants, year } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const IS_JMD = siteObject?.name?.toLowerCase() === 'jmd'
+  const AOP_YEAR = year?.selectedYear
+
+  // For JMD plants we send the full list of selected plants; for non-JMD
+  // we send only the currently selected plant.
+  const PLANT_ID_LIST = useMemo(
+    () =>
+      IS_JMD
+        ? jmdSelectedPlants?.map((plant) => plant.id) ?? []
+        : PLANT_ID
+          ? [PLANT_ID]
+          : [],
+    [plantObject, jmdSelectedPlants, siteObject],
+  )
+
   const [modifiedCells, setModifiedCells] = useState({})
+  const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -25,7 +37,7 @@ const Efficiency = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const [rows, setRows] = useState(DUMMY_ROWS)
+  const [rows, setRows] = useState([])
 
   const columns = [
     {
@@ -33,7 +45,15 @@ const Efficiency = () => {
       title: 'Asset Name',
       type: 'text',
       editable: false,
+      locked: true,
       minWidth: 200,
+    },
+    {
+      field: 'type',
+      title: 'Type',
+      type: 'text',
+      editable: false,
+      minWidth: 100,
     },
     {
       field: 'uom',
@@ -59,6 +79,54 @@ const Efficiency = () => {
     },
   ]
 
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID_LIST.length || !AOP_YEAR) return
+    setLoading(true)
+    try {
+      const response = await EfficiencyAndFuelRatioAPIService.getEfficiency(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+      )
+      const data = response?.data || []
+
+      if (!data || data.length === 0) {
+        setRows([])
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No data found', severity: 'info' })
+        return
+      }
+
+      const rowsWithId = data.map((row, index) => ({
+        ...row,
+        id: row.id || `row_${index}`,
+        remarks: row.remarks || '',
+      }))
+      setRows(rowsWithId)
+    } catch (error) {
+      console.error('Error fetching efficiency data:', error)
+      setRows([])
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchData()
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR],
+  )
+
+  useEffect(() => {
+    setModifiedCells({})
+  }, [PLANT_ID_LIST, AOP_YEAR])
+
   const permissions = {
     showAction: true,
     addButton: false,
@@ -70,7 +138,8 @@ const Efficiency = () => {
     titleName: 'Efficiency',
   }
 
-  const saveChanges = () => {
+  const saveChanges = async () => {
+    setLoading(true)
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
       setSnackbarOpen(true)
@@ -78,15 +147,55 @@ const Efficiency = () => {
         message: 'No Records to Save!',
         severity: 'info',
       })
+      setLoading(false)
       return
     }
 
-    setModifiedCells({})
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: `Successfully saved ${modifiedData.length} changes!`,
-      severity: 'success',
-    })
+    const data = modifiedData.filter((row) => row.inEdit)
+    if (data.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'No Records to Save!',
+        severity: 'info',
+      })
+      setLoading(false)
+      return
+    }
+
+    try {
+      const payload = data.map((item) => {
+        const { inEdit, isNew, isEditable, ...rest } = item
+        return {
+          ...rest,
+          id: isNew ? null : rest.id,
+          aopYear: AOP_YEAR,
+        }
+      })
+
+      await EfficiencyAndFuelRatioAPIService.saveEfficiency(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+        payload,
+      )
+
+      setModifiedCells({})
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Successfully saved ${modifiedData.length} changes!`,
+        severity: 'success',
+      })
+      fetchData()
+    } catch (error) {
+      console.error('Error saving efficiency data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to save changes. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleRemarkCellClick = (row) => {
@@ -97,6 +206,7 @@ const Efficiency = () => {
 
   return (
     <Box>
+      <LoaderBackdrop open={!!loading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
@@ -114,6 +224,7 @@ const Efficiency = () => {
         setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
+        groupBy={'type'}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}

@@ -8,6 +8,7 @@ export const BusinessDemandApiService = {
   importBusinessDemand,
   deleteBusinessDemand,
   getProductionTarget,
+  getLastFYNetProduction
 }
 
 // ========================|| Business Demand APIs ||=====================================//
@@ -21,6 +22,31 @@ export const BusinessDemandApiService = {
  */
 async function getBusinessDemand(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/business-demand?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+/**
+ * Get Business Demand NetProduction Data
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Business demand data
+ */
+async function getLastFYNetProduction(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/net-production?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

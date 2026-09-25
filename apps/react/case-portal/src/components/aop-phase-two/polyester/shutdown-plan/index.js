@@ -577,11 +577,12 @@ const ShutdownPlan = () => {
   // ─── Delete Selected ───────────────────────────────────────────────────────────────────
 
   const handleDeleteSelected = async (deleteIds) => {
-    if (!deleteIds || deleteIds?.length === 0) return
+    const validIds = (deleteIds || []).filter(Boolean)
+    if (validIds.length === 0) return
     setLoading(true)
     try {
       await ShutdownPlanApiService.deleteMultipleShutdown(
-        deleteIds,
+        validIds,
         keycloak,
         PLANT_ID,
       )

@@ -18,6 +18,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
 import javax.sql.DataSource;
+import java.time.Month;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -205,19 +209,71 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			obj = findNetProductionData(year, UUID.fromString(plantId), procedure);
 			 
 			System.out.println("obj" + obj);
-			List<NetProductionDTO> netProductionDTOs = new ArrayList<>();
+			
+			Map<String, NetProductionDTO> dtoMap = new LinkedHashMap<>();
 
 			for (Object[] row : obj) {
-				NetProductionDTO netProductionDTO = new NetProductionDTO();
+			    String sapMATCode = row[0] != null ? row[0].toString() : "";
+			    String product = row[1] != null ? row[1].toString() : "";
+			    String monthStr = row[2] != null ? row[2].toString() : null; 
+			    Double actualQty = row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0;
+			    String uom = row[4] != null ? row[4].toString() : "";
 
-				netProductionDTO.setSapMATCode(row[0] != null ? row[0].toString() : "");
-				netProductionDTO.setProduct(row[1] != null ? row[1].toString() : "");
-				netProductionDTO.setMonth(row[2] != null ? row[2].toString() : null);
-				netProductionDTO.setActualQty(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
-				netProductionDTO.setUom(row[4] != null ? row[4].toString() : null);
-				
-				netProductionDTOs.add(netProductionDTO);
+			    
+			    String groupKey = sapMATCode + "_" + product;
+
+
+			    NetProductionDTO dto = dtoMap.computeIfAbsent(groupKey, k -> {
+			        NetProductionDTO newDto = new NetProductionDTO();
+			        newDto.setSapMATCode(sapMATCode);
+			        newDto.setProduct(product);
+			        newDto.setUom(uom);
+			        
+			        
+			        newDto.setJan(0.0);
+			        newDto.setFeb(0.0);
+			        newDto.setMar(0.0);
+			        newDto.setApr(0.0);
+			        newDto.setMay(0.0);
+			        newDto.setJun(0.0);
+			        newDto.setJul(0.0);
+			        newDto.setAug(0.0);
+			        newDto.setSep(0.0);
+			        newDto.setOct(0.0);
+			        newDto.setNov(0.0);
+			        newDto.setDec(0.0);
+			        
+			        return newDto;
+			    });
+
+			   
+			    if (monthStr != null && !monthStr.isEmpty()) {
+			        try {
+			            
+			            String monthPart = monthStr.split("-")[0].toUpperCase();
+			            
+			            switch (monthPart) {
+			                case "JAN": case "JANUARY": case "01": case "1": dto.setJan(actualQty); break;
+			                case "FEB": case "FEBRUARY": case "02": case "2": dto.setFeb(actualQty); break;
+			                case "MAR": case "MARCH": case "03": case "3": dto.setMar(actualQty); break;
+			                case "APR": case "APRIL": case "04": case "4": dto.setApr(actualQty); break;
+			                case "MAY": dto.setMay(actualQty); break;
+			                case "JUN": case "JUNE": case "06": case "6": dto.setJun(actualQty); break;
+			                case "JUL": case "JULY": case "07": case "7": dto.setJul(actualQty); break;
+			                case "AUG": case "AUGUST": case "08": case "8": dto.setAug(actualQty); break;
+			                case "SEP": case "SEPTEMBER": case "09": case "9": dto.setSep(actualQty); break;
+			                case "OCT": case "OCTOBER": case "10": dto.setOct(actualQty); break;
+			                case "NOV": case "NOVEMBER": case "11": dto.setNov(actualQty); break;
+			                case "DEC": case "DECEMBER": case "12": dto.setDec(actualQty); break;
+			            }
+			        } catch (Exception e) {
+			           
+			        }
+			    }
 			}
+
+			
+			List<NetProductionDTO> netProductionDTOs = new ArrayList<>(dtoMap.values());
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
 			aopMessageVM.setData(netProductionDTOs);
