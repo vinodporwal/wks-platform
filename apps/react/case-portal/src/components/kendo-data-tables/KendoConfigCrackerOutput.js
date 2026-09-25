@@ -207,11 +207,11 @@ const CrackerConfig = () => {
       allAction: lowerVertName === 'cracker',
       modes: modes,
       uploadExcelBtn:
-        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+        (SITE_NAME === 'VMD' || SITE_NAME === 'NMD') && currentTabDisplay == 'Yield' ? false : true,
       downloadExcelBtn:
-        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+        (SITE_NAME === 'VMD' || SITE_NAME === 'NMD') && currentTabDisplay == 'Yield' ? false : true,
       downloadExcelBtnFromUI:
-        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? true : false,
+        (SITE_NAME === 'VMD' || SITE_NAME === 'NMD') && currentTabDisplay == 'Yield' ? true : false,
       ExcelName: `Production_Constarints_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`,
     },
     isOldYear,
