@@ -190,7 +190,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				shutdownNormsValueDTO.setNormParameterTypeName(row[24] != null ? row[24].toString() : null);
 				shutdownNormsValueDTO.setNormParameterTypeDisplayName(row[25] != null ? row[25].toString() : null);
 				shutdownNormsValueDTO.setUOM(row[28] != null ? row[28].toString() : null);
-				shutdownNormsValueDTO.setIsEditable(row[29] != null ? Boolean.valueOf(row[29].toString()) : null);
+				shutdownNormsValueDTO.setIsEditable(row[29] != null ? Boolean.valueOf(row[29].toString()) : false);
 				shutdownNormsValueDTO.setProductName(row[30] != null ? row[30].toString() : null);
 				if(staple || filament || ptapmdpia){
 					shutdownNormsValueDTO.setSapCode(row[31] != null ? row[31].toString() : "");
