@@ -2,7 +2,7 @@ package com.wks.caseengine.rest.server;
 
 
 import java.util.List;
-
+import java.util.Map;
 import java.util.UUID;
 
 import com.wks.caseengine.service.SpyroOutputService;
@@ -49,6 +49,12 @@ public class SpyroOutputController {
 		return	spyroOutputService.getSpyroOutputYieldData(year, plantId);
 	}
 
+	// ref: /spyro-output/yield | new api for without mode logic
+	@GetMapping(value="/spyro-output/yield-cracker")
+	public AOPMessageVM getDynamicYieldCracker(@RequestParam String plantId,@RequestParam String year){
+		return	spyroOutputService.getDynamicYieldCracker(plantId, year);
+	}
+
 
 	@GetMapping(value="/spyro-output/yield-dynamic")
 	public AOPMessageVM getDynamicYield(
@@ -56,6 +62,14 @@ public class SpyroOutputController {
 			@RequestParam String year,
 			@RequestParam String mode) {
 		return spyroOutputService.getDynamicYield(plantId, year, mode);
+	}
+
+	@PostMapping(value="/spyro-output/yield-cracker")
+	public AOPMessageVM updateDynamicYieldCracker(
+			@RequestParam String plantId,
+			@RequestParam String year,
+			@RequestBody List<Map<String, Object>> payload) {
+		return spyroOutputService.updateDynamicYieldCracker(plantId, year, payload);
 	}
 	
 	@GetMapping(value="/spyro-output/yield-dmd")
@@ -188,6 +202,7 @@ public class SpyroOutputController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
+
 	@GetMapping(value = "/optimizer-output-export")
 	public ResponseEntity<byte[]> exportSpyroOutputReportWithPilotFurnace(
 	         @RequestParam String year,@RequestParam String plantId,@RequestParam String mode,@RequestParam(value = "type", required = false) String type
@@ -256,6 +271,7 @@ public class SpyroOutputController {
 	        ) {
 			return	spyroOutputService.importExcelWithPilotFurnace(year, plantId, mode, file); 
 	}
+
 	@GetMapping(value = "/spyro-output/calculate")
 	public AOPMessageVM calculateSpyroOutputData(@RequestParam String year, @RequestParam String plantId,
 			@RequestParam String Mode, @RequestParam(value = "type", required = false) String type) {

@@ -495,7 +495,6 @@ const BusinessDemandGrid = () => {
         setSnackbarOpen={setSnackbarOpen}
         snackbarData={snackbarData}
         setSnackbarData={setSnackbarData}
-        customHeight={70}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

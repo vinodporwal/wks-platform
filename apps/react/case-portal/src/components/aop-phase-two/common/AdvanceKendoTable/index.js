@@ -296,7 +296,7 @@ const AdvanceKendoTable = ({
   const [openCalculateDialogeBox, setOpenCalculateDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
-  
+
   const openCalculateDialogBox = () => {
     setOpenCalculateDialogeBox(true)
   }
@@ -685,7 +685,7 @@ const AdvanceKendoTable = ({
         const monthDur = calculateMonthDuration(value, AOP_YEAR)
         const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
         if (monthDur) {
-          dataItem.durationInHrs = Number(monthDur)
+          dataItem.durationInHrs = String(monthDur)
         }
         if (start && end) {
           dataItem.maintStartDateTime = start
@@ -702,7 +702,13 @@ const AdvanceKendoTable = ({
       setModifiedCells((prev) => {
         // Merge with previous modified cells to get all accumulated changes
         const previousModified = prev[itemId] || {}
+        // Ensure that the freshly calculated duration and dates from dataItem override previousModified
         const base = { ...dataItem, ...previousModified, [field]: value }
+        if (screenType === 'shutdown' && field === 'monthly') {
+          if (dataItem.durationInHrs) base.durationInHrs = dataItem.durationInHrs
+          if (dataItem.maintStartDateTime) base.maintStartDateTime = dataItem.maintStartDateTime
+          if (dataItem.maintEndDateTime) base.maintEndDateTime = dataItem.maintEndDateTime
+        }
 
         if (field === 'siteName' && isDropdownSiteplant) {
           base.plantName = ''
