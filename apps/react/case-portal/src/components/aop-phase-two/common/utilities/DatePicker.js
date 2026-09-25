@@ -1,5 +1,4 @@
 import { DatePicker } from '@progress/kendo-react-dateinputs'
-import { formatDate } from '@progress/kendo-date-math'; 
 import { useRef, useEffect } from 'react'
 
 const DateOnlyPicker = ({ dataItem, field, onChange }) => {
@@ -15,7 +14,9 @@ const DateOnlyPicker = ({ dataItem, field, onChange }) => {
     if (!raw) return null
     if (raw instanceof Date) {
       if (isNaN(raw.getTime())) return null
-      return new Date(Date.UTC(raw.getFullYear(), raw.getMonth(), raw.getDate(), 0, 0, 0))
+      return new Date(
+        Date.UTC(raw.getFullYear(), raw.getMonth(), raw.getDate(), 0, 0, 0),
+      )
     }
     if (typeof raw === 'string') {
       const trimmed = raw.trim()
@@ -37,7 +38,9 @@ const DateOnlyPicker = ({ dataItem, field, onChange }) => {
       }
       const d = new Date(trimmed)
       if (!isNaN(d.getTime())) {
-        return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0))
+        return new Date(
+          Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0),
+        )
       }
     }
     return null
@@ -49,7 +52,9 @@ const DateOnlyPicker = ({ dataItem, field, onChange }) => {
   const handleChange = (event) => {
     let val = event.value
     if (val instanceof Date && !isNaN(val.getTime())) {
-      val = new Date(Date.UTC(val.getFullYear(), val.getMonth(), val.getDate(), 0, 0, 0))
+      val = new Date(
+        Date.UTC(val.getFullYear(), val.getMonth(), val.getDate(), 0, 0, 0),
+      )
     }
     onChange({
       dataItem,
