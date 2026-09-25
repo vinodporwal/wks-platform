@@ -181,7 +181,14 @@ const ShutDown = ({ permissions }) => {
 
   useEffect(() => {
     setSelectedTab(0)
-  }, [PLANT_ID, plantObject?.id, lowerPlantName, lowerSiteName, lowerVertName, AOP_YEAR])
+  }, [
+    PLANT_ID,
+    plantObject?.id,
+    lowerPlantName,
+    lowerSiteName,
+    lowerVertName,
+    AOP_YEAR,
+  ])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -558,8 +565,7 @@ const ShutDown = ({ permissions }) => {
           !IS_PTA &&
           !IS_CHEMICAL &&
           !IS_ELASTOMER_JMD_HIIR &&
-          !IS_AROMATICS &&
-          !IS_PVC_DMD
+          !IS_AROMATICS
         ) {
           for (const row of allRecords) {
             const start = new Date(row.maintStartDateTime)

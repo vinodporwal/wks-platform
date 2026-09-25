@@ -11,7 +11,10 @@ import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from 'components/aop-phase-two/services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
-import { downloadBase64Excel, downloadBlobExcel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
+import {
+  downloadBase64Excel,
+  downloadBlobExcel,
+} from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -51,6 +54,15 @@ const SteadyStateConsumption = () => {
       editable: false,
       locked: true,
       hidden: true,
+    },
+    {
+      field: 'sapCode',
+      title: 'SAP MAT Code',
+      widthT: 250,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+      locked: true,
     },
     {
       field: 'productName',
@@ -383,10 +395,7 @@ const SteadyStateConsumption = () => {
           PLANT_ID,
           AOP_YEAR,
         )
-      downloadBlobExcel(
-          blob,
-          EXCEL_NAME,
-        )
+      downloadBlobExcel(blob, EXCEL_NAME)
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -477,7 +486,7 @@ const SteadyStateConsumption = () => {
     titleName: 'Steady State Consumption (Norm/Quantity)',
     showDropdown: false,
     remarksEditable: true,
-    showCalulcationPromt:true,
+    showCalulcationPromt: true,
   }
 
   return (
@@ -498,7 +507,7 @@ const SteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}
