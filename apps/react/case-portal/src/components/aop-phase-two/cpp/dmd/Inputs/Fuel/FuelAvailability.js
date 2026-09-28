@@ -171,7 +171,7 @@ const FuelAvailability = ({
       displayMode: 'label',
       returnFullObject: true,
       editable: true,
-      locked: true,
+      locked: false,
       minWidth: 120,
     },
     {
@@ -212,6 +212,14 @@ const FuelAvailability = ({
       editable: false,
       locked: true,
       minWidth: 100,
+    },
+    {
+      field: 'fuelDescription',
+      title: 'Description',
+      type: 'text',
+      editable: false,
+      locked: false,
+      minWidth: 200,
     },
     ...MONTH_COLUMNS,
     {
@@ -255,10 +263,17 @@ const FuelAvailability = ({
         return
       }
 
+      // Transaction rows don't carry the description — resolve it from
+      // the fuel master (allFuels) by fuelId.
+      const descByFuelId = new Map(
+        allFuels.map((f) => [f.id, f.fuelDescription]),
+      )
       const rowsWithId = data.map((row, index) => ({
         ...row,
         id: row.id || `row_${index}`,
         remarks: row.remarks || '',
+        fuelDescription:
+          row.fuelDescription ?? descByFuelId.get(row.fuelId) ?? '',
       }))
       setRows(rowsWithId)
       setOriginalRows(rowsWithId)
@@ -271,7 +286,27 @@ const FuelAvailability = ({
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, allFuels])
+
+  // fuel missing from the master don't cause repeated re-renders.
+  useEffect(() => {
+    if (!allFuels.length) return
+    const descByFuelId = new Map(allFuels.map((f) => [f.id, f.fuelDescription]))
+    setRows((prev) => {
+      let changed = false
+      const next = prev.map((r) => {
+        if (!r.fuelDescription) {
+          const desc = descByFuelId.get(r.fuelId)
+          if (desc) {
+            changed = true
+            return { ...r, fuelDescription: desc }
+          }
+        }
+        return r
+      })
+      return changed ? next : prev
+    })
+  }, [allFuels, rows])
 
   useDebounce(
     () => {
@@ -316,12 +351,14 @@ const FuelAvailability = ({
         // Reset fuel when category changes
         updates.fuelId = ''
         updates.fuelDisplayName = ''
+        updates.fuelDescription = ''
       } else if (field === 'fuelDisplayName') {
         const fuel = allFuels.find((f) => f.id === selectedId)
         updates.fuelId = selectedId || ''
         updates.fuelDisplayName = fuel?.fuelDisplayName || selectedLabel || ''
         updates.fuelName = fuel?.fuelName || ''
         updates.fuelCode = fuel?.fuelCode || ''
+        updates.fuelDescription = fuel?.fuelDescription || ''
         // Auto-populate UOM from the selected fuel
         if (fuel?.uom) {
           updates.uom = fuel.uom
@@ -446,7 +483,7 @@ const FuelAvailability = ({
 
     try {
       const payload = modifiedData.map((item) => {
-        const { inEdit, isNew, isEditable, ...rest } = item
+        const { inEdit, isNew, isEditable, fuelDescription, ...rest } = item
         // For new rows, set id to null so backend creates the record
         const sanitized = {
           ...rest,
@@ -671,6 +708,7 @@ const FuelAvailability = ({
           categoryDisplayName: '',
           fuelDisplayName: '',
           fuelCode: '',
+          fuelDescription: '',
           type: DATA_TYPE,
           uom: '',
           remarks: '',

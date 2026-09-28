@@ -1,4 +1,11 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef, Fragment } from 'react'
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  Fragment,
+} from 'react'
 import {
   Box,
   Button,
@@ -45,13 +52,14 @@ const ConfigurationAccordian = ({
   isSummaryRequired = false,
   yearGap = 1,
   onDatesChange,
-  onLoadNormCalculation = () => { },
+  onLoadNormCalculation = () => {},
   normCalculationLoading = false,
 }) => {
   const keycloak = useSession()
   const hasExecutedRef = useRef(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { isReleased, oldYear, plantObject, siteObject, verticalObject } = dataGridStore
+  const { isReleased, oldYear, plantObject, siteObject, verticalObject } =
+    dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
@@ -70,23 +78,22 @@ const ConfigurationAccordian = ({
       (config) =>
         config.vertical === VERTICAL_NAME &&
         config.site === SITE_NAME &&
-        config.plant === PLANT_NAME
+        config.plant === PLANT_NAME,
     )
   }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
-
-  //HIDE FOR CT's Plants 
+  //HIDE FOR CT's Plants
   const isHideLoadButton = useMemo(() => {
     const validConfigs = [
       { vertical: 'refinery utility', site: 'dmd' },
       { vertical: 'refinery utility', site: 'dta', plant: 'ct-4' },
-      { vertical: 'refinery utility', site: 'dta', plant: 'ct-6' }
+      { vertical: 'refinery utility', site: 'dta', plant: 'ct-6' },
     ]
     return validConfigs.some(
       (config) =>
         config.vertical === VERTICAL_NAME &&
         config.site === SITE_NAME &&
-        (!config.plant || config.plant === PLANT_NAME)
+        (!config.plant || config.plant === PLANT_NAME),
     )
   }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
 
@@ -115,9 +122,11 @@ const ConfigurationAccordian = ({
   // Helper function to format dates for API
   const formatDate = (date) => {
     if (!date) return ''
-    const year = date?.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate.getTime())) return ''
+    const year = parsedDate.getFullYear()
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+    const day = String(parsedDate.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   }
 
@@ -205,10 +214,7 @@ const ConfigurationAccordian = ({
   )
 
   // Initial load with configurable year period
-  const onLoadTest = async (
-    startDateObj,
-    endDateObj,
-  ) => {
+  const onLoadTest = async (startDateObj, endDateObj) => {
     const { startDate: aopStartDate, endDate: aopEndDate } =
       getDatesFromAopYear(AOP_YEAR, yearGap)
     let effectiveStartDate = startDate
@@ -217,7 +223,6 @@ const ConfigurationAccordian = ({
       effectiveStartDate = aopStartDate
       effectiveEndDate = aopEndDate
     }
-
 
     const createPayloadItem = (obj, date) => ({
       apr: date,
@@ -283,12 +288,14 @@ const ConfigurationAccordian = ({
     setEndDate('')
     const hasModifiedOn = configurationExecutionDetails[0]?.ModifiedOn
     if (hasModifiedOn) {
-      const getDateValue = (name) =>
-        new Date(
+      const getDateValue = (name) => {
+        const parsedDate = new Date(
           configurationExecutionDetails.find(
             (item) => item.Name === name,
           )?.AttributeValue,
         )
+        return isNaN(parsedDate.getTime()) ? null : parsedDate
+      }
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
       setSorStartDate(getDateValue('SORStartDate'))
@@ -354,6 +361,22 @@ const ConfigurationAccordian = ({
         severity: 'warning',
       })
       return
+    }
+
+    const sorConfigExists = configurationExecutionDetails.some(
+      (item) =>
+        (item.Name === 'SORStartDate' || item.Name === 'SOREndDate') && item.Id,
+    )
+    if (isEORSORDATE && sorConfigExists) {
+      const sorValidation = validateDateRange(sorStartDate, sorEndDate)
+      if (!sorValidation.valid) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `SOR: ${sorValidation.message}`,
+          severity: 'warning',
+        })
+        return
+      }
     }
 
     try {
@@ -518,7 +541,9 @@ const ConfigurationAccordian = ({
           component='img'
           src={CalenderIcon}
           className='w16-icon'
-          style={{ cursor: (READ_ONLY || isHideLoadButton) ? 'not-allowed' : 'pointer' }}
+          style={{
+            cursor: READ_ONLY || isHideLoadButton ? 'not-allowed' : 'pointer',
+          }}
           onClick={() => !(READ_ONLY || isHideLoadButton) && setShow((v) => !v)}
         />
         <Box component='span' className='header-dropdown-label'>
@@ -527,18 +552,25 @@ const ConfigurationAccordian = ({
         <DatePicker
           id={id}
           format='dd-MM-yyyy'
-          value={value}
+          value={
+            value instanceof Date && !isNaN(value.getTime()) ? value : null
+          }
           show={show}
           onClose={() => setShow(false)}
           onChange={(e) => {
-            setValue(e.value)
+            const newValue = e.value
+            setValue(
+              newValue instanceof Date && isNaN(newValue.getTime())
+                ? null
+                : newValue,
+            )
             setDateEdited(true)
           }}
           disabled={READ_ONLY || isHideLoadButton}
         />
         <IconButton
           style={{
-            cursor: (READ_ONLY || isHideLoadButton) ? 'not-allowed' : 'pointer',
+            cursor: READ_ONLY || isHideLoadButton ? 'not-allowed' : 'pointer',
             p: 0,
             width: 0,
             height: 0,
@@ -546,9 +578,7 @@ const ConfigurationAccordian = ({
           onClick={() => !(READ_ONLY || isHideLoadButton) && setShow((v) => !v)}
           size='small'
         >
-          <ExpandMoreIcon
-            sx={{ fontSize: '1rem', color: '#606060' }}
-          />
+          <ExpandMoreIcon sx={{ fontSize: '1rem', color: '#606060' }} />
         </IconButton>
       </Box>
     )
@@ -614,36 +644,70 @@ const ConfigurationAccordian = ({
                 flexWrap='wrap'
               >
                 <Stack direction='column' spacing={0.5}>
-                  {isEORSORDATE && (<Typography
-                    variant='caption'
-                    className='aop-design-basis-label'
-                  >
-                    Historical Period
-                  </Typography>)}
+                  {isEORSORDATE && (
+                    <Typography
+                      variant='caption'
+                      className='aop-design-basis-label'
+                    >
+                      Historical Period
+                    </Typography>
+                  )}
                   <Stack
                     direction='row'
                     sx={{ columnGap: 1, rowGap: 0 }}
                     alignItems='center'
                     flexWrap='wrap'
                   >
-                    {renderDatePickerPill('Start Date', startDate, setStartDate, startShow, setStartShow, 'start-date')}
-                    {renderDatePickerPill('End Date', endDate, setEndDate, endShow, setEndShow, 'end-date')}
+                    {renderDatePickerPill(
+                      'Start Date',
+                      startDate,
+                      setStartDate,
+                      startShow,
+                      setStartShow,
+                      'start-date',
+                    )}
+                    {renderDatePickerPill(
+                      'End Date',
+                      endDate,
+                      setEndDate,
+                      endShow,
+                      setEndShow,
+                      'end-date',
+                    )}
                   </Stack>
-                  {isEORSORDATE && (<Typography
-                    variant='caption'
-                    className='aop-design-basis-label'
-                  >
-                    SOR
-                  </Typography>)}
-                  {isEORSORDATE && (<Stack
-                    direction='row'
-                    sx={{ columnGap: 1, rowGap: 0 }}
-                    alignItems='center'
-                    flexWrap='wrap'
-                  >
-                    {renderDatePickerPill('Start Date', sorStartDate, setSorStartDate, sorStartShow, setSorStartShow, 'sor-start-date')}
-                    {renderDatePickerPill('End Date', sorEndDate, setSorEndDate, sorEndShow, setSorEndShow, 'sor-end-date')}
-                  </Stack>)}
+                  {isEORSORDATE && (
+                    <Typography
+                      variant='caption'
+                      className='aop-design-basis-label'
+                    >
+                      SOR
+                    </Typography>
+                  )}
+                  {isEORSORDATE && (
+                    <Stack
+                      direction='row'
+                      sx={{ columnGap: 1, rowGap: 0 }}
+                      alignItems='center'
+                      flexWrap='wrap'
+                    >
+                      {renderDatePickerPill(
+                        'Start Date',
+                        sorStartDate,
+                        setSorStartDate,
+                        sorStartShow,
+                        setSorStartShow,
+                        'sor-start-date',
+                      )}
+                      {renderDatePickerPill(
+                        'End Date',
+                        sorEndDate,
+                        setSorEndDate,
+                        sorEndShow,
+                        setSorEndShow,
+                        'sor-end-date',
+                      )}
+                    </Stack>
+                  )}
                 </Stack>
 
                 {/* LOAD BUTTON */}
