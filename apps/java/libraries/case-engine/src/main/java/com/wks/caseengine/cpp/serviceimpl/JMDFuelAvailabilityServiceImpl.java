@@ -134,6 +134,7 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         dto.setFuelDisplayName(p.getFuelDisplayName());
         dto.setType(p.getType());
         dto.setUom(p.getUom());
+        dto.setFuelDescription(p.getFuelDescription());
         if (p.getCategoryFkId() != null) {
             dto.setCategoryFkId(UUID.fromString(p.getCategoryFkId()));
         }
