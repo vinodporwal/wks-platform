@@ -56,6 +56,14 @@ const index = () => {
           dateLoading={loading}
         />
       </Stack>
+
+      {/* Notification */}
+      <Notification
+        open={snackbarOpen}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+      />
     </Box>
   )
 }
