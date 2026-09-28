@@ -707,26 +707,39 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			String procedureName) {
 
 		String sql = "EXEC " +  "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
-		return jdbcTemplate.query(sql, (rs, rowNum) -> ProposedAOPDTO.builder()
-				.id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
-				.normParameterId(
-						rs.getString("NormparameterId") != null ? UUID.fromString(rs.getString("NormparameterId"))
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+				Boolean isEditable = null;
+				Object isEditableObj = rs.getObject("IsEditable");
+				if (isEditableObj != null) {
+					if (isEditableObj instanceof Boolean) {
+						isEditable = (Boolean) isEditableObj;
+					} else if (isEditableObj instanceof Number) {
+						isEditable = ((Number) isEditableObj).intValue() == 1;
+					}
+				}
+
+				return ProposedAOPDTO.builder()
+						.id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
+						.normParameterId(
+								rs.getString("NormparameterId") != null ? UUID.fromString(rs.getString("NormparameterId"))
+										: null)
+						.normParameterTypeId(rs.getString("NormParameterTypeId") != null
+								? UUID.fromString(rs.getString("NormParameterTypeId"))
 								: null)
-				.normParameterTypeId(rs.getString("NormParameterTypeId") != null
-						? UUID.fromString(rs.getString("NormParameterTypeId"))
-						: null)
-				.normParameterTypeDisplayName(rs.getString("NormParameterTypeDisplayName"))
-				.productName(rs.getString("ProductName"))
-				.uom(rs.getString("UOM"))
-				.lastFY(rs.getDouble("LastFY"))
-				.actualLastFY(rs.getDouble("ActualLastFY"))
-				.sysGrn(rs.getDouble("SysGrn"))
-				.proposed(rs.getDouble("Proposed"))
-				.remarks(rs.getString("Remarks"))
-				.plantId(rs.getString("PlantId") != null ? UUID.fromString(rs.getString("PlantId")) : null)
-				.aopYear(rs.getString("AopYear"))
-				.sapCode(rs.getString("SapMaterialCode"))
-				.build(),
+						.normParameterTypeDisplayName(rs.getString("NormParameterTypeDisplayName"))
+						.productName(rs.getString("ProductName"))
+						.uom(rs.getString("UOM"))
+						.lastFY(rs.getDouble("LastFY"))
+						.actualLastFY(rs.getDouble("ActualLastFY"))
+						.sysGrn(rs.getDouble("SysGrn"))
+						.proposed(rs.getDouble("Proposed"))
+						.remarks(rs.getString("Remarks"))
+						.plantId(rs.getString("PlantId") != null ? UUID.fromString(rs.getString("PlantId")) : null)
+						.aopYear(rs.getString("AopYear"))
+						.sapCode(rs.getString("SapMaterialCode"))
+						.isEditable(isEditable)
+						.build();
+				},
 				plantId.toString(), aopYear);
 	}
 
@@ -781,6 +794,16 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 
 			}
 
+			// sp call logic 
+
+			Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+			String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+			String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+	
+			String procedureName = verticalName + "_" + siteName + "_CalculateTotalNorms";
+
+			Integer result = executeCalculateSP(String.valueOf(plantId), year, procedureName);
+
 			if (plantId != null && year != null) {
 				List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("proposed-aop");
 				for (ScreenMapping screenMapping : screenMappingList) {
@@ -801,6 +824,19 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			return vm;
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to save proposed AOP", e);
+		}
+	}
+
+	public Integer executeCalculateSP( String plantId, String aopYear, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
 	}
 
