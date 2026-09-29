@@ -9,11 +9,7 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { BusinessDemandApiService } from '../../services/polyester/businessDemandApiService'
 import { generateExcelNameWithoutExt } from 'components/aop-phase-two/common/utilities/excelNameUtil'
-import {
-  convertRows,
-  UNIT_OPTIONS,
-  DEFAULT_UNIT,
-} from './utils'
+import { convertRows, UNIT_OPTIONS, DEFAULT_UNIT } from './utils'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import GetFinancialYear from 'components/Utilities/GetFinancialYear'
 
@@ -39,11 +35,12 @@ const LastFinacialYearGrid = () => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const valueFormat = ValueFormatterProduction()
   const customFormat = customValueFormatterPhaseTwo(5)
-  const {
-    previousFYFormatted,
-  } = GetFinancialYear(AOP_YEAR)
+  const { previousFYFormatted } = GetFinancialYear(AOP_YEAR)
   const headerMap = generateHeaderNames(previousFYFormatted)
-  const EXCEL_NAME = generateExcelNameWithoutExt(dataGridStore, 'Last Financial')
+  const EXCEL_NAME = generateExcelNameWithoutExt(
+    dataGridStore,
+    'Last Financial',
+  )
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -61,10 +58,10 @@ const LastFinacialYearGrid = () => {
   })
 
   const monthsConfig = [
-    { field: 'april', key: 4, title: 'April' },
+    { field: 'apr', key: 4, title: 'April' },
     { field: 'may', key: 5, title: 'May' },
-    { field: 'june', key: 6, title: 'June' },
-    { field: 'july', key: 7, title: 'July' },
+    { field: 'jun', key: 6, title: 'June' },
+    { field: 'jul', key: 7, title: 'July' },
     { field: 'aug', key: 8, title: 'August' },
     { field: 'sep', key: 9, title: 'September' },
     { field: 'oct', key: 10, title: 'October' },
@@ -72,7 +69,7 @@ const LastFinacialYearGrid = () => {
     { field: 'dec', key: 12, title: 'December' },
     { field: 'jan', key: 1, title: 'January' },
     { field: 'feb', key: 2, title: 'February' },
-    { field: 'march', key: 3, title: 'March' },
+    { field: 'mar', key: 3, title: 'March' },
   ]
 
   const MONTH_FIELDS = monthsConfig.map((m) => m.field)
@@ -172,7 +169,6 @@ const LastFinacialYearGrid = () => {
   useEffect(() => {
     fetchData()
   }, [fetchData])
-
 
   const handleExport = async () => {
     setSnackbarOpen(true)
