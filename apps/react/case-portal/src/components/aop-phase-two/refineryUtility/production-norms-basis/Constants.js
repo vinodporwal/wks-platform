@@ -34,11 +34,33 @@ const Constants = ({ startDate, endDate }) => {
     if (val === null || val === undefined || val === '') return ''
     const num = parseFloat(val)
     if (isNaN(num)) return val
+
+    const siteName = siteObject?.name?.toUpperCase() || ''
+    const plantName = plantObject?.name?.toUpperCase() || ''
+    const isSpecialPlant =
+      (siteName === 'DTA' && plantName === 'PCG ASU') ||
+      (siteName === 'SEZ' && plantName === 'PCG ASU') ||
+      (siteName === 'DTA' && plantName === 'AIR & ASU') ||
+      (siteName === 'SEZ' && plantName === 'AIR & ASU') ||
+      (siteName === 'C2' && plantName === 'ASU') ||
+      (siteName === 'C2' && plantName === 'AIR')
+
     const cleanUom = String(uom ?? '').trim().toLowerCase()
-    if (cleanUom === '%' || cleanUom.toLocaleLowerCase() === 'm3/hr') {
-      return Math.trunc(num).toString()
+
+    if (isSpecialPlant) {
+      if (cleanUom === '%' || cleanUom === 'm3/hr') {
+        return Math.trunc(num).toString()
+      }
+      return (Math.trunc(num * 100) / 100).toFixed(2)
+    } else {
+      if (cleanUom === 'coc') {
+        return (Math.trunc(num * 10) / 10).toFixed(1)
+      } else if (['kw', 'kw/m3', 'kg/km3'].includes(cleanUom)) {
+        return (Math.trunc(num * 1000) / 1000).toFixed(3)
+      } else {
+        return Math.trunc(num).toString()
+      }
     }
-    return (Math.trunc(num * 100) / 100).toFixed(2)
   }
 
   useEffect(() => {
@@ -176,6 +198,7 @@ const Constants = ({ startDate, endDate }) => {
           oct: formattedOct,
           remarks: item?.remarks || '',
           id: item?.normParameterFKId || item?.id || index + 1,
+          isConstantsTab: true,
         }
       })
       setRows(formattedData)
