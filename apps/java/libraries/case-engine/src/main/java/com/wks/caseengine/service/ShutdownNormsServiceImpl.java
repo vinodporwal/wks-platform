@@ -2028,7 +2028,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						cell.setCellValue("");
 					}
 
-					if (col >= 4 && col <= 15) {
 						String monthNumber = colToMonthMap.get(col);
 						boolean isMonthActive = activeMonthSet.contains(monthNumber);
 
@@ -2037,13 +2036,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						} else {
 							cell.setCellStyle(lockedStyle);
 						}
-					} else {
-						if (isRowEditable) {
+						if(col==16) {
 							cell.setCellStyle(unlockedStyle);
-						} else {
-							cell.setCellStyle(lockedStyle);
 						}
-					}
 				}
 			}
 

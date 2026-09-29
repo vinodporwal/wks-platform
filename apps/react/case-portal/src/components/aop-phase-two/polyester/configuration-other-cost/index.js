@@ -650,6 +650,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
           isReleaseDisabled={isReleaseDisabled}
           handleRelease={handleRelease}
           permissions={adjustedPermissions}
+          groupBy={['normType']}
           customHeight={70}
           paginationConfig={{
             threshold: 100,

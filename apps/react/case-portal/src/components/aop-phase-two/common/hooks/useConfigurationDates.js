@@ -28,6 +28,8 @@ const useConfigurationDates = () => {
   const getConfigurationExecutionDetails = async () => {
     setLoading(true)
     setError(null)
+    setStartDate(null)
+    setEndDate(null)
     try {
       const response = await InputApiService.getConfigurationExecutionDetails(
         keycloak,
@@ -64,8 +66,13 @@ const useConfigurationDates = () => {
       return item?.AttributeValue ? new Date(item.AttributeValue) : null
     }
 
-    setStartDate(getDateValue('StartDate'))
-    setEndDate(getDateValue('EndDate'))
+    const start = getDateValue('StartDate')
+    const end = getDateValue('EndDate')
+    setStartDate(start)
+    setEndDate(end)
+    if (!start || !end) {
+      setError('Start Date and End Date are not configured in AOP Design Basis')
+    }
   }, [configurationExecutionDetails])
 
   // Initialize on mount and when PLANT_ID/AOP_YEAR changes

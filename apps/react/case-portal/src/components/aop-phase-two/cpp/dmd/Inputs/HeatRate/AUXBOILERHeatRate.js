@@ -141,12 +141,20 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
   }
 
   useEffect(() => {
-    if (selectedPlant && startDate && endDate) {
-      const formattedStartDate = formatDate(startDate)
-      const formattedEndDate = formatDate(endDate)
-      fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
+    if (!selectedPlant || dateLoading) return
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Start Date and End Date are not configured in AOP Design Basis',
+        severity: 'warning',
+      })
+      return
     }
-  }, [selectedPlant, startDate, endDate])
+    const formattedStartDate = formatDate(startDate)
+    const formattedEndDate = formatDate(endDate)
+    fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
+  }, [selectedPlant, startDate, endDate, dateLoading])
 
   const getPlantList = useCallback(async () => {
     setLoading(true)

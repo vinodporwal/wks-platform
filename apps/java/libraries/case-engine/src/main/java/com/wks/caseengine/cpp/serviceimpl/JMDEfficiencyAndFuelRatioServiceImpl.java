@@ -340,8 +340,8 @@ public class JMDEfficiencyAndFuelRatioServiceImpl implements JMDEfficiencyAndFue
     /**
      * Seeds one CPP_Efficiency row per asset for the given plants + AOP year,
      * pulled from the two asset master tables:
-     *   PowerGenerationAssets      -> Type = 'Power'
-     *   CPPSteamGenerationAsset    -> Type = 'Steam'
+     *   PowerGenerationAssets      -> Type = 'Power' (IsActive only when AssetType = 'STG')
+     *   CPPSteamGenerationAsset    -> Type = 'Steam' (IsActive only when AssetType = 'CCPP')
      * Rows are inserted with default Value = 0. Returns the freshly seeded rows
      * (empty list if the plants have no assets configured).
      */
@@ -350,12 +350,12 @@ public class JMDEfficiencyAndFuelRatioServiceImpl implements JMDEfficiencyAndFue
 
         for (PowerGenerationAsset asset : powerGenerationAssetRepository.findByCppPlantFkIdIn(plantIds)) {
             seeds.add(newEfficiencySeed(asset.getCppPlantFkId(), asset.getAssetId(),
-                    asset.getAssetName(), "Power", aopYear));
+                    asset.getAssetName(), "Power", "STG".equalsIgnoreCase(asset.getAssetType()), aopYear));
         }
 
         for (CppSteamGenerationAsset asset : cppSteamGenerationAssetRepository.findByCppPlantFkIdIn(plantIds)) {
             seeds.add(newEfficiencySeed(asset.getCppPlantFkId(), asset.getAssetId(),
-                    asset.getAssetName(), "Steam", aopYear));
+                    asset.getAssetName(), "Steam", "CCPP".equalsIgnoreCase(asset.getAssetType()), aopYear));
         }
 
         if (seeds.isEmpty()) {
@@ -370,13 +370,13 @@ public class JMDEfficiencyAndFuelRatioServiceImpl implements JMDEfficiencyAndFue
     }
 
     private CPPEfficiency newEfficiencySeed(UUID cppPlantFkId, UUID assetFkId,
-                                            String assetName, String type, String aopYear) {
+                                            String assetName, String type, boolean isActive, String aopYear) {
         CPPEfficiency seed = new CPPEfficiency();
         seed.setCppPlantFkId(cppPlantFkId);
         seed.setAssetFkId(assetFkId);
         seed.setAssetName(assetName);
         seed.setType(type);
-        seed.setIsActive(true);
+        seed.setIsActive(isActive);
         seed.setUom("%");
         seed.setValue(0.0);
         seed.setAopYear(aopYear);

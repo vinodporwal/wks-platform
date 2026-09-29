@@ -520,9 +520,8 @@ const PlantRequirement = () => {
       case 'vmd':
       case 'hmd':
       case 'dmd':
+      case 'pmd':
         return <PlantRequirementDMD />
-      // case 'hmd':
-      //   return <PlantRequirementHMD />
       case 'nmd':
       default:
         return (
