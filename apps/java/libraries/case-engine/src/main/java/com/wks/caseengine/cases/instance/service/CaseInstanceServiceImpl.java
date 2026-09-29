@@ -151,7 +151,7 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	}
 
     @Override
-	@Scheduled(cron = "0 20 11 * * *", zone = "Asia/Kolkata")
+	@Scheduled(cron = "0 40 12 * * *", zone = "Asia/Kolkata")
 	public void findCasesWithDueDateGreaterThanNow() {
 		
 	commandContext.getSecurityContextTenantHolder().setTenantId(dbTenant);
@@ -195,10 +195,14 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 						   String caseAssignedBy = (caseInstance.getOwner() != null) ? caseInstance.getOwner().getName() : null;
 
 						   List<String> ccList = new ArrayList<>();
+						   List<String> analysisTeamDisplayList = new ArrayList<>();
+
 						   JsonNode analysisTeamNode = node.path("analysisTeam");
 						   if (analysisTeamNode.isArray()) {
 						   	   for (JsonNode member : analysisTeamNode) {
 						   	   	   ccList.add(member.asText());
+                                    var resolvedUser = usersRepository.findByEmailId(member.asText());
+                                    analysisTeamDisplayList.add((resolvedUser != null) ? resolvedUser.getUserId() : member.asText());
 						   	   }
 						   }
 						   if (caseInstance.getOwner() != null && caseInstance.getOwner().getEmail() != null) {
@@ -206,7 +210,7 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 						   }
 						   String  caseNo = caseInstance.getBusinessKey();
 						   String caseStatus = "Overdue";
-						   String analysisTeam = String.join(", ", ccList);
+						   String analysisTeam = String.join(", ", analysisTeamDisplayList);
 						   Map<String, Object> data = new HashMap<>();
 						   data.put("caseName", caseName);
 						   data.put("status", caseStatus);
