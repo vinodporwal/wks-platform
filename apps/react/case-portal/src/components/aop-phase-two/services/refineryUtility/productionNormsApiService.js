@@ -51,6 +51,11 @@ export const ProductionNormsApiService = {
   // Commodity Selection APIs
   getCommoditySelectionData,
   saveCommoditySelectionData,
+
+  // Owner Selection APIs
+  getPlantOwnerDropdown,
+  getSelectedPlantOwner,
+  saveSelectedPlantOwner,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -838,6 +843,70 @@ async function saveCommoditySelectionData(
   payload,
 ) {
   const url = `${Config.CaseEngineUrl}/task/commodity-chemicals?year=${AOP_YEAR}&plantFKId=${PlantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ========================|| Owner Selection APIs ||=====================================//
+
+async function getPlantOwnerDropdown(keycloak, plantId) {
+  const url = `${Config.CaseEngineUrl}/task/plant-owner-dropdown?plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getSelectedPlantOwner(keycloak, plantId) {
+  const url = `${Config.CaseEngineUrl}/task/selected-plant-owner?plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveSelectedPlantOwner(keycloak, plantId, payload) {
+  const url = `${Config.CaseEngineUrl}/task/selected-plant-owner?plantFKId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

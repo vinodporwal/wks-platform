@@ -30,6 +30,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.PlantOwnerDTO;
+import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -925,5 +927,114 @@ public List<Object[]> getCommodityChemicalsDataFromSP(String aopYear, String pla
 	normAttributeTransactions.setUserName(Utility.getUserName());
 	normAttributeTransactionsRepository.save(normAttributeTransactions);
 }
+
+	@Override
+	public AOPMessageVM getPlantOwnerDropdown(String plantFKId) {
+		try {
+			String sql = "SELECT CAST(Id AS VARCHAR(36)), PlantOwnerSelection, CAST(PlantId AS VARCHAR(36)) " +
+					"FROM PlantOwner WHERE PlantId = :plantFKId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantFKId", plantFKId);
+
+			List<Object[]> resultList = query.getResultList();
+			List<PlantOwnerDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+				PlantOwnerDTO dto = new PlantOwnerDTO();
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setPlantOwner(row[1] != null ? row[1].toString() : null);
+				dto.setPlantId(row[2] != null ? row[2].toString() : null);
+				dtoList.add(dto);
+			}
+
+			return new AOPMessageVM(200, "Plant owner dropdown fetched successfully", dtoList);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch plant owner dropdown data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getSelectedPlantOwner(String plantFKId) {
+		try {
+			String sql = "EXEC [dbo].[sp_GetSelectedOwner] @plantId = :plantId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantFKId);
+
+			List<Object[]> resultList = query.getResultList();
+			List<SelectedPlantOwnerDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+				SelectedPlantOwnerDTO dto = new SelectedPlantOwnerDTO();
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setPlantOwnerSelection(row[1] != null ? row[1].toString() : null);
+				dto.setPlantId(row[2] != null ? row[2].toString() : null);
+				dto.setRemarks(row[3] != null ? row[3].toString() : null);
+				dto.setNormParameterId(row[4] != null ? row[4].toString() : null);
+				dtoList.add(dto);
+			}
+
+			return new AOPMessageVM(200, "Selected plant owner fetched successfully", dtoList);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch selected plant owner data", ex);
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<SelectedPlantOwnerDTO> saveSelectedPlantOwner(String plantFKId, List<SelectedPlantOwnerDTO> dtoList) {
+		List<SelectedPlantOwnerDTO> failedList = new ArrayList<>();
+
+		for (SelectedPlantOwnerDTO dto : dtoList) {
+			try {
+				UUID normParameterFKId = UUID.fromString(dto.getNormParameterId());
+
+				if(normParameterFKId == null) { 
+					throw new RestInvalidArgumentException("Invalid UUID format for Norm Parameter ID", null);
+				}
+
+				Optional<NormAttributeTransactions> existingRecord =
+						normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthOnly(normParameterFKId, 4);
+
+				NormAttributeTransactions record;
+
+				if (existingRecord.isPresent()) {
+					record = existingRecord.get();
+					record.setAttributeValue(dto.getId());
+					record.setRemarks(dto.getRemarks());
+					record.setModifiedOn(new Date());
+					record.setUserName(Utility.getUserName());
+				} else {
+					record = new NormAttributeTransactions();
+					record.setNormParameterFKId(normParameterFKId);
+					record.setAttributeValue(dto.getId());
+					record.setRemarks(dto.getRemarks());
+					record.setAopMonth(4);
+					record.setCreatedOn(new Date());
+					record.setModifiedOn(new Date());
+					record.setUserName(Utility.getUserName());
+				}
+
+				normAttributeTransactionsRepository.save(record);
+				dto.setSaveStatus("Success");
+
+			} catch (IllegalArgumentException e) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("Invalid UUID format: " + dto.getId());
+				failedList.add(dto);
+			} catch (Exception ex) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("Error saving record: " + ex.getMessage());
+				failedList.add(dto);
+			}
+		}
+
+		return failedList;
+	}
 
 }

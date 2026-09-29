@@ -78,9 +78,9 @@ const ConfigurationAccordian = ({
   //HIDE FOR CT's Plants 
   const isHideLoadButton = useMemo(() => {
     const validConfigs = [
-      { vertical: 'refinery utility', site: 'dmd' },
-      { vertical: 'refinery utility', site: 'dta', plant: 'ct-4' },
-      { vertical: 'refinery utility', site: 'dta', plant: 'ct-6' }
+      { vertical: 'refinery utility', site: 'dmd' }
+      // { vertical: 'refinery utility', site: 'dta', plant: 'ct-4' },
+      // { vertical: 'refinery utility', site: 'dta', plant: 'ct-6' },
     ]
     return validConfigs.some(
       (config) =>

@@ -7,6 +7,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.PlantOwnerDTO;
+import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -21,4 +23,7 @@ public interface RefineryUtilityConfigurationService {
     public List<TreatmentVendorDTO> saveTreatmentVendorData(String year, String plantFKId, List<TreatmentVendorDTO> treatmentVendorDTOList);
     public AOPMessageVM getCommodityChemicalsData(String year, String plantFKId);
     public List<CommoditySelectionDTO> saveCommodityChemicalsData(String year, String plantFKId, List<CommoditySelectionDTO> commoditySelectionDTOList);
+    public AOPMessageVM getPlantOwnerDropdown(String plantFKId);
+    public AOPMessageVM getSelectedPlantOwner(String plantFKId);
+    public List<SelectedPlantOwnerDTO> saveSelectedPlantOwner(String plantFKId, List<SelectedPlantOwnerDTO> dtoList);
 }

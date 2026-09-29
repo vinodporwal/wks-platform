@@ -1658,7 +1658,7 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 
 	public void executeDynamicUpdateProcedure(String procedureName, String plantId, String finYear, String periodFrom,
 			String periodTo) {
-		String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+		String callSql = "{call " + "["+ procedureName + "]" + "(?, ?, ?, ?)}";
 
 		try (Connection connection = dataSource.getConnection();
 				CallableStatement stmt = connection.prepareCall(callSql)) {

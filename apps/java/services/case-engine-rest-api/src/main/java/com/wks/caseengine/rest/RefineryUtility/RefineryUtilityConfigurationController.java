@@ -22,6 +22,7 @@ import org.springframework.http.ContentDisposition;
 
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 
@@ -114,5 +115,27 @@ public class RefineryUtilityConfigurationController {
             return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
         }
     }
+
+	@GetMapping("/plant-owner-dropdown")
+	public ResponseEntity<AOPMessageVM> getPlantOwnerDropdown(@RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getPlantOwnerDropdown(plantFKId));
+	}
+
+	@GetMapping("/selected-plant-owner")
+	public ResponseEntity<AOPMessageVM> getSelectedPlantOwner(@RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getSelectedPlantOwner(plantFKId));
+	}
+
+	@PostMapping("/selected-plant-owner")
+	public ResponseEntity<AOPMessageVM> saveSelectedPlantOwner(
+			@RequestBody List<SelectedPlantOwnerDTO> dtoList,
+			@RequestParam String plantFKId) {
+		List<SelectedPlantOwnerDTO> failedList = refineryUtilityConfigurationService.saveSelectedPlantOwner(plantFKId, dtoList);
+		if (failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
 
 }
