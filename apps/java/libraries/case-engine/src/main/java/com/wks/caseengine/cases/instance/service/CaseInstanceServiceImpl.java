@@ -151,7 +151,7 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	}
 
     @Override
-	@Scheduled(cron = "0 0 20 * * *", zone = "Asia/Kolkata")
+	@Scheduled(cron = "0 20 11 * * *", zone = "Asia/Kolkata")
 	public void findCasesWithDueDateGreaterThanNow() {
 		
 	commandContext.getSecurityContextTenantHolder().setTenantId(dbTenant);
@@ -206,13 +206,15 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 						   }
 						   String  caseNo = caseInstance.getBusinessKey();
 						   String caseStatus = "Overdue";
+						   String analysisTeam = String.join(", ", ccList);
 						   Map<String, Object> data = new HashMap<>();
 						   data.put("caseName", caseName);
 						   data.put("status", caseStatus);
 						   data.put("caseNumber" , caseNo);
 						   data.put("assignedTo", caseAssignedToLabel);
 						   data.put("assignedToLabel", caseAssignedToLabel);
-						   data.put("assignedBy", caseAssignedBy);
+						   data.put("createdBy", caseAssignedBy);
+						   data.put("analysisTeam", analysisTeam);
 
 					
 					
