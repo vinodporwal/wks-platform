@@ -6,7 +6,10 @@ import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 
 /**
  * Reusable POI cell styles for Excel export.
@@ -148,5 +151,29 @@ public final class ExcelStyles {
         style.setWrapText(true);
         style.setLocked(false);
         return style;
+    }
+
+    /**
+     * Protects the sheet so locked/unlocked cell styles take effect, while keeping
+     * common user actions allowed: column/row resizing, AutoFilter dropdowns, and
+     * sorting. Also enables AutoFilter on the header row so filter dropdowns appear
+     * when the file is opened in Excel.
+     *
+     * <p>Call this once per sheet, after all data has been written and column widths
+     * have been set, just before writing the workbook to the output stream.</p>
+     *
+     * @param sheet         the sheet to protect (must be an XSSF sheet)
+     * @param totalColumns  total number of columns in the sheet (used for the AutoFilter range)
+     */
+    public static void applySheetProtectionWithAutoFilter(Sheet sheet, int totalColumns) {
+        sheet.protectSheet("");
+        XSSFSheet xssfSheet = (XSSFSheet) sheet;
+        xssfSheet.lockFormatColumns(false);  // allow column width changes + unhide
+        xssfSheet.lockFormatRows(false);     // allow row height changes
+        xssfSheet.lockAutoFilter(false);     // allow filter dropdowns on protected sheet
+        xssfSheet.lockSort(false);           // allow sorting on protected sheet
+        if (totalColumns > 0) {
+            sheet.setAutoFilter(new CellRangeAddress(0, 0, 0, totalColumns - 1));
+        }
     }
 }

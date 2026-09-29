@@ -87,7 +87,7 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
             // CPP_JMD_GetCPPNorms (Step B) will then LEFT JOIN that table to
             // populate calculatedNorms for NormType=6 rows.
             if (fromDate != null && !fromDate.isEmpty() && toDate != null && !toDate.isEmpty()) {
-                log.info("Date range provided — pre-calculating fixed utility norms for JMD plants: {}", plantIdsStr);
+                log.info("Date range provided pre-calculating fixed utility norms for JMD plants: {}", plantIdsStr);
                 try {
                     callFixedUtilityCalculation(plantIdsStr, financialYear, fromDate, toDate);
                     log.info("Fixed utility norm pre-calculation completed for financialYear={}", financialYear);
@@ -96,7 +96,7 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
                             calcEx.getMessage());
                 }
             } else {
-                log.info("Date range not provided — using existing values from CPP_utilitiesCalculatednorms for Fixed-type norms");
+                log.info("Date range not provided using existing values from CPP_utilitiesCalculatednorms for Fixed-type norms");
             }
 
             // -- Step B: Fetch CPP norms via main SP ------------------------------------
